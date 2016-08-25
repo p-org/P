@@ -83,8 +83,7 @@ namespace Microsoft.Pc
                             Console.WriteLine(loadErrorMsgString);
                             continue;
                         }
-                        compiler.Options = compilerOptions;
-                        var result = compiler.Compile(inputFileName);
+                        var result = compiler.Compile(inputFileName, new StandardOutput(), compilerOptions);
                         if (!result)
                         {
                             inputFileName = null;

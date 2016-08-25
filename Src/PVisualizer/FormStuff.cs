@@ -143,8 +143,8 @@ namespace Microsoft.PVisualizer
         {
             var options = new CommandLineOptions();
             options.analyzeOnly = true;
-            var compiler = new Compiler(options);
-            var result = compiler.Compile(inputFileName);
+            var compiler = new Compiler(options.shortFileNames);
+            var result = compiler.Compile(inputFileName, new StandardOutput(), options);
 
             if (result)
             {

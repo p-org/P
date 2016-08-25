@@ -145,8 +145,8 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    var compiler = new Compiler(options);
-                    result = compiler.Compile(inputFileName);
+                    var compiler = new Compiler(options.shortFileNames);
+                    result = compiler.Compile(inputFileName, new StandardOutput(), options);
                 }
                 if (!result)
                 {

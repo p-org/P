@@ -129,13 +129,11 @@ namespace Microsoft.Pc
                         }
 
                         // share the compiled P program across compiler instances.
-                        Compiler compiler = new Compiler(master);
-                        compiler.Options = options;
-                        compiler.Log = new SerializedOutput(clientPipe);
+                        Compiler compiler = master; // new Compiler(master);
                         bool result = false;
                         try
                         {
-                            result = compiler.Compile(options.inputFileName);
+                            result = compiler.Compile(options.inputFileName, new SerializedOutput(clientPipe), options);
                         }
                         catch (Exception ex)
                         {

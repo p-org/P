@@ -98,7 +98,6 @@ namespace Microsoft.Pc
 
     internal class FunInfo
     {
-        public string srcFileName;
         public bool isAnonymous;
         public List<string> parameterNames;
         public List<bool> isRefParameter;
@@ -117,9 +116,8 @@ namespace Microsoft.Pc
         public HashSet<string> printArgs;
 
         // if isAnonymous is true, parameters is actually envVars
-        public FunInfo(string srcFileName, bool isAnonymous, FuncTerm parameters, AST<FuncTerm> returnType, FuncTerm locals, Node body)
+        public FunInfo(bool isAnonymous, FuncTerm parameters, AST<FuncTerm> returnType, FuncTerm locals, Node body)
         {
-            this.srcFileName = srcFileName;
             this.isAnonymous = isAnonymous;
             this.returnType = returnType;
             this.body = body;
@@ -214,7 +212,7 @@ namespace Microsoft.Pc
             observesEvents = new List<string>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             monitorType = MonitorType.SAFETY;
-            funNameToFunInfo["ignore"] = new FunInfo(null, false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
+            funNameToFunInfo["ignore"] = new FunInfo(false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
         }
     }
 
@@ -552,7 +550,6 @@ namespace Microsoft.Pc
             terms = GetBin(factBins, "FunDecl");
             foreach (var term in terms)
             {
-                var srcFileName = funToFileName[term];
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
@@ -569,7 +566,7 @@ namespace Microsoft.Pc
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
                     var body = it.Current;
-                    var funInfo = new FunInfo(srcFileName, false, parameters, returnTypeName, locals, body);
+                    var funInfo = new FunInfo(false, parameters, returnTypeName, locals, body);
                     if (owner is FuncTerm)
                     {
                         var machineDecl = (FuncTerm)owner;
@@ -594,7 +591,6 @@ namespace Microsoft.Pc
             terms = GetBin(factBins, "AnonFunDecl");
             foreach (var term in terms)
             {
-                var srcFileName = funToFileName[term];
                 if (anonFunToName.ContainsKey(term)) continue;
                 using (var it = term.Node.Args.GetEnumerator())
                 {
@@ -611,7 +607,7 @@ namespace Microsoft.Pc
                     if (machineDecl == null)
                     {
                         var funName = "AnonFunStatic" + anonFunCounterStatic;
-                        allStaticFuns[funName] = new FunInfo(srcFileName, true, envVars, PToZing.PTypeNull, locals, body);
+                        allStaticFuns[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
                         anonFunToName[term] = funName;
                         anonFunCounterStatic++;
                     }
@@ -620,7 +616,7 @@ namespace Microsoft.Pc
                         var machineName = GetName(machineDecl, 0);
                         var machineInfo = allMachines[machineName];
                         var funName = "AnonFun" + anonFunCounter[machineName];
-                        machineInfo.funNameToFunInfo[funName] = new FunInfo(srcFileName, true, envVars, PToZing.PTypeNull, locals, body);
+                        machineInfo.funNameToFunInfo[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
                         anonFunToName[term] = funName;
                         anonFunCounter[machineName]++;
                     }

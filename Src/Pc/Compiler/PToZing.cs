@@ -59,11 +59,10 @@ namespace Microsoft.Pc
         }
 
         #region Static helpers
-        private static string SourceInfoToString(string srcFileName, FuncTerm sourceInfo)
+        private string SpanToString(Span span, string msg)
         {
-            int lineNum = (int) (GetArgByIndex(sourceInfo, 0) as Cnst).GetNumericValue().Numerator;
-            int colNum = (int)(GetArgByIndex(sourceInfo, 1) as Cnst).GetNumericValue().Numerator;
-            return string.Format("{0} ({1}, {2})", srcFileName.Replace(@"\", @"\\"), lineNum, colNum);
+            Flag flag = new Flag(SeverityKind.Error, span, msg, 0, span.Program);
+            return compiler.FormatError(flag).Replace(@"\", @"\\");
         }
 
         private static AST<Model> Add(AST<Model> m, AST<FuncTerm> ft)
@@ -1546,7 +1545,7 @@ namespace Microsoft.Pc
             {
                 return FoldSeq(ft, children, ctxt);
             }
-            else if (funName == PData.Con_SourceInfo.Node.Name)
+            else if (funName == PData.Con_IdList.Node.Name)
             {
                 return new ZingTranslationInfo(ZingData.Cnst_Nil);
             }
@@ -2236,7 +2235,6 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 var payloadExpr = it.Current.node;
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
-                var srcFileName = funInfo.srcFileName;
                 var traceStmt = MkZingTrace(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\\n", ctxt.machineName), MkZingDot("myHandle", "instance"), MkZingDot(stateExpr, "name"));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
                 if (payloadExpr == ZingData.Cnst_Nil)
@@ -2258,7 +2256,6 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldRaise(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var sourceInfo = (FuncTerm)GetArgByIndex(ft, 2);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
@@ -2266,8 +2263,7 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 var payloadExpr = it.Current.node;
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
-                var srcFileName = funInfo.srcFileName;
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Raised event must be non-null", SourceInfoToString(srcFileName, sourceInfo)));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), SpanToString(ft.Span, "Raised event must be non-null"));
                 var traceStmt = MkZingTrace(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", ctxt.machineName), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name"));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
                 if (payloadExpr == ZingData.Cnst_Nil)
@@ -2319,7 +2315,6 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldMonitor(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var sourceInfo = (FuncTerm)GetArgByIndex(ft, 2);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
@@ -2327,9 +2322,8 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 AST<Node> arg = it.Current.node;
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
-                var srcFileName = funInfo.srcFileName;
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), string.Format("{0}: Enqueued event must be non-null", SourceInfoToString(srcFileName, sourceInfo)));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), SpanToString(ft.Span, "Enqueued event must be non-null"));
                 ctxt.AddSideEffect(assertStmt);
                 if (arg == ZingData.Cnst_Nil)
                 {
@@ -2371,19 +2365,17 @@ namespace Microsoft.Pc
         ZingTranslationInfo FoldAssert(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
             Cnst msgCnst = GetArgByIndex(ft, 1) as Cnst;
-            var sourceInfo = (FuncTerm)GetArgByIndex(ft, 2);
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
-                var srcFileName = funInfo.srcFileName;
                 if (msgCnst != null)
                 {
                     return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), msgCnst.GetStringValue()));
                 }
                 else
                 {
-                    return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), string.Format("{0}: Assert failed", SourceInfoToString(srcFileName, sourceInfo))));
+                    return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), SpanToString(ft.Span, "Assert failed")));
                 }
             }
         }

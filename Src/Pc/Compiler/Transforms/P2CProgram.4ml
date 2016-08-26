@@ -3,7 +3,7 @@
    modules.C = '"C at ..\Domains\C.4ml"'
 ]
 
-transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
+transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (out:: C)
 /*
 [
     compiler_ProductivityCheck = "TypeConstant[0], ExprDepNum[1]"
@@ -53,36 +53,12 @@ transform P2CProgram (in:: P, outputFileName: String) returns (out:: C)
 	CConcatOut(-1, NIL).
 	CConcatOut(m', cmp) :- CConcatOut(m, before), COutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
 		
+	COut(17, def') :- %test = TRUE, HOut(10, def), def = FunDef(a, b, c, d, _), def' = FunDef(a, b, c, d, NIL).
+
 	out.File(codeFileName, body) :- CConcatOut(count({co | co is COut}) - 1, cmp),
 	                               headerFileName = strJoin(%outputFileName, ".h"),
 								   codeFileName = strJoin(%outputFileName, ".c"),
 								   body = Section(PpInclude(headerFileName, FALSE), cmp).
-
-    /*************************************************************/
-    /**********         Create Stubs File              ***********/
-    /*************************************************************/
-	SOut ::= (cmp: out.Cmp).
-	SOutOrder ::= (ord: Natural, cmp: out.Cmp).
-	SConcatOut ::= (pos: Integer, cmp: out.Cmp).	
-
-	SConcatOut(-1, NIL).
-	SOutOrder(o, cmp) :- so is SOut(cmp), o = toOrdinal(so, 0, { so' | so' is SOut }). 
-	SConcatOut(m', cmp) :- SConcatOut(m, before), SOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt).
-	
-	SOut(def') :- HOut(10, def), def = FunDef(a, b, c, d, _), def' = FunDef(a, b, c, d, NIL).
-	out.File("stubs.c", body) :- SConcatOut(count({so | so is SOut}) - 1, cmp), 
-								 body = PpITE(
-									   IFNDEF,
-									   Ident("P_PROGRAM_H"),
-									   Section(
-										   Section(
-											  PpDefine(Ident("P_PROGRAM_H"), NIL),
-											  Section(
-											     PpInclude("PrtUser.h", FALSE),
-											     PpInclude("PrtExecution.h", FALSE)											  
-											  )),
-										   cmp),
-									   NIL).
 								   
     /*************************************************************/
     /**********     Create C Enums for P Decls         ***********/

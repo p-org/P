@@ -33,6 +33,11 @@ namespace Microsoft.Pc
                     }
                     switch (arg.Substring(1).ToLowerInvariant())
                     {
+                        case "analyzeonly":
+                            if (colonArg != null)
+                                goto error;
+                            options.analyzeOnly = true;
+                            break;
                         case "profile":
                             if (colonArg != null)
                                 goto error;
@@ -172,6 +177,7 @@ namespace Microsoft.Pc
                 Console.WriteLine("/noC");
                 Console.WriteLine("/noSourceInfo");
                 Console.WriteLine("/shared");
+                Console.WriteLine("/analyzeOnly");
                 return 0;
             }
         }

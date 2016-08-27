@@ -1774,7 +1774,6 @@
         {
             var evDecl = GetCurrentEventDecl(span);
             evDecl.Span = span;
-            evDecl.id = (P_Root.IArgType_EventDecl__3)MkId(span);
             evDecl.name = MkString(name, nameSpan);
             parseProgram.Events.Add(evDecl);
             if (crntEventNames.Contains(name))

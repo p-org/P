@@ -74,7 +74,7 @@ domain PData
     /****************  State Machine Declarations    *************/
     /*************************************************************/
 
-    EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
+    EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
     MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
 
 	ObservesDecl   ::= new (monitor: MachineDecl, ev: String).
@@ -139,7 +139,7 @@ domain PStructuralTyping extends PData
 	
 	//Valid TransDecl
 	[rule_Classes = '"error, msg: transition on an undefined event"']
-	OneDeclError(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _, _), trns.trig != NULL, trns.trig != HALT.
+	OneDeclError(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _), trns.trig != NULL, trns.trig != HALT.
 	[rule_Classes = '"error, msg: transition to an undefined state"']
 	OneDeclError(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _, _).
 	
@@ -153,7 +153,7 @@ domain PStructuralTyping extends PData
 	
 	//Valid DoDecl
 	[rule_Classes = '"error, msg: action on an undefined event"']
-	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _, _), doD.trig != HALT, doD.trig != NULL.
+	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT, doD.trig != NULL.
 	
 	[rule_Classes = '"error, msg: function not defined"']
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, 
@@ -192,7 +192,7 @@ domain PStructuralTyping extends PData
 
 	//event in monitors is defined
 	[rule_Classes = '"error, msg: event in monitor is undefined"']
-	OneDeclError(obs) :- obs is ObservesDecl, obs.monitor.kind = MONITOR, no EventDecl(obs.ev, _, _, _).	
+	OneDeclError(obs) :- obs is ObservesDecl, obs.monitor.kind = MONITOR, no EventDecl(obs.ev, _, _).	
 }
 
 domain PStaticTyping extends PData
@@ -249,7 +249,7 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: enum element names of different enum types must be disjoint"']
 	TypeDefError(name) :- EnumTypeElem(def1, list1, _), EnumTypeElem(def2, list2, _), def1 != def2, list1.hd = list2.hd, name = def1.name.
 	[rule_Classes = '"error, msg: enum element names must be disjoint from event names"']
-	TypeDefError(name) :- EventDecl(name, _, _, _), EnumTypeElem(_, StringList(name, _), _).
+	TypeDefError(name) :- EventDecl(name, _, _), EnumTypeElem(_, StringList(name, _), _).
 	[rule_Classes = '"error, msg: at least one enum element should be numbered 0"']
 	TypeDefError(name) :- d is EnumTypeDef(name, _, _, _), no EnumTypeElemIndex(d, _, _, _, 0).
 
@@ -393,8 +393,8 @@ domain PStaticTyping extends PData
     IsMachineVar(c, n, decl, et) :- SubSE(c, e), e = Name(n, _), VarDeclExp(decl, et), decl = VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _).
 
     IsEventCnst ::= (TypingContext, String, TypeExpr).
-    IsEventCnst(c, n, BaseType(NULL)) :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, NIL, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _). 
-    IsEventCnst(c, n, pt)             :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, t, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), TypeExpansion(t, pt).
+    IsEventCnst(c, n, BaseType(NULL)) :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, NIL), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _). 
+    IsEventCnst(c, n, pt)             :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, t), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), TypeExpansion(t, pt).
 
 	IsEnumCnst ::= (TypingContext, String, TypeExpr).
 	IsEnumCnst(c, n, t) :- SubSE(c, e), e = Name(n, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), EnumTypeElem(d, StringList(n, _), _), t = NameType(d.name).
@@ -405,7 +405,7 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n, _), IsEnumCnst(c, n, t).
 
 	[ rule_Classes = '"error, msg: Undefined symbol"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n, _), no EventDecl(n, _, _, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), no EnumTypeElem(_, StringList(n, _), _). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n, _), no EventDecl(n, _, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), no EnumTypeElem(_, StringList(n, _), _). 
     
     TypeOf(c, e, BaseType(BOOL))  :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _, _), t1 = BaseType(BOOL). 
 	[ rule_Classes = '"error, msg: Operator expected a boolean value"']
@@ -822,10 +822,10 @@ domain PStaticTyping extends PData
 	ValidCaseEvent ::= (trig: String + { NULL, HALT }).
 	ValidCaseEvent(trig) :- trig = NULL.
 	ValidCaseEvent(trig) :- trig = HALT.
-	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _, _).
+	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _).
 
 	[ rule_Classes = '"error, msg: event not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _), trig: String, no EventDecl(trig, _, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _), trig: String, no EventDecl(trig, _, _).
 	
 	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, _, _), ValidCaseEvent(trig).
 
@@ -1430,8 +1430,8 @@ domain PStaticTyping extends PData
     /*************************************************************/	
 
 	EventPayloadType ::= (e: String + { NULL, HALT }, t: TypeExpr).
-	EventPayloadType(e, et) :- EventDecl(e, _, t, _), t: TypeExpr, TypeExpansion(t, et).
-	EventPayloadType(e, t)  :- EventDecl(e, _, NIL, _), t = BaseType(NULL).
+	EventPayloadType(e, et) :- EventDecl(e, _, t), t: TypeExpr, TypeExpansion(t, et).
+	EventPayloadType(e, t)  :- EventDecl(e, _, NIL), t = BaseType(NULL).
 	EventPayloadType(NULL, t) :- t = BaseType(NULL).
 	EventPayloadType(HALT, t) :- t = BaseType(ANY).
 

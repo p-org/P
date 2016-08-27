@@ -506,7 +506,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	ConstExpr(NulApp(NULL, NIL)).
 	ConstExpr(NulApp(HALT, NIL)).
 	ConstExpr(e) :- SubSE(_, e), e = NulApp(op, _), op != THIS, op != NONDET, op != FAIRNONDET.
-	ConstExpr(e) :- SubSE(_, e), e = Name(n, _), eventDecl is EventDecl(n, _, _, _), DeclId(eventDecl, _, _). 
+	ConstExpr(e) :- SubSE(_, e), e = Name(n, _), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _). 
 	ConstExpr(e) :- EnumTypeElemIndex(_, StringList(n, _), _, _, _), e = Name(n, NIL).
 
 	ConstId      ::= (id: Natural, const: in.Expr).
@@ -519,7 +519,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = NulApp(n, _), n: Integer.
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = NulApp(FALSE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = NulApp(TRUE, _).
-	BaseConstant2Kind(e, "PRT_VALUE_KIND_EVENT", out.Ident(eventName)) :- ConstExpr(e), e = Name(n, _), eventDecl is EventDecl(n, _, _, _), 
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_EVENT", out.Ident(eventName)) :- ConstExpr(e), e = Name(n, _), eventDecl is EventDecl(n, _, _), 
 																		  DeclId(eventDecl, _, eventName). 
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = Name(name, _), EnumTypeElemIndex(d, StringList(name, _), _, _, _),
 																n = strJoin(strJoin(d.name, "_"), name).
@@ -542,15 +542,15 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	EvDecl2PayloadType ::= (EventDecl, out.Expr).
 	//// An EventDecl without a payload type has a null payload type.
-	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, NIL, _), TypeToExpr(in.BaseType(NULL), expr).
+	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, NIL), TypeToExpr(in.BaseType(NULL), expr).
 	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, type, _), type : in.TypeExpr, TypeToExpr(type, expr).
+	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, type), type : in.TypeExpr, TypeToExpr(type, expr).
 
 	EvDecl2EvCard      ::= (EventDecl, out.Expr).
 	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
-	EvDecl2EvCard(d, e) :- d is EventDecl(_, NIL, _, _), e = IntLit(4294967295, DEC, U).
+	EvDecl2EvCard(d, e) :- d is EventDecl(_, NIL, _), e = IntLit(4294967295, DEC, U).
 	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2EvCard(d, e) :- d is EventDecl(_, card, _, _), e = IntLit(card.bound, DEC, U).
+	EvDecl2EvCard(d, e) :- d is EventDecl(_, card, _), e = IntLit(card.bound, DEC, U).
 
 	//// Base case
 	EvDeclConcat(c, NIL) :- c = count({d | d is EventDecl}) + 2.

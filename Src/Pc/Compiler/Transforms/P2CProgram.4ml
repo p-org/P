@@ -506,7 +506,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	ConstExpr(NulApp(NULL, NIL)).
 	ConstExpr(NulApp(HALT, NIL)).
 	ConstExpr(e) :- SubSE(_, e), e = NulApp(op, _), op != THIS, op != NONDET, op != FAIRNONDET.
-	ConstExpr(e) :- SubSE(_, e), e = Name(n, _), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _). 
+	ConstExpr(e) :- SubSE(_, e), e = Name(n, _), eventDecl is EventDecl(n, _, _), DeclId(eventDecl, _, _). 
 	ConstExpr(e) :- EnumTypeElemIndex(_, StringList(n, _), _, _, _), e = Name(n, NIL).
 
 	ConstId      ::= (id: Natural, const: in.Expr).

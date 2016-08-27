@@ -200,7 +200,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="program.c" />
-    <ClCompile Include="stubs.c" />
     <ClCompile Include="tester.c" />
   </ItemGroup>
   <ItemGroup>

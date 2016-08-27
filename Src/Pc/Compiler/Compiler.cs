@@ -24,6 +24,41 @@
 
     public enum LivenessOption { None, Standard, Mace };
 
+    public enum TopDecl { Event, EventSet, Interface, Module, Machine, Test, TypeDef };
+    public class TopDeclNames
+    {
+        public HashSet<string> eventNames;
+        public HashSet<string> eventSetNames;
+        public HashSet<string> moduleNames;
+        public HashSet<string> testNames;
+        public HashSet<string> typeNames;
+        public HashSet<string> machineNames;
+        public HashSet<string> interfaceNames;
+
+        public TopDeclNames()
+        {
+            eventNames = new HashSet<string>();
+            eventSetNames = new HashSet<string>();
+            interfaceNames = new HashSet<string>();
+            moduleNames = new HashSet<string>();
+            machineNames = new HashSet<string>();
+            testNames = new HashSet<string>();
+            typeNames = new HashSet<string>();
+        }
+
+        public void Reset()
+        {
+            eventNames.Clear();
+            eventSetNames.Clear();
+            interfaceNames.Clear();
+            moduleNames.Clear();
+            machineNames.Clear();
+            testNames.Clear();
+            typeNames.Clear();
+        }
+
+    }
+
     public class StandardOutput : ICompilerOutput
     {
         public void WriteMessage(string msg, SeverityKind severity)
@@ -451,8 +486,7 @@
                     return false;
                 }
 
-                HashSet<string> crntEventNames = new HashSet<string>();
-                HashSet<string> crntMachineNames = new HashSet<string>();
+                TopDeclNames topDeclNames = new TopDeclNames();
                 Dictionary<string, ProgramName> SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
                 SeenFileNames[RootFileName] = RootProgramName;
@@ -464,7 +498,7 @@
                     string currFileName = parserWorkQueue.Dequeue();
                     var parser = new Parser.Parser();
                     Debug.WriteLine("Loading " + currFileName);
-                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, crntEventNames, crntMachineNames, parsedProgram, out parserFlags, out includedFileNames);
+                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, parsedProgram, out parserFlags, out includedFileNames);
                     foreach (Flag f in parserFlags)
                     {
                         AddFlag(f);
@@ -840,7 +874,7 @@
             {
                 AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", 1);
                 AddErrors(task.Result, "PurityError(_, _)", 1);
-                AddErrors(task.Result, "MonitorError(_, _)", 1);
+                AddErrors(task.Result, "SpecError(_, _)", 1);
                 AddErrors(task.Result, "LValueError(_, _)", 1);
                 AddErrors(task.Result, "BadLabelError(_)", 0);
                 AddErrors(task.Result, "PayloadError(_)", 0);

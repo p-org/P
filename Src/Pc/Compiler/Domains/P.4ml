@@ -26,7 +26,8 @@ domain PData
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (qual: Qualifier, name: any String, type: any TypeExpr). 
-    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType.
+	InterfaceType	::= new (ev: NonNullEventLabel, tail: any InterfaceType + {NIL}).
+    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
         
     /*************************************************************/
     /****************          Action Language        ************/
@@ -53,7 +54,7 @@ domain PData
     NewStmt  ::= new (name: String, arg: any Expr + { NIL }, id: any Id).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }, id: any Id).
     Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }, qual: Qualifier, id: any Id).
-    Monitor  ::= new (ev: any Expr, arg: any Expr + { NIL }, id: any Id).
+    Announce  ::= new (ev: any Expr, arg: any Expr + { NIL }, id: any Id).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, label: Natural, id: any Id).
     NulStmt  ::= new (op: { SKIP, POP }, id: any Id).
     BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr, id: any Id).
@@ -68,16 +69,22 @@ domain PData
 	Print    ::= new (msg: String, segs: any Segments + { NIL }, args: any Exprs + { NIL }, id: any Id).
 	Goto	 ::= new (dst: any QualifiedName, arg: any Expr + { NIL }, id: any Id).
 	
-    Stmt ::= NewStmt + Raise + Send + Monitor + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print + Goto. 
+    Stmt ::= NewStmt + Raise + Send + Announce + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print + Goto. 
 
+	/**************************************************************/
+	/***********	Module system declarations	*******************/
+	/**************************************************************/
+	EventSetDecl ::= new (name : String, ev: NonNullEventLabel).
+	InterfaceTypeDecl ::= new (name: String, evsetName: String, argType: any TypeExpr).
+		
     /*************************************************************/
     /****************  State Machine Declarations    *************/
     /*************************************************************/
 
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
-    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
+    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
 
-	ObservesDecl   ::= new (monitor: MachineDecl, ev: String).
+	ObservesDecl   ::= new (spec: MachineDecl, ev: NonNullEventLabel).
 
     VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr, id: any Id).
     
@@ -93,13 +100,15 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + EventSetDecl + InterfaceTypeDecl.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
     QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
     QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
     EventLabel         ::= String + { NULL, HALT }.
+	NonNullEventLabel  ::= String + { HALT }.
+
 
     /*************************************************************/
     /****************          Annotations           *************/
@@ -180,19 +189,19 @@ domain PStructuralTyping extends PData
 	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
 	                       s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
 	
-	//cannot have null in Monitors
-	[rule_Classes = '"error, msg: null transitions not allowed in monitors"']
-	OneDeclError(t) :- t is TransDecl(s, NULL, _, _, _), s.owner.kind = MONITOR.
-	[rule_Classes = '"error, msg: push transitions not allowed in monitors"']
-	OneDeclError(t) :- t is TransDecl(s, _, _, PUSH, _), s.owner.kind = MONITOR.
+	//cannot have null in spec machines
+	[rule_Classes = '"error, msg: null transitions not allowed in spec machine"']
+	OneDeclError(t) :- t is TransDecl(s, NULL, _, _, _), s.owner.kind = SPEC.
+	[rule_Classes = '"error, msg: push transitions not allowed in spec machine"']
+	OneDeclError(t) :- t is TransDecl(s, _, _, PUSH, _), s.owner.kind = SPEC.
 
-	//no defer in monitors
-	[rule_Classes = '"error, msg: defer not allowed in monitor"']
-	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), s.owner.kind = MONITOR.	
+	//no defer in Spec
+	[rule_Classes = '"error, msg: defer not allowed in spec machine"']
+	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), s.owner.kind = SPEC.	
 
-	//event in monitors is defined
-	[rule_Classes = '"error, msg: event in monitor is undefined"']
-	OneDeclError(obs) :- obs is ObservesDecl, obs.monitor.kind = MONITOR, no EventDecl(obs.ev, _, _, _).	
+	//event in spec is defined
+	[rule_Classes = '"error, msg: event in observes list is undefined"']
+	OneDeclError(obs) :- obs is ObservesDecl, obs.spec.kind = SPEC, no EventDecl(obs.ev, _, _, _).	
 }
 
 domain PStaticTyping extends PData
@@ -206,7 +215,7 @@ domain PStaticTyping extends PData
 	conforms no TypeOf(_, _, ERROR). 
 	conforms no DupNmdSubE(_, _, _, _).
 	conforms no PurityError(_, _).
-	conforms no MonitorError(_, _).
+	conforms no SpecError(_, _).
 	conforms no LValueError(_, _).
 	conforms no BadLabelError(_).
 	conforms no PayloadError(_).
@@ -294,18 +303,18 @@ domain PStaticTyping extends PData
     FunAvailable(f, m) :- f is FunDecl, m is MachineDecl, f.owner = NIL;
 	                      f is FunDecl, f.owner = m.
 
-	FunDeclKind ::= (FunDecl, { REAL, MODEL, MONITOR }).
+	FunDeclKind ::= (FunDecl, { REAL, MODEL, SPEC }).
 	FunDeclKind(f, REAL) :- SubCntxt(f), f: FunDecl, f.owner = NIL, f.kind = REAL.
 	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner = NIL, f.kind = MODEL.
-	FunDeclKind(f, MONITOR) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = MONITOR.
+	FunDeclKind(f, SPEC) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = SPEC.
 	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = MODEL.
 	FunDeclKind(f, REAL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = REAL, f.kind = REAL.
 	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = REAL, f.kind = MODEL.
 
-	AnonFunDeclKind ::= (AnonFunDecl, { REAL, MODEL, MONITOR }).
+	AnonFunDeclKind ::= (AnonFunDecl, { REAL, MODEL, SPEC }).
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner = NIL, FunDeclKind(f', REAL), f'.owner = NIL, f'.name = f.ownerFun.
 	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner = NIL, FunDeclKind(f', MODEL), f'.owner = NIL, f'.name = f.ownerFun.
-	AnonFunDeclKind(f, MONITOR) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = MONITOR.
+	AnonFunDeclKind(f, SPEC) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = SPEC.
 	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = MODEL.
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun = NIL.
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun != NIL, FunDeclKind(f', REAL), f'.owner = f.owner, f'.name = f.ownerFun.
@@ -337,8 +346,8 @@ domain PStaticTyping extends PData
 	SubSE(c, es) :- SubSE(c, FunStmt(_, es, _, _, _)), es: Exprs.
 	SubSE(c, e) :- SubSE(c, FunStmt(_, _, e, _, _)), e: Name.
 	SubSE(c, es) :- SubSE(c, Print(_, _, es, _)), es: Exprs.
-	SubSE(c, e) :- SubSE(c, Monitor(e, _, _)).
-	SubSE(c, e) :- SubSE(c, Monitor(_, e, _)), e: Expr.
+	SubSE(c, e) :- SubSE(c, Announce(e, _, _)).
+	SubSE(c, e) :- SubSE(c, Announce(_, e, _)), e: Expr.
 	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, Send(e1, e2, _, _, _)).
 	SubSE(c, e) :- SubSE(c, Send(_, _, e, _, _)), e: Expr.
 	SubSE(c, e) :- SubSE(c, Raise(e, _, _)).
@@ -435,8 +444,8 @@ domain PStaticTyping extends PData
 
     TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _).
     TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _).
-	[ rule_Classes = '"error, msg: Monitor cannot be created"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MONITOR, _, _, _).
+	[ rule_Classes = '"error, msg: spec machine cannot be created"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, SPEC, _, _, _).
 	[ rule_Classes = '"error, msg: Undefined machine type"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _).
 	
@@ -586,7 +595,7 @@ domain PStaticTyping extends PData
 	UnavailableAfter(c, s, n)       :- ReceiveCases(c, s, cases), cases = Cases(_, c', _), UnavailableAfter(c', c'.body, n), EnvVars(c', n, _).
 
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: NewStmt, UnavailableBefore(c, s, n).
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Monitor, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Announce, UnavailableBefore(c, s, n).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Assert, UnavailableBefore(c, s, n).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Print, UnavailableBefore(c, s, n).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = NulStmt(SKIP, _), UnavailableBefore(c, s, n).
@@ -679,9 +688,9 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, kind, _, _, _), kind != MONITOR.   
-	[ rule_Classes = '"error, msg: Monitor cannot be created"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, MONITOR, _, _, _).
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, kind, _, _, _), kind != SPEC.   
+	[ rule_Classes = '"error, msg: spec machine cannot be created"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, SPEC, _, _, _).
 	[ rule_Classes = '"error, msg: Undeclared machine"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _).
 
@@ -741,26 +750,26 @@ domain PStaticTyping extends PData
 						   PayloadVar(s, _, _, _, ft), TypeOfArg1(c, e, et), 
 						   TypeRel(et, ft, k), et != ft, k != SUB.
 
-	//// Rules for monitor.
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Monitor(_, NIL, _),                           ///// < monitor has NIL payload,
+	//// Rules for Announce.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Announce(_, NIL, _),                           ///// < announce has NIL payload,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).  ///// < event type contains null.
 
-    TypeOf(c, e, NIL)              :- TypeOfArg2(c, e, t1, t2), e = Monitor(_, _, _),                          ///// < monitor has non-NIL payload,
+    TypeOf(c, e, NIL)              :- TypeOfArg2(c, e, t1, t2), e = Announce(_, _, _),                          ///// < announce has non-NIL payload,
 	                                  CommStmtPLType(c, e, plt), TypeRel(t2, plt, SUB).                        ///// < and pt is a subtype of plt.
 
-	//// Error rules for monitor.
+	//// Error rules for spec.
 
-	[ rule_Classes = '"error, msg: argument 1 of "monitor" expects an event value"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Monitor, t1 != BaseType(EVENT).
+	[ rule_Classes = '"error, msg: argument 1 of "announce" expects an event value"']
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Announce, t1 != BaseType(EVENT).
 
-	//// Error rules for monitor. 	
-    [ rule_Classes = '"error, msg: invalid payload type in monitor (cannot send null value)"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Monitor(_, NIL, _), null = BaseType(NULL), ///// < monitor has NIL payload,
+	//// Error rules for Announce. 	
+    [ rule_Classes = '"error, msg: invalid payload type in announce (cannot send null value)"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Announce(_, NIL, _), null = BaseType(NULL), ///// < Announce has NIL payload,
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
 
-    [ rule_Classes = '"error, msg: invalid payload type in monitor"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e : Monitor,    ///// < p has non-NIL payload,             
+    [ rule_Classes = '"error, msg: invalid payload type in announce"']
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e : Announce,    ///// < p has non-NIL payload,             
 	                                  CommStmtPLType(c, e, plt),                ///// < constant event expression
 									  TypeRel(t2, plt, k), k != SUB, t2 != plt. ///// < and pt is not a subtype of evt.
 
@@ -855,7 +864,7 @@ domain PStaticTyping extends PData
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedExprs(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Raise(e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Goto(_, e1, _), TypeOf(c, e1, t1).
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Monitor(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Announce(e1, _, _), TypeOf(c, e1, t1).
 
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Ite(e1, _, _, _), TypeOf(c, e1, t1).
@@ -870,7 +879,7 @@ domain PStaticTyping extends PData
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Exprs(_, _, e2), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = NamedExprs(_, _, e2), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Raise(_, e2, _), TypeOf(c, e2, t2).
-	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Monitor(_, e2, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Announce(_, e2, _), TypeOf(c, e2, t2).
 
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Send(_, e2, _, _, _), TypeOf(c, e2, t2).
 
@@ -881,7 +890,7 @@ domain PStaticTyping extends PData
 
 	//// Determines the payload type of the event mentioned in a communication statement.
 	//// If the event expression is not an constant, then this payload type is ANY.
-	CommStmtPLType ::= (cntxt: TypingContext, comm: Raise + Send + Monitor, type: TypeExpr + { ERROR }).
+	CommStmtPLType ::= (cntxt: TypingContext, comm: Raise + Send + Announce, type: TypeExpr + { ERROR }).
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
@@ -891,9 +900,9 @@ domain PStaticTyping extends PData
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
 	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
 
-	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Monitor(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Monitor(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
-	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Monitor(ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Announce(ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
 
     /*************************************************************/
     /*                      Field helpers                        */
@@ -923,7 +932,7 @@ domain PStaticTyping extends PData
 	MaxNumLocals(e, 0) :- SubSE(c, e), e: Goto.
 	MaxNumLocals(e, 0) :- SubSE(c, e), e: Raise.
 	MaxNumLocals(e, 0) :- SubSE(c, e), e: Send.
-	MaxNumLocals(e, 0) :- SubSE(c, e), e: Monitor.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: Announce.
 	MaxNumLocals(e, 0) :- SubSE(c, e), e: FunStmt.
 	MaxNumLocals(e, 0) :- SubSE(c, e), e: NulStmt.
 	MaxNumLocals(e, 0) :- SubSE(c, e), e: Assert.
@@ -1061,47 +1070,47 @@ domain PStaticTyping extends PData
 
 
     /*************************************************************/
-    /*                      Monitor Checking                     */
+    /*                 Spec Machine Checking                     */
     /*************************************************************/
-	MonitorError ::= (cntxt: StateDecl + TransDecl + DoDecl, expr: String + AnonFunDecl).
-	MonitorImpure ::= (TypingContext).
-	MonitorImpure(c) :- SubSE(c, e), e = NulApp(NONDET, _).
-	MonitorImpure(c) :- SubSE(c, e), e = NulApp(FAIRNONDET, _).
-	MonitorImpure(c) :- SubSE(c, e), e = NulApp(THIS, _).
-	MonitorImpure(c) :- SubSE(c, e), e : New.
-	MonitorImpure(c) :- SubSE(c, e), e : Send.
-	MonitorImpure(c) :- SubSE(c, e), e : NewStmt.
-	MonitorImpure(c) :- SubSE(c, e), e : Monitor.
-	MonitorImpure(c) :- SubSE(c, e), e : Receive.
-	MonitorImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).
-    MonitorImpure(c) :- SubSE(c, e), e = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), MonitorImpure(called).
-    MonitorImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), MonitorImpure(called).
+	SpecError ::= (cntxt: StateDecl + TransDecl + DoDecl, expr: String + AnonFunDecl).
+	SpecImpure ::= (TypingContext).
+	SpecImpure(c) :- SubSE(c, e), e = NulApp(NONDET, _).
+	SpecImpure(c) :- SubSE(c, e), e = NulApp(FAIRNONDET, _).
+	SpecImpure(c) :- SubSE(c, e), e = NulApp(THIS, _).
+	SpecImpure(c) :- SubSE(c, e), e : New.
+	SpecImpure(c) :- SubSE(c, e), e : Send.
+	SpecImpure(c) :- SubSE(c, e), e : NewStmt.
+	SpecImpure(c) :- SubSE(c, e), e : Announce.
+	SpecImpure(c) :- SubSE(c, e), e : Receive.
+	SpecImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).
+    SpecImpure(c) :- SubSE(c, e), e = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), SpecImpure(called).
+    SpecImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
-    MonitorError(c, n) :- 
-	       c is StateDecl(_, owner, n, _, _, _), owner.kind = MONITOR, called.name = n, FunAvailable(called, owner), MonitorImpure(called);
-		   c is StateDecl(_, owner, _, n, _, _), owner.kind = MONITOR, called.name = n, FunAvailable(called, owner), MonitorImpure(called).
+	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+    SpecError(c, n) :- 
+	       c is StateDecl(_, owner, n, _, _, _), owner.kind = SPEC, called.name = n, FunAvailable(called, owner), SpecImpure(called);
+		   c is StateDecl(_, owner, _, n, _, _), owner.kind = SPEC, called.name = n, FunAvailable(called, owner), SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
-    MonitorError(c, called) :- 
-	       c is StateDecl(_, owner, called, _, _, _), owner.kind = MONITOR, called: AnonFunDecl, MonitorImpure(called);
-		   c is StateDecl(_, owner, _, called, _, _), owner.kind = MONITOR, called: AnonFunDecl, MonitorImpure(called).
+	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+    SpecError(c, called) :- 
+	       c is StateDecl(_, owner, called, _, _, _), owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called);
+		   c is StateDecl(_, owner, _, called, _, _), owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
-    MonitorError(c, n) :- 
-	       c is TransDecl(src, _, _, n, _), src.owner.kind = MONITOR, called.name = n, FunAvailable(called, src.owner), MonitorImpure(called).
+	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+    SpecError(c, n) :- 
+	       c is TransDecl(src, _, _, n, _), src.owner.kind = SPEC, called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
-    MonitorError(c, called) :- 
-	       c is TransDecl(src, _, _, called, _), src.owner.kind = MONITOR, called: AnonFunDecl, MonitorImpure(called).
+	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+    SpecError(c, called) :- 
+	       c is TransDecl(src, _, _, called, _), src.owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
-	MonitorError(c, n) :-	
-		   c is DoDecl(src, _, n, _), src.owner.kind = MONITOR, called.name = n, FunAvailable(called, src.owner), MonitorImpure(called).
+	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+	SpecError(c, n) :-	
+		   c is DoDecl(src, _, n, _), src.owner.kind = SPEC, called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: monitor may not use this keyword or perform nondeterministic choice or create machines or execute send, monitor, receive and pop statements"']
-	MonitorError(c, called) :- 
-		   c is DoDecl(src, _, called, _), src.owner.kind = MONITOR, called: AnonFunDecl, MonitorImpure(called).
+	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+	SpecError(c, called) :- 
+		   c is DoDecl(src, _, called, _), src.owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 
     /*************************************************************/
     /*                         Receive Labels                    */
@@ -1162,8 +1171,8 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Send(e', _, _, _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Send(_, e', _, _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Send(_, _, e', _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
-       SubSE(c, e), e = Monitor(e', _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = Monitor(_, e', _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
+       SubSE(c, e), e = Announce(e', _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = Announce(_, e', _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Assert(e', _, _),        e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called), toSymbol(e') != #Name.
 
@@ -1184,8 +1193,8 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Send(e', _, _, _, _),       e' : New;
        SubSE(c, e), e = Send(_, e', _, _, _),       e' : New;
        SubSE(c, e), e = Send(_, _, e', _, _),       e' : New;    
-       SubSE(c, e), e = Monitor(e', _, _),       e' : New;
-       SubSE(c, e), e = Monitor(_, e', _),       e' : New;    
+       SubSE(c, e), e = Announce(e', _, _),       e' : New;
+       SubSE(c, e), e = Announce(_, e', _),       e' : New;    
        SubSE(c, e), e = Assert(e', _, _),        e' : New;
        SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' : New, toSymbol(e') != #Name.
 
@@ -1206,8 +1215,8 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Send(e', _, _, _, _),       e' = NulApp(NONDET, _);
        SubSE(c, e), e = Send(_, e', _, _, _),       e' = NulApp(NONDET, _);
        SubSE(c, e), e = Send(_, _, e', _, _),       e' = NulApp(NONDET, _);    
-       SubSE(c, e), e = Monitor(e', _, _),       e' = NulApp(NONDET, _);
-       SubSE(c, e), e = Monitor(_, e', _),       e' = NulApp(NONDET, _);    
+       SubSE(c, e), e = Announce(e', _, _),       e' = NulApp(NONDET, _);
+       SubSE(c, e), e = Announce(_, e', _),       e' = NulApp(NONDET, _);    
        SubSE(c, e), e = Assert(e', _, _),        e' = NulApp(NONDET, _);
        SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' = NulApp(NONDET, _), toSymbol(e') != #Name.
 
@@ -1228,8 +1237,8 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Send(e', _, _, _, _),       e' = NulApp(FAIRNONDET, _);
        SubSE(c, e), e = Send(_, e', _, _, _),       e' = NulApp(FAIRNONDET, _);
        SubSE(c, e), e = Send(_, _, e', _, _),       e' = NulApp(FAIRNONDET, _);    
-       SubSE(c, e), e = Monitor(e', _, _),       e' = NulApp(FAIRNONDET, _);
-       SubSE(c, e), e = Monitor(_, e', _),       e' = NulApp(FAIRNONDET, _);    
+       SubSE(c, e), e = Announce(e', _, _),       e' = NulApp(FAIRNONDET, _);
+       SubSE(c, e), e = Announce(_, e', _),       e' = NulApp(FAIRNONDET, _);    
        SubSE(c, e), e = Assert(e', _, _),        e' = NulApp(FAIRNONDET, _);
        SubSE(c, e), e = BinStmt(_, e', e'', _),  e'' = NulApp(FAIRNONDET, _), toSymbol(e') != #Name.
 	                                       
@@ -1255,9 +1264,9 @@ domain PStaticTyping extends PData
 	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL, TypeOf(c, p, pt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL, _, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
 	CompTypeRel(t3, plt)      :- TypeOfArg3(c, e, t1, t2, t3), e : Send, CommStmtPLType(c, e, plt).
-	CompTypeRel(null, plt)    :- SubSE(c, e), e = Monitor(_, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
-	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Monitor, CommStmtPLType(c, e, plt).
-	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e = Monitor(_, _, _), CommStmtPLType(c, e, plt).
+	CompTypeRel(null, plt)    :- SubSE(c, e), e = Announce(_, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Announce, CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e = Announce(_, _, _), CommStmtPLType(c, e, plt).
 	CompTypeRel(t2, t1)       :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _, _).	
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _), t1 = MapType(dom, cod).	
 	CompTypeRel(key, dom)     :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).
@@ -1477,5 +1486,5 @@ domain PStaticTyping extends PData
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
 	[ rule_Classes = '"error, msg: Null type must be subtype of payload type of entry function of start state;"']
-	PayloadError(s) :- ConstructorType(m, s, ft), m.kind = MONITOR, type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
+	PayloadError(s) :- ConstructorType(m, s, ft), m.kind = SPEC, type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
 }

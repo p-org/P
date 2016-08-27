@@ -41,8 +41,6 @@
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
         private HashSet<string> crntVarNames = new HashSet<string>();
-        private HashSet<string> crntEventNames;
-        private HashSet<string> crntMachineNames;
 
         private Stack<P_Root.Expr> valueExprStack = new Stack<P_Root.Expr>();
         private Stack<P_Root.ExprsExt> exprsStack = new Stack<P_Root.ExprsExt>();
@@ -228,8 +226,7 @@
         internal bool ParseFile(
             ProgramName file,
             CommandLineOptions options,
-            HashSet<string> crntEventNames,
-            HashSet<string> crntMachineNames,
+            TopDeclNames topDeclNames,
             PProgram program,
             out List<Flag> flags,
             out List<string> includedFileNames)
@@ -286,6 +283,79 @@
         private Span ToSpan(LexLocation loc)
         {
             return new Span(loc.StartLine, loc.StartColumn + 1, loc.EndLine, loc.EndColumn + 1, this.parseSource);
+        }
+
+
+        public bool IsValidName(TopDecl type, string name, Span nameSpan)
+        {
+            string errorMessage = "";
+            bool error = false;
+            switch (type)
+            {
+                case TopDecl.Event:
+                    if (topDeclNames.eventNames.Contains(name))
+                    {
+                        errorMessage = string.Format("An event with name {0} already declared", name);
+                        error = true;
+                    }
+                    break;
+                case TopDecl.EventSet:
+                    if (topDeclNames.eventSetNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A event set with name {0} already declared", name);
+                        error = true;
+                    }
+                    break;
+                case TopDecl.Interface:
+                case TopDecl.TypeDef:
+                    if (topDeclNames.interfaceNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A interface with name {0} already declared", name);
+                        error = true;
+                    }
+                    else if (topDeclNames.typeNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A test case with name {0} already declared", name);
+                        error = true;
+                    }
+                    break;
+                case TopDecl.Machine:
+                    if (topDeclNames.machineNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A machine with name {0} already declared", name);
+                        error = true;
+                    }
+                    break;
+                case TopDecl.Module:
+                    if (topDeclNames.moduleNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A module with name {0} already declared", name);
+                        error = true;
+                    }
+                    break;
+                case TopDecl.Test:
+                    if (topDeclNames.testNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A test case with name {0} already declared", name);
+                        error = true;
+                    }
+                    break;
+            }
+
+            if (error)
+            {
+                var errFlag = new Flag(
+                                         SeverityKind.Error,
+                                         nameSpan,
+                                         Constants.BadSyntax.ToString(errorMessage),
+                                         Constants.BadSyntax.Code,
+                                         parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+
+            return !error;
+
         }
 
         #region Pushers
@@ -437,7 +507,7 @@
             crntGotoTargetName = null;
         }
 
-        private void PushMonitor(bool hasArgs, string name, Span span)
+        private void PushAnnounce(bool hasArgs, string name, Span span)
         {
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             Contract.Assert(valueExprStack.Count > 0);
@@ -1357,6 +1427,23 @@
         private void AddGroup()
         {
             groupStack.Pop();
+        }
+
+        private void AddEventSet(string name, Span nameSpan, Span span)
+        {
+            if (IsValidName(TopDecl.EventSet, name, nameSpan))
+                topDeclNames.eventSetNames.Add(name);
+
+            foreach (var ev in crntEventList)
+            {
+                var eventset = new P_Root.EventSetDecl();
+                eventset.name = MkString(name, nameSpan);
+                eventset.Span = ev.Span;
+                eventset.ev = (P_Root.IArgType_EventSetDecl__1)ev;
+                parseProgram.EventSetDecl.Add(eventset);
+            }
+            crntEventList.Clear();
+
         }
 
         private void AddVarDecl(string name, Span span)

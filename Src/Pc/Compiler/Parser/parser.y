@@ -9,16 +9,18 @@
 }
 
 %token INT BOOL ANY SEQ MAP ID
-%token TYPE INCLUDE MAIN EVENT MACHINE MONITOR ASSUME SPEC ENUM
+%token TYPE INCLUDE MAIN EVENT MACHINE ASSUME SPEC ENUM EVENTSET
 
-%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP MONITORS
+%token VAR START HOT COLD MODEL STATE FUN ACTION GROUP OBSERVES
 
 %token ENTRY EXIT DEFER IGNORE GOTO ON DO PUSH AS WITH
 
-%token IF WHILE THIS NEW RETURN ID POP ASSERT PRINT CALL RAISE SEND DEFAULT HALT NULL RECEIVE CASE
+%token IF WHILE THIS NEW RETURN ID POP ASSERT PRINT CALL RAISE SEND DEFAULT HALT NULL RECEIVE CASE ANNOUNCE
 %token LPAREN RPAREN LCBRACE RCBRACE LBRACKET RBRACKET SIZEOF KEYS VALUES
 
 %token TRUE FALSE
+
+%token EVENTSET
 
 %token SWAP, REF, XFER
 
@@ -56,11 +58,15 @@ TopDeclList
 TopDecl
     : IncludeDecl
 	| TypeDefDecl
+	| InterfaceDecl
+	| EventSetDecl
 	| EnumTypeDefDecl
 	| EventDecl
-	| MachineDecl
+	| ImplMachineDecl
+	| SpecMachineDecl
 	| FunDecl
 	;
+
 
 /******************* Annotations *******************/ 
 AnnotationSet
@@ -128,19 +134,48 @@ EventAnnotOrNone
 	|
 	;
 
-/******************* Machine Declarations *******************/
-MachineDecl
-	: MachineNameDecl MachAnnotOrNone LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); }
+
+
+/******************* Interface Type and event set Declaration *************/
+EventSetDecl
+	: EVENTSET ID ASSIGN LCBRACE NonDefaultEventList RCBRACE SEMICOLON		{ AddEventSet($2.str, ToSpan(@2), ToSpan(@2)); }
 	;
 
-MachineNameDecl
+InterfaceDecl
+	: TYPE ID LPAREN ConstTypeOrNone RPAREN ASSIGN ID SEMICOLON	{ AddInterfaceType($2.str, $7.str, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
+	| TYPE ID LPAREN ConstTypeOrNone RPAREN ASSIGN LCBRACE NonDefaultEventList RCBRACE SEMICOLON	{ AddInterfaceType($2.str, null, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
+	;
+
+ConstTypeOrNone
+	: Type														{ SetInterfaceConstType(ToSpan(@1));    }
+	|												
+	;
+
+
+/******************* Machine Declarations *******************/
+ImplMachineDecl
+	: ImplMachineNameDecl MachAnnotOrNone ExportsInterface LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); }
+	;
+ExportsInterface
+	: COLON ID										{ AddExportsInterface($2.str, ToSpan(@2), ToSpan(@1)); }
+	|
+	;
+
+SpecMachineDecl
+	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); } 
+	;
+
+ImplMachineNameDecl
 	: MACHINE ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); }
 	| MODEL ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.MODEL, $2.str, ToSpan(@2), ToSpan(@1)); }
-	| SPEC ID ObservesList		{ SetMachine(P_Root.UserCnstKind.MONITOR, $2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+
+SpecMachineNameDecl
+	: SPEC ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 	
 ObservesList
-	: MONITORS EventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
+	: OBSERVES NonDefaultEventList { crntObservesList.AddRange(crntEventList); crntEventList.Clear(); }
 	;
 
 MachCardOrNone
@@ -383,8 +418,8 @@ Stmt
 	| RAISE Exp COMMA SingleExprArgList SEMICOLON             { PushRaise(true,  ToSpan(@1));                            }
 	| QualifierOrNone SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1)); }
 	| QualifierOrNone SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1)); }
-	| MONITOR Exp SEMICOLON									  { PushMonitor(false, $2.str, ToSpan(@1));      }
-	| MONITOR Exp COMMA SingleExprArgList SEMICOLON           { PushMonitor(true, $2.str, ToSpan(@1));       }
+	| ANNOUNCE Exp SEMICOLON								   { PushAnnounce(false, $2.str, ToSpan(@1));      }
+	| ANNOUNCE Exp COMMA SingleExprArgList SEMICOLON           { PushAnnounce(true, $2.str, ToSpan(@1));       }
 	| ReceiveStmt LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
 	| GOTO GotoTarget SEMICOLON							  { PushGoto(false, ToSpan(@1)); }
 	| GOTO GotoTarget COMMA SingleExprArgList SEMICOLON	  { PushGoto(true, ToSpan(@1)); }

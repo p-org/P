@@ -1,12 +1,10 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+<Project ToolsVersion="4.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
     <ProjectGuid>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
@@ -50,18 +48,27 @@
     <CodeContractsShowSquigglies>True</CodeContractsShowSquigglies>
     <CodeContractsUseBaseLine>False</CodeContractsUseBaseLine>
     <CodeContractsEmitXMLDocs>False</CodeContractsEmitXMLDocs>
-    <CodeContractsCustomRewriterAssembly />
-    <CodeContractsCustomRewriterClass />
-    <CodeContractsLibPaths />
-    <CodeContractsExtraRewriteOptions />
-    <CodeContractsExtraAnalysisOptions />
-    <CodeContractsSQLServerOption />
-    <CodeContractsBaseLineFile />
+    <CodeContractsCustomRewriterAssembly>
+    </CodeContractsCustomRewriterAssembly>
+    <CodeContractsCustomRewriterClass>
+    </CodeContractsCustomRewriterClass>
+    <CodeContractsLibPaths>
+    </CodeContractsLibPaths>
+    <CodeContractsExtraRewriteOptions>
+    </CodeContractsExtraRewriteOptions>
+    <CodeContractsExtraAnalysisOptions>
+    </CodeContractsExtraAnalysisOptions>
+    <CodeContractsSQLServerOption>
+    </CodeContractsSQLServerOption>
+    <CodeContractsBaseLineFile>
+    </CodeContractsBaseLineFile>
     <CodeContractsCacheAnalysisResults>True</CodeContractsCacheAnalysisResults>
     <CodeContractsFailBuildOnWarnings>False</CodeContractsFailBuildOnWarnings>
     <CodeContractsRuntimeCheckingLevel>Full</CodeContractsRuntimeCheckingLevel>
     <CodeContractsReferenceAssembly>%28none%29</CodeContractsReferenceAssembly>
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
@@ -72,6 +79,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
@@ -104,18 +112,27 @@
     <CodeContractsShowSquigglies>True</CodeContractsShowSquigglies>
     <CodeContractsUseBaseLine>False</CodeContractsUseBaseLine>
     <CodeContractsEmitXMLDocs>False</CodeContractsEmitXMLDocs>
-    <CodeContractsCustomRewriterAssembly />
-    <CodeContractsCustomRewriterClass />
-    <CodeContractsLibPaths />
-    <CodeContractsExtraRewriteOptions />
-    <CodeContractsExtraAnalysisOptions />
-    <CodeContractsSQLServerOption />
-    <CodeContractsBaseLineFile />
+    <CodeContractsCustomRewriterAssembly>
+    </CodeContractsCustomRewriterAssembly>
+    <CodeContractsCustomRewriterClass>
+    </CodeContractsCustomRewriterClass>
+    <CodeContractsLibPaths>
+    </CodeContractsLibPaths>
+    <CodeContractsExtraRewriteOptions>
+    </CodeContractsExtraRewriteOptions>
+    <CodeContractsExtraAnalysisOptions>
+    </CodeContractsExtraAnalysisOptions>
+    <CodeContractsSQLServerOption>
+    </CodeContractsSQLServerOption>
+    <CodeContractsBaseLineFile>
+    </CodeContractsBaseLineFile>
     <CodeContractsCacheAnalysisResults>True</CodeContractsCacheAnalysisResults>
     <CodeContractsFailBuildOnWarnings>False</CodeContractsFailBuildOnWarnings>
     <CodeContractsRuntimeCheckingLevel>Full</CodeContractsRuntimeCheckingLevel>
     <CodeContractsReferenceAssembly>%28none%29</CodeContractsReferenceAssembly>
     <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
+    <WarningLevel>4</WarningLevel>
+    <Optimize>false</Optimize>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
@@ -126,9 +143,7 @@
     <ErrorReport>prompt</ErrorReport>
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
     <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
+    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CodeAnalysis, Version=1.3.1.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -234,16 +249,20 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
-      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
+      <Project>{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}</Project>
       <Name>Core</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Parsers\CParser\CParser.csproj">
-      <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
+      <Project>{55AFEA71-DA6D-4258-9193-29942EBBBE48}</Project>
       <Name>CParser</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Parsers\ZingParser\ZingParser.csproj">
-      <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
+      <Project>{09A73016-0395-4014-8F26-0DD25ED81D12}</Project>
       <Name>ZingParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj">
+      <Project>{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}</Project>
+      <Name>FormulaCodeGeneratorTask</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -266,11 +285,17 @@
     <!--Make sure that the lexer runs before the C# compiler-->
     <CoreCompileDependsOn>$(CoreCompileDependsOn);GenerateCodeFromLex;</CoreCompileDependsOn>
   </PropertyGroup>
-  <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)">
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <GPLexCmd>"$(GPToolsPath)\GPLex45.exe"</GPLexCmd>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <GPLexCmd>mono $(GPToolsPath)\GPLex45.exe</GPLexCmd>
+  </PropertyGroup>
+  <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)">
     <!--Run the command line tool that generates the cs files.-->
-    <Exec Command="&quot;$(GPToolsPath)\GPLex45.exe&quot; /babel /unicode /out:@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" />
+    <Exec Command="$(GPLexCmd) /babel /unicode /out:@(MPLexCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" />
     <!--Add the generated files to the list of the files to compile.-->
-    <CreateItem Include="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')">
+    <CreateItem Include="@(MPLexCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')">
       <Output TaskParameter="Include" ItemName="Compile" />
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
@@ -284,21 +309,27 @@
     <GenerateParserCodeFromGrammarDependsOn>$(GenerateParserCodeFromGrammarDependsOn)</GenerateParserCodeFromGrammarDependsOn>
     <CoreCompileDependsOn>$(CoreCompileDependsOn);GenerateParserCodeFromGrammar</CoreCompileDependsOn>
   </PropertyGroup>
-  <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompile)" Outputs="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <GPPGCmd>"$(GPToolsPath)\GPPG45.exe"</GPPGCmd>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <GPPGCmd>mono $(GPToolsPath)\GPPG45.exe</GPPGCmd>
+  </PropertyGroup>
+  <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompile)" Outputs="@(MPPGCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
     <!--Run the command line tool that generates the cs files.-->
-    <Exec Command="&quot;$(GPToolsPath)\GPPG45.exe&quot; -babel -gplex -report -verbose -conflicts @(MPPGCompile) &gt; @(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" />
+    <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompile) &gt; @(MPPGCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')" />
     <!--Add the generated files to the list of the files to compile.-->
-    <CreateItem Include="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')">
+    <CreateItem Include="@(MPPGCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')">
       <Output TaskParameter="Include" ItemName="Compile" />
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\FormulaBinaries\x86\FormulaCodeGeneratorTask.dll" />
-  <Target Name="BeforeBuild" Condition="'$(BuildingInsideVisualStudio)' != 'true'">
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\Formula\Src\Extensions\FormulaCodeGeneratorTask\bin\x64\FormulaCodeGeneratorTask.dll" />
+  <Target Name="BeforeBuild">
     <ItemGroup>
-      <FormulaGenFiles Include="@(EmbeddedResource->'%(FullPath)')" Condition="%(EmbeddedResource.Generator) == 'FormulaCodeGenerator'" />
+      <FormulaGenFiles Include="@(EmbeddedResource-&gt;'%(FullPath)')" Condition="'%(EmbeddedResource.Generator)' == 'FormulaCodeGenerator'" />
     </ItemGroup>
-    <FormulaCodeGeneratorTask GeneratorInputs="@(FormulaGenFiles->'%(FullPath),%(CustomToolNamespace),%(IsThreadSafe),%(IsObjectGraph),%(IsNewOnly)')" DefaultNamespace="$(RootNamespace)" />
+    <FormulaCodeGeneratorTask GeneratorInputs="@(FormulaGenFiles-&gt;'%(FullPath),%(CustomToolNamespace),%(IsThreadSafe),%(IsObjectGraph),%(IsNewOnly)')" DefaultNamespace="$(RootNamespace)" />
   </Target>
 </Project>

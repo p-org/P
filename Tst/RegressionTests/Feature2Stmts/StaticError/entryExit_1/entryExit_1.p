@@ -76,7 +76,7 @@ model xx {
 }
 event dummy;
 
-spec MonitorMe monitors dummy {
+spec announceMe observes dummy {
 	var x : int;
 	
 	start state init {

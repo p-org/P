@@ -1,5 +1,5 @@
 // Liveness test: "check passed", however this is a false pass:
-// WatchDog monitor is never instantiated, hence, Zing ignores 
+// WatchDog announce is never instantiated, hence, Zing ignores 
 // all invocations of it
 // TODO: need to issue a warning (or error)
 // Compare this test to Liveness_1.p
@@ -13,7 +13,7 @@ machine Main {
        start state WaitForUser
        {
             entry { 
-				monitor Waiting;
+				announce Waiting;
 				send this, UserEvent;
 				}
             on UserEvent goto HandleEvent;
@@ -22,14 +22,14 @@ machine Main {
        state HandleEvent
        {
             entry { 
-				monitor Computing;
+				announce Computing;
 				send this, Done;
 				}			
             on Done goto WaitForUser;
        }
 }
 
-spec WatchDog monitors Waiting, Computing
+spec WatchDog observes Waiting, Computing
 {
       start cold state CanGetUserInput
       {

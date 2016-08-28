@@ -1,4 +1,4 @@
-// "raise", "send" and monitor invocation with non-constant event expression
+// "raise", "send" and announce invocation with non-constant event expression
 
 event E1 assert 1;
 event E2 assert 1;
@@ -12,9 +12,9 @@ machine Main {
         entry { 
             send this, ev2;	 
 			raise ev1;   
-			monitor ev1;
-			monitor E1; 
-			monitor ev3;	  // static error		
+			announce ev1;
+			announce E1; 
+			announce ev3;	  // static error		
         } 
 		on ev1 do Action1;  // static error
         on E1 do Action1;   
@@ -29,7 +29,7 @@ machine Main {
 		assert(test == false);  //unreachable
     }
 }
-spec M monitors E1 {
+spec M observes E1 {
 	start state x {
 	}
 }

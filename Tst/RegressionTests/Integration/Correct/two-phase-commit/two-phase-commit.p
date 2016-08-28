@@ -16,9 +16,9 @@ event StartTimer:int;
 event CancelTimer;
 event CancelTimerFailure;
 event CancelTimerSuccess;
-event MONITOR_WRITE:(idx:int, val:int);
-event MONITOR_READ_SUCCESS:(idx:int, val:int);
-event MONITOR_READ_UNAVAILABLE:int;
+event announce_WRITE:(idx:int, val:int);
+event announce_READ_SUCCESS:(idx:int, val:int);
+event announce_READ_UNAVAILABLE:int;
 
 model Timer {
 	var target: machine;
@@ -135,10 +135,10 @@ machine Coordinator {
 
 	fun DoRead(payload: (client:machine, idx:int)) {
 		if (payload.idx in data) {
-			monitor MONITOR_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
+			announce announce_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
 			send payload.client, READ_SUCCESS, data[payload.idx];
 		} else {
-			monitor MONITOR_READ_UNAVAILABLE, payload.idx;
+			announce announce_READ_UNAVAILABLE, payload.idx;
 			send payload.client, READ_UNAVAILABLE;
 		}
 	}
@@ -179,7 +179,7 @@ machine Coordinator {
 					i = i + 1;
 				}
 				data[pendingWriteReq.idx] = pendingWriteReq.val;
-				monitor MONITOR_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val);
+				announce announce_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val);
 				send pendingWriteReq.client, WRITE_SUCCESS;
 				send timer, CancelTimer;
 				raise Unit;
@@ -271,16 +271,16 @@ model Client {
 	}
 }
 
-spec M monitors MONITOR_WRITE, MONITOR_READ_SUCCESS, MONITOR_READ_UNAVAILABLE {
+spec M observes announce_WRITE, announce_READ_SUCCESS, announce_READ_UNAVAILABLE {
 	var data: map[int,int];
 
 	start state Init {
-		on MONITOR_WRITE do (payload: (idx:int, val:int)) { data[payload.idx] = payload.val; }
-		on MONITOR_READ_SUCCESS do (payload : (idx:int, val:int)) { 
+		on announce_WRITE do (payload: (idx:int, val:int)) { data[payload.idx] = payload.val; }
+		on announce_READ_SUCCESS do (payload : (idx:int, val:int)) { 
 			assert(payload.idx in data);
 			assert(data[payload.idx] == payload.val);
 		}
-		on MONITOR_READ_UNAVAILABLE do (payload: int) {
+		on announce_READ_UNAVAILABLE do (payload: int) {
 			assert(!(payload in data));
 		}
 	}

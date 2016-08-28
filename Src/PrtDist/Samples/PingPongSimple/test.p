@@ -16,7 +16,7 @@ machine Client {
   }
   state SendPing { 
     entry { 
-      monitor M_PING, this;
+      announce M_PING, this;
       send server, PING, this; 
       raise SUCCESS; 
     } 
@@ -53,7 +53,7 @@ machine Server {
 
   state SendPong { 
     entry (payload: machine) { 
-      monitor M_PONG, client;
+      announce M_PONG, client;
       send client, PONG; 
       raise SUCCESS; 
     } 
@@ -64,7 +64,7 @@ machine Server {
 event M_PING: machine;
 event M_PONG: machine;
 
-spec Safety monitors M_PING, M_PONG { 
+spec Safety observes M_PING, M_PONG { 
     var pending: map[machine, int];
     start state Init { 
         on M_PING do (payload: machine) { 

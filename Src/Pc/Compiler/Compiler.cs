@@ -305,14 +305,14 @@
             return (P_Root.UserCnstKind)cnst.Value;
         }
 
-        private bool IsMonitorFun(P_Root.FunDecl fun)
+        private bool IsSpecFun(P_Root.FunDecl fun)
         {
             P_Root.MachineDecl machine = fun.owner as P_Root.MachineDecl;
             if (machine == null)
             {
                 return false;
             }
-            else if (GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.MONITOR)
+            else if (GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.SPEC)
             {
                 return true;
             }
@@ -322,14 +322,14 @@
             }
         }
 
-        private bool IsMonitorAnonFun(P_Root.AnonFunDecl fun)
+        private bool IsSpecAnonFun(P_Root.AnonFunDecl fun)
         {
             P_Root.MachineDecl machine = fun.owner as P_Root.MachineDecl;
             if (machine == null)
             {
                 return false;
             }
-            else if (GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.MONITOR)
+            else if (GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.SPEC)
             {
                 return true;
             }
@@ -339,35 +339,35 @@
             }
         }
 
-        private bool IsMonitorMachine(P_Root.MachineDecl machine)
+        private bool IsSpecMachine(P_Root.MachineDecl machine)
         {
-            return GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.MONITOR;
+            return GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.SPEC;
         }
 
-        private bool IsMonitorState(P_Root.StateDecl state)
+        private bool IsSpecState(P_Root.StateDecl state)
         {
             P_Root.MachineDecl machine = (P_Root.MachineDecl)state.owner;
-            return IsMonitorMachine(machine);
+            return IsSpecMachine(machine);
         }
 
-        private bool IsMonitorVariable(P_Root.VarDecl variable)
+        private bool IsSpecVariable(P_Root.VarDecl variable)
         {
             P_Root.MachineDecl machine = (P_Root.MachineDecl)variable.owner;
-            return IsMonitorMachine(machine);
+            return IsSpecMachine(machine);
         }
 
-        private bool IsMonitorTransition(P_Root.TransDecl transition)
+        private bool IsSpecTransition(P_Root.TransDecl transition)
         {
             P_Root.StateDecl state = (P_Root.StateDecl)transition.src;
             P_Root.MachineDecl machine = (P_Root.MachineDecl)state.owner;
-            return IsMonitorMachine(machine);
+            return IsSpecMachine(machine);
         }
 
-        private bool IsMonitorDo(P_Root.DoDecl d)
+        private bool IsSpecDo(P_Root.DoDecl d)
         {
             P_Root.StateDecl state = (P_Root.StateDecl)d.src;
             P_Root.MachineDecl machine = (P_Root.MachineDecl)state.owner;
-            return IsMonitorMachine(machine);
+            return IsSpecMachine(machine);
         }
 
         private PProgram Filter(PProgram program)
@@ -391,75 +391,75 @@
             }
             foreach (var machine in program.Machines)
             {
-                if (IsMonitorMachine(machine)) continue;
+                if (IsSpecMachine(machine)) continue;
                 fProgram.Machines.Add(machine);
             }
             foreach (var state in program.States)
             {
-                if (IsMonitorState(state)) continue;
+                if (IsSpecState(state)) continue;
                 fProgram.States.Add(state);
             }
             foreach (var variable in program.Variables)
             {
-                if (IsMonitorVariable(variable)) continue;
+                if (IsSpecVariable(variable)) continue;
                 fProgram.Variables.Add(variable);
             }
             foreach (var transition in program.Transitions)
             {
-                if (IsMonitorTransition(transition)) continue;
+                if (IsSpecTransition(transition)) continue;
                 fProgram.Transitions.Add(transition);
             }
             foreach (var fun in program.Functions)
             {
-                if (IsMonitorFun(fun)) continue;
+                if (IsSpecFun(fun)) continue;
                 fProgram.Functions.Add(fun);
             }
             foreach (var fun in program.AnonFunctions)
             {
-                if (IsMonitorAnonFun(fun)) continue;
+                if (IsSpecAnonFun(fun)) continue;
                 fProgram.AnonFunctions.Add(fun);
             }
             foreach (var d in program.Dos)
             {
-                if (IsMonitorDo(d)) continue;
+                if (IsSpecDo(d)) continue;
                 fProgram.Dos.Add(d);
             }
             foreach (var annotation in program.Annotations)
             {
-                bool isMonitorAnnot;
+                bool isSpecAnnot;
                 if (annotation.ant is P_Root.EventDecl)
                 {
-                    isMonitorAnnot = false;
+                    isSpecAnnot = false;
                 }
                 else if (annotation.ant is P_Root.MachineDecl)
                 {
-                    isMonitorAnnot = IsMonitorMachine((P_Root.MachineDecl)annotation.ant);
+                    isSpecAnnot = IsSpecMachine((P_Root.MachineDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.VarDecl)
                 {
-                    isMonitorAnnot = IsMonitorVariable((P_Root.VarDecl)annotation.ant);
+                    isSpecAnnot = IsSpecVariable((P_Root.VarDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.FunDecl)
                 {
-                    isMonitorAnnot = IsMonitorFun((P_Root.FunDecl)annotation.ant);
+                    isSpecAnnot = IsSpecFun((P_Root.FunDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.StateDecl)
                 {
-                    isMonitorAnnot = IsMonitorState((P_Root.StateDecl)annotation.ant);
+                    isSpecAnnot = IsSpecState((P_Root.StateDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.TransDecl)
                 {
-                    isMonitorAnnot = IsMonitorTransition((P_Root.TransDecl)annotation.ant);
+                    isSpecAnnot = IsSpecTransition((P_Root.TransDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.DoDecl)
                 {
-                    isMonitorAnnot = IsMonitorDo((P_Root.DoDecl)annotation.ant);
+                    isSpecAnnot = IsSpecDo((P_Root.DoDecl)annotation.ant);
                 }
                 else
                 {
-                    isMonitorAnnot = false;
+                    isSpecAnnot = false;
                 }
-                if (isMonitorAnnot) continue;
+                if (isSpecAnnot) continue;
                 fProgram.Annotations.Add(annotation);
             }
             return fProgram;

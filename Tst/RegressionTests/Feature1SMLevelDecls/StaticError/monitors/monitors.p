@@ -17,7 +17,7 @@ machine Main {
 
 }
 
-spec M monitors a {
+spec M observes a {
 	var x : machine;
 	start state Init {
 		entry {

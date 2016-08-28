@@ -183,13 +183,13 @@ namespace Microsoft.Pc
         }
     }
 
-    enum MonitorType { SAFETY, FINALLY, REPEATEDLY };
+    enum SpecType { SAFETY, FINALLY, REPEATEDLY };
 
     internal class MachineInfo
     {
         public bool IsReal { get { return type == "REAL"; } }
         public bool IsModel { get { return type == "MODEL"; } }
-        public bool IsMonitor { get { return type == "MONITOR"; } }
+        public bool IsSpec { get { return type == "SPEC"; } }
 
         public string type;
         public int maxQueueSize;
@@ -199,7 +199,7 @@ namespace Microsoft.Pc
         public Dictionary<string, VariableInfo> localVariableToVarInfo;
         public List<string> observesEvents;
         public Dictionary<string, FunInfo> funNameToFunInfo;
-        public MonitorType monitorType;
+        public SpecType specType;
 
         public MachineInfo()
         {
@@ -211,7 +211,7 @@ namespace Microsoft.Pc
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
             observesEvents = new List<string>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
-            monitorType = MonitorType.SAFETY;
+            specType = SpecType.SAFETY;
             funNameToFunInfo["ignore"] = new FunInfo(false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
         }
     }
@@ -821,7 +821,7 @@ namespace Microsoft.Pc
             {
                 foreach (var machineName in allMachines.Keys)
                 {
-                    if (!allMachines[machineName].IsMonitor) continue;
+                    if (!allMachines[machineName].IsSpec) continue;
                     var machineInfo = allMachines[machineName];
                     List<string> initialSet = new List<string>();
                     foreach (var stateName in ComputeReachableStates(machineInfo, new string[] { machineInfo.initStateName }))
@@ -832,7 +832,7 @@ namespace Microsoft.Pc
                         }
                         if (machineInfo.stateNameToStateInfo[stateName].IsHot)
                         {
-                            machineInfo.monitorType = MonitorType.FINALLY;
+                            machineInfo.specType = SpecType.FINALLY;
                             continue;
                         }
                         initialSet.Add(stateName);
@@ -841,12 +841,12 @@ namespace Microsoft.Pc
                     {
                         if (machineInfo.stateNameToStateInfo[stateName].IsHot)
                         {
-                            machineInfo.monitorType = MonitorType.REPEATEDLY;
+                            machineInfo.specType = SpecType.REPEATEDLY;
                             break;
                         }
                     }
                 }
-                if (allMachines.Values.All(x => !x.IsMonitor || x.monitorType == MonitorType.SAFETY))
+                if (allMachines.Values.All(x => !x.IsSpec || x.specType == SpecType.SAFETY))
                 {
                     compiler.Options.liveness = LivenessOption.None;
                 }

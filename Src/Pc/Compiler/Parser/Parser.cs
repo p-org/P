@@ -39,6 +39,7 @@
 
         private List<P_Root.EventLabel> crntObservesList = new List<P_Root.EventLabel>();
 
+        private int anonEventSetCounter = 0;
         private HashSet<string> crntStateNames = new HashSet<string>();
         private HashSet<string> crntFunNames = new HashSet<string>();
         private HashSet<string> crntVarNames = new HashSet<string>();
@@ -309,6 +310,7 @@
                     }
                     break;
                 case TopDecl.Interface:
+                case TopDecl.Enum:
                 case TopDecl.TypeDef:
                     if (topDeclNames.interfaceNames.Contains(name))
                     {
@@ -317,7 +319,12 @@
                     }
                     else if (topDeclNames.typeNames.Contains(name))
                     {
-                        errorMessage = string.Format("A test case with name {0} already declared", name);
+                        errorMessage = string.Format("A typedef with name {0} already declared", name);
+                        error = true;
+                    }
+                    else if(topDeclNames.enumNames.Contains(name))
+                    {
+                        errorMessage = string.Format("An enum with name {0} already declared", name);
                         error = true;
                     }
                     break;
@@ -1434,6 +1441,11 @@
             enumElemValList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             enumTypeDef.Span = enumTypeDefSpan;
             enumTypeDef.id = (P_Root.IArgType_EnumTypeDef__3)MkId(enumTypeDefSpan);
+
+            if (IsValidName(TopDecl.Enum, name, nameSpan))
+            {
+                topDeclNames.enumNames.Add(name);
+            }
             parseProgram.EnumTypeDefs.Add(enumTypeDef);
         }
 
@@ -1452,6 +1464,7 @@
                 var eventset = new P_Root.EventSetDecl();
                 eventset.name = MkString(name, nameSpan);
                 eventset.Span = ev.Span;
+                eventset.id = (P_Root.IArgType_EventSetDecl__2)MkId(nameSpan);
                 eventset.ev = (P_Root.IArgType_EventSetDecl__1)ev;
                 parseProgram.EventSetDecl.Add(eventset);
             }
@@ -1464,7 +1477,30 @@
             var inDecl = GetCurrentInterfaceTypeDecl(span);
             inDecl.Span = span;
             inDecl.name = MkString(iname, inameSpan);
-            inDecl.evsetName = MkString(esname, iesnameSpan);
+            inDecl.id = (P_Root.IArgType_InterfaceTypeDecl__3)MkId(inameSpan);
+            if(esname == null)
+            {
+                //declaration contains set of events
+                Contract.Assert(crntEventList.Count() > 0);
+                var anonEventSetName = "__AnonEventSet_" + anonEventSetCounter;
+                anonEventSetCounter++;
+                foreach (var ev in crntEventList)
+                {
+                    var eventset = new P_Root.EventSetDecl();
+                    eventset.name = MkString(anonEventSetName, iesnameSpan);
+                    eventset.Span = ev.Span;
+                    eventset.id = (P_Root.IArgType_EventSetDecl__2)MkId(inameSpan);
+                    eventset.ev = (P_Root.IArgType_EventSetDecl__1)ev;
+                    parseProgram.EventSetDecl.Add(eventset);
+                }
+                inDecl.evsetName = MkString(anonEventSetName, iesnameSpan);
+                crntEventList.Clear();
+            }
+            else
+            {
+                inDecl.evsetName = MkString(esname, iesnameSpan);
+            }
+            
             parseProgram.InterfaceTypeDecl.Add(inDecl);
             if (IsValidName(TopDecl.Interface, iname, inameSpan))
             {
@@ -1952,6 +1988,7 @@
             export.iname = (P_Root.IArgType_MachineExportsDecl__1)MkString(interfaceName, interfaceSpan);
             export.mach = machDecl;
             export.Span = span;
+            export.id = (P_Root.IArgType_MachineExportsDecl__2)MkId(interfaceSpan);
             parseProgram.MachineExportsDecl.Add(export);
         }
 
@@ -2309,6 +2346,7 @@
             crntFunNames.Clear();
             crntVarNames.Clear();
             topDeclNames.Reset();
+            anonEventSetCounter = 0;
         }
         #endregion
     }

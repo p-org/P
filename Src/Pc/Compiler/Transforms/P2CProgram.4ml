@@ -2066,7 +2066,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 										 Args(Ident("p_tmp_stmt_2"), 
 										 Args(Ident("PRT_TRUE"), NIL)))))).
 
-	//// Monitor (erased)
+	//// Announce (erased)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Announce(_, _, _), cs = NIL.
 
 	//// NulStmt

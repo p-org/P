@@ -13,11 +13,11 @@ SpinlockSameAsRule.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____REL, 1 > to Spinlock spec machine
 
 Error:
 P Assertion failed:
@@ -25,11 +25,11 @@ Expression: assert(tmpVar_7.bl,)
 Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
 Trace-Log 1:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____REL, 0 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____REL, 0 > to Spinlock spec machine
 
 Error:
 P Assertion failed:
@@ -37,12 +37,12 @@ Expression: assert(tmpVar_7.bl,)
 Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
 Trace-Log 2:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1
@@ -53,12 +53,12 @@ Expression: assert(tmp_12.bl,)
 Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 3:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____REL, 1 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____REL, 0 > to Spinlock spec machine
 
 Error:
 P Assertion failed:
@@ -66,12 +66,12 @@ Expression: assert(tmpVar_7.bl,)
 Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
 Trace-Log 4:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____REL, 0 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____REL, 1 > to Spinlock spec machine
 
 Error:
 P Assertion failed:
@@ -79,12 +79,12 @@ Expression: assert(tmpVar_7.bl,)
 Comment: SpinlockSameAsRule.p (47, 4): Assert failed
 Safety Error Trace
 Trace-Log 5:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1
@@ -95,13 +95,13 @@ Expression: assert(tmp_12.bl,)
 Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 6:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1
@@ -112,13 +112,13 @@ Expression: assert(tmp_12.bl,)
 Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 7:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1
@@ -129,13 +129,13 @@ Expression: assert(tmp_12.bl,)
 Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 8:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1
@@ -146,13 +146,13 @@ Expression: assert(tmp_12.bl,)
 Comment: SpinlockSameAsRule.p (78, 4): Assert failed
 Safety Error Trace
 Trace-Log 9:
-<CreateLog> Created monitor Spinlock
+<CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<MonitorLog> Enqueued Event < ____ACQ, 1 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
-<MonitorLog> Enqueued Event < ____ACQ, 0 > to Spinlock monitor
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
 <StateLog> Machine Spinlock-0 entering State Abort1

@@ -1695,7 +1695,7 @@ namespace Microsoft.Pc
                 MachineInfo machineInfo = allMachines[machineName];
 
                 var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
-                ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
+                ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", machineName)), tmpVar)));
                 string afterLabel = ctxt.GetFreshLabel();
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), newMachine)));
                 ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));

@@ -78,7 +78,7 @@ domain PData
 	InterfaceTypeDecl ::= new (name: String, evsetName: String, argType: any TypeExpr, id: any Id).
 	MachineExportsDecl ::= new (mach: any MachineDecl, iname: String, id: any Id).
 
-	LinkMap ::= (createdIorM: String, createdM: String).
+	
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -253,6 +253,7 @@ domain PStaticTyping extends PData
 	InterfaceTypeDeclList(name, it) :- InterfaceTypeDecl(name, esname, _, _), it = toList(#InterfaceType, NIL, {ev | EventSetDecl(esname, ev, _) }), it : InterfaceType.
 
 	//// populate the link map
+	LinkMap ::= (createdIorM: String, createdM: String).
 	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM, no MachineExportsDecl(m, _, _);
 									  MachineExportsDecl(m, createdIorM, _), m.name = createdM.
 
@@ -485,7 +486,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
 
     TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExportsDecl(m, _, _), kind != SPEC.
-	TypeOf(c, e, t)	  :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _, _), InterfaceTypeDecl(n, _, _, _), TypeExpansion(NameType(n), t);
+	TypeOf(c, e, t)	  :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), InterfaceTypeDecl(n, _, _, _), TypeExpansion(NameType(n), t).
 
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, SPEC, _, _, _).
@@ -734,7 +735,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExportsDecl(m, _, _), kind != SPEC.
-	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, kind, _, _, _), InterfaceTypeDecl(n, _, _, _), kind != SPEC.
+	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), InterfaceTypeDecl(n, _, _, _).
 	  
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, SPEC, _, _, _).

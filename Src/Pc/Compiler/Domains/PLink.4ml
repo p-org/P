@@ -1,0 +1,155 @@
+﻿[
+   modules.C = '"C at C.4ml"'
+]
+
+domain PLink
+{
+	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
+	Id ::= { NIL } + Integer + String + IdList.
+
+	Qualifier       ::= { NONE, REF, XFER }.
+	NameType        ::= new (name: String).
+    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }).
+    TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
+    NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
+    SeqType         ::= new (x: any TypeExpr).
+    MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
+    NmdTupTypeField ::= new (qual: Qualifier, name: any String, type: any TypeExpr). 
+    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType.
+
+	StringList		::= new (hd: String, tl: any StringList + { NIL }).
+	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
+	EnumTypeDef	    ::= fun (name: String -> elems: any StringList, values: any IntegerList + { NIL }).
+	TypeDef         ::= fun (name: String -> type: any TypeExpr).
+	ModelType       ::= new (name: String).
+
+    AssumeMaxInstances ::= new (bound: Natural).
+    AssertMaxInstances ::= new (bound: Natural).
+    QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
+    EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
+
+    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, id: any Id).
+}
+
+transform PLink2C(in:: PLink) returns (out:: C)
+{
+    /*************************************************************/
+    /**********         Create Header File             ***********/
+    /*************************************************************/
+    //// Elements will be output to header file in order of position.
+    HOut ::= (pos: Natural, cmp: out.Cmp).
+    HOutOrder ::= (ord: Natural, cmp: out.Cmp).
+	HOutOrder(o, cmp) :- ho is HOut(_, cmp), o = toOrdinal(ho, 0, { ho' | ho' is HOut }). 
+
+    //// Concat elements in order.
+	HConcatOut ::= (pos: Integer, cmp: out.Cmp).	
+	HConcatOut(-1, NIL).
+	HConcatOut(m', cmp) :- HConcatOut(m, before), HOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
+		
+	out.File(headerFileName, body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
+								      headerFileName = "linker.h",
+									  ifdefBegin = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("extern \"C\"{")), NIL),
+									  ifdefEnd = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("}")), NIL),
+									  body = PpITE(
+									   IFNDEF,
+									   Ident("P_PROGRAM_H"),
+									   Section(
+										   Section(
+											  PpDefine(Ident("P_PROGRAM_H"), NIL),
+											  Section(
+											     PpInclude("PrtUser.h", FALSE),
+											     PpInclude("PrtExecution.h", FALSE)											  
+											  )),
+										   Section(ifdefBegin, Section(cmp, ifdefEnd))),
+									   NIL).
+
+    /*************************************************************/
+    /**********         Create Code File               ***********/
+    /*************************************************************/
+    //// Elements will be output to c file in order of position.
+    COut ::= (pos: Natural, cmp: out.Cmp).
+	COutOrder ::= (ord: Natural, cmp: out.Cmp).
+
+    //// Concat elements in order.
+	COutOrder(o, cmp) :- co is COut(_, cmp), o = toOrdinal(co, 0, { co' | co' is COut }). 
+	CConcatOut ::= (pos: Integer, cmp: out.Cmp).	
+	CConcatOut(-1, NIL).
+	CConcatOut(m', cmp) :- CConcatOut(m, before), COutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
+		
+	out.File(codeFileName, body) :- CConcatOut(count({co | co is COut}) - 1, cmp),
+	                               headerFileName = "linker.h",
+								   codeFileName = "linker.c",
+								   body = Section(PpInclude(headerFileName, FALSE), cmp).
+
+	/*************************************************************/
+    /**********     Create C Enums for P Decls         ***********/
+    /*************************************************************/
+	
+	EventDeclExt ::= in.EventDecl + { NULL, HALT }.
+	DeclId ::= (decl: in.MachineDecl + in.EventDecl + in.TypeDef + { NULL, HALT, PUSH }, id: Natural, cname: String).
+	
+	//// (0) Foreign types
+	DeclId(d, id, cn) :- d is in.TypeDef(name, _), in.ModelType(name), id = toOrdinal(d, 0, { d' | d' is in.TypeDef(n, _), in.ModelType(n) }), cn = strJoin("P_FORGN_TYPE_", name).
+	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : in.TypeDef, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({d | d is in.TypeDef(n, _), in.ModelType(n)}) }).  
+	
+	//// (1) Field names for named tuple types that have a type synonym
+	IndexOf ::= (t: in.NmdTupType, name: String, offset: Natural, tail: in.NmdTupType + {NIL}).
+	IndexOf(t, name, 0, tail)  :- in.TypeDef(_, t), t = in.NmdTupType(NmdTupTypeField(_, name, _), tail).
+	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = in.NmdTupType(NmdTupTypeField(_, name, _), tail), i' = i + 1.
+
+	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
+	   d is in.TypeDef(name, type), type: in.NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   IndexOf(type, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(in.#NmdTupType, type) }).  
+	
+	//// (2) Enum declarations for all enum types
+	EnumTypeElem ::= (EnumTypeDef, StringList, IntegerList + { NIL }).
+	EnumTypeElem(d, list1, list2) :- d is EnumTypeDef(_, list1, list2).
+	EnumTypeElem(d, list1, NIL) :- EnumTypeElem(d, StringList(_, list1), NIL), list1: StringList.
+	EnumTypeElem(d, list1, list2) :- EnumTypeElem(d, StringList(_, list1), IntegerList(_, list2)), list1: StringList.
+
+	EnumTypeElemIndex ::= (EnumTypeDef, StringList, IntegerList + { NIL }, String, Integer).
+	EnumTypeElemIndex(d, list, NIL, str, i) :- EnumTypeElem(d, list, NIL), list = StringList(str, NIL), i = lstLength(#StringList, d.elems) - 1.
+	EnumTypeElemIndex(d, list, NIL, str, i) :- EnumTypeElem(d, list, NIL), list = StringList(str, list'), 
+											   EnumTypeElemIndex(d, list', NIL, _, j), i = j - 1.
+  	EnumTypeElemIndex(d, list1, list2, str, i) :- EnumTypeElem(d, list1, list2), 
+												  list1 = StringList(str, _), list2 = IntegerList(i, _).
+
+	HOut(0, out.EnmDef(NIL, enumName, list)) :-
+		d is in.EnumTypeDef(enumName, elems, _), size = lstLength(in.#StringList, elems),
+		list = toList(#Elements, NIL, { enumMember | 
+										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
+										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
+	
+	//// (3) EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
+	DeclId(NULL, 0, "_P_EVENT_NULL").
+	DeclId(HALT, 1, "_P_EVENT_HALT").
+	DeclId(d, id, cn) :- d is in.EventDecl, id = 2 + toOrdinal(d, 0, { d' | d' is in.EventDecl }), cn = strJoin("P_EVENT_", d.name).
+	
+	HOut(0, out.EnmDef(NIL, "P_EVENTS", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : EventDeclExt, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is in.EventDecl}) }).  
+									   
+	//// (4) Real machine decls - Start at Id 0.
+	DeclId(d, id, cn) :- d is MachineDecl, d.kind = REAL, 
+	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, d'.kind = REAL }), cn = strJoin("P_MACHINE_", d.name).
+	
+	HOut(0, out.EnmDef(NIL, "P_MACHINES", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : MachineDecl, d.kind = REAL, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl, d.kind = REAL}) }).  
+									   
+	//// (5) Model machine decls - Start at Id 0.
+	DeclId(d, id, cn) :- d is MachineDecl, d.kind = MODEL, 
+	                     id = toOrdinal(d, 0, { d' | d' is MachineDecl, d'.kind = MODEL }), cn = strJoin("P_MODEL_", d.name).
+	
+	HOut(0, out.EnmDef(NIL, "P_MODELS", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : MachineDecl, d.kind = MODEL, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MODELS_COUNT"), size = count({d | d is MachineDecl, d.kind = MODEL}) }).  
+}

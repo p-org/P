@@ -67,6 +67,7 @@
     public class Compiler
     {
         private const string PDomain = "P";
+        private const string PLinkDomain = "PLink";
         private const string CDomain = "C";
         private const string ZingDomain = "Zing";
         private const string P2InfTypesTransform = "P2PWithInferredTypes";
@@ -82,18 +83,20 @@
         static Compiler()
         {
             ReservedModuleToLocation = new Dictionary<string, string>();
-            ReservedModuleToLocation.Add(PDomain, "Domains\\P.4ml");
-            ReservedModuleToLocation.Add(CDomain, "Domains\\C.4ml");
-            ReservedModuleToLocation.Add(ZingDomain, "Domains\\Zing.4ml");
-            ReservedModuleToLocation.Add(P2InfTypesTransform, "Transforms\\PWithInferredTypes.4ml");
-            ReservedModuleToLocation.Add(P2CTransform, "Transforms\\P2CProgram.4ml");
+            ReservedModuleToLocation.Add(PDomain, "P.4ml");
+            ReservedModuleToLocation.Add(PLinkDomain, "PLink.4ml");
+            ReservedModuleToLocation.Add(CDomain, "C.4ml");
+            ReservedModuleToLocation.Add(ZingDomain, "Zing.4ml");
+            ReservedModuleToLocation.Add(P2InfTypesTransform, "PWithInferredTypes.4ml");
+            ReservedModuleToLocation.Add(P2CTransform, "P2CProgram.4ml");
 
             ManifestPrograms = new Dictionary<string, Tuple<AST<Program>, bool>>();
-            ManifestPrograms["Pc.Domains.P.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P.4ml", "Domains\\P.4ml"), false);
-            ManifestPrograms["Pc.Domains.C.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.C.4ml", "Domains\\C.4ml"), false);
-            ManifestPrograms["Pc.Domains.Zing.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.Zing.4ml", "Domains\\Zing.4ml"), false);
-            ManifestPrograms["Pc.Transforms.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.PWithInferredTypes.4ml", "Transforms\\PWithInferredTypes.4ml"), false);
-            ManifestPrograms["Pc.Transforms.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.P2CProgram.4ml", "Transforms\\P2CProgram.4ml"), false);
+            ManifestPrograms["Pc.Domains.P.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P.4ml", "P.4ml"), false);
+            ManifestPrograms["Pc.Domains.PLink.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.PLink.4ml", "PLink.4ml"), false);
+            ManifestPrograms["Pc.Domains.C.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.C.4ml", "C.4ml"), false);
+            ManifestPrograms["Pc.Domains.Zing.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.Zing.4ml", "Zing.4ml"), false);
+            ManifestPrograms["Pc.Transforms.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.PWithInferredTypes.4ml", "PWithInferredTypes.4ml"), false);
+            ManifestPrograms["Pc.Transforms.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.P2CProgram.4ml", "P2CProgram.4ml"), false);
         }
 
         SortedSet<Flag> errors;
@@ -1234,6 +1237,7 @@
             using (new PerfTimer("Compiler generating C " + Path.GetFileName(RootFileName)))
             {
                 LoadManifestProgram("Pc.Domains.C.4ml");
+                LoadManifestProgram("Pc.Domains.PLink.4ml");
                 LoadManifestProgram("Pc.Transforms.P2CProgram.4ml");
                 return InternalGenerateC();
             }
@@ -1252,22 +1256,22 @@
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.test ? "TRUE" : "FALSE"));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CModel"));
+            transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModule + "_LinkModel"));
 
             List<Flag> appFlags;
             Task<ApplyResult> apply;
             Formula.Common.Rules.ExecuterStatistics stats;
-
             CompilerEnv.Apply(transStep, false, false, out appFlags, out apply, out stats);
             apply.RunSynchronously();
             foreach (Flag f in appFlags)
             {
                 AddFlag(f);
             }
+
             //// Extract the result
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_CModel.4ml"));
             var extractTask = apply.Result.GetOutputModel(RootModule + "_CModel", progName, AliasPrefix);
             extractTask.Wait();
-
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
 
@@ -1326,8 +1330,20 @@
                 });
 
             InstallResult uninstallResult;
-            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);            
+            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
             Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
+
+            //// Extract the link model
+            var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_LinkModel.4ml"));
+            var linkExtractTask = apply.Result.GetOutputModel(RootModule + "_LinkModel", linkProgName, AliasPrefix);
+            linkExtractTask.Wait();
+            var linkProgram = linkExtractTask.Result;
+            Contract.Assert(linkProgram != null);
+            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.ChangeExtension(RootProgramName.ToString(), ".4ml"))));
+            linkProgram.Print(wr);
+            wr.Close();
+
             return success;
         }
 

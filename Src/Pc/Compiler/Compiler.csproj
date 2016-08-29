@@ -226,6 +226,10 @@
     <EmbeddedResource Include="Zing\PrtTypes.zing" />
     <EmbeddedResource Include="Zing\PrtValues.zing" />
     <EmbeddedResource Include="Zing\Minimal.zing" />
+    <EmbeddedResource Include="Domains\PLink.4ml">
+      <CustomToolNamespace>Microsoft.Pc.Domains</CustomToolNamespace>
+      <Generator>FormulaCodeGenerator</Generator>
+    </EmbeddedResource>
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -283,6 +287,14 @@
   <PropertyGroup>
     <GenerateParserCodeFromGrammarDependsOn>$(GenerateParserCodeFromGrammarDependsOn)</GenerateParserCodeFromGrammarDependsOn>
     <CoreCompileDependsOn>$(CoreCompileDependsOn);GenerateParserCodeFromGrammar</CoreCompileDependsOn>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>copy /Y $(ProjectDir)\Domains\P.4ml $(OutDir)
+copy /Y $(ProjectDir)\Domains\PLink.4ml $(OutDir)
+copy /Y $(ProjectDir)\Domains\C.4ml $(OutDir)
+copy /Y $(ProjectDir)\Domains\Zing.4ml $(OutDir)
+copy /Y $(ProjectDir)\Transforms\P2CProgram.4ml $(OutDir)
+copy /Y $(ProjectDir)\Transforms\PWithInferredTypes.4ml $(OutDir)</PostBuildEvent>
   </PropertyGroup>
   <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompile)" Outputs="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
     <!--Run the command line tool that generates the cs files.-->

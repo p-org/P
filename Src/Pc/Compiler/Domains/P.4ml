@@ -15,8 +15,8 @@ domain PData
     
 	StringList		::= new (hd: String, tl: any StringList + { NIL }).
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
-	EnumTypeDef		::= new (name: String, elems: any StringList, values: any IntegerList + { NIL }, id: any Id).
-	TypeDef         ::= new (name: String, type: any TypeExpr, id: any Id).
+	EnumTypeDef		::= fun (name: String -> elems: any StringList, values: any IntegerList + { NIL }, id: any Id).
+	TypeDef         ::= fun (name: String -> type: any TypeExpr, id: any Id).
 	ModelType       ::= new (name: String).
 
 	NameType        ::= new (name: String).

@@ -13,7 +13,7 @@ NewMonitor_v.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created monitor M
+<CreateLog> Created spec M
 <StateLog> Machine M-0 entering State x
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Real1_Init

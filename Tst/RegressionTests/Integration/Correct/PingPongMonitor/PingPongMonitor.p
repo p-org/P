@@ -43,7 +43,7 @@ machine PONG {
     }
 }
 
-spec M monitors Ping, Pong{
+spec M observes Ping, Pong{
 start cold state ExpectPing {
 		 on Ping goto ExpectPong;
 }

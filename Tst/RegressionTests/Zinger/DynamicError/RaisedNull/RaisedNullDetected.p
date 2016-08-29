@@ -1,4 +1,4 @@
-// P semantics test: two machines, "send", "raise", monitor invocation for non-constant event expressions
+// P semantics test: two machines, "send", "raise", announce invocation for non-constant event expressions
 
 event E1 assert 1;
 event E2 assert 1: bool;
@@ -15,7 +15,7 @@ machine Main {
 			ev2 = E2;
             send mac, ev2, test;	 
 			raise ev1;   
-			monitor ev1; 
+			announce ev1; 
 				
         } 	
         on E1 do Action1;   

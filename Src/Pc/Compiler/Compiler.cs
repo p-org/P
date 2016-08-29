@@ -24,6 +24,43 @@
 
     public enum LivenessOption { None, Standard, Mace };
 
+    public enum TopDecl { Event, EventSet, Interface, Module, Machine, Test, TypeDef, Enum };
+    public class TopDeclNames
+    {
+        public HashSet<string> eventNames;
+        public HashSet<string> eventSetNames;
+        public HashSet<string> moduleNames;
+        public HashSet<string> testNames;
+        public HashSet<string> typeNames;
+        public HashSet<string> machineNames;
+        public HashSet<string> interfaceNames;
+        public HashSet<string> enumNames;
+
+        public TopDeclNames()
+        {
+            eventNames = new HashSet<string>();
+            eventSetNames = new HashSet<string>();
+            interfaceNames = new HashSet<string>();
+            moduleNames = new HashSet<string>();
+            machineNames = new HashSet<string>();
+            testNames = new HashSet<string>();
+            typeNames = new HashSet<string>();
+            enumNames = new HashSet<string>();
+        }
+
+        public void Reset()
+        {
+            eventNames.Clear();
+            eventSetNames.Clear();
+            interfaceNames.Clear();
+            moduleNames.Clear();
+            machineNames.Clear();
+            testNames.Clear();
+            typeNames.Clear();
+        }
+
+    }
+
     public class StandardOutput : ICompilerOutput
     {
         public void WriteMessage(string msg, SeverityKind severity)
@@ -270,14 +307,14 @@
             return (P_Root.UserCnstKind)cnst.Value;
         }
 
-        private bool IsMonitorFun(P_Root.FunDecl fun)
+        private bool IsSpecFun(P_Root.FunDecl fun)
         {
             P_Root.MachineDecl machine = fun.owner as P_Root.MachineDecl;
             if (machine == null)
             {
                 return false;
             }
-            else if (GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.MONITOR)
+            else if (GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.SPEC)
             {
                 return true;
             }
@@ -287,14 +324,14 @@
             }
         }
 
-        private bool IsMonitorAnonFun(P_Root.AnonFunDecl fun)
+        private bool IsSpecAnonFun(P_Root.AnonFunDecl fun)
         {
             P_Root.MachineDecl machine = fun.owner as P_Root.MachineDecl;
             if (machine == null)
             {
                 return false;
             }
-            else if (GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.MONITOR)
+            else if (GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.SPEC)
             {
                 return true;
             }
@@ -304,35 +341,35 @@
             }
         }
 
-        private bool IsMonitorMachine(P_Root.MachineDecl machine)
+        private bool IsSpecMachine(P_Root.MachineDecl machine)
         {
-            return GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.MONITOR;
+            return GetKind((P_Root.UserCnst)machine.kind) == P_Root.UserCnstKind.SPEC;
         }
 
-        private bool IsMonitorState(P_Root.StateDecl state)
+        private bool IsSpecState(P_Root.StateDecl state)
         {
             P_Root.MachineDecl machine = (P_Root.MachineDecl)state.owner;
-            return IsMonitorMachine(machine);
+            return IsSpecMachine(machine);
         }
 
-        private bool IsMonitorVariable(P_Root.VarDecl variable)
+        private bool IsSpecVariable(P_Root.VarDecl variable)
         {
             P_Root.MachineDecl machine = (P_Root.MachineDecl)variable.owner;
-            return IsMonitorMachine(machine);
+            return IsSpecMachine(machine);
         }
 
-        private bool IsMonitorTransition(P_Root.TransDecl transition)
+        private bool IsSpecTransition(P_Root.TransDecl transition)
         {
             P_Root.StateDecl state = (P_Root.StateDecl)transition.src;
             P_Root.MachineDecl machine = (P_Root.MachineDecl)state.owner;
-            return IsMonitorMachine(machine);
+            return IsSpecMachine(machine);
         }
 
-        private bool IsMonitorDo(P_Root.DoDecl d)
+        private bool IsSpecDo(P_Root.DoDecl d)
         {
             P_Root.StateDecl state = (P_Root.StateDecl)d.src;
             P_Root.MachineDecl machine = (P_Root.MachineDecl)state.owner;
-            return IsMonitorMachine(machine);
+            return IsSpecMachine(machine);
         }
 
         private PProgram Filter(PProgram program)
@@ -356,75 +393,75 @@
             }
             foreach (var machine in program.Machines)
             {
-                if (IsMonitorMachine(machine)) continue;
+                if (IsSpecMachine(machine)) continue;
                 fProgram.Machines.Add(machine);
             }
             foreach (var state in program.States)
             {
-                if (IsMonitorState(state)) continue;
+                if (IsSpecState(state)) continue;
                 fProgram.States.Add(state);
             }
             foreach (var variable in program.Variables)
             {
-                if (IsMonitorVariable(variable)) continue;
+                if (IsSpecVariable(variable)) continue;
                 fProgram.Variables.Add(variable);
             }
             foreach (var transition in program.Transitions)
             {
-                if (IsMonitorTransition(transition)) continue;
+                if (IsSpecTransition(transition)) continue;
                 fProgram.Transitions.Add(transition);
             }
             foreach (var fun in program.Functions)
             {
-                if (IsMonitorFun(fun)) continue;
+                if (IsSpecFun(fun)) continue;
                 fProgram.Functions.Add(fun);
             }
             foreach (var fun in program.AnonFunctions)
             {
-                if (IsMonitorAnonFun(fun)) continue;
+                if (IsSpecAnonFun(fun)) continue;
                 fProgram.AnonFunctions.Add(fun);
             }
             foreach (var d in program.Dos)
             {
-                if (IsMonitorDo(d)) continue;
+                if (IsSpecDo(d)) continue;
                 fProgram.Dos.Add(d);
             }
             foreach (var annotation in program.Annotations)
             {
-                bool isMonitorAnnot;
+                bool isSpecAnnot;
                 if (annotation.ant is P_Root.EventDecl)
                 {
-                    isMonitorAnnot = false;
+                    isSpecAnnot = false;
                 }
                 else if (annotation.ant is P_Root.MachineDecl)
                 {
-                    isMonitorAnnot = IsMonitorMachine((P_Root.MachineDecl)annotation.ant);
+                    isSpecAnnot = IsSpecMachine((P_Root.MachineDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.VarDecl)
                 {
-                    isMonitorAnnot = IsMonitorVariable((P_Root.VarDecl)annotation.ant);
+                    isSpecAnnot = IsSpecVariable((P_Root.VarDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.FunDecl)
                 {
-                    isMonitorAnnot = IsMonitorFun((P_Root.FunDecl)annotation.ant);
+                    isSpecAnnot = IsSpecFun((P_Root.FunDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.StateDecl)
                 {
-                    isMonitorAnnot = IsMonitorState((P_Root.StateDecl)annotation.ant);
+                    isSpecAnnot = IsSpecState((P_Root.StateDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.TransDecl)
                 {
-                    isMonitorAnnot = IsMonitorTransition((P_Root.TransDecl)annotation.ant);
+                    isSpecAnnot = IsSpecTransition((P_Root.TransDecl)annotation.ant);
                 }
                 else if (annotation.ant is P_Root.DoDecl)
                 {
-                    isMonitorAnnot = IsMonitorDo((P_Root.DoDecl)annotation.ant);
+                    isSpecAnnot = IsSpecDo((P_Root.DoDecl)annotation.ant);
                 }
                 else
                 {
-                    isMonitorAnnot = false;
+                    isSpecAnnot = false;
                 }
-                if (isMonitorAnnot) continue;
+                if (isSpecAnnot) continue;
                 fProgram.Annotations.Add(annotation);
             }
             return fProgram;
@@ -451,8 +488,7 @@
                     return false;
                 }
 
-                HashSet<string> crntEventNames = new HashSet<string>();
-                HashSet<string> crntMachineNames = new HashSet<string>();
+                TopDeclNames topDeclNames = new TopDeclNames();
                 Dictionary<string, ProgramName> SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
                 SeenFileNames[RootFileName] = RootProgramName;
@@ -464,7 +500,7 @@
                     string currFileName = parserWorkQueue.Dequeue();
                     var parser = new Parser.Parser();
                     Debug.WriteLine("Loading " + currFileName);
-                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, crntEventNames, crntMachineNames, parsedProgram, out parserFlags, out includedFileNames);
+                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, parsedProgram, out parserFlags, out includedFileNames);
                     foreach (Flag f in parserFlags)
                     {
                         AddFlag(f);
@@ -840,7 +876,7 @@
             {
                 AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", 1);
                 AddErrors(task.Result, "PurityError(_, _)", 1);
-                AddErrors(task.Result, "MonitorError(_, _)", 1);
+                AddErrors(task.Result, "SpecError(_, _)", 1);
                 AddErrors(task.Result, "LValueError(_, _)", 1);
                 AddErrors(task.Result, "BadLabelError(_)", 0);
                 AddErrors(task.Result, "PayloadError(_)", 0);
@@ -857,6 +893,7 @@
                 AddErrors(task.Result, "OneDeclError(_)", 0);
                 AddErrors(task.Result, "TwoDeclError(_, _)", 1);
                 AddErrors(task.Result, "DeclFunError(_, _)", 1);
+                AddErrors(task.Result, "ExportInterfaceError(_)", 0);
 
                 // this one is slow, so we do it last.
                 AddErrors(task.Result, "TypeOf(_, _, ERROR)", 1);

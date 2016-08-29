@@ -8,11 +8,11 @@ OUT: payloads.p (24, 10): invalid payload type in send (cannot send null value)
 OUT: payloads.p (25, 10): invalid payload type in send
 OUT: payloads.p (27, 10): invalid payload type in send
 OUT: payloads.p (28, 10): invalid payload type in send
-OUT: payloads.p (36, 10): argument 1 of "send" expects a machine value
-OUT: payloads.p (37, 10): argument 1 of "send" expects a machine value
-OUT: payloads.p (38, 10): argument 1 of "send" expects a machine value
-OUT: payloads.p (39, 10): argument 1 of "send" expects a machine value
-OUT: payloads.p (40, 10): argument 1 of "send" expects a machine value
+OUT: payloads.p (36, 10): argument 1 of "send" expects a machine or interface type value
+OUT: payloads.p (37, 10): argument 1 of "send" expects a machine or interface type value
+OUT: payloads.p (38, 10): argument 1 of "send" expects a machine or interface type value
+OUT: payloads.p (39, 10): argument 1 of "send" expects a machine or interface type value
+OUT: payloads.p (40, 10): argument 1 of "send" expects a machine or interface type value
 OUT: payloads.p (42, 10): argument 2 of "send" expects an event value
 OUT: payloads.p (43, 10): argument 2 of "send" expects an event value
 OUT: payloads.p (44, 10): argument 2 of "send" expects an event value

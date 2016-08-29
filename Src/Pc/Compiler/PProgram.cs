@@ -89,6 +89,24 @@
             private set;
         }
 
+        public List<P_Root.InterfaceTypeDecl> InterfaceTypeDecl
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.EventSetDecl> EventSetDecl
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineExportsDecl> MachineExportsDecl
+        {
+            get;
+            private set;
+        }
+
         public IEnumerable<ICSharpTerm> Terms
         {
             get
@@ -157,6 +175,22 @@
                 {
                     yield return obs;
                 }
+
+                foreach (var ev in EventSetDecl)
+                {
+                    yield return ev;
+                }
+
+                foreach (var inter in InterfaceTypeDecl)
+                {
+                    yield return inter;
+                }
+
+                foreach (var ex in MachineExportsDecl)
+                {
+                    yield return ex;
+                }
+
             }
         }
 
@@ -175,6 +209,9 @@
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();
             Observes = new List<P_Root.ObservesDecl>();
+            MachineExportsDecl = new List<P_Root.MachineExportsDecl>();
+            InterfaceTypeDecl = new List<P_Root.InterfaceTypeDecl>();
+            EventSetDecl = new List<P_Root.EventSetDecl>();
         }
     }
 }

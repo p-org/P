@@ -13,7 +13,7 @@ receive11.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created monitor M
+<CreateLog> Created spec M
 <StateLog> Machine M-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
@@ -22,13 +22,13 @@ Trace-Log 0:
 <StateLog> Machine Main-0 entering State X
 <EnqueueLog> Enqueued Event < ____G, null > in Machine ____Main-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____G, null > at Machine ____Main-0
-<MonitorLog> Enqueued Event < ____E, 10 > to M monitor
+<AnnounceLog> Enqueued Event < ____E, 10 > to M spec machine
 <StateLog> Machine M-0 exiting State Init
 <StateLog> Machine M-0 entering State Next
 <EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____Main-0 by ____Main-0
 <CreateLog> Created Machine A-0
 <StateLog> Machine A-0 entering State Init
-<MonitorLog> Enqueued Event < ____F, null > to M monitor
+<AnnounceLog> Enqueued Event < ____F, null > to M spec machine
 <StateLog> Machine M-0 exiting State Next
 
 Error:

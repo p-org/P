@@ -26,7 +26,7 @@ machine Driver {
 				nodemap += (n, true);
 				i = i + 1;
 			}
-			monitor L_INIT, nodemap;
+			announce L_INIT, nodemap;
 			fd = new FailureDetector(nodeseq);
 			send fd, REGISTER_CLIENT, this;
 			i = 0;
@@ -41,7 +41,7 @@ machine Driver {
 
 event M_PING: machine;
 event M_PONG: machine;
-spec Safety monitors M_PING, M_PONG {
+spec Safety observes M_PING, M_PONG {
 	var pending: map[machine, int];
     start state Init {
 	    on M_PING do (payload: machine) { 
@@ -60,7 +60,7 @@ spec Safety monitors M_PING, M_PONG {
 
 event L_INIT: map[machine, bool];
 
-spec Liveness monitors NODE_DOWN {
+spec Liveness observes NODE_DOWN {
 	var nodes: map[machine, bool];
 	start hot state Init {
         on L_INIT do (payload: map[machine, bool]) {        

@@ -9,7 +9,7 @@ machine Main {
        start state WaitForUser
        {
             entry { 
-				monitor Waiting;
+				announce Waiting;
 				send this, UserEvent;
 				}
             on UserEvent goto HandleEvent;
@@ -18,14 +18,14 @@ machine Main {
        state HandleEvent
        {
             entry { 
-				monitor Computing;
+				announce Computing;
 				send this, Done;
 				}			
             on Done goto WaitForUser;
        }
 }
 
-spec WatchDog monitors Computing, Waiting
+spec WatchDog observes Computing, Waiting
 {
 	  // For "cold" state CanGetUserInput, the test passes
       //start cold state CanGetUserInput

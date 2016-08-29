@@ -25,6 +25,9 @@ domain PWithInferredTypes extends PData
 
 	//// Functions for which either bodies or stubs need to be generated
 	RealOwner ::= new (ctxt: FunDecl).
+
+	//// Link map : map from interface or machine name to created machine
+	LinkMap ::= new (createdIorM: String, createdM: String).
 }
 
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
@@ -35,4 +38,5 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 	out.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).
 	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n).
 	out.RealOwner(c) :- in.RealOwner(c).
+	out.LinkMap(m,n) :- in.LinkMap(m,n).
 }

@@ -1,4 +1,4 @@
-// P semantics test: two machines, monitor invocation with non-constant event expression with payload
+// P semantics test: two machines, announce invocation with non-constant event expression with payload
 // This test found a bug (?) in pc.exe
 event E1 assert 1;
 event E2 assert 1: bool;
@@ -9,11 +9,11 @@ machine Main {
     start state Real1_Init {
         entry { 
 			ev2 = E2;
-			monitor ev2, test;  
+			announce ev2, test;  
 		}
 	}
 }
-spec M monitors E2 {
+spec M observes E2 {
 	start state x {
 		entry {
 		}

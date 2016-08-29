@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: entryExit_1.p (84, 4): monitor may not use this keyword or perform nondeterministic choice or create machines or execute send
+OUT: entryExit_1.p (84, 4): spec may not use this keyword or perform nondeterministic choice or create machines or execute send
 OUT: Compilation failed
 EXIT: -1

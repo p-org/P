@@ -53,19 +53,19 @@ machine Main {
 			
 			send A, ev, seqA;
 			
-			monitor seqE, seqInt;
-			monitor seqAny, tempbool;
-			monitor seqAny;
+			announce seqE, seqInt;
+			announce seqAny, tempbool;
+			announce seqAny;
 			
-			monitor ev, seqE, seqInt;
+			announce ev, seqE, seqInt;
 			
-			monitor A;						
+			announce A;						
 		}	
 	}	
 }
 
 
-spec M monitors seqE {
+spec M observes seqE {
 	start state x {
 	
 	

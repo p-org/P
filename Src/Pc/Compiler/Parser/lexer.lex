@@ -65,10 +65,10 @@
 			 keywords.Add("assert", (int)Tokens.ASSERT);
 			 keywords.Add("print", (int)Tokens.PRINT);
 			 keywords.Add("send", (int)Tokens.SEND);
-			 keywords.Add("monitor", (int)Tokens.MONITOR);
+			 keywords.Add("announce", (int)Tokens.ANNOUNCE);
 			 keywords.Add("spec", (int)Tokens.SPEC);
 			 keywords.Add("enum", (int)Tokens.ENUM);
-			 keywords.Add("monitors", (int)Tokens.MONITORS);
+			 keywords.Add("observes", (int)Tokens.OBSERVES);
 			 keywords.Add("raise", (int)Tokens.RAISE);
 			 keywords.Add("halt", (int)Tokens.HALT);
 

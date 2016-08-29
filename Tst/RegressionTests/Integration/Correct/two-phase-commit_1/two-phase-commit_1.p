@@ -18,11 +18,11 @@ event StartTimer:int;
 event CancelTimer;
 event CancelTimerFailure;
 event CancelTimerSuccess;
-event MONITOR_WRITE_SUCCESS:(m: machine, key:int, val:int);
-event MONITOR_WRITE_FAILURE:(m: machine, key:int, val:int);
-event MONITOR_READ_SUCCESS:(m: machine, key:int, val:int);
-event MONITOR_READ_FAILURE:machine;
-event MONITOR_UPDATE:(m:machine, key:int, val:int);
+event announce_WRITE_SUCCESS:(m: machine, key:int, val:int);
+event announce_WRITE_FAILURE:(m: machine, key:int, val:int);
+event announce_READ_SUCCESS:(m: machine, key:int, val:int);
+event announce_READ_FAILURE:machine;
+event announce_UPDATE:(m:machine, key:int, val:int);
 event goEnd;
 event final;
 
@@ -217,7 +217,7 @@ machine Coordinator {
 					i = i + 1;
 				}
 				data[pendingWriteReq.key] = pendingWriteReq.val;
-				//invoke Termination(MONITOR_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
+				//invoke Termination(announce_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
 				send pendingWriteReq.client, WRITE_SUCCESS;
 				send timer, CancelTimer;
 				raise(Unit);

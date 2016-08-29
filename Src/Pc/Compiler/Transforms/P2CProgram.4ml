@@ -1698,8 +1698,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	PayloadEvalOrder(s, i, p, h) :- p: in.Expr, RhsEvalOrder(s, i, p, h).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = New(name, arg, _), PayloadEvalOrder(s, i, arg, h),
-									ContainerInNewCall(c, name, funName, machineName, container),
+									e = New(iname, arg, _), PayloadEvalOrder(s, i, arg, h),
+									LinkMap(iname, mname),
+									ContainerInNewCall(c, mname, funName, machineName, container),
 									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
 									newCall = out.FunApp(Ident(funName), Args(process, Args(Ident(machineName), Args(Ident(strJoin("p_tmp_expr_", toString(h))), container)))),
 									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newCall, Ident("id")), NIL)).
@@ -1932,7 +1933,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Goto(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _, _, _), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Announce(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _, label, _), ContextSourceInfo(c, _, info, _),
 	                        cs = out.Seq(info, 
 							             ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
@@ -1964,8 +1965,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 						   cs = out.Seq(receive, Seq(Seq(info, case), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(Seq(info, resetRcase), Seq(info, resetReturnTo)))))).
 	
 	//// New Machine or Model
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, NIL, x), 
-						   ContainerInNewCall(c, name, funName, machineName, container),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, NIL, x),
+						   LinkMap(iname, mname),
+						   ContainerInNewCall(c, mname, funName, machineName, container),
 						   newCall = out.FunApp(Ident(funName),
 										Args(BinApp(PFLD, Ident("context"), Ident("process")),
 										Args(Ident(machineName),
@@ -1974,8 +1976,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident("P_STMT_0"), Args(newCall, Args(mkNull, Args(Ident("PRT_FALSE"), NIL))))).
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(name, pay, x), 
-						   ContainerInNewCall(c, name, funName, machineName, container),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, pay, x),
+						   LinkMap(iname, mname),
+						   ContainerInNewCall(c, mname, funName, machineName, container),
 						   newCall = out.FunApp(Ident(funName),
 										Args(BinApp(PFLD, Ident("context"), Ident("process")),
 										Args(Ident(machineName),
@@ -2077,8 +2080,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 										 Args(Ident("p_tmp_stmt_2"), 
 										 Args(Ident("PRT_TRUE"), NIL)))))).
 
-	//// Monitor (erased)
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Monitor(_, _, _), cs = NIL.
+	//// Announce (erased)
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Announce(_, _, _), cs = NIL.
 
 	//// NulStmt
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
@@ -2354,11 +2357,11 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Raise(_, e, _), e : in.Expr, RhsEvalOrder(s, 1, e, k).
 	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Raise.
 
-	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Monitor(e, _, _).
-	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Monitor(_, e, _), e : in.Expr.
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Monitor(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
-	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Monitor(_, e, _), e : in.Expr, RhsEvalOrder(s, 1, e, k).
-	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Monitor.
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Announce(e, _, _).
+	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Announce(_, e, _), e : in.Expr.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Announce(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Announce(_, e, _), e : in.Expr, RhsEvalOrder(s, 1, e, k).
+	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Announce.
 
 	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Send(e, _, _, _, _).
 	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Send(_, e, _, _, _).

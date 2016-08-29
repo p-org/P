@@ -1,9 +1,9 @@
 =================================
          Console output          
 =================================
-OUT: Duplicates.p (5, 1): Syntax error - An event with name x already declared
+OUT: Duplicates.p (5, 7): Syntax error - An event with name x already declared
 OUT: Duplicates.p (13, 2): Syntax error - A state with name S1 already declared
-OUT: Duplicates.p (18, 1): Syntax error - A machine with name Main already declared
+OUT: Duplicates.p (18, 9): Syntax error - A machine with name Main already declared
 OUT: Duplicates.p (20, 6): Syntax error - A variable with name x already declared
 OUT: Duplicates.p (34, 2): Syntax error - A state with name S2 already declared
 OUT: Duplicates.p (38, 6): Syntax error - A function with name foo already declared

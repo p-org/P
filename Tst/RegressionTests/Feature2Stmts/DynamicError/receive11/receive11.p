@@ -1,10 +1,10 @@
-//This sample tests the interaction between receive -- new and monitor.
+//This sample tests the interaction between receive -- new and announce.
 event E : int;
 event F;
 event G;
 event Unit;
 
-spec M monitors E, F {
+spec M observes E, F {
 	start state Init {
 		on E goto Next with (payload: int) { assert (payload == 10);}
 	}
@@ -17,7 +17,7 @@ spec M monitors E, F {
 machine A {
 	start state Init {
 		entry {
-			monitor F;
+			announce F;
 		}
 	}
 }

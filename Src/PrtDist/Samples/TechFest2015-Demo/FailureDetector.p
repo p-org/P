@@ -95,7 +95,7 @@ machine FailureDetector {
 		i = 0;
 		while (i < sizeof(nodes)) {
 		    if (nodes[i] in alive && !(nodes[i] in responses)) {
-				monitor M_PING, nodes[i];
+				announce M_PING, nodes[i];
 				_SEND(nodes[i], PING, this);
 			}
 		    i = i + 1;
@@ -122,7 +122,7 @@ machine FailureDetector {
 machine Node {
 	start state WaitPing {
         on PING do (payload: machine) {
-			monitor M_PONG, this;
+			announce M_PONG, this;
 		    _SEND(payload, PONG, this);
 		}
     }

@@ -21,7 +21,7 @@ machine PING
 
     state SendPing {
         entry {
-			monitor M_Ping;
+			announce M_Ping;
 			_SEND(pongMachine.0, Ping, this);
 			_SEND(pongMachine.1, Ping, this);
 			raise (Success);
@@ -48,7 +48,7 @@ machine PONG
 
     state SendPong {
 	    entry (payload:machine) {
-	        monitor M_Pong;
+	        announce M_Pong;
 			_SEND(payload, Pong, this);
 			raise (Success);		 	  
 	    }
@@ -63,7 +63,7 @@ machine PONG
 }
 
 
-spec M monitors M_Ping, M_Pong {
+spec M observes M_Ping, M_Pong {
     start state ExpectPing {
         on M_Ping goto ExpectPong_1;
     }

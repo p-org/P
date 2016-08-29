@@ -13,13 +13,13 @@ NonConstantEventExprMonitor1.trace
 =================================
 Safety Error Trace
 Trace-Log 0:
-<CreateLog> Created monitor M
+<CreateLog> Created spec M
 <StateLog> Machine M-0 entering State x
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Real1_Init
 <CreateLog> Created Machine Real2-0
 <StateLog> Machine Real2-0 entering State Real2_Init
-<MonitorLog> Enqueued Event < ____E2, false > to M monitor
+<AnnounceLog> Enqueued Event < ____E2, false > to M spec machine
 
 Error:
 P Assertion failed:

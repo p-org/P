@@ -13,7 +13,7 @@ machine Main {
         entry { 
 			mac = new Real2();
 			ev2 = E2;
-			monitor ev2, true;  
+			announce ev2, true;  
 			ev1 = E1;			
 			raise ev1, 100;  		
         } 	

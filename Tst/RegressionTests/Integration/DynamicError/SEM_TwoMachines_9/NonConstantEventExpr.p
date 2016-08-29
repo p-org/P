@@ -1,4 +1,4 @@
-// P semantics test: two machines, "send", "raise", monitor invocation for non-constant event expressions
+// P semantics test: two machines, "send", "raise", announce invocation for non-constant event expressions
 //This test found null ptr deref bug in Zing
 event E1 assert 1;
 event E2 assert 1: bool;
@@ -12,7 +12,7 @@ machine Main {
     start state Real1_Init {
         entry { 
 			mac = new Real2();
-			monitor ev2, true;  //zing error (ev2 is nulll)
+			announce ev2, true;  //zing error (ev2 is nulll)
 			ev1 = E1;			
 			raise ev1;  		
         } 	

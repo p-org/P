@@ -1,5 +1,5 @@
 // no typestate, no guard	
-// For such rules, no need to have Spinlock as a monitor -
+// For such rules, no need to have Spinlock as a announce -
 // hence, inheritance with "push" can be used.
 // Checked that all asserts are reached one-by-one,
 // when running Zinger with '-m" option 

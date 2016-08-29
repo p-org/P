@@ -1,8 +1,8 @@
-//this sample tests the new syntax for monitors.
+//this sample tests the new syntax for observes.
 event local;
 event global : int;
 
-spec First monitors local {
+spec First observes local {
 	var x : int;
 	start state Init {
 		on local do { x = x + 1; }
@@ -14,8 +14,8 @@ machine Main {
 	start state Init {
 		entry {
 			send this, local;
-			monitor local;
-			monitor global, 5;
+			announce local;
+			announce global, 5;
 		}
 		ignore local;
 	}

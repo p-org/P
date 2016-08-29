@@ -70,7 +70,7 @@
         public static readonly AST<Id> Con_Goto = Factory.Instance.MkId("Goto");
         public static readonly AST<Id> Con_Raise = Factory.Instance.MkId("Raise");
         public static readonly AST<Id> Con_Send = Factory.Instance.MkId("Send");
-        public static readonly AST<Id> Con_Monitor = Factory.Instance.MkId("Monitor");
+        public static readonly AST<Id> Con_Announce = Factory.Instance.MkId("Announce");
         public static readonly AST<Id> Con_FunStmt = Factory.Instance.MkId("FunStmt");
         public static readonly AST<Id> Con_NulStmt = Factory.Instance.MkId("NulStmt");
         public static readonly AST<Id> Con_Assert = Factory.Instance.MkId("Assert");

@@ -1673,7 +1673,7 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldNew(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
-            var typeName = GetName(ft, 0);
+            
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
@@ -1690,7 +1690,9 @@ namespace Microsoft.Pc
                 }
                 
                 AST<Node> retVal;
-                MachineInfo machineInfo = allMachines[typeName];
+                var createdIorM = GetName(ft, 0);
+                var machineName = linkMap[createdIorM];
+                MachineInfo machineInfo = allMachines[machineName];
 
                 var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
                 ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", typeName)), tmpVar)));
@@ -2860,6 +2862,19 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var eType = (FuncTerm)it.Current;
                     typeContext.AddOriginalType(type, eType);
+                }
+            }
+
+            terms = GetBin(factBins, "LinkMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var createdIorM = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var createdM = ((Cnst)it.Current).GetStringValue();
+                    linkMap.Add(createdIorM, createdM);
                 }
             }
 

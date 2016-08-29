@@ -2,7 +2,7 @@
          Console output          
 =================================
 OUT: monitors.p (9, 3): invalid assignment. right hand side is not a subtype of left hand side
-OUT: monitors.p (9, 19): Monitor cannot be created
+OUT: monitors.p (9, 19): spec machine cannot be created
 OUT: monitors.p (10, 3): invalid assignment. right hand side is not a subtype of left hand side
 OUT: monitors.p (10, 20): Undefined machine type
 OUT: monitors.p (11, 3): invalid assignment. right hand side is not a subtype of left hand side
@@ -11,13 +11,13 @@ OUT: monitors.p (14, 3): Multiple actions over the same event
 OUT: monitors.p (15, 3): Multiple actions over the same event
 OUT: monitors.p (24, 4): invalid payload type in raise (cannot send null value)
 OUT: monitors.p (25, 4): invalid payload type in raise
-OUT: monitors.p (34, 3): defer not allowed in monitor
+OUT: monitors.p (34, 3): defer not allowed in spec machine
 OUT: monitors.p (34, 3): Multiple actions over the same event
 OUT: monitors.p (35, 3): Multiple actions over the same event
-OUT: monitors.p (37, 4): monitor may not use this keyword or perform nondeterministic choice or create machines or execute send
+OUT: monitors.p (37, 4): spec may not use this keyword or perform nondeterministic choice or create machines or execute send
 OUT: monitors.p (38, 4): Undeclared machine
 OUT: monitors.p (39, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: monitors.p (39, 8): Undefined machine type
-OUT: monitors.p (43, 3): null transitions not allowed in monitors
+OUT: monitors.p (43, 3): null transitions not allowed in spec machine
 OUT: Compilation failed
 EXIT: -1

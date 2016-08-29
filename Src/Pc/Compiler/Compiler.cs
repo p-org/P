@@ -893,6 +893,7 @@
                 AddErrors(task.Result, "OneDeclError(_)", 0);
                 AddErrors(task.Result, "TwoDeclError(_, _)", 1);
                 AddErrors(task.Result, "DeclFunError(_, _)", 1);
+                AddErrors(task.Result, "ExportInterfaceError(_)", 0);
 
                 // this one is slow, so we do it last.
                 AddErrors(task.Result, "TypeOf(_, _, ERROR)", 1);

@@ -338,6 +338,7 @@ namespace Microsoft.Pc
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, List<Tuple<string, int>>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
+        public Dictionary<string, string> linkMap;
         public Dictionary<string, FunInfo> allStaticFuns;
         public Dictionary<AST<Node>, string> anonFunToName;
 
@@ -406,6 +407,7 @@ namespace Microsoft.Pc
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
             allStaticFuns = new Dictionary<string, FunInfo>();
+            linkMap = new Dictionary<string, string>();
 
             LinkedList<AST<FuncTerm>> terms;
 

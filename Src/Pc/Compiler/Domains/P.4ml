@@ -78,7 +78,7 @@ domain PData
 	InterfaceTypeDecl ::= new (name: String, evsetName: String, argType: any TypeExpr, id: any Id).
 	MachineExportsDecl ::= new (mach: any MachineDecl, iname: String, id: any Id).
 
-	LinkMap ::= (creatorMach: String, createdIorM: String, createdM: String).
+	LinkMap ::= (createdIorM: String, createdM: String).
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -241,6 +241,7 @@ domain PStaticTyping extends PData
 	conforms no UnavailableVarAccessError(_, _, _).
 	conforms no UnavailableParameterError(_, _).
 	conforms no FunRetError(_).
+	conforms no ExportInterfaceError(_).
     /*************************************************************/
 	
 	/******************************************************************/
@@ -252,9 +253,17 @@ domain PStaticTyping extends PData
 	InterfaceTypeDeclList(name, it) :- InterfaceTypeDecl(name, esname, _, _), it = toList(#InterfaceType, NIL, {ev | EventSetDecl(esname, ev, _) }), it : InterfaceType.
 
 	//// populate the link map
+	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM, no MachineExportsDecl(m, _, _);
+									  MachineExportsDecl(m, createdIorM, _), m.name = createdM.
 
-
-
+	//Checking the constructor type error for each exported interface
+	ExportInterfaceError ::= (ex: MachineExportsDecl).
+	[rule_Classes = '"error, msg: the constructor argument type is not a subtype of the exported interface argument type"']
+	ExportInterfaceError(ex) :- ex is MachineExportsDecl(m, i, _), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeRel(iargt, ct, k), ct != iargt, k != SUB. 						 
+    
+	//// LINKER: This rule needs to be fixed when doing incremental compilation
+	[rule_Classes = '"error, msg: multiple machines export the same interface"']
+	ExportInterfaceError(ex) :- ex is MachineExportsDecl(m, i, _), MachineExportsDecl(m', i, _), m != m'. 
 
 	//// Check that TypeDef's are used properly
 
@@ -475,12 +484,15 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, REAL, _, _, _).
-    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, MODEL, _, _, _).
+    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExportsDecl(m, _, _), kind != SPEC.
+	TypeOf(c, e, t)	  :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _, _), InterfaceTypeDecl(n, _, _, _), TypeExpansion(NameType(n), t);
+
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, SPEC, _, _, _).
-	[ rule_Classes = '"error, msg: Undefined machine type"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _).
+
+	//// LINKER: This rule needs to be updated when doing incremental compilation
+	[ rule_Classes = '"error, msg: Undefined machine type or the created interface is not exported by any machine"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), no MachineExportsDecl(_, n, _).
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -721,11 +733,15 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, kind, _, _, _), kind != SPEC.   
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExportsDecl(m, _, _), kind != SPEC.
+	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, kind, _, _, _), InterfaceTypeDecl(n, _, _, _), kind != SPEC.
+	  
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, SPEC, _, _, _).
-	[ rule_Classes = '"error, msg: Undeclared machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _).
+
+	//// LINKER: This rule needs to be updated when during separate compilation
+	[ rule_Classes = '"error, msg: Undefined machine type or the created interface is not exported by any machine"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), no MachineExportsDecl(_, n, _).
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _),              ///// < raise has NIL payload,
@@ -1528,6 +1544,8 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of case function;"']
 	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), PayloadVar(cases, _, _, _, ft),
 						   TypeRel(et, ft, k), et != ft, k != SUB. 
+
+	// for creation of machines
 	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
 	PayloadError(n) :- SubSE(c, n), n = New(name, NIL, _), ConstructorType(m, _, ft), m.name = name.
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
@@ -1537,8 +1555,22 @@ domain PStaticTyping extends PData
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _), ConstructorType(m, _, ft), m.name = name.
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr,
+					   TypeRel(type, ft, k), type != ft, k != SUB.
+					   
+	//for creation of interfaces
+	[ rule_Classes = '"error, msg: created interface expects an argument;"']
+	PayloadError(n) :- SubSE(c, n), n = New(name, NIL, _), no MachineDecl(name, _, _, _, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
+
+	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']
+	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), no MachineDecl(name, _, _, _, _), InterfaceTypeDecl(name, _, ft,_), TypeOfArg1(c, n, type), type: TypeExpr, 
+					   TypeRel(type, ft, k), type != ft, k != SUB.
+	[ rule_Classes = '"error, msg: created interface expects an argument;"']
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _), no MachineDecl(name, _, _, _, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
+	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), no MachineDecl(name, _, _, _, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
-	[ rule_Classes = '"error, msg: Null type must be subtype of payload type of entry function of start state;"']
-	PayloadError(s) :- ConstructorType(m, s, ft), m.kind = SPEC, type = BaseType(NULL), TypeRel(type, ft, k), type != ft, k != SUB.
+	//Entry function of spec machine must have null constructor type
+	[ rule_Classes = '"error, msg: entry function of start state of a spec machine cannot have an argument;"']
+	PayloadError(s) :- ConstructorType(m, s, ft), m.kind = SPEC, ft != BaseType(NULL).
 }

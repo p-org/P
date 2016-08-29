@@ -18,9 +18,9 @@ OUT: sends.p (45, 4): invalid payload type in send
 OUT: sends.p (49, 4): invalid payload type in send
 OUT: sends.p (50, 4): invalid payload type in send
 OUT: sends.p (51, 4): invalid payload type in send
-OUT: sends.p (54, 4): argument 1 of "send" expects a machine value
-OUT: sends.p (57, 4): invalid payload type in monitor
-OUT: sends.p (58, 4): invalid payload type in monitor (cannot send null value)
-OUT: sends.p (62, 4): argument 1 of "monitor" expects an event value
+OUT: sends.p (54, 4): argument 1 of "send" expects a machine or interface type value
+OUT: sends.p (57, 4): invalid payload type in announce
+OUT: sends.p (58, 4): invalid payload type in announce (cannot send null value)
+OUT: sends.p (62, 4): argument 1 of "announce" expects an event value
 OUT: Compilation failed
 EXIT: -1

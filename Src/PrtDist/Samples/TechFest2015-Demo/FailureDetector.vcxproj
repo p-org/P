@@ -172,7 +172,6 @@
   <ItemGroup>
     <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
     <ClCompile Include="Driver.c" />
-    <ClCompile Include="stubs.c" />
     <ClCompile Include="Timer.c" />
   </ItemGroup>
   <ItemGroup>

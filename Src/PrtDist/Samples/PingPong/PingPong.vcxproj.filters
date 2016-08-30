@@ -19,9 +19,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="stubs.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="PingPong.c">
       <Filter>Source Files</Filter>
     </ClCompile>

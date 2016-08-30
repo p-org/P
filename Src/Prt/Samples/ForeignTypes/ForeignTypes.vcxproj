@@ -180,7 +180,6 @@
     <ClCompile Include="ForeignStringType.c" />
     <ClCompile Include="ForeignTypes.c" />
     <ClCompile Include="Main.c" />
-    <ClCompile Include="stubs.c" />
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="ForeignStringType.p" />

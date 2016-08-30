@@ -159,7 +159,6 @@
   <ItemGroup>
     <ClCompile Include="MainFunction.c" />
     <ClCompile Include="PingPong.c" />
-    <ClCompile Include="stubs.c" />
     <PCompile Include="PingPong.p" />
   </ItemGroup>
   <ItemGroup>

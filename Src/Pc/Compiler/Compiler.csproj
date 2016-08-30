@@ -306,7 +306,7 @@
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\Formula\Src\Extensions\FormulaCodeGeneratorTask\bin\x64\FormulaCodeGeneratorTask.dll" />
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\Formula\Src\Extensions\FormulaCodeGeneratorTask\bin\$(PlatformTarget)\FormulaCodeGeneratorTask.dll" />
   <Target Name="BeforeBuild">
     <ItemGroup>
       <FormulaGenFiles Include="@(EmbeddedResource-&gt;'%(FullPath)')" Condition="'%(EmbeddedResource.Generator)' == 'FormulaCodeGenerator'" />

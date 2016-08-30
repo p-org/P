@@ -39,8 +39,7 @@
   </UsingTask>
 
   <Target Name="KillCompilerService">
-    <KillProcess ProcessName="PCompilerService" Condition="'$(OS)' == 'Windows_NT'"/>
-    <Exec Command="pkill PCompilerService; exit 0" Condition="'$(OS)' != 'Windows_NT'"/>
+    <KillProcess ProcessName="PCompilerService"/>
   </Target>
   
 </Project>

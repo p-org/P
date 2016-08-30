@@ -330,7 +330,7 @@ StateBodyItem
 	;
 
 OnEventList
-	: ON EventList				{ onEventList = new List<P_Root.EventLabel>(crntEventList); crntEventList.Clear(); }
+	: ON EventList				{ onEventList = new List<P_Root.EventName>(crntEventList); crntEventList.Clear(); }
 	;
 
 NonDefaultEventList

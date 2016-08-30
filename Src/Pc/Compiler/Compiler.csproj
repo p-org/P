@@ -221,15 +221,13 @@
       <LastGenOutput>P.4ml.g.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Domains\Zing.4ml" />
-    <EmbeddedResource Include="Transforms\PWithInferredTypes.4ml" />
     <EmbeddedResource Include="Zing\Prt.zing" />
     <EmbeddedResource Include="Zing\PrtTypes.zing" />
     <EmbeddedResource Include="Zing\PrtValues.zing" />
     <EmbeddedResource Include="Zing\Minimal.zing" />
-    <EmbeddedResource Include="Domains\PLink.4ml">
-      <CustomToolNamespace>Microsoft.Pc.Domains</CustomToolNamespace>
-      <Generator>FormulaCodeGenerator</Generator>
-    </EmbeddedResource>
+    <EmbeddedResource Include="Domains\PLink.4ml" />
+    <EmbeddedResource Include="Domains\P2CProgram.4ml" />
+    <EmbeddedResource Include="Domains\PWithInferredTypes.4ml" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
@@ -249,9 +247,6 @@
       <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
       <Name>ZingParser</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="Transforms\P2CProgram.4ml" />
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\..\..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
@@ -293,8 +288,8 @@
 copy /Y $(ProjectDir)\Domains\PLink.4ml $(OutDir)
 copy /Y $(ProjectDir)\Domains\C.4ml $(OutDir)
 copy /Y $(ProjectDir)\Domains\Zing.4ml $(OutDir)
-copy /Y $(ProjectDir)\Transforms\P2CProgram.4ml $(OutDir)
-copy /Y $(ProjectDir)\Transforms\PWithInferredTypes.4ml $(OutDir)</PostBuildEvent>
+copy /Y $(ProjectDir)\Domains\P2CProgram.4ml $(OutDir)
+copy /Y $(ProjectDir)\Domains\PWithInferredTypes.4ml $(OutDir)</PostBuildEvent>
   </PropertyGroup>
   <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompile)" Outputs="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
     <!--Run the command line tool that generates the cs files.-->

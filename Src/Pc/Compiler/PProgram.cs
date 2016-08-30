@@ -101,7 +101,13 @@
             private set;
         }
 
-        public List<P_Root.MachineExportsDecl> MachineExportsDecl
+        public List<P_Root.EventSetContains> EventSetContains
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineExports> MachineExports
         {
             get;
             private set;
@@ -176,7 +182,12 @@
                     yield return obs;
                 }
 
-                foreach (var ev in EventSetDecl)
+                foreach (var evset in EventSetDecl)
+                {
+                    yield return evset;
+                }
+
+                foreach (var ev in EventSetContains)
                 {
                     yield return ev;
                 }
@@ -186,7 +197,7 @@
                     yield return inter;
                 }
 
-                foreach (var ex in MachineExportsDecl)
+                foreach (var ex in MachineExports)
                 {
                     yield return ex;
                 }
@@ -209,9 +220,10 @@
             Dos = new List<P_Root.DoDecl>();
             Annotations = new List<P_Root.Annotation>();
             Observes = new List<P_Root.ObservesDecl>();
-            MachineExportsDecl = new List<P_Root.MachineExportsDecl>();
+            MachineExports = new List<P_Root.MachineExports>();
             InterfaceTypeDecl = new List<P_Root.InterfaceTypeDecl>();
             EventSetDecl = new List<P_Root.EventSetDecl>();
+            EventSetContains = new List<P_Root.EventSetContains>();
         }
     }
 }

@@ -6,6 +6,9 @@ domain PLink
 {
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
+	NonNullEventName  ::= String + { HALT }.
+	EventName         ::= String + { NULL, HALT }.
+	EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
 
 	Qualifier       ::= { NONE, REF, XFER }.
 	NameType        ::= new (name: String).
@@ -15,7 +18,8 @@ domain PLink
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (qual: Qualifier, name: any String, type: any TypeExpr). 
-    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType.
+	InterfaceType	::= new (ev: NonNullEventName, tail: any InterfaceType + {NIL}).
+    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
 
 	StringList		::= new (hd: String, tl: any StringList + { NIL }).
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
@@ -28,7 +32,9 @@ domain PLink
     QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
 
-    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, MONITOR }, id: any Id).
+	EventSet ::= fun (name: String -> any EventNameList).
+	InterfaceTypeDecl ::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
+    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, SPEC }, exports: String + { NIL }, id: any Id).
 }
 
 transform PLink2C(in:: PLink) returns (out:: C)

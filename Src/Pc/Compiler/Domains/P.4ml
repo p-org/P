@@ -26,7 +26,7 @@ domain PData
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (qual: Qualifier, name: any String, type: any TypeExpr). 
-	InterfaceType	::= new (ev: NonNullEventLabel, tail: any InterfaceType + {NIL}).
+	InterfaceType	::= new (ev: NonNullEventName, tail: any InterfaceType + {NIL}).
     TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
         
     /*************************************************************/
@@ -74,9 +74,10 @@ domain PData
 	/**************************************************************/
 	/***********	Module system declarations	*******************/
 	/**************************************************************/
-	EventSetDecl ::= new (name : String, ev: NonNullEventLabel, id: any Id).
-	InterfaceTypeDecl ::= new (name: String, evsetName: String, argType: any TypeExpr, id: any Id).
-	MachineExportsDecl ::= new (mach: any MachineDecl, iname: String, id: any Id).
+	EventSetDecl ::= fun (name : String -> id: any Id).
+	EventSetContains ::= new (evset: EventSetDecl, ev: NonNullEventName).
+	InterfaceTypeDecl ::= fun (name: String -> evsetName: String, argType: any TypeExpr, id: any Id).
+	MachineExports ::= fun (mach: any MachineDecl -> iname: String).
 
 	
 
@@ -84,10 +85,10 @@ domain PData
     /****************  State Machine Declarations    *************/
     /*************************************************************/
 
-    EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
+    EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
     MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
 
-	ObservesDecl   ::= new (spec: MachineDecl, ev: NonNullEventLabel).
+	ObservesDecl   ::= new (spec: MachineDecl, ev: NonNullEventName).
 
     VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr, id: any Id).
     
@@ -103,14 +104,14 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + ObservesDecl + EventSetDecl + InterfaceTypeDecl + MachineExportsDecl.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDecl.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
     QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
     QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
-    EventLabel         ::= String + { NULL, HALT }.
-	NonNullEventLabel  ::= String + { HALT }.
+    EventName         ::= String + { NULL, HALT }.
+	NonNullEventName  ::= String + { HALT }.
 
 
     /*************************************************************/
@@ -151,7 +152,7 @@ domain PStructuralTyping extends PData
 	
 	//Valid TransDecl
 	[rule_Classes = '"error, msg: transition on an undefined event"']
-	OneDeclError(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _), trns.trig != NULL, trns.trig != HALT.
+	OneDeclError(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _, _), trns.trig != NULL, trns.trig != HALT.
 	[rule_Classes = '"error, msg: transition to an undefined state"']
 	OneDeclError(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _, _).
 	
@@ -165,7 +166,7 @@ domain PStructuralTyping extends PData
 	
 	//Valid DoDecl
 	[rule_Classes = '"error, msg: action on an undefined event"']
-	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _), doD.trig != HALT, doD.trig != NULL.
+	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _, _), doD.trig != HALT, doD.trig != NULL.
 	
 	[rule_Classes = '"error, msg: function not defined"']
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, 
@@ -204,19 +205,19 @@ domain PStructuralTyping extends PData
 
 	//event in spec is defined
 	[rule_Classes = '"error, msg: event in observes list is undefined"']
-	OneDeclError(obs) :- obs is ObservesDecl, obs.spec.kind = SPEC, no EventDecl(obs.ev, _, _).	
+	OneDeclError(obs.spec) :- obs is ObservesDecl, obs.spec.kind = SPEC, no EventDecl(obs.ev, _, _, _).	
 
 	//event in eventset not declared
 	[rule_Classes = '"error, msg: unknown event in eventset"']
-	OneDeclError(eventset) :- eventset is EventSetDecl(_, ev, _), ev != HALT, no EventDecl(ev, _, _).
+	OneDeclError(eventset) :- EventSetContains(eventset, ev), ev != HALT, no EventDecl(ev, _, _, _).
 
 	//eventset in interface type
 	[rule_Classes = '"error, msg: unknown eventset in interface declaration"']
-	OneDeclError(inter) :- inter is InterfaceTypeDecl(_, es, _, _), no EventSetDecl(es, _, _).
+	OneDeclError(inter) :- inter is InterfaceTypeDecl(_, es, _, _), no EventSetDecl(es, _).
 
 	//interface declared in the exports
 	[rule_Classes = '"error, msg: interface in exports is not declared"']
-	OneDeclError(ex) :- ex is MachineExportsDecl(_, i, _), no InterfaceTypeDecl(i, _, _, _).
+	OneDeclError(m) :- MachineExports(m, i), no InterfaceTypeDecl(i, _, _, _).
 }
 
 domain PStaticTyping extends PData
@@ -250,21 +251,21 @@ domain PStaticTyping extends PData
 
 	//// List representation of interfacetypedecl
 	InterfaceTypeDeclList ::= (name: String, it: InterfaceType).
-	InterfaceTypeDeclList(name, it) :- InterfaceTypeDecl(name, esname, _, _), it = toList(#InterfaceType, NIL, {ev | EventSetDecl(esname, ev, _) }), it : InterfaceType.
+	InterfaceTypeDeclList(name, it) :- InterfaceTypeDecl(name, esname, _, _), eventset is EventSetDecl(esname, _), 
+	                                   it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev) }), it : InterfaceType.
 
 	//// populate the link map
 	LinkMap ::= (createdIorM: String, createdM: String).
-	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM, no MachineExportsDecl(m, _, _);
-									  MachineExportsDecl(m, createdIorM, _), m.name = createdM.
+	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM, no MachineExports(m, _);
+									  MachineExports(m, createdIorM), m.name = createdM.
 
 	//Checking the constructor type error for each exported interface
-	ExportInterfaceError ::= (ex: MachineExportsDecl).
+	ExportInterfaceError ::= (m: MachineDecl).
 	[rule_Classes = '"error, msg: the constructor argument type is not a subtype of the exported interface argument type"']
-	ExportInterfaceError(ex) :- ex is MachineExportsDecl(m, i, _), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeRel(iargt, ct, k), ct != iargt, k != SUB. 						 
+	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeRel(iargt, ct, k), ct != iargt, k != SUB. 						 
     
-	//// LINKER: This rule needs to be fixed when doing incremental compilation
-	[rule_Classes = '"error, msg: multiple machines export the same interface"']
-	ExportInterfaceError(ex) :- ex is MachineExportsDecl(m, i, _), MachineExportsDecl(m', i, _), m != m'. 
+	[rule_Classes = '"error, msg: another machine exports the same interface"']
+	ExportInterfaceError(m) :- MachineExports(m, i), MachineExports(m', i), m != m'. 
 
 	//// Check that TypeDef's are used properly
 
@@ -297,7 +298,7 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: enum element names of different enum types must be disjoint"']
 	TypeDefError(name) :- EnumTypeElem(def1, list1, _), EnumTypeElem(def2, list2, _), def1 != def2, list1.hd = list2.hd, name = def1.name.
 	[rule_Classes = '"error, msg: enum element names must be disjoint from event names"']
-	TypeDefError(name) :- EventDecl(name, _, _), EnumTypeElem(_, StringList(name, _), _).
+	TypeDefError(name) :- EventDecl(name, _, _, _), EnumTypeElem(_, StringList(name, _), _).
 	[rule_Classes = '"error, msg: at least one enum element should be numbered 0"']
 	TypeDefError(name) :- d is EnumTypeDef(name, _, _, _), no EnumTypeElemIndex(d, _, _, _, 0).
 
@@ -321,7 +322,7 @@ domain PStaticTyping extends PData
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr, _), no ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NameType(name), InterfaceTypeDecl(name, _, _, _), InterfaceTypeDeclList(name, eType).	
-	TypeExpansion(type, eType) :- MachineExportsDecl(m, name, _), type = NameType(name), InterfaceTypeDecl(name, _, _, _), InterfaceTypeDeclList(name, eType).
+	TypeExpansion(type, eType) :- MachineExports(m, name), type = NameType(name), InterfaceTypeDecl(name, _, _, _), InterfaceTypeDeclList(name, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(qual, name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(qual, name, hd'), NIL).
@@ -445,8 +446,8 @@ domain PStaticTyping extends PData
     IsMachineVar(c, n, decl, et) :- SubSE(c, e), e = Name(n, _), VarDeclExp(decl, et), decl = VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _).
 
     IsEventCnst ::= (TypingContext, String, TypeExpr).
-    IsEventCnst(c, n, BaseType(NULL)) :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, NIL), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _). 
-    IsEventCnst(c, n, pt)             :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, t), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), TypeExpansion(t, pt).
+    IsEventCnst(c, n, BaseType(NULL)) :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, NIL, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _). 
+    IsEventCnst(c, n, pt)             :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, t, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), TypeExpansion(t, pt).
 
 	IsEnumCnst ::= (TypingContext, String, TypeExpr).
 	IsEnumCnst(c, n, t) :- SubSE(c, e), e = Name(n, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), EnumTypeElem(d, StringList(n, _), _), t = NameType(d.name).
@@ -457,7 +458,7 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n, _), IsEnumCnst(c, n, t).
 
 	[ rule_Classes = '"error, msg: Undefined symbol"']
-    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n, _), no EventDecl(n, _, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), no EnumTypeElem(_, StringList(n, _), _). 
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n, _), no EventDecl(n, _, _, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), no EnumTypeElem(_, StringList(n, _), _). 
     
     TypeOf(c, e, BaseType(BOOL))  :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _, _), t1 = BaseType(BOOL). 
 	[ rule_Classes = '"error, msg: Operator expected a boolean value"']
@@ -485,15 +486,14 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExportsDecl(m, _, _), kind != SPEC.
+    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExports(m, _), kind != SPEC.
 	TypeOf(c, e, t)	  :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), InterfaceTypeDecl(n, _, _, _), TypeExpansion(NameType(n), t).
 
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, SPEC, _, _, _).
 
-	//// LINKER: This rule needs to be updated when doing incremental compilation
 	[ rule_Classes = '"error, msg: Undefined machine type or the created interface is not exported by any machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), no MachineExportsDecl(_, n, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _).
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -734,15 +734,14 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExportsDecl(m, _, _), kind != SPEC.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExports(m, _), kind != SPEC.
 	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), InterfaceTypeDecl(n, _, _, _).
 	  
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, SPEC, _, _, _).
 
-	//// LINKER: This rule needs to be updated when during separate compilation
 	[ rule_Classes = '"error, msg: Undefined machine type or the created interface is not exported by any machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), no MachineExportsDecl(_, n, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _).
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _),              ///// < raise has NIL payload,
@@ -881,10 +880,10 @@ domain PStaticTyping extends PData
 	ValidCaseEvent ::= (trig: String + { NULL, HALT }).
 	ValidCaseEvent(trig) :- trig = NULL.
 	ValidCaseEvent(trig) :- trig = HALT.
-	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _).
+	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _, _).
 
 	[ rule_Classes = '"error, msg: event not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _), trig: String, no EventDecl(trig, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _), trig: String, no EventDecl(trig, _, _, _).
 	
 	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, _, _), ValidCaseEvent(trig).
 
@@ -1510,8 +1509,8 @@ domain PStaticTyping extends PData
     /*************************************************************/	
 
 	EventPayloadType ::= (e: String + { NULL, HALT }, t: TypeExpr).
-	EventPayloadType(e, et) :- EventDecl(e, _, t), t: TypeExpr, TypeExpansion(t, et).
-	EventPayloadType(e, t)  :- EventDecl(e, _, NIL), t = BaseType(NULL).
+	EventPayloadType(e, et) :- EventDecl(e, _, t, _), t: TypeExpr, TypeExpansion(t, et).
+	EventPayloadType(e, t)  :- EventDecl(e, _, NIL, _), t = BaseType(NULL).
 	EventPayloadType(NULL, t) :- t = BaseType(NULL).
 	EventPayloadType(HALT, t) :- t = BaseType(ANY).
 

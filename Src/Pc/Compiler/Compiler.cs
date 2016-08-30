@@ -104,7 +104,7 @@
     public class Compiler
     {
         private const string PDomain = "P";
-        private const string PLinkDomain = "PLink";
+        private const string PLinkTransform = "PLink2C";
         private const string CDomain = "C";
         private const string ZingDomain = "Zing";
         private const string P2InfTypesTransform = "P2PWithInferredTypes";
@@ -121,7 +121,7 @@
         {
             ReservedModuleToLocation = new Dictionary<string, string>();
             ReservedModuleToLocation.Add(PDomain, "P.4ml");
-            ReservedModuleToLocation.Add(PLinkDomain, "PLink.4ml");
+            ReservedModuleToLocation.Add(PLinkTransform, "PLink.4ml");
             ReservedModuleToLocation.Add(CDomain, "C.4ml");
             ReservedModuleToLocation.Add(ZingDomain, "Zing.4ml");
             ReservedModuleToLocation.Add(P2InfTypesTransform, "PWithInferredTypes.4ml");
@@ -132,8 +132,8 @@
             ManifestPrograms["Pc.Domains.PLink.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.PLink.4ml", "PLink.4ml"), false);
             ManifestPrograms["Pc.Domains.C.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.C.4ml", "C.4ml"), false);
             ManifestPrograms["Pc.Domains.Zing.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.Zing.4ml", "Zing.4ml"), false);
-            ManifestPrograms["Pc.Transforms.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.PWithInferredTypes.4ml", "PWithInferredTypes.4ml"), false);
-            ManifestPrograms["Pc.Transforms.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Transforms.P2CProgram.4ml", "P2CProgram.4ml"), false);
+            ManifestPrograms["Pc.Domains.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.PWithInferredTypes.4ml", "PWithInferredTypes.4ml"), false);
+            ManifestPrograms["Pc.Domains.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P2CProgram.4ml", "P2CProgram.4ml"), false);
         }
 
         SortedSet<Flag> errors;
@@ -810,7 +810,7 @@
             {
                 return true;
             }
-            LoadManifestProgram("Pc.Transforms.PWithInferredTypes.4ml");
+            LoadManifestProgram("Pc.Domains.PWithInferredTypes.4ml");
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
             var RootModuleWithTypes = RootModule + "_WithTypes";
@@ -1275,7 +1275,7 @@
             {
                 LoadManifestProgram("Pc.Domains.C.4ml");
                 LoadManifestProgram("Pc.Domains.PLink.4ml");
-                LoadManifestProgram("Pc.Transforms.P2CProgram.4ml");
+                LoadManifestProgram("Pc.Domains.P2CProgram.4ml");
                 return InternalGenerateC();
             }
         }
@@ -1311,7 +1311,26 @@
             extractTask.Wait();
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
+            var success = Render(cProgram, RootModule + "_CModel", progName);
+ 
+            //// Extract the link model
+            var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_LinkModel.4ml"));
+            var linkExtractTask = apply.Result.GetOutputModel(RootModule + "_LinkModel", linkProgName, AliasPrefix);
+            linkExtractTask.Wait();
+            var linkModel = linkExtractTask.Result.FindAny(
+                                new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
+            Contract.Assert(linkModel != null);
+            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.ChangeExtension(RootProgramName.ToString(), ".4ml"))));
+            linkModel.Print(wr);
+            wr.Close();
+            Link(linkProgName, (AST<Model>)linkModel);
 
+            return success;
+        }
+
+        bool Render(AST<Program> cProgram, string moduleName, ProgramName progName)
+        {
             //// Set the renderer of the C program so terms can be converted to text.
             var cProgramConfig = (AST<Config>)cProgram.FindAny(new NodePred[]
                 {
@@ -1333,8 +1352,6 @@
 
             cProgram = (AST<Program>)Factory.Instance.ToAST(cProgramConfig.Root);
 
-            //// cProgram.Print(System.Console.Out);
-
             //// Install and render the program.
             InstallResult instResult;
             Task<RenderResult> renderTask;
@@ -1345,10 +1362,14 @@
             {
                 return false;
             }
-            didStart = CompilerEnv.Render(cProgram.Node.Name, RootModule + "_CModel", out renderTask);
+            didStart = CompilerEnv.Render(cProgram.Node.Name, moduleName, out renderTask);
             Contract.Assert(didStart);
             renderTask.Wait();
             Contract.Assert(renderTask.Result.Succeeded);
+
+            InstallResult uninstallResult;
+            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
             var fileQuery = new NodePred[]
             {
@@ -1365,23 +1386,40 @@
                 {
                     success = PrintFile(string.Empty, n) && success;
                 });
+            return success;
+        }
+
+        private void Link(ProgramName linkProgramName, AST<Model> linkModel)
+        {
+            InstallResult instResult;
+            AST<Program> modelProgram = MkProgWithSettings(linkProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+            bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, linkModel), out instResult);
+            Contract.Assert(progressed && instResult.Succeeded, GetFirstMessage(from t in instResult.Flags select t.Item2));
+
+            var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(PLinkTransform, null, MkReservedModuleLocation(PLinkTransform)));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(linkModel.Node.Name, null, linkProgramName.ToString()));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CLinkModel"));
+
+            List<Flag> appFlags;
+            Task<ApplyResult> apply;
+            Formula.Common.Rules.ExecuterStatistics stats;
+            CompilerEnv.Apply(transStep, false, false, out appFlags, out apply, out stats);
+            apply.RunSynchronously();
+            foreach (Flag f in appFlags)
+            {
+                AddFlag(f);
+            }
+
+            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_CLinkModel.4ml"));
+            var extractTask = apply.Result.GetOutputModel(RootModule + "_CLinkModel", progName, AliasPrefix);
+            extractTask.Wait();
+            var cProgram = extractTask.Result;
+            Contract.Assert(cProgram != null);
+            var success = Render(cProgram, RootModule + "_CLinkModel", progName);
 
             InstallResult uninstallResult;
-            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { linkProgramName }, out uninstallResult);
             Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
-
-            //// Extract the link model
-            var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_LinkModel.4ml"));
-            var linkExtractTask = apply.Result.GetOutputModel(RootModule + "_LinkModel", linkProgName, AliasPrefix);
-            linkExtractTask.Wait();
-            var linkProgram = linkExtractTask.Result;
-            Contract.Assert(linkProgram != null);
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-            StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.ChangeExtension(RootProgramName.ToString(), ".4ml"))));
-            linkProgram.Print(wr);
-            wr.Close();
-
-            return success;
         }
 
         private bool PrintFile(string filePrefix, Node n)

@@ -126,6 +126,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "Ext\Formula\Src\Cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestRoslyn", "Src\Pc\Compiler\TestRoslyn\TestRoslyn.csproj", "{9587C31A-3D46-4245-87DD-05CD5CF318E6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FormulaCodeGeneratorTask", "Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj", "{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -326,6 +328,14 @@ Global
 		{9587C31A-3D46-4245-87DD-05CD5CF318E6}.Release|x64.Build.0 = Release|Any CPU
 		{9587C31A-3D46-4245-87DD-05CD5CF318E6}.Release|x86.ActiveCfg = Release|Any CPU
 		{9587C31A-3D46-4245-87DD-05CD5CF318E6}.Release|x86.Build.0 = Release|Any CPU
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}.Debug|x64.ActiveCfg = Debug|x64
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}.Debug|x64.Build.0 = Debug|x64
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}.Debug|x86.ActiveCfg = Debug|x86
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}.Debug|x86.Build.0 = Debug|x86
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}.Release|x64.ActiveCfg = Release|x64
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}.Release|x64.Build.0 = Release|x64
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}.Release|x86.ActiveCfg = Release|x86
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -355,5 +365,6 @@ Global
 		{B81F7E46-FF83-4534-ABA2-64A5C723FEDB} = {6B36C087-8924-4B31-BE1F-91837CED42A5}
 		{1B5724EC-FFF1-48D7-A700-AD46F0150AFC} = {D9CBC08F-DEA5-4400-909F-A8E963790D22}
 		{9587C31A-3D46-4245-87DD-05CD5CF318E6} = {89F15959-6264-40C0-90F9-8387B3EBAE54}
+		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1} = {D9CBC08F-DEA5-4400-909F-A8E963790D22}
 	EndGlobalSection
 EndGlobal

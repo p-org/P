@@ -306,7 +306,14 @@
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\Formula\Src\Extensions\FormulaCodeGeneratorTask\bin\x64\FormulaCodeGeneratorTask.dll" />
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\FormulaBinaries\x86\FormulaCodeGeneratorTask.dll" Condition="'$(OS)' == 'Windows_NT'"/>
+  <Target Name="BeforeBuild" Condition="'$(BuildingInsideVisualStudio)' != 'true'">
+    <ItemGroup>
+      <FormulaGenFiles Include="@(EmbeddedResource->'%(FullPath)')" Condition="%(EmbeddedResource.Generator) == 'FormulaCodeGenerator'" />
+    </ItemGroup>
+    <FormulaCodeGeneratorTask GeneratorInputs="@(FormulaGenFiles->'%(FullPath),%(CustomToolNamespace),%(IsThreadSafe),%(IsObjectGraph),%(IsNewOnly)')" DefaultNamespace="$(RootNamespace)" />
+  </Target>
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\Formula\Src\Extensions\FormulaCodeGeneratorTask\bin\$(PlatformTarget)\FormulaCodeGeneratorTask.dll" Condition="'$(OS)' != 'Windows_NT'"/>
   <Target Name="BeforeBuild">
     <ItemGroup>
       <FormulaGenFiles Include="@(EmbeddedResource-&gt;'%(FullPath)')" Condition="'%(EmbeddedResource.Generator)' == 'FormulaCodeGenerator'" />

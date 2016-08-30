@@ -66,3 +66,11 @@ int main(int argc, char *argv[])
 	PrtFreeValue(payload);
 	PrtStopProcess(process);
 }
+
+void P_DTOR_ForwardingMachine_IMPL(PRT_MACHINEINST *context) {}
+
+void P_DTOR_TestMachine_IMPL(PRT_MACHINEINST *context){}
+
+void P_CTOR_ForwardingMachine_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
+
+void P_CTOR_TestMachine_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}

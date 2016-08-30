@@ -4,9 +4,6 @@
     <ClCompile Include="..\..\ClientFiles\MainFunction.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stubs.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="Timer.c">
       <Filter>Source Files</Filter>
     </ClCompile>

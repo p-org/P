@@ -113,3 +113,20 @@ int main(int argc, char *argv[])
 	//PRT_DBG_END_MEM_BALANCED_REGION
 }
 
+void P_DTOR_Container_IMPL(PRT_MACHINEINST *context) {}
+
+void P_DTOR_Driver_IMPL(PRT_MACHINEINST *context) {}
+
+void P_DTOR_FailureDetector_IMPL(PRT_MACHINEINST *context) {}
+
+void P_DTOR_Node_IMPL(PRT_MACHINEINST *context) {}
+
+void P_CTOR_Container_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
+
+void P_CTOR_Driver_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
+
+void P_CTOR_FailureDetector_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
+
+void P_CTOR_Node_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
+
+

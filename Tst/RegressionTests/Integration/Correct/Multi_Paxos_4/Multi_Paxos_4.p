@@ -458,7 +458,7 @@ machine LeaderElection {
 			send parentServer, newLeader, currentLeader;
 		}
 	}
-	machine fun GetNewLeader() : (rank:int, server : machine) {
+	model fun GetNewLeader() : (rank:int, server : machine) {
 			/*iter = 0;
 			while(iter < sizeof(servers))
 			{

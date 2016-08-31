@@ -39,7 +39,9 @@ $currFolder = Get-Location
 Set-Location $folder
 $allPFiles = ls -Recurse *.p
 
-FindAndReplaceModelWithMachine($allPFiles)
+#FindAndReplaceModelWithMachine($allPFiles)
+
+ReplaceString($allPFiles)
 
 #restore folder
 Set-Location $currFolder

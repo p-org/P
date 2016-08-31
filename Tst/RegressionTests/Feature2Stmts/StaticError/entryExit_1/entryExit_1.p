@@ -25,7 +25,7 @@ machine Main {
 				x = x + 1;
 	}
 
-	machine fun bar () {
+	model fun bar () {
 		if($)
 			x = x + 1;
 	}
@@ -51,7 +51,7 @@ machine xx {
 			x = x + 1;
 	}
 	
-	machine fun bar (){
+	model fun bar (){
 		if($)
 		{
 			x = x + 1;
@@ -88,7 +88,7 @@ spec announceMe observes dummy {
 		}
 	}
 	
-	machine fun foo () {
+	model fun foo () {
 		if($) {
 			x = x + 1;
 		}

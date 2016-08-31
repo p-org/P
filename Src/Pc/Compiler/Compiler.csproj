@@ -204,6 +204,7 @@
     <Compile Include="PerfTimer.cs" />
     <Compile Include="PProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PToCSharp.cs" />
     <Compile Include="PToZing.cs" />
     <Compile Include="PTranslation.cs" />
     <Compile Include="ZingData.cs" />

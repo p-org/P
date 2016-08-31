@@ -241,10 +241,6 @@
       <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
       <Name>ZingParser</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\..\Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj">
-      <Project>{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}</Project>
-      <Name>FormulaCodeGeneratorTask</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Transforms\P2CProgram.4ml" />
@@ -272,11 +268,11 @@
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <GPLexCmd>mono $(GPToolsPath)\GPLex45.exe</GPLexCmd>
   </PropertyGroup>
-  <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)">
+  <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)">
     <!--Run the command line tool that generates the cs files.-->
-    <Exec Command="$(GPLexCmd) /babel /unicode /out:@(MPLexCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" />
+    <Exec Command="$(GPLexCmd) /babel /unicode /out:@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" />
     <!--Add the generated files to the list of the files to compile.-->
-    <CreateItem Include="@(MPLexCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')">
+    <CreateItem Include="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')">
       <Output TaskParameter="Include" ItemName="Compile" />
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
@@ -296,28 +292,28 @@
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <GPPGCmd>mono $(GPToolsPath)\GPPG45.exe</GPPGCmd>
   </PropertyGroup>
-  <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompile)" Outputs="@(MPPGCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
+  <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompile)" Outputs="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
     <!--Run the command line tool that generates the cs files.-->
-    <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompile) &gt; @(MPPGCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')" />
+    <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompile) &gt; @(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" />
     <!--Add the generated files to the list of the files to compile.-->
-    <CreateItem Include="@(MPPGCompile-&gt;'$(IntermediateOutputPath)%(FileName).g.cs')">
+    <CreateItem Include="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')">
       <Output TaskParameter="Include" ItemName="Compile" />
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\FormulaBinaries\x86\FormulaCodeGeneratorTask.dll" Condition="'$(OS)' == 'Windows_NT'"/>
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\FormulaBinaries\x86\FormulaCodeGeneratorTask.dll" Condition="'$(OS)' == 'Windows_NT'" />
   <Target Name="BeforeBuild" Condition="'$(BuildingInsideVisualStudio)' != 'true'">
     <ItemGroup>
       <FormulaGenFiles Include="@(EmbeddedResource->'%(FullPath)')" Condition="%(EmbeddedResource.Generator) == 'FormulaCodeGenerator'" />
     </ItemGroup>
     <FormulaCodeGeneratorTask GeneratorInputs="@(FormulaGenFiles->'%(FullPath),%(CustomToolNamespace),%(IsThreadSafe),%(IsObjectGraph),%(IsNewOnly)')" DefaultNamespace="$(RootNamespace)" />
   </Target>
-  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\Formula\Src\Extensions\FormulaCodeGeneratorTask\bin\$(PlatformTarget)\FormulaCodeGeneratorTask.dll" Condition="'$(OS)' != 'Windows_NT'"/>
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\Formula\Src\Extensions\FormulaCodeGeneratorTask\bin\$(PlatformTarget)\FormulaCodeGeneratorTask.dll" Condition="'$(OS)' != 'Windows_NT'" />
   <Target Name="BeforeBuild">
     <ItemGroup>
-      <FormulaGenFiles Include="@(EmbeddedResource-&gt;'%(FullPath)')" Condition="'%(EmbeddedResource.Generator)' == 'FormulaCodeGenerator'" />
+      <FormulaGenFiles Include="@(EmbeddedResource->'%(FullPath)')" Condition="'%(EmbeddedResource.Generator)' == 'FormulaCodeGenerator'" />
     </ItemGroup>
-    <FormulaCodeGeneratorTask GeneratorInputs="@(FormulaGenFiles-&gt;'%(FullPath),%(CustomToolNamespace),%(IsThreadSafe),%(IsObjectGraph),%(IsNewOnly)')" DefaultNamespace="$(RootNamespace)" />
+    <FormulaCodeGeneratorTask GeneratorInputs="@(FormulaGenFiles->'%(FullPath),%(CustomToolNamespace),%(IsThreadSafe),%(IsObjectGraph),%(IsNewOnly)')" DefaultNamespace="$(RootNamespace)" />
   </Target>
 </Project>

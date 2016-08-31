@@ -20,7 +20,7 @@ event announce_WRITE:(idx:int, val:int);
 event announce_READ_SUCCESS:(idx:int, val:int);
 event announce_READ_UNAVAILABLE:int;
 
-model Timer {
+machine Timer {
 	var target: machine;
 	start state Init {
 		entry (payload : machine){
@@ -100,7 +100,7 @@ machine Replica {
 		on REQ_REPLICA do (payload :(seqNum:int, idx:int, val:int)) { HandleReqReplica(payload); }
 	}
 
-	model fun ShouldCommitWrite(): bool 
+	machine fun ShouldCommitWrite(): bool 
 	{
 		return $;
 	}
@@ -221,7 +221,7 @@ machine Coordinator {
 	}
 }
 
-model Client {
+machine Client {
     var coordinator: machine;
     start state Init {
 	    entry (payload : machine) {

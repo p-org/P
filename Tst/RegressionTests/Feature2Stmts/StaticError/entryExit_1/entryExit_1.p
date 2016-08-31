@@ -25,7 +25,7 @@ machine Main {
 				x = x + 1;
 	}
 
-	model fun bar () {
+	machine fun bar () {
 		if($)
 			x = x + 1;
 	}
@@ -44,14 +44,14 @@ machine Main {
 	
 }
 
-model xx {
+machine xx {
 	var x : int;
 	fun foo (){
 		if($)
 			x = x + 1;
 	}
 	
-	model fun bar (){
+	machine fun bar (){
 		if($)
 		{
 			x = x + 1;
@@ -88,7 +88,7 @@ spec announceMe observes dummy {
 		}
 	}
 	
-	model fun foo () {
+	machine fun foo () {
 		if($) {
 			x = x + 1;
 		}

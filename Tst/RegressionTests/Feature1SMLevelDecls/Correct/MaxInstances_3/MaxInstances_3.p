@@ -19,7 +19,7 @@ machine Main {
     }
 }
 
-model Ghost {
+machine Ghost {
     var real_machine: machine;
     start state _Init {
 	entry (payload: machine) { 

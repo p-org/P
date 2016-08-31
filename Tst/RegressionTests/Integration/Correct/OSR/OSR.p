@@ -50,7 +50,7 @@ machine Main {
   
 }
 
-model Switch {
+machine Switch {
 	var Driver: machine;
     start state _Init {
 	entry (payload: machine) { Driver = payload; raise(eUnit); }
@@ -73,7 +73,7 @@ model Switch {
     }
 }
 
-model LED {
+machine LED {
 	var Driver: machine;
 	
     start state _Init {
@@ -123,7 +123,7 @@ model LED {
 	}
 }
 
-model Timer {
+machine Timer {
 	var Driver : machine;
 	
     start state _Init {
@@ -217,7 +217,7 @@ machine OSRDriver {
 		on eOperationSuccess goto sWaitingForSwitchStatusChangeDriver;
 	}
 	
-	model fun CompleteDStateTransition() { }
+	machine fun CompleteDStateTransition() { }
 	
 	state sWaitingForSwitchStatusChangeDriver {
 		ignore eD0Entry;
@@ -237,28 +237,28 @@ machine OSRDriver {
 		on eOperationSuccess goto sDxDriver;
 	}
 	
-	model fun StoreSwitchAndEnableSwitchStatusChange() { }
+	machine fun StoreSwitchAndEnableSwitchStatusChange() { }
 	
-	model fun CheckIfSwitchStatusChanged() : bool {
+	machine fun CheckIfSwitchStatusChanged() : bool {
 		if($)
 			return true;
 		else
 			return false;
 	}
 	
-	model fun UpdateBarGraphStateUsingControlTransfer () {
+	machine fun UpdateBarGraphStateUsingControlTransfer () {
 		send LEDV, eUpdateBarGraphStateUsingControlTransfer;
 	}
 	
-	model fun SetLedStateToStableUsingControlTransfer() {
+	machine fun SetLedStateToStableUsingControlTransfer() {
 		send LEDV, eSetLedStateToStableUsingControlTransfer;
 	}
 	
-	model fun SetLedStateToUnstableUsingControlTransfer() {
+	machine fun SetLedStateToUnstableUsingControlTransfer() {
 		send LEDV, eSetLedStateToUnstableUsingControlTransfer;
 	}
 	
-	model fun StartDebounceTimer() {
+	machine fun StartDebounceTimer() {
 		send TimerV, eStartDebounceTimer;
 	}
 	

@@ -29,7 +29,7 @@ event final;
 /*
 All the external APIs which are called by the protocol
 */
-model Timer {
+machine Timer {
 	var target: machine;
 	start state Init {
 		entry (payload: machine) {
@@ -115,7 +115,7 @@ machine Replica {
 		}
 	}
 
-	model fun ShouldCommitWrite(): bool 
+	machine fun ShouldCommitWrite(): bool 
 	{
 		return $;
 	}
@@ -258,7 +258,7 @@ machine Coordinator {
 	}
 }
 
-model Client {
+machine Client {
     var coordinator: machine;
 	var mydata : int;
 	var counter : int;

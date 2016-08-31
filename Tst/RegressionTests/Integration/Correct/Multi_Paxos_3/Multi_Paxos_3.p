@@ -454,7 +454,7 @@ machine LeaderElection {
 			send parentServer, newLeader, currentLeader;
 		}
 	}
-	model fun GetNewLeader() : (rank:int, server : machine) {
+	machine fun GetNewLeader() : (rank:int, server : machine) {
 			/*iter = 0;
 			while(iter < sizeof(servers))
 			{
@@ -475,7 +475,7 @@ machine LeaderElection {
 }
 
 
-model Timer {
+machine Timer {
 	var target: machine;
 	var timeoutvalue : int;
 	start state Init {
@@ -532,7 +532,7 @@ machine Main {
 	}
 }
 
-model Client {
+machine Client {
 	var servers :seq[machine];
 	start state Init {
 		entry (payload : seq[machine]){

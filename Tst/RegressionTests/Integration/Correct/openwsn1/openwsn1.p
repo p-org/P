@@ -21,7 +21,7 @@ N4 - Rank 1
 
 /*
 channel probability is predefined and can be modeled as a faulty channel
-how do you model the non det back off
+how do you machine the non det back off
 */
 
 //events in the System
@@ -250,7 +250,7 @@ machine OpenWSN_Mote {
 	
 }
 
-model SlotTimerMachine {
+machine SlotTimerMachine {
 	var AllMotes:seq[machine];
 	var i: int;
 	var counter: int;

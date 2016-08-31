@@ -7,7 +7,7 @@ event CANCEL_SUCCESS: machine;
 event CANCEL_FAILURE: machine;
 // local event for control transfer within timer
 event UNIT; 
-model Timer {
+machine Timer {
   var client: machine;
   start state Init {
     entry (payload: machine) {

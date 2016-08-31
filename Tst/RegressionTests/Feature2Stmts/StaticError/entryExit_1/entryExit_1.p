@@ -44,7 +44,7 @@ machine Main {
 	
 }
 
-model xx {
+machine xx {
 	var x : int;
 	fun foo (){
 		if($)

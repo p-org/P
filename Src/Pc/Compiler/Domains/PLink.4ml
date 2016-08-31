@@ -446,6 +446,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 
 	EventSetId ::= (EventSet, EventNameList + { NIL }, EventName, Natural).
 	EventSetId(eventset, list, ev, id) :- eventset is EventSet(_, EventNameList(ev, list)), EventId(ev, id).
+	EventSetId(eventset, list, ev, id) :- EventSetId(eventset, EventNameList(ev, list), _, _), EventId(ev, id).
 
 	EventPacking(rlist, rlist, size, NIL) :- 
 		 eventset is EventSet,

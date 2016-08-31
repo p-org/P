@@ -68,7 +68,6 @@ extern "C"{
         PRT_UINT32			instanceOf;   /**< Index of machine type in PRT_PROGRAMDECL.       */
         PRT_VALUE			*id;          /**< The id of this machine.                         */
         void				*extContext;  /**< Pointer to an external context owned by client. */
-        PRT_BOOLEAN			isModel;	  /**< Indicates whether this is a model machine. */
     } PRT_MACHINEINST;
 
     /** The scheduling policy determines how the state machine is executed.  
@@ -195,19 +194,6 @@ extern "C"{
     * @see PRT_MACHINEINST
     */
     PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachine(
-        _Inout_ PRT_PROCESS *process,
-        _In_ PRT_UINT32 instanceOf,
-        _In_ PRT_VALUE *payload);
-
-    /** Creates a new model machine instance in process. Will be freed when process is stopped.
-    * @param[in,out] process    The process that will own this machine.
-    * @param[in]     instanceOf An index of a machine type in process' program.
-    * @param[in]     payload The payload to pass to the start state of machine instance (cloned, user frees).
-    * @returns       A pointer to a PRT_MACHINEINST.
-    * @see PrtSend
-    * @see PRT_MACHINEINST
-    */
-    PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkModel(
         _Inout_ PRT_PROCESS *process,
         _In_ PRT_UINT32 instanceOf,
         _In_ PRT_VALUE *payload);

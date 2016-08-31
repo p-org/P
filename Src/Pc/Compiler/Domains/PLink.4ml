@@ -64,10 +64,10 @@ transform PLink2C(in:: PLink) returns (out:: C)
 									  ifdefEnd = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("}")), NIL),
 									  body = PpITE(
 									   IFNDEF,
-									   Ident("P_PROGRAM_H"),
+									   Ident("P_LINKER_H"),
 									   Section(
 										   Section(
-											  PpDefine(Ident("P_PROGRAM_H"), NIL),
+											  PpDefine(Ident("P_LINKER_H"), NIL),
 											  Section(
 											     PpInclude("PrtUser.h", FALSE),
 											     PpInclude("PrtExecution.h", FALSE)											  

@@ -40,20 +40,6 @@ typedef void(PRT_CALL_CONV * PRT_SM_EXTCTOR)(_Inout_ struct PRT_MACHINEINST * co
 */
 typedef void(PRT_CALL_CONV * PRT_SM_EXTDTOR)(_Inout_ struct PRT_MACHINEINST * context);
 
-/** A PRT_SM_MODELSEND function sends an event to a model machine.
-*  process is the calling process.
-*  evnt is the id of the event being sent.
-*  payload is the data being sent.
-*  Function frees event.
-*  Function frees payload iff doTransfer is true.
-*/
-typedef void(PRT_CALL_CONV * PRT_SM_MODELSEND)(
-	_Inout_ struct PRT_MACHINEINST * sender,
-	_Inout_ struct PRT_MACHINEINST * context,
-	_Inout_ PRT_VALUE * evnt, 
-	_Inout_ PRT_VALUE * payload,
-	_In_    PRT_BOOLEAN doTransfer);
-
 /** Represents a P event declaration */
 typedef struct PRT_EVENTDECL
 {
@@ -186,33 +172,17 @@ typedef struct PRT_MACHINEDECL
 	void            **annotations;  /**< An array of annotations                            */
 } PRT_MACHINEDECL;
 
-/** Represents a P model machine declaration */
-typedef struct PRT_MODELIMPLDECL
-{
-	PRT_UINT32       declIndex;     /**< The index of model implementation in program       */
-	PRT_STRING       name;          /**< The name of this machine                           */
-
-	PRT_SM_EXTCTOR      ctorFun;    /**< Function that creates instances of this machine    */
-	PRT_SM_MODELSEND    sendFun;    /**< Function that sends to instances of this machine   */
-	PRT_SM_EXTDTOR		dtorFun;    /**< Function that destroys instances of this machine   */
-
-	PRT_UINT32      nAnnotations;   /**< Number of annotations                              */
-	void            **annotations;  /**< An array of annotations                            */
-} PRT_MODELIMPLDECL;
-
 /** Represents a P program declaration */
 typedef struct PRT_PROGRAMDECL
 {
 	PRT_UINT32      nEvents;        /**< The number of events      */
 	PRT_UINT32      nEventSets;     /**< The number of event sets  */
 	PRT_UINT32      nMachines;      /**< The number of machines    */
-	PRT_UINT32      nModelImpls;    /**< The number of model implementations */
 	PRT_UINT16      nForeignTypes;  /**< The number of foreign types */
 
 	PRT_EVENTDECL       *events;          /**< The array of events                 */
 	PRT_EVENTSETDECL    *eventSets;       /**< The array of event set declarations */
 	PRT_MACHINEDECL     *machines;        /**< The array of machines               */
-	PRT_MODELIMPLDECL   *modelImpls;      /**< The array of model implementations  */
 	PRT_FOREIGNTYPEDECL *foreignTypes;    /**< The array of foreign types */
 
 	PRT_UINT32      nAnnotations;   /**< Number of annotations               */

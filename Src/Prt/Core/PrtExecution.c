@@ -128,7 +128,6 @@ _In_  PRT_VALUE					*payload
 	id.processId = process->guid;
 	context->id = PrtMkMachineValue(id);
 	context->extContext = NULL;
-	context->isModel = PRT_FALSE;
 
 	//
 	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
@@ -1069,7 +1068,7 @@ PrtStepProcess(PRT_PROCESS *process
 		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
 		PrtUnlockMutex(privateProcess->processLock);
 
-		if (context != NULL && !context->isModel)
+		if (context != NULL)
 		{
 			// protecting against re-entry using isRunning boolean.
 			PrtLockMutex(context->stateMachineLock);
@@ -1801,7 +1800,6 @@ PrtHaltMachine(
 _Inout_ PRT_MACHINEINST_PRIV			*context
 )
 {
-	PRT_DBG_ASSERT(!context->isModel, "Must be a real machine");
 	PrtLog(PRT_STEP_HALT, NULL, context, NULL, NULL);
 	PrtCleanupMachine(context);
 }
@@ -1922,16 +1920,6 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	}
 
 	PrtUnlockMutex(context->stateMachineLock);
-}
-
-void
-PrtCleanupModel(
-_Inout_ PRT_MACHINEINST			*context
-)
-{
-	if (context->extContext != NULL)
-		context->process->program->modelImpls[context->instanceOf].dtorFun(context);
-	PrtFreeValue(context->id);
 }
 
 void

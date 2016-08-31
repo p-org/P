@@ -280,10 +280,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINEINST *sender, _In_ P
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
 	PRT_STRING machineName = c->process->program->machines[c->instanceOf].name;
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
-	PRT_STRING stateName = "model";
-	if (!c->isModel) {
-		stateName = PrtGetCurrentStateDecl(c)->name;
-	}
+	PRT_STRING stateName = PrtGetCurrentStateDecl(c)->name;
 	PRT_STRING eventName;
 
 	switch (step)

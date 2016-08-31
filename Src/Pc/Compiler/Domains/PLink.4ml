@@ -32,7 +32,7 @@ domain PLink
     QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
 
-	EventSet ::= fun (name: String -> any EventNameList + { NIL }).
+	EventSet ::= fun (name: String -> list: any EventNameList + { NIL }).
 	InterfaceTypeDecl ::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
     MachineDecl    ::= fun (name: String -> id: any Id).
 	MachineExports ::= fun (mach: String -> exports: String).
@@ -146,8 +146,14 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : EventDeclExt, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is in.EventDecl}) }).  
-									   
-	//// (4) Real machine decls - Start at Id 0.
+			
+	//// (4) EventSetDecls
+	HOut(0, out.EnmDef(NIL, "P_EVENTSET", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   EventSet(evsetName, eventNameList), id = toOrdinal(eventNameList, 0, { x | EventSet(_, x) }), enumMember = Element(IntLit(id, DEC, NIL), evsetName); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTSETS_COUNT"), size = count({ x | x is EventSet }) }).  
+						   
+	//// (5) Real machine decls - Start at Id 0.
 	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_MACHINES", list)) :- 
@@ -371,7 +377,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	
 	HOut(0, defs) :- TypeDefExtern(c, defs), defs : out.Section, c = count({ typeDef | typeDef is in.TypeDef}) - 1.
 
-		/*************************************************************/
+	/*************************************************************/
     /******            Generate event decls                 ******/
     /*************************************************************/	
 	EvDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
@@ -437,7 +443,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
     /*************************************************************/	
 	EventPackList ::= (dat: EventPackData, tl: EventPackList + { NIL }).
 	EventPackData ::= (arrIndex: Natural, events: Natural). 
-	EventPacking  ::= (list: EventPackList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
+	EventPacking  ::= (list: EventNameList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
 
 	EventId ::= (trig: String + { NULL, HALT }, id: Natural).
 	EventId(trig, id) :- trig : String, ev is in.EventDecl, ev.name = trig, DeclId(ev, id, _).
@@ -448,7 +454,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	EventSetId(eventset, list, ev, id) :- eventset is EventSet(_, EventNameList(ev, list)), EventId(ev, id).
 	EventSetId(eventset, list, ev, id) :- EventSetId(eventset, EventNameList(ev, list), _, _), EventId(ev, id).
 
-	EventPacking(rlist, rlist, size, NIL) :- 
+	EventPacking(eventset.list, rlist, size, NIL) :- 
 		 eventset is EventSet,
 		 list = toList(
 		           #EventPackList, 
@@ -461,9 +467,9 @@ transform PLink2C(in:: PLink) returns (out:: C)
 		 highestEventIndex = 1 + count({decl | decl is in.EventDecl}), size = 1 + qtnt(highestEventIndex / 32, 1), size: Natural.
 
     //// Build up pack array.
-	EventPacking(l, NIL,  i',  a') :- EventPacking(l, NIL, i, a), i > 0, i' = i - 1, i' : Natural, a' = Args(IntLit(0, HEX, U), a).
-	EventPacking(l, r, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
-	EventPacking(l, r.tl, i',  a') :- EventPacking(l, r,   i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
+	EventPacking(l, NIL, i', a') :- EventPacking(l, NIL, i, a), i > 0, i' = i - 1, i' : Natural, a' = Args(IntLit(0, HEX, U), a).
+	EventPacking(l, r, i', a') :- EventPacking(l, r, i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
+	EventPacking(l, r.tl, i', a') :- EventPacking(l, r, i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
 
 	COut(9, def) :- EventPacking(l, _, 0, a),
 	                id = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),

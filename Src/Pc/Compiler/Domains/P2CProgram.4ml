@@ -35,7 +35,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	NamedEventNameList(list, EventNameList(NULL, list'), name') :- NamedEventNameList(EventNameList(NULL, list), list', name), name' = strJoin("null", name).
 	NamedEventNameList(list, EventNameList(HALT, list'), name') :- NamedEventNameList(EventNameList(HALT, list), list', name), name' = strJoin("halt", name).
 	NamedEventNameList(list, EventNameList(ev, list'), name') :- NamedEventNameList(EventNameList(ev, list), list', name), ev: String, name' = strJoin(ev, name).
-	link.EventSet(evsetName, list) :- NamedEventNameList(NIL, list, evsetName).		
+	link.EventSet(evsetName, list) :- NamedEventNameList(NIL, list, name), evsetName = strJoin("P_GEND_EVENTSET_", name).
 	/* End generating PLink output */
 
     /*************************************************************/

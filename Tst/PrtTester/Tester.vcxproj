@@ -199,10 +199,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="linker.c" />
     <ClCompile Include="program.c" />
     <ClCompile Include="tester.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="linker.h" />
     <ClInclude Include="program.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

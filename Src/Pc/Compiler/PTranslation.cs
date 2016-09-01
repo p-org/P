@@ -188,7 +188,6 @@ namespace Microsoft.Pc
     internal class MachineInfo
     {
         public bool IsReal { get { return type == "REAL"; } }
-        public bool IsModel { get { return type == "MODEL"; } }
         public bool IsSpec { get { return type == "SPEC"; } }
 
         public string type;

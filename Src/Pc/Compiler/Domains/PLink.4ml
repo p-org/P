@@ -161,6 +161,13 @@ transform PLink2C(in:: PLink) returns (out:: C)
 									   DeclId(d, id, cn), d : MachineDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl}) }).  
 
+	HOut(0, def) :- d is in.MachineDecl,
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_MACHINEDECL"), 
+								  strJoin("P_MACHINE_STRUCT_", d.name), 
+								  NIL).
+
 	/*************************************************************/
     /******     Generate C statics for types in program     ******/
     /*************************************************************/
@@ -509,15 +516,15 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	MachineDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 	MachineDeclConcat(c, NIL) :- c = count({m | m is in.MachineDecl}).
 	MachineDeclConcat(m, arr) :- 
-							DeclId(d, m, cmach), d : in.MachineDecl,
+							DeclId(d, m, _), d : in.MachineDecl,
 							MachineDeclConcat(m + 1, after),  
 							arr = out.Args(def, after),
-							def = UnApp(ADDR, Ident(strJoin(cmach, "_struct"))).
+							def = UnApp(ADDR, Ident(strJoin("P_MACHINE_STRUCT_", d.name))).
 
 	COut(13, def) :- MachineDeclConcat(0, arr),
 	                def = out.VarDef(
 							      NIL, 
-								  ArrType(NmdType(NIL, "PRT_MACHINEDECL"), NIL), 
+								  ArrType(PtrType(NmdType(NIL, "PRT_MACHINEDECL")), NIL), 
 								  "P_GEND_MACHINES", 
 								  Init(arr)).
 

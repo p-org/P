@@ -182,7 +182,7 @@ typedef struct PRT_PROGRAMDECL
 
 	PRT_EVENTDECL       *events;          /**< The array of events                 */
 	PRT_EVENTSETDECL    *eventSets;       /**< The array of event set declarations */
-	PRT_MACHINEDECL     *machines;        /**< The array of machines               */
+	PRT_MACHINEDECL     **machines;        /**< The array of machines               */
 	PRT_FOREIGNTYPEDECL *foreignTypes;    /**< The array of foreign types */
 
 	PRT_UINT32      nAnnotations;   /**< Number of annotations               */

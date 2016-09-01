@@ -86,7 +86,7 @@ domain PData
     /*************************************************************/
 
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
-    MachineDecl    ::= fun (name: String -> kind: { REAL, MODEL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
+    MachineDecl    ::= fun (name: String -> kind: { REAL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
 
 	ObservesDecl   ::= new (spec: MachineDecl, ev: NonNullEventName).
 
@@ -351,7 +351,6 @@ domain PStaticTyping extends PData
 	FunDeclKind(f, REAL) :- SubCntxt(f), f: FunDecl, f.owner = NIL, f.kind = REAL.
 	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner = NIL, f.kind = MODEL.
 	FunDeclKind(f, SPEC) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = SPEC.
-	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = MODEL.
 	FunDeclKind(f, REAL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = REAL, f.kind = REAL.
 	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = REAL, f.kind = MODEL.
 
@@ -359,7 +358,6 @@ domain PStaticTyping extends PData
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner = NIL, FunDeclKind(f', REAL), f'.owner = NIL, f'.name = f.ownerFun.
 	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner = NIL, FunDeclKind(f', MODEL), f'.owner = NIL, f'.name = f.ownerFun.
 	AnonFunDeclKind(f, SPEC) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = SPEC.
-	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = MODEL.
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun = NIL.
 	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun != NIL, FunDeclKind(f', REAL), f'.owner = f.owner, f'.name = f.ownerFun.
 	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun != NIL, FunDeclKind(f', MODEL), f'.owner = f.owner, f'.name = f.ownerFun.

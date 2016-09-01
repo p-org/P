@@ -1959,10 +1959,6 @@
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.Span = span;
             machDecl.name = MkString(name, nameSpan);
-            if (Options.test && kind == P_Root.UserCnstKind.MODEL)
-            {
-                kind = P_Root.UserCnstKind.REAL;
-            }
             machDecl.kind = MkUserCnst(kind, span);
             foreach (var e in crntObservesList)
             {

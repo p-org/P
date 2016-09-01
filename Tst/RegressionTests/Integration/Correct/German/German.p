@@ -231,7 +231,7 @@ machine Client {
 
 
 //Environment machine in the form of a CPU which makes request to the clients
-model CPU {
+machine CPU {
 	var cache : (machine, machine, machine);
 
 	start state init {

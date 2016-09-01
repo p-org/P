@@ -43,7 +43,7 @@ machine Main {
  
 }
 
-model Ghost {
+machine Ghost {
     var real_machine: machine;
     start state _Init {
 	entry (payload: machine) { real_machine = payload; raise unit; }

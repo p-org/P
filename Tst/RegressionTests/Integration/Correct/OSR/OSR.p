@@ -50,7 +50,7 @@ machine Main {
   
 }
 
-model Switch {
+machine Switch {
 	var Driver: machine;
     start state _Init {
 	entry (payload: machine) { Driver = payload; raise(eUnit); }
@@ -73,7 +73,7 @@ model Switch {
     }
 }
 
-model LED {
+machine LED {
 	var Driver: machine;
 	
     start state _Init {
@@ -123,7 +123,7 @@ model LED {
 	}
 }
 
-model Timer {
+machine Timer {
 	var Driver : machine;
 	
     start state _Init {

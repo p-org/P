@@ -152,7 +152,7 @@ machine Main {
     }
 }
 
-model Door {
+machine Door {
     var ElevatorV : machine;
 
     start state _Init {
@@ -225,7 +225,7 @@ model Door {
     }
 }
 
-model Timer {
+machine Timer {
     var ElevatorV : machine;
 
     start state _Init {

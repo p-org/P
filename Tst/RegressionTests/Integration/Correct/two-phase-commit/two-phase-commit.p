@@ -20,7 +20,7 @@ event announce_WRITE:(idx:int, val:int);
 event announce_READ_SUCCESS:(idx:int, val:int);
 event announce_READ_UNAVAILABLE:int;
 
-model Timer {
+machine Timer {
 	var target: machine;
 	start state Init {
 		entry (payload : machine){
@@ -221,7 +221,7 @@ machine Coordinator {
 	}
 }
 
-model Client {
+machine Client {
     var coordinator: machine;
     start state Init {
 	    entry (payload : machine) {

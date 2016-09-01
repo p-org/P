@@ -121,6 +121,8 @@ void P_DTOR_FailureDetector_IMPL(PRT_MACHINEINST *context) {}
 
 void P_DTOR_Node_IMPL(PRT_MACHINEINST *context) {}
 
+void P_DTOR_Timer_IMPL(PRT_MACHINEINST *context) {}
+
 void P_CTOR_Container_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
 
 void P_CTOR_Driver_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
@@ -128,5 +130,7 @@ void P_CTOR_Driver_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
 void P_CTOR_FailureDetector_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
 
 void P_CTOR_Node_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
+
+void P_CTOR_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
 
 

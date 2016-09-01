@@ -18,53 +18,71 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
   PrtFreeValue(ev);
 }
 
-void P_DTOR_Timer_IMPL(PRT_MACHINEINST *context)
+PRT_VALUE *P_FUN_CreateTimer_IMPL(PRT_MACHINEINST *context)
 {
-  printf("Entering P_DTOR_Timer_IMPL\n");
-  TimerContext *timerContext;
-  timerContext = (TimerContext *) context->extContext;
-  PrtFreeValue(timerContext->client);
-  CloseHandle(timerContext->timer);
-  PrtFree(timerContext); 
+	PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
+	TimerContext *timerContext = (TimerContext *)PrtMalloc(sizeof(TimerContext));
+	PRT_VALUE *p_tmp_ret = NULL;
+	PRT_FUNSTACK_INFO p_tmp_frame;
+	//remm to pop frame
+	PrtPopFrame(p_tmp_mach_priv, &p_tmp_frame);
+	printf("Creating Timer\n");
+	timerContext->client = PrtCloneValue(p_tmp_frame.locals[0]);
+	timerContext->timer = CreateWaitableTimer(NULL, TRUE, NULL);
+	PrtAssert(timerContext->timer != NULL, "CreateWaitableTimer failed");
+	context->extContext = timerContext;
+	//remm to free the frame
+	PrtFreeLocals(p_tmp_mach_priv, &p_tmp_frame);
+
+	return context->id;
 }
 
-void P_CTOR_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
+PRT_VALUE *P_FUN_StartTimer_IMPL(PRT_MACHINEINST *context)
 {
-  printf("Entering P_CTOR_Timer_IMPL\n");
-  TimerContext *timerContext = (TimerContext *) PrtMalloc(sizeof(TimerContext));
-  timerContext->client = PrtCloneValue(value);
-  timerContext->timer = CreateWaitableTimer(NULL, TRUE, NULL);
-  PrtAssert(timerContext->timer != NULL, "CreateWaitableTimer failed");
-  context->extContext = timerContext;
+	PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
+	TimerContext *timerContext = (TimerContext *)context->extContext;
+	LARGE_INTEGER liDueTime;
+	PRT_VALUE *p_tmp_ret = NULL;
+	BOOL success;
+	PRT_FUNSTACK_INFO p_tmp_frame;
+	//remm to pop frame
+	PrtPopFrame(p_tmp_mach_priv, &p_tmp_frame);
+
+	liDueTime.QuadPart = -10000 * p_tmp_frame.locals[1]->valueUnion.nt;
+	printf("Timer received START\n");
+	success = SetWaitableTimer(timerContext->timer, &liDueTime, 0, Callback, context, FALSE);
+	PrtAssert(success, "SetWaitableTimer failed");
+
+	//remm to free the frame
+	PrtFreeLocals(p_tmp_mach_priv, &p_tmp_frame);
+	return NULL;
 }
 
-void P_SEND_Timer_IMPL(PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE *evnt, PRT_VALUE *payload, PRT_BOOLEAN doTransfer)
+PRT_VALUE *P_FUN_CancelTimer_IMPL(PRT_MACHINEINST *context)
 { 
-  PrtAssert(doTransfer == PRT_FALSE, "Ownership must stay with caller");
-  printf("Entering P_SEND_Timer_IMPL\n");
-  PRT_VALUE *ev;
-  BOOL success;
-  TimerContext *timerContext = (TimerContext *) receiver->extContext;
-  LARGE_INTEGER liDueTime;
-  liDueTime.QuadPart = -10000 * payload->valueUnion.nt;
-  if (!inStart && evnt->valueUnion.ev == P_EVENT_START) {
-    printf("Timer received START\n");
-    success = SetWaitableTimer(timerContext->timer, &liDueTime, 0, Callback, receiver, FALSE);
-	inStart = TRUE;
-    PrtAssert(success, "SetWaitableTimer failed");
-  } else if (evnt->valueUnion.ev == P_EVENT_CANCEL) {
+	PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
+	TimerContext *timerContext = (TimerContext *)context->extContext;
+	LARGE_INTEGER liDueTime;
+	PRT_VALUE *p_tmp_ret = NULL;
+	BOOL success;
+	PRT_VALUE *ev;
+	PRT_FUNSTACK_INFO p_tmp_frame;
+	//remm to pop frame
+	PrtPopFrame(p_tmp_mach_priv, &p_tmp_frame);
+
     printf("Timer received CANCEL\n");
 	inStart = FALSE;
     success = CancelWaitableTimer(timerContext->timer);
     if (success) {
       ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);
-      PrtSend(sender, PrtGetMachine(receiver->process, timerContext->client), ev, receiver->id, PRT_FALSE);
+      PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
     } else {
       ev = PrtMkEventValue(P_EVENT_CANCEL_FAILURE);
-      PrtSend(sender, PrtGetMachine(receiver->process, timerContext->client), ev, receiver->id, PRT_FALSE);
+      PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
     }
     PrtFreeValue(ev);
-  } else {
-    PrtAssert(FALSE, "Illegal event");
-  }
+	//remm to free the frame
+	PrtFreeLocals(p_tmp_mach_priv, &p_tmp_frame);
+
+	return NULL;
 }

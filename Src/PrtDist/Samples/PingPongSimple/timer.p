@@ -1,42 +1,58 @@
-// Timer.p
+//Functions for interacting with the timer machine
+model fun CreateTimer(owner : machine): machine {
+	return new Timer(owner);
+}
 
-// events from client to timer 
-event START: int; 
+model fun StartTimer(timer : machine, time: int) {
+	send timer, START;
+}
+
+model fun CancelTimer(timer : machine) {
+	send timer, CANCEL;
+}
+
+
+// events from client to timer
+event START: int;
 event CANCEL;
-
-// events from timer to client 
-event TIMEOUT: machine; 
-event CANCEL_SUCCESS: machine; 
+// events from timer to client
+event TIMEOUT: machine;
+event CANCEL_SUCCESS: machine;
 event CANCEL_FAILURE: machine;
-
-// local event for control transfer within timer 
+// local event for control transfer within timer
 event UNIT; 
-machine Timer { 
-    var client: machine; 
-    start state Init { 
-        entry  (payload: machine) { 
-            client = payload;
-            raise UNIT; // goto handler of UNIT
-        }
-        on UNIT goto WaitForReq;
+
+machine Timer {
+  var client: machine;
+
+  start state Init {
+    entry (payload: machine) {
+      client = payload;
+	  // goto WaitForReq
+      raise UNIT;
     }
-    state WaitForReq { 
-        on CANCEL goto WaitForReq with { 
-            send client, CANCEL_FAILURE, this;
-        }
-        on START goto WaitForCancel;
+    on UNIT goto WaitForReq;
+  }
+
+  state WaitForReq {
+    on CANCEL goto WaitForReq with { 
+      send client, CANCEL_FAILURE, this;
+    } 
+    on START goto WaitForCancel;
+  }
+
+  state WaitForCancel {
+    ignore START;
+    on null goto WaitForReq with { 
+	  send client, TIMEOUT, this; 
+	}
+    on CANCEL goto WaitForReq with {
+      if ($) {
+        send client, CANCEL_SUCCESS, this;
+      } else {
+        send client, CANCEL_FAILURE, this;
+        send client, TIMEOUT, this;
+      }
     }
-    state WaitForCancel { 
-        ignore START;
-        on CANCEL goto WaitForReq with { 
-            if ($) {
-                send client, CANCEL_SUCCESS, this;
-            } else {
-                send client, CANCEL_FAILURE, this; send client, TIMEOUT, this;
-            }
-        }
-        on null goto WaitForReq with { 
-            send client, TIMEOUT, this;
-        }
-    }
+  }
 }

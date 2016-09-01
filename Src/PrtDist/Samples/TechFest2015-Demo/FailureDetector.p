@@ -20,7 +20,7 @@ machine FailureDetector {
         entry (payload: seq[machine]) {
   	        nodes = payload;
 			InitializeAliveSet();
-			timer = new Timer(this);
+			timer = CreateTimer(this);
 			raise UNIT;   	   
         }
 		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
@@ -31,14 +31,14 @@ machine FailureDetector {
     state SendPing {
         entry (payload: machine) {
 		    SendPingsToAliveSet();
-			send timer, START, 100;
+			StartTimer(timer, 100);
 	    }
         on PONG do (payload: machine){ 
 			var timerCanceled: bool;
 		    if (payload in alive) {
 				 responses[payload] = true; 
 				 if (sizeof(responses) == sizeof(alive)) {
-					timerCanceled = CancelTimer();
+					timerCanceled = CancelLocalTimer();
 					if (timerCanceled) {
 						// goto SendPing
 						raise UNIT;
@@ -65,15 +65,15 @@ machine FailureDetector {
          entry {
 			 attempts = 0;
 			 responses = default(map[machine, bool]);
-			 send timer, START, 1000;
+			 StartTimer(timer, 1000);
 		 }
 		 on TIMEOUT goto SendPing;
 		 ignore PONG;
 	 }
 
-	 fun CancelTimer(): bool {
+	 fun CancelLocalTimer(): bool {
 		var timerCanceled: bool;
-		send timer, CANCEL;
+		CancelTimer(timer);
 		receive {
 			case CANCEL_SUCCESS: (payload: machine) { timerCanceled = true; }
 			case CANCEL_FAILURE: (payload: machine) { timerCanceled = false; }

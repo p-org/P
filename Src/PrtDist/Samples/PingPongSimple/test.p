@@ -33,7 +33,7 @@ machine Server {
 
   start state Init {  
     entry { 
-      timer = new Timer(this);
+      timer = CreateTimer(this);
       raise SUCCESS; 
     }
     on SUCCESS goto WaitPing; 
@@ -46,7 +46,7 @@ machine Server {
   state Sleep { 
     entry (payload: machine) {       
       client =  payload;
-      send timer, START, 1000;
+      StartTimer(timer, 1000);
     } 
     on TIMEOUT goto SendPong;
   }

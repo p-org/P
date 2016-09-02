@@ -1,6 +1,6 @@
 [
-   modules.P     = '"P     at ..\Domains\P.4ml"',
-   modules.PData = '"PData at ..\Domains\P.4ml"'
+   modules.P     = '"P     at P.4ml"',
+   modules.PData = '"PData at P.4ml"'
 ]
 
 domain PWithInferredTypes extends PData

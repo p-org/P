@@ -84,7 +84,7 @@ _In_  PRT_VALUE					*payload
 
 	PrtLockMutex(process->processLock);
 
-	nVars = process->program->machines[instanceOf].nVars;
+	nVars = process->program->machines[instanceOf]->nVars;
 	eQSize = PRT_QUEUE_LEN_DEFAULT;
 
 	//
@@ -128,7 +128,6 @@ _In_  PRT_VALUE					*payload
 	id.processId = process->guid;
 	context->id = PrtMkMachineValue(id);
 	context->extContext = NULL;
-	context->isModel = PRT_FALSE;
 
 	//
 	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
@@ -143,7 +142,7 @@ _In_  PRT_VALUE					*payload
 
 	// Initialize Machine Internal Variables
 	//
-	context->currentState = process->program->machines[context->instanceOf].initStateIndex;
+	context->currentState = process->program->machines[context->instanceOf]->initStateIndex;
 	context->isRunning = PRT_FALSE;
 	context->isHalted = PRT_FALSE; 
     context->nextOperation = EntryOperation;
@@ -164,7 +163,7 @@ _In_  PRT_VALUE					*payload
 		context->varValues = PrtCalloc(nVars, sizeof(PRT_VALUE*));
 		for (i = 0; i < nVars; i++)
 		{
-			context->varValues[i] = PrtMkDefaultValue(process->program->machines[instanceOf].vars[i].type);
+			context->varValues[i] = PrtMkDefaultValue(process->program->machines[instanceOf]->vars[i].type);
 		}
 	}
 
@@ -216,7 +215,7 @@ _In_  PRT_VALUE					*payload
 	//
 	// Allocate external context Structure
 	//
-	process->program->machines[context->instanceOf].extCtorFun((PRT_MACHINEINST *)context, payload);
+	process->program->machines[context->instanceOf]->extCtorFun((PRT_MACHINEINST *)context, payload);
 
 	PrtUnlockMutex(process->processLock);
 
@@ -273,7 +272,7 @@ _In_ PRT_BOOLEAN				doTransfer
 
 	eventIndex = PrtPrimGetEvent(event);
 	eventMaxInstances = context->process->program->events[eventIndex].eventMaxInstances;
-	maxQueueSize = context->process->program->machines[context->instanceOf].maxQueueSize;
+	maxQueueSize = context->process->program->machines[context->instanceOf]->maxQueueSize;
 
 	queue = &context->eventQueue;
 
@@ -413,7 +412,7 @@ _In_ PRT_UINT16					receiveIndex
 )
 {
 	PRT_UINT32 funIndex = funStackInfo->funIndex;
-	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf].funs[funIndex];
+	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf]->funs[funIndex];
 	for (PRT_UINT32 i = 0; i < funDecl->nReceives; i++)
 	{
 		if (funDecl->receives[i].receiveIndex == receiveIndex)
@@ -483,7 +482,7 @@ PrtPushNewEventHandlerFrame(
 	context->funStack.length = length + 1;
 	context->funStack.funs[length].funIndex = funIndex;
 	PRT_BOOLEAN freeLocals = PRT_FALSE;
-	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
+	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf]->funs[funIndex]);
 	PRT_VALUE ***refArgs = NULL;
 	if (locals == NULL && funDecl->maxNumLocals != 0)
 	{
@@ -554,7 +553,7 @@ PrtPushNewFrame(
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
 	context->funStack.funs[length].funIndex = funIndex;
-	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf].funs[funIndex]);
+	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf]->funs[funIndex]);
 	PRT_VALUE **locals = NULL;
 	PRT_VALUE ***refArgs = NULL;
 	PRT_BOOLEAN freeLocals = PRT_FALSE;
@@ -787,7 +786,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement;
 	PrtLog(PRT_STEP_EXIT, NULL, context, NULL, NULL);
-	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].exitFunIndex;
+	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFunIndex;
 	PrtPushNewEventHandlerFrame(context, exitFunIndex, PRT_FUN_PARAM_REF, NULL);
 	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
 }
@@ -804,7 +803,7 @@ PrtRunTransitionFunction(
 	PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
 	PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
 	PrtPushNewEventHandlerFrame(context, transFunIndex, PRT_FUN_PARAM_REF, NULL);
-	context->process->program->machines[context->instanceOf].funs[transFunIndex].implementation((PRT_MACHINEINST *)context);
+	context->process->program->machines[context->instanceOf]->funs[transFunIndex].implementation((PRT_MACHINEINST *)context);
 }
 
 static PRT_BOOLEAN
@@ -839,11 +838,11 @@ DoEntry:
 	if (context->funStack.length == 0)
 	{
 		PrtLog(PRT_STEP_ENTRY, NULL, context, NULL, NULL);
-		PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].entryFunIndex;
+		PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].entryFunIndex;
 		PrtPushNewEventHandlerFrame(context, entryFunIndex, PRT_FUN_PARAM_XFER, NULL);
 	}
 	PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
-	context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
+	context->process->program->machines[context->instanceOf]->funs[funIndex].implementation((PRT_MACHINEINST *)context);
 	goto CheckLastOperation;
 
 DoAction:
@@ -865,7 +864,7 @@ DoAction:
 			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_XFER, NULL);
 		}
 		funIndex = PrtBottomOfFunStack(context)->funIndex;
-		context->process->program->machines[context->instanceOf].funs[funIndex].implementation((PRT_MACHINEINST *)context);
+		context->process->program->machines[context->instanceOf]->funs[funIndex].implementation((PRT_MACHINEINST *)context);
 	}
 	goto CheckLastOperation;
 
@@ -1069,7 +1068,7 @@ PrtStepProcess(PRT_PROCESS *process
 		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
 		PrtUnlockMutex(privateProcess->processLock);
 
-		if (context != NULL && !context->isModel)
+		if (context != NULL)
 		{
 			// protecting against re-entry using isRunning boolean.
 			PrtLockMutex(context->stateMachineLock);
@@ -1283,7 +1282,7 @@ PrtGetCurrentStateDecl(
 _In_ PRT_MACHINEINST_PRIV			*context
 )
 {
-	return &(context->process->program->machines[context->instanceOf].states[context->currentState]);
+	return &(context->process->program->machines[context->instanceOf]->states[context->currentState]);
 }
 
 FORCEINLINE
@@ -1316,7 +1315,7 @@ _Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32					funIndex
 )
 {
-	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
+	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf]->funs[funIndex].implementation;
 	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
 	if (context->receive != NULL)
 	{
@@ -1346,7 +1345,7 @@ PrtFreeLocals(
 		return;
 	}
 
-	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf].funs[frame->funIndex];
+	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf]->funs[frame->funIndex];
 
 	if (frame->refArgs != NULL)
 	{
@@ -1378,7 +1377,7 @@ _In_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_UINT32 funIndex
 )
 {
-	return context->process->program->machines[context->instanceOf].funs[funIndex].implementation;
+	return context->process->program->machines[context->instanceOf]->funs[funIndex].implementation;
 }
 
 FORCEINLINE
@@ -1387,8 +1386,8 @@ PrtGetEntryFunction(
 _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
-	PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].entryFunIndex;
-	return context->process->program->machines[context->instanceOf].funs[entryFunIndex].implementation;
+	PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].entryFunIndex;
+	return context->process->program->machines[context->instanceOf]->funs[entryFunIndex].implementation;
 }
 
 FORCEINLINE
@@ -1397,8 +1396,8 @@ PrtGetExitFunction(
 _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
-	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf].states[context->currentState].exitFunIndex;
-	return context->process->program->machines[context->instanceOf].funs[exitFunIndex].implementation;
+	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFunIndex;
+	return context->process->program->machines[context->instanceOf]->funs[exitFunIndex].implementation;
 }
 
 FORCEINLINE
@@ -1439,7 +1438,7 @@ _In_ PRT_UINT32					currEvent
 	// Scan the parent states
 	//
 	currStack = context->callStack;
-	stateTable = context->process->program->machines[context->instanceOf].states;
+	stateTable = context->process->program->machines[context->instanceOf]->states;
 	for (i = currStack.length - 1; i >= 0; i--)
 	{
 		topOfStackState = currStack.stateStack[i].stateIndex;
@@ -1473,7 +1472,7 @@ _In_ PRT_UINT32				stateIndex
 )
 {
 	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
-	PRT_UINT32 evSetIndex = context->process->program->machines[context->instanceOf].states[stateIndex].defersSetIndex;
+	PRT_UINT32 evSetIndex = context->process->program->machines[context->instanceOf]->states[stateIndex].defersSetIndex;
 	return evSets[evSetIndex].packedEvents;
 }
 
@@ -1485,7 +1484,7 @@ _In_ PRT_UINT32				stateIndex
 )
 {
 	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
-	PRT_UINT32 evSetIndex = context->process->program->machines[context->instanceOf].states[stateIndex].doSetIndex;
+	PRT_UINT32 evSetIndex = context->process->program->machines[context->instanceOf]->states[stateIndex].doSetIndex;
 	return evSets[evSetIndex].packedEvents;
 }
 
@@ -1497,7 +1496,7 @@ _In_ PRT_UINT32				stateIndex
 )
 {
 	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
-	PRT_UINT32 evSetIndex = context->process->program->machines[context->instanceOf].states[stateIndex].transSetIndex;
+	PRT_UINT32 evSetIndex = context->process->program->machines[context->instanceOf]->states[stateIndex].transSetIndex;
 	return evSets[evSetIndex].packedEvents;
 }
 
@@ -1509,8 +1508,8 @@ _In_ PRT_UINT32				stateIndex,
 _Out_ PRT_UINT32			*nTransitions
 )
 {
-	*nTransitions = context->process->program->machines[context->instanceOf].states[stateIndex].nTransitions;
-	return context->process->program->machines[context->instanceOf].states[stateIndex].transitions;
+	*nTransitions = context->process->program->machines[context->instanceOf]->states[stateIndex].nTransitions;
+	return context->process->program->machines[context->instanceOf]->states[stateIndex].transitions;
 }
 
 PRT_BOOLEAN
@@ -1752,7 +1751,7 @@ PrtResizeEventQueue(
 _Inout_ PRT_MACHINEINST_PRIV *context
 )
 {
-	PRT_UINT32 maxEventQueueSize = context->process->program->machines[context->instanceOf].maxQueueSize;
+	PRT_UINT32 maxEventQueueSize = context->process->program->machines[context->instanceOf]->maxQueueSize;
 	PRT_UINT32 currEventQueueSize = context->eventQueue.eventsSize;
 	PRT_UINT32 newQueueSize = (maxEventQueueSize != 0xffffffff && currEventQueueSize * 2 > maxEventQueueSize) ? maxEventQueueSize : currEventQueueSize * 2;
 	PRT_EVENT* oldQueue = context->eventQueue.events;
@@ -1801,7 +1800,6 @@ PrtHaltMachine(
 _Inout_ PRT_MACHINEINST_PRIV			*context
 )
 {
-	PRT_DBG_ASSERT(!context->isModel, "Must be a real machine");
 	PrtLog(PRT_STEP_HALT, NULL, context, NULL, NULL);
 	PrtCleanupMachine(context);
 }
@@ -1902,7 +1900,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	if (context->varValues != NULL)
 	{
 		PRT_UINT32 i;
-		PRT_MACHINEDECL *mdecl = &(context->process->program->machines[context->instanceOf]);
+		PRT_MACHINEDECL *mdecl = context->process->program->machines[context->instanceOf];
 
 		for (i = 0; i < mdecl->nVars; i++) {
 			PrtFreeValue(context->varValues[i]);
@@ -1911,7 +1909,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	}
 
 	if (context->extContext != NULL)
-		context->process->program->machines[context->instanceOf].extDtorFun((PRT_MACHINEINST *)context);
+		context->process->program->machines[context->instanceOf]->extDtorFun((PRT_MACHINEINST *)context);
 	PrtFreeValue(context->id);
 
 	PrtFreeTriggerPayload(context);
@@ -1922,16 +1920,6 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	}
 
 	PrtUnlockMutex(context->stateMachineLock);
-}
-
-void
-PrtCleanupModel(
-_Inout_ PRT_MACHINEINST			*context
-)
-{
-	if (context->extContext != NULL)
-		context->process->program->modelImpls[context->instanceOf].dtorFun(context);
-	PrtFreeValue(context->id);
 }
 
 void

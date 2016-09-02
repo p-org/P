@@ -47,7 +47,7 @@ PrtDistSMExceptionHandler(
 	__in PRT_MACHINEINST* vcontext
 )
 {
-	PRT_STRING MachineName = vcontext->process->program->machines[vcontext->instanceOf].name;
+	PRT_STRING MachineName = vcontext->process->program->machines[vcontext->instanceOf]->name;
 	PRT_UINT32 MachineId = vcontext->id->valueUnion.mid->machineId;
 
 

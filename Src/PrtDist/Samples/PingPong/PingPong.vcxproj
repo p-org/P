@@ -157,11 +157,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="linker.c" />
     <ClCompile Include="MainFunction.c" />
     <ClCompile Include="PingPong.c" />
     <PCompile Include="PingPong.p" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="linker.h" />
     <ClInclude Include="PingPong.h" />
   </ItemGroup>
   <ItemGroup>

@@ -5,7 +5,7 @@
 * of the value. The type expression cannot be `any`, but `any` may appear as an inner type.
 * Here are some examples:
 *
-* `true : bool`, `1 : int`, `null : event`, `null : model`, `(1, 2) : (any, int)`.
+* `true : bool`, `1 : int`, `null : event`, `null : id`, `(1, 2) : (any, int)`.
 *
 * The type a value does not change under mutation, and the inner-types of an expression
 * constrain the legal mutations of a value. For instance, it is illegal to update `(1, 2) : (any, int)` to become
@@ -41,7 +41,7 @@ extern "C"{
 		PRT_VALUE_KIND_BOOL = 1,    /**< The kind of bool values                 */
 		PRT_VALUE_KIND_INT = 2,    /**< The kind of int values                  */
 		PRT_VALUE_KIND_EVENT = 3,    /**< The kind of event id values             */
-		PRT_VALUE_KIND_MID = 4,    /**< The kind of (model) machine id values   */
+		PRT_VALUE_KIND_MID = 4,    /**< The kind of machine id values   */
 		PRT_VALUE_KIND_FORGN = 5,    /**< The kind of all foreign values          */
 		PRT_VALUE_KIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
 		PRT_VALUE_KIND_SEQ = 7,    /**< The kind of all sequence values         */
@@ -57,7 +57,7 @@ extern "C"{
 			PRT_BOOLEAN bl;                 /**< A boolean value            */
 			PRT_INT32   nt;                 /**< An integer value           */
 			PRT_UINT32  ev;                 /**< An event id value          */
-			struct PRT_MACHINEID *mid;      /**< A (model) machine id value */
+			struct PRT_MACHINEID *mid;      /**< A machine id value */
 			struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
 			struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
 			struct PRT_SEQVALUE *seq;		/**< A sequence value	        */
@@ -65,7 +65,7 @@ extern "C"{
 		} valueUnion;
 	} PRT_VALUE;
 
-	/** The id of a (model) machine is a combination of the id of the owner process and an id unique to that process.
+	/** The id of a machine is a combination of the id of the owner process and an id unique to that process.
 	*/
 	typedef struct PRT_MACHINEID
 	{
@@ -116,7 +116,7 @@ extern "C"{
 	} PRT_FORGNVALUE;
 #endif
 
-	/** Makes a default value of an abitrary type. The defaults (def) are as follows:
+	/** Makes a default value of an arbitrary type. The defaults (def) are as follows:
 	* 1.  def(null)                = `null : null`.
 	* 2.  def(any)                 = `null : null`.
 	* 3.  def(bool)                = `false : bool`.
@@ -125,10 +125,9 @@ extern "C"{
 	* 6.  def(machine)             = `null : machine`.
 	* 7.  def(int)                 = `0 : int`.
 	* 8.  def(map[S, T])           = `[] : map[S, T]`.
-	* 9.  def(model)               = `null : model`.
-	* 10. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
-	* 11. def([S])                 = `[] : [S]`.
-	* 12. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
+	* 9. def((l1: S1,.., ln: Sn)) = `(l1 = def(S1),..., ln = def(Sn)) : (l1: S1,..., ln: Sn)`.
+	* 10. def([S])                 = `[] : [S]`.
+	* 11. def((S1,..,Sn))          = `(def(S1),..., def(S2)) : (S1,..., Sn)`.
 	* @param[in] type A type expression (will be cloned).
 	* @returns The default value of the type. Caller is responsible for freeing.
 	* @see PrtFreeValue
@@ -157,9 +156,9 @@ extern "C"{
 	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value);
 
 	/** Makes null value.
-	* The types null, event, machine, and model all share the null value.
+	* The types null, event, and machine all share the null value.
 	* The null value projected onto event is the id PRT_SPECIAL_EVENT_NULL.
-	* The null value projected onto model / machine is the processId 0-0-0-0 with machineId PRT_SPECIAL_EVENT_NULL.
+	* The null value projected onto machine is the processId 0-0-0-0 with machineId PRT_SPECIAL_EVENT_NULL.
 	* @returns A proper null value. Caller is responsible for freeing.
 	* @see PrtFreeValue
 	*/
@@ -510,7 +509,7 @@ extern "C"{
 	*/
 	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE* value, _In_ PRT_TYPE *type);
 
-	/** Determines if value is a null event, id, or model.
+	/** Determines if value is a null event or machine id.
 	* @param[in] value The value to check.
 	* @returns `true` if the null value, `false` otherwise.
 	*/

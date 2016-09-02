@@ -132,7 +132,6 @@ extern "C"{
 		PRT_UINT32			instanceOf;
 		PRT_VALUE			*id;
 		void				*extContext;
-		PRT_BOOLEAN			isModel;
 		PRT_VALUE           *recvMap;
 		PRT_VALUE			**varValues;
 		PRT_RECURSIVE_MUTEX stateMachineLock;
@@ -416,11 +415,6 @@ extern "C"{
 	void
 		PrtCleanupMachine(
 		_Inout_ PRT_MACHINEINST_PRIV			*context
-		);
-
-	void
-		PrtCleanupModel(
-		_Inout_ PRT_MACHINEINST			*context
 		);
 
 	PRT_API void

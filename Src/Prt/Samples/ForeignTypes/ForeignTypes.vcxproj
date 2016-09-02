@@ -179,6 +179,7 @@
   <ItemGroup>
     <ClCompile Include="ForeignStringType.c" />
     <ClCompile Include="ForeignTypes.c" />
+    <ClCompile Include="linker.c" />
     <ClCompile Include="Main.c" />
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +187,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ForeignStringType.h" />
+    <ClInclude Include="linker.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

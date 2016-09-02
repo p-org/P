@@ -13,6 +13,9 @@
     <ClCompile Include="timer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="linker.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -29,6 +32,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ServerClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="linker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -372,7 +372,12 @@ namespace Microsoft.Pc
         //#endregion
 
         #region CSharpCompiler
-        public bool GenerateCSharp(string csharpFileName, ref AST<Model> outModel)
+
+        //for storing members of the Application class:
+        List <SyntaxNode> members = new List<SyntaxNode>();
+        //final C# program:
+        SyntaxNode result = null;
+        public bool GenerateCSharp(string csharpFileName)
         {
             if (!allMachines.ContainsKey("Main"))
             {
@@ -391,39 +396,75 @@ namespace Microsoft.Pc
 
             List<AST<Node>> elements = new List<AST<Node>>();
             MkApplConstructors(generator);
-            //MkEvents(elements, workspace, generator);
+            MkEvents(generator);
             //MkStaticFunctions(elements, workspace, generator);
             //MkOtherAppFields(elements, workspace, generator);
             //MkMachineClasses(elements, workspace, generator);
             //MkMonitorClasses(elements, workspace, generator);
-            //MkCSharpOutput(elements, workspace, generator);
-            //EmitCSharpOutput();
-            //outModel = Add(outModel, MkCSharpFile(csharpFileName, elements));
+            MkCSharpOutput(generator);
+            EmitCSharpOutput();
             return true;
         }
         private void MkApplConstructors(SyntaxGenerator generator)
         {
             // Generate empty list of parameters for the "public Application() :base()" constructor
             var constructor_1 = generator.ConstructorDeclaration("Application", new SyntaxNode[0], Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
+            members.Add(constructor_1);
             var constructorParameters = new SyntaxNode[] {
                 generator.ParameterDeclaration("initialize",
                     generator.TypeExpression(SpecialType.System_Boolean)) };
             var constructorBody = generator.ExpressionStatement(generator.InvocationExpression(generator.IdentifierName("CreateMainMachine")));
             var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0], 
                                                                 statements: new SyntaxNode[] { constructorBody });
+            members.Add(constructor_2);
             //TODO: would this result in "new Application();" or "new Application;"?
             var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Application")));
             var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
               //Would that work for the method return type "StateImpl"?
-              null, generator.TypeExpression(typeSymbol: (ITypeSymbol) generator.IdentifierName("StateImpl")),
+              null, generator.IdentifierName("StateImpl"),
               Accessibility.Public,
               DeclarationModifiers.Override,
               new SyntaxNode[] { makeSkeletonMethodBody });
+            members.Add(makeSkeletonMethodDecl);
         }
-        private void MkEvents(List<AST<Node>> elements)
+        private void MkEvents(SyntaxGenerator generator)
         {
 
         }
+        private void MkCSharpOutput(SyntaxGenerator generator)
+        {
+            var applicationcClassDeclaration = generator.ClassDeclaration(
+              "Application", typeParameters: null,
+              accessibility: Accessibility.Public,
+              baseType: generator.IdentifierName("StateImpl"),
+              members: members);
+
+            // Declare a namespace
+            var programNameSpaceDeclaration = generator.NamespaceDeclaration("MyPProgram", applicationcClassDeclaration);
+
+            List<SyntaxNode> usingDirectivesList = new List<SyntaxNode>();
+            usingDirectivesList.Add(generator.NamespaceImportDeclaration("P.Runtime"));
+            usingDirectivesList.Add(generator.NamespaceImportDeclaration("System.Collections.Generic"));
+
+            // Get a CompilationUnit (code file) for the generated code
+            //var newNode = generator.CompilationUnit(programNameSpaceDeclaration).
+            // NormalizeWhitespace();
+
+            // Get a CompilationUnit (code file) for the generated code
+            result = generator.CompilationUnit(usingDirectivesList[0], usingDirectivesList[1], programNameSpaceDeclaration).
+              NormalizeWhitespace();
+        }
+
+        private void EmitCSharpOutput()
+        {
+            StringBuilder sb = new StringBuilder();
+            using (StringWriter writer = new StringWriter(sb))
+            {
+                result.WriteTo(writer);
+                Console.WriteLine(writer);
+            }
+        }
+
         /*
         /// ///////////////////////////////////////////////////////////////////////////PToZing.cs
         private void MkZingEnums(List<AST<Node>> elements)

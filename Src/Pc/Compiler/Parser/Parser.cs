@@ -32,12 +32,12 @@
         private P_Root.QualifiedName crntGotoTargetName = null;
         private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
-        private List<P_Root.EventLabel> crntEventList = new List<P_Root.EventLabel>();
-        private List<P_Root.EventLabel> onEventList = new List<P_Root.EventLabel>();
+        private List<P_Root.EventName> crntEventList = new List<P_Root.EventName>();
+        private List<P_Root.EventName> onEventList = new List<P_Root.EventName>();
         private List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>> crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
         private Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>> crntAnnotStack = new Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>>();
 
-        private List<P_Root.EventLabel> crntObservesList = new List<P_Root.EventLabel>();
+        private List<P_Root.EventName> crntObservesList = new List<P_Root.EventName>();
 
         private int anonEventSetCounter = 0;
         private HashSet<string> crntStateNames = new HashSet<string>();
@@ -77,7 +77,7 @@
             }
             private Stack<P_Root.IArgType_NmdTupType__1> localStack;
 
-            private Stack<List<P_Root.EventLabel>> caseEventStack;
+            private Stack<List<P_Root.EventName>> caseEventStack;
 
             private P_Root.IArgType_Cases__2 casesList;
             private Stack<P_Root.IArgType_Cases__2> casesListStack;
@@ -90,7 +90,7 @@
                 this.crntLocalVarList = new List<P_Root.StringCnst>();
                 this.localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
                 this.localStack = new Stack<P_Root.IArgType_NmdTupType__1>();
-                this.caseEventStack = new Stack<List<P_Root.EventLabel>>();
+                this.caseEventStack = new Stack<List<P_Root.EventName>>();
                 this.casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
                 this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
             }
@@ -103,7 +103,7 @@
                 this.crntLocalVarList = new List<P_Root.StringCnst>();
                 this.localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
                 this.localStack = new Stack<P_Root.IArgType_NmdTupType__1>();
-                this.caseEventStack = new Stack<List<P_Root.EventLabel>>();
+                this.caseEventStack = new Stack<List<P_Root.EventName>>();
                 this.casesList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
                 this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
             }
@@ -142,13 +142,13 @@
             {
                 contextStack.Push(contextLocalVarDecl);
                 localStack.Push(localVarDecl);
-                List<P_Root.EventLabel> caseEventList = new List<P_Root.EventLabel>(parser.crntEventList);
+                List<P_Root.EventName> caseEventList = new List<P_Root.EventName>(parser.crntEventList);
                 parser.crntEventList.Clear();
                 caseEventStack.Push(caseEventList);
                 localVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             }
 
-            public List<P_Root.EventLabel> Pop()
+            public List<P_Root.EventName> Pop()
             {
                 contextLocalVarDecl = contextStack.Pop();
                 contextLocalVarDecl = ((P_Root.NmdTupType)contextLocalVarDecl).tl;
@@ -1459,17 +1459,20 @@
             if (IsValidName(TopDecl.EventSet, name, nameSpan))
                 topDeclNames.eventSetNames.Add(name);
 
+            var eventset = new P_Root.EventSetDecl();
+            eventset.name = MkString(name, nameSpan);
+            eventset.id = (P_Root.IArgType_EventSetDecl__1)MkId(nameSpan);
+            eventset.Span = span;
+            parseProgram.EventSetDecl.Add(eventset);
+
             foreach (var ev in crntEventList)
             {
-                var eventset = new P_Root.EventSetDecl();
-                eventset.name = MkString(name, nameSpan);
-                eventset.Span = ev.Span;
-                eventset.id = (P_Root.IArgType_EventSetDecl__2)MkId(nameSpan);
-                eventset.ev = (P_Root.IArgType_EventSetDecl__1)ev;
-                parseProgram.EventSetDecl.Add(eventset);
+                var eventsetContains = new P_Root.EventSetContains();
+                eventsetContains.evset = eventset;
+                eventsetContains.ev = (P_Root.IArgType_EventSetContains__1)ev;
+                parseProgram.EventSetContains.Add(eventsetContains);
             }
             crntEventList.Clear();
-
         }
 
         private void AddInterfaceType(string iname, string esname, Span inameSpan, Span iesnameSpan, Span span)
@@ -1484,14 +1487,18 @@
                 Contract.Assert(crntEventList.Count() > 0);
                 var anonEventSetName = "__AnonEventSet_" + anonEventSetCounter;
                 anonEventSetCounter++;
+                var eventset = new P_Root.EventSetDecl();
+                eventset.name = MkString(anonEventSetName, iesnameSpan);
+                eventset.id = (P_Root.IArgType_EventSetDecl__1)MkId(inameSpan);
+                eventset.Span = span;
+                parseProgram.EventSetDecl.Add(eventset);
                 foreach (var ev in crntEventList)
                 {
-                    var eventset = new P_Root.EventSetDecl();
-                    eventset.name = MkString(anonEventSetName, iesnameSpan);
-                    eventset.Span = ev.Span;
-                    eventset.id = (P_Root.IArgType_EventSetDecl__2)MkId(inameSpan);
-                    eventset.ev = (P_Root.IArgType_EventSetDecl__1)ev;
-                    parseProgram.EventSetDecl.Add(eventset);
+                    var eventsetContains = new P_Root.EventSetContains();
+                    eventsetContains.evset = eventset;
+                    eventsetContains.ev = (P_Root.IArgType_EventSetContains__1)ev;
+                    eventsetContains.Span = ev.Span;
+                    parseProgram.EventSetContains.Add(eventsetContains);
                 }
                 inDecl.evsetName = MkString(anonEventSetName, iesnameSpan);
                 crntEventList.Clear();
@@ -1952,10 +1959,6 @@
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.Span = span;
             machDecl.name = MkString(name, nameSpan);
-            if (Options.test && kind == P_Root.UserCnstKind.MODEL)
-            {
-                kind = P_Root.UserCnstKind.REAL;
-            }
             machDecl.kind = MkUserCnst(kind, span);
             foreach (var e in crntObservesList)
             {
@@ -1984,12 +1987,11 @@
         private void AddExportsInterface(string interfaceName, Span interfaceSpan, Span span)
         {
             var machDecl = GetCurrentMachineDecl(span);
-            var export = new P_Root.MachineExportsDecl();
-            export.iname = (P_Root.IArgType_MachineExportsDecl__1)MkString(interfaceName, interfaceSpan);
+            var export = new P_Root.MachineExports();
+            export.iname = (P_Root.IArgType_MachineExports__1)MkString(interfaceName, interfaceSpan);
             export.mach = machDecl;
             export.Span = span;
-            export.id = (P_Root.IArgType_MachineExportsDecl__2)MkId(interfaceSpan);
-            parseProgram.MachineExportsDecl.Add(export);
+            parseProgram.MachineExports.Add(export);
         }
 
         private void AddMachineAnnots(Span span)
@@ -2089,6 +2091,7 @@
             crntEventDecl = P_Root.MkEventDecl();
             crntEventDecl.card = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             crntEventDecl.type = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntEventDecl.id = (P_Root.IArgType_EventDecl__3)MkId(span);
             crntEventDecl.Span = span;
             return crntEventDecl;
         }

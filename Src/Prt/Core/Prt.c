@@ -133,61 +133,54 @@ PrtRunProcess(PRT_PROCESS *process
 
 void
 PrtStopProcess(
-    _Inout_ PRT_PROCESS* process
+	_Inout_ PRT_PROCESS* process
 )
 {
-    PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
 
-    PrtLockMutex(privateProcess->processLock);
+	PrtLockMutex(privateProcess->processLock);
 	privateProcess->terminating = PRT_TRUE;
 	PRT_BOOLEAN waitForThreads = PRT_FALSE;
-    PRT_COOPERATIVE_SCHEDULER* info = NULL;
+	PRT_COOPERATIVE_SCHEDULER* info = NULL;
 
-    if (privateProcess->schedulingPolicy == PRT_SCHEDULINGPOLICY_COOPERATIVE)
-    {
-        info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
-        int count = info->threadsWaiting;
-        if (count > 0)
-        {
-            waitForThreads = PRT_TRUE;
-            // unblock all threads so the PrtRunProcess call terminates.
-            for (int i = 0; i < count; i++)
-            {
-                PrtReleaseSemaphore(info->workAvailable);
-            }
-        }
-    }
-    PrtUnlockMutex(privateProcess->processLock);
+	if (privateProcess->schedulingPolicy == PRT_SCHEDULINGPOLICY_COOPERATIVE)
+	{
+		info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
+		int count = info->threadsWaiting;
+		if (count > 0)
+		{
+			waitForThreads = PRT_TRUE;
+			// unblock all threads so the PrtRunProcess call terminates.
+			for (int i = 0; i < count; i++)
+			{
+				PrtReleaseSemaphore(info->workAvailable);
+			}
+		}
+	}
+	PrtUnlockMutex(privateProcess->processLock);
 
-    if (waitForThreads)
-    {
-        PrtWaitSemaphore(info->allThreadsStopped, -1);
-    }
-    
-    // ok, now we can safely start deleting things...
-    for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
-    {
-        PRT_MACHINEINST *context = privateProcess->machines[i];
-        if (context->isModel)
-        {
-            PrtCleanupModel(context);
-        }
-        else
-        {
-            PRT_MACHINEINST_PRIV * privContext = (PRT_MACHINEINST_PRIV *)context;
-            PrtCleanupMachine(privContext);
-            if (privContext->stateMachineLock != NULL)
-            {
-                PrtDestroyMutex(privContext->stateMachineLock);
-            }
-        }
-        PrtFree(context);
-    }
+	if (waitForThreads)
+	{
+		PrtWaitSemaphore(info->allThreadsStopped, -1);
+	}
 
-    PrtFree(privateProcess->machines);
-    PrtDestroyCooperativeScheduler(info);
-    PrtDestroyMutex(privateProcess->processLock);
-    PrtFree(process);
+	// ok, now we can safely start deleting things...
+	for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
+	{
+		PRT_MACHINEINST *context = privateProcess->machines[i];
+		PRT_MACHINEINST_PRIV * privContext = (PRT_MACHINEINST_PRIV *)context;
+		PrtCleanupMachine(privContext);
+		if (privContext->stateMachineLock != NULL)
+		{
+			PrtDestroyMutex(privContext->stateMachineLock);
+		}
+		PrtFree(context);
+	}
+
+	PrtFree(privateProcess->machines);
+	PrtDestroyCooperativeScheduler(info);
+	PrtDestroyMutex(privateProcess->processLock);
+	PrtFree(process);
 }
 
 PRT_MACHINEINST *
@@ -198,59 +191,6 @@ PrtMkMachine(
 )
 {
     return (PRT_MACHINEINST *)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, instanceOf, payload);
-}
-
-PRT_MACHINEINST *
-PrtMkModel(
-    _Inout_  PRT_PROCESS			*process,
-    _In_  PRT_UINT32				instanceOf,
-    _In_  PRT_VALUE					*payload
-)
-{
-    PRT_MACHINEINST *context;
-    PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
-
-    PrtLockMutex(privateProcess->processLock);
-
-    context = (PRT_MACHINEINST *)PrtMalloc(sizeof(PRT_MACHINEINST));
-    PrtAssert(context != NULL, "Out of memory");
-
-    PRT_UINT32 numMachines = privateProcess->numMachines;
-    PRT_UINT32 machineCount = privateProcess->machineCount;
-    PRT_MACHINEINST **machines = privateProcess->machines;
-    if (machineCount == 0)
-    {
-        machines = (PRT_MACHINEINST **)PrtCalloc(1, sizeof(PRT_MACHINEINST *));
-        privateProcess->machines = machines;
-        privateProcess->machineCount = 1;
-    }
-    else if (machineCount == numMachines)
-    {
-        PRT_MACHINEINST **newMachines = (PRT_MACHINEINST **)PrtCalloc(2 * machineCount, sizeof(PRT_MACHINEINST *));
-        for (PRT_UINT32 i = 0; i < machineCount; i++)
-        {
-            newMachines[i] = machines[i];
-        }
-        machines = newMachines;
-        privateProcess->machines = newMachines;
-        privateProcess->machineCount = 2 * machineCount;
-    }
-    machines[numMachines] = (PRT_MACHINEINST *)context;
-    privateProcess->numMachines++;
-
-    context->process = process;
-    context->instanceOf = instanceOf;
-    PRT_MACHINEID id;
-    id.machineId = privateProcess->numMachines; // index begins with 1 since 0 is reserved
-    id.processId = process->guid;
-    context->id = PrtMkMachineValue(id);
-    context->extContext = NULL;
-    context->isModel = PRT_TRUE;
-    process->program->modelImpls[context->instanceOf].ctorFun(context, payload);
-
-    PrtUnlockMutex(privateProcess->processLock);
-
-    return context;
 }
 
 PRT_MACHINEINST *
@@ -279,12 +219,5 @@ PrtSend(
     _In_ PRT_BOOLEAN				doTransfer
 )
 {
-    if (receiver->isModel)
-    {
-		PrtLog(PRT_STEP_ENQUEUE, (PRT_MACHINEINST_PRIV*)sender, (PRT_MACHINEINST_PRIV*)receiver, event, payload);
-		receiver->process->program->modelImpls[receiver->instanceOf].sendFun(sender, receiver, event, payload, doTransfer);
-        return;
-    }
-	
     PrtSendPrivate((PRT_MACHINEINST_PRIV *)sender, (PRT_MACHINEINST_PRIV *)receiver, event, payload, doTransfer);
 }

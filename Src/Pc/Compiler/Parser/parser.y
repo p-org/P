@@ -167,7 +167,6 @@ SpecMachineDecl
 
 ImplMachineNameDecl
 	: MACHINE ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); }
-	| MODEL ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.MODEL, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 SpecMachineNameDecl
@@ -330,7 +329,7 @@ StateBodyItem
 	;
 
 OnEventList
-	: ON EventList				{ onEventList = new List<P_Root.EventLabel>(crntEventList); crntEventList.Clear(); }
+	: ON EventList				{ onEventList = new List<P_Root.EventName>(crntEventList); crntEventList.Clear(); }
 	;
 
 NonDefaultEventList

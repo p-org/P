@@ -70,15 +70,11 @@ static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *
 {
     //PrtPrintStep(step, sender, receiver, eventId, payload);
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
-	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf].name);
+	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf]->name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	std::wstring stateName;
-	if (receiver->isModel) {
-		stateName = L"model";
-	}
-	else {
-		stateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(c)->name);
-	}
+	stateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(c)->name);
+	
 	std::wstring eventName;
 	std::wstring stateId = machineName + L"." + stateName;
 	std::wstring stateLabel = machineName + L"\n" + stateName;
@@ -90,8 +86,8 @@ static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *
 	{
 		PRT_MACHINEINST_PRIV * s = (PRT_MACHINEINST_PRIV *)sender;
 		eventName = ConvertToUnicode((const char*)s->process->program->events[PrtPrimGetEvent(event)].name);
-		senderMachineName = ConvertToUnicode((const char*)s->process->program->machines[s->instanceOf].name);
-		senderStateName = sender->isModel ? ConvertToUnicode("model") : ConvertToUnicode((const char*)PrtGetCurrentStateDecl(s)->name);
+		senderMachineName = ConvertToUnicode((const char*)s->process->program->machines[s->instanceOf]->name);
+		senderStateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(s)->name);
 		senderStateId = senderMachineName + L"." + senderStateName;
 		senderStateLabel = senderMachineName + L"\n" + senderStateName;
 	}

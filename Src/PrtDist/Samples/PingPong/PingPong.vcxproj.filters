@@ -25,9 +25,15 @@
     <ClCompile Include="MainFunction.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="linker.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="PingPong.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="linker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

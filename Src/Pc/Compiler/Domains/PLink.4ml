@@ -94,20 +94,19 @@ transform PLink2C(in:: PLink) returns (out:: C)
 								   body = Section(PpInclude(headerFileName, FALSE), cmp).
 
 	/*************************************************************/
-    /**********     Create C Enums for P Decls         ***********/
+    /**********   Generate contents of header file     ***********/
     /*************************************************************/
 	
 	EventDeclExt ::= in.EventDecl + { NULL, HALT }.
-	DeclId ::= (decl: in.MachineDecl + in.EventDecl + in.TypeDef + { NULL, HALT, PUSH }, id: Natural, cname: String).
+	DeclId ::= (decl: in.MachineDecl + in.EventDecl + { NULL, HALT }, id: Natural, cname: String).
 	
-	//// (0) Foreign types
-	DeclId(d, id, cn) :- d is in.TypeDef(name, _), in.ModelType(name), id = toOrdinal(d, 0, { d' | d' is in.TypeDef(n, _), in.ModelType(n) }), cn = strJoin("P_FORGN_TYPE_", name).
+	//// Foreign types
 	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.TypeDef, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({d | d is in.TypeDef(n, _), in.ModelType(n)}) }).  
+									   in.ModelType(name), id = toOrdinal(name, 0, { n | in.ModelType(n) }), cn = strJoin("P_FORGN_TYPE_", name), enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({n | in.ModelType(n)}) }).  
 	
-	//// (1) Field names for named tuple types that have a type synonym
+	//// Field names for named tuple types that have a type synonym
 	IndexOf ::= (t: in.NmdTupType, name: String, offset: Natural, tail: in.NmdTupType + {NIL}).
 	IndexOf(t, name, 0, tail)  :- in.TypeDef(_, t), t = in.NmdTupType(NmdTupTypeField(_, name, _), tail).
 	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = in.NmdTupType(NmdTupTypeField(_, name, _), tail), i' = i + 1.
@@ -118,7 +117,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 									   IndexOf(type, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(in.#NmdTupType, type) }).  
 	
-	//// (2) Enum declarations for all enum types
+	//// Enum declarations for all enum types
 	EnumTypeElem ::= (EnumTypeDef, StringList, IntegerList + { NIL }).
 	EnumTypeElem(d, list1, list2) :- d is EnumTypeDef(_, list1, list2).
 	EnumTypeElem(d, list1, NIL) :- EnumTypeElem(d, StringList(_, list1), NIL), list1: StringList.
@@ -137,7 +136,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
 	
-	//// (3) EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
+	//// EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
 	DeclId(NULL, 0, "_P_EVENT_NULL").
 	DeclId(HALT, 1, "_P_EVENT_HALT").
 	DeclId(d, id, cn) :- d is in.EventDecl, id = 2 + toOrdinal(d, 0, { d' | d' is in.EventDecl }), cn = strJoin("P_EVENT_", d.name).
@@ -147,13 +146,13 @@ transform PLink2C(in:: PLink) returns (out:: C)
 									   DeclId(d, id, cn), d : EventDeclExt, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is in.EventDecl}) }).  
 			
-	//// (4) EventSetDecls
+	//// EventSetDecls
 	HOut(0, out.EnmDef(NIL, "P_EVENTSET", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   EventSet(evsetName, eventNameList), id = toOrdinal(eventNameList, 0, { x | EventSet(_, x) }), enumMember = Element(IntLit(id, DEC, NIL), evsetName); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTSETS_COUNT"), size = count({ x | x is EventSet }) }).  
 						   
-	//// (5) Real machine decls - Start at Id 0.
+	//// Machine decls - Start at Id 0.
 	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_MACHINES", list)) :- 
@@ -168,8 +167,95 @@ transform PLink2C(in:: PLink) returns (out:: C)
 								  strJoin("P_MACHINE_STRUCT_", d.name), 
 								  NIL).
 
+	//// Extern declarations for defined types
+	HOut(0, def) :- in.TypeDef(name, _), 
+					typeName = strJoin("P_GEND_TYPE_", name),
+					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
+
+	HOut(0, def) :- in.ModelType(name), 
+					typeName = strJoin("P_GEND_TYPE_", name),
+					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
+	
+	//// Extern declarations for foreign type functions
+	HOut(0, def) :- in.ModelType(name),
+	                params = NIL,
+				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
+					argTypes = PrmTypes(BaseType(VOID), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_MKDEF_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_CLONE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_FREE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_GETHASHCODE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_TOSTRING_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name),
+	                params = Params(Param(NIL, "frgnVal1"),
+					         Params(Param(NIL, "frgnVal2"), 
+							 NIL)),
+				    funType = FunType(NmdType(NIL, "PRT_BOOLEAN"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), 
+							   PrmTypes(NmdType(NIL, "PRT_UINT64"), 
+							   NIL)),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_ISEQUAL_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	//// Extern declaration for Program Decl
+	HOut(0, def) :- def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_PROGRAMDECL"), 
+								  "P_GEND_PROGRAM", 
+								  NIL).
+
 	/*************************************************************/
-    /******     Generate C statics for types in program     ******/
+    /**********   Generate contents of code file     ***********/
     /*************************************************************/
 
 	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
@@ -179,6 +265,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 
 	TranslatedTypeExpr ::= (TypeExpr).
 	TranslatedTypeExpr(t) :- t = in.BaseType(NULL); t = in.BaseType(BOOL); t = in.BaseType(INT); t = in.BaseType(EVENT); t = in.BaseType(MACHINE); t = in.BaseType(ANY).
+	TranslatedTypeExpr(t) :- ModelType(name), t = NameType(name).
 	TranslatedTypeExpr(t) :- EventDecl(_, _, t), t : TypeExpr.
 	TranslatedTypeExpr(t) :- InterfaceTypeDecl(_, _, t).
 	TranslatedTypeExpr(t) :- TypeDef(_, t).
@@ -228,7 +315,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_INT"), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), no in.EnumTypeDef(name, _, _),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), in.ModelType(name),
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
@@ -364,25 +451,13 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	TypeToExpr ::= (TypeExpr, Expr).
 	TypeToExpr(type, expr) :- TypeId(typeIndex, type), expr = out.UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeIndex)))).
 
-	TypeDefConstant ::= (typeDefId: Integer, defs: out.Section + { NIL }).
-	TypeDefConstant(-1, NIL).
-	TypeDefConstant(m, defs) :- typeDef is in.TypeDef(name, type), m = toOrdinal(typeDef, 0, { typeDef' | typeDef' is in.TypeDef }),
-	                            typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(type, expr),
-								TypeDefConstant(m - 1, before),  
-								def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr),
-								defs = out.Section(before, def).
-	
-	COut(1, defs) :- TypeDefConstant(c, defs), defs : out.Section, c = count({ typeDef | typeDef is in.TypeDef}) - 1.
+	COut(1, def) :- in.TypeDef(name, type),
+	                typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(type, expr),
+					def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr).
+	COut(1, def) :- in.ModelType(name), type = NameType(name),
+	                typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(type, expr),
+					def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr).
 
-	TypeDefExtern ::= (typeDefId: Integer, defs: out.Section + { NIL }).
-	TypeDefExtern(-1, NIL).
-	TypeDefExtern(m, defs) :- typeDef is in.TypeDef(name, _), m = toOrdinal(typeDef, 0, { typeDef' | typeDef' is in.TypeDef }),
-	                          TypeDefExtern(m - 1, before),
-							  defs = out.Section(before, def),
-							  def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL),
-							  typeName = strJoin("P_GEND_TYPE_", name).
-	
-	HOut(0, defs) :- TypeDefExtern(c, defs), defs : out.Section, c = count({ typeDef | typeDef is in.TypeDef}) - 1.
 
 	/*************************************************************/
     /******            Generate event decls                 ******/
@@ -438,7 +513,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 							   NIL))))))).
 
     //// Emit the event decl array.
-	COut(4, def) :- EvDeclConcat(0, arr), 
+	COut(2, def) :- EvDeclConcat(0, arr), 
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_EVENTDECL"), NIL), 
@@ -478,7 +553,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	EventPacking(l, r, i', a') :- EventPacking(l, r, i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
 	EventPacking(l, r.tl, i', a') :- EventPacking(l, r, i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
 
-	COut(9, def) :- EventPacking(l, _, 0, a),
+	COut(3, def) :- EventPacking(l, _, 0, a),
 	                id = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),
 	                def = out.VarDef(
 							      NIL, 
@@ -503,7 +578,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 							   Args(Ident(strJoin("P_GEND_EVENTSET_", toString(m))),
 							   NIL))).
 
-	COut(10, def) :- EvSetDeclConcat(0, arr),
+	COut(4, def) :- EvSetDeclConcat(0, arr),
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_EVENTSETDECL"), NIL), 
@@ -521,7 +596,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 							arr = out.Args(def, after),
 							def = UnApp(ADDR, Ident(strJoin("P_MACHINE_STRUCT_", d.name))).
 
-	COut(13, def) :- MachineDeclConcat(0, arr),
+	COut(5, def) :- MachineDeclConcat(0, arr),
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(PtrType(NmdType(NIL, "PRT_MACHINEDECL")), NIL), 
@@ -529,106 +604,37 @@ transform PLink2C(in:: PLink) returns (out:: C)
 								  Init(arr)).
 
     /*************************************************************/
-    /******     Generate foreign type Decl Arrays           ******/
+    /******     Generate Foreign Type Decl Arrays           ******/
     /*************************************************************/	
 	ForeignTypeDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
 	//// Base case
-	ForeignTypeDeclConcat(c, NIL) :- c = count({t | t is in.TypeDef, in.ModelType(t.name)}).
+	ForeignTypeDeclConcat(c, NIL) :- c = count({name | in.ModelType(name)}).
 
 	ForeignTypeDeclConcat(m, arr) :- 
-							DeclId(d, m, ctype), in.ModelType(d.name), d : in.TypeDef, 
+							in.ModelType(name), m = toOrdinal(name, 0, { n | in.ModelType(n) }),
 							ForeignTypeDeclConcat(m + 1, after),  
 							arr = out.Args(def, after), 
 	                        def = Init(
-							   Args(Ident(ctype),
-							   Args(StringLit(d.name, NIL),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_MKDEF_", strJoin(d.name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_CLONE_", strJoin(d.name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_FREE_", strJoin(d.name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_GETHASHCODE_", strJoin(d.name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_ISEQUAL_", strJoin(d.name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_TOSTRING_", strJoin(d.name, "_IMPL")))),
+							   Args(Ident(strJoin("P_FORGN_TYPE_", name)),
+							   Args(StringLit(name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_MKDEF_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_CLONE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_FREE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_GETHASHCODE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_ISEQUAL_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_TOSTRING_", strJoin(name, "_IMPL")))),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   NIL))))))))))).
 
-	COut(15, def) :- ForeignTypeDeclConcat(0, arr),
+	COut(5, def) :- ForeignTypeDeclConcat(0, arr),
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_FOREIGNTYPEDECL"), NIL), 
 								  "P_GEND_FOREIGNTYPES", 
 								  Init(arr)).
 
-	HOut(12, def) :- t is in.TypeDef, in.ModelType(t.name),
-	                params = NIL,
-				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
-					argTypes = PrmTypes(BaseType(VOID), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_MKDEF_", strJoin(t.name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(12, def) :- t is in.TypeDef, in.ModelType(t.name),
-	                params = Params(Param(NIL, "frgnVal"), NIL),
-				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_CLONE_", strJoin(t.name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(12, def) :- t is in.TypeDef, in.ModelType(t.name),
-	                params = Params(Param(NIL, "frgnVal"), NIL),
-				    funType = FunType(BaseType(VOID), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_FREE_", strJoin(t.name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(12, def) :- t is in.TypeDef, in.ModelType(t.name),
-	                params = Params(Param(NIL, "frgnVal"), NIL),
-				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_GETHASHCODE_", strJoin(t.name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(12, def) :- t is in.TypeDef, in.ModelType(t.name),
-	                params = Params(Param(NIL, "frgnVal"), NIL),
-				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_TOSTRING_", strJoin(t.name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(12, def) :- t is in.TypeDef, in.ModelType(t.name),
-	                params = Params(Param(NIL, "frgnVal1"),
-					         Params(Param(NIL, "frgnVal2"), 
-							 NIL)),
-				    funType = FunType(NmdType(NIL, "PRT_BOOLEAN"), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), 
-							   PrmTypes(NmdType(NIL, "PRT_UINT64"), 
-							   NIL)),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_ISEQUAL_", strJoin(t.name, "_IMPL")),
-					  params,
-					  UNKNOWN).
 
     /*************************************************************/
     /******            Generate Program Decl                ******/
@@ -646,16 +652,10 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	ProgMachArray(size, arr) :- size = count({ m | m is in.MachineDecl }), size > 0, arr = out.Ident("P_GEND_MACHINES").
 
 	ProgForeignTypesArray ::= (size: Natural, arr: out.Ident).
-	ProgForeignTypesArray(size, arr) :- size = count({ t | t is in.TypeDef, in.ModelType(t.name) }), size = 0, arr = out.Ident("NULL").
-	ProgForeignTypesArray(size, arr) :- size = count({ t | t is in.TypeDef, in.ModelType(t.name) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
+	ProgForeignTypesArray(size, arr) :- size = count({ n | in.ModelType(n) }), size = 0, arr = out.Ident("NULL").
+	ProgForeignTypesArray(size, arr) :- size = count({ n | in.ModelType(n) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
 
-	HOut(13, def) :- def = out.VarDef(
-							      EXTERN, 
-								  NmdType(NIL, "PRT_PROGRAMDECL"), 
-								  "P_GEND_PROGRAM", 
-								  NIL).
-
-	COut(16, def) :- ProgEvntArray(evArrSize, evArrName),
+	COut(6, def) :- ProgEvntArray(evArrSize, evArrName),
 	                 ProgEvntSetArray(evSetArrSize, evSetArrName),
 					 ProgMachArray(machArrSize, machArrName),
 					 ProgForeignTypesArray(foreignTypesSize, foreignTypesArrName),

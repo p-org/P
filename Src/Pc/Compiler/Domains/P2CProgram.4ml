@@ -31,7 +31,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })).
 	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })).
 	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
-	NamedEventNameList(list, NIL, "") :- SubSE(c, s), s: Receive, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | ReceiveCases(c, s, cases), ev = cases.trig })).
+	NamedEventNameList(list, NIL, "") :- SubSE(c, s), s: Receive, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | ReceiveCases(c, s, x), ev = x.trig })).
 	NamedEventNameList(list, EventNameList(NULL, list'), name') :- NamedEventNameList(EventNameList(NULL, list), list', name), name' = strJoin("null", name).
 	NamedEventNameList(list, EventNameList(HALT, list'), name') :- NamedEventNameList(EventNameList(HALT, list), list', name), name' = strJoin("halt", name).
 	NamedEventNameList(list, EventNameList(ev, list'), name') :- NamedEventNameList(EventNameList(ev, list), list', name), ev: String, name' = strJoin(ev, name).
@@ -79,15 +79,13 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	CConcatOut(-1, NIL).
 	CConcatOut(m', cmp) :- CConcatOut(m, before), COutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
 		
-	COut(17, def') :- %test = TRUE, HOut(10, def), def = FunDef(a, b, c, d, _), def' = FunDef(a, b, c, d, NIL).
-
 	out.File(codeFileName, body) :- CConcatOut(count({co | co is COut}) - 1, cmp),
 	                               headerFileName = strJoin(%outputFileName, ".h"),
 								   codeFileName = strJoin(%outputFileName, ".c"),
 								   body = Section(PpInclude(headerFileName, FALSE), cmp).
 								   
     /*************************************************************/
-    /**********     Create C Enums for P Decls         ***********/
+    /**********     Create contents of header file     ***********/
     /*************************************************************/
 	EventName ::= (decl: { NULL, HALT } + in.EventDecl, enumName: String).
 	EventName(NULL, "_P_EVENT_NULL").
@@ -99,7 +97,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	DeclId ::= (decl: VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl, id: Natural, cname: String).
 
-	//// (4) VarDecls - Start at Id 0.
+	//// VarDecls - Start at Id 0.
 	DeclId(d, id, cn) :- d is VarDecl, d.owner.kind = REAL, 
 	                     id = toOrdinal(d, 0, { d' | d' is VarDecl, d'.owner = d.owner }), 
 						 cn = strJoin("P_VAR_", strJoin(d.owner.name, strJoin("_", d.name))).
@@ -111,7 +109,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									   DeclId(d, id, cn), d : VarDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(m.name, "_COUNT"))), size = count({d | d is VarDecl, d.owner = m}) }).  
 
-	//// (5) (Anon)FunDecls - Start at Id 1. The id 0 is reserved for the PUSH action.
+	//// (Anon)FunDecls - Start at Id 1. The id 0 is reserved for the PUSH action.
 	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
 
 	DeclId(d, id, cn) :- d is AnonFunDecl, d.owner = NIL, AnonFunDeclKind(d, REAL),
@@ -157,7 +155,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									            + count({d | d is AnonFunDecl, d.owner = m, AnonFunDeclKind(d, REAL)}) 
 												+ count({d | d is FunDecl, d.owner = m}) }).
 
-	//// (6) StateDecls - Start at Id 0. Need to encode qualified names.
+	//// StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is StateDecl, d.owner.kind = REAL, 
 	                     QualName2CStr(d.name, name), 
 					     id = toOrdinal(d, 0, { d' | d' is StateDecl, d'.owner = d.owner }), 
@@ -170,10 +168,47 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									   DeclId(d, id, cn), d : StateDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(m.name, "_COUNT"))), size = count({d | d is StateDecl, d.owner = m}) }).  
 
-    /*************************************************************/
-    /******               Generate Helper Macros            ******/
-    /*************************************************************/	
+	//// Prototypes for model functions
+	HOut(0, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, RealOwner(f),
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  UNKNOWN).
+				
 
+	//// Prototypes for constructor and destructor functions
+	HOut(0, def) :- m is in.MachineDecl, m.kind = REAL,
+	                params = Params(Param(NIL, "context"), 
+							 Params(Param(NIL, "value"), NIL)),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
+							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL)),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("P_CTOR_", strJoin(m.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- m is in.MachineDecl, m.kind = REAL,
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("P_DTOR_", strJoin(m.name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+    /*************************************************************/
+    /******       Generate contents of code file            ******/
+    /*************************************************************/	
 	//// Args lists of the form (xn, ..., x0)
 	MacroArgList ::= (args: out.Args, len: Natural, aux: Natural).
 	MacroArgList(args, 0, m) :- m = max(
@@ -327,7 +362,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_INT"), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), no in.EnumTypeDef(name, _, _, _),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), in.ModelType(name),
 								defs = out.Section(before, def),
 								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
@@ -767,17 +802,6 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 					  params,
 					  out.Seq(entryInfo, Block(tmpVars, body))).
 
-	HOut(1, def) :- DeclId(f, id, name), id > 0, f : FunDecl, f.kind = MODEL, RealOwner(f),
-	                params = Params(Param(NIL, "context"), NIL),
-				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin(name, "_IMPL"),
-					  params,
-					  UNKNOWN).
-				
     /*************************************************************/
     /******            Generate Fun Decl Arrays             ******/
     /*************************************************************/	
@@ -822,7 +846,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									   c = toOrdinal(receive, 0, {r | r: Receive, SubSE(decl, r)}), 
 									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
 									   CaseDeclConcat(nCases, decl, cases, casesInit), DeclId(decl, _, declName),
-									   link.EventSet(index, toList(#EventNameList, NIL, { ev | ReceiveCases(decl, receive, cases), ev = cases.trig })),
+									   link.EventSet(index, toList(#EventNameList, NIL, { ev | ReceiveCases(decl, receive, x), ev = x.trig })),
 									   def = out.Init(
 												Args(IntLit(label, DEC, U),
 												Args(Ident(index),
@@ -1083,8 +1107,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	MachQueueSize(m, size) :- m is in.MachineDecl, m.kind = REAL, m.card = NIL, size = 4294967295. 
 	MachQueueSize(m, size) :- m is in.MachineDecl, m.kind = REAL, size = m.card.bound.
 
-	COut(13, def) :- 
-							d is in.MachineDecl, d.kind = REAL, MachineName(d, machineName, machineStructName),
+	COut(13, def) :- 		d is in.MachineDecl, d.kind = REAL, MachineName(d, machineName, machineStructName),
 							MachVarArr(d, varArrSize, varArrName),
 							MachStateArr(d, stateArrSize, stateArrName),
 							MachFunArr(d, funArrSize, funArrName),
@@ -1112,7 +1135,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 								  machineStructName, 
 								  init).
 
-	HOut(10, def) :- m is in.MachineDecl, m.kind = REAL,
+	//// Empty constructor and destructor functions when /test option is used
+	COut(14, def) :- %test = TRUE, m is in.MachineDecl, m.kind = REAL,
 	                params = Params(Param(NIL, "context"), 
 							 Params(Param(NIL, "value"), NIL)),
 				    funType = FunType(BaseType(VOID), argTypes),
@@ -1123,9 +1147,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 					  funType,
 					  strJoin("P_CTOR_", strJoin(m.name, "_IMPL")),
 					  params,
-					  UNKNOWN).
+					  NIL).
 
-	HOut(10, def) :- m is in.MachineDecl, m.kind = REAL,
+	COut(14, def) :- %test = TRUE, m is in.MachineDecl, m.kind = REAL,
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
@@ -1134,7 +1158,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 					  funType,
 					  strJoin("P_DTOR_", strJoin(m.name, "_IMPL")),
 					  params,
-					  UNKNOWN).
+					  NIL).
 
 
     /*************************************************************/

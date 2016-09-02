@@ -172,6 +172,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
     <ClCompile Include="Driver.c" />
+    <ClCompile Include="linker.c" />
     <ClCompile Include="Timer.c" />
   </ItemGroup>
   <ItemGroup>
@@ -179,6 +180,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Driver.h" />
+    <ClInclude Include="linker.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="FailureDetector.p" />

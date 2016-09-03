@@ -1,4 +1,4 @@
-using P.PRuntime;
+using P.Runtime;
 using System.Collections.Generic;
 //Manually generated new compiler output for a simplest P program:
 //machine Main {
@@ -7,7 +7,7 @@ using System.Collections.Generic;
 //}
 namespace DummyMachine
 {
-    public class Application : PStateImpl
+    public class Application : StateImpl
     {
         #region Constructors
         public Application() : base()
@@ -15,7 +15,7 @@ namespace DummyMachine
             //initialize all fields
         }
         //(TODO)template code: move to PStateImpl?
-        public override PStateImpl MakeSkeleton()
+        public override StateImpl MakeSkeleton()
         {
             return new Application();
         }
@@ -28,16 +28,16 @@ namespace DummyMachine
         #endregion
         #region Events
         //no events in this test
-        //public static PrtEvent dummy = new PrtEvent("dummy", PrtType.NullType, PrtEvent.DefaultMaxInstances, false);
+        public static PrtEventValue dummy = new PrtEventValue(new PrtEvent("dummy", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
         #endregion
-        //(TODO)template code: move to PStateImpl?
-        public PrtMachine CreateMainMachine()
+        //(TODO)template code: move to StateImpl?
+        public PrtImplMachine CreateMainMachine()
         {
             var mainMachine = new Main(this, 10);
-            AddStateMachineToStateImpl(mainMachine);
+            AddImplMachineToStateImpl(mainMachine);
             return mainMachine;
         }
-        public class Main : PrtMachine
+        public class Main : PrtImplMachine
         {
             public override PrtState StartState
             {
@@ -47,7 +47,11 @@ namespace DummyMachine
                 }
             }
 
-            public override int NextInstanceNumber(PStateImpl app)
+            public override PrtImplMachine MakeSkeleton()
+            {
+                return new Main();
+            }
+            public override int NextInstanceNumber(StateImpl app)
             {
                 return app.NextMachineInstanceNumber(this.GetType());
             }
@@ -59,8 +63,13 @@ namespace DummyMachine
                     return "Main";
                 }
             }
+            //constructor called for cloning
+            public Main() : base()
+            {
+
+            }
             //constructor
-            public Main(PStateImpl app, int maxB) : base(app, maxB)
+            public Main(StateImpl app, int maxB) : base(app, maxB)
             {
                 // initialize fields
             }
@@ -78,29 +87,37 @@ namespace DummyMachine
                         return "Init_Entry";
                     }
                 }
-                public override void Execute(PStateImpl application, PrtMachine parent)
+                public override bool IsAnonFun
                 {
-                    PrtFunStackFrame currFun = parent.PrtPopFunStack();
-                    if (currFun.cont.returnTolocation == 0)
+                    get
+                    {
+                        return true;
+                    }
+                }
+                public override void Execute(StateImpl application, PrtMachine parent)
+                {
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    if (currFun.returnTolocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;
 
 
                     Loc_0:
-                    parent.PrtEnqueueEvent(application, dummy, PrtValue.NullValue, parent);
-                    //Add the continuation with respect to send
-                    //parent.cont.Send(1, currCont.locals);
+                    parent.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
+                    parent.PrtFunContSend(this, currFun.locals, 1);
 
                     Ret:
-                    ;
-                    //Need to figure out the push for return
+                    parent.PrtFunContReturn(null);
                 }
 
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
                 {
                     var locals = new List<PrtValue>();
-                    locals.AddRange(args);
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
                     //no local variables hence nothing to add
                     return locals;
                 }

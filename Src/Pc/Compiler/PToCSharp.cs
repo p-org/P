@@ -377,6 +377,13 @@ namespace Microsoft.Pc
         List <SyntaxNode> members = new List<SyntaxNode>();
         //final C# program:
         SyntaxNode result = null;
+
+        //utility methods:
+        //TODO: write this method: consider all possible types: null, bool, int, event, machine, any
+        private string GetTypeCreationExpr(FuncTerm type)
+        {
+            return "new PrtNullType()";
+        }
         public bool GenerateCSharp(string csharpFileName)
         {
             if (!allMachines.ContainsKey("Main"))
@@ -417,7 +424,7 @@ namespace Microsoft.Pc
             var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0], 
                                                                 statements: new SyntaxNode[] { constructorBody });
             members.Add(constructor_2);
-            //TODO: would this result in "new Application();" or "new Application;"?
+            //Generate "new Application();" 
             var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Application")));
             var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
               //Would that work for the method return type "StateImpl"?
@@ -429,7 +436,46 @@ namespace Microsoft.Pc
         }
         private void MkEvents(SyntaxGenerator generator)
         {
+            foreach (var pair in allEvents)
+            {
+                //SyntaxNode payloadType_1 = generator.TypeExpression(SpecialType.System_String);
+                //TODO: PrtNullType is generated for now; how to convert FuncTerm (pair.Value).payloadType into a StringNode?
+                SyntaxNode payloadType = generator.IdentifierName(GetTypeCreationExpr((pair.Value).payloadType));
+                SyntaxNode maxInstances;
+                if ((pair.Value).maxInstances == -1)
+                {
+                    String s = "PrtEvent.DefaultMaxInstances";
+                    maxInstances = generator.IdentifierName(s);
+                }
+                else
+                {
+                    maxInstances = generator.LiteralExpression((pair.Value).maxInstances);
+                }
+               
+                SyntaxNode doAssume;
+                if ((pair.Value).maxInstancesAssumed)
+                {
+                    doAssume = generator.LiteralExpression(true);
+                }
+                else
+                {
+                    doAssume = generator.LiteralExpression(false);
+                }
+                string quotedEventName = "\"" + pair.Key + "\"";
+                var eventCreationPars = new SyntaxNode[] { generator.IdentifierName(quotedEventName), payloadType, maxInstances, doAssume };
+                var eventCreationExpr = generator.ObjectCreationExpression(generator.IdentifierName("PrtEvent"), eventCreationPars);
+                var initExpr_1 = generator.ObjectCreationExpression(generator.IdentifierName("PrtEventValue"), eventCreationExpr);
 
+                //TODO: why "@null" is written to he output as pair.Key for the null event?
+                var eventField_1 = generator.FieldDeclaration(pair.Key,
+                  generator.IdentifierName("PrtEventValue"),
+                  Accessibility.Public,
+                  DeclarationModifiers.Static,
+                  initExpr_1);
+
+                members.Add(eventField_1);
+                
+            }
         }
         private void MkCSharpOutput(SyntaxGenerator generator)
         {

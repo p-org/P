@@ -5,6 +5,8 @@ SCRIPTPATH=$(dirname "$SCRIPT") #Absolute path of script
 pushd $SCRIPTPATH
 cd ..
 
+export MONO_IOMAP=case
+
 echo ============= Building P SDK ===============
 
 type xbuild >/dev/null 2>&1 || { echo >&2 "xbuild is not installed. Exiting..."; popd; exit 1; }
@@ -21,8 +23,10 @@ fi
 
 echo Configuration is $Configuration, $Platform
 
-git submodule init
-git submodule update
+git submodule update --init --recursive --remote
+
+mono Bld/nuget.exe restore P.sln
+
 cd Ext/Zing
 
 echo xbuild Zing.sln /p:Platform=$Platform /p:Configuration=$Configuration

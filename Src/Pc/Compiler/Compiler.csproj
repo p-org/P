@@ -263,10 +263,10 @@
     <CoreCompileDependsOn>$(CoreCompileDependsOn);GenerateCodeFromLex;</CoreCompileDependsOn>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <GPLexCmd>"$(GPToolsPath)\GPLex45.exe"</GPLexCmd>
+    <GPLexCmd>"$(GPToolsPath)\gplex45.exe"</GPLexCmd>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <GPLexCmd>mono $(GPToolsPath)\GPLex45.exe</GPLexCmd>
+    <GPLexCmd>mono $(GPToolsPath)\gplex45.exe</GPLexCmd>
   </PropertyGroup>
   <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)">
     <!--Run the command line tool that generates the cs files.-->
@@ -286,19 +286,27 @@
     <GenerateParserCodeFromGrammarDependsOn>$(GenerateParserCodeFromGrammarDependsOn)</GenerateParserCodeFromGrammarDependsOn>
     <CoreCompileDependsOn>$(CoreCompileDependsOn);GenerateParserCodeFromGrammar</CoreCompileDependsOn>
   </PropertyGroup>
-  <PropertyGroup>
-    <PostBuildEvent>copy /Y $(ProjectDir)\Domains\P.4ml $(OutDir)
-copy /Y $(ProjectDir)\Domains\PLink.4ml $(OutDir)
-copy /Y $(ProjectDir)\Domains\C.4ml $(OutDir)
-copy /Y $(ProjectDir)\Domains\Zing.4ml $(OutDir)
-copy /Y $(ProjectDir)\Domains\P2CProgram.4ml $(OutDir)
-copy /Y $(ProjectDir)\Domains\PWithInferredTypes.4ml $(OutDir)</PostBuildEvent>
-  </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <GPPGCmd>"$(GPToolsPath)\GPPG45.exe"</GPPGCmd>
+    <CpCmd>copy /Y</CpCmd>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <GPPGCmd>mono $(GPToolsPath)\GPPG45.exe</GPPGCmd>
+    <CpCmd>cp -i</CpCmd>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PostBuildEvent>
+      $(CpCmd) $(ProjectDir)\Domains\P.4ml $(OutDir)
+      $(CpCmd) $(ProjectDir)\Domains\PLink.4ml $(OutDir)
+      $(CpCmd) $(ProjectDir)\Domains\C.4ml $(OutDir)
+      $(CpCmd) $(ProjectDir)\Domains\Zing.4ml $(OutDir)
+      $(CpCmd) $(ProjectDir)\Domains\P2CProgram.4ml $(OutDir)
+      $(CpCmd) $(ProjectDir)\Domains\PWithInferredTypes.4ml $(OutDir)
+    </PostBuildEvent>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <GPPGCmd>"$(GPToolsPath)\gppg45.exe"</GPPGCmd>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <GPPGCmd>mono $(GPToolsPath)\gppg45.exe</GPPGCmd>
   </PropertyGroup>
   <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompile)" Outputs="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
     <!--Run the command line tool that generates the cs files.-->

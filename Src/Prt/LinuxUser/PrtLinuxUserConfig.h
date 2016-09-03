@@ -8,7 +8,7 @@
 #if defined(PRT_USE_CLANG)
 #define FORCEINLINE __attribute__((always_inline))
 #elif defined(PRT_USE_GCC)
-#define FORCEINLINE inline __attribute__((always_inline))
+#define FORCEINLINE 
 #else
 #define FORCEINLINE
 #endif
@@ -23,7 +23,8 @@ extern "C"{
 #endif
 
 	/** Calling convention */
-#define PRT_CALL_CONV __cdecl
+#define PRT_CALL_CONV 
+
 
 	/** Linking method */
 #ifdef PRT_API_IMPL
@@ -48,6 +49,7 @@ extern "C"{
 #define _CRTDBG_MAP_ALLOC
 
 #include <stdlib.h>
+#include <stdint.h>
 #include <crtdbg.h>
 #include <sal.h>
 #include <stddef.h>
@@ -64,6 +66,7 @@ extern "C"{
 
 #include <sal.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>

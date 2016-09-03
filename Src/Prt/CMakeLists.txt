@@ -31,6 +31,10 @@ if (NOT Win32)
 	endif()
 endif()
 
+IF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
+  SET_TARGET_PROPERTIES(Prt PROPERTIES COMPILE_FLAGS "-fPIC")
+ENDIF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
+
 # add_library(Prt_test OBJECT ${PrtUserSrc})
 add_library(Prt_shared SHARED $<TARGET_OBJECTS:Prt>)
 add_library(Prt_static STATIC $<TARGET_OBJECTS:Prt>)

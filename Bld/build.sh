@@ -1,7 +1,11 @@
+#!/bin/bash
+
 SCRIPT=$0
 SCRIPTPATH=$(dirname "$SCRIPT") #Absolute path of script
 pushd $SCRIPTPATH
 cd ..
+
+export MONO_IOMAP=case
 
 echo ============= Building P SDK ===============
 
@@ -19,12 +23,14 @@ fi
 
 echo Configuration is $Configuration, $Platform
 
-git submodule init
-git submodule update
+git submodule update --init --recursive --remote
+
+mono Bld/nuget.exe restore P.sln
+
 cd Ext/Zing
 
-echo xbuild  Zing.sln /p:Platform=$Platform /p:Configuration=Release
-xbuild  Zing.sln /p:Platform=$Platform /p:Configuration=Release
+echo xbuild Zing.sln /p:Platform=$Platform /p:Configuration=$Configuration
+xbuild ZING.sln /p:Platform=$Platform /p:Configuration=$Configuration
 
 if [ $? -ne  0 ]; then
     echo "Zing build failed. Exiting..."

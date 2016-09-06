@@ -8,10 +8,12 @@
 
     using Domains;
     using Microsoft.Formula.API;
+    using Microsoft.Pc;
     using Microsoft.Formula.API.Generators;
     using Microsoft.Formula.API.Nodes;
+    
 
-    internal partial class Parser : ShiftReduceParser<LexValue, LexLocation>
+    internal partial class PParser : ShiftReduceParser<LexValue, LexLocation>
     {
         private static readonly P_Root.Exprs TheDefaultExprs = new P_Root.Exprs();
 
@@ -56,7 +58,7 @@
 
         class LocalVarStack
         {
-            private Parser parser;
+            private PParser parser;
 
             private P_Root.IArgType_NmdTupType__1 contextLocalVarDecl;
             public P_Root.IArgType_NmdTupType__1 ContextLocalVarDecl
@@ -82,7 +84,7 @@
             private P_Root.IArgType_Cases__2 casesList;
             private Stack<P_Root.IArgType_Cases__2> casesListStack;
 
-            public LocalVarStack(Parser parser)
+            public LocalVarStack(PParser parser)
             {
                 this.parser = parser;
                 this.contextLocalVarDecl = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
@@ -95,7 +97,7 @@
                 this.casesListStack = new Stack<P_Root.IArgType_Cases__2>();
             }
 
-            public LocalVarStack(Parser parser, P_Root.IArgType_NmdTupType__1 parameters)
+            public LocalVarStack(PParser parser, P_Root.IArgType_NmdTupType__1 parameters)
             {
                 this.parser = parser;
                 this.contextLocalVarDecl = Reverse(parameters);
@@ -209,7 +211,7 @@
             get { return typeExprStack.Peek(); }
         }
 
-        public Parser()
+        public PParser()
             : base(new Scanner())
         {
             localVarStack = new LocalVarStack(this);
@@ -2353,4 +2355,35 @@
         }
         #endregion
     }
+
+    internal partial class LParser : ShiftReduceParser<LexValue, LexLocation>
+    {
+        public LParser()
+            : base(null)
+        {
+
+        }
+    }
+}
+
+namespace Microsoft.Pc.Tokens
+{
+    using QUT.Gppg;
+
+    internal partial class Parser : ShiftReduceParser<LexValue, LexLocation>
+    {
+        public Parser()
+            : base(null)
+        {
+            
+        }
+    }
+}
+
+
+namespace Microsoft.Pc.PParser
+{
+    using QUT.Gppg;
+
+    
 }

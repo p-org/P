@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
@@ -76,7 +76,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <DefineConstants>TRACE;DEBUG</DefineConstants>
     <DebugType>full</DebugType>
     <PlatformTarget>x64</PlatformTarget>
     <ErrorReport>prompt</ErrorReport>
@@ -228,8 +228,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <MPLexCompile Include="Parser\lexer.lex" />
-    <MPPGCompile Include="Parser\parser.y" />
+    <MPLexCompile Include="Parser\Lexer.lex" />
+    <MPPGCompileParser Include="Parser\PParser.y" />
+    <MPPGCompileTempParser Include="Parser\LParser.y" />
+    <MPPGCompileToken Include="Parser\Tokens.y" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
@@ -308,14 +310,24 @@
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
     <GPPGCmd>mono $(GPToolsPath)\gppg45.exe</GPPGCmd>
   </PropertyGroup>
-  <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompile)" Outputs="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
+  <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompileParser)" Outputs="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
     <!--Run the command line tool that generates the cs files.-->
-    <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompile) &gt; @(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" />
+    <Exec Command="&#xD;&#xA;    	$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompileToken) &gt; @(MPPGCompileToken->'$(IntermediateOutputPath)%(FileName).g.cs')&#xD;&#xA;    	$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompileParser) &gt; @(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')&#xD;&#xA; &#xD;&#xA;    $(GPPGCmd) -report -verbose -conflicts @(MPPGCompileTempParser) &gt; @(MPPGCompileTempParser->'$(IntermediateOutputPath)%(FileName).g.cs')   	&#xD;&#xA;    	" />
     <!--Add the generated files to the list of the files to compile.-->
-    <CreateItem Include="@(MPPGCompile->'$(IntermediateOutputPath)%(FileName).g.cs')">
+    <CreateItem Include="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')">
       <Output TaskParameter="Include" ItemName="Compile" />
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
+    <CreateItem Include="@(MPPGCompileToken->'$(IntermediateOutputPath)%(FileName).g.cs')">
+      <Output TaskParameter="Include" ItemName="Compile" />
+      <Output TaskParameter="Include" ItemName="FileWrites" />
+    </CreateItem>
+    
+    <CreateItem Include="@(MPPGCompileTempParser->'$(IntermediateOutputPath)%(FileName).g.cs')">
+      <Output TaskParameter="Include" ItemName="Compile" />
+      <Output TaskParameter="Include" ItemName="FileWrites" />
+    </CreateItem>
+
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
   <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(ExtFolder)\FormulaBinaries\x86\FormulaCodeGeneratorTask.dll" Condition="'$(OS)' == 'Windows_NT'" />

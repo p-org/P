@@ -1,6 +1,6 @@
 %namespace Microsoft.Pc.Parser
 %using Microsoft.Pc.Domains;
-%using Microsoft.Pc.Tokens;
+
 
 %YYSTYPE LexValue
 %visibility internal

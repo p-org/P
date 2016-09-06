@@ -1,14 +1,11 @@
-%namespace Microsoft.Pc.Tokens
+%namespace Microsoft.Pc.Parser
 %using Microsoft.Pc.Domains;
 %visibility internal 
 %YYSTYPE LexValue
 %sharetokens
 %partial
 %tokentype PTokens
-
-%union {
-	public string str;
-}
+%parsertype DummyTokenParser
 
 %token INT BOOL ANY SEQ MAP ID
 %token TYPE INCLUDE MAIN EVENT MACHINE ASSUME SPEC ENUM EVENTSET

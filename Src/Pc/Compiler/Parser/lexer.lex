@@ -1,7 +1,5 @@
 %namespace Microsoft.Pc.Parser
 %visibility internal
-
-%using Microsoft.Pc.Tokens;
 %tokentype PTokens
 
 %x COMMENT

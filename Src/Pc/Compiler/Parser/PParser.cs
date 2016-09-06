@@ -2355,35 +2355,6 @@
         }
         #endregion
     }
-
-    internal partial class LParser : ShiftReduceParser<LexValue, LexLocation>
-    {
-        public LParser()
-            : base(null)
-        {
-
-        }
-    }
-}
-
-namespace Microsoft.Pc.Tokens
-{
-    using QUT.Gppg;
-
-    internal partial class Parser : ShiftReduceParser<LexValue, LexLocation>
-    {
-        public Parser()
-            : base(null)
-        {
-            
-        }
-    }
 }
 
 
-namespace Microsoft.Pc.PParser
-{
-    using QUT.Gppg;
-
-    
-}

@@ -20,6 +20,7 @@
 %token TRUE FALSE
 
 %token EVENTSET
+%token RECEIVES SENDS CREATES
 
 %token SWAP, REF, XFER
 

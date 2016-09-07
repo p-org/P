@@ -27,16 +27,21 @@ domain PLink
 	TypeDef         ::= fun (name: String -> type: any TypeExpr).
 	ModelType       ::= new (name: String).
 
-    AssumeMaxInstances ::= new (bound: Natural).
-    AssertMaxInstances ::= new (bound: Natural).
-    QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
-    EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
-
-	EventSet ::= fun (name: String -> list: any EventNameList + { NIL }).
-	InterfaceTypeDecl ::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
-    MachineDecl    ::= fun (name: String -> id: any Id).
-	MachineExports ::= fun (mach: String -> exports: String).
-	Creates ::= new (iname: String).
+    AssumeMaxInstances	::= new (bound: Natural).
+    AssertMaxInstances	::= new (bound: Natural).
+    QueueConstraint		::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
+    EventDecl			::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
+	FunDecl				::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
+	FunProtoDecl		::= fun (name: String,  kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
+	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
+	InterfaceTypeDecl	::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
+    MachineDecl			::= fun (name: String -> constType: TypeExpr, id: any Id).
+	MachineProtoDecl	::= new (name: String, constType: TypeExpr).
+	MachineExports		::= fun (mach: String -> exports: String).
+	MachineReceives		::= new (mach: String, ev: NonNullEventName).
+	MachineSends		::=	new (mach: String, ev: NonNullEventName).
+	MachineCreates		::= new (mach: String, IorMName: String).
+	Creates				::= new (iname: String).
 }
 
 transform PLink2C(in:: PLink) returns (out:: C)

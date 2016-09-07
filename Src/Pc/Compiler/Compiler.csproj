@@ -313,7 +313,9 @@
   </PropertyGroup>
   <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompileParser)" Outputs="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
     <!--Run the command line tool that generates the cs files.-->
-    <Exec Command="&#xD;&#xA;    	$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileToken) &gt; @(MPPGCompileToken->'$(IntermediateOutputPath)%(FileName).g.cs')&#xD;&#xA;    	$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompileParser) &gt; @(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')&#xD;&#xA; &#xD;&#xA;    $(GPPGCmd) -report -verbose -conflicts @(MPPGCompileTempParser) &gt; @(MPPGCompileTempParser->'$(IntermediateOutputPath)%(FileName).g.cs')   	&#xD;&#xA;    	" />
+     <Exec Command="$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileToken) &gt; @(MPPGCompileToken->'$(IntermediateOutputPath)%(FileName).g.cs')"/>
+     <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompileParser) &gt; @(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')"/>
+     <Exec Command="$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileTempParser) &gt; @(MPPGCompileTempParser->'$(IntermediateOutputPath)%(FileName).g.cs')" />
     <!--Add the generated files to the list of the files to compile.-->
     <CreateItem Include="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')">
       <Output TaskParameter="Include" ItemName="Compile" />

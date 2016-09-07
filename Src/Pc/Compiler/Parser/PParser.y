@@ -36,8 +36,10 @@ TopDecl
 	| EnumTypeDefDecl
 	| EventDecl
 	| ImplMachineDecl
+	| ImplMachineProtoDecl
 	| SpecMachineDecl
 	| FunDecl
+	| FunProtoDecl
 	;
 
 
@@ -127,13 +129,36 @@ ConstTypeOrNone
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone ExportsInterface LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); }
+	: ImplMachineNameDecl MachAnnotOrNone ReceivesOrExports Sends Creates LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); }
 	;
-ExportsInterface
+
+ImplMachineProtoDecl
+	: MACHINE ID LPAREN TYPE RPAREN	{ AddMachineProto($2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+
+ReceivesOrExports
 	: COLON ID										{ AddExportsInterface($2.str, ToSpan(@2), ToSpan(@1)); }
+	| RECEIVES SEMICOLON							{ AddReceivesList(ToSpan(@1), true); }
+	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(ToSpan(@1), true); }
+	|												{ AddReceivesList(null, false); }
+	;
+
+Sends
+	: SENDS NonDefaultEventList SEMICOLON			{ AddSendsList(ToSpan(@1), true); }
+	| SENDS SEMICOLON								{ AddSendsList(ToSpan(@1), true); }
+	|												{ AddSendsList(null, false); }
+	;
+
+Creates
+	: CREATES CreatesList							{ AddCreatesList(ToSpan(@1)); }
 	|
 	;
 
+CreatesList
+	: ID						{ AddToCreatesList($1.str, ToSpan(@1)); }									
+	| ID COMMA CreatesList		{ AddToCreatesList($1.str, ToSpan(@1)); }
+	;
+	
 SpecMachineDecl
 	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); } 
 	;
@@ -216,6 +241,10 @@ PayloadNone
 /******************* Function Declarations *******************/
 FunDecl
 	: IsModel FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction(ToSpan(@1), ToSpan(@6), ToSpan(@8)); }
+	;
+
+FunProtoDecl
+	: FunNameDecl ParamsOrNone RetTypeOrNone SEMICOLON { isFunProtoDecl = true; AddFunProto(ToSpan(@1)); }
 	;
 
 FunNameDecl

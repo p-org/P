@@ -26,7 +26,9 @@
 
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
+        private bool isFunProtoDecl = false;
         private P_Root.FunDecl crntFunDecl = null;
+        private P_Root.FunProtoDecl crntFunProtoDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
         private P_Root.InterfaceTypeDecl crntInterfaceDecl = null;
@@ -336,6 +338,11 @@
                         errorMessage = string.Format("A machine with name {0} already declared", name);
                         error = true;
                     }
+                    else if(topDeclNames.interfaceNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A interface with name {0} already declared", name);
+                        error = true;
+                    }
                     break;
                 case TopDecl.Module:
                     if (topDeclNames.moduleNames.Contains(name))
@@ -348,6 +355,20 @@
                     if (topDeclNames.testNames.Contains(name))
                     {
                         errorMessage = string.Format("A test case with name {0} already declared", name);
+                        error = true;
+                    }
+                    break;
+                case TopDecl.MachineProto:
+                    if (topDeclNames.machineProto.Contains(name))
+                    {
+                        errorMessage = string.Format("A machine prototype with name {0} already declared", name);
+                        error = true;
+                    }
+                    break;
+                case TopDecl.FunProto:
+                    if (topDeclNames.funProto.Contains(name))
+                    {
+                        errorMessage = string.Format("A function prototype with name {0} already declared", name);
                         error = true;
                     }
                     break;
@@ -1348,8 +1369,21 @@
 
         private void SetFunName(string name, Span span)
         {
-            var funDecl = GetCurrentFunDecl(span);
-            funDecl.name = MkString(name, span);
+            if(isFunProtoDecl)
+            {
+                var funProtoDecl = GetCurrentFunProtoDecl(span);
+                funProtoDecl.name = MkString(name, span);
+                if(IsValidName(TopDecl.FunProto, name, span))
+                {
+                    topDeclNames.funProto.Add(name);
+                }
+            }
+            else
+            {
+                var funDecl = GetCurrentFunDecl(span);
+                funDecl.name = MkString(name, span);
+            }
+            
             if (crntFunNames.Contains(name))
             {
                 var errFlag = new Flag(
@@ -2080,6 +2114,18 @@
             localVarStack = new LocalVarStack(this);
             crntFunDecl = null;
         }
+
+        private void AddFunProto(Span span)
+        {
+            Contract.Assert(isFunProtoDecl);
+
+            var funProtoDecl = GetCurrentFunProtoDecl(span);
+            funProtoDecl.id = (P_Root.IArgType_FunProtoDecl__3)MkId(span);
+            parseProgram.Functions.Add(funProtoDecl);
+
+            crntFunProtoDecl = null;
+            isFunProtoDecl = false;
+        }
         #endregion
 
         #region Node getters
@@ -2124,6 +2170,20 @@
             crntFunDecl.@return = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             crntFunDecl.Span = span;
             return crntFunDecl;
+        }
+
+        private P_Root.FunProtoDecl GetCurrentFunProtoDecl(Span span)
+        {
+            if (crntFunProtoDecl != null)
+            {
+                return crntFunProtoDecl;
+            }
+
+            crntFunProtoDecl = P_Root.MkFunProtoDecl();
+            crntFunProtoDecl.@params = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntFunProtoDecl.@return = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            crntFunProtoDecl.Span = span;
+            return crntFunProtoDecl;
         }
 
         private P_Root.StateDecl GetCurrentStateDecl(Span span)

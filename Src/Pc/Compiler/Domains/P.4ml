@@ -78,6 +78,14 @@ domain PData
 	EventSetContains ::= new (evset: EventSetDecl, ev: NonNullEventName).
 	InterfaceTypeDecl ::= fun (name: String -> evsetName: String, argType: any TypeExpr, id: any Id).
 	MachineExports ::= fun (mach: any MachineDecl -> iname: String).
+	MachineReceives ::= new (mach: any MachineDecl, ev: NonNullEventName).
+	MachineReceivesAllEvents ::= new (mach: any MachineDecl).
+	MachineSends ::= new (mach: any MachineDecl, ev: NonNullEventName).
+	MachineSendsAllEvents ::= new (mach: any MachineDecl).
+	MachineCreates ::= new (mach: any MachineDecl, IorMName: String).
+	MachineCreatesAll ::= new (mach: any MachineDecl).
+
+	//TODO: this needs to be fixed
 	Creates ::= new (iname: String).
 	
 
@@ -87,6 +95,7 @@ domain PData
 
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
     MachineDecl    ::= fun (name: String -> kind: { REAL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
+	MachineProtoDecl ::= fun (name: String -> constType: TypeExpr, id: any Id).
 
 	ObservesDecl   ::= new (spec: MachineDecl, ev: NonNullEventName).
 
@@ -98,7 +107,9 @@ domain PData
 	// For AnonFunDecl, the order of envVars is left to right and top to bottom.
 	// Thus, the numbering of variables is consistent across nested scopes.
     FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, id: any Id).
-    AnonFunDecl    ::= new (owner: MachineDecl + { NIL }, ownerFun: String + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType, id: any Id).
+    FunProtoDecl   ::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
+	
+	AnonFunDecl    ::= new (owner: MachineDecl + { NIL }, ownerFun: String + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType, id: any Id).
     
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }, id: any Id).
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
@@ -138,7 +149,10 @@ domain PStructuralTyping extends PData
 	
     [ rule_Classes = '"error, msg: Global function has the same name"']
     TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner != NIL.
-
+	
+	[ rule_Classes = '"error, msg: Another global function has the same name"']
+    TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner = NIL.
+	
 	[ rule_Classes = '"error, msg: Multiple transitions over the same event"']
 	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
 	[ rule_Classes = '"error, msg: Multiple actions over the same event"']

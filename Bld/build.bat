@@ -30,7 +30,8 @@ goto :eof
 
 :step2
 set TAIL=%MSBuildPath:~-6%
-if "[%TAIL%]" == "[amd64\]" set MSBuildPath=%MSBuildPath:~0,-6%"
+set Build64=0
+if "[%TAIL%]" == "[amd64\]" set Build64=1
 set PATH=%PATH%;%MSBuildPath%
 set Configuration=Debug
 set Platform=x86
@@ -120,10 +121,16 @@ del Src\PrtDist\Core\NodeManager_c.c
 del Src\PrtDist\Core\NodeManager_s.c
 
 if "%NoClean%"=="true" goto :build
-echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%
+echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%  /t:Clean
 msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
 
 :build
+
+set FormulaCodeGeneratorTaskPlatform=x86
+if "%Build64%"=="1" set FormulaCodeGeneratorTaskPlatform=x64
+echo msbuild FormulaCodeGeneratorTask /p:Platform=%FormulaCodeGeneratorTaskPlatform% /p:Configuration=%Configuration%
+msbuild  ext\Formula\src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj /p:Platform=%FormulaCodeGeneratorTaskPlatform% /p:Configuration=%Configuration%
+
 if "%CleanOnly%"=="true" goto :exit
 msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /p:SOLVER=NOSOLVER
 

@@ -8,7 +8,8 @@ event SUCCESS;
 machine Client {
   var server: machine;
   start state Init { 
-    entry { 
+    entry { 	
+	  print "Client created\n";
       server = new Server(); 
       raise SUCCESS; 
     } 
@@ -16,6 +17,7 @@ machine Client {
   }
   state SendPing { 
     entry { 
+	  print "Client sending PING\n";
       announce M_PING, this;
       send server, PING, this; 
       raise SUCCESS; 
@@ -33,6 +35,7 @@ machine Server {
 
   start state Init {  
     entry { 
+	  print "Server created\n";
       timer = CreateTimer(this);
       raise SUCCESS; 
     }
@@ -53,6 +56,7 @@ machine Server {
 
   state SendPong { 
     entry (payload: machine) { 
+	  print "Server sending PONG\n";
       announce M_PONG, client;
       send client, PONG; 
       raise SUCCESS; 

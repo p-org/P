@@ -31,6 +31,7 @@
         private P_Root.FunProtoDecl crntFunProtoDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
+        private P_Root.MachineProtoDecl crntMachProtoDecl = null;
         private P_Root.InterfaceTypeDecl crntInterfaceDecl = null;
         private P_Root.QualifiedName crntStateTargetName = null;
         private P_Root.QualifiedName crntGotoTargetName = null;
@@ -38,6 +39,7 @@
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
         private List<P_Root.EventName> crntEventList = new List<P_Root.EventName>();
         private List<P_Root.EventName> onEventList = new List<P_Root.EventName>();
+        private List<P_Root.String> crntStringIdList = new List<P_Root.String>();
         private List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>> crntAnnotList = new List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>();
         private Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>> crntAnnotStack = new Stack<List<Tuple<P_Root.StringCnst, P_Root.AnnotValue>>>();
 
@@ -1360,6 +1362,13 @@
             inDecl.argType = (P_Root.IArgType_InterfaceTypeDecl__2)typeExprStack.Pop();
         }
 
+        private void SetMachineProtoConstType(Span span)
+        {
+            var machineProto = GetCurrentMachineProtoDecl(span);
+            Contract.Assert(typeExprStack.Count > 0);
+            machineProto.constType = (P_Root.IArgType_MachineProtoDecl__1)typeExprStack.Pop();
+        }
+
         private void SetFunKind(P_Root.UserCnstKind kind, Span span)
         {
             if (Options.test) return;
@@ -1384,6 +1393,7 @@
                 funDecl.name = MkString(name, span);
             }
             
+            //catch early errors
             if (crntFunNames.Contains(name))
             {
                 var errFlag = new Flag(
@@ -1403,17 +1413,37 @@
 
         private void SetFunParams(Span span)
         {
-            Contract.Assert(typeExprStack.Count > 0);
-            var funDecl = GetCurrentFunDecl(span);
-            funDecl.@params = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
-            localVarStack = new LocalVarStack(this, (P_Root.IArgType_NmdTupType__1)funDecl.@params);
+            if(isFunProtoDecl)
+            {
+                Contract.Assert(typeExprStack.Count > 0);
+                var funDecl = GetCurrentFunProtoDecl(span);
+                funDecl.@params = (P_Root.IArgType_FunProtoDecl__1)typeExprStack.Pop();
+            }
+            else
+            {
+                Contract.Assert(typeExprStack.Count > 0);
+                var funDecl = GetCurrentFunDecl(span);
+                funDecl.@params = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
+                localVarStack = new LocalVarStack(this, (P_Root.IArgType_NmdTupType__1)funDecl.@params);
+            }
+            
         }
 
         private void SetFunReturn(Span span)
         {
-            Contract.Assert(typeExprStack.Count > 0);
-            var funDecl = GetCurrentFunDecl(span);
-            funDecl.@return = (P_Root.IArgType_FunDecl__4)typeExprStack.Pop();
+            if(isFunProtoDecl)
+            {
+                Contract.Assert(typeExprStack.Count > 0);
+                var funDecl = GetCurrentFunProtoDecl(span);
+                funDecl.@return = (P_Root.IArgType_FunProtoDecl__2)typeExprStack.Pop();
+            }
+            else
+            {
+                Contract.Assert(typeExprStack.Count > 0);
+                var funDecl = GetCurrentFunDecl(span);
+                funDecl.@return = (P_Root.IArgType_FunDecl__4)typeExprStack.Pop();
+            }
+            
         }
         #endregion
 
@@ -2011,6 +2041,7 @@
         {
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.id = (P_Root.IArgType_MachineDecl__4)MkId(span);
+            machDecl.Span = span;
             parseProgram.Machines.Add(machDecl);
             crntMachDecl = null;
             crntObservesList.Clear();
@@ -2018,6 +2049,83 @@
             crntFunNames.Clear();
             crntVarNames.Clear();
             crntEventList.Clear();
+        }
+
+        private void AddMachineProto(string name, Span nameSpan, Span span)
+        {
+            Contract.Assert(typeExprStack.Count() > 0);
+            var machProto = GetCurrentMachineProtoDecl(span);
+            machProto.name = MkString(name, nameSpan);
+            parseProgram.MachineProtoDecls.Add(machProto);
+            machProto.Span = span;
+            crntMachProtoDecl = null;
+            if (IsValidName(TopDecl.MachineProto, name, nameSpan))
+            {
+                topDeclNames.machineProto.Add(name);
+            }
+        }
+
+        private void AddReceivesList(Span span)
+        {
+           
+            Contract.Assert(crntEventList.Count > 0);
+            foreach(var ev in crntEventList)
+            {
+                var rec = P_Root.MkMachineReceives(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineReceives__1)ev);
+                rec.Span = ev.Span;
+                parseProgram.MachineReceives.Add(rec);
+            }
+            crntEventList.Clear();
+           
+        }
+
+        private void AddReceivesAll()
+        {
+            var recAll = P_Root.MkMachineReceivesAllEvents(GetCurrentMachineDecl(Span.Unknown));
+            parseProgram.MachineReceivesAllEvents.Add(recAll);
+        }
+        private void AddSendsList(Span span)
+        {
+            Contract.Assert(crntEventList.Count > 0);
+            foreach (var ev in crntEventList)
+            {
+                var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineSends__1)ev);
+                send.Span = ev.Span;
+                parseProgram.MachineSends.Add(send);
+                crntEventList.Clear();
+            }
+            
+        }
+        
+        private void AddSendsAll()
+        {
+            var sendAll = P_Root.MkMachineSendsAllEvents(GetCurrentMachineDecl(Span.Unknown));
+            parseProgram.MachineSendsAllEvents.Add(sendAll);
+        }
+
+
+        private void AddCreatesList(Span span)
+        {
+            Contract.Assert(crntStringIdList.Count > 0);
+            foreach (var id in crntStringIdList)
+            {
+                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
+                creates.Span = id.Span;
+                parseProgram.MachineCreates.Add(creates);
+            }
+            crntStringIdList.Clear();
+        }
+
+        private void AddCreatesAll()
+        { 
+            var createsAll = P_Root.MkMachineCreatesAll(GetCurrentMachineDecl(Span.Unknown));
+            parseProgram.MachineCreatesAll.Add(createsAll);
+            
+        }
+
+        private void AddToCreatesList(string name, Span nameSpan)
+        {
+            crntStringIdList.Add(MkString(name, nameSpan));
         }
 
         private void AddExportsInterface(string interfaceName, Span interfaceSpan, Span span)
@@ -2030,6 +2138,7 @@
             parseProgram.MachineExports.Add(export);
         }
 
+       
         private void AddMachineAnnots(Span span)
         {
             Contract.Assert(crntAnnotStack.Count > 0);
@@ -2118,11 +2227,8 @@
         private void AddFunProto(Span span)
         {
             Contract.Assert(isFunProtoDecl);
-
             var funProtoDecl = GetCurrentFunProtoDecl(span);
-            funProtoDecl.id = (P_Root.IArgType_FunProtoDecl__3)MkId(span);
-            parseProgram.Functions.Add(funProtoDecl);
-
+            parseProgram.FunProtoDecls.Add(funProtoDecl);
             crntFunProtoDecl = null;
             isFunProtoDecl = false;
         }
@@ -2219,6 +2325,17 @@
                                         MkUserCnst(P_Root.UserCnstKind.NIL, span));
             crntMachDecl.start.Span = span;
             return crntMachDecl;
+        }
+
+        private P_Root.MachineProtoDecl GetCurrentMachineProtoDecl(Span span)
+        {
+            if (crntMachProtoDecl != null)
+            {
+                return crntMachProtoDecl;
+            }
+
+            crntMachProtoDecl = P_Root.MkMachineProtoDecl();
+            return crntMachProtoDecl;
         }
         #endregion
 

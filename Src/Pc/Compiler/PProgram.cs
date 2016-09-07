@@ -113,6 +113,54 @@
             private set;
         }
 
+        public List<P_Root.FunProtoDecl> FunProtoDecls
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineProtoDecl> MachineProtoDecls
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineReceives> MachineReceives
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineSends> MachineSends
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineCreates> MachineCreates
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineReceivesAllEvents> MachineReceivesAllEvents
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineSendsAllEvents> MachineSendsAllEvents
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineCreatesAll> MachineCreatesAll
+        {
+            get;
+            private set;
+        }
+
         public IEnumerable<ICSharpTerm> Terms
         {
             get
@@ -202,6 +250,46 @@
                     yield return ex;
                 }
 
+                foreach (var fp in FunProtoDecls)
+                {
+                    yield return fp;
+                }
+
+                foreach (var mp in MachineProtoDecls)
+                {
+                    yield return mp;
+
+                }
+
+                foreach (var mr in MachineReceives)
+                {
+                    yield return mr;
+                }
+
+                foreach (var ms in MachineSends)
+                {
+                    yield return ms;
+                }
+
+                foreach (var mc in MachineCreates)
+                {
+                    yield return mc;
+                }
+
+                foreach (var mr in MachineReceivesAllEvents)
+                {
+                    yield return mr;
+                }
+
+                foreach (var ms in MachineSendsAllEvents)
+                {
+                    yield return ms;
+                }
+
+                foreach (var mc in MachineCreatesAll)
+                {
+                    yield return mc;
+                }
             }
         }
 
@@ -224,6 +312,14 @@
             InterfaceTypeDecl = new List<P_Root.InterfaceTypeDecl>();
             EventSetDecl = new List<P_Root.EventSetDecl>();
             EventSetContains = new List<P_Root.EventSetContains>();
+            FunProtoDecls = new List<P_Root.FunProtoDecl>();
+            MachineProtoDecls = new List<P_Root.MachineProtoDecl>();
+            MachineSends = new List<P_Root.MachineSends>();
+            MachineReceives = new List<P_Root.MachineReceives>();
+            MachineCreates = new List<P_Root.MachineCreates>();
+            MachineCreatesAll = new List<P_Root.MachineCreatesAll>();
+            MachineReceivesAllEvents = new List<P_Root.MachineReceivesAllEvents>();
+            MachineSendsAllEvents = new List<P_Root.MachineSendsAllEvents>();
         }
     }
 }

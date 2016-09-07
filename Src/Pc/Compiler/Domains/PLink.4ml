@@ -32,7 +32,7 @@ domain PLink
     QueueConstraint		::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
     EventDecl			::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
 	FunDecl				::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
-	FunProtoDecl		::= fun (name: String,  kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
+	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
 	InterfaceTypeDecl	::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
     MachineDecl			::= fun (name: String -> constType: TypeExpr, id: any Id).

@@ -133,25 +133,31 @@ ImplMachineDecl
 	;
 
 ImplMachineProtoDecl
-	: MACHINE ID LPAREN TYPE RPAREN	{ AddMachineProto($2.str, ToSpan(@2), ToSpan(@1)); }
+	: MACHINE ID LPAREN MachineConstTypeOrNone RPAREN	{ AddMachineProto($2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+
+MachineConstTypeOrNone
+	: Type												{ SetMachineProtoConstType(ToSpan(@1)); }
+	|
 	;
 
 ReceivesOrExports
 	: COLON ID										{ AddExportsInterface($2.str, ToSpan(@2), ToSpan(@1)); }
-	| RECEIVES SEMICOLON							{ AddReceivesList(ToSpan(@1), true); }
-	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(ToSpan(@1), true); }
-	|												{ AddReceivesList(null, false); }
+	| RECEIVES SEMICOLON							
+	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(ToSpan(@1)); }
+	|												{ AddReceivesAll(); }
 	;
 
 Sends
-	: SENDS NonDefaultEventList SEMICOLON			{ AddSendsList(ToSpan(@1), true); }
-	| SENDS SEMICOLON								{ AddSendsList(ToSpan(@1), true); }
-	|												{ AddSendsList(null, false); }
+	: SENDS NonDefaultEventList SEMICOLON			{ AddSendsList(ToSpan(@1)); }
+	| SENDS SEMICOLON								
+	|												{ AddSendsAll(); }
 	;
 
 Creates
 	: CREATES CreatesList							{ AddCreatesList(ToSpan(@1)); }
-	|
+	| CREATES SEMICOLON
+	|												{ AddCreatesAll(); }
 	;
 
 CreatesList

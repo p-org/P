@@ -95,7 +95,7 @@ domain PData
 
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
     MachineDecl    ::= fun (name: String -> kind: { REAL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
-	MachineProtoDecl ::= fun (name: String -> constType: TypeExpr, id: any Id).
+	MachineProtoDecl ::= fun (name: String -> constType: TypeExpr).
 
 	ObservesDecl   ::= new (spec: MachineDecl, ev: NonNullEventName).
 

@@ -32,7 +32,7 @@ goto :eof
 set TAIL=%MSBuildPath:~-6%
 set Build64=0
 if "[%TAIL%]" == "[amd64\]" set Build64=1
-set PATH=%PATH%;%MSBuildPath%
+set PATH=%MSBuildPath%;%PATH%
 set Configuration=Debug
 set Platform=x86
 set NoSync=

@@ -1588,18 +1588,30 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
-					   
+	
+	// for creation of machines proto
+	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
+	PayloadError(n) :- SubSE(c, n), n = New(name, NIL, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), ft != BaseType(NULL).
+	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
+	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), TypeOfArg1(c, n, type), type: TypeExpr, 
+					   TypeRel(type, ft, k), type != ft, k != SUB.
+	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), ft != BaseType(NULL).
+	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), TypeOfArg1(c, n, type), type: TypeExpr,
+					   TypeRel(type, ft, k), type != ft, k != SUB.
+					   			   
 	//for creation of interfaces
 	[ rule_Classes = '"error, msg: created interface expects an argument;"']
-	PayloadError(n) :- SubSE(c, n), n = New(name, NIL, _), no MachineDecl(name, _, _, _, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
+	PayloadError(n) :- SubSE(c, n), n = New(name, NIL, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
 
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']
-	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), no MachineDecl(name, _, _, _, _), InterfaceTypeDecl(name, _, ft,_), TypeOfArg1(c, n, type), type: TypeExpr, 
+	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft,_), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: created interface expects an argument;"']
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _), no MachineDecl(name, _, _, _, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), no MachineDecl(name, _, _, _, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
 	//Entry function of spec machine must have null constructor type

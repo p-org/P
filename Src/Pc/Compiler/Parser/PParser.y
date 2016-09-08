@@ -38,8 +38,9 @@ TopDecl
 	| ImplMachineDecl
 	| ImplMachineProtoDecl
 	| SpecMachineDecl
-	| FunDecl
 	| FunProtoDecl
+	| FunDecl
+	
 	;
 
 
@@ -250,11 +251,15 @@ FunDecl
 	;
 
 FunProtoDecl
-	: FunNameDecl ParamsOrNone RetTypeOrNone SEMICOLON { isFunProtoDecl = true; AddFunProto(ToSpan(@1)); }
+	: FunProtoNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddFunProto(ToSpan(@1)); }
 	;
 
 FunNameDecl
 	: FUN ID { SetFunName($2.str, ToSpan(@2)); }
+	;
+
+FunProtoNameDecl
+	: MODEL ID { isFunProtoDecl = true; SetFunName($2.str, ToSpan(@2)); }
 	;
 
 IsModel

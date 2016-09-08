@@ -111,6 +111,9 @@
 
 			 keywords.Add("in", (int)PTokens.IN);
 			 keywords.Add("as", (int)PTokens.AS);
+			 keywords.Add("receives", (int)PTokens.RECEIVES);
+			 keywords.Add("sends", (int)PTokens.SENDS);
+			 keywords.Add("creates", (int)PTokens.CREATES);
 		 }
 
          int GetIdToken(string txt)

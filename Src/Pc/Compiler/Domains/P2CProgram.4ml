@@ -13,7 +13,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 {
 
     /* Begin generating PLink output */
-	link.MachineDecl(name, id) :- decl is in.MachineDecl(name, REAL, _, _, id).
+	link.MachineDecl(name, BaseType(NULL), id) :- decl is in.MachineDecl(name, REAL, _, _, id).
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
 	link.EventDecl(name, card, NIL) :- in.EventDecl(name, card, NIL, _).
 	link.EventDecl(name, card, etype) :- in.EventDecl(name, card, type, _), TypeExpansion(type, etype).

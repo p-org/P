@@ -13,7 +13,15 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 {
 
     /* Begin generating PLink output */
-	link.MachineDecl(name, BaseType(NULL), id) :- decl is in.MachineDecl(name, REAL, _, _, id).
+	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, REAL, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
+									   decl is in.MachineDecl(name, REAL, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
+	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), TypeExpansion(ctype, ectype).
+	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev).
+	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev).
+	link.MachineCreatesInt(m.name, i) :- in.MachineCreates(m, i), no in.MachineDecl(i, _, _, _, _), no in.MachineProtoDecl(mcname, _), in.InterfaceTypeDecl(i, _, _, _).
+	link.MachineCreatesM(m.name, mcname) :- in.MachineCreates(m, mcname), in.MachineDecl(mcname, _, _, _, _);
+											in.MachineCreates(m, mcname), in.MachineProtoDecl(mcname, _).
+
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
 	link.EventDecl(name, card, NIL) :- in.EventDecl(name, card, NIL, _).
 	link.EventDecl(name, card, etype) :- in.EventDecl(name, card, type, _), TypeExpansion(type, etype).
@@ -25,7 +33,14 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.InterfaceTypeDecl(name, list, etype) :- in.InterfaceTypeDecl(name, esname, type, _), TypeExpansion(type, etype),
 	                                             eventset is EventSetDecl(esname, _), 
 	                                             list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }), list : EventNameList.
-	link.Creates(iname) :- in.Creates(iname).
+	link.FunImpDecl(name, eparams, ereturn, id) :- in.FunDecl(name, _, _, params, return, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
+	link.FunImpDecl(f.name, NIL, ereturn, f.id) :- f is in.FunDecl, f.params = NIL, f.return != NIL, TypeExpansion(f.return, ereturn).
+	link.FunImpDecl(name, eparams, NIL, id) :- in.FunDecl(name, _, _, params, NIL, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType.
+	link.FunImpDecl(f.name, NIL, NIL, f.id) :- f is in.FunDecl, f.params = NIL, f.return = NIL.
+	link.FunProtoDecl(name, eparams, ereturn) :- in.FunProtoDecl(name, params, return), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
+	link.FunProtoDecl(f.name, NIL, ereturn) :- f is in.FunProtoDecl, f.params = NIL, f.return != NIL, TypeExpansion(f.return, ereturn).
+	link.FunProtoDecl(name, eparams, NIL) :- in.FunProtoDecl(name, params, NIL), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType.
+	link.FunProtoDecl(f.name, NIL, NIL) :- f is in.FunProtoDecl, f.params = NIL, f.return = NIL.
 
 	NamedEventNameList ::= (EventNameList + { NIL }, EventNameList + { NIL }, String).
 	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })).

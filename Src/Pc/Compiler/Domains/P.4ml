@@ -85,10 +85,6 @@ domain PData
 	MachineCreates ::= new (mach: any MachineDecl, IorMName: String).
 	MachineCreatesAll ::= new (mach: any MachineDecl).
 
-	//TODO: this needs to be fixed
-	Creates ::= new (iname: String).
-	
-
     /*************************************************************/
     /****************  State Machine Declarations    *************/
     /*************************************************************/
@@ -267,10 +263,18 @@ domain PStaticTyping extends PData
 	InterfaceTypeDeclList ::= (name: String, it: InterfaceType).
 	InterfaceTypeDeclList(name, it) :- InterfaceTypeDecl(name, esname, _, _), eventset is EventSetDecl(esname, _), 
 	                                   it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev) }), it : InterfaceType.
+	
+	//populate the sends, receives and creates for machines with missing annotations
+	MachineSends(m, ev.name) :- MachineSendsAllEvents(m), ev is EventDecl.
+	MachineReceives(m, ev.name) :- MachineReceivesAllEvents(m), ev is EventDecl.
+	MachineCreates(m, iorm.name) :- MachineCreatesAll(m), iorm is MachineDecl;
+									MachineCreatesAll(m), iorm is MachineProtoDecl;
+									MachineCreatesAll(m), iorm is InterfaceTypeDecl.
 
 	//// populate the link map
 	LinkMap ::= (createdIorM: String, createdM: String).
-	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM, no MachineExports(m, _);
+	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM;
+									  m is MachineProtoDecl, m.name = createdIorM, m.name = createdM;
 									  MachineExports(m, createdIorM), m.name = createdM.
 
 	//Checking the constructor type error for each exported interface
@@ -498,14 +502,15 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
 
-    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExports(m, _), kind != SPEC.
-	TypeOf(c, e, t), Creates(n)	      :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), InterfaceTypeDecl(n, _, _, _), TypeExpansion(NameType(n), t).
+    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC;
+										 SubSE(c, e), e = New(n, _, _), m is MachineProtoDecl(n, _).
+	TypeOf(c, e, t)					  :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), TypeExpansion(NameType(n), t).
 
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, SPEC, _, _, _).
 
-	[ rule_Classes = '"error, msg: Undefined machine type or the created interface is not exported by any machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _).
+	[ rule_Classes = '"error, msg: Undefined machine or interface type"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -746,14 +751,15 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), m is MachineDecl(n, kind, _, _, _), no MachineExports(m, _), kind != SPEC.
-	TypeOf(c, e, NIL), Creates(n)  :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), InterfaceTypeDecl(n, _, _, _).
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC;
+									  SubSE(c, e), e = NewStmt(n, _, _), m is MachineProtoDecl(n, _).
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _).
 	  
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, SPEC, _, _, _).
 
 	[ rule_Classes = '"error, msg: Undefined machine type or the created interface is not exported by any machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _),              ///// < raise has NIL payload,

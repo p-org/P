@@ -31,25 +31,40 @@ domain PLink
     AssertMaxInstances	::= new (bound: Natural).
     QueueConstraint		::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
     EventDecl			::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
-	FunImpDecl			::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
+	FunImpDecl			::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
 	InterfaceTypeDecl	::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
-    MachineDecl			::= fun (name: String -> constType: TypeExpr, id: any Id).
-	MachineProtoDecl	::= new (name: String, constType: TypeExpr).
+    MachineDecl			::= fun (name: String -> constType: any TypeExpr, id: any Id).
+	MachineProtoDecl	::= new (name: String, constType: any TypeExpr).
 	MachineExports		::= fun (mach: String -> exports: String).
 	MachineReceives		::= new (mach: String, ev: NonNullEventName).
 	MachineSends		::=	new (mach: String, ev: NonNullEventName).
-	MachineCreates		::= new (mach: String, IorMName: String).
-	Creates				::= new (iname: String).
+	MachineCreatesInt	::= new (mach: String, iname: String).
+	MachineCreatesM		::= new (mach: String, mmname: String).
 }
 
 transform PLink2C(in:: PLink) returns (out:: C)
 {
 	LinkError ::= (iname: String).
-	LinkError(iname) :- Creates(iname), no MachineExports(_, iname).
+	//created interface not exported
+	LinkError(iname) :- MachineCreatesInt(_, iname), no MachineExports(_, iname).
+	//multiple machines export the same interface
 	LinkError(iname) :- m is MachineDecl, m' is MachineDecl, m.name != m'.name, MachineExports(m.name, iname), MachineExports(m'.name, iname).
+	//proto machine not implemented
+	LinkError(mp.name) :- mp is MachineProtoDecl, no MachineDecl(mp.name, _, _).
+	//constructor type dont match
+	LinkError(mp.name) :- mp is MachineProtoDecl, m is MachineDecl, mp.name = m.name, mp.constType != m.constType.
+	
+	//params type or return type dont match
+	LinkError(fp.name) :- fp is FunProtoDecl, f is FunImpDecl, fp.name = f.name, fp.params != f.params;
+						 fp is FunProtoDecl, f is FunImpDecl, fp.name = f.name, fp.return != f.return.
+	//proto function not implemented
+	LinkError(fp.name) :- fp is FunProtoDecl, no FunImpDecl(fp.name, _, _, _).
 
+	//machines or machine proto cannot have the same name as interfaces
+	LinkError(iname) :- i is InterfaceTypeDecl(iname, _, _), MachineDecl(iname, _, _);
+						i is InterfaceTypeDecl(iname, _, _), MachineProtoDecl(iname, _).
     /*************************************************************/
     /**********         Create Header File             ***********/
     /*************************************************************/

@@ -111,7 +111,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDecl.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + MachineCreates.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -227,7 +227,21 @@ domain PStructuralTyping extends PData
 
 	//interface declared in the exports
 	[rule_Classes = '"error, msg: interface in exports is not declared"']
-	OneDeclError(m) :- MachineExports(m, i), no InterfaceTypeDecl(i, _, _, _).
+	OneDeclError(me) :- me is MachineExports(_, i), no InterfaceTypeDecl(i, _, _, _).
+
+	//interfaces or machine names in the creates
+	[rule_Classes = '"error, msg: interface or machine in creates is not declared"']
+	OneDeclError(mc) :- mc is MachineCreates(_, name), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
+
+	//events in sends
+	[rule_Classes = '"error, msg: event in sends list is not declared"']
+	OneDeclError(ms) :- ms is MachineSends(_, name), no EventDecl(name, _, _, _).
+
+	//events in receives
+	[rule_Classes = '"error, msg: event in receives list is not declared"']
+	OneDeclError(mr) :- mr is MachineReceives(_, name), no EventDecl(name, _, _, _).
+
+
 }
 
 domain PStaticTyping extends PData

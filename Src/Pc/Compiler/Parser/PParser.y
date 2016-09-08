@@ -134,7 +134,7 @@ ImplMachineDecl
 	;
 
 ImplMachineProtoDecl
-	: MACHINE ID LPAREN MachineConstTypeOrNone RPAREN	{ AddMachineProto($2.str, ToSpan(@2), ToSpan(@1)); }
+	: EXTERN MACHINE ID LPAREN MachineConstTypeOrNone RPAREN	{ AddMachineProto($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 MachineConstTypeOrNone
@@ -251,15 +251,11 @@ FunDecl
 	;
 
 FunProtoDecl
-	: FunProtoNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddFunProto(ToSpan(@1)); }
+	: EXTERN { isFunProtoDecl = true; } FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddFunProto(ToSpan(@1)); }
 	;
 
 FunNameDecl
 	: FUN ID { SetFunName($2.str, ToSpan(@2)); }
-	;
-
-FunProtoNameDecl
-	: MODEL ID { isFunProtoDecl = true; SetFunName($2.str, ToSpan(@2)); }
 	;
 
 IsModel

@@ -196,6 +196,11 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>P.4ml</DependentUpon>
     </Compile>
+    <Compile Include="Domains\PLink.4ml.g.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>PLink.4ml</DependentUpon>
+    </Compile>
     <Compile Include="CommandLineOptions.cs" />
     <Compile Include="ICompilerOutput.cs" />
     <Compile Include="Parser\LParser.cs" />
@@ -223,7 +228,11 @@
     <EmbeddedResource Include="Zing\PrtTypes.zing" />
     <EmbeddedResource Include="Zing\PrtValues.zing" />
     <EmbeddedResource Include="Zing\Minimal.zing" />
-    <EmbeddedResource Include="Domains\PLink.4ml" />
+    <EmbeddedResource Include="Domains\PLink.4ml">
+      <Generator>FormulaCodeGenerator</Generator>
+      <CustomToolNamespace>Microsoft.Pc.Domains</CustomToolNamespace>
+      <LastGenOutput>PLink.4ml.g.cs</LastGenOutput>
+    </EmbeddedResource>
     <EmbeddedResource Include="Domains\P2CProgram.4ml" />
     <EmbeddedResource Include="Domains\PWithInferredTypes.4ml" />
     <None Include="packages.config" />
@@ -313,9 +322,9 @@
   </PropertyGroup>
   <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompileParser)" Outputs="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
     <!--Run the command line tool that generates the cs files.-->
-     <Exec Command="$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileToken) &gt; @(MPPGCompileToken->'$(IntermediateOutputPath)%(FileName).g.cs')"/>
-     <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompileParser) &gt; @(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')"/>
-     <Exec Command="$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileTempParser) &gt; @(MPPGCompileTempParser->'$(IntermediateOutputPath)%(FileName).g.cs')" />
+    <Exec Command="$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileToken) &gt; @(MPPGCompileToken->'$(IntermediateOutputPath)%(FileName).g.cs')" />
+    <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompileParser) &gt; @(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" />
+    <Exec Command="$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileTempParser) &gt; @(MPPGCompileTempParser->'$(IntermediateOutputPath)%(FileName).g.cs')" />
     <!--Add the generated files to the list of the files to compile.-->
     <CreateItem Include="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')">
       <Output TaskParameter="Include" ItemName="Compile" />
@@ -331,5 +340,5 @@
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <Import Project="..\..\..\ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.Targets"/>
+  <Import Project="..\..\..\ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.Targets" />
 </Project>

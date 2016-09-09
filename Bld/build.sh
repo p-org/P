@@ -71,6 +71,9 @@ cd ../..
 rm Src/PrtDist/Core/NodeManager_c.c
 rm Src/PrtDist/Core/NodeManager_s.c
 
+echo xbuild ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
+xbuild ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
+
 echo xbuild P.sln /p:Platform=$Platform /p:Configuration=$Configuration
 xbuild  P.sln /p:Platform=$Platform /p:Configuration=$Configuration /t:Clean
 xbuild P.sln /p:Platform=$Platform /p:Configuration=$Configuration

@@ -70,11 +70,11 @@ PRT_VALUE *P_FUN_CancelTimer_IMPL(PRT_MACHINEINST *context)
 	success = CancelWaitableTimer(timerContext->timer);
 	if (success) {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);
-		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
+		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, timerMachine->id, PRT_FALSE);
 	}
 	else {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_FAILURE);
-		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, context->id, PRT_FALSE);
+		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, timerMachine->id, PRT_FALSE);
 	}
 	PrtFreeValue(ev);
 

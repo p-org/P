@@ -302,7 +302,7 @@
     <CpCmd>copy /Y</CpCmd>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <CpCmd>cp -i</CpCmd>
+    <CpCmd>cp</CpCmd>
   </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>

@@ -5,6 +5,36 @@ using System.Collections.Generic;
 //	start state Init {
 //	}
 //}
+
+namespace MyPProgram
+{
+    public class Application : StateImpl
+    {
+        public Application() : base()
+        {
+            //initialize all the fields
+        }
+
+        public Application(bool initialize) : base()
+        {
+            //create the main machine
+            //CreateMainMachine();
+        }
+
+        public override StateImpl MakeSkeleton()
+        {
+            return new Application();
+        }
+
+        public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", new PrtNullType(), 1, false));
+        //TODO: get rid of @:
+        public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", new PrtNullType(), 1, false));
+        public static PrtEventValue Dummy = new PrtEventValue(new PrtEvent("Dummy", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
+        public static PrtEventValue Dummy1 = new PrtEventValue(new PrtEvent("Dummy1", new PrtNullType(), 1, false));
+        public static PrtEventValue Dummy2 = new PrtEventValue(new PrtEvent("Dummy2", new PrtNullType(), 2, true));
+    }
+}
+/*
 namespace DummyMachine
 {
     public class Application : StateImpl
@@ -159,7 +189,7 @@ namespace DummyMachine
 
     }
 }
-        /*
+        
         //old code start++++++++++++++++++++++++++++++++++++++++++++++:
         //similar field for each Machine and Monitor:
         List<Main> MainMachines;
@@ -232,3 +262,4 @@ namespace DummyMachine
     }
     //old code end++++++++++++++++++++++++++++++++++++++++++++++:
 } */
+

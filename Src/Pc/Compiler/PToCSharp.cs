@@ -379,10 +379,93 @@ namespace Microsoft.Pc
         SyntaxNode result = null;
 
         //utility methods:
-        //TODO: write this method: consider all possible types: null, bool, int, event, machine, any
-        private string GetTypeCreationExpr(FuncTerm type)
+        //TODO: this is based on PToZing.TypeTranslationContext.ConstructType
+        private string ConstructType(FuncTerm type)
         {
-            return "new PrtNullType()";
+            string typeKind = ((Id)type.Function).Name;
+            if (typeKind == "BaseType")
+            {
+                var primitiveType = ((Id)GetArgByIndex(type, 0)).Name;
+                if (primitiveType == "NULL")
+                {
+                    return "null";
+                }
+                else if (primitiveType == "BOOL")
+                {
+                    return "bool";
+                }
+                else if (primitiveType == "INT")
+                {
+                    return "int";
+                }
+                else if (primitiveType == "EVENT")
+                {
+                    return "event";
+                }
+                else if (primitiveType == "MACHINE")
+                {
+                    return "machine";
+                }
+                else
+                {
+                    //TODO: how to enable Debug.Assert?
+                    Debug.Assert(primitiveType == "ANY", "Illegal BaseType");
+                    return "any";
+                }
+            }
+            else if (typeKind == "NameType")
+            {
+                return "NameType: not implemented yet";
+            }
+            else if (typeKind == "TupType")
+            {
+                return "TupType: not implemented yet";
+            }
+            else if (typeKind == "NmdTupType")
+            {
+                return "NmdTupType: not implemented";
+            }
+            else if (typeKind == "SeqType")
+            {
+                return "SeqType: not implemented";
+            }
+            else
+            {
+                // typeKind == "MapType"
+                return "MapType: not implemented";
+            }
+        }
+        //TODO: write this method: consider all possible types: null, bool, int, event, machine, any
+        private string GetTypeCreationExpr(string type)
+        {
+            if (type == "null")
+            {
+                return "new PrtNullType()";
+            }
+            else if (type == "bool")
+            {
+                return "new PrtBoolType()";
+            }
+            else if (type == "int")
+            {
+                return "new PrtIntType()";
+            }
+            else if (type == "event")
+            {
+                return "new PrtEventType()";
+            }
+            else if (type == "machine")
+            {
+                return "new PrtMachineType()";
+            }
+            else if (type == "any")
+            {
+                return "new PrtAnyType()";
+            }
+            else
+            {
+                return "enum, tuple, seq or map type not implemented yet";
+            }
         }
         public bool GenerateCSharp(string csharpFileName)
         {
@@ -405,8 +488,8 @@ namespace Microsoft.Pc
             MkApplConstructors(generator);
             MkEvents(generator);
             //MkStaticFunctions(elements, workspace, generator);
-            //MkOtherAppFields(elements, workspace, generator);
-            //MkMachineClasses(elements, workspace, generator);
+            MkOtherAppFields(generator);
+            MkMachineClasses(generator);
             //MkMonitorClasses(elements, workspace, generator);
             MkCSharpOutput(generator);
             EmitCSharpOutput();
@@ -427,7 +510,6 @@ namespace Microsoft.Pc
             //Generate "new Application();" 
             var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Application")));
             var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
-              //Would that work for the method return type "StateImpl"?
               null, generator.IdentifierName("StateImpl"),
               Accessibility.Public,
               DeclarationModifiers.Override,
@@ -440,7 +522,7 @@ namespace Microsoft.Pc
             {
                 //SyntaxNode payloadType_1 = generator.TypeExpression(SpecialType.System_String);
                 //TODO: PrtNullType is generated for now; how to convert FuncTerm (pair.Value).payloadType into a StringNode?
-                SyntaxNode payloadType = generator.IdentifierName(GetTypeCreationExpr((pair.Value).payloadType));
+                SyntaxNode payloadType = generator.IdentifierName(GetTypeCreationExpr(ConstructType((pair.Value).payloadType)));
                 SyntaxNode maxInstances;
                 if ((pair.Value).maxInstances == -1)
                 {
@@ -466,15 +548,156 @@ namespace Microsoft.Pc
                 var eventCreationExpr = generator.ObjectCreationExpression(generator.IdentifierName("PrtEvent"), eventCreationPars);
                 var initExpr_1 = generator.ObjectCreationExpression(generator.IdentifierName("PrtEventValue"), eventCreationExpr);
 
-                //TODO: why "@null" is written to he output as pair.Key for the null event?
-                var eventField_1 = generator.FieldDeclaration(pair.Key,
-                  generator.IdentifierName("PrtEventValue"),
-                  Accessibility.Public,
-                  DeclarationModifiers.Static,
-                  initExpr_1);
+                //"@null" is written to he output as pair.Key for the null event; possibly, this is done to disambiguate null as C# keyword
+                //output with "@null" compiles
+                //Tried: 
+                SyntaxNode eventField_1 = null;
+                if (pair.Key == "null")
+                {
+                    //Still generates @null for the event name
+                    eventField_1 = generator.FieldDeclaration(@"null",
+                        generator.IdentifierName("PrtEventValue"),
+                        Accessibility.Public,
+                         DeclarationModifiers.Static,
+                        initExpr_1);
+                }
+                else
+                {
+                    eventField_1 = generator.FieldDeclaration(pair.Key,
+                        generator.IdentifierName("PrtEventValue"),
+                        Accessibility.Public,
+                         DeclarationModifiers.Static,
+                        initExpr_1);
+                }
+                
 
                 members.Add(eventField_1);
                 
+            }
+        }
+        private void MkOtherAppFields(SyntaxGenerator generator)
+        {
+            List<SyntaxNode> fields = new List<SyntaxNode>();
+            //stmt1: var mainMachine = new Main(this, 10);
+            fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "mainMachine", 
+                                   generator.ObjectCreationExpression(generator.IdentifierName("Main"),
+                                   new List<SyntaxNode>() { generator.ThisExpression(), generator.LiteralExpression(10) })));
+                                   //new List<SyntaxNode>() { generator.IdentifierName("this"), generator.LiteralExpression(10) })));
+            //stmt2: AddImplMachineToStateImpl(mainMachine);
+            fields.Add(generator.InvocationExpression(generator.IdentifierName("AddImplMachineToStateImpl"), 
+                                 new List<SyntaxNode>() { generator.IdentifierName("mainMachine") }));
+            //stmt3: return mainMachine;
+            fields.Add(generator.ReturnStatement(generator.IdentifierName("mainMachine")));
+            //public PrtImplMachine CreateMainMachine() {stmt1; stmt2; stmt3};
+            var makeCreateMainMachineDecl = generator.MethodDeclaration("CreateMainMachine", null,
+              null, generator.IdentifierName("PrtImplMachine"),
+              Accessibility.Public,
+              statements: fields);
+            members.Add(makeCreateMainMachineDecl);
+        }
+        private SyntaxNode MkMainMachineClass(SyntaxGenerator generator, KeyValuePair<string, MachineInfo> machine)
+        {
+            List<SyntaxNode> machineMembers = new List<SyntaxNode>();
+            var startStateProperty = generator.PropertyDeclaration("StartState",
+              generator.IdentifierName("PrtState"), Accessibility.Public, DeclarationModifiers.Override,
+              getAccessorStatements: new SyntaxNode[]
+              { generator.ReturnStatement(generator.IdentifierName(machine.Value.initStateName)) });
+            machineMembers.Add(startStateProperty);
+
+            var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Main")));
+            var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
+              null, generator.IdentifierName("PrtImplMachine"),
+              Accessibility.Public,
+              DeclarationModifiers.Override,
+              new SyntaxNode[] { makeSkeletonMethodBody });
+            machineMembers.Add(makeSkeletonMethodDecl);
+
+            //(this.GetType())
+            var returnMethodPars = new SyntaxNode[]
+            {
+                //TODO: replace generator.IdentifierName("this") - which generates "@this" with
+                //the API that generates the keyword "this"
+                //generator.InvocationExpression(generator.QualifiedName(generator.IdentifierName("this"), generator.IdentifierName("GetType")))
+                generator.InvocationExpression(generator.MemberAccessExpression(generator.ThisExpression(), generator.IdentifierName("GetType")))
+            };
+            //return app.NextMachineInstanceNumber(this.GetType());
+            var makeNextInstanceNumberMethodBody = generator.ReturnStatement(generator.InvocationExpression(generator.MemberAccessExpression(
+                 generator.IdentifierName("app"), generator.IdentifierName("NextMachineInstanceNumber")), returnMethodPars)); 
+            //ReturnStatement(generator.InvocationExpression(generator.QualifiedName(generator.IdentifierName("app"), 
+            //generator.IdentifierName("NextMachineInstanceNumber")), returnMethodPars));
+            //(StateImpl app)
+            var methodPars = new SyntaxNode[] { generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")) };
+            var makeNextInstanceNumberMethodDecl = generator.MethodDeclaration("NextInstanceNumber", methodPars,
+              //null, generator.IdentifierName("int"),
+              null, generator.TypeExpression(SpecialType.System_Int32),
+              Accessibility.Public,
+              DeclarationModifiers.Override,
+              new SyntaxNode[] { makeNextInstanceNumberMethodBody });
+            machineMembers.Add(makeNextInstanceNumberMethodDecl);
+
+            //TODO: continue here with the Main machine class
+            var nameProperty = generator.PropertyDeclaration("Name",
+              generator.TypeExpression(SpecialType.System_String), Accessibility.Public, DeclarationModifiers.Override,
+              getAccessorStatements: new SyntaxNode[]
+              { generator.ReturnStatement(generator.IdentifierName("\"Main\"")) });
+            machineMembers.Add(nameProperty);
+
+            var constructor_1 = generator.ConstructorDeclaration("Main", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
+            machineMembers.Add(constructor_1);
+
+            var constructorPars = new SyntaxNode[]
+            {
+                generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")),
+                generator.ParameterDeclaration("maxB", generator.TypeExpression(SpecialType.System_Int32))
+            };
+            var baseConstructorPars = new SyntaxNode[] { generator.IdentifierName("app"), generator.IdentifierName("maxB") };
+            var constructor_2 = generator.ConstructorDeclaration("Main", constructorPars, Accessibility.Public, baseConstructorArguments: baseConstructorPars);
+            machineMembers.Add(constructor_2);
+
+            var mainMachineClassDecl = generator.ClassDeclaration(
+              "Main", typeParameters: null,
+              accessibility: Accessibility.Public,
+              baseType: generator.IdentifierName("PrtImplMachine"),
+              members: machineMembers);
+
+
+
+            return mainMachineClassDecl;
+        }
+        private SyntaxNode MkRealMachineClass(SyntaxGenerator generator, KeyValuePair<string, MachineInfo> machine)
+        {
+            //TODO
+            return null;
+        }
+        private SyntaxNode MkSpecMachineClass(SyntaxGenerator generator, KeyValuePair<string, MachineInfo> machine)
+        {
+            //TODO
+            return null;
+        }
+        private void MkMachineClasses(SyntaxGenerator generator)
+        {
+            //stopped here: 
+            //loop over all machines (non-monitors)
+            //calls MkMachineClass(bool main, generator)
+            //For now: only calls MkMainMachineClass
+            foreach (var pair in allMachines)
+            {
+                if (pair.Key == "Main")
+                {
+                    SyntaxNode node = MkMainMachineClass(generator, pair);
+                    members.Add(node);
+                }
+                else if ((pair.Value).IsReal)
+                {
+                    SyntaxNode node = MkRealMachineClass(generator, pair);
+                    members.Add(node);
+                }
+                else
+                {
+                    //monitor machine
+                    SyntaxNode node = MkSpecMachineClass(generator, pair);
+                    members.Add(node);
+                }
             }
         }
         private void MkCSharpOutput(SyntaxGenerator generator)

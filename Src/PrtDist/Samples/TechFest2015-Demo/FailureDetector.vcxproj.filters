@@ -39,14 +39,14 @@
     </PCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="FailureDetector.p">
+    <PFile Include="FailureDetector.p">
       <Filter>P Sources</Filter>
-    </None>
-    <None Include="PrtDistHelp.p">
+    </PFile>
+    <PFile Include="PrtDistHelp.p">
       <Filter>P Sources</Filter>
-    </None>
-    <None Include="Timer.p">
+    </PFile>
+    <PFile Include="Timer.p">
       <Filter>P Sources</Filter>
-    </None>
+    </PFile>
   </ItemGroup>
 </Project>

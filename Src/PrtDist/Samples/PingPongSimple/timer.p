@@ -1,5 +1,5 @@
 //Functions for interacting with the timer machine
-model fun CreateTimer(owner : machine): machine {
+fun CreateTimer(owner : machine): machine {
 	return new Timer(owner);
 }
 
@@ -10,7 +10,6 @@ model fun StartTimer(timer : machine, time: int) {
 model fun CancelTimer(timer : machine) {
 	send timer, CANCEL;
 }
-
 
 // events from client to timer
 event START: int;

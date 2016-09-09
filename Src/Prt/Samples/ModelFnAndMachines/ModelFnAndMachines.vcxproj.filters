@@ -44,8 +44,8 @@
     </PCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="timer.p">
+    <PFile Include="timer.p">
       <Filter>P Sources</Filter>
-    </None>
+    </PFile>
   </ItemGroup>
 </Project>

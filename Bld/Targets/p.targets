@@ -45,7 +45,7 @@
       </Code>
     </Task>
   </UsingTask>
-  <Target Name="CheckPFiles" Inputs="@(PFile)" Outputs="%(RootDir)%(Directory)stubs.c">
+  <Target Name="CheckPFiles" Inputs="@(PFile)" Outputs="%(RootDir)%(Directory)linker.c">
     
     <PropertyGroup>
       <PCompileTime>%(PCompile.ModifiedTime)</PCompileTime>
@@ -56,9 +56,9 @@
     </CompareDates>
 
     <!-- this will force a recompile of the PCompile file if any of the @(PFiles) are newer  -->
-    <Delete Files="@(PCompile->'%(RootDir)%(Directory)stubs.c')" Condition="'$(DateCompareResult)'=='true'" />
+    <Delete Files="@(PCompile->'%(RootDir)%(Directory)linker.c')" Condition="'$(DateCompareResult)'=='true'" />
   </Target>
-  <Target Name="CompileP" Inputs="@(PCompile);" Outputs="%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;%(RootDir)%(Directory)stubs.c" BeforeTargets="BeforeBuildGenerateSources"
+  <Target Name="CompileP" Inputs="@(PCompile);" Outputs="%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;%(RootDir)%(Directory)linker.c" BeforeTargets="BeforeBuildGenerateSources"
            DependsOnTargets="CheckPFiles">
     <Message Importance="high" Text="########## compiling p files: @(PCompile); ##################" />
     <Message Importance="high" Condition="!Exists('$(DropFolder)\Binaries\pc.exe')"
@@ -70,7 +70,7 @@
     <ItemGroup>
       <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).c')" />
       <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).h')" />
-      <FileWrites Include="$(MSBuildThisFileDirectory)stubs.c" />
+      <FileWrites Include="$(MSBuildThisFileDirectory)linker.c" />
     </ItemGroup>
     <Exec Command="$(DropFolder)\Binaries\pc.exe /shared @(PCompile->'%(FullPath)')"  WorkingDirectory="@(PCompile->'%(RootDir)%(Directory)')"/>
   </Target>
@@ -82,7 +82,7 @@
     </PropertyGroup>
     <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).c')"/>
     <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).h')"/>
-    <Delete Files="$(MSBuildThisFileDirectory)\stubs.c"/>
+    <Delete Files="$(MSBuildThisFileDirectory)\linker.c"/>
   </Target>
 
   <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">

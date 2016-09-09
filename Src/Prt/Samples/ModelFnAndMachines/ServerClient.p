@@ -39,7 +39,7 @@ machine Client
 	start state Init{
 		entry (arg: machine){
 			sr = arg;
-			tmr = new Timer(this);
+			tmr = CreateTimer(this);
 			counter = 0;
 			raise unit;
 		}
@@ -61,7 +61,7 @@ machine Client
 				assert(false);
 				raise halt;
 			}
-			send tmr, START, 3; // 3 secs
+			StartTimer(tmr, 3000); // 3 secs
 		}
 		on TIMEOUT do (payload: machine) { 
 			send sr, req;

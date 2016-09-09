@@ -28,6 +28,9 @@
     <ClInclude Include="linker.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="test.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -52,8 +55,8 @@
     </PCompile>
   </ItemGroup>
   <ItemGroup>
-    <None Include="timer.p">
+    <PFile Include="timer.p">
       <Filter>P Sources</Filter>
-    </None>
+    </PFile>
   </ItemGroup>
 </Project>

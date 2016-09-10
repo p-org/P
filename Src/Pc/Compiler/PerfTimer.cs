@@ -25,10 +25,10 @@ namespace Microsoft.Pc
 
         public static bool ConsoleOutput { get; set; }
 
-#if __MONOCS__
-        public static int QueryPerformanceCounter(ref long time) { return 0; }
+#if __MonoCS__
+        public static int QueryPerformanceCounter(ref long time) { time = System.Diagnostics.Stopwatch.GetTimestamp(); return 0; }
 
-        public static int QueryPerformanceFrequency(ref long freq) { return 0; }
+        public static int QueryPerformanceFrequency(ref long freq) { freq = System.Diagnostics.Stopwatch.Frequency; return 0; }
 
         static void OutputDebugString(string lpOutputString) { }
 #else

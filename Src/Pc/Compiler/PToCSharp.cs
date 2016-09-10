@@ -374,9 +374,10 @@ namespace Microsoft.Pc
         #region CSharpCompiler
 
         //for storing members of the Application class:
-        List <SyntaxNode> members = new List<SyntaxNode>();
+        static List <SyntaxNode> members = new List<SyntaxNode>();
         //final C# program:
         SyntaxNode result = null;
+        static SyntaxGenerator generator;
 
         //utility methods:
         //TODO: this is based on PToZing.TypeTranslationContext.ConstructType
@@ -477,7 +478,7 @@ namespace Microsoft.Pc
             var workspace = new AdhocWorkspace();
 
             // Get the SyntaxGenerator for the specified language
-            var generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
+            generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
 
 
             // Create using/Imports directives
@@ -485,21 +486,23 @@ namespace Microsoft.Pc
 
 
             List<AST<Node>> elements = new List<AST<Node>>();
-            MkApplConstructors(generator);
-            MkEvents(generator);
+            MkAppConstructors();
+            MkEvents();
             //MkStaticFunctions(elements, workspace, generator);
-            MkOtherAppFields(generator);
-            MkMachineClasses(generator);
+            MkOtherAppFields();
+            MkMachineClasses();
             //MkMonitorClasses(elements, workspace, generator);
-            MkCSharpOutput(generator);
+            MkCSharpOutput();
             EmitCSharpOutput();
             return true;
         }
-        private void MkApplConstructors(SyntaxGenerator generator)
+        private void MkAppConstructors()
         {
-            // Generate empty list of parameters for the "public Application() :base()" constructor
-            var constructor_1 = generator.ConstructorDeclaration("Application", new SyntaxNode[0], Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
+            //parameterless constructor
+            //TODO: add inits for all fields
+            var constructor_1 = generator.ConstructorDeclaration("Application", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
             members.Add(constructor_1);
+
             var constructorParameters = new SyntaxNode[] {
                 generator.ParameterDeclaration("initialize",
                     generator.TypeExpression(SpecialType.System_Boolean)) };
@@ -516,7 +519,7 @@ namespace Microsoft.Pc
               new SyntaxNode[] { makeSkeletonMethodBody });
             members.Add(makeSkeletonMethodDecl);
         }
-        private void MkEvents(SyntaxGenerator generator)
+        private void MkEvents()
         {
             foreach (var pair in allEvents)
             {
@@ -575,7 +578,7 @@ namespace Microsoft.Pc
                 
             }
         }
-        private void MkOtherAppFields(SyntaxGenerator generator)
+        private void MkOtherAppFields()
         {
             List<SyntaxNode> fields = new List<SyntaxNode>();
             //stmt1: var mainMachine = new Main(this, 10);
@@ -595,112 +598,146 @@ namespace Microsoft.Pc
               statements: fields);
             members.Add(makeCreateMainMachineDecl);
         }
-        private SyntaxNode MkMainMachineClass(SyntaxGenerator generator, KeyValuePair<string, MachineInfo> machine)
+        
+        private void MkMachineClasses()
         {
-            List<SyntaxNode> machineMembers = new List<SyntaxNode>();
-            var startStateProperty = generator.PropertyDeclaration("StartState",
-              generator.IdentifierName("PrtState"), Accessibility.Public, DeclarationModifiers.Override,
-              getAccessorStatements: new SyntaxNode[]
-              { generator.ReturnStatement(generator.IdentifierName(machine.Value.initStateName)) });
-            machineMembers.Add(startStateProperty);
-
-            var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Main")));
-            var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
-              null, generator.IdentifierName("PrtImplMachine"),
-              Accessibility.Public,
-              DeclarationModifiers.Override,
-              new SyntaxNode[] { makeSkeletonMethodBody });
-            machineMembers.Add(makeSkeletonMethodDecl);
-
-            //(this.GetType())
-            var returnMethodPars = new SyntaxNode[]
-            {
-                //TODO: replace generator.IdentifierName("this") - which generates "@this" with
-                //the API that generates the keyword "this"
-                //generator.InvocationExpression(generator.QualifiedName(generator.IdentifierName("this"), generator.IdentifierName("GetType")))
-                generator.InvocationExpression(generator.MemberAccessExpression(generator.ThisExpression(), generator.IdentifierName("GetType")))
-            };
-            //return app.NextMachineInstanceNumber(this.GetType());
-            var makeNextInstanceNumberMethodBody = generator.ReturnStatement(generator.InvocationExpression(generator.MemberAccessExpression(
-                 generator.IdentifierName("app"), generator.IdentifierName("NextMachineInstanceNumber")), returnMethodPars)); 
-            //ReturnStatement(generator.InvocationExpression(generator.QualifiedName(generator.IdentifierName("app"), 
-            //generator.IdentifierName("NextMachineInstanceNumber")), returnMethodPars));
-            //(StateImpl app)
-            var methodPars = new SyntaxNode[] { generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")) };
-            var makeNextInstanceNumberMethodDecl = generator.MethodDeclaration("NextInstanceNumber", methodPars,
-              //null, generator.IdentifierName("int"),
-              null, generator.TypeExpression(SpecialType.System_Int32),
-              Accessibility.Public,
-              DeclarationModifiers.Override,
-              new SyntaxNode[] { makeNextInstanceNumberMethodBody });
-            machineMembers.Add(makeNextInstanceNumberMethodDecl);
-
-            //TODO: continue here with the Main machine class
-            var nameProperty = generator.PropertyDeclaration("Name",
-              generator.TypeExpression(SpecialType.System_String), Accessibility.Public, DeclarationModifiers.Override,
-              getAccessorStatements: new SyntaxNode[]
-              { generator.ReturnStatement(generator.IdentifierName("\"Main\"")) });
-            machineMembers.Add(nameProperty);
-
-            var constructor_1 = generator.ConstructorDeclaration("Main", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
-            machineMembers.Add(constructor_1);
-
-            var constructorPars = new SyntaxNode[]
-            {
-                generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")),
-                generator.ParameterDeclaration("maxB", generator.TypeExpression(SpecialType.System_Int32))
-            };
-            var baseConstructorPars = new SyntaxNode[] { generator.IdentifierName("app"), generator.IdentifierName("maxB") };
-            var constructor_2 = generator.ConstructorDeclaration("Main", constructorPars, Accessibility.Public, baseConstructorArguments: baseConstructorPars);
-            machineMembers.Add(constructor_2);
-
-            var mainMachineClassDecl = generator.ClassDeclaration(
-              "Main", typeParameters: null,
-              accessibility: Accessibility.Public,
-              baseType: generator.IdentifierName("PrtImplMachine"),
-              members: machineMembers);
-
-
-
-            return mainMachineClassDecl;
-        }
-        private SyntaxNode MkRealMachineClass(SyntaxGenerator generator, KeyValuePair<string, MachineInfo> machine)
-        {
-            //TODO
-            return null;
-        }
-        private SyntaxNode MkSpecMachineClass(SyntaxGenerator generator, KeyValuePair<string, MachineInfo> machine)
-        {
-            //TODO
-            return null;
-        }
-        private void MkMachineClasses(SyntaxGenerator generator)
-        {
-            //stopped here: 
-            //loop over all machines (non-monitors)
-            //calls MkMachineClass(bool main, generator)
-            //For now: only calls MkMainMachineClass
+            //(TODO) For now: only calls MkMainMachineClass
+            var mkMachineClass = new MkMachineClass();
             foreach (var pair in allMachines)
             {
                 if (pair.Key == "Main")
                 {
-                    SyntaxNode node = MkMainMachineClass(generator, pair);
+                    SyntaxNode node = mkMachineClass.MkMainMachineClass(pair);
                     members.Add(node);
                 }
                 else if ((pair.Value).IsReal)
                 {
-                    SyntaxNode node = MkRealMachineClass(generator, pair);
+                    SyntaxNode node = mkMachineClass.MkRealMachineClass(pair);
                     members.Add(node);
                 }
                 else
                 {
                     //monitor machine
-                    SyntaxNode node = MkSpecMachineClass(generator, pair);
+                    SyntaxNode node = mkMachineClass.MkSpecMachineClass(pair);
                     members.Add(node);
                 }
             }
         }
-        private void MkCSharpOutput(SyntaxGenerator generator)
+        internal class MkMachineClass
+        {
+            static int anonFunCount = 0;
+            static List<SyntaxNode> machineMembers = new List<SyntaxNode>();
+            public MkMachineClass() { }
+            public SyntaxNode MkAnonFuncClassForState(string stateName, StateInfo stateInfo)
+            {
+                List<SyntaxNode> anonMembers = new List<SyntaxNode>();
+                string funName = "Anon_" + anonFunCount;
+                anonFunCount += 1;
+
+                List<SyntaxNode> anonClassMembers = new List<SyntaxNode>();
+                //TODO: continue from here: construct anonMembers
+
+                var AnonClassDecl = generator.ClassDeclaration(
+                  funName, typeParameters: null,
+                  accessibility: Accessibility.Public,
+                  baseType: generator.IdentifierName("PrtFun"),
+                  members: anonClassMembers);
+
+                return AnonClassDecl;
+            }
+            public SyntaxNode MkMainMachineClass(KeyValuePair<string, MachineInfo> machine)
+            {           
+                var startStateProperty = generator.PropertyDeclaration("StartState",
+                  generator.IdentifierName("PrtState"), Accessibility.Public, DeclarationModifiers.Override,
+                  getAccessorStatements: new SyntaxNode[]
+                  { generator.ReturnStatement(generator.IdentifierName(machine.Value.initStateName)) });
+                machineMembers.Add(startStateProperty);
+
+                var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Main")));
+                var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
+                  null, generator.IdentifierName("PrtImplMachine"),
+                  Accessibility.Public,
+                  DeclarationModifiers.Override,
+                  new SyntaxNode[] { makeSkeletonMethodBody });
+                machineMembers.Add(makeSkeletonMethodDecl);
+
+                //(this.GetType())
+                var returnMethodPars = new SyntaxNode[]
+                {
+                //TODO: replace generator.IdentifierName("this") - which generates "@this" with
+                //the API that generates the keyword "this"
+                //generator.InvocationExpression(generator.QualifiedName(generator.IdentifierName("this"), generator.IdentifierName("GetType")))
+                generator.InvocationExpression(generator.MemberAccessExpression(generator.ThisExpression(), generator.IdentifierName("GetType")))
+                };
+                //return app.NextMachineInstanceNumber(this.GetType());
+                var makeNextInstanceNumberMethodBody = generator.ReturnStatement(generator.InvocationExpression(generator.MemberAccessExpression(
+                     generator.IdentifierName("app"), generator.IdentifierName("NextMachineInstanceNumber")), returnMethodPars));
+                //ReturnStatement(generator.InvocationExpression(generator.QualifiedName(generator.IdentifierName("app"), 
+                //generator.IdentifierName("NextMachineInstanceNumber")), returnMethodPars));
+                //(StateImpl app)
+                var methodPars = new SyntaxNode[] { generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")) };
+                var makeNextInstanceNumberMethodDecl = generator.MethodDeclaration("NextInstanceNumber", methodPars,
+                  //null, generator.IdentifierName("int"),
+                  null, generator.TypeExpression(SpecialType.System_Int32),
+                  Accessibility.Public,
+                  DeclarationModifiers.Override,
+                  new SyntaxNode[] { makeNextInstanceNumberMethodBody });
+                machineMembers.Add(makeNextInstanceNumberMethodDecl);
+
+                var nameProperty = generator.PropertyDeclaration("Name",
+                  generator.TypeExpression(SpecialType.System_String), Accessibility.Public, DeclarationModifiers.Override,
+                  getAccessorStatements: new SyntaxNode[]
+                  { generator.ReturnStatement(generator.IdentifierName("\"Main\"")) });
+                machineMembers.Add(nameProperty);
+
+                //constructor for cloning
+                var constructor_1 = generator.ConstructorDeclaration("Main", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
+                machineMembers.Add(constructor_1);
+
+                //Main constructor
+                //TODO: add inits for all fields
+                var constructorPars = new SyntaxNode[]
+                {
+                generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")),
+                generator.ParameterDeclaration("maxB", generator.TypeExpression(SpecialType.System_Int32))
+                };
+                var baseConstructorPars = new SyntaxNode[] { generator.IdentifierName("app"), generator.IdentifierName("maxB") };
+                var constructor_2 = generator.ConstructorDeclaration("Main", constructorPars, Accessibility.Public, baseConstructorArguments: baseConstructorPars);
+                machineMembers.Add(constructor_2);
+
+                //TODO: getters and setters
+
+                //#region Functions
+
+                //classes for anon functions for each state of Main
+                foreach (var pair in machine.Value.stateNameToStateInfo)
+                {
+                    machineMembers.Add(MkAnonFuncClassForState(pair.Key, pair.Value));
+                }
+                //TODO: continue here with the Main machine class
+
+                var mainMachineClassDecl = generator.ClassDeclaration(
+                  "Main", typeParameters: null,
+                  accessibility: Accessibility.Public,
+                  baseType: generator.IdentifierName("PrtImplMachine"),
+                  members: machineMembers);
+
+
+
+                return mainMachineClassDecl;
+            }
+            public SyntaxNode MkRealMachineClass(KeyValuePair<string, MachineInfo> machine)
+            {
+                //TODO
+                return null;
+            }
+            public SyntaxNode MkSpecMachineClass(KeyValuePair<string, MachineInfo> machine)
+            {
+                //TODO
+                return null;
+            }
+        }
+        private void MkCSharpOutput()
         {
             var applicationcClassDeclaration = generator.ClassDeclaration(
               "Application", typeParameters: null,

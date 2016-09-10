@@ -302,7 +302,7 @@
     <CpCmd>copy /Y</CpCmd>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <CpCmd>cp -i</CpCmd>
+    <CpCmd>cp</CpCmd>
   </PropertyGroup>
   <PropertyGroup>
     <PostBuildEvent>
@@ -340,5 +340,5 @@
     </CreateItem>
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
-  <Import Project="..\..\..\ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.Targets" />
+  <Import Project="..\..\..\Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.Targets" />
 </Project>

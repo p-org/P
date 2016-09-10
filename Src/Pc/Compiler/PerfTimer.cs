@@ -25,6 +25,13 @@ namespace Microsoft.Pc
 
         public static bool ConsoleOutput { get; set; }
 
+#if __MONOCS__
+        public static int QueryPerformanceCounter(ref long time) { return 0; }
+
+        public static int QueryPerformanceFrequency(ref long freq) { return 0; }
+
+        static void OutputDebugString(string lpOutputString) { }
+#else
         [DllImport("KERNEL32.DLL", EntryPoint = "QueryPerformanceCounter", SetLastError = true,
                     CharSet = CharSet.Unicode, ExactSpelling = true,
                     CallingConvention = CallingConvention.StdCall)]
@@ -34,6 +41,10 @@ namespace Microsoft.Pc
              CharSet = CharSet.Unicode, ExactSpelling = true,
              CallingConvention = CallingConvention.StdCall)]
         public static extern int QueryPerformanceFrequency(ref long freq);
+
+        [DllImport("Kernel32.dll")]
+        static extern void OutputDebugString(string lpOutputString);
+#endif
 
         public PerfTimer(string caption)
         {
@@ -149,8 +160,7 @@ namespace Microsoft.Pc
             }
         }
 
-        [DllImport("Kernel32.dll")]
-        static extern void OutputDebugString(string lpOutputString);
+        
 
 
 

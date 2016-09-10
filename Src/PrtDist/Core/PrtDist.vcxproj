@@ -136,7 +136,7 @@
       <LinkLibraryDependencies>true</LinkLibraryDependencies>
     </ProjectReference>
     <Midl>
-      <AdditionalIncludeDirectories>..\..\prt\api;$(PSdkFolder)\Headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\prt\api;</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
       <OutputDirectory>

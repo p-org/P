@@ -13,35 +13,18 @@ namespace Microsoft.Pc
     /// </summary>
     internal class PerfTimer : IDisposable
     {
-        long m_Start;
-        long m_End;
-        long m_Freq;
+        Stopwatch watch;
         long m_Min;
         long m_Max;
         long m_Count;
         long m_Sum;
-        long m_Ticks;
         string m_Caption;
 
         public static bool ConsoleOutput { get; set; }
 
 #if __MonoCS__
-        public static int QueryPerformanceCounter(ref long time) { time = System.Diagnostics.Stopwatch.GetTimestamp(); return 0; }
-
-        public static int QueryPerformanceFrequency(ref long freq) { freq = System.Diagnostics.Stopwatch.Frequency; return 0; }
-
         static void OutputDebugString(string lpOutputString) { }
 #else
-        [DllImport("KERNEL32.DLL", EntryPoint = "QueryPerformanceCounter", SetLastError = true,
-                    CharSet = CharSet.Unicode, ExactSpelling = true,
-                    CallingConvention = CallingConvention.StdCall)]
-        public static extern int QueryPerformanceCounter(ref long time);
-
-        [DllImport("KERNEL32.DLL", EntryPoint = "QueryPerformanceFrequency", SetLastError = true,
-             CharSet = CharSet.Unicode, ExactSpelling = true,
-             CallingConvention = CallingConvention.StdCall)]
-        public static extern int QueryPerformanceFrequency(ref long freq);
-
         [DllImport("Kernel32.dll")]
         static extern void OutputDebugString(string lpOutputString);
 #endif
@@ -49,48 +32,41 @@ namespace Microsoft.Pc
         public PerfTimer(string caption)
         {
             m_Caption = caption;
-            QueryPerformanceFrequency(ref m_Freq);
+            watch = new Stopwatch();
             Start();
         }
 
         public void Start()
         {
-            m_Start = GetTime();
-            m_End = m_Start;
+            watch.Start();
         }
 
         public void Stop()
         {
-            m_End = GetTime();
-            m_Ticks += m_End - m_Start;
+            watch.Stop();
         }
 
+        /// <summary>
+        /// Get elapsed time in milliseconds
+        /// </summary>
         public long GetDuration()
-        { 
-            // in milliseconds.            
-            return GetMilliseconds(GetTicks());
+        {          
+            return watch.ElapsedMilliseconds;
         }
 
-        public long GetMilliseconds(long ticks)
-        {
-            return (ticks * (long)1000) / m_Freq;
-        }
-
+        /// <summary>
+        /// Get elapsed time in platform specific ticks
+        /// </summary>
+        /// <returns></returns>
         public long GetTicks()
         {
-            return m_Ticks;
+            return watch.ElapsedTicks;
         }
 
-        public static long GetTime()
-        { 
-            // in nanoseconds.
-            long i = 0;
-            QueryPerformanceCounter(ref i);
-            return i;
-        }
-
-        // These methods allow you to count up multiple iterations and
-        // then get the median, average and percent variation.
+        /// <summary>
+        /// Count up multiple iterations and then get the median, average and percent variation.
+        /// </summary>
+        /// <param name="ms"></param>
         public void Count(long ms)
         {
             if (m_Min == 0) m_Min = ms;
@@ -135,7 +111,8 @@ namespace Microsoft.Pc
 
         public void Clear()
         {
-            m_Start = m_End = m_Min = m_Max = m_Sum = m_Count = m_Ticks = 0;
+            watch.Reset();
+            m_Min = m_Max = m_Sum = m_Count;
         }
 
         public void Dispose()

@@ -108,8 +108,7 @@
       <AdditionalIncludeDirectories>..\..\prt\api;$(PSdkFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
-      <OutputDirectory>
-      </OutputDirectory>
+      <OutputDirectory>$(PSdkFolder)\Headers\</OutputDirectory>
     </Midl>
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
@@ -139,8 +138,7 @@
       <AdditionalIncludeDirectories>..\..\prt\api;</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
-      <OutputDirectory>
-      </OutputDirectory>
+      <OutputDirectory>$(PSdkFolder)\Headers\</OutputDirectory>
     </Midl>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -162,6 +160,7 @@
       <AdditionalIncludeDirectories>..\..\prt\api;$(PSdkFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
+      <OutputDirectory>$(PSdkFolder)\Headers\</OutputDirectory>
     </Midl>
     <Lib>
       <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
@@ -189,6 +188,7 @@
       <AdditionalIncludeDirectories>..\..\prt\api;$(PSdkFolder)\Headers</AdditionalIncludeDirectories>
       <AdditionalOptions>/prefix cstub "c_" sstub "s_" %(AdditionalOptions)</AdditionalOptions>
       <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
+      <OutputDirectory>$(PSdkFolder)\Headers\</OutputDirectory>
     </Midl>
     <Lib>
       <AdditionalLibraryDirectories>..\Lib\$(Configuration)\$(Platform)\</AdditionalLibraryDirectories>
@@ -221,7 +221,7 @@
     <None Include="PrtDistIDL.acf" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="NodeManager.idl" />
+    <Midl Include="NodeManager.idl"/>
     <Midl Include="PrtDistIDL.idl" />
   </ItemGroup>
   <ItemGroup>

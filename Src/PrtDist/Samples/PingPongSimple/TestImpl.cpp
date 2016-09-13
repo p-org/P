@@ -121,6 +121,8 @@ static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *
 	case PRT_STEP_IGNORE:
 		break;
 	}
+
+	SleepEx(1, TRUE); // SleepEx allows the Win32 Timer to execute.
 }
 
 /**
@@ -135,8 +137,30 @@ Also note that the machine hosting the main machine does not host container mach
 
 int main(int argc, char *argv[])
 {
-	dgmlMonitor.Connect("10.137.62.126");
-	dgmlMonitor.NewGraph(L"d:\\temp\\trace.dgml");
+	bool dgml = false;
+	bool cooperative = false;
+	for (int i = 0; i < argc; i++)
+	{
+		char* arg = argv[i];
+		if (arg[0] == '/' || arg[0] == '-')
+		{
+			char* name = arg + 1;
+			if (strcmp(name, "dgml") == 0)
+			{
+				dgml = true;
+			}
+			else if (strcmp(name, "cooperative") == 0)
+			{
+				cooperative = true;
+			}
+		}
+	}
+
+	if (dgml) {
+		dgmlMonitor.Connect("10.137.62.126");
+		dgmlMonitor.NewGraph(L"d:\\temp\\trace.dgml");
+	}
+
 
     PRT_GUID processGuid;
     processGuid.data1 = 1;
@@ -145,6 +169,11 @@ int main(int argc, char *argv[])
     processGuid.data4 = 0;
     ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, LogHandler);
 
+	if (cooperative)
+	{
+		PrtSetSchedulingPolicy(ContainerProcess, PRT_SCHEDULINGPOLICY_COOPERATIVE);
+	}
+
     //create main machine 
     PRT_VALUE* payload = PrtMkNullValue();
     PrtMkMachine(ContainerProcess, P_MACHINE_Client, payload);
@@ -152,7 +181,14 @@ int main(int argc, char *argv[])
 
     // Wait for the timer.
     while (1) {
-        SleepEx(1000, TRUE);
+
+		if (cooperative)
+		{
+			PrtRunProcess(ContainerProcess);
+		}
+		else {
+			SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
+		}
     }
 
     return 0;

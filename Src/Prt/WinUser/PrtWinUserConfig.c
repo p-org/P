@@ -41,7 +41,7 @@ void PRT_CALL_CONV PrtDestroySemaphore(_In_ PRT_SEMAPHORE semaphore)
 
 PRT_BOOLEAN PRT_CALL_CONV PrtWaitSemaphore(_In_ PRT_SEMAPHORE semaphore, _In_ long maxWaitTime)
 {
-    DWORD status = WaitForSingleObject(semaphore, maxWaitTime == -1 ? INFINITE : maxWaitTime);
+    DWORD status = WaitForSingleObjectEx(semaphore, maxWaitTime == -1 ? INFINITE : maxWaitTime, TRUE);
     return (status == WAIT_OBJECT_0) ? PRT_TRUE : PRT_FALSE;
 }
 

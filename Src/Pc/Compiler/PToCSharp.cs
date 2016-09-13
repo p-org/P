@@ -493,7 +493,7 @@ namespace Microsoft.Pc
             MkMachineClasses();
             //MkMonitorClasses(elements, workspace, generator);
             MkCSharpOutput();
-            EmitCSharpOutput();
+            EmitCSharpOutput(csharpFileName);
             return true;
         }
         private void MkAppConstructors()
@@ -761,13 +761,21 @@ namespace Microsoft.Pc
               NormalizeWhitespace();
         }
 
-        private void EmitCSharpOutput()
+        private void EmitCSharpOutput(string fileName)
         {
             StringBuilder sb = new StringBuilder();
             using (StringWriter writer = new StringWriter(sb))
             {
                 result.WriteTo(writer);
+
+                //Debug only:
                 Console.WriteLine(writer);
+                
+                System.IO.StreamWriter file = new System.IO.StreamWriter(fileName);
+                file.WriteLine(result);
+
+                file.Close();
+
             }
         }
 

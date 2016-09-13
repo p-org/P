@@ -20,6 +20,7 @@
         public string outputFileName { get; set; }
         public bool outputFormula { get; set; }
         public bool test { get; set; }
+        public bool csharp { get; set; }
         public bool shortFileNames { get; set; }
         public bool printTypeInference { get; set; }
         public bool noCOutput { get; set; }

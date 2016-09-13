@@ -287,7 +287,7 @@
                 }
             }
             // for regression test compatibility reasons we do not include the error number when running regression tests.
-            if (Options.test)
+            if (Options.test || Options.csharp)
             {
                 return
                   // this format causes VS to put the errors in the error list window.
@@ -549,7 +549,7 @@
                     }
                 }
 
-                if (!Options.test)
+                if (!(Options.test || Options.csharp))
                 {
                     parsedProgram = Filter(parsedProgram);
                 }
@@ -603,7 +603,8 @@
             }
 
             //// Step 3. Generate outputs
-            bool rc = (Options.noCOutput ? true : GenerateC()) && (Options.test ? GenerateZing() : true);
+            bool rc = (Options.noCOutput ? true : GenerateC()) && (Options.test ? GenerateZing() : true) &&
+                (Options.csharp ? GenerateCSharp() : true);
             return rc;
         }
 
@@ -616,7 +617,34 @@
             }
             return "";
         }
+        public bool GenerateCSharp()
+        {
+            using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModule)))
+            {
+                if (!CreateRootModelWithTypes())
+                {
+                    return false;
+                }
+            }
+            
+            AST<Model> zingModel;
+            string fileName = Path.GetFileNameWithoutExtension(RootFileName);
+            if (Options.outputFileName != null)
+            {
+                fileName = Options.outputFileName;
+            }
+            string csharpFileName = fileName + ".cs";
+            string dllFileName = fileName + ".dll";
+            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
 
+            using (new PerfTimer("Generating CSharp"))
+            {
+                var pToCSharp = new PToCSharp(this, RootModel, RootModelWithTypes);
+                pToCSharp.GenerateCSharp(csharpFileName);
+                return true;
+            }
+
+        }
         public bool GenerateZing()
         {
             using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModule)))
@@ -626,6 +654,11 @@
                     return false;
                 }
             }
+
+            //TODO: temp hack; replace with command line option /csharp
+            //var pToCSharp = new PToCSharp(this, RootModel, RootModelWithTypes);
+           // pToCSharp.GenerateCSharp("XXX");
+            //return true;
 
             AST<Model> zingModel;
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
@@ -1300,7 +1333,7 @@
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.test ? "TRUE" : "FALSE"));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId((Options.test || Options.csharp) ? "TRUE" : "FALSE"));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CModel"));
             transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModule + "_LinkModel"));
 

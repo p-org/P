@@ -79,6 +79,12 @@ namespace Microsoft.Pc
                             options.test = true;
                             break;
 
+                        case "csharp":
+                            if (colonArg != null)
+                                goto error;
+                            options.csharp = true;
+                            break;
+
                         case "shortfilenames":
                             if (colonArg != null)
                                 goto error;
@@ -169,6 +175,7 @@ namespace Microsoft.Pc
                 Console.WriteLine("/outputDir:path");
                 Console.WriteLine("/outputFileName:name");
                 Console.WriteLine("/test");
+                Console.WriteLine("/csharp");
                 Console.WriteLine("/liveness[:mace]");
                 Console.WriteLine("/shortFileNames");
                 Console.WriteLine("/printTypeInference");

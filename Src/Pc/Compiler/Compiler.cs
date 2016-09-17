@@ -22,6 +22,8 @@
 #endif
     using System.Windows.Forms;
 
+    public enum CompilerOutput { None, C, Zing };
+
     public enum LivenessOption { None, Standard, Mace };
 
     public enum TopDecl { Event, EventSet, Interface, Module, Machine, Test, TypeDef, Enum, FunProto, MachineProto };
@@ -113,6 +115,7 @@
     public class Compiler
     {
         private const string PDomain = "P";
+        private const string PLinkDomain = "PLink";
         private const string PLinkTransform = "PLink2C";
         private const string CDomain = "C";
         private const string ZingDomain = "Zing";
@@ -130,7 +133,7 @@
         {
             ReservedModuleToLocation = new Dictionary<string, string>();
             ReservedModuleToLocation.Add(PDomain, "P.4ml");
-            ReservedModuleToLocation.Add(PLinkTransform, "PLink.4ml");
+            ReservedModuleToLocation.Add(PLinkDomain, "PLink.4ml");
             ReservedModuleToLocation.Add(CDomain, "C.4ml");
             ReservedModuleToLocation.Add(ZingDomain, "Zing.4ml");
             ReservedModuleToLocation.Add(P2InfTypesTransform, "PWithInferredTypes.4ml");
@@ -161,34 +164,6 @@
             set;
         }
 
-        public ProgramName RootProgramName
-        {
-            get;
-            private set;
-        }
-
-        public string RootFileName
-        {
-            get
-            {
-                return RootProgramName.ToString();
-            }
-        }
-
-        public AST<Model> RootModel
-        {
-            get;
-            private set;
-        }
-
-        public string RootModule
-        {
-            get
-            {
-                return RootModel.Node.Name;
-            }
-        }
-
         public ProgramName RootProgramNameWithTypes
         {
             get;
@@ -217,7 +192,7 @@
             CompilerEnv = new Env(envParams);
         }
 
-        public bool Compile(string inputFileName, ICompilerOutput log, CommandLineOptions options)
+        public bool Compile(ICompilerOutput log, CommandLineOptions options)
         {
             if (options.profile)
             {
@@ -226,24 +201,8 @@
             this.errors = new SortedSet<Flag>(default(FlagSorter));
             this.Log = log;
             this.Options = options;
-            if (RootProgramName != null)
-            {
-                InstallResult uninstallResult;
-                var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { RootProgramName }, out uninstallResult);
-                Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
-            }
-            if (RootProgramNameWithTypes != null)
-            {
-                InstallResult uninstallResult;
-                var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { RootProgramNameWithTypes }, out uninstallResult);
-                Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
-            }
-            RootProgramName = null;
-            RootModel = null;
-            RootProgramNameWithTypes = null;
-            RootModelWithTypes = null;
-            ParsedProgram = null;
-            var result = InternalCompile(inputFileName);
+            this.ParsedProgram = null;
+            var result = InternalCompile();
             foreach (var f in errors)
             {
                 PrintFlag(f);
@@ -479,9 +438,9 @@
             return fProgram;
         }
 
-        bool InternalCompile(string inputFileName)
+        bool ParseProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName)
         {
-            PProgram parsedProgram = new PProgram();
+            parsedProgram = new PProgram();
             using (new PerfTimer("Compiler parsing " + Path.GetFileName(inputFileName)))
             {
                 try
@@ -503,6 +462,7 @@
                 TopDeclNames topDeclNames = new TopDeclNames();
                 Dictionary<string, ProgramName> SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
+                var RootFileName = RootProgramName.ToString();
                 SeenFileNames[RootFileName] = RootProgramName;
                 parserWorkQueue.Enqueue(RootFileName);
                 while (parserWorkQueue.Count > 0)
@@ -555,8 +515,12 @@
                 }
                 ParsedProgram = parsedProgram;
             }
+            return true;
+        }
 
-            using (new PerfTimer("Compiler formulating " + Path.GetFileName(inputFileName)))
+        void InstallProgram(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, out AST<Model> RootModel)
+        {
+            using (new PerfTimer("Compiler installing " + Path.GetFileName(inputFileName)))
             {
                 //// Step 0. Load P.4ml.
                 LoadManifestProgram("Pc.Domains.P.4ml");
@@ -564,7 +528,7 @@
                 //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
                 AST<Model> rootModel = null;
                 var mkModelResult = Factory.Instance.MkModel(
-                    MkSafeModuleName(RootFileName),
+                    MkSafeModuleName(RootProgramName.ToString()),
                     PDomain,
                     parsedProgram.Terms,
                     out rootModel,
@@ -589,25 +553,37 @@
                     wr.Close();
                 }
             }
+        }
 
-            //// Step 2. Perform static analysis.
+        bool InternalCompile()
+        {
+            PProgram parsedProgram;
+            ProgramName RootProgramName;
+            AST<Model> RootModel;
+            string inputFileName = Options.inputFileName;
+
+            if (!ParseProgram(inputFileName, out parsedProgram, out RootProgramName))
+            {
+                return false;
+            }
+
+            InstallProgram(inputFileName, parsedProgram, RootProgramName, out RootModel);
             
-            if (!Check(RootModule))
+            if (!Check(RootProgramName, RootModel.Node.Name))
             {
                 return false;
             }
                         
-            if (Options.analyzeOnly)
+            if (Options.compilerOutput == CompilerOutput.None)
             {
                 return true;
             }
 
-            //// Step 3. Generate outputs
-            bool rc = (Options.noCOutput ? true : GenerateC()) && (Options.test ? GenerateZing() : true);
+            bool rc = (Options.compilerOutput == CompilerOutput.C ? GenerateC(RootProgramName, RootModel) : true) && (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel) : true);
             return rc;
         }
 
-        public string GetFirstMessage(IEnumerable<Flag> flags)
+        public static string GetFirstMessage(IEnumerable<Flag> flags)
         {
             Flag first = flags.FirstOrDefault();
             if (first != null)
@@ -617,16 +593,17 @@
             return "";
         }
 
-        public bool GenerateZing()
+        public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel)
         {
-            using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModule)))
+            using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModel.Node.Name)))
             {
-                if (!CreateRootModelWithTypes())
+                if (!CreateRootModelWithTypes(RootProgramName, RootModel))
                 {
                     return false;
                 }
             }
 
+            string RootFileName = RootProgramName.ToString();
             AST<Model> zingModel;
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             if (Options.outputFileName != null)
@@ -813,7 +790,7 @@
             }
         }
 
-        private bool CreateRootModelWithTypes()
+        private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel)
         {
             if (RootModelWithTypes != null)
             {
@@ -821,15 +798,15 @@
             }
             LoadManifestProgram("Pc.Domains.PWithInferredTypes.4ml");
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
-            var RootModuleWithTypes = RootModule + "_WithTypes";
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
+            var RootModuleWithTypes = RootModel.Node.Name + "_WithTypes";
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModuleWithTypes));
             Task<ApplyResult> apply;
             Formula.Common.Rules.ExecuterStatistics stats;
             List<Flag> applyFlags;
             CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
-            RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_WithTypes.4ml"));
+            RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_WithTypes.4ml"));
             var extractTask = apply.Result.GetOutputModel(
                 RootModuleWithTypes,
                 RootProgramNameWithTypes,
@@ -848,7 +825,7 @@
         /// <summary>
         /// Run static analysis on the program.
         /// </summary>
-        private bool Check(string inputModule)
+        private bool Check(ProgramName RootProgramName, string inputModule)
         {
             Task<QueryResult> task;
 
@@ -886,39 +863,39 @@
             // Enumerate typing errors
             using (new PerfTimer("Compiler error reporting " + Path.GetFileName(inputModule)))
             {
-                AddErrors(task.Result, "DupNmdSubE(_, _, _, _)", 1);
-                AddErrors(task.Result, "PurityError(_, _)", 1);
-                AddErrors(task.Result, "SpecError(_, _)", 1);
-                AddErrors(task.Result, "LValueError(_, _)", 1);
-                AddErrors(task.Result, "BadLabelError(_)", 0);
-                AddErrors(task.Result, "PayloadError(_)", 0);
-                AddErrors(task.Result, "TypeDefError(_)", 0);
-                AddErrors(task.Result, "FunRetError(_)", 0);
+                AddErrors(RootProgramName, task.Result, "DupNmdSubE(_, _, _, _)", 1);
+                AddErrors(RootProgramName, task.Result, "PurityError(_, _)", 1);
+                AddErrors(RootProgramName, task.Result, "SpecError(_, _)", 1);
+                AddErrors(RootProgramName, task.Result, "LValueError(_, _)", 1);
+                AddErrors(RootProgramName, task.Result, "BadLabelError(_)", 0);
+                AddErrors(RootProgramName, task.Result, "PayloadError(_)", 0);
+                AddErrors(RootProgramName, task.Result, "TypeDefError(_)", 0);
+                AddErrors(RootProgramName, task.Result, "FunRetError(_)", 0);
 
-                AddErrors(task.Result, "FunDeclQualifierError(_, _)", 1);
-                AddErrors(task.Result, "FunCallQualifierError(_, _, _)", 2);
-                AddErrors(task.Result, "SendQualifierError(_, _)", 1);
-                AddErrors(task.Result, "UnavailableVarAccessError(_, _, _)", 1);
-                AddErrors(task.Result, "UnavailableParameterError(_, _)", 0);
+                AddErrors(RootProgramName, task.Result, "FunDeclQualifierError(_, _)", 1);
+                AddErrors(RootProgramName, task.Result, "FunCallQualifierError(_, _, _)", 2);
+                AddErrors(RootProgramName, task.Result, "SendQualifierError(_, _)", 1);
+                AddErrors(RootProgramName, task.Result, "UnavailableVarAccessError(_, _, _)", 1);
+                AddErrors(RootProgramName, task.Result, "UnavailableParameterError(_, _)", 0);
 
                 //// Enumerate structural errors
-                AddErrors(task.Result, "OneDeclError(_)", 0);
-                AddErrors(task.Result, "TwoDeclError(_, _)", 1);
-                AddErrors(task.Result, "DeclFunError(_, _)", 1);
-                AddErrors(task.Result, "ExportInterfaceError(_)", 0);
+                AddErrors(RootProgramName, task.Result, "OneDeclError(_)", 0);
+                AddErrors(RootProgramName, task.Result, "TwoDeclError(_, _)", 1);
+                AddErrors(RootProgramName, task.Result, "DeclFunError(_, _)", 1);
+                AddErrors(RootProgramName, task.Result, "ExportInterfaceError(_)", 0);
 
                 // this one is slow, so we do it last.
-                AddErrors(task.Result, "TypeOf(_, _, ERROR)", 1);
+                AddErrors(RootProgramName, task.Result, "TypeOf(_, _, ERROR)", 1);
 
                 if (Options.printTypeInference)
                 {
-                    AddTerms(task.Result, "TypeOf(_, _, _)", SeverityKind.Info, 0, "inferred type: ", 1, 2);
+                    AddTerms(RootProgramName, task.Result, "TypeOf(_, _, _)", SeverityKind.Info, 0, "inferred type: ", 1, 2);
                 }
             }
             return task.Result.Conclusion == LiftedBool.True;
         }
 
-        private void AddErrors(QueryResult result, string errorPattern, int locationIndex = -1)
+        private void AddErrors(ProgramName RootProgramName,  QueryResult result, string errorPattern, int locationIndex = -1)
         {
             List<Flag> queryFlags;
             foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
@@ -986,6 +963,7 @@
 #endif
 
         private void AddTerms(
+            ProgramName RootProgramName,
             QueryResult result,
             string termPattern,
             SeverityKind severity,
@@ -1278,19 +1256,20 @@
             return aliases;
         }
 
-        public bool GenerateC()
+        public bool GenerateC(ProgramName RootProgramName, AST<Model> RootModel)
         {
-            using (new PerfTimer("Compiler generating C " + Path.GetFileName(RootFileName)))
+            using (new PerfTimer("Compiler generating C " + Path.GetFileName(RootProgramName.ToString())))
             {
                 LoadManifestProgram("Pc.Domains.C.4ml");
                 LoadManifestProgram("Pc.Domains.PLink.4ml");
                 LoadManifestProgram("Pc.Domains.P2CProgram.4ml");
-                return InternalGenerateC();
+                return InternalGenerateC(RootProgramName, RootModel);
             }
         }
 
-        bool InternalGenerateC()
+        bool InternalGenerateC(ProgramName RootProgramName, AST<Model> RootModel)
         {
+            string RootFileName = RootProgramName.ToString();
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             if (Options.outputFileName != null)
             {
@@ -1298,11 +1277,11 @@
             }
             //// Apply the P2C transform.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModule, null, RootProgramName.ToString()));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.test ? "TRUE" : "FALSE"));
-            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CModel"));
-            transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModule + "_LinkModel"));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModel.Node.Name + "_CModel"));
+            transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModel.Node.Name + "_LinkModel"));
 
             List<Flag> appFlags;
             Task<ApplyResult> apply;
@@ -1315,16 +1294,16 @@
             }
 
             //// Extract the result
-            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_CModel.4ml"));
-            var extractTask = apply.Result.GetOutputModel(RootModule + "_CModel", progName, AliasPrefix);
+            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_CModel.4ml"));
+            var extractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_CModel", progName, AliasPrefix);
             extractTask.Wait();
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
-            var success = Render(cProgram, RootModule + "_CModel", progName);
+            var success = Render(cProgram, RootModel.Node.Name + "_CModel", progName);
  
             //// Extract the link model
-            var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_LinkModel.4ml"));
-            var linkExtractTask = apply.Result.GetOutputModel(RootModule + "_LinkModel", linkProgName, AliasPrefix);
+            var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
+            var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, AliasPrefix);
             linkExtractTask.Wait();
             var linkModel = linkExtractTask.Result.FindAny(
                                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
@@ -1333,12 +1312,10 @@
             StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.ChangeExtension(RootProgramName.ToString(), ".4ml"))));
             linkModel.Print(wr);
             wr.Close();
-            Link(linkProgName, (AST<Model>)linkModel);
-
             return success;
         }
 
-        bool Render(AST<Program> cProgram, string moduleName, ProgramName progName)
+        private bool Render(AST<Program> cProgram, string moduleName, ProgramName progName)
         {
             //// Set the renderer of the C program so terms can be converted to text.
             var cProgramConfig = (AST<Config>)cProgram.FindAny(new NodePred[]
@@ -1398,16 +1375,82 @@
             return success;
         }
 
-        private void Link(ProgramName linkProgramName, AST<Model> linkModel)
+        private static AST<Program> ParseFormulaFile(string fileName)
+        {
+            Task<ParseResult> parseTask = null;
+            try
+            {
+                string programStr;
+                using (var sr = new StreamReader(fileName))
+                {
+                    programStr = sr.ReadToEnd();
+                }
+
+                parseTask = Factory.Instance.ParseText(new ProgramName(fileName), programStr);
+            }
+            catch (Exception e)
+            {
+                throw new Exception("Unable to parse file: " + e.Message);
+            }
+
+            if (!parseTask.Result.Succeeded)
+            {
+                throw new Exception("Unable to parse file");
+            }
+
+            return parseTask.Result.Program;
+        }
+
+        public bool Link(IEnumerable<string> fileNames)
+        {
+            var linkModel = Factory.Instance.MkModel(
+                                    "OutputLinker",
+                                    false,
+                                    Factory.Instance.MkModRef(PLinkDomain, null, MkReservedModuleLocation(PLinkDomain)),
+                                    ComposeKind.Extends);
+
+            try
+            {
+                foreach (var fileName in fileNames)
+                {
+                    var program = ParseFormulaFile(fileName);
+                    program.FindAll(
+                        new NodePred[]
+                        {
+                        NodePredFactory.Instance.Star,
+                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                        },
+                        (path, n) =>
+                        {
+                            linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
+                        });
+                }
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+
+            var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "LinkModel.4ml"));
+            using (new PerfTimer("Compiler linking"))
+            {
+                LoadManifestProgram("Pc.Domains.PLink.4ml");
+                LoadManifestProgram("Pc.Domains.C.4ml");
+                InternalLink(linkProgName, linkModel);
+            }
+            return true;
+        }
+
+        private void InternalLink(ProgramName linkProgramName, AST<Model> linkModel)
         {
             InstallResult instResult;
             AST<Program> modelProgram = MkProgWithSettings(linkProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
             bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, linkModel), out instResult);
             Contract.Assert(progressed && instResult.Succeeded, GetFirstMessage(from t in instResult.Flags select t.Item2));
 
-            var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(PLinkTransform, null, MkReservedModuleLocation(PLinkTransform)));
+            var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(PLinkTransform, null, MkReservedModuleLocation(PLinkDomain)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(linkModel.Node.Name, null, linkProgramName.ToString()));
-            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModule + "_CLinkModel"));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId("CLinkModel"));
 
             List<Flag> appFlags;
             Task<ApplyResult> apply;
@@ -1419,12 +1462,12 @@
                 AddFlag(f);
             }
 
-            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModule + "_CLinkModel.4ml"));
-            var extractTask = apply.Result.GetOutputModel(RootModule + "_CLinkModel", progName, AliasPrefix);
+            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
+            var extractTask = apply.Result.GetOutputModel("CLinkModel", progName, AliasPrefix);
             extractTask.Wait();
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
-            var success = Render(cProgram, RootModule + "_CLinkModel", progName);
+            var success = Render(cProgram, "CLinkModel", progName);
 
             InstallResult uninstallResult;
             var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { linkProgramName }, out uninstallResult);

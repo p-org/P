@@ -142,9 +142,9 @@ namespace Microsoft.PVisualizer
         private static void ReadFile(string inputFileName, GViewer gViewer)
         {
             var options = new CommandLineOptions();
-            options.analyzeOnly = true;
+            options.inputFileName = inputFileName;
             var compiler = new Compiler(options.shortFileNames);
-            var result = compiler.Compile(inputFileName, new StandardOutput(), options);
+            var result = compiler.Compile(new StandardOutput(), options);
 
             if (result)
             {

@@ -133,7 +133,7 @@ namespace Microsoft.Pc
                         bool result = false;
                         try
                         {
-                            result = compiler.Compile(options.inputFileName, new SerializedOutput(clientPipe), options);
+                            result = compiler.Compile(new SerializedOutput(clientPipe), options);
                         }
                         catch (Exception ex)
                         {

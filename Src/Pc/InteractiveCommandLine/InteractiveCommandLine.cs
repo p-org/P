@@ -10,15 +10,12 @@ namespace Microsoft.Pc
 {
     internal class InteractiveCommandLine
     {
-        private static string inputFileName = null;
-
         private static void Main(string[] args)
         {
             bool shortFileNames = false;
             bool server = false;
-            string loadErrorMsgString = "USAGE: load file.p [/test] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>]";
-            string compileErrorMsgString = "USAGE: compile [/outputDir:<dir>] [/noSourceInfo]";
-            string testErrorMsgString = "USAGE: test [/liveness[:mace]] [/outputDir:<dir>]";
+            string compileErrorMsgString = "USAGE: compile file.p [/shortFileNames] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>] [/generate[:C,:Zing]] [/test] [/liveness[:mace]] [/profile]";
+            string linkErrorMsgString = "USAGE: link file_1.4ml ... file_n.4ml [file.p]";
             for (int i = 0; i < args.Length; i++)
             {
                 var arg = args[i];
@@ -49,10 +46,6 @@ namespace Microsoft.Pc
                 compiler = new Compiler(true);
             else
                 compiler = new Compiler(false);
-            CommandLineOptions compilerOptions = new CommandLineOptions();
-            compilerOptions.shortFileNames = shortFileNames;
-            compilerOptions.test = false;
-            compilerOptions.analyzeOnly = true;
             if (server)
             {
                 Console.WriteLine("Pci: initialization succeeded");
@@ -73,64 +66,29 @@ namespace Microsoft.Pc
                     Console.WriteLine("Pci: exiting");
                     return;
                 }
-                else if (inputArgs[0] == "load")
+                else if (inputArgs[0] == "compile")
                 {
                     try
                     {
-                        var success = ParseLoadString(inputArgs, compilerOptions);
-                        if (!success)
+                        CommandLineOptions compilerOptions;
+                        bool sharedCompiler;
+                        var success = CommandLineOptions.ParseCompileString(inputArgs.Skip(1), out sharedCompiler, out compilerOptions);
+                        if (!success || sharedCompiler)
                         {
-                            Console.WriteLine(loadErrorMsgString);
+                            Console.WriteLine(compileErrorMsgString);
                             continue;
                         }
-                        var result = compiler.Compile(inputFileName, new StandardOutput(), compilerOptions);
-                        if (!result)
-                        {
-                            inputFileName = null;
-                        }
+                        compilerOptions.shortFileNames = shortFileNames;
+                        var result = compiler.Compile(new StandardOutput(), compilerOptions);
                         if (server)
                         {
                             if (!result)
                             {
                                 Console.WriteLine("Pci: command failed");
-                            } else
-                            {
-                                Console.WriteLine("Pci: command done");
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine(ex.ToString());
-                        Console.WriteLine("Pci: command failed");
-                    }
-                }
-                else if (inputArgs[0] == "test")
-                {
-                    try
-                    {
-                        if (inputFileName == null)
-                        {
-                            Console.WriteLine(loadErrorMsgString);
-                            continue;
-                        }
-                        var success = ParseTestString(inputArgs, compilerOptions);
-                        if (!success)
-                        {
-                            Console.WriteLine(testErrorMsgString);
-                            continue;
-                        }
-                        compiler.Options = compilerOptions;
-                        var b = compiler.GenerateZing();
-                        if (server)
-                        {
-                            if (b)
-                            {
-                                Console.WriteLine("Pci: command done");
                             }
                             else
                             {
-                                Console.WriteLine("Pci: command failed");
+                                Console.WriteLine("Pci: command done");
                             }
                         }
                     }
@@ -140,24 +98,16 @@ namespace Microsoft.Pc
                         Console.WriteLine("Pci: command failed");
                     }
                 }
-                else if (inputArgs[0] == "compile")
+                else if (inputArgs[0] == "link")
                 {
                     try
                     {
-                        if (inputFileName == null)
+                        if (!CommandLineOptions.ParseLinkString(inputArgs.Skip(1)))
                         {
-                            Console.WriteLine(loadErrorMsgString);
+                            Console.WriteLine(linkErrorMsgString);
                             continue;
                         }
-                        var success = ParseCompileString(inputArgs, compilerOptions);
-                        if (!success)
-                        {
-                            Console.WriteLine(compileErrorMsgString);
-                            continue;
-                        }
-                        compiler.Options = compilerOptions;
-                        var b = compiler.GenerateC();
-
+                        var b = compiler.Link(inputArgs.Skip(1));
                         if (server)
                         {
                             if (b)
@@ -187,196 +137,6 @@ namespace Microsoft.Pc
                 Console.WriteLine("USAGE: Pci.exe [/shortFileNames] [/server]");
                 return;
             }
-        }
-
-        private static bool ParseLoadString(string[] args, CommandLineOptions compilerOptions)
-        {
-            string fileName = null;
-            bool test = false;
-            bool outputFormula = false;
-            bool printTypeInference = false;
-            string outputDir = null;
-            string outputFileName = null;
-            for (int i = 1; i < args.Length; i++)
-            {
-                string arg = args[i];
-                string colonArg = null;
-                if (arg[0] == '-' || arg[0] == '/')
-                {
-                    var colonIndex = arg.IndexOf(':');
-                    if (colonIndex >= 0)
-                    {
-                        arg = args[i].Substring(0, colonIndex);
-                        colonArg = args[i].Substring(colonIndex + 1);
-                    }
-                    switch (arg.Substring(1).ToLowerInvariant())
-                    {
-                        case "test":
-                            test = true;
-                            break;
-
-                        case "dumpformulamodel":
-                            outputFormula = true;
-                            break;
-
-                        case "printtypeinference":
-                            printTypeInference = true;
-                            break;
-
-                        case "outputdir":
-                            if (colonArg == null)
-                            {
-                                Console.WriteLine("Must supply path for output directory");
-                                return false;
-                            }
-                            if (!Directory.Exists(colonArg))
-                            {
-                                Console.WriteLine("Output directory {0} does not exist", colonArg);
-                                return false;
-                            }
-                            outputDir = colonArg;
-                            break;
-
-                        case "outputfilename":
-                            if (colonArg == null)
-                            {
-                                Console.WriteLine("Must supply name for output files");
-                                return false;
-                            }
-                            outputFileName = colonArg;
-                            break;
-
-                        default:
-                            return false;
-                    }
-                }
-                else
-                {
-                    if (fileName == null)
-                    {
-                        fileName = arg;
-                    }
-                    else
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            if (fileName == null)
-                return false;
-            inputFileName = fileName;
-            compilerOptions.outputFormula = outputFormula;
-            compilerOptions.printTypeInference = printTypeInference;
-            compilerOptions.outputDir = outputDir;
-            compilerOptions.outputFileName = outputFileName;
-            compilerOptions.test = test;
-            return true;
-        }
-
-        private static bool ParseCompileString(string[] args, CommandLineOptions compilerOptions)
-        {
-            string outputDir = null;
-            bool noSourceInfo = false;
-            for (int i = 1; i < args.Length; i++)
-            {
-                string arg = args[i];
-                string colonArg = null;
-                if (arg[0] == '-' || arg[0] == '/')
-                {
-                    var colonIndex = arg.IndexOf(':');
-                    if (colonIndex >= 0)
-                    {
-                        arg = args[i].Substring(0, colonIndex);
-                        colonArg = args[i].Substring(colonIndex + 1);
-                    }
-                    switch (arg.Substring(1).ToLowerInvariant())
-                    {
-                        case "outputdir":
-                            if (colonArg == null)
-                            {
-                                Console.WriteLine("Must supply path for output directory");
-                                return false;
-                            }
-                            if (!Directory.Exists(colonArg))
-                            {
-                                Console.WriteLine("Output directory {0} does not exist", colonArg);
-                                return false;
-                            }
-                            outputDir = colonArg;
-                            break;
-
-                        case "nosourceinfo":
-                            noSourceInfo = true;
-                            break;
-
-                        default:
-                            return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            compilerOptions.outputDir = outputDir;
-            compilerOptions.noSourceInfo = noSourceInfo;
-            return true;
-        }
-
-        private static bool ParseTestString(string[] args, CommandLineOptions compilerOptions)
-        {
-            LivenessOption liveness = LivenessOption.None;
-            string outputDir = null;
-            for (int i = 1; i < args.Length; i++)
-            {
-                string arg = args[i];
-                string colonArg = null;
-                if (arg[0] == '-' || arg[0] == '/')
-                {
-                    var colonIndex = arg.IndexOf(':');
-                    if (colonIndex >= 0)
-                    {
-                        arg = args[i].Substring(0, colonIndex);
-                        colonArg = args[i].Substring(colonIndex + 1);
-                    }
-                    switch (arg.Substring(1).ToLowerInvariant())
-                    {
-                        case "outputdir":
-                            if (colonArg == null)
-                            {
-                                Console.WriteLine("Must supply path for output directory");
-                                return false;
-                            }
-                            if (!Directory.Exists(colonArg))
-                            {
-                                Console.WriteLine("Output directory {0} does not exist", colonArg);
-                                return false;
-                            }
-                            outputDir = colonArg;
-                            break;
-
-                        case "liveness":
-                            if (colonArg == null)
-                                liveness = LivenessOption.Standard;
-                            else if (colonArg == "mace")
-                                liveness = LivenessOption.Mace;
-                            else
-                                return false;
-                            break;
-
-                        default:
-                            return false;
-                    }
-                }
-                else
-                {
-                    return false;
-                }
-            }
-            compilerOptions.liveness = liveness;
-            compilerOptions.outputDir = outputDir;
-            return true;
         }
     }
 }

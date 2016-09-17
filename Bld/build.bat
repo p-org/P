@@ -116,9 +116,6 @@ for %%i in (zc\bin\%Platform%\Release\zc.exe
 )
    
 cd ..\..
-REM this code fixes a problem in MIDL compile by forcing recompile of these files for each configuration.
-del Src\PrtDist\Core\NodeManager_c.c
-del Src\PrtDist\Core\NodeManager_s.c
 
 if "%NoClean%"=="true" goto :build
 echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%  /t:Clean

@@ -98,6 +98,10 @@
                             {
                                 compilerOutput = CompilerOutput.Zing;
                             }
+                            else if (colonArg == "C#")
+                            {
+                                compilerOutput = CompilerOutput.CSharp;
+                            }
                             break;
 
                         case "outputdir":

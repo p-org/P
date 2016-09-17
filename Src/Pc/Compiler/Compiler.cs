@@ -22,7 +22,7 @@
 #endif
     using System.Windows.Forms;
 
-    public enum CompilerOutput { None, C, Zing };
+    public enum CompilerOutput { None, C, Zing, CSharp };
 
     public enum LivenessOption { None, Standard, Mace };
 
@@ -579,7 +579,9 @@
                 return true;
             }
 
-            bool rc = (Options.compilerOutput == CompilerOutput.C ? GenerateC(RootProgramName, RootModel) : true) && (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel) : true);
+            bool rc = (Options.compilerOutput == CompilerOutput.C ? GenerateC(RootProgramName, RootModel) : true) && 
+                      (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel) : true) && 
+                      (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel) : true);
             return rc;
         }
 
@@ -591,6 +593,34 @@
                 return first.Message;
             }
             return "";
+        }
+
+        public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel)
+        {
+            using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModel.Node.Name)))
+            {
+                if (!CreateRootModelWithTypes(RootProgramName, RootModel))
+                {
+                    return false;
+                }
+            }
+
+            string RootFileName = RootProgramName.ToString();
+            string fileName = Path.GetFileNameWithoutExtension(RootFileName);
+            if (Options.outputFileName != null)
+            {
+                fileName = Options.outputFileName;
+            }
+            string csharpFileName = fileName + ".cs";
+            string dllFileName = fileName + ".dll";
+            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+
+            using (new PerfTimer("Generating CSharp"))
+            {
+                var pToCSharp = new PToCSharp(this, RootModel, RootModelWithTypes);
+                pToCSharp.GenerateCSharp(csharpFileName);
+                return true;
+            }
         }
 
         public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel)

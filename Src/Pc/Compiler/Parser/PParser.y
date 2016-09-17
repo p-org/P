@@ -134,7 +134,7 @@ ImplMachineDecl
 	;
 
 ImplMachineProtoDecl
-	: EXTERN MACHINE ID LPAREN MachineConstTypeOrNone RPAREN	{ AddMachineProto($2.str, ToSpan(@2), ToSpan(@1)); }
+	: EXTERN MACHINE ID LPAREN MachineConstTypeOrNone RPAREN SEMICOLON { AddMachineProto($3.str, ToSpan(@3), ToSpan(@1)); }
 	;
 
 MachineConstTypeOrNone

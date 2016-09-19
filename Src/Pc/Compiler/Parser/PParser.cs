@@ -2053,11 +2053,10 @@
 
         private void AddMachineProto(string name, Span nameSpan, Span span)
         {
-            Contract.Assert(typeExprStack.Count() > 0);
             var machProto = GetCurrentMachineProtoDecl(span);
             machProto.name = MkString(name, nameSpan);
-            parseProgram.MachineProtoDecls.Add(machProto);
             machProto.Span = span;
+            parseProgram.MachineProtoDecls.Add(machProto);
             crntMachProtoDecl = null;
             if (IsValidName(TopDecl.MachineProto, name, nameSpan))
             {
@@ -2335,6 +2334,7 @@
             }
 
             crntMachProtoDecl = P_Root.MkMachineProtoDecl();
+            crntMachProtoDecl.constType = (P_Root.IArgType_MachineProtoDecl__1)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown);
             return crntMachProtoDecl;
         }
         #endregion

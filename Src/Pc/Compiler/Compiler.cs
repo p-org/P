@@ -505,12 +505,12 @@
                 Queue<string> parserWorkQueue = new Queue<string>();
                 SeenFileNames[RootFileName] = RootProgramName;
                 parserWorkQueue.Enqueue(RootFileName);
+                var parser = new Parser.PParser();
                 while (parserWorkQueue.Count > 0)
                 {
                     List<string> includedFileNames;
                     List<Flag> parserFlags;
                     string currFileName = parserWorkQueue.Dequeue();
-                    var parser = new Parser.PParser();
                     Debug.WriteLine("Loading " + currFileName);
                     var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, parsedProgram, out parserFlags, out includedFileNames);
                     foreach (Flag f in parserFlags)

@@ -23,7 +23,14 @@ namespace Microsoft.Pc
             {
                 string arg = args[i];
                 string colonArg = null;
+/*
+ * This is because file-path on linux starts with /
+ */
+#if __MonoCS__
+                if (arg[0] == '-')
+#else
                 if (arg[0] == '-' || arg[0] == '/')
+#endif
                 {
                     var colonIndex = arg.IndexOf(':');
                     if (colonIndex >= 0)

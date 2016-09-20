@@ -2526,7 +2526,6 @@
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();
-            topDeclNames.Reset();
             anonEventSetCounter = 0;
         }
         #endregion

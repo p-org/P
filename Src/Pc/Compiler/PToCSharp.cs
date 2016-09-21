@@ -17,6 +17,7 @@ using System.Threading.Tasks;
 using Microsoft.Formula.API;
 using Microsoft.Formula.API.ASTQueries;
 using Microsoft.Formula.API.Nodes;
+using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Microsoft.Pc
 {
@@ -320,7 +321,7 @@ namespace Microsoft.Pc
         }
         internal class MkMachineClass
         {
-            static int anonFunCount = 0;
+            //static int anonFunCount = 0;
             public string machName;
             public MachineInfo machInfo;
             static List<SyntaxNode> machineMembers = new List<SyntaxNode>();
@@ -330,44 +331,239 @@ namespace Microsoft.Pc
             }
             public SyntaxNode MkAnonExecuteMethod()
             {
-                List<SyntaxNode> executeStmts = new List<SyntaxNode>(); 
-                //TODO(expand): trueStmts will be non-empty in the general case (example: PingPong.cs)
-                List<SyntaxNode> trueStmts = new List<SyntaxNode>();
-                //TODO(question): can falseStmts be different?
-                List<SyntaxNode> falseStmts = new List<SyntaxNode>();
-
-                //parent.PrtFunContReturn(null);
-                List<SyntaxNode> pars = new List<SyntaxNode>();
-                pars.Add(generator.NullLiteralExpression());
-                falseStmts.Add(generator.InvocationExpression(
-                    generator.MemberAccessExpression(generator.IdentifierName("parent"), generator.IdentifierName("PrtFunContReturn")),
-                    pars));
-
                 //PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                executeStmts.Add(generator.LocalDeclarationStatement(generator.IdentifierName("PrtFunStackFrame"), "currFun",
-                            generator.InvocationExpression(generator.MemberAccessExpression(generator.IdentifierName("parent"),
-                                    generator.IdentifierName("PrtPopFunStackFrame")))));
-                //if ((currFun.returnTolocation) == (0))
-                executeStmts.Add(generator.IfStatement(
-                    generator.ValueEqualsExpression(generator.MemberAccessExpression(
-                            generator.IdentifierName("currFun"), generator.IdentifierName("returnTolocation")),
-                                generator.LiteralExpression(0)),
-                    trueStatements: trueStmts,
-                    falseStatements: falseStmts));
-                
-                var methodPars = new SyntaxNode[] {
-                    generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")),
-                    generator.ParameterDeclaration("parent", generator.IdentifierName("PrtMachine"))};
-                var mkExecuteMethodDeclDecl = generator.MethodDeclaration("Execute", methodPars,
-                   null, SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                   Accessibility.Public,
-                   DeclarationModifiers.Override,
-                   statements: executeStmts);
-                return mkExecuteMethodDeclDecl;
+                var stmt1 =
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            IdentifierName("PrtFunStackFrame"))
+                        .WithVariables(
+                            SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                VariableDeclarator(
+                                    Identifier("currFun"))
+                                .WithInitializer(
+                                    EqualsValueClause(
+                                        InvocationExpression(
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName("parent"),
+                                                IdentifierName("PrtPopFunStackFrame"))))))))
+                    .NormalizeWhitespace();
+
+                //if (currFun.returnTolocation == 0) goto Loc_0; else goto Ret;
+                var stmt2 =
+                    IfStatement(
+                        BinaryExpression(
+                            SyntaxKind.EqualsExpression,
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("currFun"),
+                                IdentifierName("returnTolocation")),
+                            LiteralExpression(
+                                SyntaxKind.NumericLiteralExpression,
+                                Literal(0))),
+                        GotoStatement(
+                            SyntaxKind.GotoStatement,
+                            IdentifierName("Loc_0")))
+                    .WithElse(
+                        ElseClause(
+                            GotoStatement(
+                                SyntaxKind.GotoStatement,
+                                IdentifierName("Ret"))))
+                    .NormalizeWhitespace();
+
+                //Loc_0:
+                var stmt3 =
+                    LabeledStatement(
+                        Identifier("Loc_0"),
+                        ExpressionStatement(
+                            IdentifierName(
+                                MissingToken(SyntaxKind.IdentifierToken)))
+                        .WithSemicolonToken(
+                            MissingToken(SyntaxKind.SemicolonToken)))
+                    .NormalizeWhitespace();
+
+                //Ret: parent.PrtFunContReturn(null);
+                var stmt4 =
+                    LabeledStatement(
+                        Identifier("Ret"),
+                        ExpressionStatement(
+                            InvocationExpression(
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("parent"),
+                                    IdentifierName("PrtFunContReturn")))
+                            .WithArgumentList(
+                                ArgumentList(
+                                    SingletonSeparatedList<ArgumentSyntax>(
+                                        Argument(
+                                            LiteralExpression(
+                                                SyntaxKind.NullLiteralExpression)))))))
+                    .NormalizeWhitespace();
+
+                var executeMethodDecl =
+                    MethodDeclaration(
+                        PredefinedType(
+                            Token(SyntaxKind.VoidKeyword)),
+                        Identifier("Execute"))
+                    .WithModifiers(
+                        TokenList(
+                            new[]{
+                                Token(SyntaxKind.PublicKeyword),
+                                Token(SyntaxKind.OverrideKeyword)}))
+                    .WithParameterList(
+                        ParameterList(
+                            SeparatedList<ParameterSyntax>(
+                                new SyntaxNodeOrToken[]{
+                                    Parameter(
+                                        Identifier("application"))
+                                    .WithType(
+                                        IdentifierName("StateImpl")),
+                                    Token(SyntaxKind.CommaToken),
+                                    Parameter(
+                                        Identifier("parent"))
+                                    .WithType(
+                                        IdentifierName("PrtMachine"))})))
+                    .WithBody(
+                        Block(stmt1, stmt2, stmt3, stmt4))
+                    .NormalizeWhitespace();
+
+                return executeMethodDecl;
+
+                //List<SyntaxNode> executeStmts = new List<SyntaxNode>(); 
+                ////TODO(expand): trueStmts will be non-empty in the general case (example: PingPong.cs)
+                //List<SyntaxNode> trueStmts = new List<SyntaxNode>();
+                ////TODO(question): can falseStmts be different?
+                //List<SyntaxNode> falseStmts = new List<SyntaxNode>();
+
+                ////parent.PrtFunContReturn(null);
+                //List<SyntaxNode> pars = new List<SyntaxNode>();
+                //pars.Add(generator.NullLiteralExpression());
+                //falseStmts.Add(generator.InvocationExpression(
+                //    generator.MemberAccessExpression(generator.IdentifierName("parent"), generator.IdentifierName("PrtFunContReturn")),
+                //    pars));
+
+                ////PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                //executeStmts.Add(generator.LocalDeclarationStatement(generator.IdentifierName("PrtFunStackFrame"), "currFun",
+                //            generator.InvocationExpression(generator.MemberAccessExpression(generator.IdentifierName("parent"),
+                //                    generator.IdentifierName("PrtPopFunStackFrame")))));
+                ////if ((currFun.returnTolocation) == (0))
+                //executeStmts.Add(generator.IfStatement(
+                //    generator.ValueEqualsExpression(generator.MemberAccessExpression(
+                //            generator.IdentifierName("currFun"), generator.IdentifierName("returnTolocation")),
+                //                generator.LiteralExpression(0)),
+                //    trueStatements: trueStmts,
+                //    falseStatements: falseStmts));
+
+                //var methodPars = new SyntaxNode[] {
+                //    generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")),
+                //    generator.ParameterDeclaration("parent", generator.IdentifierName("PrtMachine"))};
+                //var mkExecuteMethodDeclDecl = generator.MethodDeclaration("Execute", methodPars,
+                //   null, SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                //   Accessibility.Public,
+                //   DeclarationModifiers.Override,
+                //   statements: executeStmts);
+                //return mkExecuteMethodDeclDecl;
             }
             public SyntaxNode MkAnonCreateLocalsMethod()
             {
-                return null;
+                //List<SyntaxNode> createLocalsStmts = new List<SyntaxNode>();
+
+                //var locals = new List<PrtValue>();
+                var stmt1 = 
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            IdentifierName("var"))
+                        .WithVariables(
+                            SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                VariableDeclarator(
+                                    Identifier("locals"))
+                                .WithInitializer(
+                                    EqualsValueClause(
+                                        ObjectCreationExpression(
+                                            GenericName(
+                                                Identifier("List"))
+                                            .WithTypeArgumentList(
+                                                TypeArgumentList(
+                                                    SingletonSeparatedList<TypeSyntax>(
+                                                        IdentifierName("PrtValue")))))
+                                        .WithArgumentList(
+                                            ArgumentList()))))))
+                    .NormalizeWhitespace();
+
+                //foreach (var item in args)
+                var stmt2 = 
+                    ForEachStatement(
+                        IdentifierName("var"),
+                        Identifier("item"),
+                        IdentifierName("args"),
+                        Block(
+                            SingletonList<StatementSyntax>(
+                                ExpressionStatement(
+                                    InvocationExpression(
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName("locals"),
+                                            IdentifierName("Add")))
+                                    .WithArgumentList(
+                                        ArgumentList(
+                                            SingletonSeparatedList<ArgumentSyntax>(
+                                                Argument(
+                                                    InvocationExpression(
+                                                        MemberAccessExpression(
+                                                            SyntaxKind.SimpleMemberAccessExpression,
+                                                            IdentifierName("item"),
+                                                            IdentifierName("Clone")))))))))))
+                    .NormalizeWhitespace();
+
+                ////no local variables hence nothing to add
+                //return locals;
+                var stmt3 = 
+                    ReturnStatement(
+                        IdentifierName("locals"))
+                    .WithReturnKeyword(
+                        Token(
+                            TriviaList(
+                                Comment("//no local variables hence nothing to add")),
+                            SyntaxKind.ReturnKeyword,
+                            TriviaList()))
+                    .NormalizeWhitespace();
+
+                //public override List<PrtValue> CreateLocals(params PrtValue[] args) { ... }
+                var createLocalsMethodDecl =
+                    MethodDeclaration(
+                        GenericName(
+                            Identifier("List"))
+                        .WithTypeArgumentList(
+                            TypeArgumentList(
+                                SingletonSeparatedList<TypeSyntax>(
+                                    IdentifierName("PrtValue")))),
+                        Identifier("CreateLocals"))
+                    .WithModifiers(
+                        TokenList(
+                            new[]{
+                                Token(SyntaxKind.PublicKeyword),
+                                Token(SyntaxKind.OverrideKeyword)}))
+                    .WithParameterList(
+                        ParameterList(
+                            SingletonSeparatedList<ParameterSyntax>(
+                                Parameter(
+                                    Identifier("args"))
+                                .WithModifiers(
+                                    TokenList(
+                                        Token(SyntaxKind.ParamsKeyword)))
+                                .WithType(
+                                    ArrayType(
+                                        IdentifierName("PrtValue"))
+                                    .WithRankSpecifiers(
+                                        SingletonList<ArrayRankSpecifierSyntax>(
+                                            ArrayRankSpecifier(
+                                                SingletonSeparatedList<ExpressionSyntax>(
+                                                    OmittedArraySizeExpression()))))))))
+                    .WithBody(
+                        Block(stmt1, stmt2, stmt3))
+                    .NormalizeWhitespace();
+
+                return createLocalsMethodDecl;
             }
             public SyntaxNode MkAnonEntryFuncClassForState(string stateName, StateInfo stateInfo)
             {
@@ -378,32 +574,90 @@ namespace Microsoft.Pc
                     Debug.Assert(false);
                 }
 
-                List<SyntaxNode> anonClassMembers = new List<SyntaxNode>();
-                //Name property:
-                anonClassMembers.Add(
-                  generator.PropertyDeclaration("Name",
-                  generator.TypeExpression(SpecialType.System_String), Accessibility.Public, DeclarationModifiers.Override,
-                  getAccessorStatements: new SyntaxNode[]
-                     { generator.ReturnStatement(generator.IdentifierName("Main_Init_Entry")) }));
+                //List<SyntaxNode> anonClassMembers = new List<SyntaxNode>();
+                //Name property (getter only)
+                var nameProperty =
+                    PropertyDeclaration(
+                        PredefinedType(
+                            Token(SyntaxKind.StringKeyword)),
+                        Identifier("Name"))
+                    .WithModifiers(
+                        TokenList(
+                            new[]{
+                                Token(SyntaxKind.PublicKeyword),
+                                Token(SyntaxKind.OverrideKeyword)}))
+                    .WithAccessorList(
+                        AccessorList(
+                            SingletonList<AccessorDeclarationSyntax>(
+                                AccessorDeclaration(
+                                    SyntaxKind.GetAccessorDeclaration,
+                                    Block(
+                                        SingletonList<StatementSyntax>(
+                                            ReturnStatement(
+                                                IdentifierName("\"Main_Init_Entry\""))))))))
+                    .NormalizeWhitespace();
+                //anonClassMembers.Add(
+                //  generator.PropertyDeclaration("Name",
+                //  generator.TypeExpression(SpecialType.System_String), Accessibility.Public, DeclarationModifiers.Override,
+                //  getAccessorStatements: new SyntaxNode[]
+                //     { generator.ReturnStatement(generator.IdentifierName("Main_Init_Entry")) }));
 
-                //IsAnonFun property:
-                anonClassMembers.Add(
-                  generator.PropertyDeclaration("IsAnonFun",
-                  generator.TypeExpression(SpecialType.System_Boolean), Accessibility.Public, DeclarationModifiers.Override,
-                  getAccessorStatements: new SyntaxNode[]
-                     { generator.ReturnStatement(generator.LiteralExpression(true)) }));
+                //IsAnonFun property (getter only):
+                var isAnonProperty =
+                    PropertyDeclaration(
+                        PredefinedType(
+                            Token(SyntaxKind.BoolKeyword)),
+                        Identifier("IsAnonFun"))
+                    .WithModifiers(
+                        TokenList(
+                            new[]{
+                                Token(SyntaxKind.PublicKeyword),
+                                Token(SyntaxKind.OverrideKeyword)}))
+                    .WithAccessorList(
+                        AccessorList(
+                            SingletonList<AccessorDeclarationSyntax>(
+                                AccessorDeclaration(
+                                    SyntaxKind.GetAccessorDeclaration,
+                                    Block(
+                                        SingletonList<StatementSyntax>(
+                                            ReturnStatement(
+                                                LiteralExpression(
+                                                    SyntaxKind.TrueLiteralExpression))))))))
+                    .NormalizeWhitespace();
+                //anonClassMembers.Add(
+                //  generator.PropertyDeclaration("IsAnonFun",
+                //  generator.TypeExpression(SpecialType.System_Boolean), Accessibility.Public, DeclarationModifiers.Override,
+                //  getAccessorStatements: new SyntaxNode[]
+                //     { generator.ReturnStatement(generator.LiteralExpression(true)) }));
 
                 //Execute method:
-                anonClassMembers.Add(MkAnonExecuteMethod());
+                //anonClassMembers.Add(MkAnonExecuteMethod());
 
                 //CreateLocals method:
                 //anonClassMembers.Add(MkAnonCreateLocalsMethod());
 
-                var AnonClassDecl = generator.ClassDeclaration(
-                  funName, typeParameters: null,
-                  accessibility: Accessibility.Public,
-                  baseType: generator.IdentifierName("PrtFun"),
-                  members: anonClassMembers);
+                var AnonClassDecl =
+                    ClassDeclaration("Anon_0")
+                    .WithModifiers(
+                        TokenList(
+                            Token(SyntaxKind.PublicKeyword)))
+                    .WithBaseList(
+                        BaseList(
+                            SingletonSeparatedList<BaseTypeSyntax>(
+                                SimpleBaseType(
+                                    IdentifierName("PrtFun")))))
+                    .WithMembers(
+                        List<MemberDeclarationSyntax>(
+                        new MemberDeclarationSyntax[] { nameProperty, isAnonProperty, (MemberDeclarationSyntax) MkAnonExecuteMethod(),
+                                                        (MemberDeclarationSyntax) MkAnonCreateLocalsMethod() }))
+                   .NormalizeWhitespace();
+
+
+                //var AnonClassDecl = generator.ClassDeclaration(
+                //  funName, typeParameters: null,
+                //  accessibility: Accessibility.Public,
+                //  baseType: generator.IdentifierName("PrtFun"),
+                //  members: anonClassMembers);
 
                 return AnonClassDecl;
             }
@@ -413,11 +667,33 @@ namespace Microsoft.Pc
             }
             public SyntaxNode MkMainMachineClass()
             {           
-                var startStateProperty = generator.PropertyDeclaration("StartState",
-                  generator.IdentifierName("PrtState"), Accessibility.Public, DeclarationModifiers.Override,
-                  getAccessorStatements: new SyntaxNode[]
-                  { generator.ReturnStatement(generator.IdentifierName(machInfo.initStateName)) });
+               
+                //StartState property (getter only, since there's no setter in the base class):
+                var startStateProperty =
+                    PropertyDeclaration(
+                        IdentifierName("PrtState"),
+                        Identifier("StartState"))
+                    .WithModifiers(
+                        TokenList(
+                            new[]{
+                                Token(SyntaxKind.PublicKeyword),
+                                Token(SyntaxKind.OverrideKeyword)}))
+                    .WithAccessorList(
+                        AccessorList(
+                            SingletonList<AccessorDeclarationSyntax>(
+                                AccessorDeclaration(
+                                    SyntaxKind.GetAccessorDeclaration,
+                                    Block(
+                                        SingletonList<StatementSyntax>(
+                                            ReturnStatement(
+                                                IdentifierName("Main_Init_Entry"))))))))
+                    .NormalizeWhitespace();
                 machineMembers.Add(startStateProperty);
+                //var startStateProperty = generator.PropertyDeclaration("StartState",
+                //  generator.IdentifierName("PrtState"), Accessibility.Public, DeclarationModifiers.Override,
+                //  getAccessorStatements: new SyntaxNode[]
+                //  { generator.ReturnStatement(generator.IdentifierName(machInfo.initStateName)) });
+                //machineMembers.Add(startStateProperty);
 
                 var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Main")));
                 var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
@@ -447,10 +723,33 @@ namespace Microsoft.Pc
                   new SyntaxNode[] { makeNextInstanceNumberMethodBody });
                 machineMembers.Add(makeNextInstanceNumberMethodDecl);
 
-                var nameProperty = generator.PropertyDeclaration("Name",
-                  generator.TypeExpression(SpecialType.System_String), Accessibility.Public, DeclarationModifiers.Override,
-                  getAccessorStatements: new SyntaxNode[]
-                  { generator.ReturnStatement(generator.IdentifierName("\"Main\"")) });
+                //NAme property (getter only):
+                var nameProperty =
+                    PropertyDeclaration(
+                        PredefinedType(
+                            Token(SyntaxKind.StringKeyword)),
+                        Identifier("Name"))
+                    .WithModifiers(
+                        TokenList(
+                            new[]{
+                                Token(SyntaxKind.PublicKeyword),
+                                Token(SyntaxKind.OverrideKeyword)}))
+                    .WithAccessorList(
+                        AccessorList(
+                            SingletonList<AccessorDeclarationSyntax>(
+                                AccessorDeclaration(
+                                    SyntaxKind.GetAccessorDeclaration,
+                                    Block(
+                                        SingletonList<StatementSyntax>(
+                                            ReturnStatement(
+                                                LiteralExpression(
+                                                    SyntaxKind.StringLiteralExpression,
+                                                    Literal("Main")))))))))
+                    .NormalizeWhitespace();
+                //var nameProperty = generator.PropertyDeclaration("Name",
+                //  generator.TypeExpression(SpecialType.System_String), Accessibility.Public, DeclarationModifiers.Override,
+                //  getAccessorStatements: new SyntaxNode[]
+                //  { generator.ReturnStatement(generator.IdentifierName("\"Main\"")) });
                 machineMembers.Add(nameProperty);
 
                 //constructor for cloning
@@ -476,6 +775,24 @@ namespace Microsoft.Pc
                 foreach (var pair in machInfo.stateNameToStateInfo)
                 {
                     machineMembers.Add(MkAnonEntryFuncClassForState(pair.Key, pair.Value));
+
+                    //TODO(question): check names below: should be consistent with what's generated by P compiler
+                    //public static AnonFun0 AnonFun0_Fun;
+                    machineMembers.Add(
+                        FieldDeclaration(
+                            VariableDeclaration(
+                                IdentifierName("Anon_0"))
+                            .WithVariables(
+                                SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                    VariableDeclarator(
+                                        Identifier("AnonFun0")))))
+                        .WithModifiers(
+                            TokenList(
+                                new[]{
+                                    Token(SyntaxKind.PublicKeyword),
+                                    Token(SyntaxKind.StaticKeyword)}))      
+                        .NormalizeWhitespace()
+                        );
                     //TODO(expand):
                     //machineMembers.Add(MkAnonExitFuncClassForState(pair.Key, pair.Value));
                 }
@@ -486,8 +803,6 @@ namespace Microsoft.Pc
                   accessibility: Accessibility.Public,
                   baseType: generator.IdentifierName("PrtImplMachine"),
                   members: machineMembers);
-
-
 
                 return mainMachineClassDecl;
             }

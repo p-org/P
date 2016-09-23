@@ -23,9 +23,6 @@ domain PWithInferredTypes extends PData
 	//// The maximum number of local variables in any context
 	MaxNumLocals ::= new (ctxt: TypingContext + Stmt + Cases, n: Natural).
 
-	//// Functions for which either bodies or stubs need to be generated
-	RealOwner ::= new (ctxt: FunDecl).
-
 	//// Link map : map from interface or machine name to created machine
 	LinkMap ::= new (createdIorM: String, createdM: String).
 }
@@ -37,6 +34,5 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 	out.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
 	out.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).
 	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n).
-	out.RealOwner(c) :- in.RealOwner(c).
 	out.LinkMap(m,n) :- in.LinkMap(m,n).
 }

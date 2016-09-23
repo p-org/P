@@ -21,6 +21,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Core", "..\..\Ext\Formula\S
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CompilerService", "CompilerService\CompilerService.csproj", "{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Linker", "Linker\Linker.csproj", "{5E44DBC0-C573-4157-A0FD-5067BB3522CB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -93,6 +95,14 @@ Global
 		{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}.Release|x64.Build.0 = Release|x64
 		{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}.Release|x86.ActiveCfg = Release|x86
 		{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}.Release|x86.Build.0 = Release|x86
+		{5E44DBC0-C573-4157-A0FD-5067BB3522CB}.Debug|x64.ActiveCfg = Debug|x64
+		{5E44DBC0-C573-4157-A0FD-5067BB3522CB}.Debug|x64.Build.0 = Debug|x64
+		{5E44DBC0-C573-4157-A0FD-5067BB3522CB}.Debug|x86.ActiveCfg = Debug|x86
+		{5E44DBC0-C573-4157-A0FD-5067BB3522CB}.Debug|x86.Build.0 = Debug|x86
+		{5E44DBC0-C573-4157-A0FD-5067BB3522CB}.Release|x64.ActiveCfg = Release|x64
+		{5E44DBC0-C573-4157-A0FD-5067BB3522CB}.Release|x64.Build.0 = Release|x64
+		{5E44DBC0-C573-4157-A0FD-5067BB3522CB}.Release|x86.ActiveCfg = Release|x86
+		{5E44DBC0-C573-4157-A0FD-5067BB3522CB}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

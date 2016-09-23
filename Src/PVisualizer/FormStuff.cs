@@ -141,16 +141,16 @@ namespace Microsoft.PVisualizer
 
         private static void ReadFile(string inputFileName, GViewer gViewer)
         {
-            var options = new CommandLineOptions();
-            options.inputFileName = inputFileName;
-            var compiler = new Compiler(options.shortFileNames);
-            var result = compiler.Compile(new StandardOutput(), options);
+            var compiler = new Compiler(false);
+            PProgram parsedProgram;
+            ProgramName RootProgramName;
+            var result = compiler.ParseProgram(inputFileName, out parsedProgram, out RootProgramName);
 
             if (result)
             {
                 lastFileName = inputFileName;
-                GViewer.Graph = PtoGraph.GenerateGraph(compiler.ParsedProgram);
-                program = compiler.ParsedProgram;
+                GViewer.Graph = PtoGraph.GenerateGraph(program);
+                program = parsedProgram;
             }
             else
             {

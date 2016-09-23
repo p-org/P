@@ -198,6 +198,45 @@ namespace CheckP
             Console.WriteLine("-{0}\tDescriptions of this test", DescrOption);
         }
 
+        void ParsePcArgs(IEnumerable<object> pcArgs, out string fileName, out string outputDir, out bool liveness)
+        {
+            fileName = null;
+            outputDir = null;
+            liveness = false;
+            foreach (string pcArg in pcArgs)
+            {
+                if (pcArg.EndsWith(".p"))
+                {
+                    if (fileName != null)
+                    {
+                        throw new Exception("multiple input file names");
+                    }
+                    fileName = Path.GetFullPath(Path.Combine(activeDirectory, pcArg));
+                }
+                else if (pcArg.StartsWith("/outputDir"))
+                {
+                    if (outputDir != null)
+                    {
+                        throw new Exception("multiple output directories");
+                    }
+                    var splitArgs = pcArg.Split(':');
+                    outputDir = Path.GetFullPath(Path.Combine(activeDirectory, splitArgs[1]));
+                }
+                else if (pcArg == "/liveness")
+                {
+                    liveness = true;
+                }
+            }
+            if (fileName == null)
+            {
+                throw new Exception("no input file");
+            }
+            if (outputDir == null)
+            {
+                outputDir = activeDirectory;
+            }
+        }
+
         void SplitPcArgs(IEnumerable<object> pcArgs, out List<string> loadArgs, out List<string> compileArgs, out List<string> testArgs)
         { 
             loadArgs = new List<string>();
@@ -207,27 +246,21 @@ namespace CheckP
             {
                 if (pcArg.EndsWith(".p"))
                 {
-                    loadArgs.Add(Path.GetFullPath(Path.Combine(activeDirectory, pcArg)));
-                }
-                else if (pcArg == "/dumpFormulaModel" || pcArg == "/printTypeInference")
-                { 
-                    loadArgs.Add(pcArg); 
+                    string fullPath = Path.GetFullPath(Path.Combine(activeDirectory, pcArg));
+                    loadArgs.Add(fullPath);
+                    compileArgs.Add(fullPath);
+                    testArgs.Add(fullPath);
                 }
                 else if (pcArg.StartsWith("/outputDir"))
                 {
                     var splitArgs = pcArg.Split(':');
                     var fullPcArg = splitArgs[0] + ":" + Path.GetFullPath(Path.Combine(activeDirectory, splitArgs[1]));
-                    loadArgs.Add(fullPcArg);
                     compileArgs.Add(fullPcArg);
                     testArgs.Add(fullPcArg);
                 }
                 else if (pcArg == "/liveness")
                 {
                     testArgs.Add(pcArg);
-                }
-                else if (pcArg == "/test")
-                {
-                    loadArgs.Add(pcArg);
                 }
                 else if (pcArg == "/shortFileNames")
                 {
@@ -238,8 +271,6 @@ namespace CheckP
                     throw new Exception("Unknown argument to pc encountered");
                 }
             }
-            //Add parameter: default name for output files:
-            loadArgs.Add("/outputFileName:program");
         }
 
         public bool Check(string testfile)
@@ -379,16 +410,43 @@ namespace CheckP
                     tmpWriter.WriteLine("=================================");
                     tmpWriter.WriteLine("         Console output          ");
                     tmpWriter.WriteLine("=================================");
-                    List<string> loadArgs, compileArgs, testArgs;
-                    SplitPcArgs(pcArgs.Select(x => x.Item2), out loadArgs, out compileArgs, out testArgs);
+                    string fileName;
+                    string outputDir;
+                    bool liveness;
+                    ParsePcArgs(pcArgs, out fileName, out outputDir, out liveness);
+                    var loadArgs = new List<string>();
+                    var compileArgs = new List<string>();
+                    var linkArgs = new List<string>();
+                    var testArgs = new List<string>();
+
+                    loadArgs.Add(fileName);
+                    compileArgs.Add(fileName);
+                    testArgs.Add(fileName);
+                    linkArgs.Add(Path.GetFullPath(Path.Combine(outputDir, "program.4ml")));
+
+                    compileArgs.Add("/outputDir:" + outputDir);
+                    testArgs.Add("/outputDir:" + outputDir);
+                    linkArgs.Add("/outputDir:" + outputDir);
+
+                    if (liveness)
+                    {
+                        testArgs.Add("/liveness");
+                    }
+
+                    //SplitPcArgs(pcArgs.Select(x => x.Item2), out loadArgs, out compileArgs, out testArgs);
+
                     pciProcess.Reset();
-                    pciProcess.Run("load", loadArgs);
+                    pciProcess.Run("compile", loadArgs);
                     if (pciProcess.commandSucceeded)
                     {
                         pciProcess.Run("compile", compileArgs);
                         if (pciProcess.commandSucceeded)
                         {
-                            pciProcess.Run("test", testArgs);
+                            pciProcess.Run("link", linkArgs);
+                            if (pciProcess.commandSucceeded)
+                            {
+                                pciProcess.Run("test", testArgs);
+                            }
                         }
                     }
                     tmpWriter.Write(pciProcess.outputString);

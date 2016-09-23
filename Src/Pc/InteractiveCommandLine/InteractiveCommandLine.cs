@@ -14,7 +14,7 @@ namespace Microsoft.Pc
         {
             bool shortFileNames = false;
             bool server = false;
-            string compileErrorMsgString = "USAGE: compile file.p [/shortFileNames] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/outputFileName:<name>] [/generate[:C,:Zing]] [/test] [/liveness[:mace]] [/profile]";
+            string compileErrorMsgString = "USAGE: compile file.p [/shortFileNames] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/generate[:C,:Zing]] [/liveness[:mace]] [/profile]";
             string linkErrorMsgString = "USAGE: link file_1.4ml ... file_n.4ml [file.p]";
             for (int i = 0; i < args.Length; i++)
             {
@@ -70,8 +70,8 @@ namespace Microsoft.Pc
                 {
                     try
                     {
-                        CommandLineOptions compilerOptions;
                         bool sharedCompiler;
+                        CommandLineOptions compilerOptions;
                         var success = CommandLineOptions.ParseCompileString(inputArgs.Skip(1), out sharedCompiler, out compilerOptions);
                         if (!success || sharedCompiler)
                         {
@@ -102,12 +102,13 @@ namespace Microsoft.Pc
                 {
                     try
                     {
-                        if (!CommandLineOptions.ParseLinkString(inputArgs.Skip(1)))
+                        CommandLineOptions options;
+                        if (!CommandLineOptions.ParseLinkString(inputArgs.Skip(1), out options))
                         {
                             Console.WriteLine(linkErrorMsgString);
                             continue;
                         }
-                        var b = compiler.Link(inputArgs.Skip(1));
+                        var b = compiler.Link(new StandardOutput(), options);
                         if (server)
                         {
                             if (b)

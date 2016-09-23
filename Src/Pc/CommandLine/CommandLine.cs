@@ -17,43 +17,32 @@ namespace Microsoft.Pc
             {
                 goto error;
             }
-            string inputFileName = options.inputFileName;
-            if (inputFileName != null && inputFileName.Length > 2 && inputFileName.EndsWith(".p"))
+            bool result;
+            if (sharedCompiler)
             {
-                bool result = false;
-                if (sharedCompiler)
+                // use separate process that contains pre-compiled P compiler.
+                CompilerServiceClient svc = new CompilerServiceClient();
+                if (string.IsNullOrEmpty(options.outputDir))
                 {
-                    // use separate process that contains pre-compiled P compiler.
-                    CompilerServiceClient svc = new CompilerServiceClient();
-                    // compiler service requires full path.
-                    options.inputFileName = Path.GetFullPath(inputFileName);
-                    if (string.IsNullOrEmpty(options.outputDir))
-                    {
-                        options.outputDir = Directory.GetCurrentDirectory();
-                    }
-                    result = svc.Compile(options, Console.Out);
+                    options.outputDir = Directory.GetCurrentDirectory();
                 }
-                else
-                {
-                    var compiler = new Compiler(options.shortFileNames);
-                    result = compiler.Compile(new StandardOutput(), options);
-                }
-                if (!result)
-                {
-                    return -1;
-                }
-                return 0;
+                result = svc.Compile(options, Console.Out);
             }
             else
             {
-                Console.WriteLine("Illegal input file name");
+                var compiler = new Compiler(options.shortFileNames);
+                result = compiler.Compile(new StandardOutput(), options);
             }
-        error:
+            if (!result)
+            {
+                return -1;
+            }
+            return 0;
+
+            error:
             {
                 Console.WriteLine("USAGE: Pc.exe file.p [options]");
                 Console.WriteLine("/outputDir:path");
-                Console.WriteLine("/outputFileName:name");
-                Console.WriteLine("/test");
                 Console.WriteLine("/liveness[:mace]");
                 Console.WriteLine("/shortFileNames");
                 Console.WriteLine("/printTypeInference");

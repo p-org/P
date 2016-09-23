@@ -30,9 +30,11 @@ domain PLink
     AssumeMaxInstances	::= new (bound: Natural).
     AssertMaxInstances	::= new (bound: Natural).
     QueueConstraint		::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
-    EventDecl			::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).    
-	FunImpDecl			::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
+    EventDecl			::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).
+	AnonFunDecl		    ::= new (ownerFun: String, id: any Id).
+	FunDecl				::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
+	Impure				::= new (decl: FunDecl + FunProtoDecl).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
 	InterfaceTypeDecl	::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
     MachineDecl			::= fun (name: String -> constType: any TypeExpr, id: any Id).
@@ -57,14 +59,15 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	LinkError(mp.name) :- mp is MachineProtoDecl, m is MachineDecl, mp.name = m.name, mp.constType != m.constType.
 	
 	//params type or return type dont match
-	LinkError(fp.name) :- fp is FunProtoDecl, f is FunImpDecl, fp.name = f.name, fp.params != f.params;
-						 fp is FunProtoDecl, f is FunImpDecl, fp.name = f.name, fp.return != f.return.
+	LinkError(fp.name) :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.params != f.params;
+						 fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.return != f.return.
 	//proto function not implemented
-	LinkError(fp.name) :- fp is FunProtoDecl, no FunImpDecl(fp.name, _, _, _).
+	LinkError(fp.name) :- fp is FunProtoDecl, no FunDecl(fp.name, _, _, _).
 
 	//machines or machine proto cannot have the same name as interfaces
 	LinkError(iname) :- i is InterfaceTypeDecl(iname, _, _), MachineDecl(iname, _, _);
 						i is InterfaceTypeDecl(iname, _, _), MachineProtoDecl(iname, _).
+
     /*************************************************************/
     /**********         Create Header File             ***********/
     /*************************************************************/
@@ -118,7 +121,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
     /*************************************************************/
 	
 	EventDeclExt ::= in.EventDecl + { NULL, HALT }.
-	DeclId ::= (decl: in.MachineDecl + in.EventDecl + { NULL, HALT }, id: Natural, cname: String).
+	DeclId ::= (decl: in.MachineDecl + in.EventDecl + in.FunDecl + in.AnonFunDecl + { NULL, HALT }, id: Natural, cname: String).
 	
 	//// Foreign types
 	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
@@ -171,7 +174,29 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	   list = toList(#Elements, NIL, { enumMember | 
 									   EventSet(evsetName, eventNameList), id = toOrdinal(eventNameList, 0, { x | EventSet(_, x) }), enumMember = Element(IntLit(id, DEC, NIL), evsetName); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTSETS_COUNT"), size = count({ x | x is EventSet }) }).  
-						   
+	
+	//// (Anon)FunDecls
+	AnonOrNamedFun ::= in.FunDecl + in.AnonFunDecl.
+	DeclId(d, id, cn) :- 
+		d is in.FunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }), 
+							 cn = strJoin("P_FUN_GLOBAL_", d.name);
+		d is in.AnonFunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }),
+							 anonFunIndex = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.ownerFun = d.ownerFun }), 
+							 cn = strJoin("P_FUN_GLOBAL_", strJoin(d.ownerFun, strJoin("_ANON", toString(anonFunIndex)))).
+
+	HOut(0, out.EnmDef(NIL, "P_FUNS_GLOBAL", list)) :-
+		list = toList(#Elements, NIL, { enumMember |
+									   enumMember = Element(IntLit(0, DEC, NIL), "_P_FUN_PUSH_OR_IGN"); 
+									   DeclId(d, id, cn), d is AnonOrNamedFun, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FUNS_GLOBAL_COUNT"), size = 1 + count({d | d is AnonOrNamedFun}) }).
+
+	HOut(0, def) :- d is AnonOrNamedFun, DeclId(d, _, funName), funStructName = strJoin(funName, "_STRUCT"),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_FUNDECL"), 
+								  funStructName, 
+								  NIL).
+
 	//// Machine decls - Start at Id 0.
 	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", d.name).
 	
@@ -180,11 +205,11 @@ transform PLink2C(in:: PLink) returns (out:: C)
 									   DeclId(d, id, cn), d : MachineDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl}) }).  
 
-	HOut(0, def) :- d is in.MachineDecl,
+	HOut(0, def) :- d is in.MachineDecl, machineName = strJoin("P_MACHINE_", d.name), machineStructName = strJoin(machineName, "_STRUCT"),
 	                        def = out.VarDef(
 							      EXTERN, 
 								  NmdType(NIL, "PRT_MACHINEDECL"), 
-								  strJoin("P_MACHINE_STRUCT_", d.name), 
+								  machineStructName, 
 								  NIL).
 
 	//// Extern declarations for defined types
@@ -606,15 +631,59 @@ transform PLink2C(in:: PLink) returns (out:: C)
 								  Init(arr)).
 
     /*************************************************************/
+    /******          Generate Global Fun Decl Array         ******/
+    /*************************************************************/
+	COut(4, def) :-			init = Init(
+							   Args(Ident("_P_FUN_PUSH_OR_IGN"),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   Args(Ident("NULL"),
+							   Args(IntLit(1, DEC, U),
+							   Args(IntLit(0, DEC, U),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))))),
+							def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_FUNDECL"), 
+								  "P_FUN_GLOBAL_IGNORE_PUSH_STRUCT", 
+								  init).
+	
+   	FunDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+
+	FunDeclConcat(c, NIL) :- c = 1 + count({d | d is AnonOrNamedFun }).
+
+	FunDeclConcat(m, arr) :-  
+							DeclId(d, m, cn), FunDeclConcat(m + 1, after), d : AnonOrNamedFun,
+							funStructName = strJoin(cn, "_STRUCT"),
+							arr = out.Args(def, after),
+							def = UnApp(ADDR, Ident(funStructName)).
+
+	//// Reserve the zeroth decl for the ignore/push transition
+	FunDeclConcat(0, arr) :- FunDeclConcat(1, after), arr = out.Args(def, after), def = UnApp(ADDR, Ident("P_FUN_GLOBAL_IGNORE_PUSH_STRUCT")).
+
+	COut(5, def) :- FunDeclConcat(0, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_FUNDECL"), NIL), 
+								  "P_GEND_FUNS_GLOBAL", 
+								  Init(arr)).
+
+    /*************************************************************/
     /******          Generate Machine Decl Arrays           ******/
     /*************************************************************/	
 	MachineDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 	MachineDeclConcat(c, NIL) :- c = count({m | m is in.MachineDecl}).
 	MachineDeclConcat(m, arr) :- 
-							DeclId(d, m, _), d : in.MachineDecl,
+							DeclId(d, m, _), d : in.MachineDecl, 
+							machineName = strJoin("P_MACHINE_", d.name), machineStructName = strJoin(machineName, "_STRUCT"),
 							MachineDeclConcat(m + 1, after),  
 							arr = out.Args(def, after),
-							def = UnApp(ADDR, Ident(strJoin("P_MACHINE_STRUCT_", d.name))).
+							def = UnApp(ADDR, Ident(machineStructName)).
 
 	COut(5, def) :- MachineDeclConcat(0, arr),
 	                def = out.VarDef(
@@ -655,7 +724,6 @@ transform PLink2C(in:: PLink) returns (out:: C)
 								  "P_GEND_FOREIGNTYPES", 
 								  Init(arr)).
 
-
     /*************************************************************/
     /******            Generate Program Decl                ******/
     /*************************************************************/	
@@ -671,13 +739,17 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	ProgMachArray(size, arr) :- size = count({ m | m is in.MachineDecl }), size = 0, arr = out.Ident("NULL").
 	ProgMachArray(size, arr) :- size = count({ m | m is in.MachineDecl }), size > 0, arr = out.Ident("P_GEND_MACHINES").
 
+	ProgGlobalFunArray ::= (size: Natural, arr: out.Ident).
+	ProgGlobalFunArray(size, arr) :- size = 1 + count({ m | m is AnonOrNamedFun }), arr = out.Ident("P_GEND_FUNS_GLOBAL").
+
 	ProgForeignTypesArray ::= (size: Natural, arr: out.Ident).
 	ProgForeignTypesArray(size, arr) :- size = count({ n | in.ModelType(n) }), size = 0, arr = out.Ident("NULL").
 	ProgForeignTypesArray(size, arr) :- size = count({ n | in.ModelType(n) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
 
-	COut(6, def) :- ProgEvntArray(evArrSize, evArrName),
+	COut(6, def) :-  ProgEvntArray(evArrSize, evArrName),
 	                 ProgEvntSetArray(evSetArrSize, evSetArrName),
 					 ProgMachArray(machArrSize, machArrName),
+					 ProgGlobalFunArray(globalFunArrSize, globalFunArrName),
 					 ProgForeignTypesArray(foreignTypesSize, foreignTypesArrName),
 	                 def = out.VarDef(
 							      NIL, 
@@ -688,14 +760,16 @@ transform PLink2C(in:: PLink) returns (out:: C)
 							   Args(IntLit(evArrSize, DEC, U),
 							   Args(IntLit(evSetArrSize, DEC, U),
 							   Args(IntLit(machArrSize, DEC, U),
+							   Args(IntLit(globalFunArrSize, DEC, U),
 							   Args(IntLit(foreignTypesSize, DEC, U),
 							   Args(evArrName,
 							   Args(evSetArrName,
 							   Args(machArrName,
+							   Args(globalFunArrName,
 							   Args(foreignTypesArrName,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))).
+							   NIL))))))))))))).
 
 	/*************************************************************/
     /******                 Powers of two                   ******/

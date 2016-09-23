@@ -91,7 +91,7 @@ domain PData
 
     EventDecl      ::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
     MachineDecl    ::= fun (name: String -> kind: { REAL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
-	MachineProtoDecl ::= fun (name: String -> constType: TypeExpr).
+	MachineProtoDecl ::= fun (name: String -> constType: any TypeExpr).
 
 	ObservesDecl   ::= new (spec: MachineDecl, ev: NonNullEventName).
 
@@ -126,7 +126,7 @@ domain PData
     /*************************************************************/
 
     Annotation  ::= new (ant: Annotatable, key: String, value: any AnnotValue, id: any Id).
-    Annotatable ::= EventDecl + MachineDecl + VarDecl + FunDecl + StateDecl + TransDecl + DoDecl + { NIL }.
+    Annotatable ::= EventDecl + MachineDecl + VarDecl + FunDecl + FunProtoDecl + StateDecl + TransDecl + DoDecl + { NIL }.
     AnnotValue  ::= Integer + String + Boolean + { NULL }.
 }
 
@@ -168,7 +168,7 @@ domain PStructuralTyping extends PData
 	
 	[rule_Classes = '"error, msg: transition function not defined"']
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, 
-	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _).
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
@@ -180,7 +180,7 @@ domain PStructuralTyping extends PData
 	
 	[rule_Classes = '"error, msg: function not defined"']
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, 
-	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _).
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String , FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
@@ -371,28 +371,15 @@ domain PStaticTyping extends PData
 	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(_, _, h), _). 
 	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = NmdTupType(_, t'), t' : TypeExpr. 
 
-   	RealOwner ::= (f: FunDecl).
-	RealOwner(f) :- f is FunDecl, f.owner = NIL; 
-	                f is FunDecl, f.owner.kind = REAL.
-
-	FunAvailable ::= (f: FunDecl, m: MachineDecl + { NIL }).
+	FunAvailable ::= (f: FunDecl + FunProtoDecl, m: MachineDecl + { NIL }).
     FunAvailable(f, m) :- f is FunDecl, m is MachineDecl, f.owner = NIL;
 	                      f is FunDecl, f.owner = m.
+	FunAvailable(f, m) :- f is FunProtoDecl, m is MachineDecl;
+						  f is FunProtoDecl, m = NIL.
 
-	FunDeclKind ::= (FunDecl, { REAL, MODEL, SPEC }).
-	FunDeclKind(f, REAL) :- SubCntxt(f), f: FunDecl, f.owner = NIL, f.kind = REAL.
-	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner = NIL, f.kind = MODEL.
-	FunDeclKind(f, SPEC) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = SPEC.
-	FunDeclKind(f, REAL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = REAL, f.kind = REAL.
-	FunDeclKind(f, MODEL) :- SubCntxt(f), f: FunDecl, f.owner != NIL, f.owner.kind = REAL, f.kind = MODEL.
-
-	AnonFunDeclKind ::= (AnonFunDecl, { REAL, MODEL, SPEC }).
-	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner = NIL, FunDeclKind(f', REAL), f'.owner = NIL, f'.name = f.ownerFun.
-	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner = NIL, FunDeclKind(f', MODEL), f'.owner = NIL, f'.name = f.ownerFun.
-	AnonFunDeclKind(f, SPEC) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = SPEC.
-	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun = NIL.
-	AnonFunDeclKind(f, REAL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun != NIL, FunDeclKind(f', REAL), f'.owner = f.owner, f'.name = f.ownerFun.
-	AnonFunDeclKind(f, MODEL) :- SubCntxt(f), f: AnonFunDecl, f.owner != NIL, f.owner.kind = REAL, f.ownerFun != NIL, FunDeclKind(f', MODEL), f'.owner = f.owner, f'.name = f.ownerFun.
+	AnonFunDeclGen ::= (AnonFunDecl).
+	AnonFunDeclGen(f) :- SubCntxt(f), f: AnonFunDecl, f.ownerFun = NIL.
+	AnonFunDeclGen(f) :- SubCntxt(f), f: AnonFunDecl, f' is FunDecl, f'.kind = REAL, f.ownerFun = f'.name.
 
     //// The declarations that may contain expressions or statements that should be typed.
     TypingContext ::= FunDecl + AnonFunDecl.
@@ -407,8 +394,8 @@ domain PStaticTyping extends PData
 	SubCntxt ::= sub (cntxt: TypingContext).
     
 	SubSE ::= (cntxt: TypingContext, typeable: Typeable).
-	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _, _), AnonFunDeclKind(cntxt, x), x != MODEL.
-	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable, _), FunDeclKind(cntxt, x), x != MODEL.
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _, _), AnonFunDeclGen(cntxt).
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable, _).
 	SubSE(c, e), SubSE(c, s) :- SubSE(c, While(e, s, _)).
 	SubSE(c, e), SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Ite(e, s1, s2, _)).
 	SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Seq(s1, s2, _)).
@@ -586,7 +573,7 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, et) :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), et != NIL, TypeRel(t1, inpt, SUB).
 
 	[ rule_Classes = '"error, msg: function not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).
 	[ rule_Classes = '"error, msg: function does not return a value"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
 	[ rule_Classes = '"error, msg: function requires arguments"']
@@ -889,7 +876,7 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, NIL)   :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
 	TypeOf(c, e, NIL)   :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), TypeRel(t1, inpt, SUB), TypeRel(et, t2, SUB).
 	[ rule_Classes = '"error, msg: function not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _).	
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).	
 	[ rule_Classes = '"error, msg: function requires arguments"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
 	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
@@ -1033,7 +1020,7 @@ domain PStaticTyping extends PData
 	MaxNumLocals(e, n) :- SubSE(c, e), e = Receive(cases, _, _), MaxNumLocals(cases, n). 
 	MaxNumLocals(a, n) :- a is AnonFunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2 + 1.
 	MaxNumLocals(a, n) :- a is FunDecl, MaxNumLocals(a.body, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
-	MaxNumLocals(a, n) :- a is FunDecl, RealOwner(a), a.kind = MODEL, n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n2 + n3.
+	MaxNumLocals(a, n) :- a is FunDecl, a.kind = MODEL, n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n2 + n3.
 
     LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
 	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, _, params, _, locals, _, _), envVars = lstReverse(#NmdTupType, params).
@@ -1118,20 +1105,21 @@ domain PStaticTyping extends PData
 	FunRetError ::= (cntxt: FunDecl).
 
 	[ rule_Classes = '"error, msg: function must return a value"']
-	FunRetError(f) :- f is FunDecl, FunDeclKind(f, x), x != MODEL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
+	FunRetError(f) :- f is FunDecl, f.kind = REAL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
 
     /*************************************************************/
     /*                      Control Impurity                     */
     /*************************************************************/
     PurityError ::= (cntxt: TypingContext + StateDecl + TransDecl, expr: Typeable + String + AnonFunDecl).
 
-	ControlImpure ::= (TypingContext).
+	ControlImpure ::= (TypingContext + FunProtoDecl).
 	ControlImpure(c) :- SubSE(c, e), e : Goto.
 	ControlImpure(c) :- SubSE(c, e), e : Raise.
 	ControlImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).
 	ControlImpure(c) :- SubSE(c, e), e = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
     ControlImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
 	ControlImpure(c) :- SubSE(c, e), e : Receive, ReceiveCases(c, e, cases), cases = Cases(_, act, _), ControlImpure(act).
+	ControlImpure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, n) :- 
@@ -1154,7 +1142,7 @@ domain PStaticTyping extends PData
     /*                 Spec Machine Checking                     */
     /*************************************************************/
 	SpecError ::= (cntxt: StateDecl + TransDecl + DoDecl, expr: String + AnonFunDecl).
-	SpecImpure ::= (TypingContext).
+	SpecImpure ::= (TypingContext + FunProtoDecl).
 	SpecImpure(c) :- SubSE(c, e), e = NulApp(NONDET, _).
 	SpecImpure(c) :- SubSE(c, e), e = NulApp(FAIRNONDET, _).
 	SpecImpure(c) :- SubSE(c, e), e = NulApp(THIS, _).
@@ -1166,6 +1154,7 @@ domain PStaticTyping extends PData
 	SpecImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).
     SpecImpure(c) :- SubSE(c, e), e = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), SpecImpure(called).
     SpecImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), SpecImpure(called).
+	SpecImpure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
     SpecError(c, n) :- 
@@ -1221,7 +1210,7 @@ domain PStaticTyping extends PData
     /*************************************************************/
     /*                            Impurity                       */
     /*************************************************************/
-	Impure ::= (FunDecl).
+	Impure ::= (FunDecl + FunProtoDecl).
 
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = NulApp(NONDET, _).
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = NulApp(FAIRNONDET, _).
@@ -1231,6 +1220,7 @@ domain PStaticTyping extends PData
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = Send(_, _, _, _, _). 
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = Receive(_, _, _).
 	Impure(c) :- c: FunDecl, ControlImpure(c).
+	Impure(c) :- c: FunDecl, SpecImpure(c).
 	Impure(c) :- SubSE(c, e), e = FunApp(n, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
 	Impure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
 	Impure(c) :- SubSE(c, e), e = FunStmt(n, _, aout, _, _), c : FunDecl, aout : Name, IsLValue(c, aout, TRUE).

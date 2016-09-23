@@ -22,7 +22,7 @@
 #endif
     using System.Windows.Forms;
 
-    public enum CompilerOutput { None, C, Zing, CSharp };
+    public enum CompilerOutput { None, C0, C, Zing, CSharp };
 
     public enum LivenessOption { None, Standard, Mace };
 
@@ -164,24 +164,6 @@
             set;
         }
 
-        public ProgramName RootProgramNameWithTypes
-        {
-            get;
-            private set;
-        }
-
-        public AST<Model> RootModelWithTypes
-        {
-            get;
-            private set;
-        }
-
-        public PProgram ParsedProgram // used only by PVisualizer
-        {
-            get;
-            private set;
-        }
-
         public Compiler(bool shortFileNames)
         {
             EnvParams envParams = null;
@@ -201,17 +183,20 @@
             this.errors = new SortedSet<Flag>(default(FlagSorter));
             this.Log = log;
             this.Options = options;
-            this.ParsedProgram = null;
-            var result = InternalCompile();
-            foreach (var f in errors)
+            foreach (var inputFileName in options.inputFileNames)
             {
-                PrintFlag(f);
+                var result = InternalCompile(inputFileName);
+                foreach (var f in errors)
+                {
+                    PrintFlag(f);
+                }
+                if (!result)
+                {
+                    Log.WriteMessage("Compilation failed", SeverityKind.Error);
+                    return false;
+                }
             }
-            if (!result)
-            {
-                Log.WriteMessage("Compilation failed", SeverityKind.Error);
-            }
-            return result;
+            return true;
         }
 
         private void AddFlag(Flag f)
@@ -246,7 +231,7 @@
                 }
             }
             // for regression test compatibility reasons we do not include the error number when running regression tests.
-            if (Options.test)
+            if (Options.eraseModel)
             {
                 return
                   // this format causes VS to put the errors in the error list window.
@@ -435,10 +420,71 @@
                 if (isSpecAnnot) continue;
                 fProgram.Annotations.Add(annotation);
             }
+
+            foreach (var export in program.MachineExports)
+            {
+                fProgram.MachineExports.Add(export);
+            }
+
+            foreach (var create in program.MachineCreates)
+            {
+                fProgram.MachineCreates.Add(create);
+            }
+
+            foreach (var receive in program.MachineReceives)
+            {
+                fProgram.MachineReceives.Add(receive);
+            }
+
+            foreach (var send in program.MachineSends)
+            {
+                fProgram.MachineSends.Add(send);
+            }
+
+            foreach (var decl in program.MachineCreatesAll)
+            {
+                fProgram.MachineCreatesAll.Add(decl);
+            }
+
+            foreach (var decl in program.MachineSendsAllEvents)
+            {
+                fProgram.MachineSendsAllEvents.Add(decl);
+            }
+
+            foreach (var decl in program.MachineReceivesAllEvents)
+            {
+                fProgram.MachineReceivesAllEvents.Add(decl);
+            }
+
+            foreach (var decl in program.InterfaceTypeDecl)
+            {
+                fProgram.InterfaceTypeDecl.Add(decl);
+            }
+
+            foreach (var decl in program.EventSetDecl)
+            {
+                fProgram.EventSetDecl.Add(decl);
+            }
+
+            foreach (var decl in program.EventSetContains)
+            {
+                fProgram.EventSetContains.Add(decl);
+            }
+
+            foreach (var decl in program.MachineProtoDecls)
+            {
+                fProgram.MachineProtoDecls.Add(decl);
+            }
+
+            foreach (var decl in program.FunProtoDecls)
+            {
+                fProgram.FunProtoDecls.Add(decl);
+            }
+
             return fProgram;
         }
 
-        bool ParseProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName)
+        public bool ParseProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName)
         {
             parsedProgram = new PProgram();
             using (new PerfTimer("Compiler parsing " + Path.GetFileName(inputFileName)))
@@ -509,11 +555,10 @@
                     }
                 }
 
-                if (!Options.test)
+                if (!Options.eraseModel)
                 {
                     parsedProgram = Filter(parsedProgram);
                 }
-                ParsedProgram = parsedProgram;
             }
             return true;
         }
@@ -555,12 +600,18 @@
             }
         }
 
-        bool InternalCompile()
+        void UninstallProgram(ProgramName RootProgramName)
+        {
+            InstallResult uninstallResult;
+            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { RootProgramName }, out uninstallResult);
+            Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
+        }
+
+        bool InternalCompile(string inputFileName)
         {
             PProgram parsedProgram;
             ProgramName RootProgramName;
             AST<Model> RootModel;
-            string inputFileName = Options.inputFileName;
 
             if (!ParseProgram(inputFileName, out parsedProgram, out RootProgramName))
             {
@@ -571,17 +622,20 @@
             
             if (!Check(RootProgramName, RootModel.Node.Name))
             {
+                UninstallProgram(RootProgramName);
                 return false;
             }
                         
             if (Options.compilerOutput == CompilerOutput.None)
             {
+                UninstallProgram(RootProgramName);
                 return true;
             }
 
             bool rc = (Options.compilerOutput == CompilerOutput.C ? GenerateC(RootProgramName, RootModel) : true) && 
                       (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel) : true) && 
                       (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel) : true);
+            UninstallProgram(RootProgramName);
             return rc;
         }
 
@@ -597,9 +651,10 @@
 
         public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel)
         {
+            AST<Model> RootModelWithTypes;
             using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModel.Node.Name)))
             {
-                if (!CreateRootModelWithTypes(RootProgramName, RootModel))
+                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootModelWithTypes))
                 {
                     return false;
                 }
@@ -607,10 +662,6 @@
 
             string RootFileName = RootProgramName.ToString();
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
-            if (Options.outputFileName != null)
-            {
-                fileName = Options.outputFileName;
-            }
             string csharpFileName = fileName + ".cs";
             string dllFileName = fileName + ".dll";
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
@@ -625,9 +676,10 @@
 
         public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel)
         {
+            AST<Model> RootModelWithTypes;
             using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModel.Node.Name)))
             {
-                if (!CreateRootModelWithTypes(RootProgramName, RootModel))
+                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootModelWithTypes))
                 {
                     return false;
                 }
@@ -636,10 +688,6 @@
             string RootFileName = RootProgramName.ToString();
             AST<Model> zingModel;
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
-            if (Options.outputFileName != null)
-            {
-                fileName = Options.outputFileName;
-            }
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
@@ -740,7 +788,6 @@
                     success = PrintZingFile(n, outputDirName) && success;
                 });
 
-
             InstallResult uninstallResult;
             var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
             Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
@@ -820,12 +867,8 @@
             }
         }
 
-        private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel)
+        private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel, out AST<Model> RootModelWithTypes)
         {
-            if (RootModelWithTypes != null)
-            {
-                return true;
-            }
             LoadManifestProgram("Pc.Domains.PWithInferredTypes.4ml");
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
@@ -836,7 +879,7 @@
             List<Flag> applyFlags;
             CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
-            RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_WithTypes.4ml"));
+            var RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_WithTypes.4ml"));
             var extractTask = apply.Result.GetOutputModel(
                 RootModuleWithTypes,
                 RootProgramNameWithTypes,
@@ -1214,7 +1257,7 @@
                 return "unknown";
             }
         }
-
+        /*
         /// <summary>
         /// Users may create several declarations with the same name. This method gives these different aliases
         /// to avoid failure of model compilation.
@@ -1231,7 +1274,7 @@
             occurrenceMap[name] = n + 1;
             return string.Format("{0}_{1}", name, n);
         }
-
+        
         private static string MkQualifiedAlias(Domains.P_Root.QualifiedName qualName)
         {
             Contract.Requires(qualName != null);
@@ -1246,7 +1289,7 @@
                 return string.Format("{0}_{1}", MkQualifiedAlias(qualifier), alias);
             }
         }
-
+        
         private Dictionary<Microsoft.Formula.API.Generators.ICSharpTerm, string> MkDeclAliases(PProgram program)
         {
             Contract.Requires(program != null);
@@ -1285,7 +1328,7 @@
 
             return aliases;
         }
-
+        */
         public bool GenerateC(ProgramName RootProgramName, AST<Model> RootModel)
         {
             using (new PerfTimer("Compiler generating C " + Path.GetFileName(RootProgramName.ToString())))
@@ -1301,15 +1344,12 @@
         {
             string RootFileName = RootProgramName.ToString();
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
-            if (Options.outputFileName != null)
-            {
-                fileName = Options.outputFileName;
-            }
+            
             //// Apply the P2C transform.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
-            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.test ? "TRUE" : "FALSE"));
+            transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.eraseModel ? "TRUE" : "FALSE"));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModel.Node.Name + "_CModel"));
             transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModel.Node.Name + "_LinkModel"));
 
@@ -1333,13 +1373,16 @@
  
             //// Extract the link model
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
-            var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, AliasPrefix);
+            var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, null);
             linkExtractTask.Wait();
             var linkModel = linkExtractTask.Result.FindAny(
                                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
             Contract.Assert(linkModel != null);
+
+            string outputFileName = Path.ChangeExtension(fileName, ".4ml");
+            Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-            StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.ChangeExtension(RootProgramName.ToString(), ".4ml"))));
+            StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
             linkModel.Print(wr);
             wr.Close();
             return success;
@@ -1431,8 +1474,10 @@
             return parseTask.Result.Program;
         }
 
-        public bool Link(IEnumerable<string> fileNames)
+        public bool Link(ICompilerOutput log, CommandLineOptions options)
         {
+            this.Log = log;
+            this.Options = options;
             var linkModel = Factory.Instance.MkModel(
                                     "OutputLinker",
                                     false,
@@ -1441,7 +1486,7 @@
 
             try
             {
-                foreach (var fileName in fileNames)
+                foreach (var fileName in options.inputFileNames)
                 {
                     var program = ParseFormulaFile(fileName);
                     program.FindAll(
@@ -1464,8 +1509,8 @@
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "LinkModel.4ml"));
             using (new PerfTimer("Compiler linking"))
             {
-                LoadManifestProgram("Pc.Domains.PLink.4ml");
                 LoadManifestProgram("Pc.Domains.C.4ml");
+                LoadManifestProgram("Pc.Domains.PLink.4ml");
                 InternalLink(linkProgName, linkModel);
             }
             return true;
@@ -1493,7 +1538,7 @@
             }
 
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
-            var extractTask = apply.Result.GetOutputModel("CLinkModel", progName, AliasPrefix);
+            var extractTask = apply.Result.GetOutputModel("CLinkModel", progName, null);
             extractTask.Wait();
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);

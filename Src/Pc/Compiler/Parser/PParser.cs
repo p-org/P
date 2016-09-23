@@ -569,17 +569,7 @@
                 announceStmt.ev = (P_Root.IArgType_Announce__0)valueExprStack.Pop();
                 announceStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-
-            if (Options.test)
-            {
-                stmtStack.Push(announceStmt);
-            }
-            else
-            {
-                var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
-                skipStmt.id = (P_Root.IArgType_NulStmt__1) MkId(span);
-                stmtStack.Push(skipStmt);
-            }
+            stmtStack.Push(announceStmt);
         }
 
         private void PushReceive(Span span)
@@ -1371,7 +1361,7 @@
 
         private void SetFunKind(P_Root.UserCnstKind kind, Span span)
         {
-            if (Options.test) return;
+            if (Options.eraseModel) return;
             var funDecl = GetCurrentFunDecl(span);
             funDecl.kind = MkUserCnst(kind, span);
         }
@@ -1451,11 +1441,9 @@
         private void AddModelTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
             AddTypeDef(name, nameSpan, typeDefSpan);
-            if (!Options.test)
-            {
-                var modelType = P_Root.MkModelType(MkString(name, nameSpan));
-                parseProgram.ModelTypes.Add(modelType);
-            }
+            if (Options.eraseModel) return;
+            var modelType = P_Root.MkModelType(MkString(name, nameSpan));
+            parseProgram.ModelTypes.Add(modelType);
         }
 
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)

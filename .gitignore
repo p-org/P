@@ -286,3 +286,5 @@ Src/PrtDist/Samples/PingPong/program.h
 /Src/PrtDist/Samples/PingPongSimple/test.4ml
 /Src/PrtDist/Samples/PingPongSimple/linker.h
 /Src/PrtDist/Samples/PingPongSimple/linker.c
+/Bld/Drops/Binaries
+/Src/Pc/packages

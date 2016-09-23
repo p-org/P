@@ -148,11 +148,11 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	AnonOrNamedFunName(d, en) :- d is in.AnonFunDecl, d.owner = NIL, AnonFunDeclGen(d),
 	                     anonFunIndex = toOrdinal(d, 0, { d' | d' is in.AnonFunDecl, d'.ownerFun = d.ownerFun }), 
-						 en = strJoin("P_FUN_GLOBAL_", strJoin(d.ownerFun, strJoin("_ANON", toString(anonFunIndex)))).
+						 en = strJoin("P_FUN_", strJoin(d.ownerFun, strJoin("_ANON", toString(anonFunIndex)))).
 
-	AnonOrNamedFunName(d, en) :- d is in.FunDecl, d.owner = NIL, en = strJoin("P_FUN_GLOBAL_", d.name).
+	AnonOrNamedFunName(d, en) :- d is in.FunDecl, d.owner = NIL, en = strJoin("P_FUN_", d.name).
 
-	AnonOrNamedFunName(d, en) :- d is in.FunProtoDecl, en = strJoin("P_FUN_GLOBAL_", d.name).
+	AnonOrNamedFunName(d, en) :- d is in.FunProtoDecl, en = strJoin("P_FUN_", d.name).
 
 	DeclId(d, id, en), AnonOrNamedFunName(d, en) :- 
 						 d is in.AnonFunDecl, d.owner != NULL, AnonFunDeclGen(d),
@@ -189,7 +189,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(m.name, "_COUNT"))), size = count({d | d is StateDecl, d.owner = m}) }).  
 
 	//// Prototypes for model functions
-	HOut(0, def) :- DeclId(f, id, name), id > 0, f : in.FunDecl, f.kind = MODEL,
+	HOut(0, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),

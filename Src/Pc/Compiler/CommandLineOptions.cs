@@ -83,7 +83,7 @@
                                 Console.WriteLine("Must supply type of output desired");
                                 return false;
                             }
-                            else if (colonArg == "C0")// Chris: should this be c0 or C0?
+                            else if (colonArg == "C0")
                             {
                                 compilerOutput = CompilerOutput.C0;
                             }

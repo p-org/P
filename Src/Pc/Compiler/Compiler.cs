@@ -554,11 +554,6 @@
                         parserWorkQueue.Enqueue(fullFileName);
                     }
                 }
-
-                if (!Options.eraseModel)
-                {
-                    parsedProgram = Filter(parsedProgram);
-                }
             }
             return true;
         }
@@ -632,7 +627,7 @@
                 return true;
             }
 
-            bool rc = (Options.compilerOutput == CompilerOutput.C ? GenerateC(RootProgramName, RootModel) : true) && 
+            bool rc = ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C) ? GenerateC(RootProgramName, RootModel) : true) && 
                       (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel) : true) && 
                       (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel) : true);
             UninstallProgram(RootProgramName);

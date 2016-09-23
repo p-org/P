@@ -4,7 +4,7 @@ fun CreateTimer(owner : machine): machine {
 }
 
 model fun StartTimer(timer : machine, time: int) {
-	send timer, START;
+	send timer, START, 100;
 }
 
 model fun CancelTimer(timer : machine) {

@@ -395,7 +395,7 @@ domain PStaticTyping extends PData
     
 	SubSE ::= (cntxt: TypingContext, typeable: Typeable).
 	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _, _), AnonFunDeclGen(cntxt).
-	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable, _).
+	SubSE(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable, _), cntxt.kind = REAL.
 	SubSE(c, e), SubSE(c, s) :- SubSE(c, While(e, s, _)).
 	SubSE(c, e), SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Ite(e, s1, s2, _)).
 	SubSE(c, s1), SubSE(c, s2) :- SubSE(c, Seq(s1, s2, _)).

@@ -117,6 +117,8 @@ void P_DTOR_Container_IMPL(PRT_MACHINEINST *context) {}
 
 void P_DTOR_GodMachine_IMPL(PRT_MACHINEINST *context) {}
 
+void P_DTOR_M_IMPL(PRT_MACHINEINST *context) {}
+
 void P_DTOR_PING_IMPL(PRT_MACHINEINST *context) {}
 
 void P_DTOR_PONG_IMPL(PRT_MACHINEINST *context) {}
@@ -124,6 +126,8 @@ void P_DTOR_PONG_IMPL(PRT_MACHINEINST *context) {}
 void P_CTOR_Container_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
 
 void P_CTOR_GodMachine_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
+
+void P_CTOR_M_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
 
 void P_CTOR_PING_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
 

@@ -60,6 +60,10 @@ void P_DTOR_Server_IMPL(PRT_MACHINEINST *context)
     PrtFree(serverContext);
 }
 
+void P_CTOR_Safety_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
+
+void P_DTOR_Safety_IMPL(PRT_MACHINEINST *context) {}
+
 std::wstring ConvertToUnicode(const char* str)
 {
 	std::string temp(str == NULL ? "" : str);

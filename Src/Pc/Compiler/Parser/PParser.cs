@@ -2510,12 +2510,10 @@
             crntInterfaceDecl = null;
             crntStateTargetName = null;
             crntGotoTargetName = null;
-            nextTrampolineLabel = 0;
             nextPayloadVarLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();
-            topDeclNames.Reset();
             anonEventSetCounter = 0;
         }
         #endregion

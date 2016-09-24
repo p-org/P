@@ -199,9 +199,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="linker.c" />
-    <ClCompile Include="program.c" />
-    <ClCompile Include="tester.c" />
+    <ClCompile Include="*.c" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="linker.h" />

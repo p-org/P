@@ -404,6 +404,22 @@ _In_ PRT_VALUE						*payload
 	PrtLog(PRT_STEP_RAISE, context, context, event, payload);
 }
 
+FORCEINLINE
+PRT_FUNDECL *
+GetFunDeclFromIndex(_In_ PRT_MACHINEINST_PRIV	*context, _In_ PRT_UINT32 funIndex)
+{
+	PRT_UINT32 isMachineLocal = funIndex % 2;
+	PRT_UINT32 arrayIndex = funIndex / 2;
+	if (isMachineLocal)
+	{
+		return &context->process->program->machines[context->instanceOf]->funs[arrayIndex];
+	}
+	else
+	{
+		return context->process->program->globalFuns[arrayIndex];
+	}
+}
+
 PRT_BOOLEAN
 PrtReceive(
 _Inout_ PRT_MACHINEINST_PRIV	*context,
@@ -412,7 +428,7 @@ _In_ PRT_UINT16					receiveIndex
 )
 {
 	PRT_UINT32 funIndex = funStackInfo->funIndex;
-	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf]->funs[funIndex];
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
 	for (PRT_UINT32 i = 0; i < funDecl->nReceives; i++)
 	{
 		if (funDecl->receives[i].receiveIndex == receiveIndex)
@@ -482,7 +498,7 @@ PrtPushNewEventHandlerFrame(
 	context->funStack.length = length + 1;
 	context->funStack.funs[length].funIndex = funIndex;
 	PRT_BOOLEAN freeLocals = PRT_FALSE;
-	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf]->funs[funIndex]);
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
 	PRT_VALUE ***refArgs = NULL;
 	if (locals == NULL && funDecl->maxNumLocals != 0)
 	{
@@ -553,7 +569,7 @@ PrtPushNewFrame(
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
 	context->funStack.funs[length].funIndex = funIndex;
-	PRT_FUNDECL *funDecl = &(context->process->program->machines[context->instanceOf]->funs[funIndex]);
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
 	PRT_VALUE **locals = NULL;
 	PRT_VALUE ***refArgs = NULL;
 	PRT_BOOLEAN freeLocals = PRT_FALSE;
@@ -803,7 +819,8 @@ PrtRunTransitionFunction(
 	PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
 	PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
 	PrtPushNewEventHandlerFrame(context, transFunIndex, PRT_FUN_PARAM_REF, NULL);
-	context->process->program->machines[context->instanceOf]->funs[transFunIndex].implementation((PRT_MACHINEINST *)context);
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, transFunIndex);
+	funDecl->implementation((PRT_MACHINEINST *)context);
 }
 
 static PRT_BOOLEAN
@@ -842,7 +859,8 @@ DoEntry:
 		PrtPushNewEventHandlerFrame(context, entryFunIndex, PRT_FUN_PARAM_XFER, NULL);
 	}
 	PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
-	context->process->program->machines[context->instanceOf]->funs[funIndex].implementation((PRT_MACHINEINST *)context);
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
+	funDecl->implementation((PRT_MACHINEINST *)context);
 	goto CheckLastOperation;
 
 DoAction:
@@ -864,7 +882,8 @@ DoAction:
 			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_XFER, NULL);
 		}
 		funIndex = PrtBottomOfFunStack(context)->funIndex;
-		context->process->program->machines[context->instanceOf]->funs[funIndex].implementation((PRT_MACHINEINST *)context);
+		funDecl = GetFunDeclFromIndex(context, funIndex);
+		funDecl->implementation((PRT_MACHINEINST *)context);
 	}
 	goto CheckLastOperation;
 
@@ -1315,7 +1334,8 @@ _Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32					funIndex
 )
 {
-	PRT_SM_FUN fun = context->process->program->machines[context->instanceOf]->funs[funIndex].implementation;
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
+	PRT_SM_FUN fun = funDecl->implementation;
 	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
 	if (context->receive != NULL)
 	{
@@ -1345,7 +1365,7 @@ PrtFreeLocals(
 		return;
 	}
 
-	PRT_FUNDECL *funDecl = &context->process->program->machines[context->instanceOf]->funs[frame->funIndex];
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, frame->funIndex);
 
 	if (frame->refArgs != NULL)
 	{
@@ -1377,7 +1397,8 @@ _In_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_UINT32 funIndex
 )
 {
-	return context->process->program->machines[context->instanceOf]->funs[funIndex].implementation;
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
+	return funDecl->implementation;
 }
 
 FORCEINLINE
@@ -1387,7 +1408,8 @@ _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
 	PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].entryFunIndex;
-	return context->process->program->machines[context->instanceOf]->funs[entryFunIndex].implementation;
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, entryFunIndex);
+	return funDecl->implementation;
 }
 
 FORCEINLINE
@@ -1397,7 +1419,8 @@ _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
 	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFunIndex;
-	return context->process->program->machines[context->instanceOf]->funs[exitFunIndex].implementation;
+	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, exitFunIndex);
+	return funDecl->implementation;
 }
 
 FORCEINLINE

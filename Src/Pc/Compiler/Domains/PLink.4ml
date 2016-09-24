@@ -187,7 +187,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 	HOut(0, out.EnmDef(NIL, "P_FUNS", list)) :-
 		list = toList(#Elements, NIL, { enumMember |
 									   enumMember = Element(IntLit(0, DEC, NIL), "_P_FUN_PUSH_OR_IGN"); 
-									   DeclId(d, id, cn), d is AnonOrNamedFun, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d is AnonOrNamedFun, enumMember = Element(IntLit(2*id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FUNS_COUNT"), size = 1 + count({d | d is AnonOrNamedFun}) }).
 
 	HOut(0, def) :- d is AnonOrNamedFun, DeclId(d, _, funName), funStructName = strJoin(funName, "_STRUCT"),

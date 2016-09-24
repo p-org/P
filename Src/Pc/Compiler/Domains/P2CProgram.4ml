@@ -169,8 +169,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	   m is in.MachineDecl,
 	   enumName = strJoin("P_FUNS_", m.name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = m, AnonFunDeclGen(d), enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   DeclId(d, id, cn), d : in.FunDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = m, AnonFunDeclGen(d), x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d : in.FunDecl, d.owner = m, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), 
 									   size = count({d | d is in.AnonFunDecl, d.owner = m, AnonFunDeclGen(d)}) 
 											  + count({d | d is in.FunDecl, d.owner = m}) }).

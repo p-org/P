@@ -202,8 +202,7 @@
     <ClCompile Include="*.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="linker.h" />
-    <ClInclude Include="program.h" />
+    <ClInclude Include="*.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

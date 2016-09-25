@@ -646,10 +646,11 @@
 
         public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel)
         {
+            ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
             using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModel.Node.Name)))
             {
-                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootModelWithTypes))
+                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootProgramNameWithTypes, out RootModelWithTypes))
                 {
                     return false;
                 }
@@ -664,17 +665,19 @@
             using (new PerfTimer("Generating CSharp"))
             {
                 var pToCSharp = new PToCSharp(this, RootModel, RootModelWithTypes);
-                pToCSharp.GenerateCSharp(csharpFileName);
-                return true;
+                var success = pToCSharp.GenerateCSharp(csharpFileName);
+                UninstallProgram(RootProgramNameWithTypes);
+                return success;
             }
         }
 
         public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel)
         {
+            ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
             using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModel.Node.Name)))
             {
-                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootModelWithTypes))
+                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootProgramNameWithTypes, out RootModelWithTypes))
                 {
                     return false;
                 }
@@ -692,8 +695,12 @@
                 LoadManifestProgram("Pc.Domains.Zing.4ml");
                 zingModel = MkZingOutputModel();
                 var pToZing = new PToZing(this, RootModel, RootModelWithTypes);
-                if (!pToZing.GenerateZing(zingFileName, ref zingModel))
+                bool success = pToZing.GenerateZing(zingFileName, ref zingModel);
+                UninstallProgram(RootProgramNameWithTypes);
+                if (!success)
+                {
                     return false;
+                }
             }
 
             if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
@@ -862,7 +869,7 @@
             }
         }
 
-        private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel, out AST<Model> RootModelWithTypes)
+        private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel, out ProgramName RootProgramNameWithTypes, out AST<Model> RootModelWithTypes)
         {
             LoadManifestProgram("Pc.Domains.PWithInferredTypes.4ml");
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
@@ -874,7 +881,7 @@
             List<Flag> applyFlags;
             CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
-            var RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_WithTypes.4ml"));
+            RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_WithTypes.4ml"));
             var extractTask = apply.Result.GetOutputModel(
                 RootModuleWithTypes,
                 RootProgramNameWithTypes,

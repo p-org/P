@@ -2511,6 +2511,7 @@
             crntStateTargetName = null;
             crntGotoTargetName = null;
             nextPayloadVarLabel = 0;
+            nextTrampolineLabel = 0;
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();

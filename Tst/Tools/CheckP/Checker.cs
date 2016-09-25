@@ -129,13 +129,8 @@ namespace CheckP
         private const string AccExt = ".txt";
         private const string LogFile = "check-output.log";
         private const string buildLogFileName = "testerBuildLogFile.txt";
-        private static readonly string[] RuntimeFiles = new string[] {
-            "program.c",
-            "program.h",
-            "linker.c",
-            "linker.h"
-        };
-
+        private static readonly HashSet<string> TestDirectoryContents = 
+            new HashSet<string>(new string[] { ".gitignore", "tester.sln", "tester.vcxproj", "tester.c" });
         private static readonly string[] AllOptions = new string[]
         {
             IncludePcOption,
@@ -198,10 +193,9 @@ namespace CheckP
             Console.WriteLine("-{0}\tDescriptions of this test", DescrOption);
         }
 
-        void ParsePcArgs(IEnumerable<object> pcArgs, out string fileName, out string outputDir, out bool liveness)
+        void ParsePcArgs(IEnumerable<object> pcArgs, out string fileName, out bool liveness)
         {
             fileName = null;
-            outputDir = null;
             liveness = false;
             foreach (string pcArg in pcArgs)
             {
@@ -213,15 +207,6 @@ namespace CheckP
                     }
                     fileName = Path.GetFullPath(Path.Combine(activeDirectory, pcArg));
                 }
-                else if (pcArg.StartsWith("/outputDir"))
-                {
-                    if (outputDir != null)
-                    {
-                        throw new Exception("multiple output directories");
-                    }
-                    var splitArgs = pcArg.Split(':');
-                    outputDir = Path.GetFullPath(Path.Combine(activeDirectory, splitArgs[1]));
-                }
                 else if (pcArg == "/liveness")
                 {
                     liveness = true;
@@ -230,46 +215,6 @@ namespace CheckP
             if (fileName == null)
             {
                 throw new Exception("no input file");
-            }
-            if (outputDir == null)
-            {
-                outputDir = activeDirectory;
-            }
-        }
-
-        void SplitPcArgs(IEnumerable<object> pcArgs, out List<string> loadArgs, out List<string> compileArgs, out List<string> testArgs)
-        { 
-            loadArgs = new List<string>();
-            compileArgs = new List<string>();
-            testArgs = new List<string>();
-            foreach (string pcArg in pcArgs)
-            {
-                if (pcArg.EndsWith(".p"))
-                {
-                    string fullPath = Path.GetFullPath(Path.Combine(activeDirectory, pcArg));
-                    loadArgs.Add(fullPath);
-                    compileArgs.Add(fullPath);
-                    testArgs.Add(fullPath);
-                }
-                else if (pcArg.StartsWith("/outputDir"))
-                {
-                    var splitArgs = pcArg.Split(':');
-                    var fullPcArg = splitArgs[0] + ":" + Path.GetFullPath(Path.Combine(activeDirectory, splitArgs[1]));
-                    compileArgs.Add(fullPcArg);
-                    testArgs.Add(fullPcArg);
-                }
-                else if (pcArg == "/liveness")
-                {
-                    testArgs.Add(pcArg);
-                }
-                else if (pcArg == "/shortFileNames")
-                {
-                    // ignore
-                }
-                else
-                {
-                    throw new Exception("Unknown argument to pc encountered");
-                }
             }
         }
 
@@ -360,15 +305,7 @@ namespace CheckP
                 return false;
             }
 
-            //debudding only?
             Console.WriteLine("Running test under {0} ...", activeDirectory);
-
-            //If isAdd is true, remove old acceptor file
-            //Note: this will break the logic of multiple acceptors;
-            //if in the future multiple acceptors are needed, re-implement this feature, for example:
-            //in adition to the "add" option, add option "reset" for CheckP;
-            //testP.bat will also have two alternative options: "reset" and "add";
-            //only delete acceptors for "reset" option, but not for "add" option
 
             const string acceptorFilePattern = "acc_0.txt";
             DirectoryInfo di = new DirectoryInfo(activeDirectory);
@@ -380,12 +317,7 @@ namespace CheckP
                 }
             }
 
-            //activeDirectory is "...\Prt", but runtime files are under
-            //"..\\." (test directory)
-            var temp = new DirectoryInfo(activeDirectory);
-            string parentFolder = temp.Parent.FullName;
-            var workDirectory = String.Concat(parentFolder, "\\");
-            workDirectory = String.Concat(workDirectory, ".");
+            string workDirectory = new DirectoryInfo(activeDirectory).Parent.FullName;
 
             bool isInclPc;
             Tuple<OptValueKind, object>[] includesPc;
@@ -404,49 +336,52 @@ namespace CheckP
                 //Run the component of the P tool chain specified by the "activeDirectory":
                 if (parentDir == "Pc")
                 {
+                    foreach (string fileName in Directory.EnumerateFiles(workDirectory))
+                    {
+                        if (Path.GetExtension(fileName) == ".c" ||
+                            Path.GetExtension(fileName) == ".h" ||
+                            Path.GetExtension(fileName) == ".4ml" ||
+                            Path.GetExtension(fileName) == ".zing" ||
+                            Path.GetExtension(fileName) == ".dll")
+                        {
+                            File.Delete(fileName);
+                        }
+                    }
+
                     result = ValidateOption(opts, IncludePcOption, true, 1, int.MaxValue, out isInclPc, out includesPc) &&
                             result;
                     result = ValidateOption(opts, ArgsPcOption, true, 1, int.MaxValue, out isArgsPc, out pcArgs) && result;
                     tmpWriter.WriteLine("=================================");
                     tmpWriter.WriteLine("         Console output          ");
                     tmpWriter.WriteLine("=================================");
-                    string fileName;
-                    string outputDir;
+                    string inputFileName;
                     bool liveness;
-                    ParsePcArgs(pcArgs, out fileName, out outputDir, out liveness);
-                    var loadArgs = new List<string>();
+                    ParsePcArgs(pcArgs.Select(x => x.Item2), out inputFileName, out liveness);
                     var compileArgs = new List<string>();
                     var linkArgs = new List<string>();
                     var testArgs = new List<string>();
 
-                    loadArgs.Add(fileName);
-                    compileArgs.Add(fileName);
-                    testArgs.Add(fileName);
-                    linkArgs.Add(Path.GetFullPath(Path.Combine(outputDir, "program.4ml")));
-
-                    compileArgs.Add("/outputDir:" + outputDir);
-                    testArgs.Add("/outputDir:" + outputDir);
-                    linkArgs.Add("/outputDir:" + outputDir);
-
+                    compileArgs.Add(inputFileName);
+                    compileArgs.Add("/generate:C");
+                    compileArgs.Add(string.Format("/outputDir:{0}", workDirectory));
+                    linkArgs.Add(Path.ChangeExtension(inputFileName, ".4ml"));
+                    linkArgs.Add(string.Format("/outputDir:{0}", workDirectory));
+                    testArgs.Add(inputFileName);
+                    testArgs.Add("/generate:Zing");
+                    testArgs.Add(string.Format("/outputDir:{0}", workDirectory));
                     if (liveness)
                     {
                         testArgs.Add("/liveness");
                     }
 
-                    //SplitPcArgs(pcArgs.Select(x => x.Item2), out loadArgs, out compileArgs, out testArgs);
-
                     pciProcess.Reset();
-                    pciProcess.Run("compile", loadArgs);
+                    pciProcess.Run("compile", compileArgs);
                     if (pciProcess.commandSucceeded)
                     {
-                        pciProcess.Run("compile", compileArgs);
+                        pciProcess.Run("link", linkArgs);
                         if (pciProcess.commandSucceeded)
                         {
-                            pciProcess.Run("link", linkArgs);
-                            if (pciProcess.commandSucceeded)
-                            {
-                                pciProcess.Run("test", testArgs);
-                            }
+                            pciProcess.Run("compile", testArgs);
                         }
                     }
                     tmpWriter.Write(pciProcess.outputString);
@@ -462,7 +397,7 @@ namespace CheckP
                 }
                 else if (parentDir == "Zing")
                 {
-                    result = ValidateOption(opts, IncludeZingerOption, true, 1, int.MaxValue, out isInclZinger, out includesZinger) && 
+                    result = ValidateOption(opts, IncludeZingerOption, true, 1, int.MaxValue, out isInclZinger, out includesZinger) &&
                              result;
                     result = ValidateOption(opts, ArgsZingerOption, true, 1, int.MaxValue, out isArgsZinger, out zingerArgs) &&
                              result;
@@ -474,9 +409,22 @@ namespace CheckP
                     // otherwise, it will be "true", even if Zinger's exit value is non-zero
                     // TODO: catch Zinger's exit code 7 (wrong parameters) and report it to cmd window
 
-                    //Adding default parameter: model file name as "program.dll" in the parent dir:
-                    Tuple<OptValueKind, object> zingerDefaultArg = 
-                            new Tuple <OptValueKind, object> (OptValueKind.String, "..\\program.dll");
+                    string zingDllName = null;
+                    foreach (var fileName in Directory.EnumerateFiles(workDirectory))
+                    {
+                        if (Path.GetExtension(fileName) == ".dll")
+                        {
+                            zingDllName = Path.GetFullPath(fileName);
+                            break;
+                        }
+                    }
+                    if (zingDllName == null)
+                    {
+                        Console.WriteLine("Zinger input not found.");
+                        return false;
+                    }
+                    Tuple<OptValueKind, object> zingerDefaultArg =
+                            new Tuple<OptValueKind, object>(OptValueKind.String, zingDllName);
                     var lst = new List<Tuple<OptValueKind, object>>();
                     if (zingerArgs != null)
                     {
@@ -489,7 +437,7 @@ namespace CheckP
                         zingerArgs = new Tuple<OptValueKind, object>[1];
                         zingerArgs[0] = zingerDefaultArg;
                     }
-                    
+
                     bool zingerResult = Run(tmpWriter, zingFilePath, zingerArgs);
 
                     //debug:
@@ -518,18 +466,20 @@ namespace CheckP
                     this.testerExePath = Path.Combine(testerExeDir, "tester.exe");
                     var testerDirectory = Path.Combine(this.testRoot, "PrtTester");
 
-                    //Remove previous runtime files from Tst\PrtTester:
-                    foreach (string file in RuntimeFiles)
+                    foreach (string fileName in Directory.EnumerateFiles(testerDirectory))
                     {
-                        File.Delete(Path.Combine(testerDirectory, file));
+                        var s = Path.GetFileName(fileName).ToLowerInvariant();
+                        if (TestDirectoryContents.Contains(s)) continue;
+                        File.Delete(fileName);
                     }
+
                     //Copy current runtime files generated by Pc.exe to Tst\PrtTester:
-                    foreach (string file in RuntimeFiles)
+                    foreach (string fileName in Directory.EnumerateFiles(workDirectory))
                     {
-                        File.Copy(
-                            Path.Combine(workDirectory, file),
-                            Path.Combine(testerDirectory, file)
-                            );
+                        if (Path.GetExtension(fileName) == ".c" || Path.GetExtension(fileName) == ".h")
+                        {
+                            File.Copy(fileName, Path.Combine(testerDirectory, Path.GetFileName(fileName)));
+                        }
                     }
                     //Build tester.exe for the updated runtime files.
                     var prtTesterProj = Path.Combine(this.testRoot, @"PrtTester\Tester.vcxproj");
@@ -558,9 +508,9 @@ namespace CheckP
                         Console.WriteLine("Error: Tester.vcxproj is not found under PrtTester\\");
                         return false;
                     }
-                    //Checking that program.c and program.h have been copied into testerDirectory:
-                    if (!File.Exists(Path.Combine(testerDirectory, "program.c")) ||
-                        !File.Exists(Path.Combine(testerDirectory, "program.h")))
+                    //Checking that linker.c and linker.h have been copied into testerDirectory:
+                    if (!File.Exists(Path.Combine(testerDirectory, "linker.c")) ||
+                        !File.Exists(Path.Combine(testerDirectory, "linker.h")))
                     {
                         Console.WriteLine("Error: runtime file(s) are not found under PrtTester\\");
                         return false;

@@ -1,4 +1,4 @@
-#include "program.h"
+#include "linker.h"
 
 void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 {

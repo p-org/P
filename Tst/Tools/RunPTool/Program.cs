@@ -232,6 +232,15 @@ namespace RunPTool
 
                 }
 
+                string zingExe = string.Format(@"..\Bld\Drops\{0}\{1}\Binaries\zinger.exe", configuration, platform);
+                string zingFilePath = Path.GetFullPath(Path.Combine(testRoot, zingExe));
+                if (!File.Exists(zingFilePath))
+                {
+                    Console.WriteLine("ERROR in Test: zinger.exe not find in {0}", zingFilePath);
+                    Console.WriteLine(@"Please run ~\Bld\build.bat");
+                    return;
+                }
+
                 string executingProcessDirectoryName = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
                 string pciFilePath = Path.Combine(executingProcessDirectoryName, "Pci.exe");
                 if (!File.Exists(pciFilePath))
@@ -241,7 +250,7 @@ namespace RunPTool
                 }
                 pciProcess = new PciProcess(pciFilePath);
 
-                Test(activeDirs, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
+                Test(activeDirs, zingFilePath, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
 
                 pciProcess.Shutdown();
 
@@ -462,21 +471,11 @@ namespace RunPTool
             }
         }
         //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
-        private void Test(List<DirectoryInfo> diArray, ref int testCount, ref int failCount,
+        private void Test(List<DirectoryInfo> diArray, string zingFilePath, ref int testCount, ref int failCount,
             StreamWriter failedTestsWriter, StreamWriter tempWriter, StreamWriter displayDiffsWriter)
         {
             try
             {
-                string zingExe = string.Format(@"..\Bld\Drops\{0}\{1}\Binaries\zinger.exe", configuration, platform);
-                string zingFilePath = Path.GetFullPath(Path.Combine(testRoot, zingExe));
-                
-                if (!File.Exists(zingFilePath))
-                {
-                    Console.WriteLine("ERROR in Test: zinger.exe not find in {0}", zingFilePath);
-                    Console.WriteLine(@"Please run ~\Bld\build.bat");
-                    return;
-                }
-
                 foreach (DirectoryInfo di in diArray)
                 {
                     //enumerating files in the top dir only
@@ -519,8 +518,7 @@ namespace RunPTool
                     {
                         List<DirectoryInfo> dpArray = new List<DirectoryInfo>();
                         dpArray.Add(dp);
-                        Test(dpArray, ref testCount, ref failCount, failedTestsWriter, tempWriter,
-                            displayDiffsWriter);
+                        Test(dpArray, zingFilePath, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
                     }
                 }
             }

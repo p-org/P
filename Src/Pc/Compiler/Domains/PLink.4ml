@@ -31,7 +31,7 @@ domain PLink
     AssertMaxInstances	::= new (bound: Natural).
     QueueConstraint		::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
     EventDecl			::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).
-	AnonFunDecl		    ::= new (ownerFun: String, id: any Id).
+	AnonFunDecl		    ::= new (ownerFun: String, anonFunIndex: Natural).
 	FunDecl				::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
 	Impure				::= new (decl: FunDecl + FunProtoDecl).
@@ -181,8 +181,7 @@ transform PLink2C(in:: PLink) returns (out:: C)
 		d is in.FunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }), 
 							 cn = strJoin("P_FUN_", d.name);
 		d is in.AnonFunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }),
-							 anonFunIndex = toOrdinal(d, 0, { d' | d' is AnonFunDecl, d'.ownerFun = d.ownerFun }), 
-							 cn = strJoin("P_FUN_", strJoin(d.ownerFun, strJoin("_ANON", toString(anonFunIndex)))).
+							 cn = strJoin("P_FUN_", strJoin(d.ownerFun, strJoin("_ANON", toString(d.anonFunIndex)))).
 
 	HOut(0, out.EnmDef(NIL, "P_FUNS", list)) :-
 		list = toList(#Elements, NIL, { enumMember |

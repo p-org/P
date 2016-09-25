@@ -39,7 +39,6 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	RelatedFunDecls ::= (in.FunDecl, link.FunDecl).
 	RelatedFunProtoDecls ::= (in.FunProtoDecl, link.FunProtoDecl).
 
-    link.AnonFunDecl(ownerFun, id) :- decl is in.AnonFunDecl(NIL, ownerFun, _, _, _, id), ownerFun: String, AnonFunDeclGen(decl).
 	RelatedFunDecls(c, link.FunDecl(name, eparams, ereturn, id)), link.FunDecl(name, eparams, ereturn, id) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
 	RelatedFunDecls(c, link.FunDecl(name, NIL, ereturn, id) ), link.FunDecl(name, NIL, ereturn, id) :- 
@@ -146,7 +145,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	AnonOrNamedFunName ::= (decl: AnonOrNamedFun + in.FunProtoDecl, enumName: String).
 
-	AnonOrNamedFunName(d, en) :- d is in.AnonFunDecl, d.owner = NIL, AnonFunDeclGen(d),
+	AnonOrNamedFunName(d, en), link.AnonFunDecl(d.ownerFun, anonFunIndex) 
+					  :- d is in.AnonFunDecl, d.owner = NIL, AnonFunDeclGen(d),
 	                     anonFunIndex = toOrdinal(d, 0, { d' | d' is in.AnonFunDecl, d'.ownerFun = d.ownerFun }), 
 						 en = strJoin("P_FUN_", strJoin(d.ownerFun, strJoin("_ANON", toString(anonFunIndex)))).
 

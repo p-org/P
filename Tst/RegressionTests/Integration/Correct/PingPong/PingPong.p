@@ -7,16 +7,16 @@ machine Main {
 
     start state Ping_Init {
         entry {
-  	    pongId = new PONG();
-	    raise Success;   	   
+      	    pongId = new PONG();
+    	    raise Success;   	   
         }
         on Success goto Ping_SendPing;
     }
 
     state Ping_SendPing {
         entry {
-	    send pongId, Ping, this;
-	    raise Success;
+    	    send pongId, Ping, this;
+    	    raise Success;
 	}
         on Success goto Ping_WaitPong;
      }

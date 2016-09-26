@@ -223,6 +223,15 @@
 
         CommandLineOptions Options;
 
+        Dictionary<int, SourceInfo> idToSourceInfo;
+
+        P_Root.Id MkIntegerId(Span entrySpan, Span exitSpan)
+        {
+            var nextId = idToSourceInfo.Count;
+            idToSourceInfo[nextId] = new SourceInfo(entrySpan, exitSpan);
+            return MkNumeric(nextId, new Span());
+        }
+
         P_Root.Id MkId(Span span)
         {
             return MkUserCnst(P_Root.UserCnstKind.NIL, span);
@@ -238,12 +247,14 @@
             CommandLineOptions options,
             TopDeclNames topDeclNames,
             PProgram program,
+            Dictionary<int, SourceInfo> idToSourceInfo,
             out List<Flag> flags,
             out List<string> includedFileNames)
         {
             flags = parseFlags = new List<Flag>();
             this.topDeclNames = topDeclNames;
             parseProgram = program;
+            this.idToSourceInfo = idToSourceInfo;
             includedFileNames = parseIncludedFileNames = new List<string>();
             parseSource = file;
             Options = options;
@@ -2025,10 +2036,10 @@
             }
         }
 
-        private void AddMachine(Span span)
+        private void AddMachine(Span span, Span entrySpan, Span exitSpan)
         {
             var machDecl = GetCurrentMachineDecl(span);
-            machDecl.id = (P_Root.IArgType_MachineDecl__4)MkId(span);
+            machDecl.id = (P_Root.IArgType_MachineDecl__4)MkIntegerId(entrySpan, exitSpan);
             machDecl.Span = span;
             parseProgram.Machines.Add(machDecl);
             crntMachDecl = null;
@@ -2205,7 +2216,7 @@
                                      : (P_Root.IArgType_FunDecl__1) GetCurrentMachineDecl(span);
             funDecl.locals = (P_Root.IArgType_FunDecl__5)localVarStack.LocalVarDecl;
             funDecl.body = (P_Root.IArgType_FunDecl__6)stmtStack.Pop();
-            funDecl.id = (P_Root.IArgType_FunDecl__7)MkId(entrySpan, exitSpan);
+            funDecl.id = (P_Root.IArgType_FunDecl__7)MkIntegerId(entrySpan, exitSpan);
             parseProgram.Functions.Add(funDecl);
             localVarStack = new LocalVarStack(this);
             crntFunDecl = null;

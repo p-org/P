@@ -69,7 +69,18 @@
             machineProto.Clear();
             funNames.Clear();
         }
+    }
 
+    public class SourceInfo
+    {
+        Span entrySpan;
+        Span exitSpan;
+
+        public SourceInfo(Span entrySpan, Span exitSpan)
+        {
+            this.entrySpan = entrySpan;
+            this.exitSpan = exitSpan;
+        }
     }
 
     public class StandardOutput : ICompilerOutput
@@ -280,6 +291,7 @@
                 }
 
                 TopDeclNames topDeclNames = new TopDeclNames();
+                Dictionary<int, SourceInfo> idToSourceInfo = new Dictionary<int, SourceInfo>();
                 Dictionary<string, ProgramName> SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
                 var RootFileName = RootProgramName.ToString();
@@ -292,7 +304,7 @@
                     string currFileName = parserWorkQueue.Dequeue();
                     Debug.WriteLine("Loading " + currFileName);
                     var parser = new Parser.PParser();
-                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, parsedProgram, out parserFlags, out includedFileNames);
+                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, parsedProgram, idToSourceInfo, out parserFlags, out includedFileNames);
                     foreach (Flag f in parserFlags)
                     {
                         AddFlag(f);
@@ -369,10 +381,10 @@
             }
         }
 
-        void UninstallProgram(ProgramName RootProgramName)
+        void UninstallProgram(ProgramName programName)
         {
             InstallResult uninstallResult;
-            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { RootProgramName }, out uninstallResult);
+            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { programName }, out uninstallResult);
             Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
         }
 
@@ -1216,12 +1228,11 @@
             {
                 LoadManifestProgram("Pc.Domains.C.4ml");
                 LoadManifestProgram("Pc.Domains.PLink.4ml");
-                InternalLink(linkProgName, linkModel);
+                return InternalLink(linkProgName, linkModel);
             }
-            return true;
         }
 
-        private void InternalLink(ProgramName linkProgramName, AST<Model> linkModel)
+        private bool InternalLink(ProgramName linkProgramName, AST<Model> linkModel)
         {
             InstallResult instResult;
             AST<Program> modelProgram = MkProgWithSettings(linkProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
@@ -1230,7 +1241,8 @@
 
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(PLinkTransform, null, MkReservedModuleLocation(PLinkDomain)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(linkModel.Node.Name, null, linkProgramName.ToString()));
-            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId("CLinkModel"));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId("ErrorModel"));
+            transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId("CLinkModel"));
 
             List<Flag> appFlags;
             Task<ApplyResult> apply;
@@ -1242,16 +1254,60 @@
                 AddFlag(f);
             }
 
+            bool success;
+            Task<AST<Program>> extractTask;
+
+            var errorProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "ErrorModel.4ml"));
+            extractTask = apply.Result.GetOutputModel("ErrorModel", errorProgName, null);
+            extractTask.Wait();
+            var errorProgram = extractTask.Result;
+            Contract.Assert(errorProgram != null);
+            success = PrintLinkerErrors(errorProgram);
+            if (!success)
+            {
+                UninstallProgram(linkProgramName);
+                return false;
+            }
+
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
-            var extractTask = apply.Result.GetOutputModel("CLinkModel", progName, null);
+            extractTask = apply.Result.GetOutputModel("CLinkModel", progName, null);
             extractTask.Wait();
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
-            var success = Render(cProgram, "CLinkModel", progName);
+            success = Render(cProgram, "CLinkModel", progName);
 
-            InstallResult uninstallResult;
-            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { linkProgramName }, out uninstallResult);
-            Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
+            UninstallProgram(linkProgramName);
+            return success;
+        }
+
+        void PrintLinkerError(FuncTerm ft, ref int linkErrorCount)
+        {
+            using (var it = ft.Args.GetEnumerator())
+            {
+                it.MoveNext();
+                string name = (it.Current as Cnst).GetStringValue();
+                it.MoveNext();
+                string msg = (it.Current as Cnst).GetStringValue();
+                Log.WriteMessage(string.Format("{0}: {1}", name, msg), SeverityKind.Error);
+                linkErrorCount++;
+            }
+        }
+
+        bool PrintLinkerErrors(AST<Program> program)
+        {
+            int linkErrorCount = 0;
+            program.FindAll(
+                        new NodePred[]
+                        {
+                        NodePredFactory.Instance.Star,
+                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                        },
+                        (path, n) =>
+                        {
+                            ModelFact mf = (ModelFact)n;
+                            PrintLinkerError((FuncTerm)mf.Match, ref linkErrorCount);
+                        });
+            return linkErrorCount == 0;
         }
 
         private bool PrintFile(string filePrefix, Node n)

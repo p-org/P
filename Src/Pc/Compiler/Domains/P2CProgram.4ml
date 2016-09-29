@@ -1459,17 +1459,11 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									e = in.Default(type, _), TypeToExpr(type, expr),
 									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL)).
 
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), DoFree(e, FALSE),
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
 									e = in.Cast(arg, type, _), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
 									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))).
 
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), DoFree(e, TRUE),
-									e = in.Cast(arg, type, _), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
-									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
-									ec1 = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))),
-									ec = out.FunApp(Ident("PrtCloneValue"), Args(ec1, NIL)).
-	
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.Tuple(es, _), TypeOf(c, e, type), TypeToExpr(type, expr),
 									ExprsTrans(c, s, i, es, ecs), 
@@ -1818,8 +1812,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.Tuple.
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.NamedTuple.
 	DoFree(e, b) :- SubSE(_, e), e = in.Field(e', _, _), DoFree(e', b).
-	DoFree(e, b) :- SubSE(_, e), e = in.Cast(e', _, _), DoFree(e', b).
-
+	DoFree(e, FALSE) :- SubSE(_, e), e = in.Cast(_, _, _).
 
     /*************************************************************/
     /******            Expression dependencies              ******/

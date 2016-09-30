@@ -39,22 +39,38 @@ namespace Microsoft.Pc
         string pipeName;
         bool server;
         bool closed;
-        PipeStream pipe;
+        PipeStream clientPipe;
+        int maxServerThreads;
 
         /// <summary>
         /// Construct a new NamedPipeReader for reading messages from the pipe.
         /// Use the MessageArrived event to get the messages.  
         /// </summary>
         /// <param name="pipeName">The pipe name must be unique across the Windows system</param>
-        /// <param name="server">Whether this is the server or the client (true=server)</param>
-        public NamedPipe(string pipeName, bool server)
+        public NamedPipe(string pipeName)
         {
             this.pipeName = pipeName;
-            this.server = server;
             this.closed = true;
         }
 
-        public bool IsClosed { get { return this.closed; } }
+        private NamedPipe(string pipeName, PipeStream pipe) : this(pipeName)
+        {
+            this.clientPipe = pipe;
+            this.closed = false;
+        }
+
+        public bool IsClosed { get { return this.closed || clientPipe == null || !clientPipe.IsConnected; } }
+
+        /// <summary>
+        /// Start the named pipe server thread that will accept clients.</param>
+        /// </summary>
+        public void StartServer(int maxThreads)
+        {
+            this.maxServerThreads = maxThreads;
+            this.closed = false;
+            this.server = true;
+            Task.Factory.StartNew(ServerThread);
+        }
 
         public bool Connect()
         {
@@ -62,32 +78,34 @@ namespace Microsoft.Pc
             {
                 if (server)
                 {
-                    if (pipe == null)
-                    {
-                        pipe = new NamedPipeServerStream(pipeName,
-                                    PipeDirection.In, 1, PipeTransmissionMode.Byte,
-                                    PipeOptions.Asynchronous, 8192, 8192);
-                    }
-                    Task.Factory.StartNew(ReadPipe);
+                    throw new Exception("Cannot call Connect on the server pipe");
                 }
                 else
                 {
-                    if (pipe == null)
+                    if (clientPipe == null)
                     {
-                        pipe = new NamedPipeClientStream(".", pipeName, PipeDirection.Out);
-                        ((NamedPipeClientStream)pipe).Connect(2000); // give server 5 seconds to boot up...
+                        clientPipe = new NamedPipeClientStream(".", pipeName, PipeDirection.InOut);
+                        ((NamedPipeClientStream)clientPipe).Connect(2000); // see if service is running...
                     }
                 }
                 closed = false;
             }
             catch (Exception ex)
             {
-                Debug.WriteLine(ex.Message);
-                pipe = null;
+                DebugWriteLine(ex.Message);
+                using (clientPipe)
+                {
+                    clientPipe = null;
+                }
                 return false;
             }
             return true;
         }
+
+        /// <summary>
+        /// This event is raised when a new client connects, and a pipe is provided for talking to that client.
+        /// </summary>
+        public event EventHandler<NamedPipe> ClientConnected;
 
         /// <summary>
         /// This event is raised (on a background thread) whenever a message has been
@@ -100,10 +118,12 @@ namespace Microsoft.Pc
         /// </summary>
         public void Close()
         {
-            if (!closed && pipe != null)
+            if (!closed)
             {
-                pipe.Close();
-                pipe = null;
+                using (clientPipe)
+                {
+                    clientPipe = null;
+                }
             }
             closed = true;
         }
@@ -122,71 +142,72 @@ namespace Microsoft.Pc
             }
         }
 
-        private void ReadPipe()
+        private void ClientThread(PipeStream pipe)
+        {
+            try
+            {
+                NamedPipe client = new NamedPipe(this.pipeName, pipe);
+
+                if (ClientConnected != null)
+                {
+                    ClientConnected(this, client);
+                }
+
+            }
+            catch (Exception e)
+            {
+                IOException io = e as IOException;
+                if (io != null)
+                {
+                    uint hr = (uint)io.HResult;
+                    if (hr == 0x800700e7)
+                    {
+                        // multiple instances, all pipe instances are busy, so go to deep sleep
+                        // waiting for other instance to go away.
+                        Thread.Sleep(1000);
+                    }
+                    else if (hr == 0x80131620)
+                    {
+                        closed = true;
+                    }
+                    else if (hr == 0x8007006d)
+                    {
+                        // the pipe has ended, so client went away, we can go back to listening.
+                        DebugWriteLine("The pipe has ended: " + this.pipeName);
+                    }
+                }
+                else
+                {
+                    // on standby, waiting for test to fire up...
+                    Thread.Sleep(100);
+                }
+            }
+        }
+
+        private void ServerThread()
         {
             while (!closed)
             {
                 try
                 {
-                    if (server && !pipe.IsConnected)
-                    {
-                        ((NamedPipeServerStream)pipe).WaitForConnection();
-                    }
-                    string msg = ReadMessage();
-                    if (!string.IsNullOrEmpty(msg))
-                    {
-                        OnMessageArrived(msg);                        
-                    }
-                    else
-                    {
-                        Thread.Sleep(100);
-                    }
+                    NamedPipeServerStream pipe = null;
+                    pipe = new NamedPipeServerStream(pipeName,
+                                    PipeDirection.InOut, maxServerThreads, PipeTransmissionMode.Byte,
+                                    PipeOptions.Asynchronous, 8192, 8192);
+                    ((NamedPipeServerStream)pipe).WaitForConnection();                    
+                    Task.Run(() => { ClientThread(pipe); });
                 }
-                catch (Exception e)
+                catch (Exception ex)
                 {
-                    IOException io = e as IOException;
-                    if (io != null)
-                    {
-                        uint hr = (uint)io.HResult;
-                        if (hr == 0x800700e7)
-                        {
-                            // multiple instances, all pipe instances are busy, so go to deep sleep
-                            // waiting for other instance to go away.
-                            Thread.Sleep(1000);
-                        }
-                        else if (hr == 0x80131620)
-                        {
-                            // Pipe is broken, need to recreate it.
-                            using (pipe)
-                            {
-                                pipe = null;
-                            }
-                            closed = true;
-                        }
-                    }
-                    else
-                    {
-                        // on standby, waiting for test to fire up...
-                        Thread.Sleep(100);
-                    }
+                    DebugWriteLine("ServerException: " + ex.Message);
+                    Thread.Sleep(1000);
                 }
             }
         }
 
-        public void Disconnect()
+        private void DebugWriteLine(string msg)
         {
-            if (server)
-            {
-                ((NamedPipeServerStream)pipe).Disconnect();
-            }
-        }
-
-        private void OnMessageArrived(string msg)
-        {
-            if (MessageArrived != null)
-            {
-                MessageArrived(this, new PipeMessageEventArgs(msg));
-            }
+            Debug.WriteLine("(" + System.Threading.Thread.CurrentThread.ManagedThreadId + ") " + msg);
         }
 
         /// <summary>
@@ -194,17 +215,17 @@ namespace Microsoft.Pc
         /// Only MaxBytes characters will be read, meaning the max string length
         /// is MaxBytes / BytesPerChar.
         /// </summary>
-        private string ReadMessage()
+        public string ReadMessage()
         {
             // read the 4 byte length of the string
             byte[] buffer = new byte[4];
-            int len = pipe.Read(buffer, 0, 4);
+            int len = clientPipe.Read(buffer, 0, 4);
             if (len == 4)
             {
                 int stringLength = buffer[0] + (buffer[1] << 8) + (buffer[2] << 16) + (buffer[3] << 24);
                 buffer = new byte[stringLength];
 
-                len = pipe.Read(buffer, 0, stringLength);
+                len = clientPipe.Read(buffer, 0, stringLength);
                 if (len == stringLength)
                 {
                     return Encoding.Unicode.GetString(buffer, 0, len).Trim('\0');
@@ -224,7 +245,7 @@ namespace Microsoft.Pc
         {
             try
             {
-                if (pipe != null && pipe.IsConnected)
+                if (clientPipe != null && clientPipe.IsConnected)
                 {
                     // Don't use a StreamWriter here because it has buffering which messes up the synchronization
                     // of messages across the pipe.
@@ -235,9 +256,9 @@ namespace Microsoft.Pc
                     header[1] = (byte)((len >> 8) & 0xff);
                     header[2] = (byte)((len >> 16) & 0xff);
                     header[3] = (byte)((len >> 24) & 0xff);
-                    pipe.Write(header, 0, 4);
-                    pipe.Write(bytes, 0, len);
-                    pipe.Flush();
+                    clientPipe.Write(header, 0, 4);
+                    clientPipe.Write(bytes, 0, len);
+                    clientPipe.Flush();
                 }
             }
             catch (IOException)
@@ -264,6 +285,14 @@ namespace Microsoft.Pc
             Dispose(false);
         }
 
+        internal void Flush()
+        {
+            if (clientPipe != null)
+            {
+                clientPipe.Flush();
+            }
+        }
+
         /// <summary>
         /// Called when the reader is being disposed
         /// </summary>
@@ -271,9 +300,9 @@ namespace Microsoft.Pc
         protected virtual void Dispose(bool disposing)
         {
             Close();
-            using (pipe)
+            using (clientPipe)
             {
-                pipe = null;
+                clientPipe = null;
             }
         }
     }

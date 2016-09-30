@@ -22,7 +22,7 @@
 #endif
     using System.Windows.Forms;
 
-    public enum CompilerOutput { None, C0, C, Zing, CSharp };
+    public enum CompilerOutput { None, C0, C, Zing, CSharp, Link };
 
     public enum LivenessOption { None, Standard, Mace };
 
@@ -126,10 +126,10 @@
         private const string ErrorClassName = "error";
         private const int TypeErrorCode = 1;
 
-        private static Dictionary<string, string> ReservedModuleToLocation;
-        private static Dictionary<string, Tuple<AST<Program>, bool>> ManifestPrograms;
+        private Dictionary<string, string> ReservedModuleToLocation;
+        private Dictionary<string, Tuple<AST<Program>, bool>> ManifestPrograms;
 
-        static Compiler()
+        void InitManifestPrograms()
         {
             ReservedModuleToLocation = new Dictionary<string, string>();
             ReservedModuleToLocation.Add(PDomain, "P.4ml");
@@ -166,6 +166,7 @@
 
         public Compiler(bool shortFileNames)
         {
+            InitManifestPrograms();
             EnvParams envParams = null;
             if (shortFileNames)
             {
@@ -180,6 +181,7 @@
             {
                 PerfTimer.ConsoleOutput = true;
             }
+            options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             this.errors = new SortedSet<Flag>(default(FlagSorter));
             this.Log = log;
             this.Options = options;
@@ -981,7 +983,7 @@
             return parseTask.Result.Program;
         }
 
-        private static string MkReservedModuleLocation(string resModule)
+        private string MkReservedModuleLocation(string resModule)
         {
             return Path.Combine(
                 (new FileInfo(Assembly.GetExecutingAssembly().Location)).DirectoryName,
@@ -995,7 +997,7 @@
         /// </summary>
         /// <param name="filename"></param>
         /// <returns></returns>
-        private static string MkSafeModuleName(string filename)
+        private string MkSafeModuleName(string filename)
         {
             try
             {

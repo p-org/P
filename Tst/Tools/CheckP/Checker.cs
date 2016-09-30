@@ -7,6 +7,7 @@ using Microsoft.Build.Logging;
 
 namespace CheckP
 {
+    using Microsoft.Pc;
     using System;
     using System.Collections.Generic;
     using System.Diagnostics;
@@ -15,100 +16,6 @@ namespace CheckP
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-
-    public class PciProcess
-    {
-        Process pciProcess;
-        AutoResetEvent evt;
-        public string outputString;
-        public string errorString;
-        public bool pciInitialized;
-        public bool commandSucceeded;
-
-        public PciProcess(string pciPath)
-        {
-            try
-            {
-                outputString = "";
-                errorString = "";
-                evt = new AutoResetEvent(false);
-                pciProcess = new Process();
-                pciProcess.StartInfo = new ProcessStartInfo(pciPath, "/shortFileNames /server")
-                {
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true
-                };
-                pciProcess.OutputDataReceived += pciProcess_OutputDataReceived;
-                pciProcess.ErrorDataReceived += pciProcess_OutputDataReceived;
-                pciProcess.Start();
-                pciProcess.BeginErrorReadLine();
-                pciProcess.BeginOutputReadLine();
-                evt.WaitOne();
-            }
-            catch (System.ComponentModel.Win32Exception e)
-            {
-                throw new Exception(string.Format("Unable to start the Pci process {0}: {1}", pciProcess.StartInfo.FileName, e.Message));
-            }
-        }
-
-        private void pciProcess_OutputDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            string data = e.Data;
-            if (String.IsNullOrEmpty(data))
-            {
-                return;
-            }
-            Debug.WriteLine("PCI: " + data);
-            if (!pciInitialized && data == "Pci: initialization succeeded")
-            {
-                pciInitialized = true;
-                evt.Set();
-            }
-            else if (data == "Pci: command done")
-            {
-                commandSucceeded = true;
-                evt.Set();
-            }
-            else if (data == "Pci: command failed")
-            {
-                commandSucceeded = false;
-                evt.Set();
-            }
-            else
-            {
-                outputString += string.Format("OUT: {0}\r\n", data);
-            }
-        }
-
-        public void Run(string command, IEnumerable<string> args)
-        {
-            commandSucceeded = false;
-            string str = command;
-            foreach (string arg in args)
-            {
-                str += " ";
-                str += arg;
-            }
-            evt.Reset();
-            pciProcess.StandardInput.WriteLine(str);
-            evt.WaitOne();
-        }
-
-        public void Reset()
-        {
-            commandSucceeded = true;
-            outputString = "";
-            errorString = "";
-        }
-        public void Shutdown()
-        {
-            evt.Dispose();
-            pciProcess.StandardInput.WriteLine("exit");
-        }
-    }
 
     public class Checker
     {
@@ -147,9 +54,8 @@ namespace CheckP
         private bool reset;
         private bool cooperative;
         //Pc, Prt or Zing:
-        private string parentDir;
+        private string testType;
 		private string execsToRun;
-        private PciProcess pciProcess;
         private string zingFilePath;
         private string testerExePath;
         private string testRoot;
@@ -162,14 +68,13 @@ namespace CheckP
             private set;
         }
 
-        public Checker(string activeDirectory, string testRoot, bool reset, bool cooperative, string configuration, string platform, string parentDir, string execsToRun, string zingFilePath, PciProcess pciProcess)
+        public Checker(string activeDirectory, string testRoot, bool reset, bool cooperative, string configuration, string platform, string execsToRun, string zingFilePath)
         {
             this.activeDirectory = activeDirectory;
             this.reset = reset;
             this.cooperative = cooperative;
-            this.parentDir = parentDir;
+            this.testType = Path.GetFileName(activeDirectory);
 			this.execsToRun = execsToRun;
-            this.pciProcess = pciProcess;
             this.zingFilePath = zingFilePath;
             this.testRoot = testRoot;
             this.configuration = configuration;
@@ -203,7 +108,7 @@ namespace CheckP
                 {
                     if (fileName != null)
                     {
-                        throw new Exception("multiple input file names");
+                        throw new Exception("multiple input file names not supported");
                     }
                     fileName = Path.GetFullPath(Path.Combine(activeDirectory, pcArg));
                 }
@@ -232,6 +137,14 @@ namespace CheckP
             return Check(opts);
         }
 
+        private void WriteError(string format, params object[] args)
+        {
+            var saved = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine(format, args);
+            Console.ForegroundColor = saved;
+        }
+
         private bool Check(Options opts)
         {
             bool result = true;
@@ -250,7 +163,7 @@ namespace CheckP
             {
                 foreach (var uo in unknownOpts)
                 {
-                    Console.WriteLine("ERROR: -{0} is not a legal option", uo);
+                    WriteError("ERROR: -{0} is not a legal option", uo);
                 }
 
                 result = false;
@@ -291,7 +204,7 @@ namespace CheckP
                     }
                     catch (Exception e)
                     {
-                        Console.WriteLine(
+                        WriteError(
                             "Error deleting file {0} - {1}",
                             df.Item2,
                             e.Message);
@@ -313,7 +226,7 @@ namespace CheckP
             {
                 foreach (var acci in di.EnumerateFiles(acceptorFilePattern))
                 {
-                    File.Delete(Path.Combine(activeDirectory, acci.FullName));
+                    File.Delete(acci.FullName);
                 }
             }
 
@@ -334,7 +247,7 @@ namespace CheckP
             try
             {
                 //Run the component of the P tool chain specified by the "activeDirectory":
-                if (parentDir == "Pc")
+                if (testType == "Pc")
                 {
                     foreach (string fileName in Directory.EnumerateFiles(workDirectory))
                     {
@@ -357,36 +270,47 @@ namespace CheckP
                     string inputFileName;
                     bool liveness;
                     ParsePcArgs(pcArgs.Select(x => x.Item2), out inputFileName, out liveness);
-                    var compileArgs = new List<string>();
-                    var linkArgs = new List<string>();
-                    var testArgs = new List<string>();
+                    var compileArgs = new CommandLineOptions();
 
-                    compileArgs.Add(inputFileName);
-                    compileArgs.Add("/generate:C");
-                    compileArgs.Add(string.Format("/outputDir:{0}", workDirectory));
-                    linkArgs.Add(Path.ChangeExtension(inputFileName, ".4ml"));
-                    linkArgs.Add(string.Format("/outputDir:{0}", workDirectory));
-                    testArgs.Add(inputFileName);
-                    testArgs.Add("/generate:Zing");
-                    testArgs.Add(string.Format("/outputDir:{0}", workDirectory));
-                    if (liveness)
+                    compileArgs.inputFileNames = new List<string>();
+                    compileArgs.inputFileNames.Add(inputFileName);
+                    compileArgs.compilerOutput = CompilerOutput.C;
+                    compileArgs.shortFileNames = true;
+                    compileArgs.outputDir = workDirectory;
+                    TextWriter compilerOutput = new StringWriter();
+
+                    // compile the .p
+                    CompilerServiceClient pCompilerClient = new CompilerServiceClient();
+                    bool compileResult = pCompilerClient.Compile(compileArgs, compilerOutput);
+
+                    if (compileResult)
                     {
-                        testArgs.Add("/liveness");
+                        // link the *.4ml
+                        compileArgs.inputFileNames.Clear();
+                        compileArgs.inputFileNames.Add(Path.ChangeExtension(inputFileName, ".4ml"));
+                        compileResult = pCompilerClient.Link(compileArgs, compilerOutput);
                     }
-
-                    pciProcess.Reset();
-                    pciProcess.Run("compile", compileArgs);
-                    if (pciProcess.commandSucceeded)
+                    if (compileResult)
                     {
-                        pciProcess.Run("link", linkArgs);
-                        if (pciProcess.commandSucceeded)
+                        // generate the zing
+                        if (liveness)
                         {
-                            pciProcess.Run("compile", testArgs);
+                            compileArgs.liveness = LivenessOption.Standard;
                         }
+                        compileArgs.inputFileNames.Clear();
+                        compileArgs.inputFileNames.Add(inputFileName);
+                        compileArgs.compilerOutput = CompilerOutput.Zing;
+                        compileResult = pCompilerClient.Compile(compileArgs, compilerOutput);
                     }
-                    tmpWriter.Write(pciProcess.outputString);
-                    tmpWriter.Write(pciProcess.errorString);
-                    if (pciProcess.commandSucceeded)
+
+                    pCompilerClient.Dispose();
+
+                    foreach (string line in compilerOutput.ToString().Split(new char[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        tmpWriter.Write("OUT: ");
+                        tmpWriter.WriteLine(line);
+                    }
+                    if (compileResult)
                     {
                         tmpWriter.WriteLine("EXIT: 0");
                     }
@@ -395,7 +319,7 @@ namespace CheckP
                         tmpWriter.WriteLine("EXIT: -1");
                     }
                 }
-                else if (parentDir == "Zing")
+                else if (testType == "Zing")
                 {
                     result = ValidateOption(opts, IncludeZingerOption, true, 1, int.MaxValue, out isInclZinger, out includesZinger) &&
                              result;
@@ -420,7 +344,7 @@ namespace CheckP
                     }
                     if (zingDllName == null)
                     {
-                        Console.WriteLine("Zinger input not found.");
+                        WriteError("Zinger input not found.");
                         return false;
                     }
                     Tuple<OptValueKind, object> zingerDefaultArg =
@@ -452,37 +376,23 @@ namespace CheckP
                         result = false;
                     }
                 }
-                else if (parentDir == "Prt")
+                else if (testType == "Prt")
                 {
                     result =
                         ValidateOption(opts, IncludePrtOption, true, 1, int.MaxValue, out isInclPrt, out includesPrt) &&
                         result;
                     result = ValidateOption(opts, ArgsPrtOption, true, 1, int.MaxValue, out isArgsPrt, out prtArgs) &&
                              result;
-                    //Compute "TesterDirectory" (Tst\PrtTester):
-                    //path to ...PrtTester\Debug\x86\tester.exe (since that is the configuration that RunBuildTester builds).
-                    string exePath = string.Format("PrtTester\\{0}\\{1}", configuration, platform);
-                    string testerExeDir = Path.Combine(this.testRoot, exePath);
+
+                    // copy Tester.vcxproj and tester.c into this test directory (so we can run multiple tests in parallel).
+                    CopyFiles(Path.Combine(this.testRoot, "PrtTester"), workDirectory);
+
+                    string exePath = configuration + Path.DirectorySeparatorChar + platform;
+                    string testerExeDir = Path.Combine(workDirectory, exePath);
                     this.testerExePath = Path.Combine(testerExeDir, "tester.exe");
-                    var testerDirectory = Path.Combine(this.testRoot, "PrtTester");
 
-                    foreach (string fileName in Directory.EnumerateFiles(testerDirectory))
-                    {
-                        var s = Path.GetFileName(fileName).ToLowerInvariant();
-                        if (TestDirectoryContents.Contains(s)) continue;
-                        File.Delete(fileName);
-                    }
-
-                    //Copy current runtime files generated by Pc.exe to Tst\PrtTester:
-                    foreach (string fileName in Directory.EnumerateFiles(workDirectory))
-                    {
-                        if (Path.GetExtension(fileName) == ".c" || Path.GetExtension(fileName) == ".h")
-                        {
-                            File.Copy(fileName, Path.Combine(testerDirectory, Path.GetFileName(fileName)));
-                        }
-                    }
                     //Build tester.exe for the updated runtime files.
-                    var prtTesterProj = Path.Combine(this.testRoot, @"PrtTester\Tester.vcxproj");
+                    var prtTesterProj = Path.Combine(workDirectory, "Tester.vcxproj");
 
                     //1. Define msbuildPath for msbuild.exe:
                     var msbuildPath = FindTool("MSBuild.exe");
@@ -496,7 +406,7 @@ namespace CheckP
                         msbuildPath = Path.Combine(programFiles, @"MSBuild\14.0\Bin\MSBuild.exe");
                         if (!File.Exists(msbuildPath))
                         {
-                            Console.WriteLine("Error: msbuild.exe is not in your PATH.");
+                            WriteError("Error: msbuild.exe is not in your PATH.");
                             return false;
                         }
                     }
@@ -505,14 +415,14 @@ namespace CheckP
                     //Check that Tester.vcxproj exists under PrtTester:
                     if (!File.Exists(prtTesterProj))
                     {
-                        Console.WriteLine("Error: Tester.vcxproj is not found under PrtTester\\");
+                        WriteError("Error: Tester.vcxproj is not found");
                         return false;
                     }
                     //Checking that linker.c and linker.h have been copied into testerDirectory:
-                    if (!File.Exists(Path.Combine(testerDirectory, "linker.c")) ||
-                        !File.Exists(Path.Combine(testerDirectory, "linker.h")))
+                    if (!File.Exists(Path.Combine(workDirectory, "linker.c")) ||
+                        !File.Exists(Path.Combine(workDirectory, "linker.h")))
                     {
-                        Console.WriteLine("Error: runtime file(s) are not found under PrtTester\\");
+                        WriteError("Error: linker.c and linker.h are not found, did you run pc.exe ?");
                         return false;
                     }
 
@@ -520,14 +430,14 @@ namespace CheckP
                     bool buildRes = RunBuildTester(msbuildPath, prtTesterProj, true);
                     if (!buildRes)
                     {
-                        Console.WriteLine("Error cleaning Tester project");
+                        WriteError("Error cleaning Tester project");
                         return false;
                     }
                     //Building tester.exe:
                     buildRes = RunBuildTester(msbuildPath, prtTesterProj, false);
                     if (!buildRes)
                     {
-                        Console.WriteLine("Error building Tester project");
+                        WriteError("Error building Tester project");
                         return false;
                     }
 
@@ -544,13 +454,13 @@ namespace CheckP
                 }
                 else
                 {
-                    Console.WriteLine("Unreachable: parentDir {0} has an invalid value:", parentDir);
+                    WriteError("The test directory should be 'Pc','Prt' or 'Zing', but found {0}.", testType);
                     return false;
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine("ERROR running P tool: {0}", e.Message);
+                WriteError("ERROR running {0} test: {0}", testType, e.Message);
                 return false;
             }
 
@@ -583,6 +493,28 @@ namespace CheckP
 
             return result;
         }
+
+        private static void CopyFiles(string src, string target)
+        {
+            foreach (var file in Directory.GetFiles(src))
+            {
+                string name = Path.GetFileName(file);
+                File.Copy(file, target + Path.DirectorySeparatorChar + name, true);
+            }
+        }
+
+        public static void CloneSubtree(string src, string target)
+        {
+            Directory.CreateDirectory(target);
+            CopyFiles(src, target);
+            foreach (var dir in Directory.GetDirectories(src))
+            {
+                string name = Path.GetFileName(dir);
+                string subDir = target + Path.DirectorySeparatorChar + name;
+                CloneSubtree(dir, subDir);
+            }
+        }
+
 
         private static string FindTool(string name)
         {
@@ -650,7 +582,7 @@ namespace CheckP
             }
             catch (Exception e)
             {
-                Console.WriteLine(
+                WriteError(
                     "ERROR: Could not close temporary file {0} - {1}",
                     TmpStreamFile,
                     e.Message);
@@ -672,7 +604,7 @@ namespace CheckP
             }
             catch (Exception e)
             {
-                Console.WriteLine(
+                WriteError(
                     "ERROR: Could not delete temporary file {0} - {1}",
                     TmpStreamFile,
                     e.Message);
@@ -714,7 +646,7 @@ namespace CheckP
                     }
                     else
                     {
-                        Console.WriteLine("ERROR: Could not include {0} - {1}", inc.Item2.ToString(), e.Message);
+                        WriteError("ERROR: Could not include {0} - {1}", inc.Item2.ToString(), e.Message);
                         return false;
                     }
                     
@@ -732,7 +664,7 @@ namespace CheckP
                 var di = new DirectoryInfo(Path.Combine(activeDirectory, accDir));
                 if (!di.Exists)
                 {
-                    Console.WriteLine("ERROR: Acceptor directory {0} does not exist", accDir);
+                    WriteError("ERROR: Acceptor directory {0} does not exist", accDir);
                     return false;
                 }
 
@@ -762,13 +694,13 @@ namespace CheckP
                 }
                 else
                 {
-                    Console.WriteLine("ERROR: Output is not accepted");
+                    WriteError("ERROR: Output is not accepted");
                     return false;
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine("ERROR: Could not compare acceptors - {0}", e.Message);
+                WriteError("ERROR: Could not compare acceptors - {0}", e.Message);
                 return false;
             }
         }
@@ -831,7 +763,7 @@ namespace CheckP
             }
             catch (Exception e)
             {
-                Console.WriteLine("ERROR: Failed to run command: {0}", e.Message);
+                WriteError("ERROR: Failed to run command: {0}", e.Message);
                 return false;
             }
 
@@ -886,7 +818,7 @@ namespace CheckP
             }
             catch (Exception e)
             {
-                Console.WriteLine("ERROR: Build/Clean of Tester failed: {0}", e.Message);
+                WriteError("ERROR: Build/Clean of Tester failed: {0}", e.Message);
                 return false;
             }
             return true;
@@ -898,7 +830,6 @@ namespace CheckP
             DataReceivedEventArgs e)
         {
             string line = string.Format("OUT: {0}" , e.Data);
-            Debug.WriteLine(line);
             outString += line;
             outString += Environment.NewLine;
         }
@@ -911,7 +842,6 @@ namespace CheckP
             if (!String.IsNullOrEmpty(e.Data))
             {
                 string line = string.Format("ERROR: {0}", e.Data);
-                Debug.WriteLine(line);
                 errorString += line;
                 errorString += Environment.NewLine;
             }

@@ -27,20 +27,19 @@ namespace RunPTool
         private const string DisplayDiffsFile = "display-diffs.bat";
         private const string DiffTool = "kdiff3";
 
-        private static PciProcess pciProcess;
-
         bool reset;
         bool cooperative; // for testing cooperative multitasking.
+        bool parallel; // whether to run multiple tests in parallel.
+        int maxThreads; 
 
         //set according to the name of the parent directory for "testconfig.txt":
         string testFilePath;
         string execsToRun;
         string configuration = "Debug";
         string platform = "x86";
-        const string configArg = "configuration=";
-        const string platformArg = "platform=";
 
-        static string testRoot; // the Tst directory
+        static string testRoot; // the Tst source directory
+        static string testOutput; // the Tst/TestResult directory (to separate the temporary files from our source directory).
 
         bool ParseCommandLine(string[] args)
         {
@@ -49,45 +48,69 @@ namespace RunPTool
                 string arg = args[i];
                 if (arg[0] == '/' || arg[0] == '-')
                 {
-                    string option = (arg.Substring(1).ToLowerInvariant());
-                    if (option.StartsWith("run"))
+                    arg = (arg.Substring(1).ToLowerInvariant());
+                    string option = null;
+                    int sep = arg.IndexOfAny(new char[] { '=', ':'});
+                    if (sep>0)
                     {
-                        execsToRun = arg;
+                        option = arg.Substring(sep + 1).Trim();
+                        arg = arg.Substring(0, sep).Trim();
                     }
-                    else if (option.StartsWith(platformArg))
+                    switch (arg)
                     {
-                        platform = arg.Substring(platformArg.Length + 1).ToLowerInvariant();
-                        if (platform != "x86" && platform != "x64")
-                        {
-                            Console.WriteLine("### Unrecognized platform '{0}', expecting 'x86' or 'x64'", platform);
-                            return false;
-                        }
-                    }
-                    else if (option.StartsWith(configArg))
-                    {
-                        configuration = arg.Substring(configArg.Length + 1).ToLowerInvariant();
-                        if (configuration != "debug" && configuration != "release")
-                        {
-                            Console.WriteLine("### Unrecognized configuration '{0}', expecting 'debug' or 'release'", configuration);
-                            return false;
-                        }
-                    }
-                    else
-                    {
-                        switch (option)
-                        {
-                            case "reset":
-                                reset = true;
-                                break;
-                            case "cooperative":
-                                cooperative = true;
-                                break;
-                            default:
-                                Console.WriteLine("### Unrecognized option: " + arg);
+                        case "run":
+                            execsToRun = arg;
+                            break;
+                        case "platform":
+                            if (option != "x86" && option != "x64")
+                            {
+                                Console.WriteLine("### Unrecognized platform '{0}', expecting /platform=x86 or /platform=x64", option);
                                 return false;
-                        }
+                            }
+                            platform = option;
+                            break;
+                        case "configuration":
+                            if (option != "debug" && option != "release")
+                            {
+                                Console.WriteLine("### Unrecognized configuration '{0}', expecting /configuration=debug or /configuration=release", option);
+                                return false;
+                            }
+                            configuration = option;
+                            break;
+                        case "reset":
+                            reset = true;
+                            break;
+                        case "cooperative":
+                            cooperative = true;
+                            break;
+                        case "parallel":
+                            parallel = true;
+                            if (!string.IsNullOrEmpty(option))
+                            {
+                                bool validValue = true;
+                                int j;
+                                if (int.TryParse(option, out j))
+                                {
+                                    validValue = (j > 0);
+                                    maxThreads = j;
+                                }
+                                else
+                                {
+                                    validValue = false;
+                                }
+                                if (!validValue)
+                                {
+                                    Console.WriteLine("### /parallel specified invalid number of thread '{0}', for example /parallel:4 to set 4 threads as the maximum", option);
+                                    return false;
+                                }
+                            }
+                            break;
+                        default:
+                            Console.WriteLine("### Unrecognized option: " + arg);
+                            return false;
                     }
                 }
+
                 else if (testFilePath == null)
                 {
                     testFilePath = arg;
@@ -98,10 +121,24 @@ namespace RunPTool
                     return false;
                 }
             }
+
+            // we see diminishing returns if we use too many threads to the point of it becoming slower which is why we only use 
+            // a maximum of Environment.ProcessorCount / 2.
+            int upperLimit = Environment.ProcessorCount / 2;
+
+            if (!Environment.Is64BitProcess || platform == "x86")
+            {
+                // a 32 bit process has 2 gig limit, and with each p compile consuming up to peak of 500mb we can only run about 4 threads safely.
+                upperLimit = Math.Min(4, upperLimit);
+            }
+            
+            this.maxThreads = Math.Min(this.maxThreads, upperLimit);
+            if (this.maxThreads == 0) this.maxThreads = 1;
+
             return true;
         }
 
-       static void PrintUsage()
+        static void PrintUsage()
         {
             Console.WriteLine("USAGE: RunPTool.exe  [options] [file with test dirs]");
             Console.WriteLine("Options:");
@@ -123,20 +160,31 @@ namespace RunPTool
                 PrintUsage();
                 return;
             }
+
+            Stopwatch timer = new Stopwatch();
+            timer.Start();
+
             p.Run();
+
+            timer.Stop();
+            Console.WriteLine("Test ran in {0} seconds, or {1}", timer.Elapsed.TotalSeconds, timer.Elapsed.ToString());
         }
 
         void Run()
-        { 
+        {
             try
             {
                 // this should be the script directory.
-                testRoot = FindTestRoot();                
+                testRoot = FindTestRoot();
 
                 if (execsToRun == null)
                 {
                     execsToRun = "/runAll";
                 }
+
+                // we will copy test structure here so that all the temporary files we create are contained in one place rather
+                // than poluting our source tree with all that.
+                testOutput = Path.Combine(testRoot, "TestResult");
 
                 //tstDir is where testP.bat is located
                 List<DirectoryInfo> activeDirs;
@@ -151,13 +199,13 @@ namespace RunPTool
                     activeDirs = ExtractActiveDirsFromFile(testFilePath, new DirectoryInfo(testRoot));
                     if (activeDirs == null)
                     {
-                        Console.WriteLine("Failed to run tests: directory name(s) in the test directories file are in a wrong format");
+                        WriteError("Failed to run tests: directory name(s) in the test directories file are in a wrong format");
                         Environment.ExitCode = FailCode;
                         return;
                     }
                     if (activeDirs.Count == 0)
                     {
-                        Console.WriteLine("Failed to run tests: no tests in the test directories file");
+                        WriteError("Failed to run tests: no tests in the test directories file");
                         Environment.ExitCode = FailCode;
                         return;
                     }
@@ -168,26 +216,45 @@ namespace RunPTool
                     {
                         return;
                     }
-                    //Check other rules recursively:
-                    result = CheckTestDirs(activeDirs);
-                    if (!result)
-                    {
-                        return;
-                    }
                 }
+
+                bool isInTestResultDir = false;
 
                 foreach (DirectoryInfo di in activeDirs)
                 {
                     if (!di.Exists)
                     {
-                        Console.WriteLine("Failed to run tests: directory {0} does not exist", di.FullName);
+                        WriteError("Failed to run tests: directory '{0}' does not exist", di.FullName);
                         Environment.ExitCode = FailCode;
                         return;
                     }
+                    if (di.FullName.StartsWith(testOutput, StringComparison.OrdinalIgnoreCase))
+                    {
+                        isInTestResultDir = true;
+                    }
                 }
 
+                if (!isInTestResultDir)
+                {
+                    if (Directory.Exists(testOutput))
+                    {
+                        // wipe the whole subtree, so we start with a clean state. !!
+                        Directory.Delete(testOutput, true);
+                    }
+                }
+
+                // make sure test output directory exists.
+                Directory.CreateDirectory(testOutput);
+                Directory.SetCurrentDirectory(testOutput);
+
+                // expand the list of test directories by walking the entire subtree looking for test folders
+                // according to the expected pattern of 'Pc', 'Prt', and 'Zing' folders that contain testconfig.txt files.
+                List<DirectoryInfo> allTestDirs = new List<DirectoryInfo>();
+                var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                visited.Add(testOutput); // don't drill into this folder.
+                EnumerateDirs(activeDirs, allTestDirs, visited);
+                
                 Console.WriteLine("Running tests");
-                int testCount = 0, failCount = 0;
                 StreamWriter failedTestsWriter = null;
                 StreamWriter failedTestsToResetWriter = null;
                 StreamWriter tempWriter = null;
@@ -196,23 +263,6 @@ namespace RunPTool
                 //If reset = false, replace old "failed-tests.txt" and "display-diffs.bat" with newly created files:
                 if (!reset)
                 {
-                    if (File.Exists(Path.Combine(Environment.CurrentDirectory, FailedTestsFile)))
-                    {
-                        File.Delete(Path.Combine(Environment.CurrentDirectory, FailedTestsFile));
-                    }
-                    if (File.Exists(Path.Combine(Environment.CurrentDirectory, FailedTestsToResetFile)))
-                    {
-                        File.Delete(Path.Combine(Environment.CurrentDirectory, FailedTestsToResetFile));
-                    }
-                    if (File.Exists(Path.Combine(Environment.CurrentDirectory, "tempReset.txt")))
-                    {
-                        File.Delete(Path.Combine(Environment.CurrentDirectory, "tempReset.txt"));
-                    }
-                    if (File.Exists(Path.Combine(Environment.CurrentDirectory, DisplayDiffsFile)))
-                    {
-                        File.Delete(Path.Combine(Environment.CurrentDirectory, DisplayDiffsFile));
-                    }
-
                     if (!OpenSummaryStreamWriter(FailedTestsFile, out failedTestsWriter))
                     {
                         throw new Exception("Cannot open failed-tests.txt for writing");
@@ -236,68 +286,126 @@ namespace RunPTool
                 string zingFilePath = Path.GetFullPath(Path.Combine(testRoot, zingExe));
                 if (!File.Exists(zingFilePath))
                 {
-                    Console.WriteLine("ERROR in Test: zinger.exe not find in {0}", zingFilePath);
-                    Console.WriteLine(@"Please run ~\Bld\build.bat");
+                    WriteError("ERROR in Test: zinger.exe not find in {0}", zingFilePath);
+                    WriteError(@"Please run ~\Bld\build.bat");
                     return;
                 }
 
-                string executingProcessDirectoryName = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-                string pciFilePath = Path.Combine(executingProcessDirectoryName, "Pci.exe");
-                if (!File.Exists(pciFilePath))
+                ThreadSafeOutput reporter = new RunPTool.Program.ThreadSafeOutput(failedTestsWriter, tempWriter, displayDiffsWriter);
+
+                int threads = parallel ? maxThreads : 1;
+                // now we can parallelize these test directories doing up to Environment.ProcessorCount - 1 jobs at once.
+                Parallel.ForEach(allTestDirs, new ParallelOptions()
                 {
-                    Console.WriteLine("Cannot find pci.exe");
-                    return;
-                }
-                pciProcess = new PciProcess(pciFilePath);
+                    MaxDegreeOfParallelism = threads
+                },
+                (dir) =>
+                {
+                    Test(dir, zingFilePath, reporter);
+                });
 
-                Test(activeDirs, zingFilePath, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
-
-                pciProcess.Shutdown();
-
+                int testCount = reporter.TestCount;
+                int failCount = reporter.FailCount;
                 Console.WriteLine();
                 Console.WriteLine("Total tests: {0}, Passed tests: {1}, Failed tests: {2}", testCount, testCount - failCount, failCount);
 
                 if (failCount > 0)
                 {
-                    if (!CloseSummaryStreamWriter("tempReset.txt", tempWriter))
-                    {
-                        throw new Exception("Cannot close tempReset.txt");
-                    }
+                    tempWriter.Close();
+
                     //open the reader (from the same file):
-                    if (!OpenSummaryStreamReader("tempReset.txt", out tempReader))
-                    {
-                        throw new Exception("Cannot open tempReset.txt for reading");
-                    }
+                    OpenSummaryStreamReader("tempReset.txt", out tempReader);
+
                     RemoveDupTests(failedTestsToResetWriter, tempReader);
 
-                    if (!CloseSummaryStreamWriter(FailedTestsFile, failedTestsWriter))
-                    {
-                        throw new Exception("Cannot close failed-tests.txt");
-                    }
-                    if (!CloseSummaryStreamWriter(FailedTestsToResetFile, failedTestsToResetWriter))
-                    {
-                        throw new Exception("Cannot close failed-tests-for-reset.txt");
-                    }
-                    if (!CloseSummaryStreamReader("tempReset.txt", tempReader))
-                    {
-                        throw new Exception("Cannot close tempReset.txt");
-                    }
-                    File.Delete(Path.Combine(Environment.CurrentDirectory, "tempReset.txt"));
-                    if (!CloseSummaryStreamWriter(DisplayDiffsFile, displayDiffsWriter))
-                    {
-                        throw new Exception("Cannot close display-diffs.bat");
-                    }
+                    failedTestsWriter.Close();
+                    failedTestsToResetWriter.Close();
+
+                    tempReader.Close();
+
+                    SafeDelete(Path.Combine(testOutput, "tempReset.txt"));
+
+                    displayDiffsWriter.Close();
 
                     Environment.ExitCode = FailCode;
+                    Console.WriteLine("Test output written to: " + testOutput);
                     Console.WriteLine("List of all failed subtests: failed-tests.txt");
                     Console.WriteLine("List of all failed tests (to use for reset): failed-tests-for-reset.txt");
                     Console.WriteLine("To run kdiff3 on outputs for all failed tests: run display-diffs.bat");
                 }
+
             }
             catch (Exception e)
             {
-                Console.WriteLine("Failed to run tests - {0}", e.Message);
+                WriteError("Failed to run tests - {0}", e.Message);
                 Environment.ExitCode = FailCode;
+            }
+        }
+
+        private void WriteError(string format, params object[] args)
+        {
+            var saved = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.DarkRed;
+            Console.WriteLine(format, args);
+            Console.ForegroundColor = saved;
+        }
+
+        private void SafeDelete(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        }
+
+        private void EnumerateDirs(List<DirectoryInfo> diArray, List<DirectoryInfo> allTestDirs, HashSet<string> visited)
+        {
+            List<string> result = new List<string>();
+            try
+            {
+                foreach (DirectoryInfo di in diArray)
+                {
+                    if (visited.Contains(di.FullName))
+                    {
+                        continue;
+                    }
+                    visited.Add(di.FullName);
+
+                    bool isTestDir = false;
+                    foreach (var dir in di.EnumerateDirectories())
+                    {
+                        if ((dir.Name == "Pc") ||
+                            (dir.Name == "Zing") ||
+                            (dir.Name == "Prt"))
+                        {
+                            // look for ConfigFileName
+                            foreach (var fi in dir.EnumerateFiles(ConfigFileName))
+                            {
+                                //if di.Name is Pc or Prt or Zing, leaf directory is reached;
+                                //(we are assuming that test directories cannot have these names)
+                                //Note:these directory names must be exactly Pc or Prt or Zing (they are case-sensitive)
+
+                                // Found one of these dirs, so the parent is a real test directory then.
+                                allTestDirs.Add(di);
+
+                                // don't need to dig any deeper
+                                isTestDir = true; 
+                            }
+                        }
+                        if (isTestDir)
+                        {
+                            break;
+                        }
+                    }
+
+                    // dig deeper...
+                    List<DirectoryInfo> dpArray = new List<DirectoryInfo>(di.EnumerateDirectories());
+                    EnumerateDirs(dpArray, allTestDirs, visited);
+                }
+            }
+            catch (Exception e)
+            {
+                WriteError("### ERROR reading directories: {0}", e.Message);
             }
         }
 
@@ -374,161 +482,124 @@ namespace RunPTool
             }
             return result;
         }
-        
-        //Type-check list of test dirs:
-        //TODO There's no error reported if there exists a test dir which doesn't contain
-        //any of the subdirs Pc/Zing/Prt - the test would just be skipped
-        private static bool CheckTestDirs(List<DirectoryInfo> diArray)
+
+        private void DebugWriteLine(string msg)
         {
-            //TODO Add exception handling?
+            Debug.WriteLine("(" + System.Threading.Thread.CurrentThread.ManagedThreadId + ") " + msg);
+        }
+
+        //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
+        private void Test(DirectoryInfo testDir, string zingFilePath, ThreadSafeOutput reporter)
+        {
             try
             {
-                foreach (DirectoryInfo di in diArray)
-                {
-                    //check that if di.Name is Pc/Zing/Prt, testconfig.txt is present in it:
-                    if ((di.Name == "Pc") || (di.Name == "Zing") || (di.Name == "Prt"))
-                    {
-                        if (!File.Exists(Path.Combine(di.FullName, ConfigFileName)))
-                        {
-                            Console.WriteLine("Config file testconfig.txt should exist under Pc, Zing or Prt dir:");
+                DebugWriteLine("Testing: " + testDir.FullName);
 
-                            string parent = Path.GetDirectoryName(di.FullName);
-                            if (Directory.GetFiles(parent, "*.p").Count() == 0)
+                string resultDir = PrepareTestDir(testDir.FullName);
+                DebugWriteLine("Output: " + resultDir);
+
+                //Since order of directory processing is significant (Pc should be processed before
+                //Zing and Prt), order enumerated directories alphabetically:
+                var dirs = (from dir in Directory.GetDirectories(resultDir)
+                            orderby dir ascending
+                            select dir);
+
+                foreach (var di in dirs)
+                {
+                    string name = Path.GetFileName(di);
+                    if ((name == "Pc") ||
+                        (name == "Zing" && (execsToRun == "/runZing" || execsToRun == "/runAll")) ||
+                        (name == "Prt" && (execsToRun == "/runPrt" || execsToRun == "/runAll")))
+                    {
+                        string configFile = di + Path.DirectorySeparatorChar + ConfigFileName;
+                        if (File.Exists(configFile))
+                        {
+                            var checker = new Checker(di, testRoot, reset, cooperative, configuration, platform, execsToRun, zingFilePath);
+                            if (!checker.Check(configFile))
                             {
-                                Console.WriteLine("There is also no *.p file in the parent folder, was this test deleted? ");
-                                Console.WriteLine("If so, you need to delete this folder.");
-                                Console.WriteLine("{0}", parent);
+                                reporter.RecordFailure(di);
                             }
                             else
                             {
-                                Console.WriteLine("{0}", di.FullName);
-                            }
-                            return false;
-                        }
-                    }
-
-                    foreach (var fi in di.EnumerateFiles(ConfigFilePattern))
-                    {
-                        //assuming that leaf directory Pc, Prt or Zing is reached:
-                        //fail if wrong name for config. file:
-                        if (fi.Name != "testconfig.txt")
-                        {
-                            Console.WriteLine("Incorrect configuration file name: {0} in folder: ", fi.Name);
-                            Console.WriteLine("{0}", di.FullName);
-                            return false;
-                        }
-                        else
-                        {
-                            //check that for each "testconfig.txt" file, parent dir is called Pc, Zing or Prt:
-                            if (string.Compare(di.Name, "Pc", StringComparison.OrdinalIgnoreCase) != 0 && 
-                                string.Compare(di.Name, "Zing", StringComparison.OrdinalIgnoreCase) != 0 && 
-                                string.Compare(di.Name, "Prt", StringComparison.OrdinalIgnoreCase) != 0)
-                            {
-                                Console.WriteLine("Incorrect location of config file under:");
-                                Console.WriteLine("{0}", di.FullName);
-                                Console.WriteLine("Config files should only be located in Pc, Zing or Prt dirs");
-                                return false;
-                            }
-                            //If current dir is not Pc (hence, Prt or Zing), check that Pc dir exists at the parent dir level:
-                            if (di.Name != "Pc")
-                            {
-                                if ((di.Parent != null) && !Directory.Exists(Path.Combine(di.Parent.FullName, "Pc")))
-                                {
-                                    Console.Write("For test dir \n{0}\nno Pc subdir exists", di.Parent.FullName);
-                                    return false;
-                                }
-
-                            }
-                            //Check that that there's no subdirs under Pc/Zing/Prt:
-                            foreach (var sdi in di.EnumerateDirectories())
-                            {
-                                Console.Write("No subdirs are allowed under Pc/Zing/Prt dirs \n{0}", sdi.FullName);
-                                return false;
+                                reporter.RecordSuccess();
                             }
                         }
-                    }
-                    foreach (var dp in di.EnumerateDirectories())
-                    {
-                        List<DirectoryInfo> dpArray = new List<DirectoryInfo>();
-                        dpArray.Add(dp);
-                        var result = CheckTestDirs(dpArray);
-                        if (!result)
-                        {
-                            return false;
-                        }
-                    }
-                    //return true;
-                }
-                return true;
-            }
-            catch (Exception e)
-            {
-                {
-                    Console.WriteLine("Error in CheckTestDirs - {0}", e.Message);
-                    //Environment.ExitCode = FailCode;
-                    return false;
-                }
-            }
-        }
-        //If reset = true, failedDirsWriter and displayDiffsWriter are "null"
-        private void Test(List<DirectoryInfo> diArray, string zingFilePath, ref int testCount, ref int failCount,
-            StreamWriter failedTestsWriter, StreamWriter tempWriter, StreamWriter displayDiffsWriter)
-        {
-            try
-            {
-                foreach (DirectoryInfo di in diArray)
-                {
-                    //enumerating files in the top dir only
-
-                    foreach (var fi in di.EnumerateFiles(ConfigFileName))
-                    {
-                        //if di.Name is Pc or Prt or Zing, leaf directory is reached;
-                        //(we are assuming that test directories cannot have these names)
-                        //Note:these directory names must be exactly Pc or Prt or Zing (they are case-sensitive)
-
-                        if ((di.Name == "Pc") ||
-                            (di.Name == "Zing" && (execsToRun == "/runZing" || execsToRun == "/runAll")) ||
-                            (di.Name == "Prt" && (execsToRun == "/runPrt" || execsToRun == "/runAll")))
-                        {
-                            ++testCount;
-                            var checker = new Checker(di.FullName, testRoot, reset, cooperative, configuration, platform, di.Name, execsToRun, zingFilePath, pciProcess);
-                            if ((di.Parent != null) && !checker.Check(fi.Name))
-                            {
-                                ++failCount;
-                                //add directory of the failed (sub)test to "failed_tests.txt": 
-                                failedTestsWriter.WriteLine("{0}", di.FullName);
-                                //add directory of the failed test to "tempFailed.txt": 
-                                //Console.WriteLine("+++++Writing to tempFailed: {0}", di.Parent.FullName);
-                                tempWriter.WriteLine("{0}", di.Parent.FullName);
-                                //add diffing command to "display_diff.bat":
-                                displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\check-output.log", DiffTool,
-                                    di.FullName);
-                            }
-                        }
-
-                    }
-
-                    //Since order of directory processing is significant (Pc should be processed before
-                    //Zing and Prt), order enumerated directories alphabetically:
-                    var dirs = (from dir in di.EnumerateDirectories()
-                        orderby dir.FullName ascending
-                        select dir);
-
-                    foreach (var dp in dirs)
-                    {
-                        List<DirectoryInfo> dpArray = new List<DirectoryInfo>();
-                        dpArray.Add(dp);
-                        Test(dpArray, zingFilePath, ref testCount, ref failCount, failedTestsWriter, tempWriter, displayDiffsWriter);
                     }
                 }
             }
             catch (Exception e)
             {
-                Console.WriteLine(
+                WriteError(
                     "ERROR in Test: {0}",
                     e.Message);
             }
         }
+
+        private string PrepareTestDir(string fullName)
+        {
+            if (fullName.StartsWith(testOutput, StringComparison.OrdinalIgnoreCase))
+            {
+                // we are running straight out of the TestResult directory...
+                return fullName;
+            }
+
+            // copy the test files over to the TestReults tree, mirroring the same directory structure.
+            Uri uri = new Uri(fullName);
+            Uri root = new Uri(testRoot + "/");
+            Uri relative = root.MakeRelativeUri(uri);
+            Uri test = new Uri(new Uri(testOutput + "/"), relative);
+            string testDir = test.LocalPath;
+            Checker.CloneSubtree(fullName, testDir + Path.DirectorySeparatorChar);
+
+            return testDir;
+        }
+
+        class ThreadSafeOutput
+        {
+            int testCount;
+            int failCount;
+            object threadLock = new object();
+            StreamWriter failedTestsWriter;
+            StreamWriter tempWriter;
+            StreamWriter displayDiffsWriter;
+
+            public ThreadSafeOutput(
+                StreamWriter failedTestsWriter,
+                StreamWriter tempWriter,
+                StreamWriter displayDiffsWriter)
+            {
+                this.failedTestsWriter = failedTestsWriter;
+                this.tempWriter = tempWriter;
+                this.displayDiffsWriter = displayDiffsWriter;
+            }
+
+            public int FailCount { get { return this.failCount; } }
+            public int TestCount { get { return this.testCount; } }
+
+            public void RecordSuccess()
+            {
+                lock (threadLock)
+                {
+                    this.testCount++;
+                }
+            }
+
+            public void RecordFailure(string fullPath)
+            {
+                lock (threadLock)
+                {
+                    this.failCount++;
+                    //add directory of the failed (sub)test to "failed_tests.txt": 
+                    failedTestsWriter.WriteLine("{0}", fullPath);
+                    //add directory of the failed test to "tempFailed.txt": 
+                    //Console.WriteLine("+++++Writing to tempFailed: {0}", di.Parent.FullName);
+                    tempWriter.WriteLine("{0}", System.IO.Path.GetDirectoryName(fullPath));
+                    //add diffing command to "display_diff.bat":
+                    displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\check-output.log", DiffTool, fullPath);
+                }
+            }
+        }
+
         //copy unique paths from src file into dest file
         //to keep it simple, this code only removes consecutive duplicate lines,
         //which should be good enough in most cases; the only dups that would be 
@@ -545,7 +616,7 @@ namespace RunPTool
                 //Debug:
                 //if (currentLine == null)
                 //{
-                    //Console.WriteLine("+++++RemoveDupTests: currentLine is null at the beginning");
+                //Console.WriteLine("+++++RemoveDupTests: currentLine is null at the beginning");
                 //}
                 while (currentLine != null)
                 {
@@ -574,7 +645,7 @@ namespace RunPTool
             wr = null;
             try
             {
-                wr = new StreamWriter(Path.Combine(Environment.CurrentDirectory, fileName));
+                wr = new StreamWriter(Path.Combine(testOutput, fileName));
             }
             catch (Exception e)
             {
@@ -587,57 +658,21 @@ namespace RunPTool
 
             return true;
         }
-        private static bool OpenSummaryStreamReader(string fileName, out StreamReader rd)
+        private static void OpenSummaryStreamReader(string fileName, out StreamReader rd)
         {
             rd = null;
             try
             {
-                rd = new StreamReader(Path.Combine(Environment.CurrentDirectory, fileName));
+                rd = new StreamReader(Path.Combine(testOutput, fileName));
             }
             catch (Exception e)
             {
-                Console.WriteLine(
-                    "ERROR: Could not open summary file {0} - {1}",
+                string msg = string.Format("ERROR: Could not open summary file {0} - {1}",
                     fileName,
                     e.Message);
-                return false;
+                Console.WriteLine(msg);
+                throw new Exception(msg);
             }
-
-            return true;
-        }
-        private static bool CloseSummaryStreamWriter(string fileName, StreamWriter wr)
-        {
-            try
-            {
-                wr.Close();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(
-                    "ERROR: Could not close summary file {0} - {1}",
-                    fileName,
-                    e.Message);
-                return false;
-            }
-
-            return true;
-        }
-        private static bool CloseSummaryStreamReader(string fileName, StreamReader rd)
-        {
-            try
-            {
-                rd.Close();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(
-                    "ERROR: Could not close summary file {0} - {1}",
-                    fileName,
-                    e.Message);
-                return false;
-            }
-
-            return true;
         }
 
         //generate list of directories for running regression from the input file (1st argument of testP.bat)

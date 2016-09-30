@@ -11,7 +11,7 @@
     using Microsoft.Formula.API;
     using Microsoft.Formula.API.Generators;
     using Microsoft.Formula.API.Nodes;
-
+    
     public class CommandLineOptions
     {
         public bool profile { get; set; }
@@ -22,17 +22,16 @@
         public bool printTypeInference { get; set; }
         public CompilerOutput compilerOutput { get; set; }
         public List<string> inputFileNames { get; set; }
-        public string pipeName { get; set; } // set internally
         public bool eraseModel { get; set; } // set internally
         public bool generateSourceInfo { get; set; } // not supported currently
+        public bool compilerService { get; set; } // whether to use the compiler service.
 
         public CommandLineOptions()
         {
         }
 
-        public static bool ParseCompileString(IEnumerable<string> args, out bool sharedCompiler, out CommandLineOptions options)
+        public static bool ParseCompileString(IEnumerable<string> args, out CommandLineOptions options)
         {
-            sharedCompiler = false;
             options = new CommandLineOptions();
             List<string> inputFileNames = new List<string>();
             bool profile = false;
@@ -66,7 +65,7 @@
                             break;
 
                         case "shared":
-                            sharedCompiler = true;
+                            options.compilerService = true;
                             break;
 
                         case "dumpformulamodel":
@@ -80,7 +79,7 @@
                         case "generate":
                             if (colonArg == null)
                             {
-                                Console.WriteLine("Must supply type of output desired");
+                                Console.WriteLine("Missing generation argument, expecting one of generate:C, C0, Zing, or C#");
                                 return false;
                             }
                             else if (colonArg == "C0")
@@ -99,6 +98,11 @@
                             {
                                 compilerOutput = CompilerOutput.CSharp;
                             }
+                            else
+                            {
+                                Console.WriteLine("Unrecognized generate option '{0}', expecing C, C0, Zing, or C#", colonArg);
+                                return false;
+                            }
                             break;
 
                         case "outputdir":
@@ -116,7 +120,7 @@
                             break;
 
                         case "liveness":
-                            if (colonArg == null)
+                            if (string.IsNullOrEmpty(colonArg))
                                 liveness = LivenessOption.Standard;
                             else if (colonArg == "mace")
                                 liveness = LivenessOption.Mace;
@@ -162,13 +166,13 @@
             options.shortFileNames = shortFileNames;
             options.compilerOutput = compilerOutput;
             options.inputFileNames = fullInputFileNames;
-            options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             return true;
         }
 
         public static bool ParseLinkString(IEnumerable<string> args, out CommandLineOptions options)
         {
             options = new CommandLineOptions();
+            options.compilerOutput = CompilerOutput.Link;
             List<string> inputFileNames = new List<string>();
             string outputDir = null;
             foreach (string x in args)
@@ -185,6 +189,10 @@
                     }
                     switch (arg.Substring(1).ToLowerInvariant())
                     {
+                        case "shared":
+                            options.compilerService = true;
+                            break;
+
                         case "outputdir":
                             if (colonArg == null)
                             {
@@ -217,9 +225,9 @@
             List<string> fullInputFileNames = new List<string>();
             foreach (string inputFileName in inputFileNames)
             {
-                if (!(inputFileName != null && inputFileName.Length > 4 && inputFileName.EndsWith(".4ml")))
+                if (!(inputFileName != null && inputFileName.Length > 4 && inputFileName.ToLowerInvariant().EndsWith(".4ml")))
                 {
-                    Console.WriteLine("Illegal source file name: {0}", inputFileName);
+                    Console.WriteLine("Illegal source file name: {0}, expecting *.4ml file name", inputFileName);
                     return false;
                 }
                 if (!File.Exists(inputFileName))

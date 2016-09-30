@@ -44,7 +44,12 @@ cd %SCRIPTDIR%
 set RunPArgs=%RunPArgs% /Platform=%Platform% /Configuration=%Configuration%
 echo %SCRIPTDIR%..\Bld\Drops\%Configuration%\%Platform%\Binaries\RunPTool.exe %RunPArgs%
 "%SCRIPTDIR%..\Bld\Drops\%Configuration%\%Platform%\Binaries\RunPTool.exe" %RunPArgs%
+set result=0
 if %ERRORLEVEL% neq 0 (
   echo Tests failed.
-  exit /B 1
-) else ( exit /B 0 )
+  set result=1
+) 
+
+exit /B %result%
+
+

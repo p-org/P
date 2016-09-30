@@ -574,7 +574,7 @@ namespace CheckP
             return true;
         }
 
-        private static bool CloseTmpStream(StreamWriter wr)
+        private bool CloseTmpStream(StreamWriter wr)
         {
             try
             {

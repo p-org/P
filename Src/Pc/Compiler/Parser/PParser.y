@@ -130,7 +130,7 @@ ConstTypeOrNone
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone ReceivesOrExports Sends Creates LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); }
+	: ImplMachineNameDecl MachAnnotOrNone ReceivesOrExports Sends Creates LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); }
 	;
 
 ImplMachineProtoDecl
@@ -167,7 +167,7 @@ CreatesList
 	;
 	
 SpecMachineDecl
-	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1)); } 
+	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); } 
 	;
 
 ImplMachineNameDecl

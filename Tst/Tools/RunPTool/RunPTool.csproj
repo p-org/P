@@ -94,15 +94,22 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Checker.cs" />
+    <Compile Include="OptionParser.cs" />
+    <Compile Include="Options.cs" />
     <Compile Include="Program.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CheckP\CheckP.csproj">
-      <Project>{d614d3ec-c765-4b47-8002-e683c16c5865}</Project>
-      <Name>CheckP</Name>
+    <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
+      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\..\Src\Pc\Compiler\Compiler.csproj">
+      <Project>{ed76217f-2452-4a35-90f6-6eb6ccf2d882}</Project>
+      <Name>Compiler</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSHARP.Targets" />

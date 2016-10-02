@@ -207,7 +207,6 @@
     <Compile Include="Parser\PParser.cs" />
     <Compile Include="Parser\ShiftReduceParserCode.cs" />
     <Compile Include="PData.cs" />
-    <Compile Include="PerfTimer.cs" />
     <Compile Include="PProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PToCSharp.cs" />

@@ -162,7 +162,6 @@
             options.shortFileNames = shortFileNames;
             options.compilerOutput = compilerOutput;
             options.inputFileNames = fullInputFileNames;
-            options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             return true;
         }
 

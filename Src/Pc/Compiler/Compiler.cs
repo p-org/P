@@ -21,6 +21,7 @@
     using VisualStudio.GraphModel;
 #endif
     using System.Windows.Forms;
+    using System.Xml.Linq;
 
     public enum CompilerOutput { None, C0, C, Zing, CSharp, Link };
 
@@ -82,6 +83,109 @@
             this.exitSpan = exitSpan;
         }
     }
+
+    public interface IProfiler
+    {
+        IDisposable Start(string operation, string message);
+    }
+
+    public class NullProfiler : IProfiler
+    {
+        public IDisposable Start(string operation, string message)
+        {
+            return null;
+        }
+    }
+
+    public class ConsoleProfiler : IProfiler
+    {
+        public IDisposable Start(string operation, string message)
+        {
+            return new ConsoleProfileWatcher(operation, message);
+        }
+
+        class ConsoleProfileWatcher: IDisposable
+        {
+            Stopwatch watch = new Stopwatch();
+            string operation;
+            string message;
+
+            public ConsoleProfileWatcher(string operation, string message)
+            {
+                this.operation = operation;
+                this.message = message;
+                watch.Start();
+            }
+            public void Dispose()
+            {
+                watch.Stop();
+                string msg = string.Format("{0}: {0} took {1} ms, {2}", DateTime.Now.Ticks, operation, watch.Elapsed.ToString(), message);
+            }
+        }
+
+    }
+
+    public  class XmlProfiler : IProfiler
+    {
+        XDocument data;
+        XElement current;
+
+        public XmlProfiler()
+        {
+            data = new XDocument(new XElement("data"));
+        }
+
+        public XDocument Data {  get { return this.data; } }
+
+        public IDisposable Start(string operation, string message)
+        {
+            XElement e = new XElement("operation", new XAttribute("name", operation), new XAttribute("description", message));
+            if (current == null)
+            {
+                data.Root.Add(e);
+            }
+            else
+            {
+                current.Add(e);
+            }
+            current = e;
+            return new XmlProfileWatcher(this, e, operation, message);
+        }
+
+        private void Finish(XElement e, DateTime timestamp, TimeSpan elapsed)
+        {
+            e.Add(new XAttribute("timestsamp", timestamp));
+            e.Add(new XAttribute("elapsed", elapsed));
+            if (current == e)
+            {
+                current = current.Parent;
+            }
+        }
+
+        class XmlProfileWatcher : IDisposable
+        {
+            XmlProfiler owner;
+            XElement e;
+            Stopwatch watch = new Stopwatch();
+            string operation;
+            string message;
+
+            public XmlProfileWatcher(XmlProfiler owner, XElement e, string operation, string message)
+            {
+                this.e = e;
+                this.owner = owner;
+                this.operation = operation;
+                this.message = message;
+                watch.Start();
+            }
+            public void Dispose()
+            {
+                watch.Stop();
+                owner.Finish(e, DateTime.Now, watch.Elapsed);
+            }
+        }
+    }
+
 
     public class StandardOutput : ICompilerOutput
     {
@@ -163,6 +267,8 @@
 
         public ICompilerOutput Log { get; set; }
 
+        public IProfiler Profiler { get; set; }
+
         public Env CompilerEnv
         {
             get;
@@ -184,13 +290,14 @@
                 envParams = new EnvParams(new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
             }
             CompilerEnv = new Env(envParams);
+            Profiler = new NullProfiler();
         }
 
         public bool Compile(ICompilerOutput log, CommandLineOptions options)
         {
-            if (options.profile)
+            if (options.profile && this.Profiler == null)
             {
-                PerfTimer.ConsoleOutput = true;
+                this.Profiler = new ConsoleProfiler();
             }
             options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             this.errors = new SortedSet<Flag>(default(FlagSorter));
@@ -274,7 +381,7 @@
         public bool ParseProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName)
         {
             parsedProgram = new PProgram();
-            using (new PerfTimer("Compiler parsing " + Path.GetFileName(inputFileName)))
+            using (this.Profiler.Start("Compiler parsing ", Path.GetFileName(inputFileName)))
             {
                 try
                 {
@@ -348,7 +455,7 @@
 
         void InstallProgram(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, out AST<Model> RootModel)
         {
-            using (new PerfTimer("Compiler installing " + Path.GetFileName(inputFileName)))
+            using (this.Profiler.Start("Compiler installing ", Path.GetFileName(inputFileName)))
             {
                 //// Step 0. Load P.4ml.
                 LoadManifestProgram("Pc.Domains.P.4ml");
@@ -436,7 +543,7 @@
         {
             ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
-            using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModel.Node.Name)))
+            using (this.Profiler.Start("Compiler generating model with types ", Path.GetFileName(RootModel.Node.Name)))
             {
                 if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootProgramNameWithTypes, out RootModelWithTypes))
                 {
@@ -450,7 +557,7 @@
             string dllFileName = fileName + ".dll";
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
 
-            using (new PerfTimer("Generating CSharp"))
+            using (this.Profiler.Start("Generating CSharp", csharpFileName))
             {
                 var pToCSharp = new PToCSharp(this, RootModel, RootModelWithTypes);
                 var success = pToCSharp.GenerateCSharp(csharpFileName);
@@ -463,7 +570,7 @@
         {
             ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
-            using (new PerfTimer("Compiler generating model with types " + Path.GetFileName(RootModel.Node.Name)))
+            using (this.Profiler.Start("Compiler generating model with types", Path.GetFileName(RootModel.Node.Name)))
             {
                 if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootProgramNameWithTypes, out RootModelWithTypes))
                 {
@@ -478,7 +585,7 @@
             string dllFileName = fileName + ".dll";
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
 
-            using (new PerfTimer("Generating Zing"))
+            using (this.Profiler.Start("Generating Zing", zingFileName))
             {
                 LoadManifestProgram("Pc.Domains.Zing.4ml");
                 zingModel = MkZingOutputModel();
@@ -496,7 +603,7 @@
 
             System.Diagnostics.Process zcProcess = null;
 
-            using (new PerfTimer("Compiling Zing"))
+            using (this.Profiler.Start("Compiling Zing", zingFileName))
             {
                 var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
                 string zingCompiler = Path.Combine(binPath.FullName, "zc.exe");
@@ -692,7 +799,7 @@
         {
             Task<QueryResult> task;
 
-            using (new PerfTimer("Compiler analyzing " + Path.GetFileName(inputModule)))
+            using (this.Profiler.Start("Compiler analyzing", Path.GetFileName(inputModule)))
             {
                 //// Run static analysis on input program.
                 List<Flag> queryFlags;
@@ -724,7 +831,7 @@
             }
 
             // Enumerate typing errors
-            using (new PerfTimer("Compiler error reporting " + Path.GetFileName(inputModule)))
+            using (this.Profiler.Start("Compiler error reporting", Path.GetFileName(inputModule)))
             {
                 AddErrors(RootProgramName, task.Result, "DupNmdSubE(_, _, _, _)", 1);
                 AddErrors(RootProgramName, task.Result, "PurityError(_, _)", 1);
@@ -1050,7 +1157,7 @@
         
         public bool GenerateC(ProgramName RootProgramName, AST<Model> RootModel)
         {
-            using (new PerfTimer("Compiler generating C " + Path.GetFileName(RootProgramName.ToString())))
+            using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
             {
                 LoadManifestProgram("Pc.Domains.C.4ml");
                 LoadManifestProgram("Pc.Domains.PLink.4ml");
@@ -1226,7 +1333,7 @@
             }
 
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "LinkModel.4ml"));
-            using (new PerfTimer("Compiler linking"))
+            using (this.Profiler.Start("Compiler linking", linkProgName.ToString()))
             {
                 LoadManifestProgram("Pc.Domains.C.4ml");
                 LoadManifestProgram("Pc.Domains.PLink.4ml");

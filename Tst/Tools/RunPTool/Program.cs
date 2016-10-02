@@ -149,8 +149,7 @@ namespace RunPTool
 
                 // we will copy test structure here so that all the temporary files we create are contained in one place rather
                 // than poluting our source tree with all that.
-                testOutput = Path.Combine(testRoot, "TestResult");
-
+                testOutput = Path.Combine(testRoot, "TestResult_" + this.configuration + "_" + this.platform);
 
                 //tstDir is where testP.bat is located
                 List<DirectoryInfo> activeDirs;

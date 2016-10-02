@@ -25,6 +25,8 @@
         public bool eraseModel { get; set; } // set internally
         public bool generateSourceInfo { get; set; } // not supported currently
         public bool compilerService { get; set; } // whether to use the compiler service.
+        public string compilerId { get; set; } // for internal use only.
+
 
         public CommandLineOptions()
         {

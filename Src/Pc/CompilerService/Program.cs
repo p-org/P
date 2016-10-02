@@ -20,8 +20,8 @@ namespace Microsoft.Pc
         int busyCount;
         int maxCompilers = 1;
         object compilerlock = new object();
-        List<Compiler> compilerFree = new List<Compiler>();
-        List<Compiler> compilerBusy = new List<Compiler>();
+        Dictionary<string, Compiler> compilerFree = new Dictionary<string, Compiler>();
+        Dictionary<string, Compiler> compilerBusy = new Dictionary<string, Compiler>();
 
         static void Main(string[] args)
         {
@@ -85,11 +85,18 @@ namespace Microsoft.Pc
                 // send the <job-finished> message, then we expect a "<job-finished>" handshake from client
                 // or the client sends another job.
                 string msg = pipe.ReadMessage();
-                if (msg == CompilerServiceClient.JobFinishedMessage)
+                if (msg == null)
+                {
+                    // pipe is closing.
+                }
+                else if (msg == CompilerServiceClient.CompilerLockMessage)
+                {
+                    HandleLockMessage(pipe);
+                }
+                else if (msg.StartsWith(CompilerServiceClient.CompilerFreeMessage))
                 {
                     // this session is done, double handshake.
-                    pipe.WriteMessage(CompilerServiceClient.JobFinishedMessage);
-                    return;
+                    HandleFreeMessage(pipe, msg);
                 }
                 else if (!string.IsNullOrEmpty(msg))
                 {
@@ -113,53 +120,90 @@ namespace Microsoft.Pc
             pipe.Close();
         }
 
-
-        private Compiler GetFreeCompiler()
+        private void HandleLockMessage(NamedPipe pipe)
         {
-            Compiler compiler = null;
-            while (compiler == null)
+            var pair = GetFreeCompiler();
+            // send the id to the client for use in subsequent jobs.
+            pipe.WriteMessage(pair.Item1);
+        }
+
+        private void HandleFreeMessage(NamedPipe pipe, string msg)
+        {
+            string[] parts = msg.Split(':');
+            if (parts.Length == 2 && compilerBusy.ContainsKey(parts[1]))
+            {
+                string id = parts[1];
+                string result = "";
+                lock (compilerBusy)
+                {
+                    if (compilerBusy.ContainsKey(id))
+                    {
+                        Compiler c = compilerBusy[id];
+                        compilerBusy.Remove(id);
+                        compilerFree[id] = c;
+                        result = CompilerServiceClient.JobFinishedMessage;
+                    }
+                    else
+                    {
+                        result = string.Format("Error: '<free>guid', specified compiler not found with id='{0}'", id);
+                    }
+                }
+                pipe.WriteMessage(result);
+            }
+            else
+            {
+                pipe.WriteMessage("Protocol error: expecting '<free>guid', to free the specified compiler");
+            }
+        }
+
+        private Tuple<string,Compiler> GetFreeCompiler()
+        {
+            Tuple<string, Compiler> result = null;
+            while (result == null)
             {
                 lock (compilerlock)
                 {
                     if (compilerFree.Count > 0)
                     {
-                        int last = compilerFree.Count - 1;
-                        compiler = compilerFree[last];
-                        compilerFree.RemoveAt(last);
-                        compilerBusy.Add(compiler);
+                        var pair = compilerFree.First();
+                        compilerFree.Remove(pair.Key);
+                        compilerBusy[pair.Key] = pair.Value;
+                        result = new Tuple<string, Compiler>(pair.Key, pair.Value);
                     }
                     else if (compilerBusy.Count < maxCompilers)
                     {
-                        compiler = new Compiler(false);
-                        compilerBusy.Add(compiler);
+                        var compiler = new Compiler(false);
+                        var id = Guid.NewGuid().ToString();
+                        compilerBusy[id] = compiler;
+                        result = new Tuple<string, Compiler>(id, compiler);
                     }
                 }
-                if (compiler == null)
+                if (result == null)
                 {
                     // wait for free compiler
                     Thread.Sleep(1000);
                 }
             }
-            return compiler;
+            Interlocked.Increment(ref busyCount);
+            return result;
         }
 
-        private void FreeCompiler(Compiler compiler)
+        private void FreeCompiler(Compiler compiler, string id)
         {
+            Interlocked.Decrement(ref busyCount);
             lock (compilerlock)
             {
-                int i = compilerBusy.IndexOf(compiler);
-                compilerBusy.RemoveAt(i);
-                compilerFree.Add(compiler);
+                compilerBusy.Remove(id);
+                compilerFree[id] = compiler;
             }
         }
 
-        private Compiler RebuildCompiler(Compiler compiler)
+        private Compiler RebuildCompiler(Compiler compiler, string id)
         {
             lock (compilerlock)
             {
-                Compiler newCompiler = new Compiler(false);
-                int i = compilerBusy.IndexOf(compiler);
-                compilerBusy[i] = newCompiler;
+                Compiler newCompiler = new Compiler(false);                
+                compilerBusy[id] = newCompiler;
                 return newCompiler;
             }
         }
@@ -171,10 +215,11 @@ namespace Microsoft.Pc
 
         private bool ProcessJob(string msg, ICompilerOutput output)
         {
-            Interlocked.Increment(ref busyCount);
             bool result = false;
             Compiler compiler = null;
             CommandLineOptions options = null;
+            bool freeCompiler = false;
+            string compilerId = null;
 
             try
             {
@@ -184,7 +229,23 @@ namespace Microsoft.Pc
                 bool retry = true;
                 bool masterCreated = false;
 
-                compiler = GetFreeCompiler();
+                if (options.compilerId == null)
+                {
+                    var pair = GetFreeCompiler();
+                    compiler = pair.Item2;
+                    compilerId = pair.Item1 ;
+                    freeCompiler = true;
+                }
+                else
+                {
+                    // the givein compilerId belongs to our client, so we can safely use it.
+                    lock (compilerlock)
+                    {
+                        compilerId = options.compilerId;
+                        compiler = compilerBusy[options.compilerId];
+                    }
+                }
+                
                 while (retry)
                 {
                     retry = false;
@@ -214,7 +275,7 @@ namespace Microsoft.Pc
                         {
                             // sometimes the compiler gets out of whack, and rebuilding it solves the problem.
                             masterCreated = true;
-                            compiler = RebuildCompiler(compiler);
+                            compiler = RebuildCompiler(compiler, compilerId);
                             retry = true;
                         }
                         else
@@ -234,10 +295,12 @@ namespace Microsoft.Pc
             }
             finally
             {
-                Interlocked.Decrement(ref busyCount);
-                if (compiler != null)
+                if (freeCompiler)
                 {
-                    FreeCompiler(compiler);
+                    if (compiler != null)
+                    {
+                        FreeCompiler(compiler, compilerId);
+                    }
                 }
             }
 

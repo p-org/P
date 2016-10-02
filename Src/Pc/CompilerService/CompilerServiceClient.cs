@@ -20,8 +20,11 @@ namespace Microsoft.Pc
     {
         const string ServerPipeName = "63642A12-F751-41E3-A9D3-279EE34A0EDB-CompilerService";
         NamedPipe service;
+        string id;
 
         public static string JobFinishedMessage = "<job-finished>";
+        public static string CompilerLockMessage = "<lock>";
+        public static string CompilerFreeMessage = "<free>";
 
         public bool Link(CommandLineOptions options, TextWriter log)
         {
@@ -51,6 +54,13 @@ namespace Microsoft.Pc
                             service = null;
                             return null;
                         }
+                        else
+                        {
+                            // now lock a Compiler object until we re disposed so we can get better
+                            // performance by sharing the same Compiler across compile, link and test.
+                            service.WriteMessage(CompilerLockMessage);
+                            this.id = service.ReadMessage();
+                        }
                     }
                 }
             }
@@ -74,7 +84,7 @@ namespace Microsoft.Pc
             NamedPipe service = Connect(log);
 
             CompilerOutputStream output = new CompilerOutputStream(log);
-
+            options.compilerId = id;
             StringWriter writer = new StringWriter();
             XmlSerializer serializer = new XmlSerializer(typeof(CommandLineOptions));
             serializer.Serialize(writer, options);
@@ -125,9 +135,17 @@ namespace Microsoft.Pc
         {
             if (service != null && !service.IsClosed)
             {
-                service.WriteMessage(JobFinishedMessage);
+                // now free the Compiler object
+                service.WriteMessage(CompilerFreeMessage + ":" + id);
                 string handshake = service.ReadMessage();
-                DebugWriteLine("Job Terminated: " + handshake);
+                if (handshake != JobFinishedMessage)
+                {
+                    DebugWriteLine("Job Error: " + handshake);
+                }
+                else
+                {
+                    DebugWriteLine("Job Terminated: " + handshake);
+                }
             }
             service.Close(); // we can only write one message at a time.
         }

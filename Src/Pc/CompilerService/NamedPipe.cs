@@ -11,27 +11,6 @@ using System.Diagnostics;
 namespace Microsoft.Pc
 {
     /// <summary>
-    /// This event args is used to communicate messages read from the pipe.
-    /// </summary>
-    public class PipeMessageEventArgs : EventArgs
-    {
-        /// <summary>
-        /// Construct a new PipeMessageEventArgs with the given message.
-        /// This is used by the MessageArrived event on the NamedPipeReader
-        /// </summary>
-        /// <param name="message">The message that was read by the NamedPipeReader</param>
-        public PipeMessageEventArgs(string message)
-        {
-            Message = message;
-        }
-
-        /// <summary>
-        /// The message that was read by the NamedPipeReader
-        /// </summary>
-        public string Message { get; set; }
-    }
-
-    /// <summary>
     /// This class sets up a named pipe for bidirectional communication with another process.
     /// </summary>
     public class NamedPipe : IDisposable
@@ -43,8 +22,7 @@ namespace Microsoft.Pc
         int maxServerThreads;
 
         /// <summary>
-        /// Construct a new NamedPipeReader for reading messages from the pipe.
-        /// Use the MessageArrived event to get the messages.  
+        /// Construct a new NamedPipeReader for reading & writing messages to/from the pipe.
         /// </summary>
         /// <param name="pipeName">The pipe name must be unique across the Windows system</param>
         public NamedPipe(string pipeName)
@@ -106,12 +84,6 @@ namespace Microsoft.Pc
         /// This event is raised when a new client connects, and a pipe is provided for talking to that client.
         /// </summary>
         public event EventHandler<NamedPipe> ClientConnected;
-
-        /// <summary>
-        /// This event is raised (on a background thread) whenever a message has been
-        /// received 
-        /// </summary>
-        public event EventHandler<PipeMessageEventArgs> MessageArrived;
 
         /// <summary>
         /// Close the pipe.

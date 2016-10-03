@@ -70,10 +70,9 @@ namespace Microsoft.Pc
                 {
                     try
                     {
-                        bool sharedCompiler;
                         CommandLineOptions compilerOptions;
-                        var success = CommandLineOptions.ParseCompileString(inputArgs.Skip(1), out sharedCompiler, out compilerOptions);
-                        if (!success || sharedCompiler)
+                        var success = CommandLineOptions.ParseCompileString(inputArgs.Skip(1), out compilerOptions);
+                        if (!success || compilerOptions.compilerService)
                         {
                             Console.WriteLine(compileErrorMsgString);
                             continue;

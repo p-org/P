@@ -1,6 +1,6 @@
 @echo off
 
-for /f %%i in (failed-tests.txt) do (
+for /f %%i in (TestResult\failed-tests.txt) do (
   call :check %%i
 )
 

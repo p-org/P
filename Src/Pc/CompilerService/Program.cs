@@ -2,6 +2,8 @@
 using Microsoft.Pc;
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,13 +18,15 @@ namespace Microsoft.Pc
         const string ServerPipeName = "63642A12-F751-41E3-A9D3-279EE34A0EDB-CompilerService";
         bool doMoreWork;
         int busyCount;
-        NamedPipe pipe;
+        int maxCompilers = 1;
         object compilerlock = new object();
-        Compiler master;
+        Dictionary<string, Compiler> compilerFree = new Dictionary<string, Compiler>();
+        Dictionary<string, Compiler> compilerBusy = new Dictionary<string, Compiler>();
 
         static void Main(string[] args)
         {
             Program p = new Program();
+            p.maxCompilers = Environment.ProcessorCount - 1; // leave 1 core for the user :-) 
             try
             {
                 p.Run();
@@ -31,14 +35,12 @@ namespace Microsoft.Pc
             {
                 Console.WriteLine("Error: " + ex.Message);
             }
-            Console.WriteLine("Press ENTER to continue...");
-            Console.ReadLine();
         }
 
         private void OnContractFailed(object sender, System.Diagnostics.Contracts.ContractFailedEventArgs e)
         {
             // compiler might be in a weird state, start over.
-            master = null;
+            // but which compiler is it?
             string reason = e.Message;
             if (e.OriginalException != null && e.OriginalException.Message != reason)
             {
@@ -57,13 +59,12 @@ namespace Microsoft.Pc
             Console.WriteLine("Starting compiler service, listening to named pipe");
 
             // start the server.
-            pipe = new NamedPipe(ServerPipeName, true);
-            pipe.MessageArrived += OnMessageArrived;
-            if (!pipe.Connect())
-            {
-                Console.WriteLine("Hmmm, is it already running?");
-                return;
-            }
+            NamedPipe pipe = new NamedPipe(ServerPipeName);
+            pipe.ClientConnected += OnClientConnected;
+
+            // we should never use more than Environment.ProcessorCount, the * 2 provides some slop for pipe cleanup from previous jobs.
+            pipe.StartServer(Environment.ProcessorCount * 2); 
+
             doMoreWork = true;
 
             // stay awake waiting for work
@@ -76,92 +77,245 @@ namespace Microsoft.Pc
             Console.WriteLine("Compiler service terminating due to lack of work");
         }
 
-        private void OnMessageArrived(object sender, PipeMessageEventArgs e)
+        private void OnClientConnected(object sender, NamedPipe pipe)
         {
-            doMoreWork = true;
-            Task.Run(new Action(() =>
+            while (!pipe.IsClosed)
             {
-                try
+                // the protocol after client connects is to send a job, we send back results until we
+                // send the <job-finished> message, then we expect a "<job-finished>" handshake from client
+                // or the client sends another job.
+                string msg = pipe.ReadMessage();
+                if (msg == null)
                 {
-                    ProcessJob(e.Message);
+                    // pipe is closing.
                 }
-                catch (Exception)
+                else if (msg == CompilerServiceClient.CompilerLockMessage)
                 {
-                    // deserialization of the job failed, so ignore it.
+                    HandleLockMessage(pipe);
                 }
-            }));
+                else if (msg.StartsWith(CompilerServiceClient.CompilerFreeMessage))
+                {
+                    // this session is done, double handshake.
+                    HandleFreeMessage(pipe, msg);
+                }
+                else if (!string.IsNullOrEmpty(msg))
+                {
+                    try
+                    {
+                        doMoreWork = true;
+                        SerializedOutput output = new SerializedOutput(pipe);
 
-            pipe.Disconnect(); // go back to waiting for next connection
+                        bool result = ProcessJob(msg, output);
+
+                        // now make sure client gets the JobFinishedMessage message!
+                        output.WriteMessage(CompilerServiceClient.JobFinishedMessage + result.ToString(), SeverityKind.Info);
+                        output.Flush();                        
+                    }
+                    catch (Exception)
+                    {
+                        // deserialization of the job failed, so ignore it.
+                    }
+                }
+            }
+            pipe.Close();
         }
 
-        private void ProcessJob(string msg)
+        private void HandleLockMessage(NamedPipe pipe)
         {
-            Interlocked.Increment(ref busyCount);
+            var pair = GetFreeCompiler();
+            // send the id to the client for use in subsequent jobs.
+            pipe.WriteMessage(pair.Item1);
+        }
 
-            NamedPipe clientPipe = null;
+        private void HandleFreeMessage(NamedPipe pipe, string msg)
+        {
+            string[] parts = msg.Split(':');
+            if (parts.Length == 2 && compilerBusy.ContainsKey(parts[1]))
+            {
+                string id = parts[1];
+                string result = "";
+                lock (compilerBusy)
+                {
+                    if (compilerBusy.ContainsKey(id))
+                    {
+                        Compiler c = compilerBusy[id];
+                        compilerBusy.Remove(id);
+                        compilerFree[id] = c;
+                        result = CompilerServiceClient.JobFinishedMessage;
+                    }
+                    else
+                    {
+                        result = string.Format("Error: '<free>guid', specified compiler not found with id='{0}'", id);
+                    }
+                }
+                pipe.WriteMessage(result);
+            }
+            else
+            {
+                pipe.WriteMessage("Protocol error: expecting '<free>guid', to free the specified compiler");
+            }
+        }
+
+        private Tuple<string,Compiler> GetFreeCompiler()
+        {
+            Tuple<string, Compiler> result = null;
+            while (result == null)
+            {
+                lock (compilerlock)
+                {
+                    if (compilerFree.Count > 0)
+                    {
+                        var pair = compilerFree.First();
+                        compilerFree.Remove(pair.Key);
+                        compilerBusy[pair.Key] = pair.Value;
+                        result = new Tuple<string, Compiler>(pair.Key, pair.Value);
+                    }
+                    else if (compilerBusy.Count < maxCompilers)
+                    {
+                        var compiler = new Compiler(false);
+                        var id = Guid.NewGuid().ToString();
+                        compilerBusy[id] = compiler;
+                        result = new Tuple<string, Compiler>(id, compiler);
+                    }
+                }
+                if (result == null)
+                {
+                    // wait for free compiler
+                    Thread.Sleep(1000);
+                }
+            }
+            Interlocked.Increment(ref busyCount);
+            return result;
+        }
+
+        private void FreeCompiler(Compiler compiler, string id)
+        {
+            Interlocked.Decrement(ref busyCount);
+            lock (compilerlock)
+            {
+                compilerBusy.Remove(id);
+                compilerFree[id] = compiler;
+            }
+        }
+
+        private Compiler RebuildCompiler(Compiler compiler, string id)
+        {
+            lock (compilerlock)
+            {
+                Compiler newCompiler = new Compiler(false);                
+                compilerBusy[id] = newCompiler;
+                return newCompiler;
+            }
+        }
+
+        private static void DebugWriteLine(string msg)
+        {
+            Debug.WriteLine("(" + System.Threading.Thread.CurrentThread.ManagedThreadId + ") " + msg);
+        }
+
+        private bool ProcessJob(string msg, ICompilerOutput output)
+        {
+            bool result = false;
+            Compiler compiler = null;
+            CommandLineOptions options = null;
+            bool freeCompiler = false;
+            string compilerId = null;
+
             try
             {
                 XmlSerializer s = new XmlSerializer(typeof(CommandLineOptions));
-                CommandLineOptions options = (CommandLineOptions)s.Deserialize(new StringReader(msg));
-
-                if (!string.IsNullOrEmpty(options.pipeName))
-                {
-                    clientPipe = new NamedPipe(options.pipeName, false);
-                    clientPipe.Connect();
-                }
-
-                var output = new SerializedOutput(clientPipe);
+                options = (CommandLineOptions)s.Deserialize(new StringReader(msg));
 
                 bool retry = true;
                 bool masterCreated = false;
 
+                if (options.compilerId == null)
+                {
+                    var pair = GetFreeCompiler();
+                    compiler = pair.Item2;
+                    compilerId = pair.Item1 ;
+                    freeCompiler = true;
+                }
+                else
+                {
+                    // the givein compilerId belongs to our client, so we can safely use it.
+                    lock (compilerlock)
+                    {
+                        compilerId = options.compilerId;
+                        compiler = compilerBusy[options.compilerId];
+                    }
+                }
+                
                 while (retry)
                 {
                     retry = false;
-                    // We have to serialize compiler jobs, the Compiler is not threadsafe.
-                    lock (compilerlock)
+                    try
                     {
-                        if (master == null)
+                        if (options.inputFileNames == null)
                         {
-                            masterCreated = true;
-                            output.WriteMessage("Generating P compiler", SeverityKind.Info);
-                            master = new Compiler(false);
+                            // this is odd, compile will fail, but this stops the Debug output from crashing.
+                            options.inputFileNames = new List<string>();
                         }
 
-                        // share the compiled P program across compiler instances.
-                        Compiler compiler = master; // new Compiler(master);
-                        bool result = false;
-                        try
+                        if (options.compilerOutput == CompilerOutput.Link)
                         {
-                            result = compiler.Compile(new SerializedOutput(clientPipe), options);
+                            DebugWriteLine("Linking: " + string.Join(", ", options.inputFileNames));
+                            result = compiler.Link(output, options);
                         }
-                        catch (Exception ex)
+                        else
                         {
-                            if (!masterCreated)
-                            {
-                                // sometimes the compiler gets out of whack, and rebuilding it solves the problem.
-                                retry = true;
-                                master = null;
-                            }
-                            else
-                            {
-                                output.WriteMessage("Compile failed: " + ex.ToString(), SeverityKind.Error);
-                            }
+                            DebugWriteLine("Compiling: " + options.compilerOutput + ", " + string.Join(", ", options.inputFileNames));
+                            result = compiler.Compile(output, options);
                         }
-                        if (!retry)
+                    }
+                    catch (Exception ex)
+                    {
+                        result = false;
+                        if (!masterCreated)
                         {
-                            compiler.Log.WriteMessage("finished:" + result, SeverityKind.Info);
+                            // sometimes the compiler gets out of whack, and rebuilding it solves the problem.
+                            masterCreated = true;
+                            compiler = RebuildCompiler(compiler, compilerId);
+                            retry = true;
+                        }
+                        else
+                        {
+                            output.WriteMessage("Compile failed: " + ex.ToString(), SeverityKind.Error);
                         }
                     }
                 }
-
-                Thread.Sleep(1000);
+            }
+            catch (Exception ex)
+            {
+                result = false;
+                if (output != null)
+                {
+                    output.WriteMessage("internal error: " + ex.ToString(), SeverityKind.Error);
+                }
             }
             finally
             {
-                if (clientPipe != null) clientPipe.Close();
-                Interlocked.Decrement(ref busyCount);
+                if (freeCompiler)
+                {
+                    if (compiler != null)
+                    {
+                        FreeCompiler(compiler, compilerId);
+                    }
+                }
             }
+
+            try
+            {
+                if (options != null)
+                {
+                    DebugWriteLine("Finished: " + options.compilerOutput + ", " + string.Join(", ", options.inputFileNames) + ", result=" + result);
+                }                
+            }
+            catch (Exception ex)
+            {
+                DebugWriteLine("Internal Error: " + ex.ToString());
+            }
+            return result;
         }
 
         public class SerializedOutput : ICompilerOutput
@@ -176,7 +330,12 @@ namespace Microsoft.Pc
             public void WriteMessage(string msg, SeverityKind severity)
             {
                 // send this back to the command line process that invoked this compiler.
+                Program.DebugWriteLine("WriteMessage: " + msg);
                 this.pipe.WriteMessage(severity + ": " + msg);
+            }
+            public void Flush()
+            {
+                this.pipe.Flush();
             }
         }
     }

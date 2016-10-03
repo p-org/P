@@ -61,7 +61,10 @@ namespace RunPTool
                     }
                     switch (arg)
                     {
-                        case "run":
+                        case "runprt":
+                        case "runpc":
+                        case "runzing":
+                        case "runall":
                             execsToRun = arg;
                             break;
                         case "platform":

@@ -844,7 +844,6 @@
 
                 AddErrors(RootProgramName, task.Result, "FunDeclQualifierError(_, _)", 1);
                 AddErrors(RootProgramName, task.Result, "FunCallQualifierError(_, _, _)", 2);
-                AddErrors(RootProgramName, task.Result, "SendQualifierError(_, _)", 1);
                 AddErrors(RootProgramName, task.Result, "UnavailableVarAccessError(_, _, _)", 1);
                 AddErrors(RootProgramName, task.Result, "UnavailableParameterError(_, _)", 0);
 

@@ -424,8 +424,8 @@ Stmt
 	| ID LPAREN ExprArgList RPAREN SEMICOLON                  { PushFunStmt($1.str, true,  ToSpan(@1));                  }						
 	| RAISE Exp SEMICOLON                                     { PushRaise(false, ToSpan(@1));                            }
 	| RAISE Exp COMMA SingleExprArgList SEMICOLON             { PushRaise(true,  ToSpan(@1));                            }
-	| QualifierOrNone SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1)); }
-	| QualifierOrNone SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1)); }
+	| SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1)); }
+	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1)); }
 	| ANNOUNCE Exp SEMICOLON								   { PushAnnounce(false, $2.str, ToSpan(@1));      }
 	| ANNOUNCE Exp COMMA SingleExprArgList SEMICOLON           { PushAnnounce(true, $2.str, ToSpan(@1));       }
 	| ReceiveStmt LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }

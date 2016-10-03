@@ -17,7 +17,7 @@ machine Main {
 	state SendPing { 
 		entry (v: int) { 
 			if (count < 10) {
-				xfer send server, PING, v;
+				send server, PING, v;
 				count = count + 1;
 			}
 		} 
@@ -37,7 +37,7 @@ machine Server {
   
 	state SendPong { 
 		entry (v: int) { 
-			xfer send client, PONG, v; 
+			send client, PONG, v; 
 		} 
 		on PING goto SendPong; 
 	}

@@ -53,7 +53,7 @@ domain PData
     //// Statements
     NewStmt  ::= new (name: String, arg: any Expr + { NIL }, id: any Id).
     Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }, id: any Id).
-    Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }, qual: Qualifier, id: any Id).
+    Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }, id: any Id).
     Announce  ::= new (ev: any Expr, arg: any Expr + { NIL }, id: any Id).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, label: Natural, id: any Id).
     NulStmt  ::= new (op: { SKIP, POP }, id: any Id).
@@ -262,7 +262,6 @@ domain PStaticTyping extends PData
 	conforms no TypeDefError(_).
 	conforms no FunDeclQualifierError(_, _).
 	conforms no FunCallQualifierError(_, _, _).
-	conforms no SendQualifierError(_, _).
 	conforms no UnavailableVarAccessError(_, _, _).
 	conforms no UnavailableParameterError(_, _).
 	conforms no FunRetError(_).
@@ -409,8 +408,8 @@ domain PStaticTyping extends PData
 	SubSE(c, es) :- SubSE(c, Print(_, _, es, _)), es: Exprs.
 	SubSE(c, e) :- SubSE(c, Announce(e, _, _)).
 	SubSE(c, e) :- SubSE(c, Announce(_, e, _)), e: Expr.
-	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, Send(e1, e2, _, _, _)).
-	SubSE(c, e) :- SubSE(c, Send(_, _, e, _, _)), e: Expr.
+	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, Send(e1, e2, _, _)).
+	SubSE(c, e) :- SubSE(c, Send(_, _, e, _)), e: Expr.
 	SubSE(c, e) :- SubSE(c, Raise(e, _, _)).
 	SubSE(c, e) :- SubSE(c, Raise(_, e, _)), e: Expr.
 	SubSE(c, e) :- SubSE(c, Goto(_, e, _)), e: Expr.
@@ -622,18 +621,6 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: xfer or ref argument should be passed for exactly one parameter"']
 	FunCallQualifierError(c, e, expr) :- FunArgsParams(c, e, Exprs(qual, expr, tl), _), FunArgsParams(c, e, Exprs(_, expr, tl'), _), qual != NONE, tl != tl'.
 
-	SendQualifierError ::= (TypingContext, Send).
-	[rule_Classes = '"error, msg: ref qualifier not allowed"']
-	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, _, REF, _).
-	[ rule_Classes = '"error, msg: null payload not allowed"']
-	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, NIL, XFER, _).
-	[ rule_Classes = '"error, msg: payload should be a variable"']
-	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), toSymbol(expr) != #Name.
-	[ rule_Classes = '"error, msg: payload should be a variable"']
-	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), expr = Name(n, _), IsEventCnst(c, n, _).
-	[ rule_Classes = '"error, msg: payload should be a local variable"']
-	SendQualifierError(c, e) :- SubSE(c, e), e = Send(_, _, expr, XFER, _), expr = Name(n, _), IsMachineVar(c, n, _, _).
-
 	EnvVars ::= (AnonFunDecl, String, NmdTupType + { NIL }).
 	EnvVars(c, n, envVars) :- c is AnonFunDecl(_, _, _, _, NmdTupType(NmdTupTypeField(_, n, _), envVars), _), envVars != NIL.
 	EnvVars(c, n, envVars) :- EnvVars(c, _, NmdTupType(NmdTupTypeField(_, n, _), envVars)), envVars != NIL.
@@ -668,7 +655,6 @@ domain PStaticTyping extends PData
 	UnavailableAfter(c, s, n)   :- FunArgsParams(c, s, Exprs(XFER, Name(n, _), _), _), s: FunStmt, s.aout = NIL.
 	UnavailableAfter(c, s, n)   :- FunArgsParams(c, s, Exprs(XFER, Name(n, _), _), _), s: FunStmt, s.aout = Name(n', _), n' != n.
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Send, UnavailableBefore(c, s, n).
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Send(_, _, Name(n, _), XFER, _).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(op, _, _, _), op != ASSIGN, UnavailableBefore(c, s, n).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, e, _, _), toSymbol(e) != #Name, UnavailableBefore(c, s, n).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n', _), _, _), UnavailableBefore(c, s, n), n' != n.
@@ -782,7 +768,7 @@ domain PStaticTyping extends PData
 									  TypeOf(c, p, pt), TypeRel(pt, plt, k), k != SUB, pt != plt. ///// < and pt is not a subtype of plt.
 
 	//// Rules for send.
-    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL, _, _),                           ///// < send has NIL payload,
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL, _),                           ///// < send has NIL payload,
 	                                  t1 = BaseType(MACHINE),                                                 ///// < arg1 is a machine type,
 	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).        ///// < arg2 event type contains null.
 
@@ -795,11 +781,11 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(MACHINE), toSymbol(t1) != #InterfaceType.
 
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _, _, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
 
 	//// Error rules for send with constant event expression. 	
     [ rule_Classes = '"error, msg: invalid payload type in send (cannot send null value)"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, _, NIL, _, _), null = BaseType(NULL),   ///// < send has NIL payload,
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, _, NIL, _), null = BaseType(NULL),   ///// < send has NIL payload,
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
 
@@ -934,7 +920,7 @@ domain PStaticTyping extends PData
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Goto(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Announce(e1, _, _), TypeOf(c, e1, t1).
 
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Ite(e1, _, _, _), TypeOf(c, e1, t1).
 
 	//// The type of the first two sub-expression in a Typeable with at least two sub-expression.
@@ -949,12 +935,12 @@ domain PStaticTyping extends PData
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Raise(_, e2, _), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Announce(_, e2, _), TypeOf(c, e2, t2).
 
-	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Send(_, e2, _, _, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Send(_, e2, _, _), TypeOf(c, e2, t2).
 
 	//// The type of the first three sub-expression in a Typeable with at least three sub-expression.
     TypeOfArg3::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }, type2: TypeExpr + { ERROR, NIL }, type3: TypeExpr + { ERROR, NIL }).
 
-	TypeOfArg3(c, e, t1, t2, t3) :- TypeOfArg2(c, e, t1, t2), e = Send(_, _, e3, _, _), TypeOf(c, e3, t3).
+	TypeOfArg3(c, e, t1, t2, t3) :- TypeOfArg2(c, e, t1, t2), e = Send(_, _, e3, _), TypeOf(c, e3, t3).
 
 	//// Determines the payload type of the event mentioned in a communication statement.
 	//// If the event expression is not an constant, then this payload type is ANY.
@@ -964,9 +950,9 @@ domain PStaticTyping extends PData
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
 	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Raise(ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
 
-	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
-	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
@@ -1217,7 +1203,7 @@ domain PStaticTyping extends PData
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = BinStmt(_, e', e'', _), IsLValue(c, e', TRUE).
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = NewStmt(_, _, _).
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = New(_, _, _).
-	Impure(c) :- SubSE(c, e), c : FunDecl, e = Send(_, _, _, _, _). 
+	Impure(c) :- SubSE(c, e), c : FunDecl, e = Send(_, _, _, _). 
 	Impure(c) :- SubSE(c, e), c : FunDecl, e = Receive(_, _, _).
 	Impure(c) :- c: FunDecl, ControlImpure(c).
 	Impure(c) :- c: FunDecl, SpecImpure(c).
@@ -1239,9 +1225,9 @@ domain PStaticTyping extends PData
 	   SubSE(c, e), e = Goto(_, e', _),         e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(e', _, _),         e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Raise(_, e', _),         e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);        
-       SubSE(c, e), e = Send(e', _, _, _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = Send(_, e', _, _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
-       SubSE(c, e), e = Send(_, _, e', _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
+       SubSE(c, e), e = Send(e', _, _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = Send(_, e', _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
+       SubSE(c, e), e = Send(_, _, e', _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Announce(e', _, _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
        SubSE(c, e), e = Announce(_, e', _),       e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);    
        SubSE(c, e), e = Assert(e', _, _),        e' = FunApp(n, _, _), called.name = n, FunAvailable(called, c.owner), Impure(called);
@@ -1261,9 +1247,9 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Goto(_, e', _),         e' : New;
 	   SubSE(c, e), e = Raise(e', _, _),         e' : New;
        SubSE(c, e), e = Raise(_, e', _),         e' : New;        
-       SubSE(c, e), e = Send(e', _, _, _, _),       e' : New;
-       SubSE(c, e), e = Send(_, e', _, _, _),       e' : New;
-       SubSE(c, e), e = Send(_, _, e', _, _),       e' : New;    
+       SubSE(c, e), e = Send(e', _, _, _),       e' : New;
+       SubSE(c, e), e = Send(_, e', _, _),       e' : New;
+       SubSE(c, e), e = Send(_, _, e', _),       e' : New;    
        SubSE(c, e), e = Announce(e', _, _),       e' : New;
        SubSE(c, e), e = Announce(_, e', _),       e' : New;    
        SubSE(c, e), e = Assert(e', _, _),        e' : New;
@@ -1283,9 +1269,9 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Goto(_, e', _),         e' = NulApp(NONDET, _);
        SubSE(c, e), e = Raise(e', _, _),         e' = NulApp(NONDET, _);
        SubSE(c, e), e = Raise(_, e', _),         e' = NulApp(NONDET, _);        
-       SubSE(c, e), e = Send(e', _, _, _, _),       e' = NulApp(NONDET, _);
-       SubSE(c, e), e = Send(_, e', _, _, _),       e' = NulApp(NONDET, _);
-       SubSE(c, e), e = Send(_, _, e', _, _),       e' = NulApp(NONDET, _);    
+       SubSE(c, e), e = Send(e', _, _, _),       e' = NulApp(NONDET, _);
+       SubSE(c, e), e = Send(_, e', _, _),       e' = NulApp(NONDET, _);
+       SubSE(c, e), e = Send(_, _, e', _),       e' = NulApp(NONDET, _);    
        SubSE(c, e), e = Announce(e', _, _),       e' = NulApp(NONDET, _);
        SubSE(c, e), e = Announce(_, e', _),       e' = NulApp(NONDET, _);    
        SubSE(c, e), e = Assert(e', _, _),        e' = NulApp(NONDET, _);
@@ -1305,9 +1291,9 @@ domain PStaticTyping extends PData
        SubSE(c, e), e = Goto(_, e', _),         e' = NulApp(FAIRNONDET, _);
        SubSE(c, e), e = Raise(e', _, _),         e' = NulApp(FAIRNONDET, _);
        SubSE(c, e), e = Raise(_, e', _),         e' = NulApp(FAIRNONDET, _);        
-       SubSE(c, e), e = Send(e', _, _, _, _),       e' = NulApp(FAIRNONDET, _);
-       SubSE(c, e), e = Send(_, e', _, _, _),       e' = NulApp(FAIRNONDET, _);
-       SubSE(c, e), e = Send(_, _, e', _, _),       e' = NulApp(FAIRNONDET, _);    
+       SubSE(c, e), e = Send(e', _, _, _),       e' = NulApp(FAIRNONDET, _);
+       SubSE(c, e), e = Send(_, e', _, _),       e' = NulApp(FAIRNONDET, _);
+       SubSE(c, e), e = Send(_, _, e', _),       e' = NulApp(FAIRNONDET, _);    
        SubSE(c, e), e = Announce(e', _, _),       e' = NulApp(FAIRNONDET, _);
        SubSE(c, e), e = Announce(_, e', _),       e' = NulApp(FAIRNONDET, _);    
        SubSE(c, e), e = Assert(e', _, _),        e' = NulApp(FAIRNONDET, _);
@@ -1333,7 +1319,7 @@ domain PStaticTyping extends PData
 	CompTypeRel(t1, plt)      :- TypeOfArg1(c, e, t1), c.owner != NIL, e = Goto(dst, p, _), p != NIL, s = StateDecl(dst, c.owner, _, _, _, _), PayloadVar(s, _, _, _, plt).
 	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _), null = BaseType(NULL).
 	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL, TypeOf(c, p, pt).
-	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL, _, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
+	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
 	CompTypeRel(t3, plt)      :- TypeOfArg3(c, e, t1, t2, t3), e : Send, CommStmtPLType(c, e, plt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Announce(_, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
 	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Announce, CommStmtPLType(c, e, plt).

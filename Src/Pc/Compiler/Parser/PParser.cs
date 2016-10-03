@@ -495,7 +495,7 @@
 
             var sendStmt = P_Root.MkSend();
             sendStmt.Span = span;
-            sendStmt.id = (P_Root.IArgType_Send__4) MkId(span);
+            sendStmt.id = (P_Root.IArgType_Send__3) MkId(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -517,7 +517,6 @@
                 sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
                 sendStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-            sendStmt.qual = qualifier.Pop();
 
             stmtStack.Push(sendStmt);
         }

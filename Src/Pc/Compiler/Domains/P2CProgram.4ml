@@ -1488,7 +1488,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Goto(_, _, _), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Announce(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _, label, _), ContextSourceInfo(c, _, info, _),
 	                        cs = out.Seq(info, 
@@ -1596,7 +1596,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	SendFuncName(n) :- n = Ident("PrtSend").	
 							
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
-	                       s = in.Send(dest, ev, NIL, _, x), RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans),
+	                       s = in.Send(dest, ev, NIL, x), RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans),
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(mkNull, Args(Ident("PRT_FALSE"), Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))))),
 						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
@@ -1609,7 +1609,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 										 Args(Ident("PRT_FALSE"), NIL)))))),
 						   ConstId(m, in.NulApp(NULL, NIL)), mkNull = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Send(dest, ev, pay, NONE, x), pay : in.Expr,
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Send(dest, ev, pay, x), pay : in.Expr,
 						   RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans), RhsExpr(c, s, 2, payTrans, doFreePayTrans),
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(payTrans, Args(doFreePayTrans, Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))))),
@@ -1621,20 +1621,6 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 										 Args(Ident("p_tmp_stmt_1"),
 										 Args(Ident("p_tmp_stmt_2"), 
 										 Args(Ident("PRT_FALSE"), NIL)))))).
-
- 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Send(dest, ev, pay, XFER, x), pay : in.Expr,
-						   RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans), RhsExpr(c, s, 2, payTrans, doFreePayTrans),
-						   ContextLineInfo(c, s, info),
-						   cs = out.Seq(info, FunApp(Ident("P_STMT_2"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, Args(nullStmt, NIL)))), Args(payTrans, Args(doFreePayTrans, Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))))),
-						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
-						   SendFuncName(name), 
-						   RhsTrans(c, s, 2, j, out.Args(payVar, _)), RhsMaxOrder(s, 2, j), nullStmt = out.BinApp(ASN, payVar, Ident("NULL")),
-						   sendCall = out.FunApp(name,
-										 Args(Ident("context"),
-						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
-										 Args(Ident("p_tmp_stmt_1"),
-										 Args(Ident("p_tmp_stmt_2"), 
-										 Args(Ident("PRT_TRUE"), NIL)))))).
 
 	//// Announce (erased)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Announce(_, _, _), cs = NIL.
@@ -1918,12 +1904,12 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Announce(_, e, _), e : in.Expr, RhsEvalOrder(s, 1, e, k).
 	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Announce.
 
-	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Send(e, _, _, _, _).
-	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Send(_, e, _, _, _).
-	RhsCntxt(s, 2, e) :- SubSE(_, s), s = in.Send(_, _, e, _, _), e : in.Expr.
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Send(e, _, _, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
-	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Send(_, e, _, _, _), e : in.Expr, RhsEvalOrder(s, 1, e, k).
-	RhsMaxOrder(s, 2, k) :- SubSE(_, s), s = in.Send(_, _, e, _, _), e : in.Expr, RhsEvalOrder(s, 2, e, k).
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Send(e, _, _, _).
+	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Send(_, e, _, _).
+	RhsCntxt(s, 2, e) :- SubSE(_, s), s = in.Send(_, _, e, _), e : in.Expr.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Send(e, _, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Send(_, e, _, _), e : in.Expr, RhsEvalOrder(s, 1, e, k).
+	RhsMaxOrder(s, 2, k) :- SubSE(_, s), s = in.Send(_, _, e, _), e : in.Expr, RhsEvalOrder(s, 2, e, k).
 	StmtExprSize(s, 3)   :- SubSE(_, s), s : in.Send.
 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e', _), e' : in.Expr. 

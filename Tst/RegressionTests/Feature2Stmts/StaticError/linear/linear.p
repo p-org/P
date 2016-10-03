@@ -17,7 +17,7 @@ machine Main {
 			assert y == 0;
 			F(g ref, y xfer);
 			assert g == 1;
-			xfer send this, E, y;
+			send this, E, y;
 			if (G(g) == 0)
 			{
 				y = 1;

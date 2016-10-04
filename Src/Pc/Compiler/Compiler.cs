@@ -842,10 +842,8 @@
                 AddErrors(RootProgramName, task.Result, "TypeDefError(_)", 0);
                 AddErrors(RootProgramName, task.Result, "FunRetError(_)", 0);
 
-                AddErrors(RootProgramName, task.Result, "FunDeclQualifierError(_, _)", 1);
                 AddErrors(RootProgramName, task.Result, "FunCallQualifierError(_, _, _)", 2);
                 AddErrors(RootProgramName, task.Result, "UnavailableVarAccessError(_, _, _)", 1);
-                AddErrors(RootProgramName, task.Result, "UnavailableParameterError(_, _)", 0);
 
                 //// Enumerate structural errors
                 AddErrors(RootProgramName, task.Result, "OneDeclError(_)", 0);

@@ -10,14 +10,13 @@ domain PLink
 	EventName         ::= String + { NULL, HALT }.
 	EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
 
-	Qualifier       ::= { NONE, REF, XFER }.
 	NameType        ::= new (name: String).
     BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }).
     TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
-    NmdTupTypeField ::= new (qual: Qualifier, name: any String, type: any TypeExpr). 
+    NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
 	InterfaceType	::= new (ev: NonNullEventName, tail: any InterfaceType + {NIL}).
     TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
 
@@ -136,8 +135,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	
 	//// Field names for named tuple types that have a type synonym
 	IndexOf ::= (t: in.NmdTupType, name: String, offset: Natural, tail: in.NmdTupType + {NIL}).
-	IndexOf(t, name, 0, tail)  :- in.TypeDef(_, t), t = in.NmdTupType(NmdTupTypeField(_, name, _), tail).
-	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = in.NmdTupType(NmdTupTypeField(_, name, _), tail), i' = i + 1.
+	IndexOf(t, name, 0, tail)  :- in.TypeDef(_, t), t = in.NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = in.NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
 	   d is in.TypeDef(name, type), type: in.NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
@@ -323,7 +322,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.MapType(_, t).
 	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.TupType(t, _).  
 	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.TupType(_, t), t: TypeExpr.  
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.NmdTupType(NmdTupTypeField(_, _, t), _).
+	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.NmdTupType(NmdTupTypeField(_, t), _).
 	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.NmdTupType(_, t), t: TypeExpr.  
 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
@@ -332,8 +331,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.TupType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, _, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, _, t'), t''), TypeDepNum(j, t'), TypeDepNum(k, t''), i = j + k + 1.  
+	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
+	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), TypeDepNum(k, t''), i = j + k + 1.  
 	TypeId(id, t) :- td is TypeDepNum(_, t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum }).
 
 	//// Build type initializers in linearization order.
@@ -450,11 +449,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// Complex type NmdTuple 
 	NmdTup2ArrayInit ::= (type: in.NmdTupType, narr: out.Expr, tarr: out.Expr). 
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, n', t'), NIL), TypeConstant(t', id', _), 
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(n', t'), NIL), TypeConstant(t', id', _), 
 	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)), 
 	                                   narr = Init(Args(StringLit(n', NIL), NIL)).
 									    
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, n', t'), t''), TypeConstant(t', id', _), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(n', t'), t''), TypeConstant(t', id', _), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
 	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')),
 	                                   narr = Init(Args(StringLit(n', NIL), n'')).
 

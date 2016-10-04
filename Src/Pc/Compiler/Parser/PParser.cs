@@ -168,22 +168,21 @@
                 casesList.Span = caseSpan;
             }
 
-            public void AddPayloadVar(P_Root.UserCnstKind qualKind, string name, Span span)
+            public void AddPayloadVar(string name, Span span)
             {
                 Contract.Assert(parser.typeExprStack.Count > 0);
-                var typeExpr = (P_Root.IArgType_NmdTupTypeField__2)parser.typeExprStack.Pop();
+                var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)parser.typeExprStack.Pop();
                 var nameTerm = P_Root.MkString(name);
                 nameTerm.Span = span;
-                var field = P_Root.MkNmdTupTypeField(P_Root.MkUserCnst(qualKind), nameTerm, typeExpr);
+                var field = P_Root.MkNmdTupTypeField(nameTerm, typeExpr);
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
-            public void AddPayloadVar(P_Root.UserCnstKind qualKind)
+            public void AddPayloadVar()
             {
                 var field = P_Root.MkNmdTupTypeField(
-                                    P_Root.MkUserCnst(qualKind),
                                     P_Root.MkString(string.Format("_payload_{0}", parser.GetNextPayloadVarLabel())), 
-                                    (P_Root.IArgType_NmdTupTypeField__2) parser.MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown));
+                                    (P_Root.IArgType_NmdTupTypeField__1) parser.MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown));
                 contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
             }
 
@@ -197,10 +196,10 @@
             public void CompleteCrntLocalVarList()
             {
                 Contract.Assert(parser.typeExprStack.Count > 0);
-                var typeExpr = (P_Root.IArgType_NmdTupTypeField__2)parser.typeExprStack.Pop();
+                var typeExpr = (P_Root.IArgType_NmdTupTypeField__1)parser.typeExprStack.Pop();
                 foreach (var v in crntLocalVarList)
                 {
-                    var field = P_Root.MkNmdTupTypeField(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE), v, typeExpr);
+                    var field = P_Root.MkNmdTupTypeField(v, typeExpr);
                     localVarDecl = P_Root.MkNmdTupType(field, localVarDecl);
                     contextLocalVarDecl = P_Root.MkNmdTupType(field, contextLocalVarDecl);
                 }
@@ -459,20 +458,19 @@
 
             tupType.Span = span;
             tupFld.Span = span;
-            tupFld.qual = qualifier.Pop();
             tupFld.name = MkString(fieldName, span);
             tupType.hd = tupFld;
             if (isLast)
             {
                 Contract.Assert(typeExprStack.Count > 0);
-                tupFld.type = (P_Root.IArgType_NmdTupTypeField__2)typeExprStack.Pop();
+                tupFld.type = (P_Root.IArgType_NmdTupTypeField__1)typeExprStack.Pop();
                 tupType.tl = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
             else
             {
                 Contract.Assert(typeExprStack.Count > 1);
                 tupType.tl = (P_Root.IArgType_NmdTupType__1)typeExprStack.Pop();
-                tupFld.type = (P_Root.IArgType_NmdTupTypeField__2)typeExprStack.Pop();
+                tupFld.type = (P_Root.IArgType_NmdTupTypeField__1)typeExprStack.Pop();
             }
 
             typeExprStack.Push(tupType);
@@ -703,7 +701,8 @@
             var funExpr = P_Root.MkFunApp();
             funExpr.name = MkString(name, span);
             funExpr.Span = span;
-            funExpr.id = (P_Root.IArgType_FunApp__2)MkId(span);
+            funExpr.label = P_Root.MkNumeric(GetNextTrampolineLabel());
+            funExpr.id = (P_Root.IArgType_FunApp__3)MkId(span);
             if (hasArgs)
             {
                 funExpr.args = (P_Root.Exprs)exprsStack.Pop();
@@ -1027,29 +1026,13 @@
             Contract.Assert(valueExprStack.Count > 1);
             P_Root.Expr arg2 = valueExprStack.Pop();
             P_Root.Expr arg1 = valueExprStack.Pop();
-            if (op == P_Root.UserCnstKind.ASSIGN && arg1 is P_Root.Name && arg2 is P_Root.FunApp)
-            {
-                P_Root.Name aout = arg1 as P_Root.Name;
-                P_Root.FunApp funCall = arg2 as P_Root.FunApp;
-                var funStmt = P_Root.MkFunStmt();
-                funStmt.name = (P_Root.IArgType_FunStmt__0)funCall.name;
-                funStmt.args = (P_Root.IArgType_FunStmt__1)funCall.args;
-                funStmt.aout = (P_Root.IArgType_FunStmt__2)aout;
-                funStmt.label = MkNumeric(GetNextTrampolineLabel(), span);
-                funStmt.Span = span;
-                funStmt.id = (P_Root.IArgType_FunStmt__4) MkId(span);
-                stmtStack.Push(funStmt);
-            }
-            else
-            {
-                var binStmt = P_Root.MkBinStmt();
-                binStmt.op = MkUserCnst(op, span);
-                binStmt.arg2 = (P_Root.IArgType_BinStmt__2)arg2;
-                binStmt.arg1 = (P_Root.IArgType_BinStmt__1)arg1;
-                binStmt.Span = span;
-                binStmt.id = (P_Root.IArgType_BinStmt__3) MkId(span);
-                stmtStack.Push(binStmt);
-            }
+            var binStmt = P_Root.MkBinStmt();
+            binStmt.op = MkUserCnst(op, span);
+            binStmt.arg2 = (P_Root.IArgType_BinStmt__2)arg2;
+            binStmt.arg1 = (P_Root.IArgType_BinStmt__1)arg1;
+            binStmt.Span = span;
+            binStmt.id = (P_Root.IArgType_BinStmt__3)MkId(span);
+            stmtStack.Push(binStmt);
         }
 
         private void PushBinExpr(P_Root.UserCnstKind op, Span span)
@@ -2372,9 +2355,8 @@
             stmt.id = (P_Root.IArgType_NulStmt__1) MkId(span);
             stmt.Span = span;
             var field = P_Root.MkNmdTupTypeField(
-                                   P_Root.MkUserCnst(P_Root.UserCnstKind.NONE),
                                    P_Root.MkString("_payload_skip"),
-                                   (P_Root.IArgType_NmdTupTypeField__2)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown));
+                                   (P_Root.IArgType_NmdTupTypeField__1)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown));
             var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__4)P_Root.MkNmdTupType(field, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)));
             decl.Span = span;
             parseProgram.AnonFunctions.Add(decl);

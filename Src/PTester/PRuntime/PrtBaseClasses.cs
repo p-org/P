@@ -220,14 +220,6 @@ namespace P.Runtime
 
     public class PrtIgnoreFun : PrtFun
     {
-        public override string Name
-        {
-            get
-            {
-                return "Ignore";
-            }
-        }
-
         public override bool IsAnonFun
         {
             get
@@ -249,14 +241,6 @@ namespace P.Runtime
 
     public class PrtSkipFun : PrtFun
     {
-        public override string Name
-        {
-            get
-            {
-                return "Skip";
-            }
-        }
-
         public override bool IsAnonFun
         {
             get
@@ -278,11 +262,6 @@ namespace P.Runtime
 
     public abstract class PrtFun
     {
-        public abstract string Name
-        {
-            get;
-        }
-
         public abstract bool IsAnonFun
         {
             get;

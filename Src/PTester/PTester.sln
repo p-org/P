@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTester", "PTester\PTester.csproj", "{56FF7823-8BE6-4EEA-8B5D-656D801DC87D}"
 EndProject
@@ -14,6 +14,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingPong", "Regressions\PingPong\PingPong.csproj", "{F0239538-61D6-461E-AF26-7B865CC12D94}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dummy", "Regressions\Dummy\Dummy.csproj", "{6DE09DF5-085D-4EC8-819B-009189658069}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestEntryExitFuns", "Regressions\TestEntryExitFuns\TestEntryExitFuns.csproj", "{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -79,6 +81,18 @@ Global
 		{6DE09DF5-085D-4EC8-819B-009189658069}.Release|x64.Build.0 = Release|Any CPU
 		{6DE09DF5-085D-4EC8-819B-009189658069}.Release|x86.ActiveCfg = Release|Any CPU
 		{6DE09DF5-085D-4EC8-819B-009189658069}.Release|x86.Build.0 = Release|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Debug|x64.Build.0 = Debug|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Debug|x86.Build.0 = Debug|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Release|x64.ActiveCfg = Release|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Release|x64.Build.0 = Release|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Release|x86.ActiveCfg = Release|Any CPU
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -86,5 +100,6 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{F0239538-61D6-461E-AF26-7B865CC12D94} = {F8D28E4E-51CF-4085-A86A-F94DD052C3A8}
 		{6DE09DF5-085D-4EC8-819B-009189658069} = {F8D28E4E-51CF-4085-A86A-F94DD052C3A8}
+		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7} = {F8D28E4E-51CF-4085-A86A-F94DD052C3A8}
 	EndGlobalSection
 EndGlobal

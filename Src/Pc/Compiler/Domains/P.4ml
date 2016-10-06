@@ -1227,14 +1227,16 @@ domain PStaticTyping extends PData
 	Impure ::= (FunDecl + FunProtoDecl).
 	Impure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
 	Impure(c) :- c is FunDecl, c.kind = MODEL, no Annotation(c, "pure", _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(NONDET, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(FAIRNONDET, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Goto.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Raise.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulStmt(POP, _).
-	Impure(c) :- SubSE0(c, e), c : FunDecl, e = BinStmt(_, e', e'', _), IsLValue(c, e', TRUE).
-	Impure(c) :- SubSE0(c, e), c : FunDecl, e = NewStmt(_, _, _).
-	Impure(c) :- SubSE0(c, e), c : FunDecl, e = New(_, _, _).
-	Impure(c) :- SubSE0(c, e), c : FunDecl, e = Send(_, _, _, _). 
-	Impure(c) :- SubSE0(c, e), c : FunDecl, e = Receive(_, _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = BinStmt(_, e', e'', _), IsLValue(c, e', TRUE).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NewStmt(_, _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = New(_, _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = Send(_, _, _, _). 
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = Receive(_, _, _).
 	Impure(c) :- SubSE0(c, e), e = FunApp(n, _, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = FunApp(_, args, _, _), ImpureExprs(c, args).
 	Impure(c) :- SubSE0(c, e), e = FunStmt(n, _, _, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).

@@ -2137,7 +2137,7 @@ namespace Microsoft.Pc
             while (nmdTupType != null)
             {
                 var fieldInfo = (FuncTerm)GetArgByIndex(nmdTupType, 0);
-                var fieldNameInFieldInfo = (Cnst)GetArgByIndex(fieldInfo, 1);
+                var fieldNameInFieldInfo = (Cnst)GetArgByIndex(fieldInfo, 0);
                 if (fieldName == fieldNameInFieldInfo.GetStringValue())
                     return fieldIndex;
                 nmdTupType = GetArgByIndex(nmdTupType, 1) as FuncTerm;

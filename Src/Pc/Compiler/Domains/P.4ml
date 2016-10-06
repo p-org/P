@@ -1230,8 +1230,6 @@ domain PStaticTyping extends PData
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Goto.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Raise.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulStmt(POP, _).
-	Impure(c) :- SubSE0(c, e), c : FunDecl, e = NulApp(NONDET, _).
-	Impure(c) :- SubSE0(c, e), c : FunDecl, e = NulApp(FAIRNONDET, _).
 	Impure(c) :- SubSE0(c, e), c : FunDecl, e = BinStmt(_, e', e'', _), IsLValue(c, e', TRUE).
 	Impure(c) :- SubSE0(c, e), c : FunDecl, e = NewStmt(_, _, _).
 	Impure(c) :- SubSE0(c, e), c : FunDecl, e = New(_, _, _).

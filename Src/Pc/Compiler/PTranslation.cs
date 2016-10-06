@@ -100,7 +100,6 @@ namespace Microsoft.Pc
     {
         public bool isAnonymous;
         public List<string> parameterNames;
-        public List<bool> isRefParameter;
         // if isAnonymous is true, 
         //    parameterNames is the list of environment variables
         //    parameterNames[0] is the payload parameter
@@ -123,7 +122,6 @@ namespace Microsoft.Pc
             this.body = body;
 
             this.parameterNames = new List<string>();
-            this.isRefParameter = new List<bool>();
             this.localNameToInfo = new Dictionary<string, LocalVariableInfo>();
             this.localNames = new List<string>();
             this.numFairChoices = 0;
@@ -140,14 +138,11 @@ namespace Microsoft.Pc
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
                     enumerator.MoveNext();
-                    var isRef = ((Id)enumerator.Current).Name == "REF";
-                    enumerator.MoveNext();
                     var varName = ((Cnst)enumerator.Current).GetStringValue();
                     enumerator.MoveNext();
                     var varType = (FuncTerm)enumerator.Current;
                     localNameToInfo[varName] = new LocalVariableInfo(varType, paramIndex);
                     parameterNames.Add(varName);
-                    isRefParameter.Add(isRef);
                 }
                 parameters = PTranslation.GetArgByIndex(parameters, 1) as FuncTerm;
                 paramIndex++;
@@ -159,8 +154,6 @@ namespace Microsoft.Pc
                 var ft = (FuncTerm)PToZing.GetArgByIndex(locals, 0);
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
-                    // skip over the qualifier
-                    enumerator.MoveNext();
                     enumerator.MoveNext();
                     var varName = ((Cnst)enumerator.Current).GetStringValue();
                     enumerator.MoveNext();
@@ -246,6 +239,37 @@ namespace Microsoft.Pc
         public static AST<FuncTerm> PTypeEvent = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("EVENT"));
         public static AST<FuncTerm> PTypeMachine = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("MACHINE"));
         public static AST<FuncTerm> PTypeAny = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("ANY"));
+
+        public Span LookupSpan(FuncTerm ft)
+        {
+            string name = ((Id)ft.Function).Name;
+            Node id = null;
+            switch (name)
+            {
+                case "NulStmt":
+                case "Return":
+                    id = GetArgByIndex(ft, 1); break;
+                case "NewStmt":
+                case "Raise":
+                case "Announce":
+                case "While":
+                case "Seq":
+                case "Receive":
+                case "Assert":
+                case "Goto":
+                    id = GetArgByIndex(ft, 2); break;
+                case "Send":
+                case "BinStmt":
+                case "Ite":
+                case "Print":
+                    id = GetArgByIndex(ft, 3); break;
+                case "FunStmt":
+                    id = GetArgByIndex(ft, 4); break;
+                default: Debug.Assert(false, "Illegal FuncTerm in LookupSpan"); break;
+            }
+            int integerId = (int)(id as Cnst).GetNumericValue().Numerator;
+            return idToSourceInfo[integerId].entrySpan;
+        }
 
         public string GetOwnerName(FuncTerm ft, int ownerIndex, int ownerNameIndex)
         {
@@ -340,10 +364,12 @@ namespace Microsoft.Pc
         public Dictionary<string, string> linkMap;
         public Dictionary<string, FunInfo> allStaticFuns;
         public Dictionary<AST<Node>, string> anonFunToName;
+        public Dictionary<int, SourceInfo> idToSourceInfo;
 
-        public PTranslation(Compiler compiler, AST<Model> model)
+        public PTranslation(Compiler compiler, AST<Model> model, Dictionary<int, SourceInfo> idToSourceInfo)
         {
             this.compiler = compiler;
+            this.idToSourceInfo = idToSourceInfo;
             GenerateProgramData(model);
         }
 
@@ -548,6 +574,20 @@ namespace Microsoft.Pc
                 }
             }
 
+            Dictionary<AST<Node>, Node> translatedBody = new Dictionary<AST<Node>, Node>();
+            terms = GetBin(factBins, "TranslatedBody");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var cntxt = Factory.Instance.ToAST(it.Current);
+                    it.MoveNext();
+                    var newStmt = it.Current;
+                    translatedBody[cntxt] = newStmt;
+                }
+            }
+
             terms = GetBin(factBins, "FunDecl");
             foreach (var term in terms)
             {
@@ -566,7 +606,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
-                    var body = it.Current;
+                    var body = translatedBody[term];
                     var funInfo = new FunInfo(false, parameters, returnTypeName, locals, body);
                     if (owner is FuncTerm)
                     {
@@ -602,7 +642,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
-                    var body = it.Current;
+                    var body = translatedBody[term];
                     it.MoveNext();
                     var envVars = it.Current as FuncTerm;
                     if (machineDecl == null)

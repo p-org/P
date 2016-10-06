@@ -17,6 +17,9 @@ domain PWithInferredTypes extends PData
 	//// The expansion of NameTypes in TypeExprs
 	TypeExpansion ::= new (type: any TypeExpr, eType: any TypeExpr).
 
+	//// The translation due to conversion of each impure FunApp to a FunStmt
+	TranslatedBody ::= new (cntxt: any TypingContext, stmt: any Stmt).
+
 	//// The expansion of NameTypes in TypeExprs
 	TranslatedTypeExpr ::= new (eType: any TypeExpr).
 
@@ -32,6 +35,7 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
     out._(x) :- x is in.Data.
 	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t).
 	out.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
+	out.TranslatedBody(c, s) :- in.TranslatedBody(c, s).
 	out.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).
 	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n).
 	out.LinkMap(m,n) :- in.LinkMap(m,n).

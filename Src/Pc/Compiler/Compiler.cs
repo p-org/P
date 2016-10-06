@@ -74,8 +74,8 @@
 
     public class SourceInfo
     {
-        Span entrySpan;
-        Span exitSpan;
+        public Span entrySpan;
+        public Span exitSpan;
 
         public SourceInfo(Span entrySpan, Span exitSpan)
         {
@@ -378,9 +378,10 @@
 
         }
 
-        public bool ParseProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName)
+        public bool ParseProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out Dictionary<int, SourceInfo> idToSourceInfo)
         {
             parsedProgram = new PProgram();
+            idToSourceInfo = new Dictionary<int, SourceInfo>();
             using (this.Profiler.Start("Compiler parsing ", Path.GetFileName(inputFileName)))
             {
                 try
@@ -400,7 +401,6 @@
                 }
 
                 TopDeclNames topDeclNames = new TopDeclNames();
-                Dictionary<int, SourceInfo> idToSourceInfo = new Dictionary<int, SourceInfo>();
                 Dictionary<string, ProgramName> SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
                 var RootFileName = RootProgramName.ToString();
@@ -502,8 +502,9 @@
             PProgram parsedProgram;
             ProgramName RootProgramName;
             AST<Model> RootModel;
+            Dictionary<int, SourceInfo> idToSourceInfo;
 
-            if (!ParseProgram(inputFileName, out parsedProgram, out RootProgramName))
+            if (!ParseProgram(inputFileName, out parsedProgram, out RootProgramName, out idToSourceInfo))
             {
                 return false;
             }
@@ -523,8 +524,8 @@
             }
 
             bool rc = ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C) ? GenerateC(RootProgramName, RootModel) : true) && 
-                      (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel) : true) && 
-                      (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel) : true);
+                      (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel, idToSourceInfo) : true) && 
+                      (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel, idToSourceInfo) : true);
             UninstallProgram(RootProgramName);
             return rc;
         }
@@ -539,7 +540,7 @@
             return "";
         }
 
-        public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel)
+        public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<int, SourceInfo> idToSourceInfo)
         {
             ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
@@ -559,14 +560,14 @@
 
             using (this.Profiler.Start("Generating CSharp", csharpFileName))
             {
-                var pToCSharp = new PToCSharp(this, RootModel, RootModelWithTypes);
+                var pToCSharp = new PToCSharp(this, RootModelWithTypes, idToSourceInfo);
                 var success = pToCSharp.GenerateCSharp(csharpFileName);
                 UninstallProgram(RootProgramNameWithTypes);
                 return success;
             }
         }
 
-        public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel)
+        public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<int, SourceInfo> idToSourceInfo)
         {
             ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
@@ -589,7 +590,7 @@
             {
                 LoadManifestProgram("Pc.Domains.Zing.4ml");
                 zingModel = MkZingOutputModel();
-                var pToZing = new PToZing(this, RootModel, RootModelWithTypes);
+                var pToZing = new PToZing(this, RootModelWithTypes, idToSourceInfo);
                 bool success = pToZing.GenerateZing(zingFileName, ref zingModel);
                 UninstallProgram(RootProgramNameWithTypes);
                 if (!success)
@@ -844,6 +845,7 @@
 
                 AddErrors(RootProgramName, task.Result, "FunCallQualifierError(_, _, _)", 2);
                 AddErrors(RootProgramName, task.Result, "UnavailableVarAccessError(_, _, _)", 1);
+                AddErrors(RootProgramName, task.Result, "UnavailableParameterError(_, _)", 0);
 
                 //// Enumerate structural errors
                 AddErrors(RootProgramName, task.Result, "OneDeclError(_)", 0);

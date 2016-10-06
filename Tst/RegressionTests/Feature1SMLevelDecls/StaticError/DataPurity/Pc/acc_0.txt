@@ -1,0 +1,9 @@
+=================================
+         Console output          
+=================================
+OUT: DataImpureFunction.p (15, 11): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: DataImpureFunction.p (22, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: DataImpureFunction.p (35, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: DataImpureFunction.p (58, 15): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: Compilation failed
+EXIT: -1

@@ -7,7 +7,7 @@ machine Main {
 		return 0; 
 	}
 	
-	fun F(a ref: int, b : int) {
+	fun F(a : int, b : int) {
 	    a = a + 1;
 	}
 	
@@ -15,7 +15,7 @@ machine Main {
 	    entry {
 			var y: int;
 			assert y == 0;
-			F(g ref, y xfer);
+			F(g swap, y xfer);
 			assert g == 1;
 			if (G(g) == 0)
 			{

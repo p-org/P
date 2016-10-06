@@ -231,6 +231,13 @@
             return MkNumeric(nextId, new Span());
         }
 
+        P_Root.Id MkIntegerId(Span span)
+        {
+            var nextId = idToSourceInfo.Count;
+            idToSourceInfo[nextId] = new SourceInfo(span, new Span());
+            return MkNumeric(nextId, new Span());
+        }
+
         P_Root.Id MkId(Span span)
         {
             return MkUserCnst(P_Root.UserCnstKind.NIL, span);
@@ -493,7 +500,7 @@
 
             var sendStmt = P_Root.MkSend();
             sendStmt.Span = span;
-            sendStmt.id = (P_Root.IArgType_Send__3) MkId(span);
+            sendStmt.id = (P_Root.IArgType_Send__3) MkIntegerId(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -527,7 +534,7 @@
             var gotoStmt = P_Root.MkGoto();
             gotoStmt.dst = crntGotoTargetName;
             gotoStmt.Span = span;
-            gotoStmt.id = (P_Root.IArgType_Goto__2) MkId(span);
+            gotoStmt.id = (P_Root.IArgType_Goto__2) MkIntegerId(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -556,7 +563,7 @@
 
             var announceStmt = P_Root.MkAnnounce();
             announceStmt.Span = span;
-            announceStmt.id = (P_Root.IArgType_Announce__2)MkId(span);
+            announceStmt.id = (P_Root.IArgType_Announce__2)MkIntegerId(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -585,7 +592,7 @@
             var receiveStmt = P_Root.MkReceive((P_Root.IArgType_Receive__0)localVarStack.PopCasesList());
             receiveStmt.Span = span;
             receiveStmt.label = P_Root.MkNumeric(GetNextTrampolineLabel());
-            receiveStmt.id = (P_Root.IArgType_Receive__2) MkId(span);
+            receiveStmt.id = (P_Root.IArgType_Receive__2)MkIntegerId(span);
             stmtStack.Push(receiveStmt);
         }
 
@@ -596,7 +603,7 @@
 
             var raiseStmt = P_Root.MkRaise();
             raiseStmt.Span = span;
-            raiseStmt.id = (P_Root.IArgType_Raise__2) MkId(span);
+            raiseStmt.id = (P_Root.IArgType_Raise__2)MkIntegerId(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -627,7 +634,7 @@
             var newStmt = P_Root.MkNewStmt();
             newStmt.name = MkString(name, nameSpan);
             newStmt.Span = span;
-            newStmt.id = (P_Root.IArgType_NewStmt__2) MkId(span);
+            newStmt.id = (P_Root.IArgType_NewStmt__2)MkIntegerId(span);
             if (hasArgs)
             {
                 var arg = exprsStack.Pop();
@@ -683,7 +690,7 @@
             funStmt.aout = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             funStmt.Span = span;
             funStmt.label = P_Root.MkNumeric(GetNextTrampolineLabel());
-            funStmt.id = (P_Root.IArgType_FunStmt__4) MkId(span);
+            funStmt.id = (P_Root.IArgType_FunStmt__4)MkIntegerId(span);
             if (hasArgs)
             {
                 funStmt.args = (P_Root.Exprs)exprsStack.Pop();
@@ -827,7 +834,7 @@
         {
             var nulStmt = P_Root.MkNulStmt(MkUserCnst(op, span));
             nulStmt.Span = span;
-            nulStmt.id = (P_Root.IArgType_NulStmt__1) MkId(span);
+            nulStmt.id = (P_Root.IArgType_NulStmt__1)MkIntegerId(span);
             stmtStack.Push(nulStmt);
         }
 
@@ -921,7 +928,7 @@
                 Contract.Assert(stmtStack.Count > 0);
                 var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
                 skipStmt.Span = span;
-                skipStmt.id = (P_Root.IArgType_NulStmt__1) MkId(span);
+                skipStmt.id = (P_Root.IArgType_NulStmt__1)MkIntegerId(span);
                 iteStmt.@true = (P_Root.IArgType_Ite__1)stmtStack.Pop();
                 iteStmt.@false = skipStmt;
             }
@@ -941,7 +948,7 @@
             {
                 retStmt.expr = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-            retStmt.id = (P_Root.IArgType_Return__1) MkId(span);
+            retStmt.id = (P_Root.IArgType_Return__1)MkIntegerId(span);
             stmtStack.Push(retStmt);
         }
 
@@ -952,7 +959,7 @@
                 (P_Root.IArgType_While__0)valueExprStack.Pop(),
                 (P_Root.IArgType_While__1)stmtStack.Pop());
             whileStmt.Span = span;
-            whileStmt.id = (P_Root.IArgType_While__2) MkId(span);
+            whileStmt.id = (P_Root.IArgType_While__2)MkIntegerId(span);
             stmtStack.Push(whileStmt);
         }
 
@@ -963,7 +970,7 @@
             assertStmt.arg = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
             assertStmt.msg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             assertStmt.Span = span;
-            assertStmt.id = (P_Root.IArgType_Assert__2) MkId(span);
+            assertStmt.id = (P_Root.IArgType_Assert__2)MkIntegerId(span);
             stmtStack.Push(assertStmt);
         }
         
@@ -974,7 +981,7 @@
             assertStmt.arg = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
             assertStmt.msg = MkString(msg, msgSpan);
             assertStmt.Span = span;
-            assertStmt.id = (P_Root.IArgType_Assert__2) MkId(span);
+            assertStmt.id = (P_Root.IArgType_Assert__2)MkIntegerId(span);
             stmtStack.Push(assertStmt);
         }
 
@@ -1009,14 +1016,14 @@
                 }
                 printStmt.segs = segs;
                 printStmt.args = args;
-                printStmt.id = (P_Root.IArgType_Print__3) MkId(span);
+                printStmt.id = (P_Root.IArgType_Print__3)MkIntegerId(span);
                 printStmt.Span = span;
                 stmtStack.Push(printStmt);
             }
             else
             {
                 var skipStmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
-                skipStmt.id = (P_Root.IArgType_NulStmt__1) MkId(span);
+                skipStmt.id = (P_Root.IArgType_NulStmt__1)MkIntegerId(span);
                 stmtStack.Push(skipStmt);
             }
         }
@@ -1031,7 +1038,7 @@
             binStmt.arg2 = (P_Root.IArgType_BinStmt__2)arg2;
             binStmt.arg1 = (P_Root.IArgType_BinStmt__1)arg1;
             binStmt.Span = span;
-            binStmt.id = (P_Root.IArgType_BinStmt__3)MkId(span);
+            binStmt.id = (P_Root.IArgType_BinStmt__3)MkIntegerId(span);
             stmtStack.Push(binStmt);
         }
 
@@ -2352,7 +2359,7 @@
         private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
-            stmt.id = (P_Root.IArgType_NulStmt__1) MkId(span);
+            stmt.id = (P_Root.IArgType_NulStmt__1)MkIntegerId(span);
             stmt.Span = span;
             var field = P_Root.MkNmdTupTypeField(
                                    P_Root.MkString("_payload_skip"),

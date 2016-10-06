@@ -56,7 +56,7 @@
 			 keywords.Add("pop", (int)PTokens.POP);
 			 keywords.Add("true", (int)PTokens.TRUE);
 			 keywords.Add("false", (int)PTokens.FALSE);
-			 keywords.Add("ref", (int)PTokens.REF);
+			 keywords.Add("swap", (int)PTokens.SWAP);
 			 keywords.Add("xfer", (int)PTokens.XFER);
 			 keywords.Add("sizeof", (int)PTokens.SIZEOF);
 			 keywords.Add("keys", (int)PTokens.KEYS);

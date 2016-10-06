@@ -516,7 +516,7 @@ PrtPushNewEventHandlerFrame(
 		}
 		locals[payloadIndex] = context->currentPayload;
 		context->currentPayload = NULL;
-		if (payloadStatus == PRT_FUN_PARAM_REF)
+		if (payloadStatus == PRT_FUN_PARAM_SWAP)
 		{
 			refArgs = PrtCalloc(1, sizeof(PRT_VALUE **));
 			refArgs[0] = &context->currentPayload;
@@ -532,7 +532,7 @@ PrtPushNewEventHandlerFrame(
 	}
 	else
 	{
-		if (payloadStatus != PRT_FUN_PARAM_REF)
+		if (payloadStatus != PRT_FUN_PARAM_SWAP)
 		{
 			PrtFreeTriggerPayload(context);
 		}
@@ -608,7 +608,7 @@ PrtPushNewFrame(
 					arg = va_arg(argp, PRT_VALUE *);
 					locals[count] = PrtCloneValue(arg);
 					break;
-				case PRT_FUN_PARAM_REF:
+				case PRT_FUN_PARAM_SWAP:
 					argPtr = va_arg(argp, PRT_VALUE **);
 					refArgs[count] = argPtr;
 					locals[count] = *argPtr;
@@ -803,7 +803,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	context->lastOperation = ReturnStatement;
 	PrtLog(PRT_STEP_EXIT, NULL, context, NULL, NULL);
 	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFunIndex;
-	PrtPushNewEventHandlerFrame(context, exitFunIndex, PRT_FUN_PARAM_REF, NULL);
+	PrtPushNewEventHandlerFrame(context, exitFunIndex, PRT_FUN_PARAM_SWAP, NULL);
 	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
 }
 
@@ -818,7 +818,7 @@ PrtRunTransitionFunction(
 	context->lastOperation = ReturnStatement; 
 	PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFunIndex;
 	PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
-	PrtPushNewEventHandlerFrame(context, transFunIndex, PRT_FUN_PARAM_REF, NULL);
+	PrtPushNewEventHandlerFrame(context, transFunIndex, PRT_FUN_PARAM_SWAP, NULL);
 	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, transFunIndex);
 	funDecl->implementation((PRT_MACHINEINST *)context);
 }

@@ -33,8 +33,8 @@ namespace Microsoft.Pc
 
     class PToCSharp : PTranslation
     {
-        public PToCSharp(Compiler compiler, AST<Model> model, AST<Model> modelWithTypes)
-            : base(compiler, model)
+        public PToCSharp(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo)
+            : base(compiler, modelWithTypes, idToSourceInfo)
         {
             //this.typeContext = new TypeTranslationContext(this);
             //GenerateTypeInfo(modelWithTypes);

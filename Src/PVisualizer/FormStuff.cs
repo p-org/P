@@ -144,7 +144,8 @@ namespace Microsoft.PVisualizer
             var compiler = new Compiler(false);
             PProgram parsedProgram;
             ProgramName RootProgramName;
-            var result = compiler.ParseProgram(inputFileName, out parsedProgram, out RootProgramName);
+            Dictionary<int, SourceInfo> idToSourceInfo;
+            var result = compiler.ParseProgram(inputFileName, out parsedProgram, out RootProgramName, out idToSourceInfo);
 
             if (result)
             {

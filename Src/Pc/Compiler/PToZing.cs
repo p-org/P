@@ -51,8 +51,8 @@ namespace Microsoft.Pc
             return string.Format("MACHINE_{0}", machineName);
         }
 
-        public PToZing(Compiler compiler, AST<Model> model, AST<Model> modelWithTypes)
-            : base(compiler, model)
+        public PToZing(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo)
+            : base(compiler, modelWithTypes, idToSourceInfo)
         {
             this.typeContext = new TypeTranslationContext(this);
             GenerateTypeInfo(modelWithTypes);
@@ -1720,6 +1720,15 @@ namespace Microsoft.Pc
 
         ZingTranslationInfo FoldFunApp(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
         {
+            List<bool> isSwapParameter = new List<bool>();
+            var exprs = GetArgByIndex(ft, 1) as FuncTerm;
+            while (exprs != null)
+            {
+                var qualifier = GetArgByIndex(exprs, 0) as Id;
+                isSwapParameter.Add(qualifier.Name == "SWAP");
+                exprs = GetArgByIndex(exprs, 2) as FuncTerm;
+            }
+
             var calleeName = GetName(ft, 0);
             var calleeInfo = allStaticFuns.ContainsKey(calleeName) ? allStaticFuns[calleeName] : allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
 
@@ -1746,7 +1755,7 @@ namespace Microsoft.Pc
                 var calleeArg = calleeInfo.parameterNames[parameterCount];
                 var calleeArgInfo = calleeInfo.localNameToInfo[calleeArg];
                 ctxt.AddSideEffect(MkZingAssignWithClone(MkZingIndex(argCloneVar, Factory.Instance.MkCnst(calleeArgInfo.index)), child.node));
-                if (calleeInfo.isRefParameter[parameterCount])
+                if (isSwapParameter[parameterCount])
                 {
                     processRefParams.Add(MkZingAssign(child.node, MkZingIndex(MkZingDot("entryCtxt", "retLocals"), Factory.Instance.MkCnst(calleeArgInfo.index))));
                 }
@@ -2265,7 +2274,7 @@ namespace Microsoft.Pc
                 it.MoveNext();
                 var payloadExpr = it.Current.node;
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), SpanToString(ft.Span, "Raised event must be non-null"));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), SpanToString(LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = MkZingTrace(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", ctxt.machineName), MkZingDot("myHandle", "instance"), MkZingDot(eventExpr, "name"));
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
                 if (payloadExpr == ZingData.Cnst_Nil)
@@ -2325,7 +2334,7 @@ namespace Microsoft.Pc
                 AST<Node> arg = it.Current.node;
                 var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpSendPayload");
-                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), SpanToString(ft.Span, "Enqueued event must be non-null"));
+                var assertStmt = MkZingAssert(MkZingNeq(eventExpr, MkZingIdentifier("null")), SpanToString(LookupSpan(ft), "Enqueued event must be non-null"));
                 ctxt.AddSideEffect(assertStmt);
                 if (arg == ZingData.Cnst_Nil)
                 {
@@ -2377,7 +2386,7 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), SpanToString(ft.Span, "Assert failed")));
+                    return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), SpanToString(LookupSpan(ft), "Assert failed")));
                 }
             }
         }
@@ -3084,8 +3093,8 @@ namespace Microsoft.Pc
                     while (type != null)
                     {
                         var typeField = (FuncTerm)GetArgByIndex(type, 0);
-                        memberNames.Add(GetField(((Cnst)GetArgByIndex(typeField, 1)).GetStringValue()));
-                        memberTypes.Add(PTypeToZingExpr((FuncTerm)GetArgByIndex(typeField, 2)));
+                        memberNames.Add(GetField(((Cnst)GetArgByIndex(typeField, 0)).GetStringValue()));
+                        memberTypes.Add(PTypeToZingExpr((FuncTerm)GetArgByIndex(typeField, 1)));
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     var tupleType = GetType();

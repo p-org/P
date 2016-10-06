@@ -1,7 +1,7 @@
 event E: int;
 
 machine Main {
-	fun F(a ref: int, b : int) {
+	fun F(a : int, b : int) {
 	    a = a + b;
 	}
 
@@ -11,7 +11,7 @@ machine Main {
 	    entry {
 			var y: int;
 			y = 1;
-			F(g ref, y);
+			F(g swap, y);
 			assert g == 1;
 			assert y == 1;
 			raise E, 1;
@@ -21,7 +21,7 @@ machine Main {
 			i = i + 1;
 		}
 		exit {
-			F(g ref, 1);
+			F(g swap, 1);
 		}
 	}
 

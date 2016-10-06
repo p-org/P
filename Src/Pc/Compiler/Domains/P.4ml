@@ -752,7 +752,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Assert(_, _, _), t1 != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Ite, t1 = BaseType(BOOL).
-	[ rule_Classes                                   = '"error, msg: "if (...)" expects a boolean value"']
+	[ rule_Classes = '"error, msg: "if (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Ite, t1 != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : While, t1 = BaseType(BOOL).

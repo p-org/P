@@ -12,7 +12,7 @@ machine Main {
 
   fun Baz() : bool 
   {
-	return Foo();
+	return Foo(); // error
   }
 
   fun Bar() : bool 
@@ -29,7 +29,7 @@ machine Main {
 			x = x + 1;
 		}
 		assert x == 0;
-		while (Bar())   //OK
+		while (Bar())   //error
 		{
 		
 		}

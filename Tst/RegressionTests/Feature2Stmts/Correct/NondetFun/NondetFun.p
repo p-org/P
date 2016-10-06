@@ -12,7 +12,9 @@ machine Main {
 
   fun Baz() : bool 
   {
-	return Foo();
+	var b: bool;
+	b = Foo();
+	return b;
   }
 
   fun Bar() : bool 
@@ -24,14 +26,17 @@ machine Main {
   
   start state Init {
     entry {
-		if (Foo())
+		var b: bool;
+		b = Foo();
+		if (b)
 		{
 			x = x + 1;
 		}
 		assert x == 0;
-		while (Bar()) 
+		b = Bar();
+		while (b) 
 		{
-		
+			b = Bar();
 		}
 		assert x <= 5;
     }

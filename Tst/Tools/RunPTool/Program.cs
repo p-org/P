@@ -142,7 +142,7 @@ namespace RunPTool
             Console.WriteLine("Options:");
             Console.WriteLine("    /reset - remove old acceptor file, useful for generating new test baselines");
             Console.WriteLine("    /cooperative - enable testing of cooperative multitasking");
-            Console.WriteLine("    /platform=[x64|x64] - specify the platform to test (default 'x86')");
+            Console.WriteLine("    /platform=[x86|x64] - specify the platform to test (default 'x86')");
             Console.WriteLine("    /configuration=[debug|release] - specify the configuration to test (default 'debug')");
             Console.WriteLine("    /output:dirname - specify the test output directory (default'TestResult_debug_x86')");
             Console.WriteLine("    /runPc - do the compile step only");

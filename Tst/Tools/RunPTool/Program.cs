@@ -32,6 +32,8 @@ namespace RunPTool
 
         bool reset;
         bool cooperative; // for testing cooperative multitasking.
+        bool listTests;
+        int batchSize;
 
         //set according to the name of the parent directory for "testconfig.txt":
         string testFilePath;
@@ -41,8 +43,9 @@ namespace RunPTool
         const string configArg = "configuration=";
         const string platformArg = "platform=";
 
-        static string testRoot; // the Tst source directory
-        static string testOutput; // the Tst/TestResult directory (to separate the temporary files from our source directory).
+        string testRoot; // the Tst source directory
+        string testOutput; // the Tst/TestResult directory (to separate the temporary files from our source directory).
+        string testOutputDirectoryName;
 
         bool ParseCommandLine(string[] args)
         {
@@ -89,6 +92,32 @@ namespace RunPTool
                         case "cooperative":
                             cooperative = true;
                             break;
+                        case "list":
+                            listTests = true;
+                            break;
+                        case "batch":
+                            if (int.TryParse(option, out batchSize))
+                            {
+                                if (batchSize < 5)
+                                {
+                                    WriteError("### /batch:size, is invalid, should be greater than 5 otherwise you'll probably run out of memory");
+                                    return false;
+                                }
+                            }
+                            else
+                            {
+                                WriteError("### /batch:size, missing size option, for example: /batch:10");
+                                return false;
+                            }
+                            break;
+                        case "output":
+                            if (string.IsNullOrEmpty(option))
+                            {
+                                WriteError("### /output:dirname option is expecting a directory name, like /output:TestResult");
+                                return false;
+                            }
+                            testOutputDirectoryName = option;
+                            break;
                         default:
                             WriteError("### Unrecognized option: " + arg);
                             return false;
@@ -115,10 +144,12 @@ namespace RunPTool
             Console.WriteLine("    /cooperative - enable testing of cooperative multitasking");
             Console.WriteLine("    /platform=[x64|x64] - specify the platform to test (default 'x86')");
             Console.WriteLine("    /configuration=[debug|release] - specify the configuration to test (default 'debug')");
+            Console.WriteLine("    /output:dirname - specify the test output directory (default'TestResult_debug_x86')");
             Console.WriteLine("    /runPc - do the compile step only");
             Console.WriteLine("    /runPrt - run the compiled state machine using PrtTester");
             Console.WriteLine("    /runZing - run zinger on the compiled output");
             Console.WriteLine("    /runAll (default)");
+            Console.WriteLine("    /list - print the list of discovered test directories");
         }
 
         static void Main(string[] args)
@@ -152,7 +183,14 @@ namespace RunPTool
 
                 // we will copy test structure here so that all the temporary files we create are contained in one place rather
                 // than poluting our source tree with all that.
-                testOutput = Path.Combine(testRoot, "TestResult_" + this.configuration + "_" + this.platform);
+                if (string.IsNullOrEmpty(testOutputDirectoryName))
+                {
+                    testOutput = Path.Combine(testRoot, "TestResult_" + this.configuration + "_" + this.platform);
+                }
+                else
+                {
+                    testOutput = Path.Combine(testRoot, testOutputDirectoryName);
+                }
 
                 //tstDir is where testP.bat is located
                 List<DirectoryInfo> activeDirs;
@@ -222,6 +260,50 @@ namespace RunPTool
                 visited.Add(testOutput); // don't drill into this folder.
                 EnumerateDirs(activeDirs, allTestDirs, visited);
 
+                if (batchSize > 0)
+                {
+                    Console.WriteLine("Creating 'run.cmd' to batch testp.bat with batchsize of " + batchSize);
+
+                    var batch = 0;
+                    var currentBatchSize = 0;
+                    StreamWriter master = new StreamWriter(Path.Combine(testRoot, "run.cmd"));
+                    StreamWriter file = null;
+                    foreach (var dir in allTestDirs)
+                    {
+                        if (file == null)
+                        {
+                            var testList = Path.Combine(testRoot, "TestList" + batch + ".txt");
+                            file = new StreamWriter(testList);
+                            string cmd = "start testp nobuild nosync noclean " + platform + " " + configuration + " " + testList + " /output:TestResult" + batch;
+                            master.WriteLine(cmd);
+                            batch++;
+                        }
+                        currentBatchSize++;
+                        file.WriteLine(dir.FullName);
+                        if (currentBatchSize == batchSize)
+                        {
+                            file.Close();
+                            file = null;
+                            currentBatchSize = 0;
+                        }
+                    }
+
+                    if (file != null)
+                    {
+                        file.Close();
+                    }
+                    master.Close();
+                    return;
+                }
+                if (listTests)
+                {
+
+                    foreach (var dir in allTestDirs)
+                    {
+                        Console.WriteLine("  " + dir.FullName);
+                    }
+                    return;
+                }
 
                 Console.WriteLine("Running tests");
                 int testCount = 0, failCount = 0;

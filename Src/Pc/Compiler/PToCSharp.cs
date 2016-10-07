@@ -303,8 +303,10 @@ namespace Microsoft.Pc
             public string machName;
             public MachineInfo machInfo;
             static List<SyntaxNode> machineMembers = new List<SyntaxNode>();
+            List<StatementSyntax> mainConstructorFields = new List<StatementSyntax>();
             //keeps track of already encountered function names:
             private HashSet<string> processedFuns = new HashSet<string>();
+            private static int transition_count = 1;
             public MkMachineClass(string name, MachineInfo info) {
                 machName = name;
                 machInfo = info;
@@ -585,10 +587,49 @@ namespace Microsoft.Pc
                 return funClassDecl;
             }
             
+            public void AddFunClass(string funName, string funType)
+            {
+                //If this function name was already encountered, class declaration
+                //has been generated earlier
+                if (!processedFuns.Contains(funName))
+                {
+                    //Class declaration:
+                    machineMembers.Add(MkFuncClassForState(funName, funType));
+                    //Variable declaration:
+                    machineMembers.Add(
+                        FieldDeclaration(
+                            VariableDeclaration(
+                                IdentifierName(funType))
+                            .WithVariables(
+                                SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                    VariableDeclarator(
+                                        Identifier(funName)))))
+                        .WithModifiers(
+                            TokenList(
+                                new[]{
+                                        Token(SyntaxKind.PublicKeyword),
+                                        Token(SyntaxKind.StaticKeyword)}))
+                        .NormalizeWhitespace());
+                    //Add function variable instantiation to Main constructor:
+                    mainConstructorFields.Add(
+                        ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                IdentifierName(funName),
+                                ObjectCreationExpression(
+                                    IdentifierName(funType))
+                                .WithArgumentList(
+                                    ArgumentList())))
+                        .NormalizeWhitespace());
+
+                    processedFuns.Add(funName);
+                }
+            }
             public SyntaxNode MkMainMachineClass()
             {
                 //function instantiations for the constructor of Main:
-                List<ExpressionStatementSyntax> mainConstructorFields = new List<ExpressionStatementSyntax>();
+                //List<ExpressionStatementSyntax> mainConstructorFields = new List<ExpressionStatementSyntax>();
+                
 
                 //StartState property (getter only, since there's no setter in the base class):
                 string startState = machInfo.initStateName;
@@ -688,7 +729,7 @@ namespace Microsoft.Pc
 
                 //TODO(expand): generate functions declared in the Main machine (not state-specific)
 
-                //classes for entry and exit functions for each state of Main
+                //classes for functions for each state of Main
                 //and variable declarations for those functions:
                 foreach (var pair in machInfo.stateNameToStateInfo)
                 {
@@ -697,90 +738,32 @@ namespace Microsoft.Pc
                     //TODO(remove)
                     Console.WriteLine("Entry func name for state {0}: {1}", pair.Key, funName);
                     var funType = funName + "_Class";
-                    
-                    //If this function name was already encountered for an entry, class declaration
-                    //has been generated earlier
-                    if (!processedFuns.Contains(funName))
-                    {
-                        //Class declaration:
-                        machineMembers.Add(MkFuncClassForState(funName, funType));
-                        //Variable declaration:
-                        machineMembers.Add(
-                            FieldDeclaration(
-                                VariableDeclaration(
-                                    IdentifierName(funType))
-                                .WithVariables(
-                                    SingletonSeparatedList<VariableDeclaratorSyntax>(
-                                        VariableDeclarator(
-                                            Identifier(funName)))))
-                            .WithModifiers(
-                                TokenList(
-                                    new[]{
-                                        Token(SyntaxKind.PublicKeyword),
-                                        Token(SyntaxKind.StaticKeyword)}))
-                            .NormalizeWhitespace());
-                        //Add function variable instantiation to Main constructor:
-                        mainConstructorFields.Add(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(funName),
-                                    ObjectCreationExpression(
-                                        IdentifierName(funType))
-                                    .WithArgumentList(
-                                        ArgumentList())))
-                            .NormalizeWhitespace());
-                  
-                        processedFuns.Add(funName);
-                    }
+                    AddFunClass(funName, funType);
 
-                    //exit function of the state:
-                    
+                    //exit function of the state: 
                     funName = pair.Value.exitFunName;
                     //TODO(remove)
                     Console.WriteLine("Exit func name for state {0}: {1}", pair.Key, funName);
                     funType = funName + "_Class";
-                    
-                    //If this function name was already encountered for an exit, variable declaration
-                    //has been generated earlier
-                    if (!processedFuns.Contains(funName))
-                    {
-                        //Class declaration:
-                        machineMembers.Add(MkFuncClassForState(funName, funType));
+                    AddFunClass(funName, funType);
 
-                        //Variable declaration:
-                        machineMembers.Add(
-                            FieldDeclaration(
-                                VariableDeclaration(
-                                    IdentifierName(funType))
-                                .WithVariables(
-                                    SingletonSeparatedList<VariableDeclaratorSyntax>(
-                                        VariableDeclarator(
-                                            Identifier(funName)))))
-                            .WithModifiers(
-                                TokenList(
-                                    new[]{
-                                        Token(SyntaxKind.PublicKeyword),
-                                        Token(SyntaxKind.StaticKeyword)}))
-                            .NormalizeWhitespace());
-                        //Add function variable instantiation to Main constructor:
-                        mainConstructorFields.Add(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(funName),
-                                    ObjectCreationExpression(
-                                        IdentifierName(funType))
-                                    .WithArgumentList(
-                                        ArgumentList())))
-                            .NormalizeWhitespace());
-                        processedFuns.Add(funName);
+                    //Functions in transitions:
+                    foreach (var transition in pair.Value.transitions)
+                    {
+                        funName = transition.Value.transFunName;
+                        funType = funName + "_Class";
+                        if (!transition.Value.IsPush)
+                        {
+                            AddFunClass(funName, funType);
+                        }
                     }
-                    
-                    //TODO(question, expand): any other functions for the state? What about functions in transitions?
+
+                    //(TODO: how to loop over functions in dos?) Functions in dos:
  
+                    //TODO(question, expand): any other functions for the state? What about functions in transitions?
+
                 }
-                
+
                 //State classes for all states of Main:
                 foreach (var pair in machInfo.stateNameToStateInfo)
                 {
@@ -908,13 +891,121 @@ namespace Microsoft.Pc
                                                         IdentifierName("StateTemperature"),
                                                         IdentifierName("Warm")))})))))
                         .NormalizeWhitespace());
+
+                    //Transition instantiations for the state of the machine:
+  
+                    //"transition" + "_" + transition_count
+                    foreach (var transition in pair.Value.transitions)
+                    {
+                        string trigger = transition.Key;
+                        string transition_name = "transition" + "_" + transition_count;
+                        //For push transition, transition.Value.transFunName name is null - 
+                        //replacing wuth PrtCommonFunctions.SkipFun
+                        if (transition.Value.IsPush)
+                        {
+                            //push transition:
+                            mainConstructorFields.Add(
+                            LocalDeclarationStatement(
+                                VariableDeclaration(
+                                    IdentifierName("PrtTransition"))
+                                .WithVariables(
+                                    SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                        VariableDeclarator(
+                                            Identifier(transition_name))
+                                        .WithInitializer(
+                                            EqualsValueClause(
+                                                ObjectCreationExpression(
+                                                    IdentifierName("PrtTransition"))
+                                                .WithArgumentList(
+                                                    ArgumentList(
+                                                        SeparatedList<ArgumentSyntax>(
+                                                            new SyntaxNodeOrToken[]{
+                                                                Argument(
+                                                                    MemberAccessExpression(
+                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                        IdentifierName("PrtCommonFunctions"),
+                                                                        IdentifierName("SkipFun"))),
+                                                                        Token(SyntaxKind.CommaToken),
+                                                                Argument(
+                                                                    IdentifierName(transition.Value.target)),
+                                                                Token(SyntaxKind.CommaToken),
+                                                                Argument(
+                                                                    LiteralExpression(
+                                                                        SyntaxKind.TrueLiteralExpression))}))))))))
+                            .NormalizeWhitespace()); 
+                        }
+                        else
+                        {
+                            //goto transition:
+                            mainConstructorFields.Add(
+                            LocalDeclarationStatement(
+                                VariableDeclaration(
+                                    IdentifierName("PrtTransition"))
+                                .WithVariables(
+                                    SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                        VariableDeclarator(
+                                            Identifier("transition" + "_" + transition_count))
+                                        .WithInitializer(
+                                            EqualsValueClause(
+                                                ObjectCreationExpression(
+                                                    IdentifierName("PrtTransition"))
+                                                .WithArgumentList(
+                                                    ArgumentList(
+                                                        SeparatedList<ArgumentSyntax>(
+                                                            new SyntaxNodeOrToken[]{
+                                                                Argument(
+                                                                    IdentifierName(transition.Value.transFunName)),
+                                                                Token(SyntaxKind.CommaToken),
+                                                                Argument(
+                                                                    IdentifierName(transition.Value.target)),
+                                                                Token(SyntaxKind.CommaToken),
+                                                                Argument(
+                                                                    LiteralExpression(
+                                                                        SyntaxKind.FalseLiteralExpression))}))))))))
+                            .NormalizeWhitespace());
+                        }
+                        //Add transition to the state:
+                        mainConstructorFields.Add(
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName(stateName),
+                                            IdentifierName("transitions")),
+                                        IdentifierName("Add")))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                    Argument(
+                                                        IdentifierName(trigger)),
+                                                    Token(SyntaxKind.CommaToken),
+                                                    Argument(
+                                                        IdentifierName(transition_name))}))))
+                            .NormalizeWhitespace()
+                            );
+                        transition_count += 1;
+                    }
                 }
 
                 //Constructor for Main:
                 //static Main()
-                SyntaxNode mainConstructor = generator.ConstructorDeclaration("Main", modifiers: DeclarationModifiers.Static,
-                    statements: mainConstructorFields);
-                    
+                var mainConstructor =
+                    ConstructorDeclaration(
+                        Identifier("Main"))
+                            .WithModifiers(
+                                TokenList(
+                                    Token(SyntaxKind.StaticKeyword)))
+                            .WithBody(
+                                Block(mainConstructorFields
+                                    ))
+                    .NormalizeWhitespace();
+
+                //SyntaxNode mainConstructor = generator.ConstructorDeclaration("Main", modifiers: DeclarationModifiers.Static,
+                //    statements: mainConstructorFields);
+
                 machineMembers.Add(mainConstructor);
 
                 var mainMachineClassDecl = generator.ClassDeclaration(

@@ -494,7 +494,7 @@ PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINS
 	return buffer;
 }
 
-PRT_VALUE* PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
+void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
 {
 	PrtPrintf(msg);
 	va_list argp;
@@ -518,5 +518,4 @@ PRT_VALUE* PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
 	}
 	va_end(argp);
 	PrtFree(args);
-	return NULL;
 }

@@ -183,13 +183,81 @@ PrtStopProcess(
 	PrtFree(process);
 }
 
+FORCEINLINE
+PRT_FUNDECL *
+GetFunDeclHelper(_In_ PRT_PROCESS	*process, _In_ PRT_UINT32 instanceOf, _In_ PRT_UINT32 funIndex)
+{
+	PRT_UINT32 isMachineLocal = funIndex % 2;
+	PRT_UINT32 arrayIndex = funIndex / 2;
+	if (isMachineLocal)
+	{
+		return &process->program->machines[instanceOf]->funs[arrayIndex];
+	}
+	else
+	{
+		return process->program->globalFuns[arrayIndex];
+	}
+}
+
 PRT_MACHINEINST *
 PrtMkMachine(
     _Inout_  PRT_PROCESS			*process,
     _In_  PRT_UINT32				instanceOf,
-    _In_  PRT_VALUE					*payload
+	...
 )
 {
+	PRT_MACHINEDECL *machineDecl = process->program->machines[instanceOf];
+	PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFunIndex;
+	PRT_TYPE *payloadType = GetFunDeclHelper(process, instanceOf, entryFunIndex)->payloadType;
+	PRT_VALUE *payload;
+
+	if (payloadType == NULL)
+	{
+		payload = PrtMkNullValue();
+	}
+	else 
+	{
+		PRT_UINT32 numParameters = 1;
+		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		{
+			numParameters = payloadType->typeUnion.tuple->arity;
+		}
+		PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, instanceOf);
+		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				break;
+			case PRT_FUN_PARAM_XFER:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		{
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
+	}
     return (PRT_MACHINEINST *)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, instanceOf, payload);
 }
 
@@ -215,9 +283,50 @@ PrtSend(
 	_Inout_ PRT_MACHINEINST			*sender,
     _Inout_ PRT_MACHINEINST			*receiver,
     _In_ PRT_VALUE					*event,
-    _In_ PRT_VALUE					*payload,
-    _In_ PRT_BOOLEAN				doTransfer
+	...
 )
 {
-    PrtSendPrivate((PRT_MACHINEINST_PRIV *)sender, (PRT_MACHINEINST_PRIV *)receiver, event, payload, doTransfer);
+	PRT_TYPE *payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
+	PRT_UINT32 numParameters = 1;
+	if (payloadType->typeKind == PRT_KIND_TUPLE)
+	{
+		numParameters = payloadType->typeUnion.tuple->arity;
+	}
+	PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+	va_list argp;
+	va_start(argp, event);
+	for (PRT_UINT32 i = 0; i < numParameters; i++)
+	{
+#if __PX4_NUTTX
+		PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+		PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+		PRT_VALUE *arg;
+		PRT_VALUE **argPtr;
+		switch (argStatus)
+		{
+		case PRT_FUN_PARAM_CLONE:
+			arg = va_arg(argp, PRT_VALUE *);
+			args[i] = PrtCloneValue(arg);
+			break;
+		case PRT_FUN_PARAM_SWAP:
+			PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+			break;
+		case PRT_FUN_PARAM_XFER:
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
+			break;
+		}
+	}
+	va_end(argp);
+	PRT_VALUE *payload = args[0];
+	if (payloadType->typeKind == PRT_KIND_TUPLE)
+	{
+		payload = MakeTupleFromArray(payloadType, args);
+	}
+	PrtFree(args);
+
+    PrtSendPrivate((PRT_MACHINEINST_PRIV *)sender, (PRT_MACHINEINST_PRIV *)receiver, event, payload);
 }

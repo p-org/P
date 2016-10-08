@@ -95,6 +95,7 @@ typedef struct PRT_FUNDECL
 	PRT_UINT32 numParameters;    /**< number of parameters (1 for anonymous functions)                      */
 	PRT_UINT32 maxNumLocals;     /**< number of local variables including nested scopes                     */
 	PRT_UINT32 numEnvVars;       /**< number of local variables in enclosing scopes (0 for named functions) */
+	PRT_TYPE *payloadType;       /**< payload type for anonymous functions (NULL for named functions)       */
 	PRT_TYPE *localsNmdTupType;  /**< type of local variables tuple (not including nested scopes)           */
 	PRT_UINT32 nReceives;        /**< number of receive statements in body                                  */
 	PRT_RECEIVEDECL *receives;   /**< array of receive decls in body                                        */

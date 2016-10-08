@@ -36,10 +36,10 @@ PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachineRemote(
 	}
 	RpcEndExcept
 	
-	PRT_MACHINEINST_PRIV *context;
-	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
+	PRT_MACHINEINST* context;
+	context = (PRT_MACHINEINST*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
 	context->id = PrtDistDeserializeValue(retVal);
-	return (PRT_MACHINEINST*)context;
+	return context;
 }
 
 void s_PrtDistMkMachine(
@@ -50,7 +50,7 @@ void s_PrtDistMkMachine(
 )
 {
 	PRT_VALUE* deserial_params = PrtDistDeserializeValue(params);
-	PRT_MACHINEINST* newContext = PrtMkMachine(ContainerProcess, instanceOf, deserial_params);
+	PRT_MACHINEINST_PRIV* newContext = PrtMkMachinePrivate((PRT_PROCESS_PRIV *)ContainerProcess, instanceOf, deserial_params);
 	*retVal = PrtDistSerializeValue(newContext->id);
 }
 

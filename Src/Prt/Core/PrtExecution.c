@@ -248,8 +248,7 @@ PrtSendPrivate(
 _Inout_ PRT_MACHINEINST_PRIV	*sender,
 _Inout_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_VALUE					*event,
-_In_ PRT_VALUE					*payload,
-_In_ PRT_BOOLEAN				doTransfer
+_In_ PRT_VALUE					*payload
 )
 {
 	PRT_EVENTQUEUE *queue;
@@ -302,7 +301,7 @@ _In_ PRT_BOOLEAN				doTransfer
 	// Add event to the queue
 	//
 	queue->events[tail].trigger = PrtCloneValue(event);
-	queue->events[tail].payload = doTransfer ? payload : PrtCloneValue(payload);
+	queue->events[tail].payload = payload;
 	queue->events[tail].sender = PrtCloneValue(sender->id);
 	queue->size++;
 	queue->tailIndex = (tail + 1) % queue->eventsSize;
@@ -368,40 +367,18 @@ _In_ PRT_VALUE					*payload
 	}
 	PrtUnlockMutex(context->stateMachineLock);
 
-	PrtSendPrivate((PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, source), context, event, payload, PRT_TRUE);
+	PrtSendPrivate((PRT_MACHINEINST_PRIV*)PrtGetMachine(context->process, source), context, event, payload);
 }
 
-void
-PrtGoto(
-	_Inout_ PRT_MACHINEINST_PRIV		*context,
-	_In_ PRT_UINT32						destStateIndex,
-	_In_ PRT_VALUE						*payload
-)
+PRT_VALUE *MakeTupleFromArray(_In_ PRT_TYPE *tupleType, _In_ PRT_VALUE **elems)
 {
-	context->lastOperation = GotoStatement;
-	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
-	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
-	context->destStateIndex = destStateIndex;
-	context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
-	context->currentPayload = PrtCloneValue(payload);
-	PrtLog(PRT_STEP_GOTO, context, context, NULL, payload);
-}
-
-void
-PrtRaise(
-_Inout_ PRT_MACHINEINST_PRIV		*context,
-_In_ PRT_VALUE						*event,
-_In_ PRT_VALUE						*payload
-)
-{
-	PrtAssert(!PrtIsSpecialEvent(event), "Raised event must not be null");
-	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
-	context->lastOperation = RaiseStatement;
-	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
-	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
-	context->currentTrigger = PrtCloneValue(event);
-	context->currentPayload = PrtCloneValue(payload);
-	PrtLog(PRT_STEP_RAISE, context, context, event, payload);
+	PRT_UINT32 arity = tupleType->typeUnion.tuple->arity;
+	PRT_VALUE *payload = PrtMkDefaultValue(tupleType);
+	for (PRT_UINT32 i = 0; i < arity; i++)
+	{
+		PrtTupleSetEx(payload, i, elems[i], PRT_FALSE);
+	}
+	return payload;
 }
 
 FORCEINLINE
@@ -418,6 +395,131 @@ GetFunDeclFromIndex(_In_ PRT_MACHINEINST_PRIV	*context, _In_ PRT_UINT32 funIndex
 	{
 		return context->process->program->globalFuns[arrayIndex];
 	}
+}
+
+void
+PrtGoto(
+	_Inout_ PRT_MACHINEINST_PRIV		*context,
+	_In_ PRT_UINT32						destStateIndex,
+	...
+)
+{
+	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
+	context->lastOperation = GotoStatement;
+	context->destStateIndex = destStateIndex;
+	context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
+
+	PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[destStateIndex].entryFunIndex;
+	PRT_TYPE *payloadType = GetFunDeclFromIndex(context, entryFunIndex)->payloadType;
+	PRT_VALUE *payload;
+	if (payloadType == NULL)
+	{
+		payload = PrtMkNullValue();
+	}
+	else {
+		PRT_UINT32 numParameters = 1;
+		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		{
+			numParameters = payloadType->typeUnion.tuple->arity;
+		}
+		PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, destStateIndex);
+		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				break;
+			case PRT_FUN_PARAM_XFER:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		{
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
+	}
+	context->currentPayload = payload;
+	PrtLog(PRT_STEP_GOTO, context, context, NULL, payload);
+}
+
+void
+PrtRaise(
+	_Inout_ PRT_MACHINEINST_PRIV		*context,
+	_In_ PRT_VALUE						*event,
+	...
+)
+{
+	PrtAssert(!PrtIsSpecialEvent(event), "Raised event must not be null");
+	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
+	context->lastOperation = RaiseStatement;
+	context->currentTrigger = PrtCloneValue(event);
+
+	PRT_TYPE *payloadType = PrtGetPayloadType(context, event);
+	PRT_UINT32 numParameters = 1;
+	if (payloadType->typeKind == PRT_KIND_TUPLE)
+	{
+		numParameters = payloadType->typeUnion.tuple->arity;
+	}
+	PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+	va_list argp;
+	va_start(argp, event);
+	for (PRT_UINT32 i = 0; i < numParameters; i++)
+	{
+#if __PX4_NUTTX
+		PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+		PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+		PRT_VALUE *arg;
+		PRT_VALUE **argPtr;
+		switch (argStatus)
+		{
+		case PRT_FUN_PARAM_CLONE:
+			arg = va_arg(argp, PRT_VALUE *);
+			args[i] = PrtCloneValue(arg);
+			break;
+		case PRT_FUN_PARAM_SWAP:
+			PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+			break;
+		case PRT_FUN_PARAM_XFER:
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
+			break;
+		}
+	}
+	va_end(argp);
+	PRT_VALUE *payload = args[0];
+	if (payloadType->typeKind == PRT_KIND_TUPLE)
+	{
+		payload = MakeTupleFromArray(payloadType, args);
+	}
+	PrtFree(args);
+	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
+	context->currentPayload = payload;
+	PrtLog(PRT_STEP_RAISE, context, context, event, payload);
 }
 
 PRT_BOOLEAN
@@ -558,7 +660,7 @@ PrtPushNewEventHandlerFrame(
 	context->funStack.funs[length].rcase = NULL;
 }
 
-PRT_VALUE *
+void
 PrtPushNewFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_In_ PRT_UINT32					funIndex,
@@ -636,7 +738,6 @@ PrtPushNewFrame(
 	context->funStack.funs[length].refArgs = refArgs;
 	context->funStack.funs[length].returnTo = 0xFFFF;
 	context->funStack.funs[length].rcase = NULL;
-	return NULL;
 }
 
 void

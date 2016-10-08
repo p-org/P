@@ -35,7 +35,7 @@ domain PData
                                
     //// Expressions
     Name       ::= new (name: String, id: any Id).
-    New        ::= new (name: String, arg: any Expr + { NIL }, id: any Id).
+    New        ::= new (name: String, args: any Exprs + { NIL }, id: any Id).
     FunApp     ::= new (name: String, args: any Exprs + { NIL }, label: Natural, id: any Id).
     NulApp     ::= new (op: Integer + Boolean + { THIS, NONDET, FAIRNONDET, NULL, HALT }, id: any Id).
     UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr, id: any Id).
@@ -51,10 +51,10 @@ domain PData
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
-    NewStmt  ::= new (name: String, arg: any Expr + { NIL }, id: any Id).
-    Raise    ::= new (ev: any Expr, arg: any Expr + { NIL }, id: any Id).
-    Send     ::= new (dest: any Expr, ev: any Expr, arg: any Expr + { NIL }, id: any Id).
-    Announce  ::= new (ev: any Expr, arg: any Expr + { NIL }, id: any Id).
+    NewStmt  ::= new (name: String, args: any Exprs + { NIL }, id: any Id).
+    Raise    ::= new (ev: any Expr, args: any Exprs + { NIL }, id: any Id).
+    Send     ::= new (dest: any Expr, ev: any Expr, args: any Exprs + { NIL }, id: any Id).
+    Announce ::= new (ev: any Expr, args: any Exprs + { NIL }, id: any Id).
     FunStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, label: Natural, id: any Id).
     NulStmt  ::= new (op: { SKIP, POP }, id: any Id).
     BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, arg2: any Expr, id: any Id).
@@ -67,7 +67,7 @@ domain PData
 	Assert   ::= new (arg: any Expr, msg: String + { NIL }, id: any Id). 
 	Segments ::= new (formatArg: Natural, str: String, tl: any Segments + { NIL }).
 	Print    ::= new (msg: String, segs: any Segments + { NIL }, args: any Exprs + { NIL }, id: any Id).
-	Goto	 ::= new (dst: any QualifiedName, arg: any Expr + { NIL }, id: any Id).
+	Goto	 ::= new (dst: any QualifiedName, args: any Exprs + { NIL }, id: any Id).
 	
     Stmt ::= NewStmt + Raise + Send + Announce + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print + Goto. 
 
@@ -406,14 +406,14 @@ domain PStaticTyping extends PData
 	SubSE0(c, e) :- SubSE0(c, FunStmt(_, _, e, _, _)), e: Name.
 	SubSE0(c, es) :- SubSE0(c, Print(_, _, es, _)), es: Exprs.
 	SubSE0(c, e) :- SubSE0(c, Announce(e, _, _)).
-	SubSE0(c, e) :- SubSE0(c, Announce(_, e, _)), e: Expr.
+	SubSE0(c, e) :- SubSE0(c, Announce(_, e, _)), e: Exprs.
 	SubSE0(c, e1), SubSE0(c, e2) :- SubSE0(c, Send(e1, e2, _, _)).
-	SubSE0(c, e) :- SubSE0(c, Send(_, _, e, _)), e: Expr.
+	SubSE0(c, e) :- SubSE0(c, Send(_, _, e, _)), e: Exprs.
 	SubSE0(c, e) :- SubSE0(c, Raise(e, _, _)).
-	SubSE0(c, e) :- SubSE0(c, Raise(_, e, _)), e: Expr.
-	SubSE0(c, e) :- SubSE0(c, Goto(_, e, _)), e: Expr.
-	SubSE0(c, e) :- SubSE0(c, NewStmt(_, e, _)), e: Expr.
-	SubSE0(c, e) :- SubSE0(c, New(_, e, _)), e: Expr.
+	SubSE0(c, e) :- SubSE0(c, Raise(_, e, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, Goto(_, e, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, NewStmt(_, e, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, New(_, e, _)), e: Exprs.
 	SubSE0(c, es) :- SubSE0(c, FunApp(_, es, _, _)), es: Exprs.
 	SubSE0(c, e) :- SubSE0(c, UnApp(_, e, _)).
 	SubSE0(c, e1), SubSE0(c, e2) :- SubSE0(c, BinApp(_, e1, e2, _)).
@@ -676,10 +676,10 @@ domain PStaticTyping extends PData
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n', _), _, _), UnavailableBefore(c, s, n), n' != n.
 
 	NeededBefore ::= (TypingContext, Stmt, ExprsExt + { NIL }).
-	NeededBefore(c, s, e) :- SubSE(c, s), s: NewStmt, e = s.arg.
-	NeededBefore(c, s, e) :- SubSE(c, s), s: Raise, e = s.arg.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: NewStmt, e = s.args.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Raise, e = s.args.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: Send, e = s.ev.
-	NeededBefore(c, s, e) :- SubSE(c, s), s: Send, e = s.arg.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Send, e = s.args.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: FunStmt, e = s.args.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: BinStmt, s.op != ASSIGN, e = s.arg1.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: BinStmt, toSymbol(s.arg1) != #Name, e = s.arg1.
@@ -689,8 +689,8 @@ domain PStaticTyping extends PData
 	NeededBefore(c, s, e) :- SubSE(c, s), s: Ite, e = s.cond.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: Assert, e = s.arg.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: Print, e = s.args.
-	NeededBefore(c, s, e) :- SubSE(c, s), s: Goto, e = s.arg.
-	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': New, e = e'.arg.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Goto, e = s.args.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': New, e = e'.args.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': FunApp, e = e'.args.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': UnApp, e = e'.arg1.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': BinApp, e = e'.arg1.
@@ -920,13 +920,13 @@ domain PStaticTyping extends PData
 	//// The type of the first sub-expression in a Typeable with at least one sub-expression.
     TypeOfArg1 ::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }).
 
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = New(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = New(_, e1, _), ExprsToPayloadType(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunApp(_, e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnApp(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Cast(e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Tuple(e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedTuple(e1, _), TypeOf(c, e1, t1).
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1, _), ExprsToPayloadType(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunStmt(_, e1, _, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Assert(e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Return(e1, _), TypeOf(c, e1, t1).
@@ -938,7 +938,7 @@ domain PStaticTyping extends PData
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Exprs(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedExprs(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Raise(e1, _, _), TypeOf(c, e1, t1).
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Goto(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Goto(_, e1, _), ExprsToPayloadType(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Announce(e1, _, _), TypeOf(c, e1, t1).
 
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _, _), TypeOf(c, e1, t1).
@@ -953,15 +953,15 @@ domain PStaticTyping extends PData
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinApp(_, _, e2, _), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Exprs(_, _, e2), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = NamedExprs(_, _, e2), TypeOf(c, e2, t2).
-	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Raise(_, e2, _), TypeOf(c, e2, t2).
-	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Announce(_, e2, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Raise(_, e2, _), ExprsToPayloadType(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Announce(_, e2, _), ExprsToPayloadType(c, e2, t2).
 
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Send(_, e2, _, _), TypeOf(c, e2, t2).
 
 	//// The type of the first three sub-expression in a Typeable with at least three sub-expression.
     TypeOfArg3::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }, type2: TypeExpr + { ERROR, NIL }, type3: TypeExpr + { ERROR, NIL }).
 
-	TypeOfArg3(c, e, t1, t2, t3) :- TypeOfArg2(c, e, t1, t2), e = Send(_, _, e3, _), TypeOf(c, e3, t3).
+	TypeOfArg3(c, e, t1, t2, t3) :- TypeOfArg2(c, e, t1, t2), e = Send(_, _, e3, _), ExprsToPayloadType(c, e3, t3).
 
 	//// Determines the payload type of the event mentioned in a communication statement.
 	//// If the event expression is not an constant, then this payload type is ANY.
@@ -978,6 +978,11 @@ domain PStaticTyping extends PData
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
 	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
 	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Announce(ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
+
+	ExprsToPayloadType ::= (TypingContext, Exprs + { NIL }, TypeExpr).
+	ExprsToPayloadType(c, NIL, BaseType(NULL)) :- c is TypingContext.
+	ExprsToPayloadType(c, e, t') :- TypeOf(c, e, t), e: Exprs, t = TupType(t', NIL).
+	ExprsToPayloadType(c, e, t)  :- TypeOf(c, e, t), e: Exprs, t: TupType, t.tl != NIL.
 
     /*************************************************************/
     /*                      Field helpers                        */
@@ -1244,7 +1249,6 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" "']
     PurityError(c, e') :- 
-       SubSE0(c, e), e = New(_, e', _),           ImpureFunApp(c, e');
        SubSE0(c, e), e = UnApp(_, e', _),         ImpureFunApp(c, e');
        SubSE0(c, e), e = BinApp(_, e', _, _),     ImpureFunApp(c, e');
        SubSE0(c, e), e = BinApp(_, _, e', _),     ImpureFunApp(c, e');    
@@ -1252,15 +1256,10 @@ domain PStaticTyping extends PData
        SubSE0(c, e), e = Cast(e', _, _),          ImpureFunApp(c, e');    
        SubSE0(c, e), e = Exprs(_, e', _),         ImpureFunApp(c, e');              
        SubSE0(c, e), e = NamedExprs(_, e', _),    ImpureFunApp(c, e');
-       SubSE0(c, e), e = NewStmt(_, e', _),       ImpureFunApp(c, e');
-	   SubSE0(c, e), e = Goto(_, e', _),          ImpureFunApp(c, e');
        SubSE0(c, e), e = Raise(e', _, _),         ImpureFunApp(c, e');
-       SubSE0(c, e), e = Raise(_, e', _),         ImpureFunApp(c, e');        
        SubSE0(c, e), e = Send(e', _, _, _),       ImpureFunApp(c, e');
        SubSE0(c, e), e = Send(_, e', _, _),       ImpureFunApp(c, e');
-       SubSE0(c, e), e = Send(_, _, e', _),       ImpureFunApp(c, e');    
        SubSE0(c, e), e = Announce(e', _, _),      ImpureFunApp(c, e');
-       SubSE0(c, e), e = Announce(_, e', _),      ImpureFunApp(c, e');    
        SubSE0(c, e), e = Assert(e', _, _),        ImpureFunApp(c, e');
        SubSE0(c, e), e = BinStmt(_, e', e'', _),  ImpureFunApp(c, e''), toSymbol(e') != #Name;
 	   SubSE0(c, e), e = While(e', _, _),         ImpureFunApp(c, e');
@@ -1269,67 +1268,49 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" or "return new M(...)" "']
     PurityError(c, e') :- 
-       SubSE0(c, e), e = New(_, e', _),           e' : New;
        SubSE0(c, e), e = UnApp(_, e', _),         e' : New;
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' : New;
        SubSE0(c, e), e = BinApp(_, _, e', _),     e' : New;    
        SubSE0(c, e), e = Field(e', _, _),         e' : New;
        SubSE0(c, e), e = Cast(e', _, _),          e' : New;    
        SubSE0(c, e), e = Exprs(_, e', _),         e' : New;              
-       SubSE0(c, e), e = NamedExprs(_, e', _), e' : New;
-       SubSE0(c, e), e = NewStmt(_, e', _),       e' : New;
-       SubSE0(c, e), e = Goto(_, e', _),         e' : New;
+       SubSE0(c, e), e = NamedExprs(_, e', _),    e' : New;
 	   SubSE0(c, e), e = Raise(e', _, _),         e' : New;
-       SubSE0(c, e), e = Raise(_, e', _),         e' : New;        
        SubSE0(c, e), e = Send(e', _, _, _),       e' : New;
        SubSE0(c, e), e = Send(_, e', _, _),       e' : New;
-       SubSE0(c, e), e = Send(_, _, e', _),       e' : New;    
-       SubSE0(c, e), e = Announce(e', _, _),       e' : New;
-       SubSE0(c, e), e = Announce(_, e', _),       e' : New;    
+       SubSE0(c, e), e = Announce(e', _, _),      e' : New;
        SubSE0(c, e), e = Assert(e', _, _),        e' : New;
        SubSE0(c, e), e = BinStmt(_, e', e'', _),  e'' : New, toSymbol(e') != #Name.
 
     [ rule_Classes = '"error, msg: $ can only be used like "x = $" or "if ($)" or "while ($)" or "return $;" "']
     PurityError(c, e') :- 
-       SubSE0(c, e), e = New(_, e', _),           e' = NulApp(NONDET, _);
        SubSE0(c, e), e = UnApp(_, e', _),         e' = NulApp(NONDET, _);
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(NONDET, _);
        SubSE0(c, e), e = BinApp(_, _, e', _),     e' = NulApp(NONDET, _);    
        SubSE0(c, e), e = Field(e', _, _),         e' = NulApp(NONDET, _);
        SubSE0(c, e), e = Cast(e', _, _),          e' = NulApp(NONDET, _);    
        SubSE0(c, e), e = Exprs(_, e', _),         e' = NulApp(NONDET, _);              
-       SubSE0(c, e), e = NamedExprs(_, e', _), e' = NulApp(NONDET, _);
-       SubSE0(c, e), e = NewStmt(_, e', _),       e' = NulApp(NONDET, _);
-       SubSE0(c, e), e = Goto(_, e', _),         e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = NamedExprs(_, e', _),    e' = NulApp(NONDET, _);
        SubSE0(c, e), e = Raise(e', _, _),         e' = NulApp(NONDET, _);
-       SubSE0(c, e), e = Raise(_, e', _),         e' = NulApp(NONDET, _);        
        SubSE0(c, e), e = Send(e', _, _, _),       e' = NulApp(NONDET, _);
        SubSE0(c, e), e = Send(_, e', _, _),       e' = NulApp(NONDET, _);
-       SubSE0(c, e), e = Send(_, _, e', _),       e' = NulApp(NONDET, _);    
-       SubSE0(c, e), e = Announce(e', _, _),       e' = NulApp(NONDET, _);
-       SubSE0(c, e), e = Announce(_, e', _),       e' = NulApp(NONDET, _);    
+       SubSE0(c, e), e = Announce(e', _, _),      e' = NulApp(NONDET, _);
        SubSE0(c, e), e = Assert(e', _, _),        e' = NulApp(NONDET, _);
        SubSE0(c, e), e = BinStmt(_, e', e'', _),  e'' = NulApp(NONDET, _), toSymbol(e') != #Name.
 
     [ rule_Classes = '"error, msg: $$ can only be used like "x = $$" or "if ($$)" or "while ($$)" or "return $$;" "']
     PurityError(c, e') :- 
-       SubSE0(c, e), e = New(_, e', _),           e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = UnApp(_, e', _),         e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = BinApp(_, _, e', _),     e' = NulApp(FAIRNONDET, _);    
        SubSE0(c, e), e = Field(e', _, _),         e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Cast(e', _, _),          e' = NulApp(FAIRNONDET, _);    
        SubSE0(c, e), e = Exprs(_, e', _),         e' = NulApp(FAIRNONDET, _);              
-       SubSE0(c, e), e = NamedExprs(_, e', _), e' = NulApp(FAIRNONDET, _);
-       SubSE0(c, e), e = NewStmt(_, e', _),       e' = NulApp(FAIRNONDET, _);
-       SubSE0(c, e), e = Goto(_, e', _),         e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = NamedExprs(_, e', _),    e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Raise(e', _, _),         e' = NulApp(FAIRNONDET, _);
-       SubSE0(c, e), e = Raise(_, e', _),         e' = NulApp(FAIRNONDET, _);        
        SubSE0(c, e), e = Send(e', _, _, _),       e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Send(_, e', _, _),       e' = NulApp(FAIRNONDET, _);
-       SubSE0(c, e), e = Send(_, _, e', _),       e' = NulApp(FAIRNONDET, _);    
-       SubSE0(c, e), e = Announce(e', _, _),       e' = NulApp(FAIRNONDET, _);
-       SubSE0(c, e), e = Announce(_, e', _),       e' = NulApp(FAIRNONDET, _);    
+       SubSE0(c, e), e = Announce(e', _, _),      e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Assert(e', _, _),        e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = BinStmt(_, e', e'', _),  e'' = NulApp(FAIRNONDET, _), toSymbol(e') != #Name.
 	                                       
@@ -1568,8 +1549,8 @@ domain PStaticTyping extends PData
 	ConstructorType(m, s, ft) :- s is StateDecl, m = s.owner, s.name = m.start, PayloadVar(s, _, _, ft).
 
 	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVar(_, _, _, ft);
-						   SubSE(c, n), n: New, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVar(_, _, _, ft);
-						   SubSE(c, n), n: NewStmt, TypeOf(c, n.arg, et), et: TypeExpr, PayloadVar(_, _, _, ft).
+						   SubSE(c, n), n: New, TypeOf(c, n.args, et), et: TypeExpr, PayloadVar(_, _, _, ft);
+						   SubSE(c, n), n: NewStmt, TypeOf(c, n.args, et), et: TypeExpr, PayloadVar(_, _, _, ft).
 
     PayloadError ::= (TransDecl + DoDecl + StateDecl + Cases + New + NewStmt).
 

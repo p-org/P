@@ -184,27 +184,31 @@ extern "C"{
 		_In_ PRT_BOOLEAN cloneValue
 		);
 
+	PRT_VALUE *MakeTupleFromArray(
+		_In_ PRT_TYPE *tupleType, 
+		_In_ PRT_VALUE **elems
+		);
+	
 	void
 		PrtSendPrivate(
 		_Inout_ PRT_MACHINEINST_PRIV    *sender,
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_VALUE					*event,
-		_In_ PRT_VALUE					*payload,
-		_In_ PRT_BOOLEAN				doTransfer
+		_In_ PRT_VALUE					*payload
 		);
 
 	PRT_API void PRT_CALL_CONV
 		PrtGoto(
 			_Inout_ PRT_MACHINEINST_PRIV		*context,
 			_In_ PRT_UINT32						destStateIndex,
-			_In_ PRT_VALUE						*payload
+			...
 		);
 	
 	PRT_API void PRT_CALL_CONV
 		PrtRaise(
 		_Inout_ PRT_MACHINEINST_PRIV		*context,
 		_In_ PRT_VALUE					*event,
-		_In_ PRT_VALUE					*payload
+		...
 		);
 
 	void
@@ -487,7 +491,7 @@ extern "C"{
 		_In_ PRT_VALUE					**locals
 		);
 
-	PRT_VALUE *
+	void
 		PrtPushNewFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_UINT32					funIndex,

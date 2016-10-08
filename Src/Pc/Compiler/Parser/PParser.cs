@@ -501,28 +501,16 @@
             var sendStmt = P_Root.MkSend();
             sendStmt.Span = span;
             sendStmt.id = (P_Root.IArgType_Send__3) MkIntegerId(span);
+            sendStmt.ev = (P_Root.IArgType_Send__1)valueExprStack.Pop();
+            sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
             if (hasArgs)
             {
-                var arg = exprsStack.Pop();
-                if (arg.Symbol == TheDefaultExprs.Symbol)
-                {
-                    sendStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
-                    sendStmt.arg.Span = arg.Span;
-                }
-                else
-                {
-                    sendStmt.arg = (P_Root.IArgType_Send__2)arg;
-                }
-                sendStmt.ev = (P_Root.IArgType_Send__1)valueExprStack.Pop();
-                sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
+                sendStmt.args = (P_Root.Exprs)exprsStack.Pop();
             }
             else
             {
-                sendStmt.ev = (P_Root.IArgType_Send__1)valueExprStack.Pop();
-                sendStmt.dest = (P_Root.IArgType_Send__0)valueExprStack.Pop();
-                sendStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+                sendStmt.args = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-
             stmtStack.Push(sendStmt);
         }
 
@@ -537,20 +525,11 @@
             gotoStmt.id = (P_Root.IArgType_Goto__2) MkIntegerId(span);
             if (hasArgs)
             {
-                var arg = exprsStack.Pop();
-                if (arg.Symbol == TheDefaultExprs.Symbol)
-                {
-                    gotoStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
-                    gotoStmt.arg.Span = arg.Span;
-                }
-                else
-                {
-                    gotoStmt.arg = (P_Root.IArgType_Goto__1)arg;
-                }
+                gotoStmt.args = (P_Root.Exprs)exprsStack.Pop();
             }
             else
             {
-                gotoStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+                gotoStmt.args = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
             stmtStack.Push(gotoStmt);
             crntGotoTargetName = null;
@@ -564,25 +543,14 @@
             var announceStmt = P_Root.MkAnnounce();
             announceStmt.Span = span;
             announceStmt.id = (P_Root.IArgType_Announce__2)MkIntegerId(span);
+            announceStmt.ev = (P_Root.IArgType_Announce__0)valueExprStack.Pop();
             if (hasArgs)
             {
-                var arg = exprsStack.Pop();
-                if (arg.Symbol == TheDefaultExprs.Symbol)
-                {
-                    announceStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
-                    announceStmt.arg.Span = arg.Span;
-                }
-                else
-                {
-                    announceStmt.arg = (P_Root.IArgType_Announce__1)arg;
-                }
-
-                announceStmt.ev = (P_Root.IArgType_Announce__0)valueExprStack.Pop();
+                announceStmt.args = (P_Root.Exprs)exprsStack.Pop();
             }
             else
             {
-                announceStmt.ev = (P_Root.IArgType_Announce__0)valueExprStack.Pop();
-                announceStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+                announceStmt.args = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
             stmtStack.Push(announceStmt);
         }
@@ -604,27 +572,15 @@
             var raiseStmt = P_Root.MkRaise();
             raiseStmt.Span = span;
             raiseStmt.id = (P_Root.IArgType_Raise__2)MkIntegerId(span);
+            raiseStmt.ev = (P_Root.IArgType_Raise__0)valueExprStack.Pop();
             if (hasArgs)
             {
-                var arg = exprsStack.Pop();
-                if (arg.Symbol == TheDefaultExprs.Symbol)
-                {
-                    raiseStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
-                    raiseStmt.arg.Span = arg.Span;
-                }
-                else
-                {
-                    raiseStmt.arg = (P_Root.IArgType_Raise__1)arg;
-                }
-
-                raiseStmt.ev = (P_Root.IArgType_Raise__0)valueExprStack.Pop();
+                raiseStmt.args = (P_Root.Exprs)exprsStack.Pop();
             }
             else
             {
-                raiseStmt.ev = (P_Root.IArgType_Raise__0)valueExprStack.Pop();
-                raiseStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+                raiseStmt.args = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
-
             stmtStack.Push(raiseStmt);
         }
 
@@ -637,20 +593,11 @@
             newStmt.id = (P_Root.IArgType_NewStmt__2)MkIntegerId(span);
             if (hasArgs)
             {
-                var arg = exprsStack.Pop();
-                if (arg.Symbol == TheDefaultExprs.Symbol)
-                {
-                    newStmt.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
-                    newStmt.arg.Span = arg.Span;
-                }
-                else
-                {
-                    newStmt.arg = (P_Root.IArgType_NewStmt__1)arg;
-                }
+                newStmt.args = (P_Root.Exprs)exprsStack.Pop();
             }
             else
             {
-                newStmt.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+                newStmt.args = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
             stmtStack.Push(newStmt);
         }
@@ -664,20 +611,11 @@
             newExpr.id = (P_Root.IArgType_New__2)MkId(span);
             if (hasArgs)
             {
-                var arg = exprsStack.Pop();
-                if (arg.Symbol == TheDefaultExprs.Symbol)
-                {
-                    newExpr.arg = P_Root.MkTuple((P_Root.IArgType_Tuple__0)arg);
-                    newExpr.arg.Span = arg.Span;
-                }
-                else
-                {
-                    newExpr.arg = (P_Root.IArgType_New__1)arg;
-                }
+                newExpr.args = (P_Root.Exprs)exprsStack.Pop();
             }
             else
             {
-                newExpr.arg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+                newExpr.args = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             }
             valueExprStack.Push(newExpr);
         }

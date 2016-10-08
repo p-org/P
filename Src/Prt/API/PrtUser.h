@@ -47,7 +47,7 @@ extern "C"{
 	*/
 	PRT_API PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *sender, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload);
 
-	PRT_VALUE* PrtFormatPrintf(_In_ PRT_CSTRING msg, ...);
+	PRT_API void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...);
 #ifdef __cplusplus
 }
 #endif

@@ -193,10 +193,10 @@ extern "C"{
     * @see PrtSend
     * @see PRT_MACHINEINST
     */
-    PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachine(
-        _Inout_ PRT_PROCESS *process,
-        _In_ PRT_UINT32 instanceOf,
-        _In_ PRT_VALUE *payload);
+	PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachine(
+		_Inout_ PRT_PROCESS *process,
+		_In_ PRT_UINT32 instanceOf,
+		...);
 
     /** Gets machine instance corresponding to id in process.
     * @param[in] process    The process containing the machine id.
@@ -215,12 +215,12 @@ extern "C"{
     * @param[in] payload The payload to send with this message.
     * @param[in] doTransfer The callee is reponsible for freeing the payload iff doTransfer is true.
     */
-    PRT_API void PRT_CALL_CONV PrtSend(
+	PRT_API void PRT_CALL_CONV PrtSend(
 		_Inout_ PRT_MACHINEINST *sender,
-        _Inout_ PRT_MACHINEINST *receiver,
-        _In_ PRT_VALUE *evt,
-        _In_ PRT_VALUE *payload,
-        _In_ PRT_BOOLEAN doTransfer);
+		_Inout_ PRT_MACHINEINST *receiver,
+		_In_ PRT_VALUE *evt,
+		...
+	);
 
 #ifdef __cplusplus
 }

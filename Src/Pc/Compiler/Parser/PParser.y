@@ -414,18 +414,18 @@ Stmt
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt %prec ELSE          { PushIte(true, ToSpan(@1));                               }					
 	| IF LPAREN Exp RPAREN Stmt		                          { PushIte(false, ToSpan(@1));                              }
 	| NEW ID LPAREN RPAREN SEMICOLON						  { PushNewStmt($2.str, ToSpan(@2), false, ToSpan(@1)); }
-	| NEW ID LPAREN SingleExprArgList RPAREN SEMICOLON 		  { PushNewStmt($2.str, ToSpan(@2), true, ToSpan(@1)); }
+	| NEW ID LPAREN ExprArgList RPAREN SEMICOLON 		      { PushNewStmt($2.str, ToSpan(@2), true, ToSpan(@1)); }
 	| ID LPAREN RPAREN SEMICOLON                              { PushFunStmt($1.str, false, ToSpan(@1));                  }
 	| ID LPAREN ExprArgList RPAREN SEMICOLON                  { PushFunStmt($1.str, true,  ToSpan(@1));                  }						
 	| RAISE Exp SEMICOLON                                     { PushRaise(false, ToSpan(@1));                            }
-	| RAISE Exp COMMA SingleExprArgList SEMICOLON             { PushRaise(true,  ToSpan(@1));                            }
+	| RAISE Exp COMMA ExprArgList SEMICOLON                   { PushRaise(true,  ToSpan(@1));                            }
 	| SEND Exp COMMA Exp SEMICOLON                            { PushSend(false, ToSpan(@1)); }
-	| SEND Exp COMMA Exp COMMA SingleExprArgList SEMICOLON    { PushSend(true,  ToSpan(@1)); }
-	| ANNOUNCE Exp SEMICOLON								   { PushAnnounce(false, $2.str, ToSpan(@1));      }
-	| ANNOUNCE Exp COMMA SingleExprArgList SEMICOLON           { PushAnnounce(true, $2.str, ToSpan(@1));       }
-	| ReceiveStmt LCBRACE CaseList RCBRACE						  { PushReceive(ToSpan(@1)); }
-	| GOTO GotoTarget SEMICOLON							  { PushGoto(false, ToSpan(@1)); }
-	| GOTO GotoTarget COMMA SingleExprArgList SEMICOLON	  { PushGoto(true, ToSpan(@1)); }
+	| SEND Exp COMMA Exp COMMA ExprArgList SEMICOLON          { PushSend(true,  ToSpan(@1)); }
+	| ANNOUNCE Exp SEMICOLON								  { PushAnnounce(false, $2.str, ToSpan(@1));      }
+	| ANNOUNCE Exp COMMA ExprArgList SEMICOLON                { PushAnnounce(true, $2.str, ToSpan(@1));       }
+	| ReceiveStmt LCBRACE CaseList RCBRACE					  { PushReceive(ToSpan(@1)); }
+	| GOTO GotoTarget SEMICOLON							      { PushGoto(false, ToSpan(@1)); }
+	| GOTO GotoTarget COMMA ExprArgList SEMICOLON	          { PushGoto(true, ToSpan(@1)); }
 	;
 
 ReceiveStmt
@@ -537,8 +537,8 @@ Exp_0
     | VALUES  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.VALUES, ToSpan(@1));      }
     | SIZEOF  LPAREN Exp RPAREN              { PushUnExpr(P_Root.UserCnstKind.SIZEOF, ToSpan(@1));      }
     | DEFAULT LPAREN Type RPAREN             { PushDefaultExpr(ToSpan(@1));                             }
-	| NEW ID LPAREN RPAREN								{ PushNewExpr($2.str, ToSpan(@2), false, ToSpan(@1)); }
-	| NEW ID LPAREN SingleExprArgList RPAREN			{ PushNewExpr($2.str, ToSpan(@2), true, ToSpan(@1)); }
+	| NEW ID LPAREN RPAREN					 { PushNewExpr($2.str, ToSpan(@2), false, ToSpan(@1)); }
+	| NEW ID LPAREN ExprArgList RPAREN		 { PushNewExpr($2.str, ToSpan(@2), true, ToSpan(@1)); }
 	| LPAREN Exp COMMA             RPAREN    { PushTupleExpr(true);                                     }
 	| LPAREN Exp COMMA ExprArgList RPAREN    { PushTupleExpr(false);                                    }
 	| ID LPAREN RPAREN                       { PushFunExpr($1.str, false, ToSpan(@1));                  }
@@ -546,12 +546,6 @@ Exp_0
 	| LPAREN ID ASSIGN Exp COMMA RPAREN      { PushNmdTupleExpr($2.str, ToSpan(@2), true);              }
 	| LPAREN ID ASSIGN Exp COMMA 
 	  NmdExprArgList       RPAREN            { PushNmdTupleExpr($2.str, ToSpan(@2), false);             }
-	;
-
-// An arg list that can be a single expr, or an exprs
-SingleExprArgList
-	: Exp										  { MoveValToExprs(false); }
-	| Exp QualifierOrNone COMMA SingleExprArgList { PushExprs();           }
 	;
 
 // An arg list that is always packed into an exprs.

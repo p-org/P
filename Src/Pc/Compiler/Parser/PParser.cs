@@ -589,8 +589,9 @@
             Contract.Assert(!hasArgs || exprsStack.Count > 0);
             var newStmt = P_Root.MkNewStmt();
             newStmt.name = MkString(name, nameSpan);
+            newStmt.aout = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             newStmt.Span = span;
-            newStmt.id = (P_Root.IArgType_NewStmt__2)MkIntegerId(span);
+            newStmt.id = (P_Root.IArgType_NewStmt__3)MkIntegerId(span);
             if (hasArgs)
             {
                 newStmt.args = (P_Root.Exprs)exprsStack.Pop();
@@ -905,7 +906,7 @@
         {
             Contract.Assert(valueExprStack.Count > 0);
             var assertStmt = P_Root.MkAssert();
-            assertStmt.arg = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
+            assertStmt.cond = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
             assertStmt.msg = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             assertStmt.Span = span;
             assertStmt.id = (P_Root.IArgType_Assert__2)MkIntegerId(span);
@@ -916,7 +917,7 @@
         {
             Contract.Assert(valueExprStack.Count > 0);
             var assertStmt = P_Root.MkAssert();
-            assertStmt.arg = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
+            assertStmt.cond = (P_Root.IArgType_Assert__0)valueExprStack.Pop();
             assertStmt.msg = MkString(msg, msgSpan);
             assertStmt.Span = span;
             assertStmt.id = (P_Root.IArgType_Assert__2)MkIntegerId(span);

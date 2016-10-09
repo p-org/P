@@ -1496,7 +1496,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 														    out.IntLit(label, DEC, U)), 
 										     out.Seq(info, Goto(strJoin("L", toString(label)))),
 										     NIL)).
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Goto(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _, _), cs = NIL.
@@ -1532,26 +1532,31 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 						   cs = out.Seq(receive, Seq(Seq(info, case), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(Seq(info, resetRcase), Seq(info, resetReturnTo)))))).
 	
 	//// New Machine
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, NIL, x),
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, NIL, _, x), ret = Ident("p_tmp_funstmt_ret"),
 						   LinkMap(iname, mname), MachineName(machineDecl, machineName), machineDecl.name = mname,
-						   newCall = out.FunApp(Ident("PrtMkMachine"),
-										Args(BinApp(PFLD, Ident("context"), Ident("process")),
-										Args(Ident(machineName), NIL))),
+						   newCall = out.BinApp(ASN, ret, 
+													 FunApp(Ident("PrtMkMachine"),
+															Args(BinApp(PFLD, Ident("context"), Ident("process")),
+															Args(Ident(machineName), NIL)))),
 						   ContextLineInfo(c, s, info),
-						   cs = out.Seq(info, newCall).
+						   FunStmtCleanup(c, s, cleanup),
+						   cs = out.Seq(Seq(info, newCall), Seq(info, cleanup)).
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, pay, x), pay != NIL,
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, pay, _, x), pay != NIL, ret = Ident("p_tmp_funstmt_ret"),
 						   LinkMap(iname, mname), MachineName(machineDecl, machineName), machineDecl.name = mname,
-						   newCall = out.FunApp(Ident("PrtMkMachine"),
-										Args(BinApp(PFLD, Ident("context"), Ident("process")),
-										Args(Ident(machineName),
-											 lstReverse(#Args, ecs')))),
+						   newCall = out.BinApp(ASN, ret,
+													 FunApp(Ident("PrtMkMachine"),
+															Args(BinApp(PFLD, Ident("context"), Ident("process")),
+															Args(Ident(machineName),
+																 lstReverse(#Args, ecs'))))),
 						   RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1,
 						   TransformStmtArgs(c, s, 0, NIL, NIL, ecs', NIL),
 						   ContextLineInfo(c, s, info),
-						   cs = out.Seq(info, FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
+						   FunStmtCleanup(c, s, cleanup),
+						   cs = out.Seq(Seq(info, FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
 						                             Args(FunApp(Ident("P_SEQ"), Args(newCall, Args(Ident("NULL"), NIL))), Args(Ident("PRT_FALSE"), 
-													 tail)))).
+													 tail)))), 
+										Seq(info, cleanup)).
 
    	//// Goto
 	StmtTrans(c, s, cs) :- SubSE(c, s), 
@@ -1730,9 +1735,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
     //// Fun
 	FunStmtCleanup ::= (cntxt: TypingContext, stmt: in.Stmt, trans: out.Stmt).
-	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s = FunStmt(_, _, NIL, _, x), ret = Ident("p_tmp_funstmt_ret"), ContextLineInfo(c, s, info),
+	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s: in.Stmt, s.aout = NIL, ret = Ident("p_tmp_funstmt_ret"), ContextLineInfo(c, s, info),
 								cs = out.ITE(BinApp(NEQ, ret, Ident("NULL")), Seq(info, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))), NIL).
-	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s = FunStmt(_, _, aout, _, _), aout: in.Name, ret = Ident("p_tmp_funstmt_ret"),
+	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s: in.Stmt, aout = s.aout, aout: in.Name, ret = Ident("p_tmp_funstmt_ret"),
 								varDecl is VarDecl(aout.name, c.owner, _, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, aout.name, _),
 								cs =  out.FunApp(Ident("PrtSetGlobalVarEx"),
 						                     Args(Ident("p_tmp_mach_priv"),
@@ -1740,7 +1745,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											 Args(ret,
 											 Args(Ident("PRT_FALSE"),
 											      NIL))))).
-	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s = FunStmt(_, _, aout, _, _), aout: in.Name, ret = Ident("p_tmp_funstmt_ret"),
+	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s: in.Stmt, aout = s.aout, aout: in.Name, ret = Ident("p_tmp_funstmt_ret"),
 								TypeOfLocalVar(c, aout.name, _), LocalVars(c, locals), IndexOf(locals, aout.name, i, _),
 								cs = out.FunApp(Ident("PrtSetLocalVarEx"),
 						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
@@ -1893,8 +1898,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	RhsEvalOrder(s, i, e, k) :- RhsCntxt(s, i, e), dn is ExprDepNum(j, e), e : in.Expr, 
 	                            k = toOrdinal(dn, 0, { dn' | RhsCntxt(s, i, e'), dn' is ExprDepNum(l, e'), e' : in.Expr }). 
 
-	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e, _), e : in.Exprs.
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e, _), e : in.Exprs, 
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e, _, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e, _, _), e : in.Exprs, 
 							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
 	StmtExprSize(s, 0)   :- SubSE(_, s), s : in.NewStmt, s.args = NIL.
 	

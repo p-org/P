@@ -1,6 +1,8 @@
 //Functions for interacting with the timer machine
 fun CreateTimer(owner : machine): machine {
-	return new Timer(owner);
+	var m: machine;
+	m = new Timer(owner);
+	return m;
 }
 
 model fun StartTimer(timer : machine, time: int) {

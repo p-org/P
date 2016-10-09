@@ -51,7 +51,7 @@ domain PData
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
-    NewStmt  ::= new (name: String, args: any Exprs + { NIL }, id: any Id).
+    NewStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, id: any Id).
     Raise    ::= new (ev: any Expr, args: any Exprs + { NIL }, id: any Id).
     Send     ::= new (dest: any Expr, ev: any Expr, args: any Exprs + { NIL }, id: any Id).
     Announce ::= new (ev: any Expr, args: any Exprs + { NIL }, id: any Id).
@@ -64,7 +64,7 @@ domain PData
     Seq      ::= new (s1: any Stmt, s2: any Stmt, id: any Id).
 	Cases	 ::= new (trig: String + { NULL, HALT }, action: any AnonFunDecl, cases: any Cases + { NIL }).
 	Receive  ::= new (cases: any Cases, label: Natural, id: any Id).
-	Assert   ::= new (arg: any Expr, msg: String + { NIL }, id: any Id). 
+	Assert   ::= new (cond: any Expr, msg: String + { NIL }, id: any Id). 
 	Segments ::= new (formatArg: Natural, str: String, tl: any Segments + { NIL }).
 	Print    ::= new (msg: String, segs: any Segments + { NIL }, args: any Exprs + { NIL }, id: any Id).
 	Goto	 ::= new (dst: any QualifiedName, args: any Exprs + { NIL }, id: any Id).
@@ -412,7 +412,8 @@ domain PStaticTyping extends PData
 	SubSE0(c, e) :- SubSE0(c, Raise(e, _, _)).
 	SubSE0(c, e) :- SubSE0(c, Raise(_, e, _)), e: Exprs.
 	SubSE0(c, e) :- SubSE0(c, Goto(_, e, _)), e: Exprs.
-	SubSE0(c, e) :- SubSE0(c, NewStmt(_, e, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, NewStmt(_, e, _, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, NewStmt(_, _, e, _)), e: Name.
 	SubSE0(c, e) :- SubSE0(c, New(_, e, _)), e: Exprs.
 	SubSE0(c, es) :- SubSE0(c, FunApp(_, es, _, _)), es: Exprs.
 	SubSE0(c, e) :- SubSE0(c, UnApp(_, e, _)).
@@ -441,9 +442,10 @@ domain PStaticTyping extends PData
 	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = Seq(s1, s2, id), SubSETrans(c, s1, s1'), SubSETrans(c, s2, s2'), stmt' = Seq(s1', s2', id).
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(op, _, _, _), op != ASSIGN.
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, _, _), toSymbol(e1) != #Name.
-	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, _, e2, _), toSymbol(e2) != #FunApp.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, _, e2, _), toSymbol(e2) != #FunApp, toSymbol(e2) != #New.
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, e2, _), e1: Name, e2: FunApp, no ImpureFunApp(c, e2).
 	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, e2, id), e1: Name, e2 = FunApp(name, args, label, _), ImpureFunApp(c, e2), stmt' = FunStmt(name, args, e1, label, id).
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, e2, id), e1: Name, e2 = New(name, args, _), stmt' = NewStmt(name, args, e1, id).
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Receive.
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Return.
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Assert.
@@ -687,7 +689,7 @@ domain PStaticTyping extends PData
 	NeededBefore(c, s, e) :- SubSE(c, s), s: Return, e = s.expr.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: While, e = s.cond.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: Ite, e = s.cond.
-	NeededBefore(c, s, e) :- SubSE(c, s), s: Assert, e = s.arg.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Assert, e = s.cond.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: Print, e = s.args.
 	NeededBefore(c, s, e) :- SubSE(c, s), s: Goto, e = s.args.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': New, e = e'.args.
@@ -759,15 +761,35 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC;
-									  SubSE(c, e), e = NewStmt(n, _, _), m is MachineProtoDecl(n, _).
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _).
-	  
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), MachineDecl(n, SPEC, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, SPEC, _, _, _).
 
 	[ rule_Classes = '"error, msg: Undefined machine type or the created interface is not exported by any machine"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _), no MachineDecl(n, _, _, _, _), no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _, _, _, _), 
+									  no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC,
+									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+
+	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC,
+									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
+
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), 
+									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+
+	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), 
+									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
+
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _, _, _, _), 
+									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+	
+	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _, _, _, _), 
+									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _),              ///// < raise has NIL payload,
@@ -926,7 +948,7 @@ domain PStaticTyping extends PData
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Cast(e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Tuple(e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedTuple(e1, _), TypeOf(c, e1, t1).
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1, _), ExprsToPayloadType(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1, _, _), ExprsToPayloadType(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunStmt(_, e1, _, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Assert(e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Return(e1, _), TypeOf(c, e1, t1).
@@ -949,6 +971,7 @@ domain PStaticTyping extends PData
 
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Field(_, n, _), TypeOfField(t1, n, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = FunStmt(_, _, e2, _, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = NewStmt(_, _, e2, _), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinStmt(_, _, e2, _), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinApp(_, _, e2, _), TypeOf(c, e2, t2).
 	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Exprs(_, _, e2), TypeOf(c, e2, t2).
@@ -1103,8 +1126,8 @@ domain PStaticTyping extends PData
 	VarInLocalScope(decl, locals, name) :- decl is TypingContext, locals = decl.locals, locals != NIL, name = locals.hd.name.
 	VarInLocalScope(decl, locals, name) :- VarInLocalScope(decl, locals', _), locals = locals'.tl, locals != NIL, name = locals.hd.name.
 
-	LValueError    ::= (cntxt: TypingContext, stmt: BinStmt + FunStmt).
-	ModStmtSubExpr ::= sub (cntxt: TypingContext, stmt: BinStmt + FunStmt, expr: Expr).
+	LValueError    ::= (cntxt: TypingContext, stmt: BinStmt).
+	ModStmtSubExpr ::= sub (cntxt: TypingContext, stmt: BinStmt, expr: Expr).
 	IsLValue       ::=     (cntxt: TypingContext, expr: Expr, writesGlobal: Boolean). 
 	IsLValue(c, e, FALSE)  :- ModStmtSubExpr(c, _, e), e = Name(n, _), VarInLocalScope(c, _, n).		
 	IsLValue(c, e, TRUE)  :- ModStmtSubExpr(c, _, e), e = Name(n, _), no VarInLocalScope(c, _, n), TypeOfLocalVar(c, n, _).		
@@ -1113,8 +1136,7 @@ domain PStaticTyping extends PData
     IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = BinApp(IDX, e', _, _), IsLValue(c, e', wg). 
 
     [ rule_Classes = '"error, msg: invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name"']
-	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _, _), no IsLValue(c, e', _);
-						 SubSE(c, e), e = FunStmt(_, _, x, _, _), x: Name, no IsLValue(c, x, _).
+	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _, _), no IsLValue(c, e', _).
 
     /*************************************************************/
     /*                      Function Returns                     */
@@ -1238,7 +1260,7 @@ domain PStaticTyping extends PData
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Raise.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulStmt(POP, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = BinStmt(_, e', e'', _), IsLValue(c, e', TRUE).
-	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NewStmt(_, _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NewStmt(_, _, _, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = New(_, _, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = Send(_, _, _, _). 
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = Receive(_, _, _).
@@ -1266,7 +1288,7 @@ domain PStaticTyping extends PData
 	   SubSE0(c, e), e = Ite(e', _, _, _),        ImpureFunApp(c, e');
 	   SubSE0(c, e), e = Return(e', _),           ImpureFunApp(c, e').
 
-    [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" or "return new M(...)" "']
+    [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" "']
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         e' : New;
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' : New;
@@ -1280,7 +1302,8 @@ domain PStaticTyping extends PData
        SubSE0(c, e), e = Send(_, e', _, _),       e' : New;
        SubSE0(c, e), e = Announce(e', _, _),      e' : New;
        SubSE0(c, e), e = Assert(e', _, _),        e' : New;
-       SubSE0(c, e), e = BinStmt(_, e', e'', _),  e'' : New, toSymbol(e') != #Name.
+       SubSE0(c, e), e = BinStmt(_, e', e'', _),  e'' : New, toSymbol(e') != #Name;
+	   SubSE0(c, e), e = Return(e', _),           e' : New.
 
     [ rule_Classes = '"error, msg: $ can only be used like "x = $" or "if ($)" or "while ($)" or "return $;" "']
     PurityError(c, e') :- 
@@ -1575,9 +1598,9 @@ domain PStaticTyping extends PData
 	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _), ConstructorType(m, _, ft), m.name = name.
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), ConstructorType(m, _, ft), m.name = name.
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr,
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 	
 	// for creation of machines proto
@@ -1587,9 +1610,9 @@ domain PStaticTyping extends PData
 	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), ft != BaseType(NULL).
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), ft != BaseType(NULL).
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), TypeOfArg1(c, n, type), type: TypeExpr,
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 					   			   
 	//for creation of interfaces
@@ -1600,9 +1623,9 @@ domain PStaticTyping extends PData
 	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft,_), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: created interface expects an argument;"']
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
 	//Entry function of spec machine must have null constructor type

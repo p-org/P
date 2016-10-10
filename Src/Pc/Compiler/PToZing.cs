@@ -1721,7 +1721,7 @@ namespace Microsoft.Pc
             if (GetArgByIndex(ft, 2).NodeKind != NodeKind.Id)
             {
                 aout = args.Last();
-                args.RemoveAt(args.Count);
+                args.RemoveAt(args.Count-1);
             }
             var createdIorM = GetName(ft, 0);
             var machineName = linkMap[createdIorM];

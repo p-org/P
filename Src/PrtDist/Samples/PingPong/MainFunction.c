@@ -92,7 +92,7 @@ int main(int argc, char *argv[])
 		{
 			//create main machine 
 			PRT_VALUE* payload = PrtMkNullValue();
-			PrtMkMachine(ContainerProcess, P_MACHINE_GodMachine, payload);
+			PrtMkMachine(ContainerProcess, P_MACHINE_GodMachine, PRT_FUN_PARAM_CLONE, payload);
 			PrtFreeValue(payload);
 		}
 		else
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 			//create container machine
 			PrtDistLog("Creating Container Machine");
 			PRT_VALUE* payload = PrtMkNullValue();
-			PrtMkMachine(ContainerProcess, P_MACHINE_Container, payload);
+			PrtMkMachine(ContainerProcess, P_MACHINE_Container, PRT_FUN_PARAM_CLONE, payload);
 			PrtFreeValue(payload);
 
 		}

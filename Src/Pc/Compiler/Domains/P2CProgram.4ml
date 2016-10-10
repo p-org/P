@@ -1534,27 +1534,27 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	//// New Machine
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, NIL, _, x), ret = Ident("p_tmp_funstmt_ret"),
 						   LinkMap(iname, mname), MachineName(machineDecl, machineName), machineDecl.name = mname,
-						   newCall = out.BinApp(ASN, ret, 
-													 FunApp(Ident("PrtMkMachine"),
-															Args(BinApp(PFLD, Ident("context"), Ident("process")),
-															Args(Ident(machineName), NIL)))),
+						   newCall = out.FunApp(Ident("PrtMkMachine"),
+												Args(BinApp(PFLD, Ident("context"), Ident("process")),
+												Args(Ident(machineName), NIL))),
 						   ContextLineInfo(c, s, info),
 						   FunStmtCleanup(c, s, cleanup),
-						   cs = out.Seq(Seq(info, newCall), Seq(info, cleanup)).
+						   ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newCall, Ident("id")), NIL)),
+						   cs = out.Seq(Seq(info, out.BinApp(ASN, ret, ec)), Seq(info, cleanup)).
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, pay, _, x), pay != NIL, ret = Ident("p_tmp_funstmt_ret"),
 						   LinkMap(iname, mname), MachineName(machineDecl, machineName), machineDecl.name = mname,
-						   newCall = out.BinApp(ASN, ret,
-													 FunApp(Ident("PrtMkMachine"),
-															Args(BinApp(PFLD, Ident("context"), Ident("process")),
-															Args(Ident(machineName),
-																 lstReverse(#Args, ecs'))))),
+						   newCall = out.FunApp(Ident("PrtMkMachine"),
+												Args(BinApp(PFLD, Ident("context"), Ident("process")),
+												Args(Ident(machineName),
+													 lstReverse(#Args, ecs')))),
 						   RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1,
 						   TransformStmtArgs(c, s, 0, NIL, NIL, ecs', NIL),
 						   ContextLineInfo(c, s, info),
 						   FunStmtCleanup(c, s, cleanup),
+						   ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newCall, Ident("id")), NIL)),
 						   cs = out.Seq(Seq(info, FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
-						                             Args(FunApp(Ident("P_SEQ"), Args(newCall, Args(Ident("NULL"), NIL))), Args(Ident("PRT_FALSE"), 
+						                             Args(FunApp(Ident("P_SEQ"), Args(out.BinApp(ASN, ret, ec), Args(Ident("NULL"), NIL))), Args(Ident("PRT_FALSE"), 
 													 tail)))), 
 										Seq(info, cleanup)).
 

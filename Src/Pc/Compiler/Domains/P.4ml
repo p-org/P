@@ -445,7 +445,7 @@ domain PStaticTyping extends PData
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, _, e2, _), toSymbol(e2) != #FunApp, toSymbol(e2) != #New.
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, e2, _), e1: Name, e2: FunApp, no ImpureFunApp(c, e2).
 	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, e2, id), e1: Name, e2 = FunApp(name, args, label, _), ImpureFunApp(c, e2), stmt' = FunStmt(name, args, e1, label, id).
-	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, e2, id), e1: Name, e2 = New(name, args, _), stmt' = NewStmt(name, args, e1, id).
+	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, e2, id), e1: Name, e2 = New(name, args, _), stmt' = NewStmt(name, args, e1, id).
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Receive.
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Return.
 	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Assert.

@@ -412,12 +412,13 @@ PrtGoto(
 
 	PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[destStateIndex].entryFunIndex;
 	PRT_TYPE *payloadType = GetFunDeclFromIndex(context, entryFunIndex)->payloadType;
-	PRT_VALUE *payload;
+	PRT_VALUE *payload = NULL;
 	if (payloadType == NULL)
 	{
 		payload = PrtMkNullValue();
 	}
-	else {
+	else 
+	{
 		PRT_UINT32 numParameters = 1;
 		if (payloadType->typeKind == PRT_KIND_TUPLE)
 		{
@@ -477,46 +478,54 @@ PrtRaise(
 	context->currentTrigger = PrtCloneValue(event);
 
 	PRT_TYPE *payloadType = PrtGetPayloadType(context, event);
-	PRT_UINT32 numParameters = 1;
-	if (payloadType->typeKind == PRT_KIND_TUPLE)
+	PRT_VALUE *payload = NULL;
+	if (payloadType->typeKind == PRT_KIND_NULL)
 	{
-		numParameters = payloadType->typeUnion.tuple->arity;
+		payload = PrtMkNullValue();
 	}
-	PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
-	va_list argp;
-	va_start(argp, event);
-	for (PRT_UINT32 i = 0; i < numParameters; i++)
+	else
 	{
-#if __PX4_NUTTX
-		PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-		PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-		PRT_VALUE *arg;
-		PRT_VALUE **argPtr;
-		switch (argStatus)
+		PRT_UINT32 numParameters = 1;
+		if (payloadType->typeKind == PRT_KIND_TUPLE)
 		{
-		case PRT_FUN_PARAM_CLONE:
-			arg = va_arg(argp, PRT_VALUE *);
-			args[i] = PrtCloneValue(arg);
-			break;
-		case PRT_FUN_PARAM_SWAP:
-			PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
-			break;
-		case PRT_FUN_PARAM_XFER:
-			argPtr = va_arg(argp, PRT_VALUE **);
-			args[i] = *argPtr;
-			*argPtr = NULL;
-			break;
+			numParameters = payloadType->typeUnion.tuple->arity;
 		}
+		PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, event);
+		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				break;
+			case PRT_FUN_PARAM_XFER:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		{
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
 	}
-	va_end(argp);
-	PRT_VALUE *payload = args[0];
-	if (payloadType->typeKind == PRT_KIND_TUPLE)
-	{
-		payload = MakeTupleFromArray(payloadType, args);
-	}
-	PrtFree(args);
 	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
 	context->currentPayload = payload;
 	PrtLog(PRT_STEP_RAISE, context, context, event, payload);

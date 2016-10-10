@@ -20,7 +20,7 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 
 	PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
 	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, timerContext->client);
-	PrtSend(context, clientMachine, ev, context->id, PRT_FALSE);
+	PrtSend(context, clientMachine, ev, PRT_FUN_PARAM_CLONE, context->id);
 	PrtFreeValue(ev);
 }
 
@@ -70,11 +70,11 @@ PRT_VALUE *P_FUN_CancelTimer_IMPL(PRT_MACHINEINST *context)
 	success = CancelWaitableTimer(timerContext->timer);
 	if (success) {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);
-		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, timerMachine->id, PRT_FALSE);
+		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, PRT_FUN_PARAM_CLONE, timerMachine->id);
 	}
 	else {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_FAILURE);
-		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, timerMachine->id, PRT_FALSE);
+		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, PRT_FUN_PARAM_CLONE, timerMachine->id);
 	}
 	PrtFreeValue(ev);
 

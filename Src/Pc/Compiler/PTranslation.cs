@@ -174,6 +174,15 @@ namespace Microsoft.Pc
                 return parameterNames.Last();
             }
         }
+
+       public FuncTerm PayloadType
+        {
+            get
+            {
+                Debug.Assert(isAnonymous);
+                return localNameToInfo[PayloadVarName].type;
+            }
+        }
     }
 
     enum SpecType { SAFETY, FINALLY, REPEATEDLY };

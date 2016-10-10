@@ -80,7 +80,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *
         printf("Ran %d steps in 10 seconds\n", steps);
 		PRT_VALUE *haltEvent = PrtMkEventValue(_P_EVENT_HALT);
 		PRT_VALUE *nullValue = PrtMkNullValue();
-		PrtSend(receiver, receiver, haltEvent, nullValue, PRT_FALSE);
+		PrtSend(receiver, receiver, haltEvent, PRT_FUN_PARAM_CLONE, nullValue);
 		PrtFreeValue(haltEvent);
 		PrtFreeValue(nullValue);
     }
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 
     //create main machine 
     PRT_VALUE* payload = PrtMkNullValue();
-    PrtMkMachine(ContainerProcess, P_MACHINE_Client, payload);
+    PrtMkMachine(ContainerProcess, P_MACHINE_Client, PRT_FUN_PARAM_CLONE, payload);
     PrtFreeValue(payload);
 
     return 0;

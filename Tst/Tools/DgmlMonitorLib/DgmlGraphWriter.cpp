@@ -348,13 +348,16 @@ HRESULT DgmlGraphWriter::Connect(const char* serverName)
 HRESULT DgmlGraphWriter::NewGraph(const wchar_t* path)
 {
 	FILE* ptr;
+	fileName = path;
 	errno_t rc = _wfopen_s(&ptr, path, L"w");
 	if (rc == 0)
 	{
 		fwprintf(ptr, L"<DirectedGraph xmlns='http://schemas.microsoft.com/vs/2009/dgml'/>");
 		fclose(ptr);
-		LoadGraphMessage m(path);
-		m.Write(writer);
+		if (writer != NULL) {
+			LoadGraphMessage m(path);
+			m.Write(writer);
+		}
 	}
 	return 0;
 }
@@ -370,17 +373,29 @@ HRESULT DgmlGraphWriter::LoadGraph(const wchar_t* path)
 
 HRESULT DgmlGraphWriter::NavigateToNode(const wchar_t* nodeId, const wchar_t* nodeLabel)
 {
-	if (writer == NULL) return E_NOT_VALID_STATE;
-	NavigateNodeMessage m(nodeId, nodeLabel);
-	m.Write(writer);
+	if (writer == NULL) 
+	{
+		graph.GetOrCreateNode(std::wstring(nodeId), std::wstring(nodeLabel));
+	}
+	else 
+	{
+		NavigateNodeMessage m(nodeId, nodeLabel);
+		m.Write(writer);
+	}
 	return 0;
 }
 
 HRESULT DgmlGraphWriter::NavigateLink(const wchar_t* srcNodeId, const wchar_t* srcNodeLabel, const wchar_t* targetNodeId, const wchar_t* targetNodeLabel, const wchar_t* linkLabel, int linkIndex)
 {
-	if (writer == NULL) return E_NOT_VALID_STATE;
-	NavigateLinkMessage m(srcNodeId, srcNodeLabel, targetNodeId, targetNodeLabel, linkLabel, linkIndex);
-	m.Write(writer);
+	if (writer == NULL) 
+	{
+		graph.GetOrCreateLink(std::wstring(srcNodeId), std::wstring(srcNodeLabel), std::wstring(targetNodeId), std::wstring(targetNodeLabel), std::wstring(linkLabel), linkIndex);
+	}
+	else 
+	{
+		NavigateLinkMessage m(srcNodeId, srcNodeLabel, targetNodeId, targetNodeLabel, linkLabel, linkIndex);
+		m.Write(writer);
+	}
 	return 0;
 }
 
@@ -391,6 +406,10 @@ HRESULT DgmlGraphWriter::Close()
 		socket->Close();
 		delete socket;
 		socket = NULL;
+	}
+	else if (fileName.length() > 0)
+	{
+		graph.Save(fileName);
 	}
 	if (writer != NULL)
 	{

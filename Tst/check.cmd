@@ -1,6 +1,13 @@
 @echo off
 
-for /f %%i in (TestResult\failed-tests.txt) do (
+echo This program will show windiff of all failed tests and prompt you to update the baselines.
+
+if NOT EXIST failed-tests.txt (
+  echo Please run this tool from the TestResult* directory containing the 'failed-tests.txt'
+  goto :eof
+)
+
+for /f %%i in (failed-tests.txt) do (
   call :check %%i
 )
 

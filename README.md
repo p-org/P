@@ -3,9 +3,14 @@ P is a language for asynchronous event-driven programming. P allows the programm
 Manual
 =========
 
-Check the [P manual](https://github.com/p-org/P/blob/master/Doc/Manual/pmanual.pdf) !
+Check the [P manual](https://github.com/p-org/P/blob/master/Doc/Manual/pmanual.pdf).
 
 Information for building P framework is available [here](https://github.com/p-org/P/wiki).
+
+Demos
+==========================================================
+See [fun demo video](https://www.youtube.com/watch?v=ZzLoNbMGhg4) using P to control a quadrocopter and make sense of the MavLink stream, all visualized in a live DGML diagram.
+
 
 Publications
 ==========================================================

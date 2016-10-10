@@ -72,7 +72,8 @@ std::wstring ConvertToUnicode(const char* str)
 
 static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
-    //PrtPrintStep(step, sender, receiver, eventId, payload);
+    // This LogHandler shows how to use the dgmlMonitor to create a DGML graph of the state machine transitions that
+	// were recorded by this LogHandler.  The DGML identifiers computed below are designed to ensure the correct DGML graph is built.
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
 	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf]->name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
@@ -161,7 +162,13 @@ int main(int argc, char *argv[])
 	}
 
 	if (dgml) {
-		dgmlMonitor.Connect("10.137.62.126");
+
+		// Attempt to connect to Visual Studio running on some machine.  This instance of VS 2015 needs to have the DgmlTestMonitor VSIX extension
+		// installed, and the DgmlTestMonitor window needs to be open.  Then you will see the state machine building & animating in real time.
+		// dgmlMonitor.Connect("10.137.62.126");
+
+		// Either way you need to also start a new graph file on disk. If you have not connected to VS then this file will be written
+		// at the time you call dgmlMonitor.Close(), otherwise VS will maintain the graph inside VS.
 		dgmlMonitor.NewGraph(L"d:\\temp\\trace.dgml");
 	}
 
@@ -184,7 +191,8 @@ int main(int argc, char *argv[])
     PrtFreeValue(payload);
 
     // Wait for the timer.
-    while (1) {
+	int iterations = 10;
+    while (iterations--) {
 
 		if (cooperative)
 		{
@@ -194,6 +202,10 @@ int main(int argc, char *argv[])
 			SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
 		}
     }
+
+	if (dgml) {
+		dgmlMonitor.Close();
+	}
 
     return 0;
 

@@ -178,7 +178,7 @@ namespace RunPTool
 
                 if (execsToRun == null)
                 {
-                    execsToRun = "/runAll";
+                    execsToRun = "runall";
                 }
 
                 // we will copy test structure here so that all the temporary files we create are contained in one place rather
@@ -590,8 +590,8 @@ namespace RunPTool
                 {
                     string name = Path.GetFileName(di);
                     if ((name == "Pc") ||
-                        (name == "Zing" && (execsToRun == "/runZing" || execsToRun == "/runAll")) ||
-                        (name == "Prt" && (execsToRun == "/runPrt" || execsToRun == "/runAll")))
+                        (name == "Zing" && (execsToRun == "runzing" || execsToRun == "runall")) ||
+                        (name == "Prt" && (execsToRun == "runprt" || execsToRun == "runall")))
                     {
                         string configFile = di + Path.DirectorySeparatorChar + ConfigFileName;
                         if (File.Exists(configFile))

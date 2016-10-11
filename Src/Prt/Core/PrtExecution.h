@@ -201,13 +201,15 @@ extern "C"{
 		PrtGoto(
 			_Inout_ PRT_MACHINEINST_PRIV		*context,
 			_In_ PRT_UINT32						destStateIndex,
+			_In_ PRT_UINT32						numArgs,
 			...
 		);
 	
 	PRT_API void PRT_CALL_CONV
 		PrtRaise(
 		_Inout_ PRT_MACHINEINST_PRIV		*context,
-		_In_ PRT_VALUE					*event,
+		_In_ PRT_VALUE						*event,
+		_In_ PRT_UINT32						numArgs,
 		...
 		);
 

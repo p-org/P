@@ -401,6 +401,7 @@ void
 PrtGoto(
 	_Inout_ PRT_MACHINEINST_PRIV		*context,
 	_In_ PRT_UINT32						destStateIndex,
+	_In_ PRT_UINT32						numArgs,
 	...
 )
 {
@@ -409,25 +410,17 @@ PrtGoto(
 	context->lastOperation = GotoStatement;
 	context->destStateIndex = destStateIndex;
 	context->currentTrigger = PrtMkEventValue(PRT_SPECIAL_EVENT_NULL);
-
-	PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[destStateIndex].entryFunIndex;
-	PRT_TYPE *payloadType = GetFunDeclFromIndex(context, entryFunIndex)->payloadType;
 	PRT_VALUE *payload = NULL;
-	if (payloadType == NULL)
+	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
 	}
 	else 
 	{
-		PRT_UINT32 numParameters = 1;
-		if (payloadType->typeKind == PRT_KIND_TUPLE)
-		{
-			numParameters = payloadType->typeUnion.tuple->arity;
-		}
-		PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
-		va_start(argp, destStateIndex);
-		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
 #if __PX4_NUTTX
 			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
@@ -454,8 +447,10 @@ PrtGoto(
 		}
 		va_end(argp);
 		payload = args[0];
-		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		if (numArgs > 1)
 		{
+			PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[destStateIndex].entryFunIndex;
+			PRT_TYPE *payloadType = GetFunDeclFromIndex(context, entryFunIndex)->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
@@ -468,6 +463,8 @@ void
 PrtRaise(
 	_Inout_ PRT_MACHINEINST_PRIV		*context,
 	_In_ PRT_VALUE						*event,
+	_In_ PRT_UINT32						numArgs,
+
 	...
 )
 {
@@ -476,24 +473,17 @@ PrtRaise(
 	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
 	context->lastOperation = RaiseStatement;
 	context->currentTrigger = PrtCloneValue(event);
-
-	PRT_TYPE *payloadType = PrtGetPayloadType(context, event);
 	PRT_VALUE *payload = NULL;
-	if (payloadType->typeKind == PRT_KIND_NULL)
+	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
 	}
 	else
 	{
-		PRT_UINT32 numParameters = 1;
-		if (payloadType->typeKind == PRT_KIND_TUPLE)
-		{
-			numParameters = payloadType->typeUnion.tuple->arity;
-		}
-		PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
-		va_start(argp, event);
-		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
 #if __PX4_NUTTX
 			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
@@ -520,8 +510,9 @@ PrtRaise(
 		}
 		va_end(argp);
 		payload = args[0];
-		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		if (numArgs > 1)
 		{
+			PRT_TYPE *payloadType = PrtGetPayloadType(context, event); 
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);

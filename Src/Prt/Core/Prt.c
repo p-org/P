@@ -203,28 +203,21 @@ PRT_MACHINEINST *
 PrtMkMachine(
     _Inout_  PRT_PROCESS			*process,
     _In_  PRT_UINT32				instanceOf,
+	_In_ PRT_UINT32					numArgs,
 	...
 )
 {
-	PRT_MACHINEDECL *machineDecl = process->program->machines[instanceOf];
-	PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFunIndex;
-	PRT_TYPE *payloadType = GetFunDeclHelper(process, instanceOf, entryFunIndex)->payloadType;
 	PRT_VALUE *payload = NULL;
-	if (payloadType == NULL)
+	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
 	}
 	else 
 	{
-		PRT_UINT32 numParameters = 1;
-		if (payloadType->typeKind == PRT_KIND_TUPLE)
-		{
-			numParameters = payloadType->typeUnion.tuple->arity;
-		}
-		PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
-		va_start(argp, instanceOf);
-		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
 #if __PX4_NUTTX
 			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
@@ -251,8 +244,11 @@ PrtMkMachine(
 		}
 		va_end(argp);
 		payload = args[0];
-		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		if (numArgs > 1)
 		{
+			PRT_MACHINEDECL *machineDecl = process->program->machines[instanceOf];
+			PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFunIndex;
+			PRT_TYPE *payloadType = GetFunDeclHelper(process, instanceOf, entryFunIndex)->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
@@ -282,26 +278,21 @@ PrtSend(
 	_Inout_ PRT_MACHINEINST			*sender,
     _Inout_ PRT_MACHINEINST			*receiver,
     _In_ PRT_VALUE					*event,
+	_In_ PRT_UINT32					numArgs,
 	...
 )
 {
-	PRT_TYPE *payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
 	PRT_VALUE *payload = NULL;
-	if (payloadType->typeKind == PRT_KIND_NULL)
+	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
 	}
 	else
 	{
-		PRT_UINT32 numParameters = 1;
-		if (payloadType->typeKind == PRT_KIND_TUPLE)
-		{
-			numParameters = payloadType->typeUnion.tuple->arity;
-		}
-		PRT_VALUE **args = PrtCalloc(numParameters, sizeof(PRT_VALUE*));
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
-		va_start(argp, event);
-		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
 #if __PX4_NUTTX
 			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
@@ -328,8 +319,9 @@ PrtSend(
 		}
 		va_end(argp);
 		payload = args[0];
-		if (payloadType->typeKind == PRT_KIND_TUPLE)
+		if (numArgs > 1)
 		{
+			PRT_TYPE *payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);

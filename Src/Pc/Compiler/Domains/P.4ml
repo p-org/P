@@ -808,7 +808,7 @@ domain PStaticTyping extends PData
 
     [ rule_Classes = '"error, msg: invalid payload type in raise"']
     TypeOf(c, e, ERROR)            :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL,       ///// < p has non-NIL payload,             
-									  TypeOf(c, p, pt), TypeRel(pt, plt, k), k != SUB, pt != plt. ///// < and pt is not a subtype of plt.
+									  TypeOfArg2(c, e, _, pt), TypeRel(pt, plt, k), k != SUB, pt != plt. ///// < and pt is not a subtype of plt.
 
 	//// Rules for send.
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL, _),                           ///// < send has NIL payload,
@@ -824,7 +824,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(MACHINE), toSymbol(t1) != #InterfaceType.
 
 	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, e2, _, _), TypeOf(c, e2, t2), t2 != BaseType(EVENT).
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Send, t2 != BaseType(EVENT).
 
 	//// Error rules for send with constant event expression. 	
     [ rule_Classes = '"error, msg: invalid payload type in send (cannot send null value)"']

@@ -1462,11 +1462,11 @@ namespace Microsoft.Pc
             var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpPayload");
             if (args.Count == 0)
             {
-                MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node)));
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeNull.Node))));
             }
             else if (args.Count == 1)
             {
-                MkZingAssignWithClone(tmpVar, args[0]);
+                ctxt.AddSideEffect(MkZingAssignWithClone(tmpVar, args[0]));
             }
             else
             {

@@ -196,6 +196,7 @@ extern "C"{
 	PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachine(
 		_Inout_ PRT_PROCESS *process,
 		_In_ PRT_UINT32 instanceOf,
+		_In_ PRT_UINT32	numArgs,
 		...);
 
     /** Gets machine instance corresponding to id in process.
@@ -219,6 +220,7 @@ extern "C"{
 		_Inout_ PRT_MACHINEINST *sender,
 		_Inout_ PRT_MACHINEINST *receiver,
 		_In_ PRT_VALUE *evt,
+		_In_ PRT_UINT32	numArgs,
 		...
 	);
 

@@ -1,6 +1,7 @@
 machine Main {
   var x: int;
   var y: int;
+
   fun Foo() : bool
   {
     var n1, n2: bool;

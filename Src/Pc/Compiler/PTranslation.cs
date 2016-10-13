@@ -258,7 +258,6 @@ namespace Microsoft.Pc
                 case "NulStmt":
                 case "Return":
                     id = GetArgByIndex(ft, 1); break;
-                case "NewStmt":
                 case "Raise":
                 case "Announce":
                 case "While":
@@ -267,11 +266,12 @@ namespace Microsoft.Pc
                 case "Assert":
                 case "Goto":
                     id = GetArgByIndex(ft, 2); break;
+                case "NewStmt":
                 case "Send":
-                case "BinStmt":
                 case "Ite":
                 case "Print":
                     id = GetArgByIndex(ft, 3); break;
+                case "BinStmt":
                 case "FunStmt":
                     id = GetArgByIndex(ft, 4); break;
                 default: Debug.Assert(false, "Illegal FuncTerm in LookupSpan"); break;

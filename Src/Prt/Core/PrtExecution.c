@@ -6,14 +6,38 @@ PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 /* Initialize the function to default print fucntion*/
 PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
 
+void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value)
+{
+	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
+	PrtAssert(PrtIsValidValue(*value), "value is not valid");
+
+	PRT_VALUE *oldValue = context->varValues[varIndex];
+	if (status == PRT_FUN_PARAM_XFER)
+	{
+		if (oldValue != NULL)
+		{
+			PrtFreeValue(oldValue);
+			oldValue = NULL;
+		}
+		context->varValues[varIndex] = *value;
+		*value = NULL;
+	}
+	else 
+	{
+		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		context->varValues[varIndex] = *value;
+		*value = oldValue;
+	}	
+}
+
 void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
-	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
+	PrtAssert(PrtIsValidValue(value), "value is not valid");
 	PRT_VALUE *oldValue = context->varValues[varIndex];
 	context->varValues[varIndex] = cloneValue ? PrtCloneValue(value) : value;
 	if (oldValue != NULL)
 	{
-		PRT_DBG_ASSERT(PrtIsValidValue(oldValue), "Variable must contain a valid value");
+		PrtAssert(PrtIsValidValue(oldValue), "Variable must contain a valid value");
 		PrtFreeValue(oldValue);
 	}
 }
@@ -23,14 +47,38 @@ void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ P
 	PrtSetGlobalVarEx(context, varIndex, value, PRT_TRUE);
 }
 
+void PRT_CALL_CONV PrtSetLocalVarLinear(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value)
+{
+	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
+	PrtAssert(PrtIsValidValue(*value), "value is not valid");
+
+	PRT_VALUE *oldValue = locals[varIndex];
+	if (status == PRT_FUN_PARAM_XFER)
+	{
+		if (oldValue != NULL)
+		{
+			PrtFreeValue(oldValue);
+			oldValue = NULL;
+		}
+		locals[varIndex] = *value;
+		*value = NULL;
+	}
+	else
+	{
+		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		locals[varIndex] = *value;
+		*value = oldValue;
+	}
+}
+
 void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
-	PRT_DBG_ASSERT(PrtIsValidValue(value), "value is not valid");
+	PrtAssert(PrtIsValidValue(value), "value is not valid");
 	PRT_VALUE *oldValue = locals[varIndex];
 	locals[varIndex] = cloneValue ? PrtCloneValue(value) : value;
 	if (oldValue != NULL)
 	{
-		PRT_DBG_ASSERT(PrtIsValidValue(oldValue), "Variable must contain a valid value");
+		PrtAssert(PrtIsValidValue(oldValue), "Variable must contain a valid value");
 		PrtFreeValue(oldValue);
 	}
 }

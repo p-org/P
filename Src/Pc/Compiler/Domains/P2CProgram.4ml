@@ -1513,7 +1513,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NulStmt(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Assert(_, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Print(_, _, _, _), cs = NIL.
-	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _, _, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Return(_, _), cs = NIL.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.While(_, s1, _), Trampoline(c, s1, cs1), cs = cs1.
 	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Ite(_, s1, s2, _), Trampoline(c, s1, cs1), Trampoline(c, s2, cs2), cs = out.Seq(cs1, cs2).
@@ -1991,8 +1991,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	//// Numbers each getter involving a key expression.	
 	LhsPath ::= (stmt: in.BinStmt, getter: in.Expr, keyNum: Natural).
 
-	LhsPath(s, e, 1)   :- SubSE(_, s), s = in.BinStmt(_, e, _, _), e = in.BinApp(IDX, _, _, _).
-	LhsPath(s, e, 0)   :- SubSE(_, s), s = in.BinStmt(_, e, _, _), toSymbol(e) != in.#BinApp.
+	LhsPath(s, e, 1)   :- SubSE(_, s), s = in.BinStmt(_, e, _, _, _), e = in.BinApp(IDX, _, _, _).
+	LhsPath(s, e, 0)   :- SubSE(_, s), s = in.BinStmt(_, e, _, _, _), toSymbol(e) != in.#BinApp.
 
 	LhsPath(s, e', i') :- LhsPath(s, e, i), e = in.BinApp(IDX, e', _, _), e' = in.BinApp(IDX, _, _, _), i' = i + 1.
 	LhsPath(s, e', i)  :- LhsPath(s, e, i), e = in.BinApp(IDX, e', _, _), toSymbol(e') != in.#BinApp.
@@ -2000,11 +2000,11 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	LhsPath(s, e', i') :- LhsPath(s, e, i), e = in.Field(e', _, _), e' = in.BinApp(IDX, _, _, _), i' = i + 1.
 	LhsPath(s, e', i)  :- LhsPath(s, e, i), e = in.Field(e', _, _), toSymbol(e') != in.#BinApp.
 
-	RhsCntxt(s, 0, e)  :- SubSE(_, s), s = in.BinStmt(_, _, e, _).
+	RhsCntxt(s, 0, e)  :- SubSE(_, s), s = in.BinStmt(_, _, _, e, _).
 	RhsCntxt(s, i, e)  :- LhsPath(s, g, i), g = in.BinApp(IDX, _, e, _).
 	StmtExprSize(s, n) :- LhsPath(s, Name(_, _), i), n = i + 1.
 
-	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.BinStmt(_, _, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.BinStmt(_, _, _, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
 	RhsMaxOrder(s, i, k) :- LhsPath(s, g, i), g = in.BinApp(IDX, _, e, _), RhsEvalOrder(s, i, e, k).
 
 	//// Caches the cnames of global variables in LhsPaths
@@ -2041,13 +2041,21 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
     //// Concat all statement-level expressions
 	LhsExprs ::= (cntxt: TypingContext, stmt: in.BinStmt, indx: Natural, args: out.Args). 
-	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(REMOVE, _, _, _), RhsExpr(c, s, 0, trans, doFree), args = out.Args(trans, Args(doFree, NIL)).
-	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(op, _, _, _), op != REMOVE, RhsExpr(c, s, 0, trans, _), args = out.Args(trans, Args(Ident("PRT_FALSE"), NIL)).
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(REMOVE, _, _, _, _), RhsExpr(c, s, 0, trans, doFree), args = out.Args(trans, Args(doFree, NIL)).
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(op, _, _, _, _), op != REMOVE, RhsExpr(c, s, 0, trans, _), args = out.Args(trans, Args(Ident("PRT_FALSE"), NIL)).
 	LhsExprs(c, s, i', args) :- LhsExprs(c, s, i, a), i' = i + 1, RhsExpr(c, s, i', trans, doFree), args = out.Args(trans, Args(doFree, a)). 
+
+	QualToStatus ::= (in.Qualifier, String).
+	QualToStatus(XFER, "PRT_FUN_PARAM_XFER").
+	QualToStatus(SWAP, "PRT_FUN_PARAM_SWAP").
+
+	AssignSourceVar ::= (TypingContext, in.Name, out.Expr).
+	AssignSourceVar(c, e, ec) :- SubSE(c, e), e = Name(n, _), IsLocalVar(c, n, _), LocalVars(c, locals), IndexOf(locals, n, localIndex, _),
+								 ec = out.BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(localIndex, DEC, U)).
 
     //// ASSIGN / UPDATE
 	//// Case 1: Assign global variable
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _, x), e = Name(glbl, _), 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = Name(glbl, _), 
 	                       varDecl is VarDecl(glbl, c.owner, _, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, glbl, _),  
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   ContextLineInfo(c, s, info), 
@@ -2060,8 +2068,22 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											 Args(doClone,
 											      NIL))))).
 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = Name(glbl, _), 
+	                       varDecl is VarDecl(glbl, c.owner, _, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, glbl, _),  
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   ContextLineInfo(c, s, info), 
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))), 
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), AssignSourceVar(c, src, ec),
+						   asgn = out.FunApp(Ident("PrtSetGlobalVarLinear"),
+						                     Args(Ident("p_tmp_mach_priv"),
+											 Args(Ident(varName),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											      NIL))))).
+
 	//// Case 2: Assign a local variable
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _, x), e = Name(lcl, _), 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = Name(lcl, _), 
                            TypeOfLocalVar(c, lcl, _), LocalVars(c, locals), IndexOf(locals, lcl, i, _),                 
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
 						   ContextLineInfo(c, s, info),
@@ -2074,8 +2096,22 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											 Args(doClone,
 											      NIL))))).
 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = Name(lcl, _), 
+                           TypeOfLocalVar(c, lcl, _), LocalVars(c, locals), IndexOf(locals, lcl, i, _),                 
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), AssignSourceVar(c, src, ec),
+						   asgn = out.FunApp(Ident("PrtSetLocalVarLinear"),
+						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											      NIL))))).
+
 	//// Case 3: Assign a tuple by int index
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _, x), e = in.Field(getter, i, _), i : Natural, 	                       
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Field(getter, i, _), i : Natural, 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, getter, _), egetter), 
 						   ContextLineInfo(c, s, info),
@@ -2088,8 +2124,22 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											 Args(doClone,
 											      NIL))))).
 
+  	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = in.Field(getter, i, _), i : Natural, 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, getter, _), egetter), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), AssignSourceVar(c, src, ec),
+						   asgn = out.FunApp(Ident("PrtTupleSetLinear"),
+						                     Args(egetter,
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											      NIL))))).
+
 	//// Case 4: Assign a tuple by name
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _, x), e = in.Field(getter, field, _), field : String, 	                       
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Field(getter, field, _), field : String, 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   TypeOf(c, getter, t), IndexOf(t, field, i, _), LhsTrans(c, LhsPath(s, getter, _), egetter), 
 						   ContextLineInfo(c, s, info),
@@ -2102,8 +2152,22 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											 Args(doClone,
 											      NIL))))).
 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = in.Field(getter, field, _), field : String, 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   TypeOf(c, getter, t), IndexOf(t, field, i, _), LhsTrans(c, LhsPath(s, getter, _), egetter), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), AssignSourceVar(c, src, ec),
+						   asgn = out.FunApp(Ident("PrtTupleSetLinear"),
+						                     Args(egetter,
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											      NIL))))).
+
 	//// Case 5: Assign a sequence (rewrite the reading version of the translation)
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _, x), e = in.BinApp(IDX, _, _, _), 	                       
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.BinApp(IDX, _, _, _), 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, e, _), egetter), 
 						   egetter = out.FunApp(Ident("PrtSeqGetNC"), Args(seq, Args(ndex, NIL))),
@@ -2117,8 +2181,23 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											 Args(doClone,
 											      NIL))))).
 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, src, x), e = in.BinApp(IDX, _, _, _), 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, e, _), egetter), 
+						   egetter = out.FunApp(Ident("PrtSeqGetNC"), Args(seq, Args(ndex, NIL))),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), AssignSourceVar(c, src, ec),
+						   asgn = out.FunApp(Ident("PrtSeqUpdateLinear"),
+						                     Args(seq,
+											 Args(ndex,
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											      NIL))))).
+
 	//// Case 6: Assign a map (rewrite the reading version of the translation)
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, _, x), e = in.BinApp(IDX, _, _, _), 	                       
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.BinApp(IDX, _, _, _), 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, e, _), egetter), 
 						   egetter = out.FunApp(Ident("PrtMapGetNC"), Args(map, Args(key, NIL))),  
@@ -2133,9 +2212,25 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											 Args(doClone,
 											      NIL)))))).
 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = in.BinApp(IDX, _, _, _), 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, e, _), egetter), 
+						   egetter = out.FunApp(Ident("PrtMapGetNC"), Args(map, Args(key, NIL))),  
+						   ContextLineInfo(c, s, info), 
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), AssignSourceVar(c, src, ec),
+						   asgn = out.FunApp(Ident("PrtMapUpdateLinear"),
+						                     Args(map,
+											 Args(key,
+											 Args(Ident("PRT_TRUE"),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											      NIL)))))).
+
     //// INSERT
 	//// Case 1: Insert into a sequence
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(INSERT, e, _, x), 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(INSERT, e, _, _, x), 
 	                       TypeOf(c, e, t), toSymbol(t) = in.#SeqType, LhsTrans(c, LhsPath(s, e, _), egetter), 
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
 						   ContextLineInfo(c, s, info),
@@ -2169,7 +2264,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 						   freeValue = out.FunApp(Ident("PrtFree"), Args(Ident("p_tmp_stmt_0"), NIL)).
 
 	//// Case 2: Insert into a map
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(INSERT, e, _, x), 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(INSERT, e, _, _, x), 
 	                       TypeOf(c, e, t), toSymbol(t) = in.#MapType, LhsTrans(c, LhsPath(s, e, _), egetter), 
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
 						   ContextLineInfo(c, s, info),
@@ -2203,7 +2298,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
     //// REMOVE
 	//// Case 1: Remove from a sequence
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _, x), 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _, _, x), 
 	                       TypeOf(c, e, t), toSymbol(t) = in.#SeqType, LhsTrans(c, LhsPath(s, e, _), egetter), 
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
 						   ContextLineInfo(c, s, info),
@@ -2214,7 +2309,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											      NIL))).
 
 	//// Case 2: Remove from a map
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _, x), 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _, _, x), 
 	                       TypeOf(c, e, t), toSymbol(t) = in.#MapType, LhsTrans(c, LhsPath(s, e, _), egetter), 
 	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
 						   ContextLineInfo(c, s, info),

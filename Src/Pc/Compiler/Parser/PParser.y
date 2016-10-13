@@ -390,8 +390,8 @@ QualifierOrNone
 	;
 
 NmdTupTypeList
-	: ID QualifierOrNone COLON Type 					  { PushNmdTupType($1.str, ToSpan(@1), true);  }			
-	| ID QualifierOrNone COLON Type COMMA NmdTupTypeList  { PushNmdTupType($1.str, ToSpan(@1), false); }	
+	: ID COLON Type 					  { PushNmdTupType($1.str, ToSpan(@1), true);  }			
+	| ID COLON Type COMMA NmdTupTypeList  { PushNmdTupType($1.str, ToSpan(@1), false); }	
 	;
 
 /******************* Statements *******************/
@@ -407,9 +407,9 @@ Stmt
 	| PRINT STR COMMA ExprArgList SEMICOLON                   { PushPrint($2.str.Substring(1,$2.str.Length-2), ToSpan(@2), ToSpan(@1), true);  }
 	| RETURN SEMICOLON                                        { PushReturn(false, ToSpan(@1));                           }
 	| RETURN Exp SEMICOLON                                    { PushReturn(true, ToSpan(@1));                            }
-	| Exp ASSIGN Exp SEMICOLON                                { PushBinStmt(P_Root.UserCnstKind.ASSIGN, ToSpan(@1));     }
+	| Exp ASSIGN Exp QualifierOrNone SEMICOLON                { PushBinStmt(P_Root.UserCnstKind.ASSIGN, ToSpan(@1));     }
 	| Exp REMOVE Exp SEMICOLON                                { PushBinStmt(P_Root.UserCnstKind.REMOVE, ToSpan(@1));     }
-	| Exp INSERT Exp SEMICOLON								  { PushBinStmt(P_Root.UserCnstKind.INSERT, ToSpan(@1));	 }
+	| Exp INSERT Exp QualifierOrNone SEMICOLON				  { PushBinStmt(P_Root.UserCnstKind.INSERT, ToSpan(@1));	 }
 	| WHILE LPAREN Exp RPAREN Stmt                            { PushWhile(ToSpan(@1));                                   }
 	| IF LPAREN Exp RPAREN Stmt ELSE Stmt %prec ELSE          { PushIte(true, ToSpan(@1));                               }					
 	| IF LPAREN Exp RPAREN Stmt		                          { PushIte(false, ToSpan(@1));                              }

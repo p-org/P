@@ -974,10 +974,18 @@
             P_Root.Expr arg1 = valueExprStack.Pop();
             var binStmt = P_Root.MkBinStmt();
             binStmt.op = MkUserCnst(op, span);
-            binStmt.arg2 = (P_Root.IArgType_BinStmt__2)arg2;
+            binStmt.arg2 = (P_Root.IArgType_BinStmt__3)arg2;
             binStmt.arg1 = (P_Root.IArgType_BinStmt__1)arg1;
             binStmt.Span = span;
-            binStmt.id = (P_Root.IArgType_BinStmt__3)MkIntegerId(span);
+            binStmt.id = (P_Root.IArgType_BinStmt__4)MkIntegerId(span);
+            if (op == P_Root.UserCnstKind.REMOVE)
+            {
+                binStmt.qual = P_Root.MkUserCnst(P_Root.UserCnstKind.NONE);
+            }
+            else
+            {
+                binStmt.qual = qualifier.Pop();
+            }
             stmtStack.Push(binStmt);
         }
 

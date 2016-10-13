@@ -14,8 +14,11 @@ machine Main {
 	start state S {
 	    entry {
 			var y: int;
+			var g_local: int;
 			assert y == 0;
-			F(g swap, y xfer);
+			g = g_local swap;
+			F(g_local swap, y xfer);
+			g = g_local xfer;
 			assert g == 1;
 			send this, E, y;
 			if (G(g) == 0)

@@ -377,6 +377,33 @@ PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal)
 	return *prmVal->valueUnion.mid;
 }
 
+void PRT_CALL_CONV PrtTupleSetLinear(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_FUN_PARAM_STATUS status, _In_ PRT_VALUE **value)
+{
+	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
+	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
+	PrtAssert(PrtIsValidValue(*value), "Invalid value expression.");
+	PrtAssert(tuple->discriminator == PRT_VALUE_KIND_TUPLE, "Cannot perform tuple set on this value");
+	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
+
+	PRT_VALUE *oldValue = tuple->valueUnion.tuple->values[index];
+	if (status == PRT_FUN_PARAM_XFER)
+	{
+		if (oldValue != NULL)
+		{
+			PrtFreeValue(oldValue);
+			oldValue = NULL;
+		}
+		tuple->valueUnion.tuple->values[index] = *value;
+		*value = NULL;
+	}
+	else
+	{
+		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		tuple->valueUnion.tuple->values[index] = *value;
+		*value = oldValue;
+	}
+}
+
 void PRT_CALL_CONV PrtTupleSetEx(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_VALUE *value, PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
@@ -410,6 +437,34 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 i
 	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
 	return tuple->valueUnion.tuple->values[index];
+}
+
+void PRT_CALL_CONV PrtSeqUpdateLinear(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_FUN_PARAM_STATUS status, _In_ PRT_VALUE **value)
+{
+	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
+	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
+	PrtAssert(PrtIsValidValue(*value), "Invalid value expression.");
+	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
+	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
+	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
+
+	PRT_VALUE *oldValue = seq->valueUnion.seq->values[index->valueUnion.nt];
+	if (status == PRT_FUN_PARAM_XFER)
+	{
+		if (oldValue != NULL)
+		{
+			PrtFreeValue(oldValue);
+			oldValue = NULL;
+		}
+		seq->valueUnion.seq->values[index->valueUnion.nt] = *value;
+		*value = NULL;
+	}
+	else
+	{
+		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		seq->valueUnion.seq->values[index->valueUnion.nt] = *value;
+		*value = oldValue;
+	}
 }
 
 void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value, PRT_BOOLEAN cloneValue)
@@ -596,7 +651,7 @@ static void PRT_CALL_CONV PrtMapExpand(_Inout_ PRT_VALUE *map)
 	}
 }
 
-void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
+PRT_VALUE *PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
@@ -606,13 +661,11 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE *bucket;
 	PRT_MAPNODE *node = NULL;
-	PRT_BOOLEAN isNewKey = PRT_FALSE;
 
 	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->valueUnion.map->capNum];
 	bucket = map->valueUnion.map->buckets[bucketNum];
 	if (bucket == NULL)
 	{
-		isNewKey = PRT_TRUE;
 		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
 		node->key = cloneKey == PRT_TRUE ? PrtCloneValue(key) : key;
 		node->value = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
@@ -624,7 +677,6 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 	{
 		PRT_VALUE *valueClone = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
 		PRT_MAPNODE *next = bucket;
-		isNewKey = PRT_TRUE;
 		while (next != NULL)
 		{
 			if (PrtIsEqualValue(next->key, key))
@@ -635,47 +687,70 @@ void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _
 					PrtFreeValue(key);
 				}
 
-				PrtFreeValue(next->value);
+				PRT_VALUE *oldValue = next->value;
 				next->value = valueClone;
-				isNewKey = PRT_FALSE;
-				break;
+				return oldValue;
 			}
 
 			next = next->bucketNext;
 		}
 
-		if (isNewKey == PRT_TRUE)
-		{
-			node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-			node->key = cloneKey == PRT_TRUE ? PrtCloneValue(key) : key;
-			node->value = valueClone;
-			node->bucketNext = bucket;
-			node->insertNext = NULL;
-			map->valueUnion.map->buckets[bucketNum] = node;
-		}
+		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
+		node->key = cloneKey == PRT_TRUE ? PrtCloneValue(key) : key;
+		node->value = valueClone;
+		node->bucketNext = bucket;
+		node->insertNext = NULL;
+		map->valueUnion.map->buckets[bucketNum] = node;
 	}
 
-	if (isNewKey == PRT_TRUE)
+	if (map->valueUnion.map->last == NULL)
 	{
-		if (map->valueUnion.map->last == NULL)
-		{
-			map->valueUnion.map->first = node;
-			map->valueUnion.map->last = node;
-			node->insertPrev = NULL;
-		}
-		else
-		{
-			node->insertPrev = map->valueUnion.map->last;
-			map->valueUnion.map->last->insertNext = node;
-			map->valueUnion.map->last = node;
-		}
+		map->valueUnion.map->first = node;
+		map->valueUnion.map->last = node;
+		node->insertPrev = NULL;
+	}
+	else
+	{
+		node->insertPrev = map->valueUnion.map->last;
+		map->valueUnion.map->last->insertNext = node;
+		map->valueUnion.map->last = node;
+	}
 
-		map->valueUnion.map->size = map->valueUnion.map->size + 1;
+	map->valueUnion.map->size = map->valueUnion.map->size + 1;
 
-		if (((double)map->valueUnion.map->size) / ((double)PrtHashtableCapacities[map->valueUnion.map->capNum]) > ((double)PRT_MAXHASHLOAD))
+	if (((double)map->valueUnion.map->size) / ((double)PrtHashtableCapacities[map->valueUnion.map->capNum]) > ((double)PRT_MAXHASHLOAD))
+	{
+		PrtMapExpand(map);
+	}
+
+	return NULL;
+}
+
+void PRT_CALL_CONV PrtMapUpdateLinear(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_FUN_PARAM_STATUS status, _In_ PRT_VALUE **value)
+{
+	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
+	PRT_VALUE *oldValue = PrtMapUpdateHelper(map, key, cloneKey, *value, PRT_FALSE);
+	if (status == PRT_FUN_PARAM_XFER)
+	{
+		if (oldValue != NULL)
 		{
-			PrtMapExpand(map);
+			PrtFreeValue(oldValue);
 		}
+		*value = NULL;
+	}
+	else 
+	{
+		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		*value = oldValue;
+	}
+}
+
+void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
+{
+	PRT_VALUE *oldValue = PrtMapUpdateHelper(map, key, cloneKey, value, cloneValue);
+	if (oldValue != NULL)
+	{
+		PrtFreeValue(oldValue);
 	}
 }
 

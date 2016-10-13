@@ -1337,7 +1337,7 @@ namespace Microsoft.Pc
             }
             else if (funName == PData.Con_BinStmt.Node.Name)
             {
-                yield return GetArgByIndex(ft, 2);
+                yield return GetArgByIndex(ft, 3);
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 if (op == PData.Cnst_Assign.Node.Name)
                 {

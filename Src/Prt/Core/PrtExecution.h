@@ -21,13 +21,6 @@ extern "C"{
 	//
 #define PRT_QUEUE_LEN_DEFAULT 64
 
-	typedef enum PRT_FUN_PARAM_STATUS
-	{
-		PRT_FUN_PARAM_CLONE,
-		PRT_FUN_PARAM_SWAP,
-		PRT_FUN_PARAM_XFER
-	} PRT_FUN_PARAM_STATUS;
-
     typedef struct PRT_COOPERATIVE_SCHEDULER
     {
         PRT_SEMAPHORE           workAvailable;      /* semaphore to signal blocked PrtRunProcess threads */
@@ -165,6 +158,14 @@ extern "C"{
 	/** Sets a global variable to variable
 	* @param[in,out] context The context to modify.
 	* @param[in] varIndex The index of the variable to modify.
+	* @param[in] status Indicates whether this operation is transfer or swap
+	* @param[in,out] value The pointer to the value to transfer or swap
+	*/
+	PRT_API void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE ** value);
+
+	/** Sets a global variable to variable
+	* @param[in,out] context The context to modify.
+	* @param[in] varIndex The index of the variable to modify.
 	* @param[in] value The value to set. (Will be cloned if cloneValue is PRT_TRUE)
 	* @param[in] cloneValue Only set to PRT_FALSE if value will be forever owned by this machine.
 	*/
@@ -176,6 +177,13 @@ extern "C"{
 		_In_  PRT_UINT32				instanceOf,
 		_In_  PRT_VALUE					*payload
 		);
+
+	PRT_API void PRT_CALL_CONV PrtSetLocalVarLinear(
+		_Inout_ PRT_VALUE **locals,
+		_In_ PRT_UINT32 varIndex,
+		_In_ PRT_FUN_PARAM_STATUS status,
+		_Inout_ PRT_VALUE **value
+	);
 
 	PRT_API void PRT_CALL_CONV PrtSetLocalVarEx(
 		_Inout_ PRT_VALUE **locals,

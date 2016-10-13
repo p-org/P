@@ -433,6 +433,13 @@ class PRT_VALUE {
         tuple.tuple[index] = PrtCloneValue(value);
     }
 
+    static PRT_VALUE PrtTupleSetAndReturnOldValue(PRT_VALUE tuple, int index, PRT_VALUE value) {
+		PRT_VALUE oldValue;
+		oldValue = tuple.tuple[index];
+        tuple.tuple[index] = PrtCloneValue(value);
+		return oldValue;
+    }
+
     static PRT_VALUE PrtTupleGet(PRT_VALUE tuple, int index) {
         PRT_VALUE retVal;
 		retVal = PRT_VALUE.PrtCloneValue(tuple.tuple[index]);
@@ -441,6 +448,12 @@ class PRT_VALUE {
 
     static void PrtSeqSet(PRT_VALUE seq, PRT_VALUE index, PRT_VALUE value) {
         seq.seq.Set(index.nt, value);
+    }
+
+    static PRT_VALUE PrtSeqSetAndReturnOldValue(PRT_VALUE seq, PRT_VALUE index, PRT_VALUE value) {
+		PRT_VALUE oldValue;
+		oldValue = seq.seq.SetAndReturnOldValue(index.nt, value);
+        return oldValue;
     }
 
     static void PrtSeqInsert(PRT_VALUE seq, PRT_VALUE index, PRT_VALUE value) {
@@ -471,6 +484,12 @@ class PRT_VALUE {
 
     static void PrtMapSet(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
         map.map.Set(key, value);
+    }
+
+    static PRT_VALUE PrtMapSetAndReturnOldValue(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
+		PRT_VALUE oldValue;
+		oldValue = map.map.SetAndReturnOldValue(key, value);
+        return oldValue;
     }
 
 	static void PrtMapInsert(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
@@ -550,6 +569,14 @@ class PRT_SEQ {
     void Set(int index, PRT_VALUE value) {
 		assert (0 <= index && index < size, "index out of bound");
         contents[index] = PRT_VALUE.PrtCloneValue(value);
+    }
+
+    PRT_VALUE SetAndReturnOldValue(int index, PRT_VALUE value) {
+		PRT_VALUE oldValue;
+		assert (0 <= index && index < size, "index out of bound");
+		oldValue = contents[index];
+        contents[index] = PRT_VALUE.PrtCloneValue(value);
+		return oldValue;
     }
 
     void Insert(int index, PRT_VALUE value) {
@@ -667,19 +694,32 @@ class PRT_MAP {
 		return map;
     }
 
-    void Set(PRT_VALUE key, PRT_VALUE value) {
+	void Set(PRT_VALUE key, PRT_VALUE value) {
+		PRT_VALUE oldValue;
+		oldValue = SetHelper(key, value);
+	}
+	
+	PRT_VALUE SetAndReturnOldValue(PRT_VALUE key, PRT_VALUE value) {
+		PRT_VALUE oldValue;
+		oldValue = SetHelper(key, value);
+		return oldValue;
+	}
+
+    PRT_VALUE SetHelper(PRT_VALUE key, PRT_VALUE value) {
         int i;
 		bool b;
 		PRT_VALUE_ARRAY newKeys;
 		PRT_VALUE_ARRAY newValues;
 		int j;
+		PRT_VALUE oldValue;
 
 		i = 0;
 		while (i < size) {
 			b = PRT_VALUE.PrtIsEqualValue(keys[i], key);
 			if (b) {
+				oldValue = values[i];
 				values[i] = PRT_VALUE.PrtCloneValue(value);
-				return;
+				return oldValue;
 			} else {
 				i = i + 1;
 			}
@@ -699,6 +739,7 @@ class PRT_MAP {
 		keys = newKeys;
 		values = newValues;
 		size = size + 1;
+		return null;
     }
 
     void Remove(PRT_VALUE key) {

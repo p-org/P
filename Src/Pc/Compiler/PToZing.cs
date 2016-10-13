@@ -2403,6 +2403,7 @@ namespace Microsoft.Pc
 
                 if (op == PData.Cnst_Assign.Node.Name)
                 {
+                    string assignType = (GetArgByIndex(ft, 2) as Id).Name;
                     if (((Id)lhs.Function).Name == PData.Con_Field.Node.Name)
                     {
                         var field = (Cnst)GetArgByIndex(lhs, 1);
@@ -2415,11 +2416,40 @@ namespace Microsoft.Pc
                         {
                             fieldIndex = GetFieldIndex(field.GetStringValue(), LookupType(ctxt, GetArgByIndex(lhs, 0)));
                         }
-                        return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleSet"), dest, Factory.Instance.MkCnst(fieldIndex), src)));
+                        if (assignType == "NONE")
+                        {
+                            var returnStmt = MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleSet"), dest, Factory.Instance.MkCnst(fieldIndex), src));
+                            return new ZingTranslationInfo(returnStmt);
+                        }
+                        else if (assignType == "XFER")
+                        {
+                            var returnStmt = 
+                                MkZingSeq(
+                                    MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleSet"), dest, Factory.Instance.MkCnst(fieldIndex), src)),
+                                    MkZingAssign(src, MkZingIdentifier("null")));
+                            return new ZingTranslationInfo(returnStmt);
+                        }
+                        else
+                        {   // assignType = "SWAP" 
+                            var returnStmt = MkZingAssign(src, MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleSetAndReturnOldValue"), dest, Factory.Instance.MkCnst(fieldIndex), src));
+                            return new ZingTranslationInfo(returnStmt);
+                        }
                     }
                     else if (index == null)
                     {
-                        return new ZingTranslationInfo(MkZingAssignWithClone(dest, src));
+                        if (assignType == "NONE")
+                        {
+                            return new ZingTranslationInfo(MkZingAssignWithClone(dest, src));
+                        }
+                        else if (assignType == "XFER")
+                        {
+                            return new ZingTranslationInfo(MkZingSeq(MkZingAssign(dest, src), MkZingAssign(src, MkZingIdentifier("null"))));
+                        }
+                        else
+                        {   // assignType == "SWAP"
+                            var swapVar = ctxt.GetTmpVar(PrtValue, "swap");
+                            return new ZingTranslationInfo(MkZingSeq(MkZingAssign(swapVar, dest), MkZingAssign(dest, src), MkZingAssign(src, swapVar)));
+                        }
                     }
                     else
                     {
@@ -2428,12 +2458,46 @@ namespace Microsoft.Pc
                         typeName = ((Id)type.Function).Name;
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
-                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtSeqSet"), dest, index, src)));
+                            if (assignType == "NONE")
+                            {
+                                var returnStmt = MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtSeqSet"), dest, index, src));
+                                return new ZingTranslationInfo(returnStmt);
+                            }
+                            else if (assignType == "XFER")
+                            {
+                                var returnStmt =
+                                    MkZingSeq(
+                                        MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtSeqSet"), dest, index, src)),
+                                        MkZingAssign(src, MkZingIdentifier("null")));
+                                return new ZingTranslationInfo(returnStmt);
+                            }
+                            else
+                            {   // assignType == "SWAP"
+                                var returnStmt = MkZingAssign(src, MkZingCall(MkZingDot("PRT_VALUE", "PrtSeqSetAndReturnOldValue"), dest, index, src));
+                                return new ZingTranslationInfo(returnStmt);
+                            }
                         }
                         else
                         {
                             // type is PMapType
-                            return new ZingTranslationInfo(MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSet"), dest, index, src)));
+                            if (assignType == "NONE")
+                            {
+                                var returnStmt = MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSet"), dest, index, src));
+                                return new ZingTranslationInfo(returnStmt);
+                            }
+                            else if (assignType == "XFER")
+                            {
+                                var returnStmt =
+                                    MkZingSeq(
+                                        MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSetAndReturnOldValue"), dest, index, src)),
+                                        MkZingAssign(src, MkZingIdentifier("null")));
+                                return new ZingTranslationInfo(returnStmt);
+                            }
+                            else
+                            {   // assignType == "SWAP"
+                                var returnStmt = MkZingAssign(src, MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSet"), dest, index, src));
+                                return new ZingTranslationInfo(returnStmt);
+                            }
                         }
                     }
                 }

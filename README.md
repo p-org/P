@@ -14,5 +14,14 @@ See [fun demo video](https://www.youtube.com/watch?v=ZzLoNbMGhg4) using P to con
 
 Publications
 ==========================================================
+- **[P: Safe asynchronous event-driven programming](http://research.microsoft.com/pubs/191069/pldi212_desai.pdf)**.
+Ankush Desai, Vivek Gupta, Ethan Jackson, Shaz Qadeer, Sriram Rajamani, and Damien Zufferey.
+In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI), 2013.
 
-- [P: Safe asynchronous event-driven programming] (http://research.microsoft.com/pubs/191069/pldi212_desai.pdf), ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI), 2013.
+- **[Systematic testing of asynchronous reactive systems](http://dx.doi.org/10.1145/2786805.2786861)**.
+Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
+In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
+
+- **[Building Reliable Distributed Systems With P](http://www2.eecs.berkeley.edu/Pubs/TechRpts/2015/EECS-2015-198.pdf)**.
+Ankush Desai, Ethan Jackson, Amar Phanishayee, Shaz Qadeer and Sanjit A. Seshia.
+University of California, Berkeley.Technical Report No. UCB/EECS-2015-198.

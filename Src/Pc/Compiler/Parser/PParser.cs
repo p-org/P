@@ -854,7 +854,7 @@
             Contract.Assert(valueExprStack.Count > 0);
             var iteStmt = P_Root.MkIte();
             iteStmt.Span = span;
-            iteStmt.id = (P_Root.IArgType_Ite__3) MkId(span);
+            iteStmt.id = (P_Root.IArgType_Ite__3) MkIntegerId(span);
             iteStmt.cond = (P_Root.IArgType_Ite__0)valueExprStack.Pop();
             if (hasElse)
             {

@@ -63,7 +63,7 @@ namespace Microsoft.Pc
         private string SpanToString(Span span, string msg)
         {
             Flag flag = new Flag(SeverityKind.Error, span, msg, 0, span.Program);
-            return compiler.FormatError(flag).Replace(@"\", @"\\");
+            return ErrorReporter.FormatError(flag, compiler.Options).Replace(@"\", @"\\");
         }
 
         private static AST<Model> Add(AST<Model> m, AST<FuncTerm> ft)

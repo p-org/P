@@ -33,15 +33,18 @@ namespace Microsoft.Pc
 
     class PToCSharp : PTranslation
     {
-        public PToCSharp(Compiler compiler, AST<Model> model, AST<Model> modelWithTypes)
+        public PToCSharp(Compiler compiler, AST<Model> model, AST<Model> modelWithTypes, string csharpFileName)
             : base(compiler, model)
         {
+            this.csharpFileName = csharpFileName;
+            allStaticFuns = base.allStaticFuns;
             //this.typeContext = new TypeTranslationContext(this);
             //GenerateTypeInfo(modelWithTypes);
         }
 
         #region CSharpCompiler
-
+        string csharpFileName;
+        static Dictionary<string, FunInfo> allStaticFuns;
         //for storing members of the Application class:
         static List <SyntaxNode> members = new List<SyntaxNode>();
         //final C# program:
@@ -157,16 +160,12 @@ namespace Microsoft.Pc
             List<AST<Node>> elements = new List<AST<Node>>();
             MkAppConstructors();
             MkEvents();
-            //TODO(expand): create static class and static field for each static function in P program
-            //TODO(question): where to get information about static functions defined outside of any machine?
-            //in PTranslation class: 
-            //public Dictionary<AST<Node>, string> anonFunToName;
             //generated static anon function name is: 
             //var funName = "AnonFunStatic" + anonFunCounterStatic;
             //In PToZing.cs:
             //string funName = anonFunToName[Factory.Instance.ToAST(fun)];
             //, where fun is a Node.
-            //MkStaticFunctions(elements, workspace, generator);
+            MkStaticFunctions();
             MkOtherAppFields();
             MkMachineClasses();
             //MkMonitorClasses(elements, workspace, generator);
@@ -252,64 +251,20 @@ namespace Microsoft.Pc
                 
             }
         }
-        private void MkOtherAppFields()
+        internal class MkFunctionDecl
         {
-            //CreateMainMachine method declaration:
-            List<SyntaxNode> fields = new List<SyntaxNode>();
-            //stmt1: var mainMachine = new Main(this, 10);
-            fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "mainMachine", 
-                                   generator.ObjectCreationExpression(generator.IdentifierName("Main"),
-                                   new List<SyntaxNode>() { generator.ThisExpression(), generator.LiteralExpression(10) })));
-                                   //new List<SyntaxNode>() { generator.IdentifierName("this"), generator.LiteralExpression(10) })));
-            //stmt2: AddImplMachineToStateImpl(mainMachine);
-            fields.Add(generator.InvocationExpression(generator.IdentifierName("AddImplMachineToStateImpl"), 
-                                 new List<SyntaxNode>() { generator.IdentifierName("mainMachine") }));
-            //stmt3: return mainMachine;
-            fields.Add(generator.ReturnStatement(generator.IdentifierName("mainMachine")));
-            //public PrtImplMachine CreateMainMachine() {stmt1; stmt2; stmt3};
-            var makeCreateMainMachineDecl = generator.MethodDeclaration("CreateMainMachine", null,
-              null, generator.IdentifierName("PrtImplMachine"),
-              Accessibility.Public,
-              statements: fields);
-            members.Add(makeCreateMainMachineDecl);
-        }
-        
-        private void MkMachineClasses()
-        {
-            //TODO(expand) For now: only calls MkMainMachineClass  
-            foreach (var pair in allMachines)
+            public string funName;
+            public string funType;
+            //TODO: might not be needed
+            public bool isGlobalStatic;
+            //null if global function:
+            public MkMachineClass owner;
+            public MkFunctionDecl(string funName, bool isGlobalStatic, MkMachineClass owner)
             {
-                var mkMachine = new MkMachineClass(pair.Key, pair.Value);
-                if (pair.Key == "Main")
-                {
-                    SyntaxNode node = mkMachine.MkMainMachineClass();
-                    members.Add(node);
-                }
-                else if ((pair.Value).IsReal)
-                {
-                    SyntaxNode node = mkMachine.MkRealMachineClass();
-                    members.Add(node);
-                }
-                else
-                {
-                    //monitor machine
-                    SyntaxNode node = mkMachine.MkSpecMachineClass();
-                    members.Add(node);
-                }
-            }
-        }
-        internal class MkMachineClass
-        {
-            public string machName;
-            public MachineInfo machInfo;
-            static List<SyntaxNode> machineMembers = new List<SyntaxNode>();
-            List<StatementSyntax> mainConstructorFields = new List<StatementSyntax>();
-            //keeps track of already encountered function names:
-            private HashSet<string> processedFuns = new HashSet<string>();
-            private static int transition_count = 1;
-            public MkMachineClass(string name, MachineInfo info) {
-                machName = name;
-                machInfo = info;
+                this.funName = funName;
+                this.funType = funName + "_Class";
+                this.isGlobalStatic = isGlobalStatic;
+                this.owner = owner;
             }
             //TODO(fix): replace this code with general case: Execute method for any function
             public SyntaxNode MkExecuteMethod()
@@ -416,7 +371,7 @@ namespace Microsoft.Pc
             public SyntaxNode MkCreateLocalsMethod()
             {
                 //var locals = new List<PrtValue>();
-                var stmt1 = 
+                var stmt1 =
                     LocalDeclarationStatement(
                         VariableDeclaration(
                             IdentifierName("var"))
@@ -438,7 +393,7 @@ namespace Microsoft.Pc
                     .NormalizeWhitespace();
 
                 //foreach (var item in args)
-                var stmt2 = 
+                var stmt2 =
                     ForEachStatement(
                         IdentifierName("var"),
                         Identifier("item"),
@@ -464,7 +419,7 @@ namespace Microsoft.Pc
 
                 ////no local variables hence nothing to add
                 //return locals;
-                var stmt3 = 
+                var stmt3 =
                     ReturnStatement(
                         IdentifierName("locals"))
                     .WithReturnKeyword(
@@ -512,7 +467,7 @@ namespace Microsoft.Pc
 
                 return createLocalsMethodDecl;
             }
-            public SyntaxNode MkFuncClassForState(string funName, string funType)
+            public SyntaxNode MkFuncClass()
             {
                 SyntaxList<MemberDeclarationSyntax> funMembers = new SyntaxList<MemberDeclarationSyntax>();
 
@@ -568,8 +523,8 @@ namespace Microsoft.Pc
                 }
                 funMembers = funMembers.Add(isAnonProperty);
 
-                funMembers = funMembers.Add((MemberDeclarationSyntax) MkExecuteMethod());
-                funMembers = funMembers.Add((MemberDeclarationSyntax) MkCreateLocalsMethod());
+                funMembers = funMembers.Add((MemberDeclarationSyntax)MkExecuteMethod());
+                funMembers = funMembers.Add((MemberDeclarationSyntax)MkCreateLocalsMethod());
 
                 var funClassDecl =
                     ClassDeclaration(funType)
@@ -586,17 +541,21 @@ namespace Microsoft.Pc
 
                 return funClassDecl;
             }
-            
-            public void AddFunClass(string funName, string funType)
+
+            public void AddFunClass()
             {
-                //If this function name was already encountered, class declaration
-                //has been generated earlier
-                if (!processedFuns.Contains(funName))
+                //Function class declaration should be generated in two cases:
+                //1. For all global static functions
+                //2. For other functions: if this function name was not already encountered
+                if (owner == null || !(owner == null) && !owner.processedFuns.Contains(funName))
                 {
                     //Class declaration:
-                    machineMembers.Add(MkFuncClassForState(funName, funType));
+                    List<SyntaxNode> whereToAdd;
+                    whereToAdd = (this.isGlobalStatic) ? PToCSharp.members : owner.machineMembers;
+
+                    whereToAdd.Add(MkFuncClass());
                     //Variable declaration:
-                    machineMembers.Add(
+                    whereToAdd.Add(
                         FieldDeclaration(
                             VariableDeclaration(
                                 IdentifierName(funType))
@@ -610,27 +569,144 @@ namespace Microsoft.Pc
                                         Token(SyntaxKind.PublicKeyword),
                                         Token(SyntaxKind.StaticKeyword)}))
                         .NormalizeWhitespace());
-                    //Add function variable instantiation to Main constructor:
-                    mainConstructorFields.Add(
-                        ExpressionStatement(
-                            AssignmentExpression(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                IdentifierName(funName),
-                                ObjectCreationExpression(
-                                    IdentifierName(funType))
-                                .WithArgumentList(
-                                    ArgumentList())))
-                        .NormalizeWhitespace());
 
-                    processedFuns.Add(funName);
+                    //Add function variable instantiation to:
+                    //PToCsharp class for global static functions;
+                    //Main constructor for other functions
+                    if (this.isGlobalStatic)
+                    {
+                        PToCSharp.members.Add(
+                            ExpressionStatement(
+                                AssignmentExpression(
+                                    SyntaxKind.SimpleAssignmentExpression,
+                                    IdentifierName(funName),
+                                    ObjectCreationExpression(
+                                        IdentifierName(funType))
+                                    .WithArgumentList(
+                                        ArgumentList())))
+                            .NormalizeWhitespace());
+                    }
+                    else
+                    {
+                        owner.mainConstructorFields.Add(
+                            ExpressionStatement(
+                                AssignmentExpression(
+                                    SyntaxKind.SimpleAssignmentExpression,
+                                    IdentifierName(funName),
+                                    ObjectCreationExpression(
+                                        IdentifierName(funType))
+                                    .WithArgumentList(
+                                        ArgumentList())))
+                            .NormalizeWhitespace());
+                    }
+   
+                    if (!(owner == null))
+                    {
+                        owner.processedFuns.Add(funName);
+                    }   
                 }
             }
-            public SyntaxNode MkMainMachineClass()
+        }
+        private void MkStaticFunctions()
+        {
+            foreach (var pair in allStaticFuns)
             {
-                //function instantiations for the constructor of Main:
-                //List<ExpressionStatementSyntax> mainConstructorFields = new List<ExpressionStatementSyntax>();
-                
-
+                var funName = pair.Key;
+                var funType = funName + "_Class";
+                MkFunctionDecl funDecl = new MkFunctionDecl(funName, true, null);
+                funDecl.AddFunClass();
+                //members.Add();
+                //members.Add(AddStaticFunClass(funName,funType));
+            }
+        }
+        private void MkOtherAppFields()
+        {
+            //CreateMainMachine method declaration:
+            List<SyntaxNode> fields = new List<SyntaxNode>();
+            //TODO(expand): replace "10" with Main machine's maxQueueSize;
+            //check that maxQueueSizeAssumed is true
+            //stmt1: var mainMachine = new Main(this, mainMachineMaxQueueSize);
+            MachineInfo mainMachInfo;
+            //TODO(question): do we need to have the two cases below? If not, what is maxQueueSizeAssumed for?    
+            //TODO(bug fix) Implement both "assume" and "assert" for maxQueueSize
+            //There are three cases:
+            //- default (no constraint on queue size): maxQueueSizeAssumed == false; maxQueueSize = -1 
+            // - replace by 10? (TODO(question))
+            //- assume <maxQueueSize>: maxQueueSize > 0, 
+            //- assert <maxQueueSize>: maxQueueSizeAssumed == true;   
+            if (allMachines.TryGetValue("Main", out mainMachInfo))
+            {
+                if (mainMachInfo.maxQueueSizeAssumed)
+                {
+                    fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "mainMachine",
+                                   generator.ObjectCreationExpression(generator.IdentifierName("Main"),
+                                   new List<SyntaxNode>() { generator.ThisExpression(), generator.LiteralExpression(mainMachInfo.maxQueueSize) })));
+                }
+                else
+                {
+                    //TODO(question): 10 is the default maxQueueSize for Main machine
+                    fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "mainMachine",
+                                   generator.ObjectCreationExpression(generator.IdentifierName("Main"),
+                                   new List<SyntaxNode>() { generator.ThisExpression(), generator.LiteralExpression(10) })));
+                }
+            }
+        
+            //stmt2: AddImplMachineToStateImpl(mainMachine);
+            fields.Add(generator.InvocationExpression(generator.IdentifierName("AddImplMachineToStateImpl"), 
+                                 new List<SyntaxNode>() { generator.IdentifierName("mainMachine") }));
+            //stmt3: return mainMachine;
+            fields.Add(generator.ReturnStatement(generator.IdentifierName("mainMachine")));
+            //public PrtImplMachine CreateMainMachine() {stmt1; stmt2; stmt3};
+            var makeCreateMainMachineDecl = generator.MethodDeclaration("CreateMainMachine", null,
+              null, generator.IdentifierName("PrtImplMachine"),
+              Accessibility.Public,
+              statements: fields);
+            members.Add(makeCreateMainMachineDecl);
+        }
+        private void MkMachineClasses()
+        {
+            //TODO(expand) For now: only calls MkMainMachineClass  
+            //Debug only:
+            Console.WriteLine("Number of machines: {0}", allMachines.Count());
+            foreach (var pair in allMachines)
+            {
+                MkMachineClass mkMachine;
+                if ((pair.Value).IsReal)
+                {
+                    //Regular machine:
+                    //Debug only:
+                    Console.WriteLine("Next Real machine: name: {0}", pair.Key);
+                    mkMachine = new MkMachineClass(pair.Key, pair.Value);
+                    SyntaxNode node = mkMachine.MkRealMachineClass();
+                    members.Add(node);
+                }
+                else
+                {
+                    //monitor machine
+                    //Debug only:
+                    Console.WriteLine("Next Spec machine: name: {0}", pair.Key);
+                    mkMachine = new MkMachineClass(pair.Key, pair.Value);
+                    SyntaxNode node = mkMachine.MkSpecMachineClass();
+                    members.Add(node);
+                }
+            }
+        }
+        internal class MkMachineClass
+        {
+            public string machName;
+            public MachineInfo machInfo;
+            public List<SyntaxNode> machineMembers = new List<SyntaxNode>();
+            public List<StatementSyntax> mainConstructorFields = new List<StatementSyntax>();
+            //keeps track of already encountered function names:
+            public HashSet<string> processedFuns = new HashSet<string>();
+            private int transition_count = 1;
+            public MkMachineClass(string name, MachineInfo info) {
+                machName = name;
+                machInfo = info;
+            }
+           
+            public SyntaxNode MkRealMachineClass()
+            {
                 //StartState property (getter only, since there's no setter in the base class):
                 string startState = machInfo.initStateName;
                 var startStateProperty =
@@ -656,7 +732,7 @@ namespace Microsoft.Pc
                 machineMembers.Add(startStateProperty);
 
                 
-                var skeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Main")));
+                var skeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName(machName)));
                 var skeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
                   null, generator.IdentifierName("PrtImplMachine"),
                   Accessibility.Public,
@@ -702,17 +778,15 @@ namespace Microsoft.Pc
                                     Block(
                                         SingletonList<StatementSyntax>(
                                             ReturnStatement(
-                                                LiteralExpression(
-                                                    SyntaxKind.StringLiteralExpression,
-                                                    Literal("Main")))))))))
+                                                IdentifierName("\"" + machName + "\""))))))))
                     .NormalizeWhitespace();
                 machineMembers.Add(nameProperty);
 
                 //constructor for cloning
-                var constructor_1 = generator.ConstructorDeclaration("Main", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
+                var constructor_1 = generator.ConstructorDeclaration(machName, null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
                 machineMembers.Add(constructor_1);
 
-                //Main constructor
+                //Machine class constructor
                 //TODO(expand): add inits for all fields
                 var constructorPars = new SyntaxNode[]
                 {
@@ -720,16 +794,16 @@ namespace Microsoft.Pc
                 generator.ParameterDeclaration("maxB", generator.TypeExpression(SpecialType.System_Int32))
                 };
                 var baseConstructorPars = new SyntaxNode[] { generator.IdentifierName("app"), generator.IdentifierName("maxB") };
-                var constructor_2 = generator.ConstructorDeclaration("Main", constructorPars, Accessibility.Public, baseConstructorArguments: baseConstructorPars);
+                var constructor_2 = generator.ConstructorDeclaration(machName, constructorPars, Accessibility.Public, baseConstructorArguments: baseConstructorPars);
                 machineMembers.Add(constructor_2);
 
                 //TODO(expand): getters and setters
                 
                 //#region Functions
 
-                //TODO(expand): generate functions declared in the Main machine (not state-specific)
+                //TODO(expand): generate functions declared in the machine (not state-specific)
 
-                //classes for functions for each state of Main
+                //classes for functions for each state of the machine
                 //and variable declarations for those functions:
                 foreach (var pair in machInfo.stateNameToStateInfo)
                 {
@@ -737,34 +811,36 @@ namespace Microsoft.Pc
                     var funName = pair.Value.entryActionName;
                     //TODO(remove)
                     Console.WriteLine("Entry func name for state {0}: {1}", pair.Key, funName);
-                    var funType = funName + "_Class";
-                    AddFunClass(funName, funType);
+                    MkFunctionDecl funDecl = new MkFunctionDecl(funName, false, this);
+                    funDecl.AddFunClass();
 
                     //exit function of the state: 
                     funName = pair.Value.exitFunName;
                     //TODO(remove)
                     Console.WriteLine("Exit func name for state {0}: {1}", pair.Key, funName);
-                    funType = funName + "_Class";
-                    AddFunClass(funName, funType);
+                    funDecl = new MkFunctionDecl(funName, false, this);
+                    funDecl.AddFunClass();
 
                     //Functions in transitions:
                     foreach (var transition in pair.Value.transitions)
                     {
                         funName = transition.Value.transFunName;
-                        funType = funName + "_Class";
-                        if (!transition.Value.IsPush)
+                        //stopped here+++++++++++++++++++++++++++++++++++++++++++++
+                        //TODO: check that this is not a global static function; if so, do not generate class and instance
+                        if (!transition.Value.IsPush && !(PToCSharp.allStaticFuns.ContainsKey(funName)))
                         {
-                            AddFunClass(funName, funType);
+                            //TODO(remove)
+                            Console.WriteLine("For goto transition: func name for state {0}: {1}", pair.Key, funName);
+                            funDecl = new MkFunctionDecl(funName, false, this);
+                            funDecl.AddFunClass();
                         }
                     }
 
                     //(TODO: how to loop over functions in dos?) Functions in dos:
- 
-                    //TODO(question, expand): any other functions for the state? What about functions in transitions?
 
                 }
 
-                //State classes for all states of Main:
+                //State classes for all states of the machine:
                 foreach (var pair in machInfo.stateNameToStateInfo)
                 {
                     string stateName = pair.Key;
@@ -860,7 +936,7 @@ namespace Microsoft.Pc
                         .NormalizeWhitespace();
                     machineMembers.Add(stateDeclaration);
 
-                    //state instantiation for Main constructor:
+                    //state instantiation for the machine class constructor:
                     mainConstructorFields.Add(
                         ExpressionStatement(
                             AssignmentExpression(
@@ -990,11 +1066,11 @@ namespace Microsoft.Pc
                     }
                 }
 
-                //Constructor for Main:
-                //static Main()
+                //Constructor for the machine class:
+                //static Machine()
                 var mainConstructor =
                     ConstructorDeclaration(
-                        Identifier("Main"))
+                        Identifier(machName))
                             .WithModifiers(
                                 TokenList(
                                     Token(SyntaxKind.StaticKeyword)))
@@ -1003,24 +1079,20 @@ namespace Microsoft.Pc
                                     ))
                     .NormalizeWhitespace();
 
-                //SyntaxNode mainConstructor = generator.ConstructorDeclaration("Main", modifiers: DeclarationModifiers.Static,
+                //SyntaxNode mainConstructor = generator.ConstructorDeclaration(machName, modifiers: DeclarationModifiers.Static,
                 //    statements: mainConstructorFields);
 
                 machineMembers.Add(mainConstructor);
 
                 var mainMachineClassDecl = generator.ClassDeclaration(
-                  "Main", typeParameters: null,
+                  machName, typeParameters: null,
                   accessibility: Accessibility.Public,
                   baseType: generator.IdentifierName("PrtImplMachine"),
                   members: machineMembers);
 
                 return mainMachineClassDecl;
             }
-            public SyntaxNode MkRealMachineClass()
-            {
-                //TODO(expand)
-                return null;
-            }
+            
             public SyntaxNode MkSpecMachineClass()
             {
                 //TODO(expand)
@@ -1036,8 +1108,10 @@ namespace Microsoft.Pc
               members: members);
 
             // Declare a namespace
-            //TODO(question): generate namespace name: <source name> + "_CSharp" or something
-            var programNameSpaceDeclaration = generator.NamespaceDeclaration("MyPProgramGenerated", applicationcClassDeclaration);
+            //Generate namespace name: <output file name, no ".cs"> 
+            int index = this.csharpFileName.LastIndexOf(".");
+            string namespaceName = this.csharpFileName.Substring(0, index);
+            var programNameSpaceDeclaration = generator.NamespaceDeclaration(namespaceName, applicationcClassDeclaration);
 
             List<SyntaxNode> usingDirectivesList = new List<SyntaxNode>();
             usingDirectivesList.Add(generator.NamespaceImportDeclaration("P.Runtime"));

@@ -63,6 +63,7 @@
     <Compile Include="PingPong.cs" />
     <Compile Include="PingPong.FirstDraft.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TwoMachines.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\PRuntime\PRuntime.csproj">
@@ -72,6 +73,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="PingPong.p" />
+    <None Include="TwoMachines.p" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -780,7 +780,7 @@
 
             using (this.Profiler.Start("Generating CSharp", csharpFileName))
             {
-                var pToCSharp = new PToCSharp(this, RootModelWithTypes, idToSourceInfo);
+                var pToCSharp = new PToCSharp(this, RootModelWithTypes, idToSourceInfo, csharpFileName);
                 var success = pToCSharp.GenerateCSharp(csharpFileName);
                 UninstallProgram(RootProgramNameWithTypes);
                 return success;

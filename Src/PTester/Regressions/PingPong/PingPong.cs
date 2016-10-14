@@ -210,6 +210,42 @@ namespace MyPProgramGenerated
             }
 
             public static AnonFun3_Class AnonFun3;
+            public class Action2_Class : PrtFun
+            {
+                public override bool IsAnonFun
+                {
+                    get
+                    {
+                        return false;
+                    }
+                }
+
+                public override void Execute(StateImpl application, PrtMachine parent)
+                {
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    if (currFun.returnTolocation == 0)
+                        goto Loc_0;
+                    else
+                        goto Ret;
+                    Loc_0:
+                    Ret:
+                        parent.PrtFunContReturn(null);
+                }
+
+                public override List<PrtValue> CreateLocals(params PrtValue[] args)
+                {
+                    var locals = new List<PrtValue>();
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
+
+                    //no local variables hence nothing to add
+                    return locals;
+                }
+            }
+
+            public static Action2_Class Action2;
             public class AnonFun4_Class : PrtFun
             {
                 public override bool IsAnonFun
@@ -312,6 +348,7 @@ namespace MyPProgramGenerated
                 AnonFun0 = new AnonFun0_Class();
                 AnonFun2 = new AnonFun2_Class();
                 AnonFun3 = new AnonFun3_Class();
+                Action2 = new Action2_Class();
                 AnonFun4 = new AnonFun4_Class();
                 AnonFun5 = new AnonFun5_Class();
                 Main_InitPingPong = new Main_InitPingPong_Class("Main_InitPingPong", AnonFun1, AnonFun0, false, StateTemperature.Warm);
@@ -320,9 +357,9 @@ namespace MyPProgramGenerated
                 PrtTransition transition_2 = new PrtTransition(PrtCommonFunctions.SkipFun, Main_Success, true);
                 Main_InitPingPong.transitions.Add(E, transition_2);
                 Main_Fail = new Main_Fail_Class("Main_Fail", AnonFun3, AnonFun0, false, StateTemperature.Warm);
-                PrtTransition transition_3 = new PrtTransition(AnonFun4, Main_InitPingPong, false);
+                PrtTransition transition_3 = new PrtTransition(Action2, Main_InitPingPong, false);
                 Main_Fail.transitions.Add(dummy, transition_3);
-                PrtTransition transition_4 = new PrtTransition(PrtCommonFunctions.SkipFun, Main_Success, true);
+                PrtTransition transition_4 = new PrtTransition(AnonFun4, Main_Success, false);
                 Main_Fail.transitions.Add(E, transition_4);
                 Main_Success = new Main_Success_Class("Main_Success", AnonFun0, AnonFun0, false, StateTemperature.Warm);
                 PrtTransition transition_5 = new PrtTransition(AnonFun5, Main_InitPingPong, false);

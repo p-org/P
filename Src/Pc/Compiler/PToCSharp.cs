@@ -37,14 +37,12 @@ namespace Microsoft.Pc
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
             this.csharpFileName = csharpFileName;
-            allStaticFuns = base.allStaticFuns;
             //this.typeContext = new TypeTranslationContext(this);
             //GenerateTypeInfo(modelWithTypes);
         }
 
         #region CSharpCompiler
         string csharpFileName;
-        static Dictionary<string, FunInfo> allStaticFuns;
         //for storing members of the Application class:
         static List <SyntaxNode> members = new List<SyntaxNode>();
         //final C# program:
@@ -140,7 +138,7 @@ namespace Microsoft.Pc
                 return "enum, tuple, seq or map type not implemented yet";
             }
         }
-        public bool GenerateCSharp(string csharpFileName)
+        public bool GenerateCSharp()
         {
             if (!allMachines.ContainsKey("Main"))
             {
@@ -676,7 +674,7 @@ namespace Microsoft.Pc
                     //Regular machine:
                     //Debug only:
                     Console.WriteLine("Next Real machine: name: {0}", pair.Key);
-                    mkMachine = new MkMachineClass(pair.Key, pair.Value);
+                    mkMachine = new MkMachineClass(this, pair.Key, pair.Value);
                     SyntaxNode node = mkMachine.MkRealMachineClass();
                     members.Add(node);
                 }
@@ -685,7 +683,7 @@ namespace Microsoft.Pc
                     //monitor machine
                     //Debug only:
                     Console.WriteLine("Next Spec machine: name: {0}", pair.Key);
-                    mkMachine = new MkMachineClass(pair.Key, pair.Value);
+                    mkMachine = new MkMachineClass(this, pair.Key, pair.Value);
                     SyntaxNode node = mkMachine.MkSpecMachineClass();
                     members.Add(node);
                 }
@@ -693,6 +691,7 @@ namespace Microsoft.Pc
         }
         internal class MkMachineClass
         {
+            public PToCSharp translator;
             public string machName;
             public MachineInfo machInfo;
             public List<SyntaxNode> machineMembers = new List<SyntaxNode>();
@@ -700,7 +699,8 @@ namespace Microsoft.Pc
             //keeps track of already encountered function names:
             public HashSet<string> processedFuns = new HashSet<string>();
             private int transition_count = 1;
-            public MkMachineClass(string name, MachineInfo info) {
+            public MkMachineClass(PToCSharp ptoCsharp, string name, MachineInfo info) {
+                translator = ptoCsharp;
                 machName = name;
                 machInfo = info;
             }
@@ -827,7 +827,7 @@ namespace Microsoft.Pc
                         funName = transition.Value.transFunName;
                         //stopped here+++++++++++++++++++++++++++++++++++++++++++++
                         //TODO: check that this is not a global static function; if so, do not generate class and instance
-                        if (!transition.Value.IsPush && !(PToCSharp.allStaticFuns.ContainsKey(funName)))
+                        if (!transition.Value.IsPush && !translator.allStaticFuns.ContainsKey(funName))
                         {
                             //TODO(remove)
                             Console.WriteLine("For goto transition: func name for state {0}: {1}", pair.Key, funName);

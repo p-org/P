@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 40727 distinct states explored
+OUT: 30216 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -22,7 +22,6 @@ Trace-Log 0:
 <CreateLog> Created Machine Node-0
 <StateLog> Machine Node-0 entering State WaitPing
 <CreateLog> Created Machine Node-1
-<StateLog> Machine Node-1 entering State WaitPing
 <AnnounceLog> Enqueued Event < ____M_START, map : ((____Node-0,true)(____Node-1,true)) > to Liveness spec machine
 <StateLog> Machine Liveness-0 exiting State Init
 <StateLog> Machine Liveness-0 entering State Wait
@@ -49,7 +48,6 @@ Trace-Log 0:
 <NullTransLog> Null transition taken by Machine ____Timer-0
 <StateLog> Machine Timer-0 exiting State WaitForCancel
 <EnqueueLog> Enqueued Event < ____TIMEOUT, ____Timer-0 > in Machine ____FailureDetector-0 by ____Timer-0
-<StateLog> Machine Timer-0 entering State WaitForReq
 <DequeueLog> Dequeued Event < ____PONG, ____Node-0 > at Machine ____FailureDetector-0
 <DequeueLog> Dequeued Event < ____TIMEOUT, ____Timer-0 > at Machine ____FailureDetector-0
 <RaiseLog> Machine FailureDetector-0 raised Event ____UNIT
@@ -64,6 +62,7 @@ Trace-Log 0:
 <DequeueLog> Dequeued Event < ____halt, null > at Machine ____Node-0
 <StateLog> Machine Node-0 exiting State WaitPing
 <EnqueueLog> Enqueued Event < ____halt, null > in Machine ____Node-1 by ____Main-0
+<StateLog> Machine Node-1 entering State WaitPing
 <DequeueLog> Dequeued Event < ____PING, ____FailureDetector-0 > at Machine ____Node-1
 <AnnounceLog> Enqueued Event < ____M_PONG, ____Node-1 > to Safety spec machine
 <EnqueueLog> Enqueued Event < ____PONG, ____Node-1 > in Machine ____FailureDetector-0 by ____Node-1
@@ -71,6 +70,7 @@ Trace-Log 0:
 <EnqueueLog> Enqueued Event < ____CANCEL, null > in Machine ____Timer-0 by ____FailureDetector-0
 <RaiseLog> Machine FailureDetector-0 raised Event ____TIMER_CANCELED
 <StateLog> Machine FailureDetector-0 entering State WaitForCancelResponse
+<StateLog> Machine Timer-0 entering State WaitForReq
 <DequeueLog> Dequeued Event < ____START, 100 > at Machine ____Timer-0
 <StateLog> Machine Timer-0 exiting State WaitForReq
 <StateLog> Machine Timer-0 entering State WaitForCancel
@@ -113,15 +113,15 @@ Trace-Log 0:
 <StateLog> Machine FailureDetector-0 entering State SendPing
 <AnnounceLog> Enqueued Event < ____M_PING, ____Node-0 > to Safety spec machine
 <EnqueueLog> ____Node-0 Machine has been halted and Event ____PING is dropped
-<AnnounceLog> Enqueued Event < ____M_PING, ____Node-1 > to Safety spec machine
-<EnqueueLog> Enqueued Event < ____PING, ____FailureDetector-0 > in Machine ____Node-1 by ____FailureDetector-0
-<EnqueueLog> Enqueued Event < ____START, 100 > in Machine ____Timer-0 by ____FailureDetector-0
 <DequeueLog> Dequeued Event < ____PING, ____FailureDetector-0 > at Machine ____Node-1
 <AnnounceLog> Enqueued Event < ____M_PONG, ____Node-1 > to Safety spec machine
 <EnqueueLog> Enqueued Event < ____PONG, ____Node-1 > in Machine ____FailureDetector-0 by ____Node-1
-<DequeueLog> Dequeued Event < ____PONG, ____Node-1 > at Machine ____FailureDetector-0
 <DequeueLog> Dequeued Event < ____halt, null > at Machine ____Node-1
 <StateLog> Machine Node-1 exiting State WaitPing
+<AnnounceLog> Enqueued Event < ____M_PING, ____Node-1 > to Safety spec machine
+<EnqueueLog> ____Node-1 Machine has been halted and Event ____PING is dropped
+<EnqueueLog> Enqueued Event < ____START, 100 > in Machine ____Timer-0 by ____FailureDetector-0
+<DequeueLog> Dequeued Event < ____PONG, ____Node-1 > at Machine ____FailureDetector-0
 <StateLog> Machine Timer-0 entering State WaitForReq
 <DequeueLog> Dequeued Event < ____START, 100 > at Machine ____Timer-0
 <StateLog> Machine Timer-0 exiting State WaitForReq

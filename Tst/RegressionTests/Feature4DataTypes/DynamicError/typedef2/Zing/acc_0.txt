@@ -73,5 +73,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_9.bl,)
+Expression: assert(tmp_7.bl,)
 Comment: typedef2.p (59, 5): Assert failed

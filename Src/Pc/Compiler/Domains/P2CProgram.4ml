@@ -538,9 +538,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	ConstExpr ::= (e: in.Expr).
 	ConstExpr(NulApp(NULL, NIL)).
 	ConstExpr(NulApp(HALT, NIL)).
-	ConstExpr(e) :- SubSE(_, e), e = NulApp(op, _), op != THIS, op != NONDET, op != FAIRNONDET.
-	ConstExpr(e) :- SubSE(_, e), e = Name(n, _), eventDecl is in.EventDecl(n, _, _, _). 
-	ConstExpr(e) :- EnumTypeElemIndex(_, StringList(n, _), _, _, _), e = Name(n, NIL).
+	ConstExpr(NulApp(op, NIL)) :- SubSE(_, e), e = NulApp(op, _), op != THIS, op != NONDET, op != FAIRNONDET.
+	ConstExpr(Name(n, NIL)) :- SubSE(_, e), e = Name(n, _), eventDecl is in.EventDecl(n, _, _, _). 
+	ConstExpr(Name(n, NIL)) :- EnumTypeElemIndex(_, StringList(n, _), _, _, _).
 
 	ConstId      ::= (id: Natural, const: in.Expr).
 	ConstId(id, c) :- ConstExpr(c), id = toOrdinal(c, 0, { c' | ConstExpr(c') }).
@@ -1257,28 +1257,12 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									ec = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
-									e = Name(n, _), IsEventCnst(c, n, _), ConstId(m, e),
+									e = Name(n, _), IsEventCnst(c, n, _), ConstId(m, Name(n, NIL)),
 									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = Name(n, _), IsEnumCnst(c, n, _), ConstId(m, e),
+									e = Name(n, _), IsEnumCnst(c, n, _), ConstId(m, Name(n, NIL)),
 									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
-
-	//// Machine creation
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = New(iname, NIL, _),
-									LinkMap(iname, mname), MachineName(machineDecl, machineName), machineDecl.name = mname,
-									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
-									newCall = out.FunApp(Ident("PrtMkMachine"), Args(process, Args(Ident(machineName), NIL))),
-									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newCall, Ident("id")), NIL)).
-
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-									e = New(iname, args, _), args != NIL, 
-									TransformArgs(c, s, i, e, NIL, ecs', NIL),
-									LinkMap(iname, mname), MachineName(machineDecl, machineName), machineDecl.name = mname,
-									process = out.BinApp(PFLD, Ident("context"), Ident("process")),
-									newCall = out.FunApp(Ident("PrtMkMachine"), Args(process, Args(Ident(machineName), lstReverse(#Args, ecs')))),
-									ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newCall, Ident("id")), NIL)).
 
 	//// Function application
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), e = in.FunApp(name, NIL, _, _), 
@@ -1297,15 +1281,15 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	//// Nullary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = NulApp(n, _), n : Integer,
-									ConstId(m, e), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									ConstId(m, NulApp(n, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(FALSE, _), 
-									ConstId(m, e), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									ConstId(m, NulApp(FALSE, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
     RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(TRUE, _), 
-									ConstId(m, e), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									ConstId(m, NulApp(TRUE, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(THIS, _),
@@ -1321,11 +1305,11 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(NULL, _),
-									ConstId(m, e), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									ConstId(m, NulApp(NULL, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = NulApp(HALT, _),
-									ConstId(m, e), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									ConstId(m, NulApp(HALT, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
 
 	//// Unary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
@@ -1763,26 +1747,24 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											      NIL))))).
 
    	NaturalList ::= (i: Natural, tl: NaturalList + { NIL }).
-	ExprsTransIndex ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, e: in.FunApp + in.New + { NIL }, exprs: in.Exprs + { NIL }, transIndex: NaturalList + { NIL }).
+	ExprsTransIndex ::= (cntxt: TypingContext, stmt: in.Stmt, pos: Natural, e: in.FunApp + { NIL }, exprs: in.Exprs + { NIL }, transIndex: NaturalList + { NIL }).
 	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.FunStmt, s.args != NIL.
 	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.NewStmt, s.args != NIL.
 	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.Print, s.args != NIL.
 	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.Goto, s.args != NIL.
 	ExprsTransIndex(c, s, 1, NIL, s.args, NIL) :- SubSE(c, s), s: in.Raise, s.args != NIL.
 	ExprsTransIndex(c, s, 2, NIL, s.args, NIL) :- SubSE(c, s), s: in.Send, s.args != NIL.
-	ExprsTransIndex(c, s, i, e, e.args, NIL) :- RhsNext(c, s, i, _, e, _), e: in.New, e.args != NIL.
 	ExprsTransIndex(c, s, i, e, e.args, NIL) :- RhsNext(c, s, i, _, e, _), e: in.FunApp, e.args != NIL.
 	ExprsTransIndex(c, s, i, x, e'', trans) :- ExprsTransIndex(c, s, i, x, e, tl), e = in.Exprs(_, e', e''), RhsEvalOrder(s, i, e', j),
 	                                           trans = NaturalList(j, tl). 
 
-	TransformArgs ::= (TypingContext, in.Stmt, Natural, in.FunApp + in.New + { NIL }, NaturalList + { NIL }, out.Args + { NIL }, in.Exprs + { NIL }).
-	TransformArgs(c, s, i, e, ii, NIL, e.args):- RhsNext(c, s, i, _, e, _), e: in.New, e.args != NIL, ExprsTransIndex(c, s, i, e, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformArgs ::= (TypingContext, in.Stmt, Natural, in.FunApp + { NIL }, NaturalList + { NIL }, out.Args + { NIL }, in.Exprs + { NIL }).
 	TransformArgs(c, s, i, e, ii, NIL, e.args):- RhsNext(c, s, i, _, e, _), e: in.FunApp, e.args != NIL, ExprsTransIndex(c, s, i, e, NIL, ii'), ii = lstReverse(#NaturalList, ii').
 	TransformArgs(c, s, i, x, ii, args', tl) :- TransformArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(_, _, tl)), 
 												ec = Ident(strJoin("p_tmp_expr_", toString(j))), 
 												args' = out.Args(ec, Args(Ident("PRT_FUN_PARAM_CLONE"), args)).
 
-	TransformStmtArgs ::= (TypingContext, in.Stmt, Natural, in.FunApp + in.New + { NIL }, NaturalList + { NIL }, out.Args + { NIL }, in.Exprs + { NIL }).
+	TransformStmtArgs ::= (TypingContext, in.Stmt, Natural, in.FunApp + { NIL }, NaturalList + { NIL }, out.Args + { NIL }, in.Exprs + { NIL }).
 	TransformStmtArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.FunStmt, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
 	TransformStmtArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.NewStmt, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
 	TransformStmtArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.Print, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
@@ -1831,13 +1813,10 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	/*************************************************************/
 
 	DoFree ::= (expr: in.Expr, Boolean).
-	DoFree(NulApp(NULL, NIL), FALSE).
-	DoFree(NulApp(HALT, NIL), FALSE).
 	DoFree(e, FALSE) :- SubSE(_, e), e: in.Name.
 	DoFree(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op != NONDET, e.op != FAIRNONDET.
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op = NONDET.
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op = FAIRNONDET.
-	DoFree(e, TRUE) :- SubSE(_, e), e: in.New.
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.FunApp.
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.UnApp.
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
@@ -1860,11 +1839,6 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.Name.
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.NulApp. 
 	ExprDepNum(0, e) :- SubSE(_, e), e : in.Default.
-
-	//// New app has a hidden dependency on NULL if it is an nullary app.
-	ExprDepNum(0, h),
-	ExprDepNum(1, e) :- SubSE(_, e), e = in.New(_, NIL, _), h = in.NulApp(NULL, NIL). 
-	ExprDepNum(i, e) :- SubSE(_, e), e = in.New(_, e', _), ExprDepNum(j, e'), i = j + 1. 
 
 	//// Fun app has zero or one depenencies.
 	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL, _, _). 
@@ -1964,9 +1938,6 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	RhsMaxOrder(s, 2, k) :- SubSE(_, s), s = in.Send(_, _, e, _), e : in.Exprs, 
 							k = maxAll(0, { k' | RhsEvalOrder(s, 2, _, k') }), k: Natural.
 	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Send, s.args = NIL.
-
-	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, e', _), e' : in.Exprs. 
-	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.New(_, NIL, _), e' = in.NulApp(NULL, NIL). 
 
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e', _, _), e' : in.Exprs.
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e', _).

@@ -10,8 +10,11 @@ machine Main {
     start state S {
 	    entry {
 			var y: int;
+			var g_local: int;
 			y = 1;
-			F(g swap, y);
+			g = g_local swap;
+			F(g_local swap, y);
+			g = g_local xfer;
 			assert g == 1;
 			assert y == 1;
 			raise E, 1;
@@ -21,7 +24,10 @@ machine Main {
 			i = i + 1;
 		}
 		exit {
-			F(g swap, 1);
+			var g_local: int;
+			g = g_local swap; 
+			F(g_local swap, 1);
+			g = g_local xfer;
 		}
 	}
 

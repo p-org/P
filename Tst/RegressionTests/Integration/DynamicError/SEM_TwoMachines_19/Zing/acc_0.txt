@@ -45,5 +45,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_41.bl,)
+Expression: assert(tmp_6.bl,)
 Comment: EventExprSemantics2.p (70, 5): Assert failed

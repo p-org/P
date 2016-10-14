@@ -1,8 +1,7 @@
 =================================
          Console output          
 =================================
-OUT: sends.p (21, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: sends.p (21, 10): Undefined machine or interface type
+OUT: sends.p (21, 4): Undefined machine or interface type
 OUT: sends.p (28, 4): invalid assignment. right hand side is not a subtype of left hand side
 OUT: sends.p (31, 4): invalid payload type in send
 OUT: sends.p (32, 4): invalid payload type in send

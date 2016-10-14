@@ -42,10 +42,9 @@ OUT: CastInExprs.p (184, 12): Cast can never succeed
 OUT: CastInExprs.p (188, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: CastInExprs.p (188, 12): Cast can never succeed
 OUT: CastInExprs.p (194, 5): invalid payload type in send
-OUT: CastInExprs.p (195, 5): invalid payload type in send
+OUT: CastInExprs.p (195, 22): Cast can never succeed
 OUT: CastInExprs.p (196, 5): invalid payload type in send
 OUT: CastInExprs.p (198, 5): invalid payload type in send
-OUT: CastInExprs.p (199, 5): invalid payload type in send
 OUT: CastInExprs.p (199, 24): Cast can never succeed
 OUT: CastInExprs.p (201, 5): invalid payload type in send
 OUT: CastInExprs.p (203, 11): invalid payload type in send

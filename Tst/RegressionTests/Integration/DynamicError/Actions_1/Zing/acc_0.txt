@@ -38,5 +38,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_7.bl,)
+Expression: assert(tmp_6.bl,)
 Comment: Actions_1.p (37, 6): Assert failed

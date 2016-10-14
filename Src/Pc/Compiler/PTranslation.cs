@@ -252,30 +252,7 @@ namespace Microsoft.Pc
         public Span LookupSpan(FuncTerm ft)
         {
             string name = ((Id)ft.Function).Name;
-            Node id = null;
-            switch (name)
-            {
-                case "NulStmt":
-                case "Return":
-                    id = GetArgByIndex(ft, 1); break;
-                case "Raise":
-                case "Announce":
-                case "While":
-                case "Seq":
-                case "Receive":
-                case "Assert":
-                case "Goto":
-                    id = GetArgByIndex(ft, 2); break;
-                case "NewStmt":
-                case "Send":
-                case "Ite":
-                case "Print":
-                    id = GetArgByIndex(ft, 3); break;
-                case "BinStmt":
-                case "FunStmt":
-                    id = GetArgByIndex(ft, 4); break;
-                default: Debug.Assert(false, "Illegal FuncTerm in LookupSpan"); break;
-            }
+            Node id = ft.Args.Last();
             int integerId = (int)(id as Cnst).GetNumericValue().Numerator;
             return idToSourceInfo[integerId].entrySpan;
         }

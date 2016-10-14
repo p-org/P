@@ -609,7 +609,7 @@
             var newExpr = P_Root.MkNew();
             newExpr.name = MkString(name, nameSpan);
             newExpr.Span = span;
-            newExpr.id = (P_Root.IArgType_New__2)MkId(span);
+            newExpr.id = (P_Root.IArgType_New__2)MkIntegerId(span);
             if (hasArgs)
             {
                 newExpr.args = (P_Root.Exprs)exprsStack.Pop();
@@ -648,7 +648,7 @@
             funExpr.name = MkString(name, span);
             funExpr.Span = span;
             funExpr.label = P_Root.MkNumeric(GetNextTrampolineLabel());
-            funExpr.id = (P_Root.IArgType_FunApp__3)MkId(span);
+            funExpr.id = (P_Root.IArgType_FunApp__3)MkIntegerId(span);
             if (hasArgs)
             {
                 funExpr.args = (P_Root.Exprs)exprsStack.Pop();
@@ -677,7 +677,7 @@
             var tuple = P_Root.MkTuple(fullExprs);
             fullExprs.Span = arg.Span;
             tuple.Span = arg.Span;
-            tuple.id = (P_Root.IArgType_Tuple__1)MkId(arg.Span);
+            tuple.id = (P_Root.IArgType_Tuple__1)MkIntegerId(arg.Span);
             valueExprStack.Push(tuple);
         }
 
@@ -704,7 +704,7 @@
             var tuple = P_Root.MkNamedTuple(fullExprs);
             fullExprs.Span = span;
             tuple.Span = span;
-            tuple.id = (P_Root.IArgType_NamedTuple__1)MkId(span);
+            tuple.id = (P_Root.IArgType_NamedTuple__1)MkIntegerId(span);
             valueExprStack.Push(tuple);
         }
 
@@ -791,7 +791,7 @@
         {
             var nulExpr = P_Root.MkNulApp(MkUserCnst(op, span));
             nulExpr.Span = span;
-            nulExpr.id = (P_Root.IArgType_NulApp__1)MkId(span);
+            nulExpr.id = (P_Root.IArgType_NulApp__1)MkIntegerId(span);
             valueExprStack.Push(nulExpr);
         }
 
@@ -802,7 +802,7 @@
             unExpr.op = MkUserCnst(op, span);
             unExpr.arg1 = (P_Root.IArgType_UnApp__1)valueExprStack.Pop();
             unExpr.Span = span;
-            unExpr.id = (P_Root.IArgType_UnApp__2)MkId(span);
+            unExpr.id = (P_Root.IArgType_UnApp__2)MkIntegerId(span);
             valueExprStack.Push(unExpr);
         }
 
@@ -812,7 +812,7 @@
             var defExpr = P_Root.MkDefault();
             defExpr.type = (P_Root.IArgType_Default__0)typeExprStack.Pop();
             defExpr.Span = span;
-            defExpr.id = (P_Root.IArgType_Default__1)MkId(span);
+            defExpr.id = (P_Root.IArgType_Default__1)MkIntegerId(span);
             valueExprStack.Push(defExpr);
         }
 
@@ -833,7 +833,7 @@
 
             var nulExpr = P_Root.MkNulApp(MkNumeric(val, span));
             nulExpr.Span = span;
-            nulExpr.id = (P_Root.IArgType_NulApp__1)MkId(span);
+            nulExpr.id = (P_Root.IArgType_NulApp__1)MkIntegerId(span);
             valueExprStack.Push(nulExpr);
         }
 
@@ -845,7 +845,7 @@
                 (P_Root.IArgType_Cast__0)valueExprStack.Pop(),
                 (P_Root.IArgType_Cast__1)typeExprStack.Pop());
             cast.Span = span;
-            cast.id = (P_Root.IArgType_Cast__2)MkId(span);
+            cast.id = (P_Root.IArgType_Cast__2)MkIntegerId(span);
             valueExprStack.Push(cast);
         }
 
@@ -997,7 +997,7 @@
             binApp.arg2 = (P_Root.IArgType_BinApp__2)valueExprStack.Pop();
             binApp.arg1 = (P_Root.IArgType_BinApp__1)valueExprStack.Pop();
             binApp.Span = span;
-            binApp.id = (P_Root.IArgType_BinApp__3)MkId(span);
+            binApp.id = (P_Root.IArgType_BinApp__3)MkIntegerId(span);
             valueExprStack.Push(binApp);
         }
 
@@ -1005,7 +1005,7 @@
         {
             var nameNode = P_Root.MkName(MkString(name, span));
             nameNode.Span = span;
-            nameNode.id = (P_Root.IArgType_Name__1)MkId(span);
+            nameNode.id = (P_Root.IArgType_Name__1)MkIntegerId(span);
             valueExprStack.Push(nameNode);
         }
 
@@ -1016,7 +1016,7 @@
             field.name = MkString(name, span);
             field.arg = (P_Root.IArgType_Field__0)valueExprStack.Pop();
             field.Span = span;
-            field.id = (P_Root.IArgType_Field__2)MkId(span);
+            field.id = (P_Root.IArgType_Field__2)MkIntegerId(span);
             valueExprStack.Push(field);
         }
 
@@ -1041,7 +1041,7 @@
             field.name = MkNumeric(index, span);
             field.arg = (P_Root.IArgType_Field__0)valueExprStack.Pop();
             field.Span = span;
-            field.id = (P_Root.IArgType_Field__2)MkId(span);
+            field.id = (P_Root.IArgType_Field__2)MkIntegerId(span);
             valueExprStack.Push(field);
         }
 
@@ -1186,7 +1186,7 @@
             state = GetCurrentStateDecl(stmt.Span);
             var entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             entry.Span = stmt.Span;
-            entry.id = (P_Root.IArgType_AnonFunDecl__5) MkId(entrySpan, exitSpan);
+            entry.id = (P_Root.IArgType_AnonFunDecl__5)MkIntegerId(entrySpan, exitSpan);
             parseProgram.AnonFunctions.Add(entry);
             localVarStack = new LocalVarStack(this);
 
@@ -1240,7 +1240,7 @@
             state = GetCurrentStateDecl(stmt.Span);
             var exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             exit.Span = stmt.Span;
-            exit.id = (P_Root.IArgType_AnonFunDecl__5)MkId(entrySpan, exitSpan);
+            exit.id = (P_Root.IArgType_AnonFunDecl__5)MkIntegerId(entrySpan, exitSpan);
             parseProgram.AnonFunctions.Add(exit);
             localVarStack = new LocalVarStack(this);
 
@@ -1402,7 +1402,7 @@
             var type = (P_Root.IArgType_TypeDef__1)typeExprStack.Pop();
             var typeDef = P_Root.MkTypeDef(MkString(name, nameSpan), type);
             typeDef.Span = typeDefSpan;
-            typeDef.id = (P_Root.IArgType_TypeDef__2)MkId(typeDefSpan);
+            typeDef.id = (P_Root.IArgType_TypeDef__2)MkIntegerId(typeDefSpan);
             parseProgram.TypeDefs.Add(typeDef);
         }
 
@@ -1441,7 +1441,7 @@
             enumElemList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             enumElemValList = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             enumTypeDef.Span = enumTypeDefSpan;
-            enumTypeDef.id = (P_Root.IArgType_EnumTypeDef__3)MkId(enumTypeDefSpan);
+            enumTypeDef.id = (P_Root.IArgType_EnumTypeDef__3)MkIntegerId(enumTypeDefSpan);
 
             if (IsValidName(TopDecl.Enum, name, nameSpan))
             {
@@ -1462,7 +1462,7 @@
 
             var eventset = new P_Root.EventSetDecl();
             eventset.name = MkString(name, nameSpan);
-            eventset.id = (P_Root.IArgType_EventSetDecl__1)MkId(nameSpan);
+            eventset.id = (P_Root.IArgType_EventSetDecl__1)MkIntegerId(nameSpan);
             eventset.Span = span;
             parseProgram.EventSetDecl.Add(eventset);
 
@@ -1481,7 +1481,7 @@
             var inDecl = GetCurrentInterfaceTypeDecl(span);
             inDecl.Span = span;
             inDecl.name = MkString(iname, inameSpan);
-            inDecl.id = (P_Root.IArgType_InterfaceTypeDecl__3)MkId(inameSpan);
+            inDecl.id = (P_Root.IArgType_InterfaceTypeDecl__3)MkIntegerId(inameSpan);
             if(esname == null)
             {
                 //declaration contains set of events
@@ -1490,7 +1490,7 @@
                 anonEventSetCounter++;
                 var eventset = new P_Root.EventSetDecl();
                 eventset.name = MkString(anonEventSetName, iesnameSpan);
-                eventset.id = (P_Root.IArgType_EventSetDecl__1)MkId(inameSpan);
+                eventset.id = (P_Root.IArgType_EventSetDecl__1)MkIntegerId(inameSpan);
                 eventset.Span = span;
                 parseProgram.EventSetDecl.Add(eventset);
                 foreach (var ev in crntEventList)
@@ -1523,7 +1523,7 @@
             varDecl.name = MkString(name, span);
             varDecl.owner = GetCurrentMachineDecl(span);
             varDecl.Span = span;
-            varDecl.id = (P_Root.IArgType_VarDecl__3)MkId(span);
+            varDecl.id = (P_Root.IArgType_VarDecl__3)MkIntegerId(span);
             crntVarList.Add(varDecl);
             if (crntVarNames.Contains(name))
             {
@@ -1577,7 +1577,7 @@
             {
                 var defOrIgn = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, kind);
                 defOrIgn.Span = span;
-                defOrIgn.id = (P_Root.IArgType_DoDecl__3)MkId(span);
+                defOrIgn.id = (P_Root.IArgType_DoDecl__3)MkIntegerId(span);
                 parseProgram.Dos.Add(defOrIgn);
                 if (isTrigAnnotated)
                 {
@@ -1588,7 +1588,7 @@
                             kv.Item1,
                             (P_Root.IArgType_Annotation__2)kv.Item2);
                         annot.Span = crntAnnotSpan;
-                        annot.id = (P_Root.IArgType_Annotation__3)MkId(crntAnnotSpan);
+                        annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(crntAnnotSpan);
                         parseProgram.Annotations.Add(annot);
                     }
                 }
@@ -1606,7 +1606,7 @@
             var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
             var action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             action.Span = stmt.Span;
-            action.id = (P_Root.IArgType_AnonFunDecl__5)MkId(entrySpan, exitSpan);
+            action.id = (P_Root.IArgType_AnonFunDecl__5)MkIntegerId(entrySpan, exitSpan);
             parseProgram.AnonFunctions.Add(action);
             localVarStack = new LocalVarStack(this);
             AddTransitionHelper(state, action, span);
@@ -1630,7 +1630,7 @@
             {
                 var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntStateTargetName, action);
                 trans.Span = span;
-                trans.id = (P_Root.IArgType_TransDecl__4)MkId(span);
+                trans.id = (P_Root.IArgType_TransDecl__4)MkIntegerId(span);
                 parseProgram.Transitions.Add(trans);
                 if (isTrigAnnotated)
                 {
@@ -1641,7 +1641,7 @@
                             kv.Item1,
                             (P_Root.IArgType_Annotation__2)kv.Item2);
                         annot.Span = crntAnnotSpan;
-                        annot.id = (P_Root.IArgType_Annotation__3)MkId(crntAnnotSpan);
+                        annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(crntAnnotSpan);
                         parseProgram.Annotations.Add(annot);
                     }
                 }
@@ -1674,7 +1674,7 @@
             {
                 var trans = P_Root.MkTransDecl(state, (P_Root.IArgType_TransDecl__1)e, crntStateTargetName, action);
                 trans.Span = span;
-                trans.id = (P_Root.IArgType_TransDecl__4)MkId(span);
+                trans.id = (P_Root.IArgType_TransDecl__4)MkIntegerId(span);
                 parseProgram.Transitions.Add(trans);
                 if (isTrigAnnotated)
                 {
@@ -1685,7 +1685,7 @@
                             kv.Item1,
                             (P_Root.IArgType_Annotation__2)kv.Item2);
                         annot.Span = crntAnnotSpan;
-                        annot.id = (P_Root.IArgType_Annotation__3)MkId(crntAnnotSpan);
+                        annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(crntAnnotSpan);
                         parseProgram.Annotations.Add(annot);
                     }
                 }
@@ -1707,7 +1707,7 @@
                     kv.Item1,
                     (P_Root.IArgType_Annotation__2)kv.Item2);
                 annot.Span = span;
-                annot.id = (P_Root.IArgType_Annotation__3)MkId(span);
+                annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(span);
                 parseProgram.Annotations.Add(annot);  
             }
         }
@@ -1763,7 +1763,7 @@
                     : (P_Root.IArgType_AnonFunDecl__1)crntFunDecl.name;
             var anonAction = P_Root.MkAnonFunDecl(owner, ownerFun, (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
-            anonAction.id = (P_Root.IArgType_AnonFunDecl__5)MkId(entrySpan, exitSpan);
+            anonAction.id = (P_Root.IArgType_AnonFunDecl__5)MkIntegerId(entrySpan, exitSpan);
             parseProgram.AnonFunctions.Add(anonAction);
             var caseEventList = localVarStack.Pop();
             foreach (var e in caseEventList)
@@ -1782,7 +1782,7 @@
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
             var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
-            anonAction.id = (P_Root.IArgType_AnonFunDecl__5)MkId(entrySpan, exitSpan);
+            anonAction.id = (P_Root.IArgType_AnonFunDecl__5)MkIntegerId(entrySpan, exitSpan);
             parseProgram.AnonFunctions.Add(anonAction);
             localVarStack = new LocalVarStack(this);
 
@@ -1790,7 +1790,7 @@
             {
                 var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, anonAction);
                 action.Span = span;
-                action.id = (P_Root.IArgType_DoDecl__3)MkId(span);
+                action.id = (P_Root.IArgType_DoDecl__3)MkIntegerId(span);
                 parseProgram.Dos.Add(action);
                 if (isTrigAnnotated)
                 {
@@ -1801,7 +1801,7 @@
                             kv.Item1,
                             (P_Root.IArgType_Annotation__2)kv.Item2);
                         annot.Span = crntAnnotSpan;
-                        annot.id = (P_Root.IArgType_Annotation__3)MkId(crntAnnotSpan);
+                        annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(crntAnnotSpan);
                         parseProgram.Annotations.Add(annot);
                     }
                 }
@@ -1823,7 +1823,7 @@
             {
                 var action = P_Root.MkDoDecl(state, (P_Root.IArgType_DoDecl__1)e, actName);
                 action.Span = span;
-                action.id = (P_Root.IArgType_DoDecl__3)MkId(span);
+                action.id = (P_Root.IArgType_DoDecl__3)MkIntegerId(span);
                 parseProgram.Dos.Add(action);
                 if (isTrigAnnotated)
                 {
@@ -1834,7 +1834,7 @@
                             kv.Item1,
                             (P_Root.IArgType_Annotation__2)kv.Item2);
                         annot.Span = crntAnnotSpan;
-                        annot.id = (P_Root.IArgType_Annotation__3)MkId(crntAnnotSpan);
+                        annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(crntAnnotSpan);
                         parseProgram.Annotations.Add(annot);
                     }
                 }
@@ -1857,7 +1857,7 @@
         {
             var state = GetCurrentStateDecl(span);
             state.Span = span;
-            state.id = (P_Root.IArgType_StateDecl__5)MkId(span);
+            state.id = (P_Root.IArgType_StateDecl__5)MkIntegerId(span);
             parseProgram.States.Add(state);
             if (groupStack.Count == 0)
             {
@@ -1933,7 +1933,7 @@
                             kv.Item1,
                             (P_Root.IArgType_Annotation__2)kv.Item2);
                         annot.Span = annotSpan;
-                        annot.id = (P_Root.IArgType_Annotation__3)MkId(annotSpan);
+                        annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(annotSpan);
                         parseProgram.Annotations.Add(annot);
                     }
                 }
@@ -2085,7 +2085,7 @@
                     kv.Item1,
                     (P_Root.IArgType_Annotation__2)kv.Item2);
                 annot.Span = span;
-                annot.id = (P_Root.IArgType_Annotation__3)MkId(span);
+                annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(span);
                 parseProgram.Annotations.Add(annot);
             }            
         }
@@ -2102,7 +2102,7 @@
                     kv.Item1,
                     (P_Root.IArgType_Annotation__2)kv.Item2);
                 annot.Span = span;
-                annot.id = (P_Root.IArgType_Annotation__3)MkId(span);
+                annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(span);
                 parseProgram.Annotations.Add(annot);
             }
         }
@@ -2119,7 +2119,7 @@
                     kv.Item1,
                     (P_Root.IArgType_Annotation__2)kv.Item2);
                 annot.Span = span;
-                annot.id = (P_Root.IArgType_Annotation__3)MkId(span);
+                annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(span);
                 parseProgram.Annotations.Add(annot);
             }
         }
@@ -2136,7 +2136,7 @@
                     kv.Item1,
                     (P_Root.IArgType_Annotation__2)kv.Item2);
                 annot.Span = span;
-                annot.id = (P_Root.IArgType_Annotation__3)MkId(span);
+                annot.id = (P_Root.IArgType_Annotation__3)MkIntegerId(span);
                 parseProgram.Annotations.Add(annot);
             }
         }
@@ -2179,7 +2179,7 @@
             crntEventDecl = P_Root.MkEventDecl();
             crntEventDecl.card = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             crntEventDecl.type = MkUserCnst(P_Root.UserCnstKind.NIL, span);
-            crntEventDecl.id = (P_Root.IArgType_EventDecl__3)MkId(span);
+            crntEventDecl.id = (P_Root.IArgType_EventDecl__3)MkIntegerId(span);
             crntEventDecl.Span = span;
             return crntEventDecl;
         }

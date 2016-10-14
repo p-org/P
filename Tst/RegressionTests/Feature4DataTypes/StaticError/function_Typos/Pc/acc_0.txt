@@ -5,7 +5,7 @@ OUT: function_Typos.p (2, 17): same name appears more than once in name tuple or
 OUT: function_Typos.p (2, 25): same name appears more than once in name tuple or named tuple type
 OUT: function_Typos.p (2, 33): same name appears more than once in name tuple or named tuple type
 OUT: function_Typos.p (2, 41): same name appears more than once in name tuple or named tuple type
-OUT: function_Typos.p (3, 1): no start state in machine
+OUT: function_Typos.p (3, 14): no start state in machine
 OUT: function_Typos.p (4, 11): same name appears more than once in name tuple or named tuple type
 OUT: function_Typos.p (4, 22): same name appears more than once in name tuple or named tuple type
 OUT: function_Typos.p (5, 3): function cannot return a value

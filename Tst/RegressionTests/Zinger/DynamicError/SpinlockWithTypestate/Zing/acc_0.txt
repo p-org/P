@@ -21,7 +21,7 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_6.bl,)
+Expression: assert(tmpVar_15.bl,)
 Comment: SpinlockWithTypestate.p (38, 4): Assert failed
 Safety Error Trace
 Trace-Log 1:
@@ -45,7 +45,7 @@ Trace-Log 2:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_6.bl,)
+Expression: assert(tmpVar_15.bl,)
 Comment: SpinlockWithTypestate.p (38, 4): Assert failed
 Safety Error Trace
 Trace-Log 3:

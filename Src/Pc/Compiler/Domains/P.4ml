@@ -7,7 +7,7 @@ domain PData
 {   
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
-	
+
     /*************************************************************/
     /****************          Type Language          ************/
     /*************************************************************/    
@@ -568,16 +568,6 @@ domain PStaticTyping extends PData
     TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k != EMPTY.
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
-
-    TypeOf(c, e, BaseType(MACHINE))   :- SubSE(c, e), e = New(n, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC;
-										 SubSE(c, e), e = New(n, _, _), m is MachineProtoDecl(n, _).
-	TypeOf(c, e, t)					  :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), TypeExpansion(NameType(n), t).
-
-	[ rule_Classes = '"error, msg: spec machine cannot be created"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), MachineDecl(n, SPEC, _, _, _).
-
-	[ rule_Classes = '"error, msg: Undefined machine or interface type"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = New(n, _, _), no MachineDecl(n, _, _, _, _), no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
 	
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
@@ -837,7 +827,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, SPEC, _, _, _).
 
-	[ rule_Classes = '"error, msg: Undefined machine type or the created interface is not exported by any machine"']
+	[ rule_Classes = '"error, msg: Undefined machine or interface type"']
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _, _, _, _), 
 									  no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
 
@@ -1015,7 +1005,6 @@ domain PStaticTyping extends PData
 	//// The type of the first sub-expression in a Typeable with at least one sub-expression.
     TypeOfArg1 ::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }).
 
-	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = New(_, e1, _), ExprsToPayloadType(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunApp(_, e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnApp(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Cast(e1, _, _), TypeOf(c, e1, t1).
@@ -1429,12 +1418,12 @@ domain PStaticTyping extends PData
 	CompTypeRel(null, plt)    :- SubSE(c, e), c.owner != NIL, e = Goto(dst, NIL, _), null = BaseType(NULL), s = StateDecl(dst, c.owner, _, _, _, _), PayloadVar(s, _, _, plt).
 	CompTypeRel(t1, plt)      :- TypeOfArg1(c, e, t1), c.owner != NIL, e = Goto(dst, p, _), p != NIL, s = StateDecl(dst, c.owner, _, _, _, _), PayloadVar(s, _, _, plt).
 	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _), null = BaseType(NULL).
-	CompTypeRel(pt, plt)      :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL, TypeOf(c, p, pt).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Raise, CommStmtPLType(c, e, plt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
 	CompTypeRel(t3, plt)      :- TypeOfArg3(c, e, t1, t2, t3), e : Send, CommStmtPLType(c, e, plt).
 	CompTypeRel(null, plt)    :- SubSE(c, e), e = Announce(_, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
 	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Announce, CommStmtPLType(c, e, plt).
-	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e = Announce(_, _, _), CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Announce, CommStmtPLType(c, e, plt).
 	CompTypeRel(t2, t1)       :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _, _, _).	
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 = MapType(dom, cod).	
 	CompTypeRel(key, dom)     :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)).
@@ -1666,11 +1655,6 @@ domain PStaticTyping extends PData
 
 	// for creation of machines
 	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
-	PayloadError(n) :- SubSE(c, n), n = New(name, NIL, _), ConstructorType(m, _, ft), m.name = name.
-	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
-	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr, 
-					   TypeRel(type, ft, k), type != ft, k != SUB.
-	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), ConstructorType(m, _, ft), m.name = name.
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr,
@@ -1678,23 +1662,12 @@ domain PStaticTyping extends PData
 	
 	// for creation of machines proto
 	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
-	PayloadError(n) :- SubSE(c, n), n = New(name, NIL, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), ft != BaseType(NULL).
-	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
-	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), TypeOfArg1(c, n, type), type: TypeExpr, 
-					   TypeRel(type, ft, k), type != ft, k != SUB.
-	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), ft != BaseType(NULL).
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 					   			   
 	//for creation of interfaces
-	[ rule_Classes = '"error, msg: created interface expects an argument;"']
-	PayloadError(n) :- SubSE(c, n), n = New(name, NIL, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
-
-	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']
-	PayloadError(n) :- SubSE(c, n), n = New(name, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft,_), TypeOfArg1(c, n, type), type: TypeExpr, 
-					   TypeRel(type, ft, k), type != ft, k != SUB.
 	[ rule_Classes = '"error, msg: created interface expects an argument;"']
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']

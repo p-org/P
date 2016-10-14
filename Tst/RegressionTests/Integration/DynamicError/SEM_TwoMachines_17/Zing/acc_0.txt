@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
-OUT: 126 distinct states explored
+OUT: 102 distinct states explored
 OUT: 
 EXIT: 3
 
@@ -44,5 +44,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_35.bl,)
+Expression: assert(tmp_34.bl,)
 Comment: EventExprSemantics.p (68, 28): Assert failed

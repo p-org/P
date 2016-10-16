@@ -18,6 +18,7 @@ machine Lock {
 			data = v swap;
 			send client, ACQUIRE_RESP, v xfer;
 		}
+		defer ACQUIRE_REQ;
 		on RELEASE goto Unheld;
 	}
 }

@@ -851,7 +851,7 @@ namespace Microsoft.Pc
                     if (!allMachines[machineName].IsSpec) continue;
                     var machineInfo = allMachines[machineName];
                     List<string> initialSet = new List<string>();
-                    foreach (var stateName in ComputeReachableStates(machineInfo, new string[] { machineInfo.initStateName }))
+                    foreach (var stateName in ComputeReachableStates(machineName, machineInfo, new string[] { machineInfo.initStateName }))
                     {
                         if (machineInfo.stateNameToStateInfo[stateName].IsWarm)
                         {
@@ -864,7 +864,7 @@ namespace Microsoft.Pc
                         }
                         initialSet.Add(stateName);
                     }
-                    foreach (var stateName in ComputeReachableStates(machineInfo, initialSet))
+                    foreach (var stateName in ComputeReachableStates(machineName, machineInfo, initialSet))
                     {
                         if (machineInfo.stateNameToStateInfo[stateName].IsHot)
                         {
@@ -880,7 +880,62 @@ namespace Microsoft.Pc
             }
         }
 
-        HashSet<string> ComputeReachableStates(MachineInfo machineInfo, IEnumerable<string> initialSet)
+        private HashSet<string> ComputeGotoTargets(string machineName, Node node)
+        {
+            HashSet<string> targets = new HashSet<string>();
+            Stack<Node> searchStack = new Stack<Node>();
+            searchStack.Push(node);
+            while (searchStack.Count != 0)
+            {
+                var topOfStack = searchStack.Pop() as FuncTerm;
+                if (topOfStack == null) continue;
+                var name = ((Id)topOfStack.Function).Name;
+                switch (name)
+                {
+                    case "NewStmt":
+                    case "Raise":
+                    case "Send":
+                    case "Announce":
+                    case "FunStmt":
+                    case "NulStmt":
+                    case "BinStmt":
+                    case "Return":
+                    case "Assert":
+                    case "Print":
+                    case "Receive": // receive is not allowed in spec machines
+                        continue;
+                    case "Goto":
+                        var targetName = GetNameFromQualifiedName(machineName, GetArgByIndex(topOfStack, 0) as FuncTerm);
+                        targets.Add(targetName);
+                        continue;
+                    case "While":
+                        searchStack.Push(GetArgByIndex(topOfStack, 1));
+                        continue;
+                    case "Ite":
+                        searchStack.Push(GetArgByIndex(topOfStack, 1));
+                        searchStack.Push(GetArgByIndex(topOfStack, 2));
+                        continue;
+                    case "Seq":
+                        searchStack.Push(GetArgByIndex(topOfStack, 0));
+                        searchStack.Push(GetArgByIndex(topOfStack, 1));
+                        continue;
+                }
+            }
+            return targets;
+        }
+
+        private HashSet<string> ComputeGotoTargets(string machineName, MachineInfo machineInfo, StateInfo stateInfo)
+        {
+            HashSet<string> targets = new HashSet<string>();
+            targets.UnionWith(ComputeGotoTargets(machineName, machineInfo.funNameToFunInfo[stateInfo.entryActionName].body));
+            foreach (var actionName in stateInfo.actions.Values)
+            {
+                targets.UnionWith(ComputeGotoTargets(machineName, machineInfo.funNameToFunInfo[actionName].body));
+            }
+            return targets;
+        }
+
+        HashSet<string> ComputeReachableStates(string machineName, MachineInfo machineInfo, IEnumerable<string> initialSet)
         {
             Stack<string> dfsStack = new Stack<string>();
             HashSet<string> visitedStates = new HashSet<string>();
@@ -896,6 +951,12 @@ namespace Microsoft.Pc
                 foreach (var e in curStateInfo.transitions.Keys)
                 {
                     var nextState = curStateInfo.transitions[e].target;
+                    if (visitedStates.Contains(nextState)) continue;
+                    visitedStates.Add(nextState);
+                    dfsStack.Push(nextState);
+                }
+                foreach (var nextState in ComputeGotoTargets(machineName, machineInfo, curStateInfo))
+                {
                     if (visitedStates.Contains(nextState)) continue;
                     visitedStates.Add(nextState);
                     dfsStack.Push(nextState);

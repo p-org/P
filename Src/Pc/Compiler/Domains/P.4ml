@@ -78,12 +78,9 @@ domain PData
 	EventSetContains ::= new (evset: EventSetDecl, ev: NonNullEventName).
 	InterfaceTypeDecl ::= fun (name: String -> evsetName: String, argType: any TypeExpr, id: any Id).
 	MachineExports ::= fun (mach: any MachineDecl -> iname: String).
-	MachineReceives ::= new (mach: any MachineDecl, ev: NonNullEventName).
-	MachineReceivesAllEvents ::= new (mach: any MachineDecl).
-	MachineSends ::= new (mach: any MachineDecl, ev: NonNullEventName).
-	MachineSendsAllEvents ::= new (mach: any MachineDecl).
-	MachineCreates ::= new (mach: any MachineDecl, IorMName: String).
-	MachineCreatesAll ::= new (mach: any MachineDecl).
+	MachineReceives ::= new (mach: any MachineDecl, ev: NonNullEventName + { NIL }).
+	MachineSends ::= new (mach: any MachineDecl, ev: NonNullEventName + { NIL }).
+	MachineCreates ::= new (mach: any MachineDecl, IorMName: String + { NIL }).
 
     /*************************************************************/
     /****************  State Machine Declarations    *************/
@@ -231,15 +228,15 @@ domain PStructuralTyping extends PData
 
 	//interfaces or machine names in the creates
 	[rule_Classes = '"error, msg: interface or machine in creates is not declared"']
-	OneDeclError(mc) :- mc is MachineCreates(_, name), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
+	OneDeclError(mc) :- mc is MachineCreates(_, name), name != NIL, no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
 
 	//events in sends
 	[rule_Classes = '"error, msg: event in sends list is not declared"']
-	OneDeclError(ms) :- ms is MachineSends(_, name), no EventDecl(name, _, _, _).
+	OneDeclError(ms) :- ms is MachineSends(_, name), no EventDecl(name, _, _, _), name != NIL.
 
 	//events in receives
 	[rule_Classes = '"error, msg: event in receives list is not declared"']
-	OneDeclError(mr) :- mr is MachineReceives(_, name), no EventDecl(name, _, _, _).
+	OneDeclError(mr) :- mr is MachineReceives(_, name), no EventDecl(name, _, _, _), name != NIL.
 
 
 }
@@ -277,11 +274,11 @@ domain PStaticTyping extends PData
 	                                   it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev) }), it : InterfaceType.
 	
 	//populate the sends, receives and creates for machines with missing annotations
-	MachineSends(m, ev.name) :- MachineSendsAllEvents(m), ev is EventDecl.
-	MachineReceives(m, ev.name) :- MachineReceivesAllEvents(m), ev is EventDecl.
-	MachineCreates(m, iorm.name) :- MachineCreatesAll(m), iorm is MachineDecl;
-									MachineCreatesAll(m), iorm is MachineProtoDecl;
-									MachineCreatesAll(m), iorm is InterfaceTypeDecl.
+	MachineSends(m, ev.name) :- MachineSends(m, NIL), ev is EventDecl.
+	MachineReceives(m, ev.name) :- MachineReceives(m, NIL), ev is EventDecl.
+	MachineCreates(m, iorm.name) :- MachineCreates(m, NIL), iorm is MachineDecl;
+									MachineCreates(m, NIL), iorm is MachineProtoDecl;
+									MachineCreates(m, NIL), iorm is InterfaceTypeDecl.
 
 	//// populate the link map
 	LinkMap ::= (createdIorM: String, createdM: String).

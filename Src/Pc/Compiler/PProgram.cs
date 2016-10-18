@@ -143,24 +143,6 @@
             private set;
         }
 
-        public List<P_Root.MachineReceivesAllEvents> MachineReceivesAllEvents
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.MachineSendsAllEvents> MachineSendsAllEvents
-        {
-            get;
-            private set;
-        }
-
-        public List<P_Root.MachineCreatesAll> MachineCreatesAll
-        {
-            get;
-            private set;
-        }
-
         public IEnumerable<ICSharpTerm> Terms
         {
             get
@@ -275,21 +257,6 @@
                 {
                     yield return mc;
                 }
-
-                foreach (var mr in MachineReceivesAllEvents)
-                {
-                    yield return mr;
-                }
-
-                foreach (var ms in MachineSendsAllEvents)
-                {
-                    yield return ms;
-                }
-
-                foreach (var mc in MachineCreatesAll)
-                {
-                    yield return mc;
-                }
             }
         }
 
@@ -317,9 +284,6 @@
             MachineSends = new List<P_Root.MachineSends>();
             MachineReceives = new List<P_Root.MachineReceives>();
             MachineCreates = new List<P_Root.MachineCreates>();
-            MachineCreatesAll = new List<P_Root.MachineCreatesAll>();
-            MachineReceivesAllEvents = new List<P_Root.MachineReceivesAllEvents>();
-            MachineSendsAllEvents = new List<P_Root.MachineSendsAllEvents>();
         }
     }
 }

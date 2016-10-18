@@ -18,8 +18,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
 									   decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), TypeExpansion(ctype, ectype).
-	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev).
-	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev).
+	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev), ev : in.NonNullEventName.
+	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev), ev : in.NonNullEventName.
 	link.MachineCreatesInt(m.name, i) :- in.MachineCreates(m, i), no in.MachineDecl(i, _, _, _, _), no in.MachineProtoDecl(mcname, _), in.InterfaceTypeDecl(i, _, _, _).
 	link.MachineCreatesM(m.name, mcname) :- in.MachineCreates(m, mcname), in.MachineDecl(mcname, _, _, _, _);
 											in.MachineCreates(m, mcname), in.MachineProtoDecl(mcname, _).

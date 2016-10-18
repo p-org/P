@@ -145,20 +145,20 @@ MachineConstTypeOrNone
 ReceivesOrExports
 	: COLON ID										{ AddExportsInterface($2.str, ToSpan(@2), ToSpan(@1)); }
 	| RECEIVES SEMICOLON							
-	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(ToSpan(@1)); }
-	|												{ AddReceivesAll(); }
+	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(true, ToSpan(@1)); }
+	|												{ AddReceivesList(false); }
 	;
 
 Sends
-	: SENDS NonDefaultEventList SEMICOLON			{ AddSendsList(ToSpan(@1)); }
+	: SENDS NonDefaultEventList SEMICOLON			{ AddSendsList(true, ToSpan(@1)); }
 	| SENDS SEMICOLON								
-	|												{ AddSendsAll(); }
+	|												{ AddSendsList(false); }
 	;
 
 Creates
-	: CREATES CreatesList							{ AddCreatesList(ToSpan(@1)); }
+	: CREATES CreatesList							{ AddCreatesList(true, ToSpan(@1)); }
 	| CREATES SEMICOLON
-	|												{ AddCreatesAll(); }
+	|												{ AddCreatesList(false); }
 	;
 
 CreatesList

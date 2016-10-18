@@ -1,0 +1,1 @@
+dsc: runtime, linear version of PingPong

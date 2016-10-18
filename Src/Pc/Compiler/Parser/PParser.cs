@@ -1999,64 +1999,71 @@
             }
         }
 
-        private void AddReceivesList(Span span)
+        private void AddReceivesList(bool hasDecl, Span span = default(Span))
         {
-           
-            Contract.Assert(crntEventList.Count > 0);
-            foreach(var ev in crntEventList)
+           if(hasDecl)
             {
-                var rec = P_Root.MkMachineReceives(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineReceives__1)ev);
-                rec.Span = ev.Span;
-                parseProgram.MachineReceives.Add(rec);
-            }
-            crntEventList.Clear();
-           
-        }
-
-        private void AddReceivesAll()
-        {
-            var recAll = P_Root.MkMachineReceivesAllEvents(GetCurrentMachineDecl(Span.Unknown));
-            parseProgram.MachineReceivesAllEvents.Add(recAll);
-        }
-        private void AddSendsList(Span span)
-        {
-            Contract.Assert(crntEventList.Count > 0);
-            foreach (var ev in crntEventList)
-            {
-                var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineSends__1)ev);
-                send.Span = ev.Span;
-                parseProgram.MachineSends.Add(send);
+                Contract.Assert(crntEventList.Count > 0);
+                foreach (var ev in crntEventList)
+                {
+                    var rec = P_Root.MkMachineReceives(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineReceives__1)ev);
+                    rec.Span = ev.Span;
+                    parseProgram.MachineReceives.Add(rec);
+                }
                 crntEventList.Clear();
             }
+           else
+            {
+                var rec = P_Root.MkMachineReceives(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.NIL, span));
+                rec.Span = span;
+                parseProgram.MachineReceives.Add(rec);
+            }
             
         }
-        
-        private void AddSendsAll()
+        private void AddSendsList(bool hasDecl, Span span = default(Span))
         {
-            var sendAll = P_Root.MkMachineSendsAllEvents(GetCurrentMachineDecl(Span.Unknown));
-            parseProgram.MachineSendsAllEvents.Add(sendAll);
+            if(hasDecl)
+            {
+                Contract.Assert(crntEventList.Count > 0);
+                foreach (var ev in crntEventList)
+                {
+                    var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineSends__1)ev);
+                    send.Span = ev.Span;
+                    parseProgram.MachineSends.Add(send);
+                    crntEventList.Clear();
+                }
+            }
+            else
+            {
+                var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.NIL, span));
+                send.Span = span;
+                parseProgram.MachineSends.Add(send);
+            }
         }
 
-
-        private void AddCreatesList(Span span)
+        private void AddCreatesList(bool hasDecl, Span span = default(Span))
         {
-            Contract.Assert(crntStringIdList.Count > 0);
-            foreach (var id in crntStringIdList)
+            if(hasDecl)
             {
-                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
-                creates.Span = id.Span;
+                Contract.Assert(crntStringIdList.Count > 0);
+                foreach (var id in crntStringIdList)
+                {
+                    var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
+                    creates.Span = id.Span;
+                    parseProgram.MachineCreates.Add(creates);
+                }
+                crntStringIdList.Clear();
+            }
+            else
+            {
+                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.NIL, span));
+                creates.Span = span;
                 parseProgram.MachineCreates.Add(creates);
             }
-            crntStringIdList.Clear();
-        }
-
-        private void AddCreatesAll()
-        { 
-            var createsAll = P_Root.MkMachineCreatesAll(GetCurrentMachineDecl(Span.Unknown));
-            parseProgram.MachineCreatesAll.Add(createsAll);
             
         }
 
+        
         private void AddToCreatesList(string name, Span nameSpan)
         {
             crntStringIdList.Add(MkString(name, nameSpan));

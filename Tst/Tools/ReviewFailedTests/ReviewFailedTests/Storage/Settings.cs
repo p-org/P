@@ -18,6 +18,7 @@ namespace ReviewFailedTests.Utilities
         string windiffPath;
         string errorLogName = "check-output.log";
         string baselineName = "acc_0.txt";
+        string quickTipsShown;
         Point windowLocation;
         Size windowSize;
 
@@ -118,6 +119,23 @@ namespace ReviewFailedTests.Utilities
             }
         }
 
+        public string QuickTipsShown
+        {
+            get
+            {
+                return quickTipsShown;
+            }
+
+            set
+            {
+                if (this.quickTipsShown != value)
+                {
+                    this.quickTipsShown = value;
+                    OnPropertyChanged("QuickTipsShown");
+                }
+            }
+        }
+
         public static bool SafeFileExists(string path)
         {
             try
@@ -182,6 +200,27 @@ namespace ReviewFailedTests.Utilities
             }
         }
 
+        internal bool ContainsQuickTip(string key)
+        {
+            if (this.quickTipsShown == null)
+            {
+                return false;
+            }
+            return this.quickTipsShown.Contains(key);
+
+        }
+
+        internal void AddQuickTip(string key)
+        {
+            if (this.quickTipsShown == null)
+            {
+                this.QuickTipsShown = key;
+            }
+            else
+            {
+                this.QuickTipsShown += ";" + key;
+            }
+        }
     }
 
 

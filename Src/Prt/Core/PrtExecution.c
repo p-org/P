@@ -666,9 +666,9 @@ PrtPushNewEventHandlerFrame(
 		}
 		locals[payloadIndex] = context->currentPayload;
 		context->currentPayload = NULL;
+		refArgs = PrtCalloc(1, sizeof(PRT_VALUE **));
 		if (payloadStatus == PRT_FUN_PARAM_SWAP)
 		{
-			refArgs = PrtCalloc(1, sizeof(PRT_VALUE **));
 			refArgs[0] = &context->currentPayload;
 		}
 		else 
@@ -682,6 +682,7 @@ PrtPushNewEventHandlerFrame(
 	}
 	else
 	{
+		PrtAssert(funDecl->numParameters == 0, "Number of parameters must be zero for a named function used as an event handler");
 		if (payloadStatus != PRT_FUN_PARAM_SWAP)
 		{
 			PrtFreeTriggerPayload(context);
@@ -711,6 +712,7 @@ PrtPushNewEventHandlerFrame(
 void
 PrtPushNewFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_BOOLEAN				isFunApp,
 	_In_ PRT_UINT32					funIndex,
 	...
 )
@@ -740,7 +742,10 @@ PrtPushNewFrame(
 		PRT_UINT32 count = 0;
 		if (0 < numParameters)
 		{
-			refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
+			if (!isFunApp)
+			{
+				refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
+			}
 			va_list argp;
 			va_start(argp, funIndex);
 			for (PRT_UINT32 i = 0; i < numParameters; i++)
@@ -756,15 +761,24 @@ PrtPushNewFrame(
 				{
 				case PRT_FUN_PARAM_CLONE:
 					arg = va_arg(argp, PRT_VALUE *);
-					locals[count] = PrtCloneValue(arg);
+					if (isFunApp)
+					{
+						locals[count] = arg;
+					}
+					else
+					{
+						locals[count] = PrtCloneValue(arg);
+					}
 					break;
 				case PRT_FUN_PARAM_SWAP:
+					PrtAssert(!isFunApp, "Illegal status value");
 					argPtr = va_arg(argp, PRT_VALUE **);
 					refArgs[count] = argPtr;
 					locals[count] = *argPtr;
 					*argPtr = NULL;
 					break;
 				case PRT_FUN_PARAM_XFER:
+					PrtAssert(!isFunApp, "Illegal status value");
 					argPtr = va_arg(argp, PRT_VALUE **);
 					locals[count] = *argPtr;
 					*argPtr = NULL;
@@ -1515,10 +1529,9 @@ PrtFreeLocals(
 	}
 
 	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, frame->funIndex);
-
+	PRT_UINT32 numParameters = funDecl->numParameters;
 	if (frame->refArgs != NULL)
 	{
-		PRT_UINT32 numParameters = funDecl->numParameters;
 		for (PRT_UINT32 i = 0; i < numParameters; i++)
 		{
 			if (frame->refArgs[i] != NULL)
@@ -1529,7 +1542,13 @@ PrtFreeLocals(
 		}
 		PrtFree(frame->refArgs);
 	}
-
+	else
+	{
+		for (PRT_UINT32 i = 0; i < numParameters; i++)
+		{
+			frame->locals[i] = NULL;
+		}
+	}
 	for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
 	{
 		if (frame->locals[i] != NULL)

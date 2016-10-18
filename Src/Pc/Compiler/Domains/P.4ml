@@ -427,14 +427,23 @@ domain PStaticTyping extends PData
     SubSE0(c, e) :- SubSE0(c, NamedExprs(_, e, _)).
 	SubSE0(c, es) :- SubSE0(c, NamedExprs(_, _, es)), es: NamedExprs.
 
-	ImpureExprs ::= (TypingContext, Exprs).
-	ImpureExprs(c, exprs) :- SubSE0(c, exprs), exprs: Exprs, exprs.qual != NONE.
-	ImpureExprs(c, exprs) :- SubSE0(c, exprs), exprs = Exprs(_, _, exprs'), ImpureExprs(c, exprs').
+	ImpureExprsInFunApp ::= (TypingContext, Exprs).
+	ImpureExprsInFunApp(c, exprs) :- SubSE0(c, exprs), exprs: Exprs, exprs.qual != NONE.
+	ImpureExprsInFunApp(c, exprs) :- SubSE0(c, exprs), exprs = Exprs(_, _, exprs'), ImpureExprsInFunApp(c, exprs').
 
 	ImpureFunApp ::= (TypingContext, FunApp).
 	ImpureFunApp(c, e) :- 
 			SubSE0(c, e), e: FunApp, Impure(called), FunAvailable(called, c.owner), called.name = e.name;
-			SubSE0(c, e), e: FunApp, ImpureExprs(c, e.args).
+			SubSE0(c, e), e: FunApp, ImpureExprsInFunApp(c, e.args).
+
+	ImpureExprsInFunStmt ::= (TypingContext, Exprs).
+	ImpureExprsInFunStmt(c, exprs) :- SubSE0(c, exprs), exprs = Exprs(qual, Name(n, _), _), qual != NONE, no VarInLocalScope(c, _, n).
+	ImpureExprsInFunStmt(c, exprs) :- SubSE0(c, exprs), exprs = Exprs(_, _, exprs'), ImpureExprsInFunStmt(c, exprs').
+
+	ImpureFunStmt ::= (TypingContext, FunStmt).
+	ImpureFunStmt(c, e) :- 
+			SubSE0(c, e), e: FunStmt, Impure(called), FunAvailable(called, c.owner), called.name = e.name;
+			SubSE0(c, e), e: FunStmt, ImpureExprsInFunStmt(c, e.args).
 
 	SubSETrans ::= (cntxt: TypingContext, from: Typeable, to: Typeable).
 	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = While(e, s, id), SubSETrans(c, s, s'), stmt' = While(e, s', id).
@@ -657,7 +666,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: argument should be a variable"']
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
 	[ rule_Classes = '"error, msg: argument should be a local variable"']
-	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, expr = Name(n, _), no IsLocalVar(c, n, _).
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
 	[ rule_Classes = '"error, msg: linear argument should be passed for exactly one parameter"']
 	QualifierError(c, e, expr) :- StmtArgs(c, e, Exprs(qual, expr, tl)), StmtArgs(c, e, Exprs(_, expr, tl')), qual != NONE, tl != tl'.
 	[ rule_Classes = '"error, msg: xfer or swap not allowed"']
@@ -678,7 +687,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: argument should be a variable"']
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
 	[ rule_Classes = '"error, msg: argument should be a local variable"']
-	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, expr = Name(n, _), no IsLocalVar(c, n, _).
+	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
 	[ rule_Classes = '"error, msg: xfer or swap not allowed"']
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(REMOVE, _, qual, expr, _), qual != NONE.
 	[ rule_Classes = '"error, msg: xfer or swap not allowed"']
@@ -1132,8 +1141,8 @@ domain PStaticTyping extends PData
 
     TypeOfLocalVarAux(cntxt, name, type, tl) :- LocalVars(cntxt, locals), locals = NmdTupType(NmdTupTypeField(name, type), tl).
     TypeOfLocalVarAux(cntxt, name, type, tl) :- TypeOfLocalVarAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
-    
     TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.
+	
 	[ rule_Classes = '"error, msg: Variable with same name has been declared before"']
     TypeOfLocalVar(cntxt, name, ERROR) :- TypeOfLocalVarAux(cntxt, name, _, aux), TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux'.
 
@@ -1321,15 +1330,16 @@ domain PStaticTyping extends PData
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Goto.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Raise.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulStmt(POP, _).
-	Impure(c) :- SubSE0(c, e), c: FunDecl, e = BinStmt(_, e', _, e'', _), IsLValue(c, e', TRUE).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = BinStmt(_, e', _, _, _), IsLValue(c, e', TRUE).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = BinStmt(_, _, qual, e', _), qual != NONE, IsLValue(c, e', TRUE).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NewStmt(_, _, _, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = New(_, _, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = Send(_, _, _, _). 
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = Receive(_, _, _).
-	Impure(c) :- SubSE0(c, e), e = FunApp(n, _, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
-	Impure(c) :- SubSE0(c, e), c: FunDecl, e = FunApp(_, args, _, _), ImpureExprs(c, args).
-	Impure(c) :- SubSE0(c, e), e = FunStmt(n, _, _, _, _), c : FunDecl, called.name = n, FunAvailable(called, c.owner), Impure(called).
-	Impure(c) :- SubSE0(c, e), e = FunStmt(n, _, aout, _, _), c : FunDecl, aout : Name, IsLValue(c, aout, TRUE).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, ImpureFunApp(c, e).
+	Impure(c) :- SubSE0(c, e), e: FunApp, c : FunDecl, called.name = e.name, FunAvailable(called, c.owner), Impure(called).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, ImpureFunStmt(c, e).
+	Impure(c) :- SubSE0(c, e), e: FunStmt, c : FunDecl, called.name = e.name, FunAvailable(called, c.owner), Impure(called).
 
     [ rule_Classes = '"error, msg: this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" "']
     PurityError(c, e') :- 

@@ -43,34 +43,40 @@ domain PLink
 	MachineSends		::=	new (mach: String, ev: NonNullEventName).
 	MachineCreatesInt	::= new (mach: String, iname: String).
 	MachineCreatesM		::= new (mach: String, mmname: String).
+
+	AvailableParameterDemand   ::= new (fname: String, pname: String).
+	UnavailableParameterSupply ::= new (fname: String, pname: String).
 }
 
 domain PLinkError 
 {
-	Error ::= new (name: String, msg: String).
+	OneNameError ::= new (name: String, msg: String).
+	TwoNameError ::= new (name1: String, name2: String, msg: String).
 }
 
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 {
-	err.Error(name, "multiple machines with same name") :- m is MachineDecl, m' is MachineDecl, m != m', m.name = m'.name, name = m.name.
+	err.OneNameError(name, "multiple machines with same name") :- m is MachineDecl, m' is MachineDecl, m != m', m.name = m'.name, name = m.name.
 
-	err.Error(name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.
+	err.OneNameError(name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.
 
-	err.Error(iname, "created interface not exported") :- MachineCreatesInt(_, iname), no MachineExports(_, iname).
+	err.OneNameError(iname, "created interface not exported") :- MachineCreatesInt(_, iname), no MachineExports(_, iname).
 	
-	err.Error(iname, "multiple machines export the same interface") :- m is MachineDecl, m' is MachineDecl, m.name != m'.name, MachineExports(m.name, iname), MachineExports(m'.name, iname).
+	err.OneNameError(iname, "multiple machines export the same interface") :- m is MachineDecl, m' is MachineDecl, m.name != m'.name, MachineExports(m.name, iname), MachineExports(m'.name, iname).
 	
-	err.Error(mp.name, "machine prototype not implemented") :- mp is MachineProtoDecl, no MachineDecl(mp.name, _, _).
+	err.OneNameError(mp.name, "machine prototype not implemented") :- mp is MachineProtoDecl, no MachineDecl(mp.name, _, _).
 	
-	err.Error(mp.name, "constructor type does not match") :- mp is MachineProtoDecl, m is MachineDecl, mp.name = m.name, mp.constType != m.constType.
+	err.OneNameError(mp.name, "constructor type does not match") :- mp is MachineProtoDecl, m is MachineDecl, mp.name = m.name, mp.constType != m.constType.
 	
-	err.Error(fp.name, "parameter type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.params != f.params.
-	err.Error(fp.name, "return type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.return != f.return.
+	err.OneNameError(fp.name, "parameter type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.params != f.params.
+	err.OneNameError(fp.name, "return type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.return != f.return.
 
-	err.Error(fp.name, "function prototype not implemented") :- fp is FunProtoDecl, no FunDecl(fp.name, _, _, _).
+	err.OneNameError(fp.name, "function prototype not implemented") :- fp is FunProtoDecl, no FunDecl(fp.name, _, _, _).
 
-	err.Error(iname, "machine cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineDecl(iname, _, _).
-	err.Error(iname, "machine prototype cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineProtoDecl(iname, _).
+	err.OneNameError(iname, "machine cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineDecl(iname, _, _).
+	err.OneNameError(iname, "machine prototype cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineProtoDecl(iname, _).
+
+	err.TwoNameError(fname, pname, "function parameter must be available at return") :- AvailableParameterDemand(fname, pname), UnavailableParameterSupply(fname, pname).
 
     /*************************************************************/
     /**********         Create Header File             ***********/

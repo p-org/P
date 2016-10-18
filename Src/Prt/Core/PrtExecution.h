@@ -504,6 +504,7 @@ extern "C"{
 	void
 		PrtPushNewFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
+		_In_ PRT_BOOLEAN				isFunApp,
 		_In_ PRT_UINT32					funIndex,
 		...
 		);

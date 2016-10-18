@@ -1,0 +1,92 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Init
+OUT: <CreateLog> Machine Server(2) is created
+OUT: <StateLog> Machine Server(2) entered state Init
+OUT: <RaiseLog> Machine Main(1) raised event SUCCESS with payload 0
+OUT: <ExitLog> Machine Main(1) exiting state Init
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state Init
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: <EnqueueLog> Enqueued event PING with payload 0 on Machine Server(2)
+OUT: <DequeueLog> Dequeued event PING with payload 0 by Machine Server(2)
+OUT: <ExitLog> Machine Server(2) exiting state SendPong
+OUT: <StateLog> Machine Server(2) entered state SendPong
+OUT: <EnqueueLog> Enqueued event PONG with payload 0 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event PONG with payload 0 by Machine Main(1)
+OUT: <ExitLog> Machine Main(1) exiting state SendPing
+OUT: <StateLog> Machine Main(1) entered state SendPing
+OUT: 
+EXIT: 0

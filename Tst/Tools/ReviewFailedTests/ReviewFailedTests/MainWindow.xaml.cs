@@ -28,7 +28,24 @@ namespace ReviewFailedTests
         {
             UiDispatcher.Initialize();
             InitializeComponent();
-            RestorePosition();            
+            RestorePosition();
+            this.Loaded += OnMainWindowLoaded;     
+        }
+
+        private void OnMainWindowLoaded(object sender, RoutedEventArgs e)
+        {
+            string[] args = App.Instance.Arguments;
+            try
+            {
+                if (args.Length > 0 && File.Exists(args[0]))
+                {
+                    OpenFile(args[0]);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Error loading file: " + args[0] + ".  " + ex.Message, "Error Loading File", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void OnWindowLocationChanged(object sender, EventArgs e)
@@ -117,12 +134,13 @@ namespace ReviewFailedTests
                         line = reader.ReadLine();
                     }
                     FailedTestList.ItemsSource = tests;
-
+                    FailedTestList.SelectedIndex = 0;
+                    FailedTestList.Focus();
                 }
             }
             catch (Exception ex)
             {
-                ShowStatus(ex.Message);
+                MessageBox.Show("Error loading file: " + fileName + ".  " + ex.Message, "Error Loading File", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 

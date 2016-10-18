@@ -32,5 +32,13 @@ namespace ReviewFailedTests
         }
 
         public static App Instance {  get { return instance; } }
+
+        public string[] Arguments { get; set; }
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            Arguments = e.Args;
+            base.OnStartup(e);
+        }
     }
 }

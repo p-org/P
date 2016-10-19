@@ -46,6 +46,7 @@ namespace ReviewFailedTests
             {
                 MessageBox.Show("Error loading file: " + args[0] + ".  " + ex.Message, "Error Loading File", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+
         }
 
         private void OnWindowLocationChanged(object sender, EventArgs e)
@@ -101,8 +102,7 @@ namespace ReviewFailedTests
 
         private void OnOpenFile(object sender, RoutedEventArgs e)
         {
-            Button button = (Button)sender;
-            button.IsEnabled = false;
+            OpenButton.IsEnabled = false;
 
             Microsoft.Win32.OpenFileDialog fo = new Microsoft.Win32.OpenFileDialog();
             fo.Filter = "Text files (*.txt)|*.txt";
@@ -112,7 +112,7 @@ namespace ReviewFailedTests
             {
                 OpenFile(fo.FileName);
             }
-            button.IsEnabled = true;
+            OpenButton.IsEnabled = true;
         }
 
         private void OpenFile(string fileName)
@@ -120,9 +120,9 @@ namespace ReviewFailedTests
             try
             {
                 ShowStatus("");
+                List<TestModel> tests = new List<TestModel>();
                 using (StreamReader reader = new StreamReader(fileName))
                 {
-                    List<TestModel> tests = new List<TestModel>();
                     string line = reader.ReadLine();
                     while (line != null)
                     {
@@ -136,6 +136,16 @@ namespace ReviewFailedTests
                     FailedTestList.ItemsSource = tests;
                     FailedTestList.SelectedIndex = 0;
                     FailedTestList.Focus();
+                }
+
+                if (tests.Count == 0)
+                {
+                    MessageBox.Show("No test failures found in this file.", "No Failures", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                else if (!settings.ContainsQuickTip("TipEnterKey"))
+                {
+                    MessageBox.Show("Did you know you can press ENTER key to review each line of the diff?", "Quick Tip", MessageBoxButton.YesNo, MessageBoxImage.Information);
+                    settings.AddQuickTip("TipEnterKey");
                 }
             }
             catch (Exception ex)
@@ -285,6 +295,11 @@ namespace ReviewFailedTests
         private void OnSettingsPanelClosed(object sender, EventArgs e)
         {
             SettingsPanel.Visibility = Visibility.Hidden;
+        }
+
+        private void OnOpenFileCommand(object sender, ExecutedRoutedEventArgs e)
+        {
+            OnOpenFile(sender, e);
         }
     }
 }

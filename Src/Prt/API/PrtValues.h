@@ -25,6 +25,13 @@ extern "C"{
 #include "PrtValues_IDL.h"
 #else
 
+	typedef enum PRT_FUN_PARAM_STATUS
+	{
+		PRT_FUN_PARAM_CLONE,
+		PRT_FUN_PARAM_SWAP,
+		PRT_FUN_PARAM_XFER
+	} PRT_FUN_PARAM_STATUS;
+
 	typedef enum PRT_SPECIAL_EVENT
 	{
 		PRT_SPECIAL_EVENT_NULL = 0,  /**< The id of the null event */

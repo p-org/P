@@ -99,8 +99,8 @@ Trace-Log 6:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
@@ -116,8 +116,8 @@ Trace-Log 7:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init

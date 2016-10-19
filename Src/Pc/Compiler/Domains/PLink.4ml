@@ -46,6 +46,11 @@ domain PLink
 
 	AvailableParameterDemand   ::= new (fname: String, pname: String).
 	UnavailableParameterSupply ::= new (fname: String, pname: String).
+
+	/*****************************************************************/
+	/*		Module system related declarations and constructs		 */
+	/*****************************************************************/
+
 }
 
 domain PLinkError 

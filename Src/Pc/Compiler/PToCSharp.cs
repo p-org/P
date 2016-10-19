@@ -704,7 +704,209 @@ namespace Microsoft.Pc
                 machName = name;
                 machInfo = info;
             }
-           
+            public StatementSyntax MkStateInstantiation(string stateName, string stateType, string entryFun, string exitFun, 
+                                                    bool hasNullTransition, StateTemperature temperature)
+            {
+                if (hasNullTransition)
+                {
+                    if (temperature == StateTemperature.WARM)
+                    {
+                        return ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                IdentifierName(stateName),
+                                ObjectCreationExpression(
+                                    IdentifierName(stateType))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                Argument(
+                                                    IdentifierName("\"" + stateName + "\"")),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(entryFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(exitFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    LiteralExpression(
+                                                        SyntaxKind.TrueLiteralExpression)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    MemberAccessExpression(
+                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                        IdentifierName("StateTemperature"),
+                                                        IdentifierName("Warm")))})))))
+                        .NormalizeWhitespace();
+                    }
+                    else if (temperature == StateTemperature.HOT)
+                    {
+                        return ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                IdentifierName(stateName),
+                                ObjectCreationExpression(
+                                    IdentifierName(stateType))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                Argument(
+                                                    IdentifierName("\"" + stateName + "\"")),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(entryFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(exitFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    LiteralExpression(
+                                                        SyntaxKind.TrueLiteralExpression)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    MemberAccessExpression(
+                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                        IdentifierName("StateTemperature"),
+                                                        IdentifierName("Hot")))})))))
+                        .NormalizeWhitespace();
+                    }
+                    else
+                    {
+                        return ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                IdentifierName(stateName),
+                                ObjectCreationExpression(
+                                    IdentifierName(stateType))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                Argument(
+                                                    IdentifierName("\"" + stateName + "\"")),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(entryFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(exitFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    LiteralExpression(
+                                                        SyntaxKind.TrueLiteralExpression)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    MemberAccessExpression(
+                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                        IdentifierName("StateTemperature"),
+                                                        IdentifierName("Cold")))})))))
+                        .NormalizeWhitespace();
+                    }
+                }
+                else
+                {
+                    if (temperature == StateTemperature.WARM)
+                    {
+                        return ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                IdentifierName(stateName),
+                                ObjectCreationExpression(
+                                    IdentifierName(stateType))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                Argument(
+                                                    IdentifierName("\"" + stateName + "\"")),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(entryFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(exitFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    LiteralExpression(
+                                                        SyntaxKind.FalseLiteralExpression)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    MemberAccessExpression(
+                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                        IdentifierName("StateTemperature"),
+                                                        IdentifierName("Warm")))})))))
+                        .NormalizeWhitespace();
+                    }
+                    else if (temperature == StateTemperature.HOT)
+                    {
+                        return ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                IdentifierName(stateName),
+                                ObjectCreationExpression(
+                                    IdentifierName(stateType))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                Argument(
+                                                    IdentifierName("\"" + stateName + "\"")),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(entryFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(exitFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    LiteralExpression(
+                                                        SyntaxKind.FalseLiteralExpression)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    MemberAccessExpression(
+                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                        IdentifierName("StateTemperature"),
+                                                        IdentifierName("Hot")))})))))
+                        .NormalizeWhitespace();
+                    }
+                    else
+                    {
+                        return ExpressionStatement(
+                            AssignmentExpression(
+                                SyntaxKind.SimpleAssignmentExpression,
+                                IdentifierName(stateName),
+                                ObjectCreationExpression(
+                                    IdentifierName(stateType))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                Argument(
+                                                    IdentifierName("\"" + stateName + "\"")),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(entryFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    IdentifierName(exitFun)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    LiteralExpression(
+                                                        SyntaxKind.FalseLiteralExpression)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    MemberAccessExpression(
+                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                        IdentifierName("StateTemperature"),
+                                                        IdentifierName("Cold")))})))))
+                        .NormalizeWhitespace();
+                    }
+                }
+            }
+                                             
             public SyntaxNode MkRealMachineClass()
             {
                 //StartState property (getter only, since there's no setter in the base class):
@@ -825,8 +1027,7 @@ namespace Microsoft.Pc
                     foreach (var transition in pair.Value.transitions)
                     {
                         funName = transition.Value.transFunName;
-                        //stopped here+++++++++++++++++++++++++++++++++++++++++++++
-                        //TODO: check that this is not a global static function; if so, do not generate class and instance
+                        
                         if (!transition.Value.IsPush && !translator.allStaticFuns.ContainsKey(funName))
                         {
                             //TODO(remove)
@@ -836,7 +1037,18 @@ namespace Microsoft.Pc
                         }
                     }
 
-                    //(TODO: how to loop over functions in dos?) Functions in dos:
+                    //Functions in dos: loop over StateInfo.actions (to be renamed into StateInfo.dos):
+                    foreach (var doFun in pair.Value.actions)
+                    {
+                        funName = doFun.Value;
+                        //TODO(remove)
+                        Console.WriteLine("For Do declaration: func name for state {0}: {1}", pair.Key, funName);
+                        if (!translator.allStaticFuns.ContainsKey(funName))
+                        {
+                            funDecl = new MkFunctionDecl(funName, false, this);
+                            funDecl.AddFunClass();
+                        } 
+                    }
 
                 }
 
@@ -937,39 +1149,69 @@ namespace Microsoft.Pc
                     machineMembers.Add(stateDeclaration);
 
                     //state instantiation for the machine class constructor:
-                    mainConstructorFields.Add(
-                        ExpressionStatement(
-                            AssignmentExpression(
-                                SyntaxKind.SimpleAssignmentExpression,
-                                IdentifierName(stateName),
-                                ObjectCreationExpression(
-                                    IdentifierName(stateType))
+                    //Example: 
+                    //PONG_Pong_WaitPing = new PONG_Pong_WaitPing_Class("PONG_Pong_WaitPing", AnonFun1, AnonFun0, false, StateTemperature.Warm);
+                    //Consider 6 cases (write a mmethod): for each bool value of hasNullTransition, there are 3 possible "temperatures"
+                    //TODO(remove):
+                    Console.WriteLine("hasNullTransition for state {0} is {1}", stateName, pair.Value.hasNullTransition);
+                    mainConstructorFields.Add(MkStateInstantiation(stateName, stateType, pair.Value.entryActionName, pair.Value.exitFunName,
+                                              pair.Value.hasNullTransition, pair.Value.temperature));
+
+                    //Add DoDecls to the StateInfo:
+                    //Example: Main_Ping_SendPing.dos.Add(Pong, foo);
+                    //Note: "ignore E" is considered a DeDecl with the default "ignore" function, and is present in StateInfo.actions
+                    //TODO(question): do I have to use pre-defined 
+                    //public class PrtIgnoreFun : PrtFun
+                    //for "ignore" function?
+                    foreach (var doFun in pair.Value.actions)
+                    {
+                        mainConstructorFields.Add(
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName(stateName),
+                                            IdentifierName("dos")),
+                                        IdentifierName("Add")))
                                 .WithArgumentList(
                                     ArgumentList(
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                 Argument(
-                                                    IdentifierName("\"" + stateName + "\"")),
+                                                    IdentifierName(doFun.Key)),
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
-                                                    IdentifierName(pair.Value.entryActionName)),
-                                                Token(SyntaxKind.CommaToken),
-                                                Argument(
-                                                    IdentifierName(pair.Value.exitFunName)),
-                                                Token(SyntaxKind.CommaToken),
-                                                Argument(
-                                                    LiteralExpression(
-                                                        SyntaxKind.FalseLiteralExpression)),
-                                                Token(SyntaxKind.CommaToken),
-                                                Argument(
-                                                    MemberAccessExpression(
-                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                        IdentifierName("StateTemperature"),
-                                                        IdentifierName("Warm")))})))))
-                        .NormalizeWhitespace());
+                                                    IdentifierName(doFun.Value))}))))
+                            .NormalizeWhitespace()
+                            );
+                    }
+
+                    //Add deferred events (if any) to the state:
+                    foreach (var deferredEvent in pair.Value.deferredEvents)
+                    {
+                        mainConstructorFields.Add(
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName(stateName),
+                                            IdentifierName("deferredSet")),
+                                        IdentifierName("Add")))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SingletonSeparatedList<ArgumentSyntax>(
+                                            Argument(
+                                                IdentifierName(deferredEvent))))))
+                            .NormalizeWhitespace()
+                        );
+                    }
 
                     //Transition instantiations for the state of the machine:
-  
+
                     //"transition" + "_" + transition_count
                     foreach (var transition in pair.Value.transitions)
                     {

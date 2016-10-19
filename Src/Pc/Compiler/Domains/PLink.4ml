@@ -38,11 +38,7 @@ domain PLink
 	InterfaceTypeDecl	::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
     MachineDecl			::= fun (name: String -> constType: any TypeExpr, id: any Id).
 	MachineProtoDecl	::= new (name: String, constType: any TypeExpr).
-	MachineExports		::= fun (mach: String -> exports: String).
-	MachineReceives		::= new (mach: String, ev: NonNullEventName).
-	MachineSends		::=	new (mach: String, ev: NonNullEventName).
-	MachineCreatesInt	::= new (mach: String, iname: String).
-	MachineCreatesM		::= new (mach: String, mmname: String).
+	
 
 	AvailableParameterDemand   ::= new (fname: String, pname: String).
 	UnavailableParameterSupply ::= new (fname: String, pname: String).
@@ -50,6 +46,53 @@ domain PLink
 	/*****************************************************************/
 	/*		Module system related declarations and constructs		 */
 	/*****************************************************************/
+
+	//// Machine Signature
+	MachineExports		::= fun (mach: String -> exports: String).
+	MachineReceives		::= new (mach: String, ev: NonNullEventName).
+	MachineSends		::=	new (mach: String, ev: NonNullEventName).
+	MachineCreatesInt	::= new (mach: String, iname: String).
+	MachineCreatesM		::= new (mach: String, mmname: String).
+
+	//// Module Declarations
+	LeafModuleDecl ::= new (name: String).
+	LeafModuleContains ::= new (lmod: LeafModuleDecl, mach: MachineDecl).
+	ModuleName ::= new (name: String).
+	
+
+	/// Module Constructions
+	ModuleDef ::= new (name: String, mod: any ModuleExpr).
+	HideExpr ::= new (evtNames: any EventNameList, mod: any ModuleExpr). 
+	RenameExpr ::= new (mNames: String, mNames': String, mod: any ModuleExpr).
+	ExportExpr ::= new (mName: String, iName: String, mod: any ModuleExpr).
+	AssumeExpr ::= new (monNames: any MonitorNameList, mod: any ModuleExpr).
+	AssertExpr ::= new (monNames: any MonitorNameList, mod: any ModuleExpr).
+	SafeExpr ::= new (mod: any ModuleExpr).
+	ComposeExpr ::= new (left: any ModuleExpr, right: any ModuleExpr).
+	ModuleExpr ::= ModuleName + HideExpr + RenameExpr + ExportExpr + AssumeExpr + AssertExpr + SafeExpr + ComposeExpr + LeafModuleDecl.
+
+	//// Test Declarations and Implementation
+	TestDecl ::= new (name: String, mod: any ModuleExpr).
+	RefinementDecl ::= new (name: String, lhs: any ModuleExpr, rhs: any ModuleExpr).
+	ImplementationDecl ::= new (mod: any ModuleExpr).
+
+	//// Module Signature 
+	ModulePrivate ::= (mod: ModuleExpr, ev: NonNullEventName).
+	ModuleSends ::= (mod: ModuleExpr, ev: NonNullEventName).
+	ModuleReceives ::= (mod: ModuleExpr, ev: NonNullEventName).
+	ModuleExports ::= (mod: ModuleExpr, i: String).  
+	ModuleCreates ::= (mod: ModuleExpr, i: String).
+
+	//// Module Code Gen and Compatibity Helpers
+	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, interfaceOrMachine: String, newImpMachine: String + {NIL}).
+	ModuleRenameMap ::= (mod: ModuleExpr, newName: String, impMachine: MachineDecl).  // for both machines and monitors
+	ModuleSafeMap ::= (mod: ModuleExpr, newName: String, isSafe: Boolean).
+	ModuleMonitorMap ::= (mod: ModuleExpr, newMonitorName: String, impMachine: String).
+
+	// MonitorNamesList
+	MonitorNameList ::= new (str: String, tl: any MonitorNameList + { NIL }).
+	MemberOfMonitorNameList ::= sub (MonitorNameList, String).
+	MemberOfEventNameList ::= sub (EventNameList, EventName).
 
 }
 

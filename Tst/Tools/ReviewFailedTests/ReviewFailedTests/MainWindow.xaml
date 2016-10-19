@@ -47,7 +47,7 @@
                 <Button x:Name="SettingsButton" Grid.Column="1" Style="{StaticResource AppBarButtonStyle}" ToolTip="Open" Click="OnSettingsClick">&#xE115;</Button>
             </Grid>
 
-            <ListView x:Name="FailedTestList" Grid.Row="1"  BorderThickness="0" 
+            <ListView x:Name="FailedTestList" Grid.Row="1"  BorderThickness="0" MouseDoubleClick="OnListDoubleClick"
                   Style="{StaticResource DarkListStyle}" ItemTemplate="{StaticResource TestListItemTemplate}"
                   ScrollViewer.VerticalScrollBarVisibility="Auto"
                   SelectionChanged="OnListItemSelected" SelectionMode="Single" KeyDown="OnListViewKeyDown">

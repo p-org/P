@@ -55,26 +55,26 @@ domain PLink
 	MachineCreatesM		::= new (mach: String, mmname: String).
 
 	//// Module Declarations
-	LeafModuleDecl ::= new (name: String).
-	LeafModuleContains ::= new (lmod: LeafModuleDecl, mach: MachineDecl).
+	ModuleDecl ::= new (name: String).
+	ModuleContains ::= new (lmod: ModuleDecl, mach: MachineDecl).
 	ModuleName ::= new (name: String).
 	
 
 	/// Module Constructions
 	ModuleDef ::= new (name: String, mod: any ModuleExpr).
-	HideExpr ::= new (evtNames: any EventNameList, mod: any ModuleExpr). 
-	RenameExpr ::= new (mNames: String, mNames': String, mod: any ModuleExpr).
-	ExportExpr ::= new (mName: String, iName: String, mod: any ModuleExpr).
-	AssumeExpr ::= new (monNames: any MonitorNameList, mod: any ModuleExpr).
-	AssertExpr ::= new (monNames: any MonitorNameList, mod: any ModuleExpr).
-	SafeExpr ::= new (mod: any ModuleExpr).
-	ComposeExpr ::= new (left: any ModuleExpr, right: any ModuleExpr).
-	ModuleExpr ::= ModuleName + HideExpr + RenameExpr + ExportExpr + AssumeExpr + AssertExpr + SafeExpr + ComposeExpr + LeafModuleDecl.
+	HideExpr ::= new (evtNames: any EventNameList, mod: any ModuleExpr, id: any Id). 
+	RenameExpr ::= new (mNames: String, mNames': String, mod: any ModuleExpr, id: any Id).
+	ExportExpr ::= new (mName: String, iName: String, mod: any ModuleExpr, id: any Id).
+	AssumeExpr ::= new (monNames: any MonitorNameList, mod: any ModuleExpr, id: any Id).
+	AssertExpr ::= new (monNames: any MonitorNameList, mod: any ModuleExpr, id: any Id).
+	SafeExpr ::= new (mod: any ModuleExpr, id: any Id).
+	ComposeExpr ::= new (left: any ModuleExpr, right: any ModuleExpr, id: any Id).
+	ModuleExpr ::= ModuleName + HideExpr + RenameExpr + ExportExpr + AssumeExpr + AssertExpr + SafeExpr + ComposeExpr + ModuleDecl.
 
 	//// Test Declarations and Implementation
-	TestDecl ::= new (name: String, mod: any ModuleExpr).
-	RefinementDecl ::= new (name: String, lhs: any ModuleExpr, rhs: any ModuleExpr).
-	ImplementationDecl ::= new (mod: any ModuleExpr).
+	TestDecl ::= new (name: String, mod: any ModuleExpr, id: any Id).
+	RefinementDecl ::= new (name: String, lhs: any ModuleExpr, rhs: any ModuleExpr, id: any Id).
+	ImplementationDecl ::= new (mod: any ModuleExpr, id: any Id).
 
 	//// Module Signature 
 	ModulePrivate ::= (mod: ModuleExpr, ev: NonNullEventName).
@@ -93,17 +93,24 @@ domain PLink
 	MonitorNameList ::= new (str: String, tl: any MonitorNameList + { NIL }).
 	MemberOfMonitorNameList ::= sub (MonitorNameList, String).
 	MemberOfEventNameList ::= sub (EventNameList, EventName).
-
 }
 
-domain PLinkError 
+domain PLinkError
 {
+	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
+	Id ::= { NIL } + Integer + String + IdList.
+	//// General linker errors
 	OneNameError ::= new (name: String, msg: String).
 	TwoNameError ::= new (name1: String, name2: String, msg: String).
+
+	//// Module system related linker errors
+	ModuleDefError ::= new (name: String, msg: String).
+	NoMainMachineInModExpr ::= new (modExprId: any Id, msg: String).
 }
 
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 {
+	//// General Linker Errors
 	err.OneNameError(name, "multiple machines with same name") :- m is MachineDecl, m' is MachineDecl, m != m', m.name = m'.name, name = m.name.
 
 	err.OneNameError(name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.
@@ -125,6 +132,53 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	err.OneNameError(iname, "machine prototype cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineProtoDecl(iname, _).
 
 	err.TwoNameError(fname, pname, "function parameter must be available at return") :- AvailableParameterDemand(fname, pname), UnavailableParameterSupply(fname, pname).
+
+	//// Module System related Linker Errors
+
+	//// Check if the named module definition is legal ////
+	ModuleDefError(name, "undefined module") :- AllModuleExprs(modEx), modEx = ModuleName(name), no ModuleDecl(name), no ModuleDef(name, _).
+
+	ModuleDefError(modName, "multiple named module definitions with the same name") :- ModuleDef(modName, expr1), ModuleDef(modName, expr2), expr1 != expr2.
+
+	ModuleDefDepends ::= sub (modDef: ModuleDef, mName: ModuleName).
+	ModuleNameDepends ::= (name1: String, name2: String).
+	ModuleNameDepends(nmodule.name, modName.name) :- ModuleDefDepends(nmodule, modName).
+	ModuleNameDepends(name1, name3) :- ModuleNameDepends(name1, name2), ModuleNameDepends(name2, name3).
+
+	ModuleDefError(name, "named module depends on itself") :- ModuleNameDepends(name, name).
+
+	//// Expand ModuleExpr
+	AllModuleExprs ::= sub (ModuleExpr).
+	ModuleExprExpansion ::= (modExpr: ModuleExpr, eModExpr: ModuleExpr).
+	
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name), emodExpr = ModuleDecl(name), no ModuleDef(name, _).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name), no ModuleDefError(name, _), no ModuleDecl(name), ModuleDef(name, modExpr'), ModuleExprExpansion(modExpr', emodExpr).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleDecl(name), emodExpr = ModuleDecl(name).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = HideExpr(s, modExpr', id), emodExpr = HideExpr(s, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = RenameExpr(s1, s2, modExpr', id), emodExpr = RenameExpr(s1, s2, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ExportExpr(s1, s2, modExpr', id), emodExpr = ExportExpr(s1, s2, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = AssumeExpr(s, modExpr', id), emodExpr = AssumeExpr(s, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = AssertExpr(s, modExpr', id), emodExpr = AssertExpr(s, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = SafeExpr(modExpr', id), emodExpr = SafeExpr(emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ComposeExpr(modExpr', modExpr'', id), emodExpr = ComposeExpr(emodExpr', emodExpr'', id), ModuleExprExpansion(modExpr', emodExpr'), ModuleExprExpansion(modExpr'', emodExpr'').
+
+	//// All expanded Module Exprs
+	AllExpandedModuleExprs ::= (modExpr: ModuleExpr).
+	AllExpandedModuleExprs(emodExpr) :- AllModuleExprs(modExpr), ModuleExprExpansion(modExpr, emodExpr).
+
+	//// All leaf modules in module expr
+	AllModuleDecls ::= (modExpr: ModuleExpr, mod: ModuleDecl).
+	AllModuleDecls(modExpr, mod) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, AllModuleDecls(modExpr.mod, mod).
+	AllModuleDecls(modExpr, mod) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, mod = modExpr.
+	AllModuleDecls(modExpr, mod) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, AllModuleDecls(modExpr.left, mod);
+									AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, AllModuleDecls(modExpr.right, mod).
+	
+
+	/**************************************************************************/
+	/*	Check that there is main machine in each moduleExpr in the test decl  */
+	/**************************************************************************/
+	NoMainMachineInModExpr(id, "no Main machine in the module expression in test decl") :-
+			TestDecl(_, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _).
 
     /*************************************************************/
     /**********         Create Header File             ***********/
@@ -178,25 +232,25 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
     /**********   Generate contents of header file     ***********/
     /*************************************************************/
 	
-	EventDeclExt ::= in.EventDecl + { NULL, HALT }.
-	DeclId ::= (decl: in.MachineDecl + in.EventDecl + in.FunDecl + in.AnonFunDecl + { NULL, HALT }, id: Natural, cname: String).
+	EventDeclExt ::= EventDecl + { NULL, HALT }.
+	DeclId ::= (decl: MachineDecl + EventDecl + FunDecl + AnonFunDecl + { NULL, HALT }, id: Natural, cname: String).
 	
 	//// Foreign types
 	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
-									   in.ModelType(name), id = toOrdinal(name, 0, { n | in.ModelType(n) }), cn = strJoin("P_FORGN_TYPE_", name), enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({n | in.ModelType(n)}) }).  
+									   ModelType(name), id = toOrdinal(name, 0, { n | ModelType(n) }), cn = strJoin("P_FORGN_TYPE_", name), enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({n | ModelType(n)}) }).  
 	
 	//// Field names for named tuple types that have a type synonym
-	IndexOf ::= (t: in.NmdTupType, name: String, offset: Natural, tail: in.NmdTupType + {NIL}).
-	IndexOf(t, name, 0, tail)  :- in.TypeDef(_, t), t = in.NmdTupType(NmdTupTypeField(name, _), tail).
-	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = in.NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
+	IndexOf ::= (t: NmdTupType, name: String, offset: Natural, tail: NmdTupType + {NIL}).
+	IndexOf(t, name, 0, tail)  :- TypeDef(_, t), t = NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   d is in.TypeDef(name, type), type: in.NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
+	   d is TypeDef(name, type), type: NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   IndexOf(type, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(in.#NmdTupType, type) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(#NmdTupType, type) }).  
 	
 	//// Enum declarations for all enum types
 	EnumTypeElem ::= (EnumTypeDef, StringList, IntegerList + { NIL }).
@@ -212,7 +266,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 												  list1 = StringList(str, _), list2 = IntegerList(i, _).
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :-
-		d is in.EnumTypeDef(enumName, elems, _), size = lstLength(in.#StringList, elems),
+		d is EnumTypeDef(enumName, elems, _), size = lstLength(#StringList, elems),
 		list = toList(#Elements, NIL, { enumMember | 
 										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
@@ -220,12 +274,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
 	DeclId(NULL, 0, "_P_EVENT_NULL").
 	DeclId(HALT, 1, "_P_EVENT_HALT").
-	DeclId(d, id, cn) :- d is in.EventDecl, id = 2 + toOrdinal(d, 0, { d' | d' is in.EventDecl }), cn = strJoin("P_EVENT_", d.name).
+	DeclId(d, id, cn) :- d is EventDecl, id = 2 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", d.name).
 	
 	HOut(0, out.EnmDef(NIL, "P_EVENTS", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : EventDeclExt, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is in.EventDecl}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventDecl}) }).  
 			
 	//// EventSetDecls
 	HOut(0, out.EnmDef(NIL, "P_EVENTSET", list)) :- 
@@ -234,11 +288,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTSETS_COUNT"), size = count({ x | x is EventSet }) }).  
 	
 	//// (Anon)FunDecls
-	AnonOrNamedFun ::= in.FunDecl + in.AnonFunDecl.
+	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
 	DeclId(d, id, cn) :- 
-		d is in.FunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }), 
+		d is FunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }), 
 							 cn = strJoin("P_FUN_", d.name);
-		d is in.AnonFunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }),
+		d is AnonFunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }),
 							 cn = strJoin("P_FUN_", strJoin(d.ownerFun, strJoin("_ANON", toString(d.anonFunIndex)))).
 
 	HOut(0, out.EnmDef(NIL, "P_FUNS", list)) :-
@@ -262,7 +316,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 									   DeclId(d, id, cn), d : MachineDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl}) }).  
 
-	HOut(0, def) :- d is in.MachineDecl, machineName = strJoin("P_MACHINE_", d.name), machineStructName = strJoin(machineName, "_STRUCT"),
+	HOut(0, def) :- d is MachineDecl, machineName = strJoin("P_MACHINE_", d.name), machineStructName = strJoin(machineName, "_STRUCT"),
 	                        def = out.VarDef(
 							      EXTERN, 
 								  NmdType(NIL, "PRT_MACHINEDECL"), 
@@ -270,16 +324,16 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  NIL).
 
 	//// Extern declarations for defined types
-	HOut(0, def) :- in.TypeDef(name, _), 
+	HOut(0, def) :- TypeDef(name, _), 
 					typeName = strJoin("P_GEND_TYPE_", name),
 					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
 
-	HOut(0, def) :- in.ModelType(name), 
+	HOut(0, def) :- ModelType(name), 
 					typeName = strJoin("P_GEND_TYPE_", name),
 					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
 	
 	//// Extern declarations for foreign type functions
-	HOut(0, def) :- in.ModelType(name),
+	HOut(0, def) :- ModelType(name),
 	                params = NIL,
 				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
 					argTypes = PrmTypes(BaseType(VOID), NIL),					  
@@ -290,7 +344,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name),
+	HOut(0, def) :- ModelType(name),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -301,7 +355,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name),
+	HOut(0, def) :- ModelType(name),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -312,7 +366,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name),
+	HOut(0, def) :- ModelType(name),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -323,7 +377,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name),
+	HOut(0, def) :- ModelType(name),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -334,7 +388,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name),
+	HOut(0, def) :- ModelType(name),
 	                params = Params(Param(NIL, "frgnVal1"),
 					         Params(Param(NIL, "frgnVal2"), 
 							 NIL)),
@@ -362,8 +416,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
 	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
-	TypeId      ::= (id: Natural, type: in.TypeExpr).
-	TypeDepNum  ::= (id: Natural, type: in.TypeExpr).
+	TypeId      ::= (id: Natural, type: TypeExpr).
+	TypeDepNum  ::= (id: Natural, type: TypeExpr).
 
 	TranslatedTypeExpr ::= (TypeExpr).
 	TranslatedTypeExpr(t) :- t = in.BaseType(NULL); t = in.BaseType(BOOL); t = in.BaseType(INT); t = in.BaseType(EVENT); t = in.BaseType(MACHINE); t = in.BaseType(ANY).
@@ -371,13 +425,13 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	TranslatedTypeExpr(t) :- EventDecl(_, _, t), t : TypeExpr.
 	TranslatedTypeExpr(t) :- InterfaceTypeDecl(_, _, t).
 	TranslatedTypeExpr(t) :- TypeDef(_, t).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.SeqType(t).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.MapType(t, _).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.MapType(_, t).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.TupType(t, _).  
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.TupType(_, t), t: TypeExpr.  
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.NmdTupType(NmdTupTypeField(_, t), _).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = in.NmdTupType(_, t), t: TypeExpr.  
+	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = SeqType(t).
+	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = MapType(t, _).
+	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = MapType(_, t).
+	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = TupType(t, _).  
+	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = TupType(_, t), t: TypeExpr.  
+	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = NmdTupType(NmdTupTypeField(_, t), _).
+	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = NmdTupType(_, t), t: TypeExpr.  
 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType. 
@@ -391,7 +445,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// Build type initializers in linearization order.
 	//// defs is the definitions that precede the encoding of this type constant.
-	TypeConstant ::= (type: in.TypeExpr + { NIL }, typeExprId: Integer, defs: out.Section + { NIL }).
+	TypeConstant ::= (type: TypeExpr + { NIL }, typeExprId: Integer, defs: out.Section + { NIL }).
 	TypeConstant(NIL, -1, NIL).
 
 	//// Base types
@@ -410,14 +464,14 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 
 	//// Enum types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), in.EnumTypeDef(name, _, _),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = NameType(name), EnumTypeDef(name, _, _),
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_INT"), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), in.ModelType(name),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = NameType(name), ModelType(name),
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
@@ -427,7 +481,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.SeqType(tinner), TypeConstant(tinner, tinnerid, _),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = SeqType(tinner), TypeConstant(tinner, tinnerid, _),
 								              defs = out.Section(Section(before, defSeq), def),
                               defSeq = out.VarDef(
                                      NIL, 
@@ -447,7 +501,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// Complex type Map 
 	TypeConstant(t, m, defs) :- 
-	                       TypeId(m, t), TypeConstant(_, m - 1, before), t = in.MapType(tdom, tcod), 
+	                       TypeId(m, t), TypeConstant(_, m - 1, before), t = MapType(tdom, tcod), 
 	                       TypeConstant(tdom, domid, _), TypeConstant(tcod, codid, _),
 								         defs = out.Section(Section(before, defMap), def),
 										     defMap = out.VarDef(
@@ -468,13 +522,13 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 											          NIL))),														  
 										      typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
 	//// Complex type Tuple 
-	Tup2ArrayInit ::= (type: in.TupType, arr: out.Expr). 
-	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = in.TupType(t', NIL), TypeConstant(t', id', _), init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)). 
-	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = in.TupType(t', t''), TypeConstant(t', id', _), Tup2ArrayInit(t'', Init(ts'')), 
+	Tup2ArrayInit ::= (type: TupType, arr: out.Expr). 
+	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = TupType(t', NIL), TypeConstant(t', id', _), init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)). 
+	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = TupType(t', t''), TypeConstant(t', id', _), Tup2ArrayInit(t'', Init(ts'')), 
 	                          init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')). 
 
 	TypeConstant(t, m, defs) :- 
-	                       TypeId(m, t), TypeConstant(_, m - 1, before), Tup2ArrayInit(t, arrInit), t : in.TupType, 
+	                       TypeId(m, t), TypeConstant(_, m - 1, before), Tup2ArrayInit(t, arrInit), t : TupType, 
 								         defs = out.Section(Section(before, Section(defTupArr, defTup)), def),
 										     defTupArr = out.VarDef(
 										           NIL, 
@@ -486,7 +540,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 														  NmdType(NIL, "PRT_TUPTYPE"), 
 														  typeNameTup, 
 														  Init(
-														    Args(IntLit(lstLength(in.#TupType, t), DEC, NIL), 
+														    Args(IntLit(lstLength(#TupType, t), DEC, NIL), 
 															  Args(Ident(typeNameTupArr), 
 															  NIL)))),
 										     def = out.VarDef(
@@ -502,16 +556,16 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 										     typeNameTup = strJoin("P_GEND_TYPE_TUP_", toString(m)).
 
 	//// Complex type NmdTuple 
-	NmdTup2ArrayInit ::= (type: in.NmdTupType, narr: out.Expr, tarr: out.Expr). 
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(n', t'), NIL), TypeConstant(t', id', _), 
+	NmdTup2ArrayInit ::= (type: NmdTupType, narr: out.Expr, tarr: out.Expr). 
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(n', t'), NIL), TypeConstant(t', id', _), 
 	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)), 
 	                                   narr = Init(Args(StringLit(n', NIL), NIL)).
 									    
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(n', t'), t''), TypeConstant(t', id', _), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(n', t'), t''), TypeConstant(t', id', _), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
 	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')),
 	                                   narr = Init(Args(StringLit(n', NIL), n'')).
 
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), NmdTup2ArrayInit(t, narr, tarr), t : NmdTupType, 
 								     defs = out.Section(before, Section(defNmdTupNArr, Section(defNmdTupTArr, Section(defNmdTup, def)))),
 										 defNmdTupNArr = out.VarDef(
 										              NIL, 
@@ -528,7 +582,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 														  NmdType(NIL, "PRT_NMDTUPTYPE"), 
 														  typeNameNmdTup, 
 														  Init(
-														  Args(IntLit(lstLength(in.#NmdTupType, t), DEC, NIL), 
+														  Args(IntLit(lstLength(#NmdTupType, t), DEC, NIL), 
 															Args(Ident(typeNameNmdTupNArr), 
 															Args(Ident(typeNameNmdTupTArr), 
 															NIL))))),
@@ -553,10 +607,10 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	TypeToExpr ::= (TypeExpr, Expr).
 	TypeToExpr(type, expr) :- TypeId(typeIndex, type), expr = out.UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeIndex)))).
 
-	COut(1, def) :- in.TypeDef(name, type),
+	COut(1, def) :- TypeDef(name, type),
 	                typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(type, expr),
 					def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr).
-	COut(1, def) :- in.ModelType(name), type = NameType(name),
+	COut(1, def) :- ModelType(name), type = NameType(name),
 	                typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(type, expr),
 					def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr).
 
@@ -566,20 +620,20 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
     /*************************************************************/	
 	EvDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
-	EvDecl2PayloadType ::= (in.EventDecl, out.Expr).
+	EvDecl2PayloadType ::= (EventDecl, out.Expr).
 	//// An EventDecl without a payload type has a null payload type.
-	EvDecl2PayloadType(d, expr) :- d is in.EventDecl(_, _, NIL), TypeToExpr(in.BaseType(NULL), expr).
+	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, NIL), TypeToExpr(in.BaseType(NULL), expr).
 	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2PayloadType(d, expr) :- d is in.EventDecl(_, _, type), type : in.TypeExpr, TypeToExpr(type, expr).
+	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, type), type : TypeExpr, TypeToExpr(type, expr).
 
-	EvDecl2EvCard      ::= (in.EventDecl, out.Expr).
+	EvDecl2EvCard      ::= (EventDecl, out.Expr).
 	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
-	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, NIL, _), e = IntLit(4294967295, DEC, U).
+	EvDecl2EvCard(d, e) :- d is EventDecl(_, NIL, _), e = IntLit(4294967295, DEC, U).
 	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, card, _), e = IntLit(card.bound, DEC, U).
+	EvDecl2EvCard(d, e) :- d is EventDecl(_, card, _), e = IntLit(card.bound, DEC, U).
 
 	//// Base case
-	EvDeclConcat(c, NIL) :- c = count({d | d is in.EventDecl}) + 2.
+	EvDeclConcat(c, NIL) :- c = count({d | d is EventDecl}) + 2.
 
     //// Build event array in reverse order
 	EvDeclConcat(m, arr) :- DeclId(d, m, cn), EvDeclConcat(m + 1, after), arr = out.Args(def, after), EvDecl2PayloadType(d, expr), EvDecl2EvCard(d, card), 
@@ -630,7 +684,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	EventPacking  ::= (list: EventNameList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
 
 	EventId ::= (trig: String + { NULL, HALT }, id: Natural).
-	EventId(trig, id) :- trig : String, ev is in.EventDecl, ev.name = trig, DeclId(ev, id, _).
+	EventId(trig, id) :- trig : String, ev is EventDecl, ev.name = trig, DeclId(ev, id, _).
 	EventId(NULL, id) :- DeclId(NULL, id, _).
 	EventId(HALT, id) :- DeclId(HALT, id, _).
 
@@ -648,7 +702,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 				        n = sum(0, { m | EventSetId(eventset, _, _, k), i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
 	               }),
 		 rlist = lstReverse(#EventPackList, list),
-		 highestEventIndex = 1 + count({decl | decl is in.EventDecl}), size = 1 + qtnt(highestEventIndex / 32, 1), size: Natural.
+		 highestEventIndex = 1 + count({decl | decl is EventDecl}), size = 1 + qtnt(highestEventIndex / 32, 1), size: Natural.
 
     //// Build up pack array.
 	EventPacking(l, NIL, i', a') :- EventPacking(l, NIL, i, a), i > 0, i' = i - 1, i' : Natural, a' = Args(IntLit(0, HEX, U), a).
@@ -735,9 +789,9 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
     /******          Generate Machine Decl Arrays           ******/
     /*************************************************************/	
 	MachineDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
-	MachineDeclConcat(c, NIL) :- c = count({m | m is in.MachineDecl}).
+	MachineDeclConcat(c, NIL) :- c = count({m | m is MachineDecl}).
 	MachineDeclConcat(m, arr) :- 
-							DeclId(d, m, _), d : in.MachineDecl, 
+							DeclId(d, m, _), d : MachineDecl, 
 							machineName = strJoin("P_MACHINE_", d.name), machineStructName = strJoin(machineName, "_STRUCT"),
 							MachineDeclConcat(m + 1, after),  
 							arr = out.Args(def, after),
@@ -756,10 +810,10 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	ForeignTypeDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
 	//// Base case
-	ForeignTypeDeclConcat(c, NIL) :- c = count({name | in.ModelType(name)}).
+	ForeignTypeDeclConcat(c, NIL) :- c = count({name | ModelType(name)}).
 
 	ForeignTypeDeclConcat(m, arr) :- 
-							in.ModelType(name), m = toOrdinal(name, 0, { n | in.ModelType(n) }),
+							ModelType(name), m = toOrdinal(name, 0, { n | ModelType(n) }),
 							ForeignTypeDeclConcat(m + 1, after),  
 							arr = out.Args(def, after), 
 	                        def = Init(
@@ -787,22 +841,22 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
     /*************************************************************/	
 
 	ProgEvntArray ::= (size: Natural, arr: out.Ident).
-	ProgEvntArray(size, arr) :- size = 2 + count({ e | e is in.EventDecl }), arr = out.Ident("P_GEND_EVENTS").
+	ProgEvntArray(size, arr) :- size = 2 + count({ e | e is EventDecl }), arr = out.Ident("P_GEND_EVENTS").
 
 	ProgEvntSetArray ::= (size: Natural, arr: out.Ident).
 	ProgEvntSetArray(size, arr) :- size = count({ l | EventPacking(l, _, 0, _) }), size = 0, arr = out.Ident("NULL").
 	ProgEvntSetArray(size, arr) :- size = count({ l | EventPacking(l, _, 0, _) }), size > 0, arr = out.Ident("P_GEND_EVENTSETS").
 
 	ProgMachArray ::= (size: Natural, arr: out.Ident).
-	ProgMachArray(size, arr) :- size = count({ m | m is in.MachineDecl }), size = 0, arr = out.Ident("NULL").
-	ProgMachArray(size, arr) :- size = count({ m | m is in.MachineDecl }), size > 0, arr = out.Ident("P_GEND_MACHINES").
+	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl }), size = 0, arr = out.Ident("NULL").
+	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl }), size > 0, arr = out.Ident("P_GEND_MACHINES").
 
 	ProgGlobalFunArray ::= (size: Natural, arr: out.Ident).
 	ProgGlobalFunArray(size, arr) :- size = 1 + count({ m | m is AnonOrNamedFun }), arr = out.Ident("P_GEND_FUNS").
 
 	ProgForeignTypesArray ::= (size: Natural, arr: out.Ident).
-	ProgForeignTypesArray(size, arr) :- size = count({ n | in.ModelType(n) }), size = 0, arr = out.Ident("NULL").
-	ProgForeignTypesArray(size, arr) :- size = count({ n | in.ModelType(n) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
+	ProgForeignTypesArray(size, arr) :- size = count({ n | ModelType(n) }), size = 0, arr = out.Ident("NULL").
+	ProgForeignTypesArray(size, arr) :- size = count({ n | ModelType(n) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
 
 	COut(6, def) :-  ProgEvntArray(evArrSize, evArrName),
 	                 ProgEvntSetArray(evSetArrSize, evSetArrName),

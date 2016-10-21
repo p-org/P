@@ -36,6 +36,7 @@ namespace P.Runtime
         public PrtEventBuffer eventQueue;
         public HashSet<PrtValue> receiveSet;
         public int maxBufferSize;
+        public bool doAssume;
         #endregion
 
         #region Clone and Undo
@@ -62,6 +63,7 @@ namespace P.Runtime
             clonedMachine.nextSMOperation = this.nextSMOperation;
             clonedMachine.stateExitReason = this.stateExitReason;
             clonedMachine.maxBufferSize = this.maxBufferSize;
+            clonedMachine.doAssume = this.doAssume;
             clonedMachine.stateImpl = this.stateImpl;
             return clonedMachine;
         }
@@ -73,16 +75,18 @@ namespace P.Runtime
         public PrtImplMachine() : base()
         {
             this.maxBufferSize = 0;
+            this.doAssume = false;
             this.eventQueue = new PrtEventBuffer();
             this.receiveSet = new HashSet<PrtValue>();
         }
 
-        public PrtImplMachine(StateImpl app, int maxBuff) : base()
+        public PrtImplMachine(StateImpl app, int maxBuff, bool assume) : base()
         {
             this.instanceNumber = this.NextInstanceNumber(app);
             this.eventQueue = new PrtEventBuffer();
             this.receiveSet = new HashSet<PrtValue>();
             this.maxBufferSize = maxBuff;
+            this.doAssume = assume;
             this.stateImpl = app;
             //Push the start state function on the funStack.
             PrtPushState(StartState);
@@ -131,18 +135,23 @@ namespace P.Runtime
             }
             else
             {
-                
                 stateImpl.Trace(
                     @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
                     ev.evt.name, arg.GetString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
-                
 
                 this.eventQueue.EnqueueEvent(e, arg);
                 if (this.maxBufferSize != -1 && this.eventQueue.Size() > this.maxBufferSize)
                 {
-                    throw new PrtMaxBufferSizeExceededException(
-                        String.Format(@"<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}",
-                        this.maxBufferSize, this.Name, this.instanceNumber));
+                    if (this.doAssume)
+                    {
+                        throw new PrtAssumeFailureException();
+                    }
+                    else
+                    {
+                        throw new PrtMaxBufferSizeExceededException(
+                            String.Format(@"<EXCEPTION> Event Buffer Size Exceeded {0} in Machine {1}-{2}",
+                            this.maxBufferSize, this.Name, this.instanceNumber));
+                    }
                 }
                 if (currentStatus == PrtMachineStatus.Blocked && this.eventQueue.IsEnabled(this))
                 {

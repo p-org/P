@@ -234,6 +234,7 @@ namespace ReviewFailedTests
                     string newBaseLine = System.IO.Path.Combine(model.Path, settings.ErrorLogName);
                     string oldBaseLine = System.IO.Path.Combine(model.Baseline, settings.BaselineName);
                     File.Copy(newBaseLine, oldBaseLine, true);
+                    ShowStatus("Updated: " + oldBaseLine);
                 }
                 catch (Exception ex)
                 {
@@ -249,7 +250,7 @@ namespace ReviewFailedTests
             StringBuilder sb = new StringBuilder();
             string[] dirs = path.Split(System.IO.Path.DirectorySeparatorChar);
             bool skipNext = false;
-            bool foundIt = true;
+            bool foundIt = false;
             for (int i = 0, n = dirs.Length; i<n;i++)
             {
                 string dir = dirs[i];
@@ -300,6 +301,11 @@ namespace ReviewFailedTests
         private void OnOpenFileCommand(object sender, ExecutedRoutedEventArgs e)
         {
             OnOpenFile(sender, e);
+        }
+
+        private void OnListDoubleClick(object sender, MouseButtonEventArgs e)
+        {
+            ProcessSelectedItem();
         }
     }
 }

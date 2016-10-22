@@ -10,6 +10,107 @@
 
 %%
 
-DummyLinkerRule
-	: {}
+LinkerProgram
+	: EOF
+	| TopDeclList
+	;
+
+TopDeclList
+    : TopDecl
+	| TopDeclList TopDecl 
+	;
+
+TopDecl
+	: ModuleDecl
+	| NamedModuleDecl
+	| TestDecl
+	| ImplementationDecl
+	;
+
+/* Module Expression */
+ModuleExpr
+	: HideExpr
+	| AssertExpr
+	| AssumeExpr
+	| ExportExpr
+	| SafeExpr
+	| RenameExpr
+	| ComposeExpr
+	| ID								{ PushModuleName($1.str, ToSpan(@1)); }
+	;
+
+/* Named Module Expr */
+NamedModuleDecl
+	: MODULE ID ASSIGN ModuleExpr SEMICOLON			{ AddModuleDef($2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+/* Module */
+ModuleDecl
+	: MODULE ID ModulePrivateEvents LCBRACE StringList RCBRACE			{ AddModuleDecl($2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+	
+ModulePrivateEvents
+	: PRIVATE NonDefaultEventList SEMICOLON		{ crntPrivateList.AddRange(crntEventList); crntEventList.Clear(); }
+	| PRIVATE SEMICOLON
+	|											{ isPrivateListAllEvents = true; }
+	;
+
+/* Composition */
+ComposeExpr
+	:  ModuleExpr LOR ModuleExpr		{ PushComposeExpr(ToSpan(@1)); }
+	;
+
+/* Hide */
+HideExpr
+	: LPAREN HIDE NonDefaultEventList IN ModuleExpr RPAREN		{ PushHideExpr(ToSpan(@1)); }
+	;
+
+/* Safe */
+SafeExpr
+	: LPAREN SAFE ModuleExpr RPAREN		{ PushSafeExpr(ToSpan(@1)); }
+	;
+/* Assert */
+AssertExpr
+	: LPAREN ASSERT StringList IN ModuleExpr RPAREN		{ PushAssertExpr(ToSpan(@1)); }
+	;
+
+/* Assume */
+AssumeExpr
+	: LPAREN ASSUME StringList IN ModuleExpr RPAREN		{ PushAssumeExpr(ToSpan(@1)); }
+	;
+
+/* Export */
+ExportExpr
+	: LPAREN EXPORT ID AS ID IN ModuleExpr RPAREN		{ PushExportExpr($3.str, $5.str, ToSpan(@3), ToSpan(@5), ToSpan(@1)); }
+	;
+
+/* Rename */
+RenameExpr
+	: LPAREN RENAME ID TO ID IN ModuleExpr RPAREN		{ PushRenameExpr($3.str, ToSpan(@3), $5.str, ToSpan(@5), ToSpan(@1)); }
+	;
+
+/* StringList */
+StringList 
+	: ID						{ PushString($1.str, ToSpan(@1), true); }
+	| ID COMMA StringList		{ PushString($1.str, ToSpan(@1), false); }
+	;
+
+/* Test Declaration */
+TestDecl
+	: TEST ID ModuleExpr SEMICOLON							{ AddTestDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
+	| TEST ID ModuleExpr REFINES ModuleExpr SEMICOLON		{ AddRefinementDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
+	;
+
+/* Implementation Declaration */
+ImplementationDecl
+	: IMPLEMENTATION ModuleExpr SEMICOLON		{ AddImplementationDecl(ToSpan(@1)); }
+	;
+
+NonDefaultEventList
+	: NonDefaultEventId
+	| NonDefaultEventList COMMA NonDefaultEventId 
+	;
+
+NonDefaultEventId
+	: ID        { AddToEventList($1.str, ToSpan(@1));                      }
+	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
 	;

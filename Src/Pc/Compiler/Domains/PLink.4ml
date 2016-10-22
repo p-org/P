@@ -56,7 +56,7 @@ domain PLink
 
 	//// Module Declarations
 	ModuleDecl ::= new (name: String).
-	ModuleContains ::= new (lmod: ModuleDecl, mach: MachineDecl).
+	ModuleContains ::= new (lmod: ModuleDecl, mach: String).
 	ModulePrivateEvents ::= new (mod: ModuleDecl, ev: NonNullEventName + { NIL }).
 	ModuleName ::= new (name: String).
 	
@@ -183,60 +183,56 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 			RefinementDecl(_, modExpr, _, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _);
 			RefinementDecl(_, _, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _).
 
-
-
-
-
 	/************************************************************************************/
 	/*	Generate sends, receives, exports, private and creates for Module Expressions   */
 	/************************************************************************************/
-	/*
-	//// private events 
-	PrivateForModuleExpr(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvent(modExpr, ev);
-										 AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEventAll(modExpr), MachineReceivesDecl(mach, ev), mach.mod = modExpr.
-	PrivateForModuleExpr(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, PrivateForModuleExpr(modExpr.mod, ev).
-	PrivateForModuleExpr(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, PrivateForModuleExpr(modExpr.mod, ev);
-										 AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfStringsList(modExpr.evtNames, ev).
-	PrivateForModuleExpr(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, PrivateForModuleExpr(modExpr.left, ev);
-										 AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, PrivateForModuleExpr(modExpr.right, ev).
-									 
-
-	//// sends list 
-	SendsForModuleExpr(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSendsDecl(mach, ev), mach.mod = modExpr, no ModulePrivateEvent(modExpr, ev). 
-	SendsForModuleExpr(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, SendsForModuleExpr(modExpr.mod, ev).
-	SendsForModuleExpr(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, SendsForModuleExpr(modExpr.left, ev);
-									   AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, SendsForModuleExpr(modExpr.right, ev).
-	SendsForModuleExpr(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MachineSendsDecl(_, ev), SendsForModuleExpr(modExpr.mod, ev), no MemberOfStringsList(modExpr.evtNames, ev).
 	
+	//// Compute the private set for leaf module
+	ModulePrivate(mod, ev.name) :- mod is ModuleDecl, ModulePrivateEvents(mod, NIL), ev is EventDecl.
 
-
+	//// private events 
+	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : NonNullEventName;
+								  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, NIL), ModuleContains(modExpr, mach), MachineReceives(mach, ev).
+	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModulePrivate(modExpr.mod, ev).
+	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModulePrivate(modExpr.mod, ev), ev: NonNullEventName;
+								  AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfEventNameList(modExpr.evtNames, ev), ev: NonNullEventName.
+	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.left, ev);
+								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.right, ev).
+									 
+	//// sends list 
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSends(mach, ev), ModuleContains(modExpr, mach), no ModulePrivate(modExpr, ev). 
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModuleSends(modExpr.mod, ev).
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.left, ev);
+								AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.right, ev).
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MachineSends(_, ev), ModuleSends(modExpr.mod, ev), no MemberOfEventNameList(modExpr.evtNames, ev).
+	
 	//// exports list
 	AllExportedInterfaces ::= (ix: String).
-	AllExportedInterfaces(ix) :- ExportExpr(_, ix, _); MachineExportsDecl(_, ix).
-	ExportsForModuleExpr(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineExportsDecl(mach, ix), mach.mod = modExpr.
-	ExportsForModuleExpr(modExpr, ix) :- AllExpandedModuleExprs(modExpr), ExportsForModuleExpr(modExpr.mod, ix),
+	AllExportedInterfaces(ix) :-  ExportExpr(_, ix, _, _); MachineExports(_, ix).
+	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineExports(mach, ix), ModuleContains(modExpr, mach).
+	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr.mod, ix),
 										 toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, toSymbol(modExpr) != #ExportExpr.
-	ExportsForModuleExpr(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ExportsForModuleExpr(modExpr.mod, ix);
-										 AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ix = modExpr.iName.
-	ExportsForModuleExpr(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ExportsForModuleExpr(modExpr.left, ix);
-									     AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ExportsForModuleExpr(modExpr.right, ix).									 
-	ExportsForModuleExpr(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllExportedInterfaces(ix), ExportsForModuleExpr(modExpr.mod, ix), InterfaceTypeDecl(ix, es, _), count({ev | EventSetDecl(es, ev), MemberOfStringsList(modExpr.evtNames, ev)}) = 0.
+	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleExports(modExpr.mod, ix);
+								  AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ix = modExpr.iName.
+	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleExports(modExpr.left, ix);
+								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleExports(modExpr.right, ix).									 
+	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllExportedInterfaces(ix), ModuleExports(modExpr.mod, ix), InterfaceTypeDecl(ix, es, _), count({ev | MemberOfEventNameList(es, ev), MemberOfEventNameList(modExpr.evtNames, ev)}) = 0.
 
 	//// creates list
 	AllCreatedInterfaces ::= (ic: String).
-	AllCreatedInterfaces(ic) :- MachineCreatesDecl(_, ic).
-	CreatesForModuleExpr(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineCreatesDecl(mach, ic), mach.mod = modExpr.
-	CreatesForModuleExpr(modExpr, ic) :- AllExpandedModuleExprs(modExpr), CreatesForModuleExpr(modExpr.mod, ic),
+	AllCreatedInterfaces(ic) :- MachineCreatesInt(_, ic).
+	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineCreatesInt(mach, ic), ModuleContains(modExpr, mach).
+	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), ModuleCreates(modExpr.mod, ic),
 										 toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl.
-	CreatesForModuleExpr(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, CreatesForModuleExpr(modExpr.left, ic);
-									     AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, CreatesForModuleExpr(modExpr.right, ic).									 
-	CreatesForModuleExpr(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllCreatedInterfaces(ic), CreatesForModuleExpr(modExpr.mod, ic), InterfaceTypeDecl(ic, es, _), count({ev | EventSetDecl(es, ev), MemberOfStringsList(modExpr.evtNames, ev)}) = 0.
+	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleCreates(modExpr.left, ic);
+									     AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleCreates(modExpr.right, ic).									 
+	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllCreatedInterfaces(ic), ModuleCreates(modExpr.mod, ic), InterfaceTypeDecl(ic, es, _), count({ev | MemberOfEventNameList(es, ev), MemberOfEventNameList(modExpr.evtNames, ev)}) = 0.
 
 	//// receives list
-	ReceivesForModuleExpr(modExpr, er) :- AllExpandedModuleExprs(modExpr), ExportsForModuleExpr(modExpr, ix), InterfaceTypeDecl(ix, es, _), EventSetDecl(es, er).
+	ModuleReceives(modExpr, er) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr, ix), InterfaceTypeDecl(ix, es, _), MemberOfEventNameList(es, er), er : NonNullEventName.
 	
 
-	*/
+	
     /*************************************************************/
     /**********         Create Header File             ***********/
     /*************************************************************/

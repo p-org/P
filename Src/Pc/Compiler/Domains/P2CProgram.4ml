@@ -15,8 +15,10 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
     /**********         Create PLink output            ***********/
     /*************************************************************/
-	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
-									   decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
+	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, REAL, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
+									   decl is in.MachineDecl(name, REAL, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
+	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(#EventNameList, NIL, {ev | ObservesDecl(decl, ev) }), list : EventNameList.
+
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), TypeExpansion(ctype, ectype).
 	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev), ev : in.NonNullEventName.
 	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev), ev : in.NonNullEventName.
@@ -27,6 +29,26 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
 	link.EventDecl(name, card, NIL) :- in.EventDecl(name, card, NIL, _).
 	link.EventDecl(name, card, etype) :- in.EventDecl(name, card, type, _), TypeExpansion(type, etype).
+
+	//// Compute the permission set associated with each high level type
+	//// A(e)
+	EmbeddedPermissionsInType ::= (t: in.TypeExpr, perm: in.NonNullEventName).
+
+	EmbeddedPermissionsInType(in.BaseType(MACHINE), ev),
+	EmbeddedPermissionsInType(in.BaseType(ANY), ev)   :- in.EventDecl(ev, _, _, _).
+
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : in.InterfaceType, InterfaceTypeDeclList(i, type), in.InterfaceTypeDecl(i, es, _, _), EventSetDecl(es, ev), ev: in.NonNullEventName.	
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, NIL), EmbeddedPermissionsInType(hd, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
+											AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), NIL), EmbeddedPermissionsInType(hd, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
+	 										AllTypeExprs(type), TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.SeqType(x), EmbeddedPermissionsInType(x, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.MapType(k, v), EmbeddedPermissionsInType(v, ev).
+
+	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), EmbeddedPermissionsInType(pt, perm).
+
 	link.ModelType(name) :- in.ModelType(name).
 	link.TypeDef(name, etype) :- in.TypeDef(name, type, id), no in.ModelType(name), TypeExpansion(type, etype).
 	link.EnumTypeDef(name, elems, values) :- in.EnumTypeDef(name, elems, values, _).

@@ -1835,9 +1835,18 @@ namespace Microsoft.Pc
                 }
             }
             //stopped here: write code for this method 
+            //public enum FunContext { EntryFun, ExitFun, Transitions, Dos } 
             public FunInfo GetFunInfo(string funName)
             {
-                return null;
+                if (translator.allStaticFuns.ContainsKey(funName))
+                {
+                    return translator.allStaticFuns[funName];
+                }
+                else
+                {
+                    return machInfo.funNameToFunInfo[funName];
+                }
+                //return null;
             }
             public SyntaxNode MkRealMachineClass()
             {

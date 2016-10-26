@@ -54,16 +54,6 @@ namespace Microsoft.Pc
         static SyntaxGenerator generator;
 
         #region Utility
-        //utility methods:
-        //public AST<Node> PTypeToZingExpr(FuncTerm pType)
-        //{
-        //    var pTypeAST = Factory.Instance.ToAST(pType);
-        //    if (!pTypeToZingExpr.ContainsKey(pTypeAST))
-        //    {
-        //        pTypeToCSharpExpr[pTypeAST] = ConstructType(pType);
-        //    }
-        //    return pTypeToCSahrpExpr[pTypeAST];
-        //}
         //This is based on PToZing.TypeTranslationContext.ConstructType
         //and will eventually be replaced with smth similar
         private string ConstructType(FuncTerm type)
@@ -153,117 +143,7 @@ namespace Microsoft.Pc
                 return "enum, tuple, seq or map type not implemented yet";
             }
         }
-        public bool GenerateCSharp()
-        {
-            if (!allMachines.ContainsKey("Main"))
-            {
-                Console.WriteLine("Unable to generate CSharp code since Main machine is absent.");
-                return false;
-            }
-            var workspace = new AdhocWorkspace();
-
-            // Get the SyntaxGenerator for the specified language
-            generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
-
-
-            // Create using/Imports directives
-            var usingDirectives = generator.NamespaceImportDeclaration("System");
-
-
-            List<AST<Node>> elements = new List<AST<Node>>();
-            MkAppConstructors();
-            MkEvents();
-            //generated static anon function name is: 
-            //var funName = "AnonFunStatic" + anonFunCounterStatic;
-            //In PToZing.cs:
-            //string funName = anonFunToName[Factory.Instance.ToAST(fun)];
-            //, where fun is a Node.
-            MkStaticFunctions();
-            MkOtherAppFields();
-            MkMachineClasses();
-            //MkMonitorClasses(elements, workspace, generator);
-            MkCSharpOutput();
-            EmitCSharpOutput(csharpFileName);
-            return true;
-        }
-        private void MkAppConstructors()
-        {
-            //parameterless constructor
-            //TODO(expand): add inits for all fields
-            var constructor_1 = generator.ConstructorDeclaration("Application", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
-            members.Add(constructor_1);
-
-            var constructorParameters = new SyntaxNode[] {
-                generator.ParameterDeclaration("initialize",
-                    generator.TypeExpression(SpecialType.System_Boolean)) };
-            var constructorBody = generator.ExpressionStatement(generator.InvocationExpression(generator.IdentifierName("CreateMainMachine")));
-            var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0], 
-                                                                statements: new SyntaxNode[] { constructorBody });
-            members.Add(constructor_2);
-            //Generate "new Application();" 
-            var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Application")));
-            var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
-              null, generator.IdentifierName("StateImpl"),
-              Accessibility.Public,
-              DeclarationModifiers.Override,
-              new SyntaxNode[] { makeSkeletonMethodBody });
-            members.Add(makeSkeletonMethodDecl);
-        }
-        private void MkEvents()
-        {
-            foreach (var pair in allEvents)
-            {
-                SyntaxNode payloadType = generator.IdentifierName(GetTypeCreationExpr(ConstructType((pair.Value).payloadType)));
-                SyntaxNode maxInstances;
-                if ((pair.Value).maxInstances == -1)
-                {
-                    String s = "PrtEvent.DefaultMaxInstances";
-                    maxInstances = generator.IdentifierName(s);
-                }
-                else
-                {
-                    maxInstances = generator.LiteralExpression((pair.Value).maxInstances);
-                }
-               
-                SyntaxNode doAssume;
-                if ((pair.Value).maxInstancesAssumed)
-                {
-                    doAssume = generator.LiteralExpression(true);
-                }
-                else
-                {
-                    doAssume = generator.LiteralExpression(false);
-                }
-                string quotedEventName = "\"" + pair.Key + "\"";
-                var eventCreationPars = new SyntaxNode[] { generator.IdentifierName(quotedEventName), payloadType, maxInstances, doAssume };
-                var eventCreationExpr = generator.ObjectCreationExpression(generator.IdentifierName("PrtEvent"), eventCreationPars);
-                var initExpr_1 = generator.ObjectCreationExpression(generator.IdentifierName("PrtEventValue"), eventCreationExpr);
-
-                //"@null" is written to he output as pair.Key for the null event; possibly, this is done to disambiguate null as C# keyword
-                //output with "@null" compiles
-                SyntaxNode eventField_1 = null;
-                if (pair.Key == NullEvent)
-                {
-                    eventField_1 = generator.FieldDeclaration(@"null",
-                        generator.IdentifierName("PrtEventValue"),
-                        Accessibility.Public,
-                         DeclarationModifiers.Static,
-                        initExpr_1);
-                }
-                else
-                {
-                    eventField_1 = generator.FieldDeclaration(pair.Key,
-                        generator.IdentifierName("PrtEventValue"),
-                        Accessibility.Public,
-                         DeclarationModifiers.Static,
-                        initExpr_1);
-                }
-                
-
-                members.Add(eventField_1);
-                
-            }
-        }
+        
         public static AST<FuncTerm> MkCSharpAssign(AST<Node> lhs, AST<Node> rhs)
         {
             throw new NotImplementedException();
@@ -363,6 +243,117 @@ namespace Microsoft.Pc
         }
 
         #endregion
+        public bool GenerateCSharp()
+        {
+            if (!allMachines.ContainsKey("Main"))
+            {
+                Console.WriteLine("Unable to generate CSharp code since Main machine is absent.");
+                return false;
+            }
+            var workspace = new AdhocWorkspace();
+
+            // Get the SyntaxGenerator for the specified language
+            generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
+
+
+            // Create using/Imports directives
+            var usingDirectives = generator.NamespaceImportDeclaration("System");
+
+
+            List<AST<Node>> elements = new List<AST<Node>>();
+            MkAppConstructors();
+            MkEvents();
+            //generated static anon function name is: 
+            //var funName = "AnonFunStatic" + anonFunCounterStatic;
+            //In PToZing.cs:
+            //string funName = anonFunToName[Factory.Instance.ToAST(fun)];
+            //, where fun is a Node.
+            MkStaticFunctions();
+            MkOtherAppFields();
+            MkMachineClasses();
+            //MkMonitorClasses(elements, workspace, generator);
+            MkCSharpOutput();
+            EmitCSharpOutput(csharpFileName);
+            return true;
+        }
+        private void MkAppConstructors()
+        {
+            //parameterless constructor
+            //TODO(expand): add inits for all fields
+            var constructor_1 = generator.ConstructorDeclaration("Application", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
+            members.Add(constructor_1);
+
+            var constructorParameters = new SyntaxNode[] {
+                generator.ParameterDeclaration("initialize",
+                    generator.TypeExpression(SpecialType.System_Boolean)) };
+            var constructorBody = generator.ExpressionStatement(generator.InvocationExpression(generator.IdentifierName("CreateMainMachine")));
+            var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0],
+                                                                statements: new SyntaxNode[] { constructorBody });
+            members.Add(constructor_2);
+            //Generate "new Application();" 
+            var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Application")));
+            var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
+              null, generator.IdentifierName("StateImpl"),
+              Accessibility.Public,
+              DeclarationModifiers.Override,
+              new SyntaxNode[] { makeSkeletonMethodBody });
+            members.Add(makeSkeletonMethodDecl);
+        }
+        private void MkEvents()
+        {
+            foreach (var pair in allEvents)
+            {
+                SyntaxNode payloadType = generator.IdentifierName(GetTypeCreationExpr(ConstructType((pair.Value).payloadType)));
+                SyntaxNode maxInstances;
+                if ((pair.Value).maxInstances == -1)
+                {
+                    String s = "PrtEvent.DefaultMaxInstances";
+                    maxInstances = generator.IdentifierName(s);
+                }
+                else
+                {
+                    maxInstances = generator.LiteralExpression((pair.Value).maxInstances);
+                }
+
+                SyntaxNode doAssume;
+                if ((pair.Value).maxInstancesAssumed)
+                {
+                    doAssume = generator.LiteralExpression(true);
+                }
+                else
+                {
+                    doAssume = generator.LiteralExpression(false);
+                }
+                string quotedEventName = "\"" + pair.Key + "\"";
+                var eventCreationPars = new SyntaxNode[] { generator.IdentifierName(quotedEventName), payloadType, maxInstances, doAssume };
+                var eventCreationExpr = generator.ObjectCreationExpression(generator.IdentifierName("PrtEvent"), eventCreationPars);
+                var initExpr_1 = generator.ObjectCreationExpression(generator.IdentifierName("PrtEventValue"), eventCreationExpr);
+
+                //"@null" is written to he output as pair.Key for the null event; possibly, this is done to disambiguate null as C# keyword
+                //output with "@null" compiles
+                SyntaxNode eventField_1 = null;
+                if (pair.Key == NullEvent)
+                {
+                    eventField_1 = generator.FieldDeclaration(@"null",
+                        generator.IdentifierName("PrtEventValue"),
+                        Accessibility.Public,
+                         DeclarationModifiers.Static,
+                        initExpr_1);
+                }
+                else
+                {
+                    eventField_1 = generator.FieldDeclaration(pair.Key,
+                        generator.IdentifierName("PrtEventValue"),
+                        Accessibility.Public,
+                         DeclarationModifiers.Static,
+                        initExpr_1);
+                }
+
+
+                members.Add(eventField_1);
+
+            }
+        }
         internal class MkFunctionDecl
         {
             //funName is former entityName
@@ -378,9 +369,6 @@ namespace Microsoft.Pc
 
             //These fields are copied from ZingFoldContext (not needed for C#)
             private PToCSharp pToCSharp;
-            //public string machineName;
-            //public string entityName;
-            //public FunInfo entityInfo;
             //sideEffectsStack is used for non-atomic stmts: Seq, ITE, While in the translation of expressions.
             //Translation of a P expression should result in a zing expression so that translated expressions can be 
             //composed; but compilation of some P expressions results in a complicated piece of code containing statements as well.  
@@ -1557,28 +1545,21 @@ namespace Microsoft.Pc
                 var funType = funName + "_Class";
                 MkFunctionDecl funDecl = new MkFunctionDecl(funName, pair.Value, true, null);
                 funDecl.AddFunClass();
-                //members.Add();
-                //members.Add(AddStaticFunClass(funName,funType));
             }
         }
         private void MkOtherAppFields()
         {
             //CreateMainMachine method declaration:
             List<SyntaxNode> fields = new List<SyntaxNode>();
-            //TODO(expand): replace "10" with Main machine's maxQueueSize;
-            //check that maxQueueSizeAssumed is true
-            //stmt1: var mainMachine = new Main(this, mainMachineMaxQueueSize);
+            //stmt1: var mainMachine = new Main(this, mainMachineMaxQueueSize, true);
             MachineInfo mainMachInfo;
-            //TODO(question): do we need to have the two cases below? If not, what is maxQueueSizeAssumed for?    
-            //TODO(bug fix) Implement both "assume" and "assert" for maxQueueSize
             //There are three cases:
-            //- default (no constraint on queue size): maxQueueSizeAssumed == false; maxQueueSize = -1 
-            // - replace by 10? (TODO(question))
-            //- assume <maxQueueSize>: maxQueueSize > 0, 
-            //- assert <maxQueueSize>: maxQueueSizeAssumed == true;   
+            //- default (no constraint on queue size): maxQueueSizeAssumed == false; maxQueueSize = default (10?) 
+            //- assume <maxQueueSize>: maxQueueSize > 0, maxQueueSizeAssumed == true;
+            //- assert <maxQueueSize>: maxQueueSize > 0, maxQueueSizeAssumed == false;   
             if (allMachines.TryGetValue("Main", out mainMachInfo))
             {
-                if (mainMachInfo.maxQueueSizeAssumed)
+                if (mainMachInfo.maxQueueSize > 0)
                 {
                     fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "mainMachine",
                                    generator.ObjectCreationExpression(generator.IdentifierName("Main"),
@@ -1588,9 +1569,11 @@ namespace Microsoft.Pc
                 else
                 {
                     //TODO(question): 10 is the default maxQueueSize for Main machine
+                    //TODO: create "PrtImplMachine.DefaultMaxBuffer"
                     fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "mainMachine",
                                    generator.ObjectCreationExpression(generator.IdentifierName("Main"),
-                                   new List<SyntaxNode>() { generator.ThisExpression(), generator.LiteralExpression(10) })));
+                                   new List<SyntaxNode>() { generator.ThisExpression(), generator.LiteralExpression(10),
+                                                            generator.LiteralExpression(mainMachInfo.maxQueueSizeAssumed) })));
                 }
             }
         

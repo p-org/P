@@ -99,7 +99,7 @@ namespace TwoMachines
         public static F1_Class F1;
         public PrtImplMachine CreateMainMachine()
         {
-            var mainMachine = new Main(this, 10);
+            var mainMachine = new Main(this, 10, false);
             AddImplMachineToStateImpl(mainMachine);
             return mainMachine;
         }

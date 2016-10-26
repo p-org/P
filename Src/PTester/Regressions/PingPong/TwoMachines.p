@@ -20,6 +20,7 @@ fun F2() {
 	//send this, Pong;
 }
 
+//machine Main assume 222
 machine Main
 {
     //var pongId: machine;

@@ -1833,8 +1833,7 @@ namespace Microsoft.Pc
                         .NormalizeWhitespace();
                     }
                 }
-            }
-            //stopped here: write code for this method 
+            } 
             //public enum FunContext { EntryFun, ExitFun, Transitions, Dos } 
             public FunInfo GetFunInfo(string funName)
             {

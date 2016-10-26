@@ -25,7 +25,7 @@ namespace MyPProgramGenerated
         public static PrtEventValue E = new PrtEventValue(new PrtEvent("E", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
         public PrtImplMachine CreateMainMachine()
         {
-            var mainMachine = new Main(this, 10);
+            var mainMachine = new Main(this, 10, false);
             AddImplMachineToStateImpl(mainMachine);
             return mainMachine;
         }
@@ -62,7 +62,7 @@ namespace MyPProgramGenerated
             {
             }
 
-            public Main(StateImpl app, int maxB): base (app, maxB)
+            public Main(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
             {
             }
 

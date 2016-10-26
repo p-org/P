@@ -40,7 +40,7 @@ namespace Microsoft.Pc
         public string exitFunName;
         public bool hasNullTransition;
         public Dictionary<string, TransitionInfo> transitions;
-        public Dictionary<string, string> actions;
+        public Dictionary<string, string> dos;
         public List<string> deferredEvents;
         public List<string> ignoredEvents;
         public StateTemperature temperature;
@@ -68,7 +68,7 @@ namespace Microsoft.Pc
             this.exitFunName = exitFunName;
             this.hasNullTransition = false;
             this.transitions = new Dictionary<string, TransitionInfo>();
-            this.actions = new Dictionary<string, string>();
+            this.dos = new Dictionary<string, string>();
             this.deferredEvents = new List<string>();
             this.ignoredEvents = new List<string>();
             this.temperature = temperature;
@@ -767,7 +767,7 @@ namespace Microsoft.Pc
                     var action = it.Current;
                     if (action.NodeKind == NodeKind.Cnst)
                     {
-                        stateTable.actions[eventName] = ((Cnst)action).GetStringValue();
+                        stateTable.dos[eventName] = ((Cnst)action).GetStringValue();
                     }
                     else if (action.NodeKind == NodeKind.Id)
                     {
@@ -779,12 +779,12 @@ namespace Microsoft.Pc
                         {
                             // ((Id)action).Name == "IGNORE"
                             stateTable.ignoredEvents.Add(eventName);
-                            stateTable.actions[eventName] = "ignore";
+                            stateTable.dos[eventName] = "ignore";
                         }
                     }
                     else
                     {
-                        stateTable.actions[eventName] = anonFunToName[Factory.Instance.ToAST(action)];
+                        stateTable.dos[eventName] = anonFunToName[Factory.Instance.ToAST(action)];
                     }
                 }
             }
@@ -928,7 +928,7 @@ namespace Microsoft.Pc
         {
             HashSet<string> targets = new HashSet<string>();
             targets.UnionWith(ComputeGotoTargets(machineName, machineInfo.funNameToFunInfo[stateInfo.entryActionName].body));
-            foreach (var actionName in stateInfo.actions.Values)
+            foreach (var actionName in stateInfo.dos.Values)
             {
                 targets.UnionWith(ComputeGotoTargets(machineName, machineInfo.funNameToFunInfo[actionName].body));
             }

@@ -1976,7 +1976,7 @@ namespace Microsoft.Pc
                     }
 
                     //Functions in dos: loop over StateInfo.actions (to be renamed into StateInfo.dos):
-                    foreach (var doFun in pair.Value.actions)
+                    foreach (var doFun in pair.Value.dos)
                     {
                         funName = doFun.Value;
                         funInfo = GetFunInfo(funName);
@@ -2102,7 +2102,7 @@ namespace Microsoft.Pc
                     //TODO(question): do I have to use pre-defined 
                     //public class PrtIgnoreFun : PrtFun
                     //for "ignore" function?
-                    foreach (var doFun in pair.Value.actions)
+                    foreach (var doFun in pair.Value.dos)
                     {
                         mainConstructorFields.Add(
                             ExpressionStatement(

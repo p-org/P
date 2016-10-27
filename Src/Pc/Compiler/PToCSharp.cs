@@ -453,7 +453,7 @@ namespace Microsoft.Pc
                 return locals.Select(loc => PToCSharp.MkCSharpVarDecl(loc.Item2, loc.Item1));
             }
 
-            private IEnumerable<Node> ZingUnfold(Node n)
+            private IEnumerable<Node> Unfold(Node n)
             {
                 if (n.NodeKind != NodeKind.FuncTerm)
                 {
@@ -469,14 +469,14 @@ namespace Microsoft.Pc
                 }
                 else if (funName == PData.Con_Print.Node.Name)
                 {
-                    foreach (var a in ZingUnfold(GetArgByIndex(ft, 2)))
+                    foreach (var a in Unfold(GetArgByIndex(ft, 2)))
                     {
                         yield return a;
                     }
                 }
                 else if (funName == PData.Con_Goto.Node.Name)
                 {
-                    foreach (var a in ZingUnfold(GetArgByIndex(ft, 1)))
+                    foreach (var a in Unfold(GetArgByIndex(ft, 1)))
                     {
                         yield return a;
                     }
@@ -484,7 +484,7 @@ namespace Microsoft.Pc
                 else if (funName == PData.Con_Announce.Node.Name || funName == PData.Con_Raise.Node.Name)
                 {
                     yield return GetArgByIndex(ft, 0);
-                    foreach (var a in ZingUnfold(GetArgByIndex(ft, 1)))
+                    foreach (var a in Unfold(GetArgByIndex(ft, 1)))
                     {
                         yield return a;
                     }
@@ -493,7 +493,7 @@ namespace Microsoft.Pc
                 {
                     yield return GetArgByIndex(ft, 0);
                     yield return GetArgByIndex(ft, 1);
-                    foreach (var a in ZingUnfold(GetArgByIndex(ft, 2)))
+                    foreach (var a in Unfold(GetArgByIndex(ft, 2)))
                     {
                         yield return a;
                     }
@@ -504,14 +504,14 @@ namespace Microsoft.Pc
                 }
                 else if (funName == PData.Con_FunApp.Node.Name)
                 {
-                    foreach (var a in ZingUnfold(GetArgByIndex(ft, 1)))
+                    foreach (var a in Unfold(GetArgByIndex(ft, 1)))
                     {
                         yield return a;
                     }
                 }
                 else if (funName == PData.Con_FunStmt.Node.Name || funName == PData.Con_NewStmt.Node.Name)
                 {
-                    foreach (var a in ZingUnfold(GetArgByIndex(ft, 1)))
+                    foreach (var a in Unfold(GetArgByIndex(ft, 1)))
                     {
                         yield return a;
                     }
@@ -601,14 +601,14 @@ namespace Microsoft.Pc
                 }
                 else if (funName == PData.Con_Tuple.Node.Name)
                 {
-                    foreach (var a in ZingUnfold(GetArgByIndex(ft, 0)))
+                    foreach (var a in Unfold(GetArgByIndex(ft, 0)))
                     {
                         yield return a;
                     }
                 }
                 else if (funName == PData.Con_NamedTuple.Node.Name)
                 {
-                    foreach (var a in ZingUnfold(GetArgByIndex(ft, 0)))
+                    foreach (var a in Unfold(GetArgByIndex(ft, 0)))
                     {
                         yield return a;
                     }
@@ -677,7 +677,7 @@ namespace Microsoft.Pc
                 }
             }
             //Eliminating ZingTranslationInfo: using AST<Node> instead
-            private AST<Node> ZingFold(Node n, IEnumerable<AST<Node>> children)
+            private AST<Node> Fold(Node n, IEnumerable<AST<Node>> children)
             {
                 if (n.NodeKind == NodeKind.Id || n.NodeKind == NodeKind.Cnst)
                     return ZingData.Cnst_Nil;
@@ -1185,6 +1185,9 @@ namespace Microsoft.Pc
             //TODO(expand): stopped here:
             public List<StatementSyntax> MkFunctionBody()
             {
+                var funBody = Factory.Instance.ToAST(funInfo.body).Compute<AST<Node>>(
+                x => Unfold(x),
+                (x, ch) => Fold(x, ch));
                 return new List<StatementSyntax>();
             }
             //TODO(fix): replace this code with general case: Execute method for any function

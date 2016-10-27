@@ -53,7 +53,7 @@ namespace Microsoft.Pc
         SyntaxNode result = null;
         static SyntaxGenerator generator;
 
-        #region Utility
+        #region Utilities
         //This is based on PToZing.TypeTranslationContext.ConstructType
         //and will eventually be replaced with smth similar
         private string ConstructType(FuncTerm type)
@@ -452,7 +452,7 @@ namespace Microsoft.Pc
             {
                 return locals.Select(loc => PToCSharp.MkCSharpVarDecl(loc.Item2, loc.Item1));
             }
-
+            #region FoldUnfod
             private IEnumerable<Node> Unfold(Node n)
             {
                 if (n.NodeKind != NodeKind.FuncTerm)
@@ -930,6 +930,74 @@ namespace Microsoft.Pc
             }
             AST<Node> FoldSend(FuncTerm ft, IEnumerable<AST<Node>> children)
             {
+                //code to be generated:
+                //Line 1 (template everything except event and <payload value>): 
+                //parent.PrtEnqueueEvent(event, <payload value>, parent);
+                //Example:parent.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
+                //public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
+                //event: children[1]
+                //<payload value>: compute from children[2-children.Count()]
+
+                //Line 2 (template everything): 
+                //parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
+                //TODO(question):check that the last parameter is correct
+                //Example: parent.PrtFunContSend(this, currFun.locals, 1);
+                //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
+
+                //List<AST<Node>> args = new List<AST<Node>>(children.Select(x => x));
+                ExpressionSyntax eventExpr;
+                ExpressionSyntax payloadExpr;
+                var enqueueEvent =
+                    ExpressionStatement(
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("parent"),
+                                IdentifierName("PrtEnqueueEvent")))
+                        .WithArgumentList(
+                            ArgumentList(
+                                SeparatedList<ArgumentSyntax>(
+                                    new SyntaxNodeOrToken[]{
+                                        Argument(
+                                            //TODO: replace with real expr
+                                            IdentifierName("eventExpr")),
+                                        Token(SyntaxKind.CommaToken),
+                                        Argument(
+                                            //TODO: replace with real expr
+                                            IdentifierName("payloadExpr")),
+                                        Token(SyntaxKind.CommaToken),
+                                        Argument(
+                                            IdentifierName("parent"))}))))
+                    .NormalizeWhitespace();
+
+                var contSend =
+                    ExpressionStatement(
+                        InvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("parent"),
+                                IdentifierName("PrtFunContSend")))
+                        .WithArgumentList(
+                            ArgumentList(
+                                SeparatedList<ArgumentSyntax>(
+                                    new SyntaxNodeOrToken[]{
+                                        Argument(
+                                            ThisExpression()),
+                                        Token(SyntaxKind.CommaToken),
+                                        Argument(
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName("currFun"),
+                                                IdentifierName("locals"))),
+                                        Token(SyntaxKind.CommaToken),
+                                        Argument(
+                                            MemberAccessExpression(
+                                                SyntaxKind.SimpleMemberAccessExpression,
+                                                IdentifierName("currFun"),
+                                                IdentifierName("returnTolocation")))}))))
+                    .NormalizeWhitespace();
+
+
                 throw new NotImplementedException();
             }
             AST<Node> FoldAnnounce(FuncTerm ft, IEnumerable<AST<Node>> children)
@@ -976,6 +1044,9 @@ namespace Microsoft.Pc
             {
                 throw new NotImplementedException();
             }
+            #endregion
+
+            #region Types
             //Possibly, all types-realted stuff should be moved to PToCSharp (similar to Zing compiler)
             //and  TypeTranslationContext to be instantiated in the PToCSharp constructor
             //After that, ConstructType in MkFunctionDecl can be replaced with TypeTranslationContext.ConstructType
@@ -1173,7 +1244,7 @@ namespace Microsoft.Pc
                 }
             }
             //ZingTranslationInfo FoldName(FuncTerm ft, IEnumerable<CSharpTranslationInfo> children)
-            
+            #endregion
             public MkFunctionDecl(string funName, FunInfo funInfo, bool isGlobalStatic, MkMachineClass owner)
             {
                 this.funName = funName;
@@ -1191,9 +1262,9 @@ namespace Microsoft.Pc
                 return new List<StatementSyntax>();
             }
             //TODO(fix): replace this code with general case: Execute method for any function
-            //Line below is a template:
             public SyntaxNode MkExecuteMethod()
             {
+                //Line below is a template:
                 List<StatementSyntax> funStmts = new List<StatementSyntax>();
                 //PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                 funStmts.Add(

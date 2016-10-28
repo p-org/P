@@ -202,12 +202,14 @@ GetFunDeclHelper(_In_ PRT_PROCESS	*process, _In_ PRT_UINT32 instanceOf, _In_ PRT
 PRT_MACHINEINST *
 PrtMkMachine(
     _Inout_  PRT_PROCESS			*process,
-    _In_  PRT_UINT32				instanceOf,
+    _In_  PRT_UINT32				IorM,
 	_In_ PRT_UINT32					numArgs,
 	...
 )
 {
 	PRT_VALUE *payload = NULL;
+	PRT_UINT32 instanceOf;
+
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
@@ -244,6 +246,7 @@ PrtMkMachine(
 		}
 		va_end(argp);
 		payload = args[0];
+
 		if (numArgs > 1)
 		{
 			PRT_MACHINEDECL *machineDecl = process->program->machines[instanceOf];

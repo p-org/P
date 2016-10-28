@@ -187,7 +187,8 @@ typedef struct PRT_PROGRAMDECL
 	PRT_MACHINEDECL     **machines;       /**< The array of machines               */
 	PRT_FUNDECL			**globalFuns;     /**< The array of global functions */
 	PRT_FOREIGNTYPEDECL *foreignTypes;    /**< The array of foreign types */
-
+	PRT_UINT32			***linkMap;		  /**< stores the link map from renameName -> IorM -> renameName */
+	PRT_UINT32			**renameMap;		  /**< stores the rename map from renameName -> real name */
 	PRT_UINT32      nAnnotations;   /**< Number of annotations               */
 	void            **annotations;  /**< An array of annotations             */
 } PRT_PROGRAMDECL;

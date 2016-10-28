@@ -137,7 +137,19 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	err.TwoNameError(fname, pname, "function parameter must be available at return") :- AvailableParameterDemand(fname, pname), UnavailableParameterSupply(fname, pname).
 
-	//// Module System related Linker Errors
+	// The following checks are performed when there is no implementation, test decl.
+	err.OneNameError(inName, "constructor arguments of the exported interface does not match constructor argument of creator interface") 
+	:- MachineExports(_, inName), MachineCreatesInt(_, ic), InterfaceTypeDecl(iName, evL, t), InterfaceTypeDecl(ic, evL, t'), t != t', 
+	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
+
+	err.OneNameError(ic, "created interface is not exported by any machine") 
+	:- MachineDecl(mach, _, _), no MachineExports(_, inName), MachineCreatesInt(mach, ic), InterfaceTypeDecl(iName, evL, t), InterfaceTypeDecl(ic, evL, t'), 
+	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
+
+
+	/******************************************/
+	/*   Module System related Linker Errors */
+	/*****************************************/
 
 	//// Check if the named module definition is legal ////
 	ModuleDefError(name, "undefined module") :- AllModuleExprs(modEx), modEx = ModuleName(name, _), no ModuleDecl(name, _), no ModuleDef(name, _).
@@ -539,6 +551,13 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	CRenameMap ::= (nName: String, iName: String).
 	CRenameMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, ImpName).
 	
+	// If there is no implementation decl then generate the normal link map
+	CLinkMap(creatorM, IorM, impM) :- MachineDecl(creatorM, _, _), MachineCreatesM(creatorM, IorM), impM = IorM, no ImplementationDecl(_, _);
+									  MachineDecl(creatorM, _, _), MachineCreatesInt(creatorM, IorM), MachineExports(impM, IorM), no ImplementationDecl(_, _).
+	
+	CRenameMap (nName, nName) :- MachineDecl(nName, _, _).
+
+
     /*************************************************************/
     /**********         Create Header File             ***********/
     /*************************************************************/

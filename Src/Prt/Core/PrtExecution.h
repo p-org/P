@@ -123,6 +123,7 @@ extern "C"{
 	typedef struct PRT_MACHINEINST_PRIV {
 		PRT_PROCESS		    *process;
 		PRT_UINT32			instanceOf;
+		PRT_UINT32			renamedName;
 		PRT_VALUE			*id;
 		void				*extContext;
 		PRT_VALUE           *recvMap;

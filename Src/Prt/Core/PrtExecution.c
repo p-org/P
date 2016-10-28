@@ -132,6 +132,7 @@ _In_  PRT_VALUE					*payload
 
 	PrtLockMutex(process->processLock);
 
+
 	nVars = process->program->machines[instanceOf]->nVars;
 	eQSize = PRT_QUEUE_LEN_DEFAULT;
 

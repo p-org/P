@@ -14,6 +14,11 @@
 
     internal partial class LParser : ShiftReduceParser<LexValue, LexLocation>
     {
+        private List<Flag> parseFlags;
+        private LProgram parseLinker;
+
+        private List<PLink_Root.EventName> crntEventList = new List<PLink_Root.EventName>();
+
         public LParser()
             : base(null)
         {

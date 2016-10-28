@@ -87,7 +87,7 @@ domain PLink
 	ModuleCreates ::= (mod: ModuleExpr, i: String).
 
 	//// Module Code Gen and Compatibity Helpers
-	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, interfaceOrMachine: String, newImpMachine: String + {NIL}).
+	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, interfaceOrMachine: String, newImpMachine: String).
 	ModuleRenameMap ::= (mod: ModuleExpr, newName: String, impMachine: String).  // for both machines and monitors
 	ModuleSafeMap ::= (mod: ModuleExpr, newName: String, isSafe: Boolean).
 	ModuleMonitorMap ::= (mod: ModuleExpr, newMonitorName: String, impMachine: String).
@@ -123,10 +123,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	err.OneNameError(name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.
 
-	err.OneNameError(iname, "created interface not exported") :- MachineCreatesInt(_, iname), no MachineExports(_, iname).
-	
-	err.OneNameError(iname, "multiple machines export the same interface") :- m is MachineDecl, m' is MachineDecl, m.name != m'.name, MachineExports(m.name, iname), MachineExports(m'.name, iname).
-	
 	err.OneNameError(mp.name, "machine prototype not implemented") :- mp is MachineProtoDecl, no MachineDecl(mp.name, _, _).
 	
 	err.OneNameError(mp.name, "constructor type does not match") :- mp is MachineProtoDecl, m is MachineDecl, mp.name = m.name, mp.constType != m.constType.
@@ -477,62 +473,71 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 													AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleRenameMap(modExpr.mod, newName, impName).
 	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleRenameMap(modExpr.left, newName, impName);
 													AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleRenameMap(modExpr.right, newName, impName).	
-	ModuleRenameMap(modExpr, newName, machDecl) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr'), ModuleRenameMap(modExpr', mname, machDecl), mname != oldname;
-												 AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleRenameMap(modExpr', mname', machDecl), mname' = oldname, mname = newname.
-	ModuleRenameMap(modExpr, newName, machDecl) :- AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr'), ModuleRenameMap(modExpr', mname, machDecl);
-												 AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr'), MemberOfStringsList(monNames, mname), machDecl is MachineDecl, machDecl.name = mname, machDecl.kind = MONITOR.
-	ModuleRenameMap(modExpr, newName, machDecl) :-	AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr'), ModuleRenameMap(modExpr', mname, machDecl);
-													AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr'), MemberOfStringsList(monNames, mname), machDecl is MachineDecl, machDecl.name = mname, machDecl.kind = MONITOR.										 										 								 							 
+	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr', _), ModuleRenameMap(modExpr', newName, impName), newName != oldname;
+													AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newName, modExpr', _), ModuleRenameMap(modExpr', oldname, impName).
+	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr', _), ModuleRenameMap(modExpr', newName, impName);
+													AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr', _), MemberOfMonitorNameList(monNames, newName), MonitorDecl(newName, _, _), impName = newName.
+	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr', _), ModuleRenameMap(modExpr', newName, impName);
+													AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr', _), MemberOfMonitorNameList(monNames, newName),  MonitorDecl(newName, _, _), impName = newName.										 										 								 							 
 	////populate the safe map
-	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #SafeExpr, toSymbol(modExpr) != #ComposeExpr, 
+	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #SafeExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #AssertExpr, 
 											  toSymbol(modExpr) != #AssumeExpr, toSymbol(modExpr) != #ModuleDecl, toSymbol(modExpr) != #RenameExpr, ModuleSafeMap(modExpr.mod, mname, isSafe).
 	ModuleSafeMap(modExpr, mname, FALSE) :-  AllExpandedModuleExprs(modExpr), modExpr : ModuleExpr, ModuleRenameMap(modExpr, mname, _).
 	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSafeMap(modExpr.left, mname, isSafe);
 											 AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSafeMap(modExpr.right, mname, isSafe).
-	ModuleSafeMap(modExpr, mname, TRUE) :- 	 AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, ModuleSafeMap(modExpr.mod, mname, _).
+	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, ModuleSafeMap(modExpr.mod, mname, isSafe);
+											 AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr', _), MemberOfMonitorNameList(monNames, mname), MonitorDecl(mname, _, _), isSafe = TRUE.
+	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr', _), ModuleSafeMap(modExpr.mod, mname, isSafe);
+											 AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr', _), MemberOfMonitorNameList(monNames, mname), MonitorDecl(mname, _, _), isSafe = FALSE.
 	ModuleSafeMap(modExpr, mname, TRUE) :-	 AllExpandedModuleExprs(modExpr), modExpr : SafeExpr, ModuleSafeMap(modExpr.mod, mname, _).
-	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr'), ModuleSafeMap(modExpr', mname, isSafe), mname != oldname;
-											 AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleSafeMap(modExpr', mname', isSafe), mname' = oldname, mname = newname.
+	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr',_), ModuleSafeMap(modExpr', mname, isSafe), mname != oldname;
+											 AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr',_), ModuleSafeMap(modExpr', mname', isSafe), mname' = oldname, mname = newname.
 
 	////populate the monitor map
 	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #AssumeExpr, toSymbol(modExpr) != #AssertExpr, 
 													  toSymbol(modExpr) != #RenameExpr, ModuleMonitorMap(modExpr.mod, monName, impMachine).
 	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleMonitorMap(modExpr.left, monName, impMachine);
 													  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleMonitorMap(modExpr.right, monName, impMachine).
-	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr'), ModuleMonitorMap(modExpr', monName, impMachine), monName != oldname;
-											 		  AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleMonitorMap(modExpr', monName', impMachine), monName' = oldname, monName = newname;
-											 		  AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleMonitorMap(modExpr', monName, impMachine'), impMachine' = oldname, impMachine = newname.	
-	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, MemberOfStringsList(modExpr.monNames, monName), ModuleLinkMap(modExpr.mod, impMachine, _, _).
-	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssertExpr, MemberOfStringsList(modExpr.monNames, monName), ModuleLinkMap(modExpr.mod, impMachine, _, _).
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr', _), ModuleMonitorMap(modExpr', monName, impMachine), monName != oldname;
+											 		  AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleMonitorMap(modExpr', monName', impMachine), monName' = oldname, monName = newname;
+											 		  AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleMonitorMap(modExpr', monName, impMachine'), impMachine' = oldname, impMachine = newname.	
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, MemberOfMonitorNameList(modExpr.monNames, monName), ModuleLinkMap(modExpr.mod, impMachine, _, _).
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssertExpr, MemberOfMonitorNameList(modExpr.monNames, monName), ModuleLinkMap(modExpr.mod, impMachine, _, _).
 
 	////populate the link map
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #RenameExpr, toSymbol(modExpr) != #ModuleDecl,
 													  toSymbol(modExpr) != #ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, IorM, ImpMachine).
 
-
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.left, creatorM, IorM, ImpMachine);
-													  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.right, creatorM, IorM, ImpMachine);
-													  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.left, creatorM, _, _), ModuleLinkMap(modExpr.right, _, IorM, ImpMachine), ExportsForModuleExpr(modExpr.right, IorM);
-													  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.right, creatorM, _, _), ModuleLinkMap(modExpr.left, _, IorM, ImpMachine), ExportsForModuleExpr(modExpr.right, IorM).
+														  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.right, creatorM, IorM, ImpMachine);
+														  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.left, creatorM, _, _), ModuleLinkMap(modExpr.right, _, IorM, ImpMachine), ModuleExports(modExpr.right, IorM);
+														  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.right, creatorM, _, _), ModuleLinkMap(modExpr.left, _, IorM, ImpMachine), ModuleExports(modExpr.left, IorM).
 
 
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, IorM, ImpMachine);
 													  	  AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, _, _), IorM = modExpr.iName, ImpMachine = modExpr.mName.
-	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr'), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine), 
-													  	  creatorM != oldname, ImpMachine != oldname;
-													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine), creatorM' = oldname, creatorM = newname, ImpMachine != oldname;
-													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine'), ImpMachine' = oldname, ImpMachine = newname, creatorM != oldname;
-													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine'), ImpMachine' = oldname, creatorM' = oldname, creatorM = newname, ImpMachine = newname.
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr', _), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine), creatorM != oldname, ImpMachine != oldname;
+														AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr',_), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine), creatorM' = oldname, creatorM = newname, ImpMachine != oldname;
+													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine'), ImpMachine' = oldname, ImpMachine = newname, creatorM != oldname;
+													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine'), ImpMachine' = oldname, creatorM' = oldname, creatorM = newname, ImpMachine = newname.
 
-	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, mach is MachineDecl, mach.mod = modExpr, creatorM = mach.name, 
-														  ExportsForModuleExpr(modExpr, IorM), MachineExportsDecl(imp, IorM), imp.name = ImpMachine, no IsPrivateMachine(modExpr, IorM);
-													  	  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, mach is MachineDecl, mach.mod = modExpr, creatorM = mach.name, IsPrivateMachine(modExpr, priMach.name), priMach is MachineDecl, priMach.mod = modExpr, IorM = priMach.name, ImpMachine = priMach.name;
-													  	  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, mach is MachineDecl, mach.mod = modExpr, creatorM = mach.name, CreatesForModuleExpr(modExpr, ic), no ExportsForModuleExpr(modExpr, ix), InterfaceTypeDeclList(ic, icL), InterfaceTypeDeclList(ix, icL), no IsPrivateMachine(modExpr, ic), IorM = ic, ImpMachine = NIL.
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, creatorM), MachineCreatesM(creatorM, ImpMachine), IorM =  ImpMachine;
+														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, creatorM), ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM).
 	
 	/**************************************************************************/
 	/*     C Code Helpers
 	/**************************************************************************/
 
+	//// Compute the link map for C code
+	CLinkMap ::= (creatorM: String, IorM: String, impM: String).
+	// make sure that the IorM matches the name of interface created by the machine (new I).
+	// impM is the name of the real machine and not the renamed name.
+	CLinkMap(creatorM, IorM, impM) :-	ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cM, impM), no InterfaceTypeDecl(IorM, _, _), cM = IorM; //machine creation
+										ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cI, impM), InterfaceTypeDecl(cI, cIL, _), 
+										ModuleRenameMap(emodExpr, creatorM, realM), MachineCreatesInt(realM, cI'), InterfaceTypeDecl(cI', cIL, _), cI' = IorM.
+	
+	CRenameMap ::= (nName: String, iName: String).
+	CRenameMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, ImpName).
 	
     /*************************************************************/
     /**********         Create Header File             ***********/

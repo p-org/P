@@ -57,10 +57,10 @@ domain PLink
 	MachineCreatesM		::= new (mach: String, mmname: String).
 
 	//// Module Declarations
-	ModuleDecl ::= new (name: String).
+	ModuleDecl ::= fun (name: String -> id: any Id).
 	ModuleContains ::= new (lmod: ModuleDecl, mach: String).
 	ModulePrivateEvents ::= new (mod: ModuleDecl, ev: NonNullEventName + { NIL }).
-	ModuleName ::= new (name: String).
+	ModuleName ::= fun (name: String -> id: any Id).
 	
 
 	/// Module Constructions
@@ -75,9 +75,9 @@ domain PLink
 	ModuleExpr ::= ModuleName + HideExpr + RenameExpr + ExportExpr + AssumeExpr + AssertExpr + SafeExpr + ComposeExpr + ModuleDecl.
 
 	//// Test Declarations and Implementation
-	TestDecl ::= new (name: String, mod: any ModuleExpr, id: any Id).
-	RefinementDecl ::= new (name: String, lhs: any ModuleExpr, rhs: any ModuleExpr, id: any Id).
-	ImplementationDecl ::= new (mod: any ModuleExpr, id: any Id).
+	TestDecl ::= fun (name: String -> mod: any ModuleExpr, id: any Id).
+	RefinementDecl ::= fun (name: String -> lhs: any ModuleExpr, rhs: any ModuleExpr, id: any Id).
+	ImplementationDecl ::= fun (mod: any ModuleExpr -> id: any Id).
 
 	//// Module Signature 
 	ModulePrivate ::= (mod: ModuleExpr, ev: NonNullEventName).
@@ -102,6 +102,7 @@ domain PLinkError
 {
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
+	
 	//// General linker errors
 	OneNameError ::= new (name: String, msg: String).
 	TwoNameError ::= new (name1: String, name2: String, msg: String).
@@ -109,9 +110,10 @@ domain PLinkError
 	//// Module system related linker errors
 	ModuleDefError ::= new (name: String, msg: String).
 	NoMainMachineInModExpr ::= new (modExprId: any Id, msg: String).
-	ModuleConstructionIllegal ::= new (modExprId: any Id, arg: String, msg: String).
-
-	ImplementationOrTestDeclError ::= new (modExprId: any Id, msg: String).
+	ModuleConstructionIllegal ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
+	WellFormednessError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
+	TestOrImplDeclError ::= new (modExprId: any Id, arg: String, msg: String).
+	RefinementDeclError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 }
 
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
@@ -142,7 +144,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// Module System related Linker Errors
 
 	//// Check if the named module definition is legal ////
-	ModuleDefError(name, "undefined module") :- AllModuleExprs(modEx), modEx = ModuleName(name), no ModuleDecl(name), no ModuleDef(name, _).
+	ModuleDefError(name, "undefined module") :- AllModuleExprs(modEx), modEx = ModuleName(name, _), no ModuleDecl(name, _), no ModuleDef(name, _).
 
 	ModuleDefError(modName, "multiple named module definitions with the same name") :- ModuleDef(modName, expr1), ModuleDef(modName, expr2), expr1 != expr2.
 
@@ -157,9 +159,9 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	AllModuleExprs ::= sub (ModuleExpr).
 	ModuleExprExpansion ::= (modExpr: ModuleExpr, eModExpr: ModuleExpr).
 	
-	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name), emodExpr = ModuleDecl(name), no ModuleDef(name, _).
-	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name), no ModuleDefError(name, _), no ModuleDecl(name), ModuleDef(name, modExpr'), ModuleExprExpansion(modExpr', emodExpr).
-	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleDecl(name), emodExpr = ModuleDecl(name).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name, id), emodExpr = ModuleDecl(name, id), no ModuleDef(name, _).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name, id), no ModuleDefError(name, _), no ModuleDecl(name, _), ModuleDef(name, modExpr'), ModuleExprExpansion(modExpr', emodExpr).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleDecl(name, id), emodExpr = ModuleDecl(name, id).
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = HideExpr(s, modExpr', id), emodExpr = HideExpr(s, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = RenameExpr(s1, s2, modExpr', id), emodExpr = RenameExpr(s1, s2, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ExportExpr(s1, s2, modExpr', id), emodExpr = ExportExpr(s1, s2, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
@@ -196,11 +198,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	ModulePrivate(mod, ev.name) :- mod is ModuleDecl, ModulePrivateEvents(mod, NIL), ev is EventDecl.
 
 	//// private events 
-	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : NonNullEventName;
+	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : in.NonNullEventName;
 								  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, NIL), ModuleContains(modExpr, mach), MachineReceives(mach, ev).
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModulePrivate(modExpr.mod, ev).
-	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModulePrivate(modExpr.mod, ev), ev: NonNullEventName;
-								  AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfEventNameList(modExpr.evtNames, ev), ev: NonNullEventName.
+	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModulePrivate(modExpr.mod, ev), ev: in.NonNullEventName;
+								  AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfEventNameList(modExpr.evtNames, ev), ev: in.NonNullEventName.
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.left, ev);
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.right, ev).
 									 
@@ -234,7 +236,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllCreatedInterfaces(ic), ModuleCreates(modExpr.mod, ic), InterfaceTypeDecl(ic, es, _), count({ev | MemberOfEventNameList(es, ev), MemberOfEventNameList(modExpr.evtNames, ev)}) = 0.
 
 	//// receives list
-	ModuleReceives(modExpr, er) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr, ix), InterfaceTypeDecl(ix, es, _), MemberOfEventNameList(es, er), er : NonNullEventName.
+	ModuleReceives(modExpr, er) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr, ix), InterfaceTypeDecl(ix, es, _), MemberOfEventNameList(es, er), er : in.NonNullEventName.
 
 	/**************************************************************************/
 	/**				Check that the module contruction is legal			  	  */
@@ -305,7 +307,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//alpha is disjoint from EP
 	ModuleConstructionIllegal(id, ev, "trying to hide private event of the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModulePrivate(mod, ev), MemberOfEventNameList(evtList, ev), ev: String.
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModulePrivate(mod, ev), MemberOfEventNameList(evtList, ev).
 
 	//for each interface in dom(IX) and IC it is either disjoint from alpha or included in it.
 	ModuleConstructionIllegal(id, ix1, "trying to partially hide an exported interface of the module expression") 
@@ -317,93 +319,219 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	/// (permissions in ER + ES is disjoint from EP )
 	ModuleConstructionIllegal(id, ev, "after hidding the event has private permission in them") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleSends(modExpr, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm), ev: String;
-		AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleReceives(modExpr, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm), ev: String.
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleSends(modExpr, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm);
+		AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleReceives(modExpr, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm).
 
 	//// trying to hide an interface in IC that is not in IX
 	ModuleConstructionIllegal(id, ev, "illegal hiding of a created interface that is not exported by the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleCreates(mod, ic), InterfaceTypeDecl(ic, el, _), MemberOfEventNameList(el, ev), 
-	 MemberOfEventNameList(evtList, ev), no ModuleExports(mod, ix),  InterfaceTypeDecl(ix, el, _), ev: String.
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleCreates(mod, ic), InterfaceTypeDecl(ic, el, _), MemberOfEventNameList(el, ev), ev: in.NonNullEventName,
+	 MemberOfEventNameList(evtList, ev), no ModuleExports(mod, ix),  InterfaceTypeDecl(ix, el, _).
 
 
 	//// LEGAL COMPOSITION !
 
 	///// All composition expressions
 	AllCompositionExprs ::= (modL: ModuleExpr, modR: ModuleExpr, emodL: ModuleExpr, emodR: ModuleExpr).
-	AllCompositionExprs(modL, modR, emodL, emodR) :- AllModuleExprs(modExpr), modExpr = ComposeExpr(modL, modR), ModuleExprExpansion(modL, emodL), ModuleExprExpansion(modR, emodR).
+	AllCompositionExprs(modL, modR, emodL, emodR) :- AllModuleExprs(modExpr), modExpr = ComposeExpr(modL, modR, _), ModuleExprExpansion(modL, emodL), ModuleExprExpansion(modR, emodR).
 	//// Mp and Mq are disjoint
-	[rule_Classes = '"error, msg: compatibility error> machine names are not disjoint"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), ModuleRenameMap(emodL, mname, _), ModuleRenameMap(emodR, mname, _).
+	ModuleConstructionIllegal(modL.id, mname, "compatibility error> machine names are not disjoint") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleRenameMap(emodL, mname, _), ModuleRenameMap(emodR, mname, _).
 
 	//// dom(IXp) and dom(IXq) are disjoint
-	[rule_Classes = '"error, msg: compatibility error> exported interfaces are not disjoint"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), ExportsForModuleExpr(emodL, ixL), ExportsForModuleExpr(emodR, ixR), 
-											InterfaceTypeDecl(ixL, esL, _), EventSetDecl(esL, ev), InterfaceTypeDecl(ixR, esR, _), EventSetDecl(esR, ev).
-
-											
+	ModuleConstructionIllegal(modL.id, ixL, "compatibility error> exported interfaces are not disjoint") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleExports(emodL, ixL), ModuleExports(emodR, ixR), 
+	InterfaceTypeDecl(ixL, esL, _), MemberOfEventNameList(esL, ev), InterfaceTypeDecl(ixR, esR, _), MemberOfEventNameList(esR, ev).									
 
 	//// ICp and ICq are disjoint
-	[rule_Classes = '"error, msg: compatibility error> created interfaces are not disjoint"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), CreatesForModuleExpr(emodL, icL), CreatesForModuleExpr(emodR, icR), 
-											InterfaceTypeDecl(icL, esL, _), EventSetDecl(esL, ev), InterfaceTypeDecl(icR, esR, _), EventSetDecl(esR, ev).
+	ModuleConstructionIllegal(modL.id, icL, "compatibility error> created interfaces are not disjoint") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleCreates(emodL, icL), ModuleCreates(emodR, icR), 
+		InterfaceTypeDecl(icL, esL, _), MemberOfEventNameList(esL, ev), InterfaceTypeDecl(icR, esR, _), MemberOfEventNameList(esR, ev).
 
 	//// ESp and ESq are disjoint
-	[rule_Classes = '"error, msg: compatibility error> sends are not disjoint"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), SendsForModuleExpr(emodL, ev), SendsForModuleExpr(emodR, ev).
+	ModuleConstructionIllegal(modL.id, ev, "compatibility error> sends are not disjoint") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleSends(emodL, ev), ModuleSends(emodR, ev).
 
 	//// ES and EP are disjoint
-	[rule_Classes = '"error, msg: compatibility error> sends and privates are not disjoint"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), SendsForModuleExpr(emodL, ev), PrivateForModuleExpr(emodR, ev);	
-											AllCompositionExprs(modL, modR, emodL, emodR), SendsForModuleExpr(emodR, ev), PrivateForModuleExpr(emodL, ev).
+	ModuleConstructionIllegal(modL.id, ev, "compatibility error> sends and privates are not disjoint") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleSends(emodL, ev), ModulePrivate(emodR, ev);	
+	AllCompositionExprs(modL, modR, emodL, emodR), ModuleSends(emodR, ev), ModulePrivate(emodL, ev).
 
 	//// e \in ER + ES, all a in A(e) is disjoint from EP
-	[rule_Classes = '"error, msg: compatibility error> after composition the public events in receives or sends has private permissions in them"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR), ReceivesForModuleExpr(composedMod, ev),
-											EventDecl(ev, _, pt), EmbeddedPermissionsInType(pt, perm), PrivateForModuleExpr(composedMod, perm);
-											AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR), SendsForModuleExpr(composedMod, ev),
-											EventDecl(ev, _, pt), EmbeddedPermissionsInType(pt, perm), PrivateForModuleExpr(composedMod, perm).
+	ModuleConstructionIllegal(modL.id, ev, "compatibility error> after composition the public events in receives or sends has private permissions in them") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleReceives(composedMod, ev),
+	PermEmbeddedInEvent(ev, perm), ModulePrivate(composedMod, perm);
+	AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleSends(composedMod, ev),
+	PermEmbeddedInEvent(ev, perm), ModulePrivate(composedMod, perm).
 
 	//// IX of the composed module is disjoint from EP of the composed module
-	[rule_Classes = '"error, msg: compatibility error> after composition the exported interfaces are not disjoint from the private events"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR), ExportsForModuleExpr(composedMod, ix),
-											InterfaceTypeDecl(ix, es, _), EventSetDecl(es, ev), PrivateForModuleExpr(composedMod, ev).
+	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the exported interfaces are not disjoint from the private events") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleExports(composedMod, ix),
+	InterfaceTypeDecl(ix, es, _), MemberOfEventNameList(es, ev), ModulePrivate(composedMod, ev).
 
 	//// IC of the composed module is disjoint from EP of the composed module
-	[rule_Classes = '"error, msg: compatibility error> after composition the created interfaces are not disjoint from the private events"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR), CreatesForModuleExpr(composedMod, ic),
-											InterfaceTypeDecl(ic, es, _), EventSetDecl(es, ev), PrivateForModuleExpr(composedMod, ev).	
+	ModuleConstructionIllegal(modL.id, ic, "compatibility error> after composition the created interfaces are not disjoint from the private events") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
+	InterfaceTypeDecl(ic, es, _), MemberOfEventNameList(es, ev), ModulePrivate(composedMod, ev).	
 
 	//// IC is either disjoint or equal to the IX
-	[rule_Classes = '"error, msg: compatibility error> after composition the created interfaces are not disjoint or equal to the exported interfaces"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR), CreatesForModuleExpr(composedMod, ic),
-											ExportsForModuleExpr(composedMod, ix), InterfaceTypeDeclList(ic, icL), InterfaceTypeDeclList(ix, ixL), icL != ixL,
-											InterfaceTypeDecl(ic, esc, _), EventSetDecl(esc, ev), InterfaceTypeDecl(ix, esx, _), EventSetDecl(esx, ev).
+	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the created interfaces are not disjoint or equal to the exported interfaces") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
+	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _), InterfaceTypeDecl(ix, ixL, _), icL != ixL,
+	InterfaceTypeDecl(ic, esc, _), MemberOfEventNameList(esc, ev), InterfaceTypeDecl(ix, esx, _), MemberOfEventNameList(esx, ev).
 
 	//// for the match IC and IX, constructor(IC) subtype of constructor(IX).
-	[rule_Classes = '"error, msg: compatibility error> after composition the constructor type of created interfaces is not a subtype of constructor type of exported interfaces"']
-	ModuleCompositionIllegal(modL, modR) :- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR), CreatesForModuleExpr(composedMod, ic),
-											ExportsForModuleExpr(composedMod, ix), InterfaceTypeDeclList(ic, icL), InterfaceTypeDeclList(ix, ixL), icL = ixL,
-											InterfaceTypeDecl(ic, _, ct), InterfaceTypeDecl(ix, _, xt), TypeRel(ct, xt, k), ct != xt, k != SUB.	
-
-
-
-	//// Implementation or Test Declaration related Errors
-	ImplementationOrTestDeclError(ml1.id, "at most one implementation declaration is allowed") :-
-		ml1 is ImplementationDecl, ml2 is ImplementationDecl, ml1 != ml2.
-
-
-
+	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the constructor type of created interfaces is not a subtype of constructor type of exported interfaces") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
+	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _), InterfaceTypeDecl(ix, ixL, _), icL = ixL,
+	InterfaceTypeDecl(ic, _, ct), InterfaceTypeDecl(ix, _, xt), ct != xt.			
 	
+	/**************************************************************************/
+	/*			Well-formedness condition check for the leaf modules		  */
+	/**************************************************************************/
+	
+	//// machines mentioned in the module declaration are legal
+	WellFormednessError(mod.id, mach, "wellformedness error> machine not defined")
+	:- ModuleContains(mod, mach), mod: ModuleDecl, no MachineDecl(mach, _, _).
+
+	//// events mentioned in the module declaration are legal
+	WellFormednessError(mod.id, ev, "wellformedness error> event not defined")
+	:- mod is ModuleDecl, ModulePrivateEvents(mod, ev), ev: NonNullEventName, no EventDecl(ev, _, _).
+
+	//// make sure that new M in the module are for private machines.
+	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M, but not all its events are private")
+	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), MachineReceives(newM, ev), no ModulePrivate(mod, ev).
+
+	//// ix is not disjoint from EP
+	WellFormednessError(mod.id, ix, "wellformedness error> the exported interfaces are not disjoint from private events") 
+	:- mod is ModuleDecl, ModuleExports(mod, ix), ModulePrivate(mod, ev), InterfaceTypeDecl(ix, es, _), MemberOfEventNameList(es, ev).
+
+	//// ic is not disjoint from EP
+	WellFormednessError(mod.id, ic, "wellformedness error> the created interfaces are not disjoint from private events") 
+	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModulePrivate(mod, ev), InterfaceTypeDecl(ic, es, _), MemberOfEventNameList(es, ev).
+
+	//// IC is either disjoint or equal to the IX
+	WellFormednessError(mod.id, ix, "wellformedness error> the created interfaces are not disjoint or equal to the exported interface") 
+	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModuleExports(mod, ix), InterfaceTypeDecl(ic, icL, _), InterfaceTypeDecl(ix, ixL, _), 									
+	icL != ixL, InterfaceTypeDecl(ic, esc, _), MemberOfEventNameList(esc, ev), InterfaceTypeDecl(ix, esx, _), MemberOfEventNameList(esx, ev).
+
+	//// for the match IC and IX, constructor(IC) subtype of constructor(IX).
+	WellFormednessError(mod.id, ix, "wellformedness error> type of created interfaces is not a subtype of constructor type of exported interface") 
+	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModuleExports(mod, ix), 
+	InterfaceTypeDecl(ic, icL, ct), InterfaceTypeDecl(ix, ixL, xt), icL = ixL, ct != xt.
+
+	//// e \in ER + ES, all a in A(e) is disjoint from EP
+	WellFormednessError(mod.id, ev, "wellformedness error> the public events in receives or sends has private permissions in them") 
+	:- mod is ModuleDecl, ModuleReceives(mod, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(mod, perm);
+	mod is ModuleDecl, ModuleSends(mod, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(mod, perm).
+
+	//// no two machines export the same interface
+	WellFormednessError(mod.id, ix, "wellformedness error> multiple machines export the same interface") 
+	:- mod is ModuleDecl, ModuleContains(mod, mach), ModuleContains(mod, mach'), MachineExports(mach, ix), MachineExports(mach', ix'),
+	InterfaceTypeDecl(ix, ixL, _), InterfaceTypeDecl(ix', ixL, _).
+
+	/**************************************************************************/
+	/*			Refinement, Implementation and Test Decls are legal			  */
+	/**************************************************************************/
+
+	////Implementation and test module expr must be closed with respect to creates
+	[rule_Classes = '"error, msg: "']
+	TestOrImplDeclError(modExpr.id, ic, "top level module expressions must be closed with respect to created interfaces (all created interfaces must be exported)") 
+	:- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix),InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _);
+	TestDecl(_, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _);
+	RefinementDecl(_, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _);
+	RefinementDecl(_, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _).
+
+	//// There is only one implementation modExpr
+	TestOrImplDeclError(modExpr.id, "Error", "Multiple implementation declarations")
+	:- ImplementationDecl(modExpr, _), ImplementationDecl(modExpr', _), modExpr != modExpr'.
+
+	//// Refinement checks
+	AllRefinementTests ::= (modL: ModuleExpr, modR: ModuleExpr).
+	AllRefinementTests(emodL, emodR) :- RefinementDecl(_, modL, modR, _), ModuleExprExpansion(modL, emodL), ModuleExprExpansion(modR, emodR).
+
+	// IC_q subset of IC_p
+	RefinementDeclError(modp.id, icq, "interfaces created by RHS must be a subset of interfaces created by LHS") :-
+	AllRefinementTests(modp, modq), ModuleCreates(modq, icq), InterfaceTypeDecl(icq, icL, _), no ModuleCreates(modp, icp), InterfaceTypeDecl(icp, icL, _).
+	
+	// IXq subset of iXp U ICp
+	RefinementDeclError(modp.id, ixq, "interfaces implemented by RHS must be a subset of interfaces implemented + created by LHS") :-
+	AllRefinementTests(modp, modq), ModuleExports(modq, ixq), InterfaceTypeDecl(ixq, ixL, _), no ModuleCreates(modp, icp), InterfaceTypeDecl(icp, ixL, _), no ModuleExports(modp, ixp), InterfaceTypeDecl(ixp, ixL, _).
+
+	// ESq subset of ESp
+	RefinementDeclError(modp.id, ev, "events sent by RHS must be subset of events sents by LHS") :-
+	AllRefinementTests(modp, modq), ModuleSends(modq, ev), no ModuleSends(modp, ev).
+
+	// ERq subset of ERp U ESp
+	RefinementDeclError(modp.id, ev, "events received by RHS must be subset of events sent or received by LHS") :-
+	AllRefinementTests(modp, modq), ModuleReceives(modq, ev), no ModuleSends(modp, ev), no ModuleReceives(modp, ev).
 
 
+	/**************************************************************************/
+	/*			Populate all the maps used for code generation				  */
+	/**************************************************************************/
+	
+	////populate the rename map
+	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, newName), newName = impName.
+	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : SafeExpr, ModuleRenameMap(modExpr.mod, newName, impName);
+													AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModuleRenameMap(modExpr.mod, newName, impName);
+													AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleRenameMap(modExpr.mod, newName, impName).
+	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleRenameMap(modExpr.left, newName, impName);
+													AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleRenameMap(modExpr.right, newName, impName).	
+	ModuleRenameMap(modExpr, newName, machDecl) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr'), ModuleRenameMap(modExpr', mname, machDecl), mname != oldname;
+												 AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleRenameMap(modExpr', mname', machDecl), mname' = oldname, mname = newname.
+	ModuleRenameMap(modExpr, newName, machDecl) :- AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr'), ModuleRenameMap(modExpr', mname, machDecl);
+												 AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr'), MemberOfStringsList(monNames, mname), machDecl is MachineDecl, machDecl.name = mname, machDecl.kind = MONITOR.
+	ModuleRenameMap(modExpr, newName, machDecl) :-	AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr'), ModuleRenameMap(modExpr', mname, machDecl);
+													AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr'), MemberOfStringsList(monNames, mname), machDecl is MachineDecl, machDecl.name = mname, machDecl.kind = MONITOR.										 										 								 							 
+	////populate the safe map
+	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #SafeExpr, toSymbol(modExpr) != #ComposeExpr, 
+											  toSymbol(modExpr) != #AssumeExpr, toSymbol(modExpr) != #ModuleDecl, toSymbol(modExpr) != #RenameExpr, ModuleSafeMap(modExpr.mod, mname, isSafe).
+	ModuleSafeMap(modExpr, mname, FALSE) :-  AllExpandedModuleExprs(modExpr), modExpr : ModuleExpr, ModuleRenameMap(modExpr, mname, _).
+	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSafeMap(modExpr.left, mname, isSafe);
+											 AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSafeMap(modExpr.right, mname, isSafe).
+	ModuleSafeMap(modExpr, mname, TRUE) :- 	 AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, ModuleSafeMap(modExpr.mod, mname, _).
+	ModuleSafeMap(modExpr, mname, TRUE) :-	 AllExpandedModuleExprs(modExpr), modExpr : SafeExpr, ModuleSafeMap(modExpr.mod, mname, _).
+	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr'), ModuleSafeMap(modExpr', mname, isSafe), mname != oldname;
+											 AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleSafeMap(modExpr', mname', isSafe), mname' = oldname, mname = newname.
+
+	////populate the monitor map
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #AssumeExpr, toSymbol(modExpr) != #AssertExpr, 
+													  toSymbol(modExpr) != #RenameExpr, ModuleMonitorMap(modExpr.mod, monName, impMachine).
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleMonitorMap(modExpr.left, monName, impMachine);
+													  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleMonitorMap(modExpr.right, monName, impMachine).
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr'), ModuleMonitorMap(modExpr', monName, impMachine), monName != oldname;
+											 		  AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleMonitorMap(modExpr', monName', impMachine), monName' = oldname, monName = newname;
+											 		  AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleMonitorMap(modExpr', monName, impMachine'), impMachine' = oldname, impMachine = newname.	
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, MemberOfStringsList(modExpr.monNames, monName), ModuleLinkMap(modExpr.mod, impMachine, _, _).
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssertExpr, MemberOfStringsList(modExpr.monNames, monName), ModuleLinkMap(modExpr.mod, impMachine, _, _).
+
+	////populate the link map
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #RenameExpr, toSymbol(modExpr) != #ModuleDecl,
+													  toSymbol(modExpr) != #ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, IorM, ImpMachine).
 
 
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.left, creatorM, IorM, ImpMachine);
+													  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.right, creatorM, IorM, ImpMachine);
+													  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.left, creatorM, _, _), ModuleLinkMap(modExpr.right, _, IorM, ImpMachine), ExportsForModuleExpr(modExpr.right, IorM);
+													  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.right, creatorM, _, _), ModuleLinkMap(modExpr.left, _, IorM, ImpMachine), ExportsForModuleExpr(modExpr.right, IorM).
 
 
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, IorM, ImpMachine);
+													  	  AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, _, _), IorM = modExpr.iName, ImpMachine = modExpr.mName.
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr'), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine), 
+													  	  creatorM != oldname, ImpMachine != oldname;
+													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine), creatorM' = oldname, creatorM = newname, ImpMachine != oldname;
+													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine'), ImpMachine' = oldname, ImpMachine = newname, creatorM != oldname;
+													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr'), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine'), ImpMachine' = oldname, creatorM' = oldname, creatorM = newname, ImpMachine = newname.
 
-
-
-
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, mach is MachineDecl, mach.mod = modExpr, creatorM = mach.name, 
+														  ExportsForModuleExpr(modExpr, IorM), MachineExportsDecl(imp, IorM), imp.name = ImpMachine, no IsPrivateMachine(modExpr, IorM);
+													  	  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, mach is MachineDecl, mach.mod = modExpr, creatorM = mach.name, IsPrivateMachine(modExpr, priMach.name), priMach is MachineDecl, priMach.mod = modExpr, IorM = priMach.name, ImpMachine = priMach.name;
+													  	  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, mach is MachineDecl, mach.mod = modExpr, creatorM = mach.name, CreatesForModuleExpr(modExpr, ic), no ExportsForModuleExpr(modExpr, ix), InterfaceTypeDeclList(ic, icL), InterfaceTypeDeclList(ix, icL), no IsPrivateMachine(modExpr, ic), IorM = ic, ImpMachine = NIL.
+	
+	/**************************************************************************/
+	/*     C Code Helpers
+	/**************************************************************************/
 
 	
     /*************************************************************/
@@ -507,7 +635,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 									   DeclId(d, id, cn), d : EventDeclExt, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventDecl}) }).  
 			
-	//// EventSetDecls
+	//// MemberOfEventNameLists
 	HOut(0, out.EnmDef(NIL, "P_EVENTSET", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   EventSet(evsetName, eventNameList), id = toOrdinal(eventNameList, 0, { x | EventSet(_, x) }), enumMember = Element(IntLit(id, DEC, NIL), evsetName); 
@@ -963,7 +1091,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	COut(4, def) :- EvSetDeclConcat(0, arr),
 	                def = out.VarDef(
 							      NIL, 
-								  ArrType(NmdType(NIL, "PRT_EVENTSETDECL"), NIL), 
+								  ArrType(NmdType(NIL, "PRT_MemberOfEventNameList"), NIL), 
 								  "P_GEND_EVENTSETS", 
 								  Init(arr)).
 

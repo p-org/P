@@ -701,6 +701,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  machineStructName, 
 								  NIL).
 
+	//// Enum for IorM
+	HOut(0, out.EnmDef(NIL, "P_IORM", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   CLinkMap(_, iOrM, _), id = toOrdinal(iOrM, 0, {n | CLinkMap(_, n, _)}), enumMember = Element(IntLit(id, DEC, NIL), strJoin("P_IORM_", iOrM)); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_IORM_COUNT"), size = count({n | CLinkMap(_, n, _)}) }).  
+
 	//// Extern declarations for defined types
 	HOut(0, def) :- TypeDef(name, _), 
 					typeName = strJoin("P_GEND_TYPE_", name),
@@ -1215,6 +1221,46 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  Init(arr)).
 
     /*************************************************************/
+    /******     Generate Rename Map and Link Map Arrays     ******/
+    /*************************************************************/	
+	RenameMapDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+	RenameMapDeclConcat(c, NIL) :- c = count({n | CRenameMap(n, _)}).
+	RenameMapDeclConcat(m, arr) :- 
+							mdecl is MachineDecl, DeclId(mdecl, _, machineName), 
+							CRenameMap(name, mdecl.name), m = toOrdinal(name, 0, {n | CRenameMap(n, _)}),
+							RenameMapDeclConcat(m + 1, after),  
+							arr = out.Args(Ident(machineName), after).
+
+	COut(5, def) :- RenameMapDeclConcat(0, arr),
+					def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_UINT32"), NIL), 
+								  "P_GEND_RENAMEMAP", 
+								  Init(arr)).
+
+	LinkMapDeclInnerConcat ::= (name: String, pos: Natural, arr: out.Args + {NIL}).
+	LinkMapDeclInnerConcat(name, c, NIL) :- CLinkMap(name, _, _), c = count({n | CLinkMap(name, n, _)}).
+	LinkMapDeclInnerConcat(name, m, arr) :- 
+							CLinkMap(name, mOrI, x), xid = toOrdinal(x, 0, {n | CRenameMap(n, _)}),
+							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
+							LinkMapDeclInnerConcat(name, m + 1, after),  
+							arr = out.Args(IntLit(xid, DEC, U), after).
+	
+	LinkMapDeclOuterConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+	LinkMapDeclOuterConcat(c, NIL) :- c = count({n | LinkMapDeclInnerConcat(n, _, _)}).
+	LinkMapDeclOuterConcat(m, arr) :- 
+							CLinkMap(name, _, _), LinkMapDeclInnerConcat(name, 0, args),
+							m = toOrdinal(name, 0, {n | CLinkMap(n, _, _)}), 
+							LinkMapDeclOuterConcat(m + 1, after),
+							arr = out.Args(Init(args), after).
+	
+	COut(5, def) :- LinkMapDeclOuterConcat(0, arr),
+					def = out.VarDef(
+							      NIL, 
+								  ArrType(ArrType(NmdType(NIL, "PRT_UINT32"), NIL), NIL), 
+								  "P_GEND_LINKMAP", 
+								  Init(arr)).
+    /*************************************************************/
     /******            Generate Program Decl                ******/
     /*************************************************************/	
 
@@ -1257,9 +1303,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							   Args(machArrName,
 							   Args(globalFunArrName,
 							   Args(foreignTypesArrName,
+							   Args(Ident("P_GEND_LINKMAP"),
+							   Args(Ident("P_GEND_RENAMEMAP"),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))))).
+							   NIL))))))))))))))).
 
 	/*************************************************************/
     /******                 Powers of two                   ******/

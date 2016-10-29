@@ -27,51 +27,7 @@
 
     public enum LivenessOption { None, Standard, Mace };
 
-    public enum TopDecl { Event, EventSet, Interface, Module, Machine, Test, TypeDef, Enum, FunProto, MachineProto };
-    public class TopDeclNames
-    {
-        public HashSet<string> eventNames;
-        public HashSet<string> eventSetNames;
-        public HashSet<string> moduleNames;
-        public HashSet<string> testNames;
-        public HashSet<string> typeNames;
-        public HashSet<string> machineNames;
-        public HashSet<string> interfaceNames;
-        public HashSet<string> enumNames;
-        public HashSet<string> machineProto;
-        public HashSet<string> funProto;
-        public HashSet<string> funNames;
-        public TopDeclNames()
-        {
-            eventNames = new HashSet<string>();
-            eventSetNames = new HashSet<string>();
-            interfaceNames = new HashSet<string>();
-            moduleNames = new HashSet<string>();
-            machineNames = new HashSet<string>();
-            testNames = new HashSet<string>();
-            typeNames = new HashSet<string>();
-            enumNames = new HashSet<string>();
-            funProto = new HashSet<string>();
-            machineProto = new HashSet<string>();
-            funNames = new HashSet<string>();
-
-        }
-
-        public void Reset()
-        {
-            eventNames.Clear();
-            eventSetNames.Clear();
-            interfaceNames.Clear();
-            moduleNames.Clear();
-            machineNames.Clear();
-            testNames.Clear();
-            typeNames.Clear();
-            funProto.Clear();
-            machineProto.Clear();
-            funNames.Clear();
-        }
-    }
-
+   
     public class SourceInfo
     {
         public Span entrySpan;

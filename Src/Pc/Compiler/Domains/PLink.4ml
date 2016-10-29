@@ -1303,9 +1303,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							   Args(machArrName,
 							   Args(globalFunArrName,
 							   Args(foreignTypesArrName,
+							   Args(Ident("P_GEND_LINKMAP"),
+							   Args(Ident("P_GEND_RENAMEMAP"),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))))).
+							   NIL))))))))))))))).
 
 	/*************************************************************/
     /******                 Powers of two                   ******/

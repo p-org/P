@@ -1393,19 +1393,88 @@
             return parseTask.Result.Program;
         }
 
+        public bool ParseLinkProgram(string inputFileName, out LProgram parsedProgram, out ProgramName RootProgramName)
+        {
+            parsedProgram = new LProgram();
+            using (this.Profiler.Start("P Link parsing ", Path.GetFileName(inputFileName)))
+            {
+                try
+                {
+                    RootProgramName = new ProgramName(Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, inputFileName)));
+                }
+                catch (Exception e)
+                {
+                    errorReporter.AddFlag(
+                        new Flag(
+                            SeverityKind.Error,
+                            default(Span),
+                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                            Constants.BadFile.Code));
+                    RootProgramName = null;
+                    return false;
+                }
+
+                TopDeclNames topDeclNames = new TopDeclNames();
+                var RootFileName = RootProgramName.ToString();
+                List<Flag> parserFlags;
+                Debug.WriteLine("Loading " + inputFileName);
+                var parser = new Parser.LParser();
+                var result = parser.ParseFile(inputFileName, Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags);
+                foreach (Flag f in parserFlags)
+                {
+                    errorReporter.AddFlag(f);
+                }
+                if (!result)
+                {
+                    RootProgramName = null;
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+
         public bool Link(ICompilerOutput log, CommandLineOptions options)
         {
             this.Log = log;
             this.Options = options;
+
+            
+
             var linkModel = Factory.Instance.MkModel(
                                     "OutputLinker",
                                     false,
                                     Factory.Instance.MkModRef(PLinkDomain, null, MkReservedModuleLocation(PLinkDomain)),
                                     ComposeKind.Extends);
 
+
             try
             {
-                foreach (var fileName in options.inputFileNames)
+                // compile the p file into formula file 
+                var plinkFile = options.PFiles.First();
+                using (this.Profiler.Start(" ", Path.GetFileName(inputFileName)))
+                {
+                    //// Step 0. Load PLink.4ml.
+                    LoadManifestProgram("Pc.Domains.PLink.4ml");
+
+                    //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
+                    AST<Model> rootModel = null;
+                    var mkModelResult = Factory.Instance.MkModel(
+                        MkSafeModuleName(RootProgramName.ToString()),
+                        PDomain,
+                        parsedProgram.Terms,
+                        out rootModel,
+                        null,
+                        MkReservedModuleLocation(PDomain),
+                        ComposeKind.None);
+                    Contract.Assert(mkModelResult);
+                    RootModel = rootModel;
+
+                    InstallResult instResult;
+                    AST<Program> modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+
+
+                    foreach (var fileName in options.FormulaFiles)
                 {
                     var program = ParseFormulaFile(fileName);
                     program.FindAll(

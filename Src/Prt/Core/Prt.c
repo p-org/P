@@ -199,6 +199,7 @@ GetFunDeclHelper(_In_ PRT_PROCESS	*process, _In_ PRT_UINT32 instanceOf, _In_ PRT
 	}
 }
 
+
 PRT_MACHINEINST *
 PrtMkMachine(
     _Inout_  PRT_PROCESS			*process,

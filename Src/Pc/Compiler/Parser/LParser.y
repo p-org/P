@@ -70,12 +70,12 @@ SafeExpr
 	;
 /* Assert */
 AssertExpr
-	: LPAREN ASSERT StringList IN ModuleExpr RPAREN		{ PushAssertExpr(ToSpan(@1)); }
+	: LPAREN ASSERT MonitorNameList IN ModuleExpr RPAREN		{ PushAssertExpr(ToSpan(@1)); }
 	;
 
 /* Assume */
 AssumeExpr
-	: LPAREN ASSUME StringList IN ModuleExpr RPAREN		{ PushAssumeExpr(ToSpan(@1)); }
+	: LPAREN ASSUME MonitorNameList IN ModuleExpr RPAREN		{ PushAssumeExpr(ToSpan(@1)); }
 	;
 
 /* Export */
@@ -88,10 +88,10 @@ RenameExpr
 	: LPAREN RENAME ID TO ID IN ModuleExpr RPAREN		{ PushRenameExpr($3.str, ToSpan(@3), $5.str, ToSpan(@5), ToSpan(@1)); }
 	;
 
-/* StringList */
-StringList 
-	: ID						{ PushString($1.str, ToSpan(@1), true); }
-	| ID COMMA StringList		{ PushString($1.str, ToSpan(@1), false); }
+/* MonitorNameList */
+MonitorNameList 
+	: ID							{ PushMonitorName($1.str, ToSpan(@1), true); }
+	| ID COMMA MonitorNameList		{ PushMonitorName($1.str, ToSpan(@1), false); }
 	;
 
 /* Test Declaration */

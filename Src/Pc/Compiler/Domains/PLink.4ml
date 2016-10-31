@@ -64,7 +64,7 @@ domain PLink
 	
 
 	/// Module Constructions
-	ModuleDef ::= new (name: String, mod: any ModuleExpr).
+	ModuleDef ::= fun (name: String -> mod: any ModuleExpr).
 	HideExpr ::= new (evtNames: any EventNameList, mod: any ModuleExpr, id: any Id). 
 	RenameExpr ::= new (mNames: String, mNames': String, mod: any ModuleExpr, id: any Id).
 	ExportExpr ::= new (mName: String, iName: String, mod: any ModuleExpr, id: any Id).
@@ -146,6 +146,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	:- MachineDecl(mach, _, _), no MachineExports(_, inName), MachineCreatesInt(mach, ic), InterfaceTypeDecl(iName, evL, t), InterfaceTypeDecl(ic, evL, t'), 
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
+	// TODO: multiple machines must not expose the same interface.
 
 	/******************************************/
 	/*   Module System related Linker Errors */
@@ -701,6 +702,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  machineStructName, 
 								  NIL).
 
+	//// Enum for renamed machine names
+	HOut(0, out.EnmDef(NIL, "P_RENAME", list)) :- 
+	   list = toList(#Elements, NIL, { enumMember | 
+									   CRenameMap(name, _), id = toOrdinal(name, 0, {n | CRenameMap(n, _)}), enumMember = Element(IntLit(id, DEC, NIL), strJoin("P_RENAME_", name)); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_RENAME_COUNT"), size = count({n | CRenameMap(n, _)}) }).  
+
 	//// Enum for IorM
 	HOut(0, out.EnmDef(NIL, "P_IORM", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
@@ -1239,18 +1246,23 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  Init(arr)).
 
 	LinkMapDeclInnerConcat ::= (name: String, pos: Natural, arr: out.Args + {NIL}).
-	LinkMapDeclInnerConcat(name, c, NIL) :- CLinkMap(name, _, _), c = count({n | CLinkMap(name, n, _)}).
+	LinkMapDeclInnerConcat(name, c, NIL) :- CRenameMap(name, _), c = count({n | CLinkMap(_, n, _)}).
 	LinkMapDeclInnerConcat(name, m, arr) :- 
 							CLinkMap(name, mOrI, x), xid = toOrdinal(x, 0, {n | CRenameMap(n, _)}),
 							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
 							LinkMapDeclInnerConcat(name, m + 1, after),  
 							arr = out.Args(IntLit(xid, DEC, U), after).
+	LinkMapDeclInnerConcat(name, m, arr) :- 
+							CRenameMap(name, _), CLinkMap(_, mOrI, _), no CLinkMap(name, mOrI, _), 
+							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
+							LinkMapDeclInnerConcat(name, m + 1, after),  
+							arr = out.Args(Ident("P_RENAME_COUNT"), after).
 	
 	LinkMapDeclOuterConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 	LinkMapDeclOuterConcat(c, NIL) :- c = count({n | LinkMapDeclInnerConcat(n, _, _)}).
 	LinkMapDeclOuterConcat(m, arr) :- 
-							CLinkMap(name, _, _), LinkMapDeclInnerConcat(name, 0, args),
-							m = toOrdinal(name, 0, {n | CLinkMap(n, _, _)}), 
+							LinkMapDeclInnerConcat(name, 0, args),
+							m = toOrdinal(name, 0, {n | LinkMapDeclInnerConcat(n, _, _)}), 
 							LinkMapDeclOuterConcat(m + 1, after),
 							arr = out.Args(Init(args), after).
 	
@@ -1260,6 +1272,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  ArrType(ArrType(NmdType(NIL, "PRT_UINT32"), NIL), NIL), 
 								  "P_GEND_LINKMAP", 
 								  Init(arr)).
+
     /*************************************************************/
     /******            Generate Program Decl                ******/
     /*************************************************************/	

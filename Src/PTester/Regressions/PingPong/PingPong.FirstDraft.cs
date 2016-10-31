@@ -199,6 +199,11 @@ namespace SimpleMachine
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public class Anon_1 : PrtFun
@@ -236,6 +241,11 @@ namespace SimpleMachine
                     }
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 

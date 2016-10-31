@@ -1,5 +1,6 @@
 using P.Runtime;
 using System.Collections.Generic;
+using System;
 
 namespace TwoMachines
 {
@@ -58,6 +59,11 @@ namespace TwoMachines
                 //no local variables hence nothing to add
                 return locals;
             }
+            public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+            {
+                //throw new NotImplementedException();
+                return null;
+            }
         }
 
         public static F2_Class F2;
@@ -93,6 +99,11 @@ namespace TwoMachines
 
                 //no local variables hence nothing to add
                 return locals;
+            }
+            public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+            {
+                //throw new NotImplementedException();
+                return null;
             }
         }
 
@@ -173,6 +184,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static AnonFun2_Class AnonFun2;
@@ -208,6 +224,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -245,6 +266,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static foo_Class foo;
@@ -280,6 +306,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -317,6 +348,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static AnonFun0_Class AnonFun0;
@@ -352,6 +388,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -461,6 +502,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static AnonFun0_Class AnonFun0;
@@ -496,6 +542,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -533,6 +584,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static ignore_Class ignore;
@@ -568,6 +624,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -605,6 +666,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static AnonFun10_Class AnonFun10;
@@ -640,6 +706,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -677,6 +748,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static AnonFun3_Class AnonFun3;
@@ -712,6 +788,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -749,6 +830,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static AnonFun11_Class AnonFun11;
@@ -784,6 +870,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -821,6 +912,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static AnonFun5_Class AnonFun5;
@@ -856,6 +952,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -893,6 +994,11 @@ namespace TwoMachines
                     //no local variables hence nothing to add
                     return locals;
                 }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
+                }
             }
 
             public static AnonFun7_Class AnonFun7;
@@ -928,6 +1034,11 @@ namespace TwoMachines
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 

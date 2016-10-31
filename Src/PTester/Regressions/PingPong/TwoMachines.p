@@ -7,8 +7,8 @@
 //warm/hot/cold states
 
 event Ping assert 1: machine;
-event Pong assert 1;
-event Success;
+event Pong assert 1: int;
+event Success: bool;
 event Fail;
 
 fun F1() {

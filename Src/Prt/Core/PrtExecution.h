@@ -123,7 +123,6 @@ extern "C"{
 	typedef struct PRT_MACHINEINST_PRIV {
 		PRT_PROCESS		    *process;
 		PRT_UINT32			instanceOf;
-		PRT_UINT32			renamedName;
 		PRT_VALUE			*id;
 		void				*extContext;
 		PRT_VALUE           *recvMap;
@@ -147,6 +146,7 @@ extern "C"{
 		PRT_UINT32          *currentDeferredSetCompact;
 		PRT_UINT32          *inheritedActionSetCompact;
 		PRT_UINT32          *currentActionSetCompact;
+		PRT_UINT32			renamedName;
 	} PRT_MACHINEINST_PRIV;
 
 	/** Sets a global variable to variable

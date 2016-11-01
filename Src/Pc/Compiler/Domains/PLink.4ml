@@ -1264,7 +1264,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							CRenameMap(name, _), CLinkMap(_, mOrI, _), no CLinkMap(name, mOrI, _), 
 							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
 							LinkMapDeclInnerConcat(name, m + 1, after),  
-							arr = out.Args(Ident("P_RENAME_COUNT"), after).
+							arr = out.Args(Ident("_P_RENAME_COUNT"), after).
 	
 	LinkMapDeclOuterConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 	LinkMapDeclOuterConcat(c, NIL) :- c = count({n | LinkMapDeclInnerConcat(n, _, _)}).

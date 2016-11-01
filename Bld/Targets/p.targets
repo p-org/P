@@ -87,7 +87,7 @@
       <FileWrites Include="$(MSBuildThisFileDirectory)linker.c" />
       <FileWrites Include="$(MSBuildThisFileDirectory)linker.h" />
     </ItemGroup>
-    <Exec Command="$(DropFolder)\Binaries\plink.exe @(PLink->'%(FullPath)')"  WorkingDirectory="@(PLink->'%(RootDir)%(Directory)')"/>    
+    <Exec Command="$(DropFolder)\Binaries\pc.exe /link @(PLink->'%(FullPath)')"  WorkingDirectory="@(PLink->'%(RootDir)%(Directory)')"/>    
   </Target>
 
   <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >

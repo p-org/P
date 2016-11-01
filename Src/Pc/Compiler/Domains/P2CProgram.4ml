@@ -15,8 +15,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
     /**********         Create PLink output            ***********/
     /*************************************************************/
-	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, REAL, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
-									   decl is in.MachineDecl(name, REAL, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
+	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
+									   decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
 	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(#EventNameList, NIL, {ev | ObservesDecl(decl, ev) }), list : EventNameList.
 
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), TypeExpansion(ctype, ectype).

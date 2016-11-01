@@ -5,13 +5,17 @@
 //deferred events
 //null transition
 //warm/hot/cold states
+//types
+//variables: machine locals, function locals (including formal pars)
 
+type nmdtuple = (a: int, b: int);
 event Ping assert 1: machine;
 event Pong assert 1: int;
 event Success: bool;
-event Fail;
+event Fail: nmdtuple;
 
-fun F1() {
+fun F1(int par1, bool par2) {
+	var varInt: int;
 	//send this, Ping;
 	//send this, Pong;
 }
@@ -23,14 +27,17 @@ fun F2() {
 //machine Main assume 222
 machine Main
 {
-    //var pongId: machine;
+    var pongId: machine;
+	var varInt: int;
+	var varBool: bool;
+	var varTpl: nmdtuple;
 
     start hot state Init {
         entry {
 			//pongId = new PONG();
 	        //raise Success;   	   
         }
-        on Success goto Ping_SendPing with F2;
+        on Success goto Ping_SendPing with F1(varInt, varBool);
 		ignore Fail;
 		on null goto Ping_WaitPong;
     }
@@ -40,23 +47,23 @@ machine Main
 			//send pongId, Ping, this;
 	        //raise Success;
 	    }
-        on Success goto Ping_WaitPong with foo;      //foo used 1st time in goto
-		on Pong do foo;                           //foo used 1st time in "do"
+        on Success goto Ping_WaitPong with foo(varBool, varTpl);      //foo used 1st time in goto
+		on Pong do foo(varBool, varTpl);                           //foo used 1st time in "do"
 		defer Fail;
      }
 
      state Ping_WaitPong {
-        on Pong goto Ping_SendPing with foo;   //foo used 2nd time in goto
+        on Pong goto Ping_SendPing with foo(varBool, varTpl);   //foo used 2nd time in goto
 		on Success do {}
      }
 
      state Done {
-		on Pong do { foo(); }          //foo used 2nd time in "do"
+		on Pong do { foo(varBool, varTpl); }          //foo used 2nd time in "do"
 		on Success do { assert(false); }
 		ignore Fail;
 	 }
 
-	 fun foo() {}
+	 fun foo(bool par1, nmdtuple par2) {}
 }
 
 machine PONG assume 111 {

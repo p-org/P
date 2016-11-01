@@ -20,12 +20,27 @@ namespace TwoMachines
             return new Application();
         }
 
-        public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", new PrtNullType(), 1, false));
-        public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", new PrtNullType(), 1, false));
-        public static PrtEventValue Fail = new PrtEventValue(new PrtEvent("Fail", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
-        public static PrtEventValue Success = new PrtEventValue(new PrtEvent("Success", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
-        public static PrtEventValue Pong = new PrtEventValue(new PrtEvent("Pong", new PrtNullType(), 1, false));
-        public static PrtEventValue Ping = new PrtEventValue(new PrtEvent("Ping", new PrtMachineType(), 1, false));
+        public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", typeNull, 1, false));
+        public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", typeNull, 1, false));
+        public static PrtEventValue Fail = new PrtEventValue(new PrtEvent("Fail", typeNull, PrtEvent.DefaultMaxInstances, false));
+        public static PrtEventValue Success = new PrtEventValue(new PrtEvent("Success", typeBool, PrtEvent.DefaultMaxInstances, false));
+        public static PrtEventValue Pong = new PrtEventValue(new PrtEvent("Pong", typeInt, 1, false));
+        public static PrtEventValue Ping = new PrtEventValue(new PrtEvent("Ping", typeMachine, 1, false));
+
+        static PrtType typeNull;
+        static PrtType typeMachine;
+        static PrtType typeInt;
+        static PrtType typeBool;
+        static PrtType typeNmdtuple;
+
+        static Application()
+        {
+            typeNull = new PrtNullType();
+            typeInt = new PrtIntType();
+            typeBool = new PrtBoolType();
+            typeMachine = new PrtMachineType();
+            typeNmdtuple = new PrtNamedTupleType("a", typeInt, "b", typeInt);
+        }
         public class F2_Class : PrtFun
         {
             public override bool IsAnonFun
@@ -69,6 +84,86 @@ namespace TwoMachines
         public static F2_Class F2;
         public class F1_Class : PrtFun
         {
+            #region locals
+            //Assuming: locals of functions are enumerated in "locals" list in the order they are
+            //declared in the P program: formals first, then local vars
+            //Question: is below correct:
+            //C# variable of the type Par1_Class will be instantiated when the function "F1" is 
+            //called (hence, , i.e., in the function call translation.
+            //Question: what for are the two different constructors for PrtFunDtackFrame?
+            
+            internal class Par1_Class: PrtFunStackFrame
+            {
+                public Par1_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                {
+
+                }
+                public Par1_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    : base(fun, locs, retLocation)
+                {
+
+                }
+                public override PrtFunStackFrame Clone()
+                {
+                    return this.Clone();
+                }
+                public PrtValue Par1
+                {
+                    get
+                    {
+                        return locals[0];
+                    }
+                }
+            }
+            internal class Par2_Class : PrtFunStackFrame
+            {
+                public Par2_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                {
+
+                }
+                public Par2_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    : base(fun, locs, retLocation)
+                {
+
+                }
+                public override PrtFunStackFrame Clone()
+                {
+                    return this.Clone();
+                }
+                public PrtValue Par2
+                {
+                    get
+                    {
+                        return locals[1];
+                    }
+                }
+
+            }
+            internal class VarInt_Class : PrtFunStackFrame
+            {
+                public VarInt_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                {
+
+                }
+                public VarInt_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    : base(fun, locs, retLocation)
+                {
+
+                }
+                public override PrtFunStackFrame Clone()
+                {
+                    return this.Clone();
+                }
+                public PrtValue VarInt
+                {
+                    get
+                    {
+                        return locals[2];
+                    }
+                }
+
+            }
+            #endregion
             public override bool IsAnonFun
             {
                 get
@@ -468,6 +563,39 @@ namespace TwoMachines
             public Main(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
             {
             }
+
+            #region variables
+            //Assuming: machine variables are enumerated in the "fields" in the order they are
+            //declared in the P program
+            public PrtValue PongId
+            {
+                get
+                {
+                    return fields[0];
+                }
+            }
+            public PrtValue VarInt
+            {
+                get
+                {
+                    return fields[1];
+                }
+            }
+            public PrtValue VarBool
+            {
+                get
+                {
+                    return fields[2];
+                }
+            }
+            public PrtValue VarTpl
+            {
+                get
+                {
+                    return fields[3];
+                }
+            }
+            #endregion
 
             public class AnonFun0_Class : PrtFun
             {

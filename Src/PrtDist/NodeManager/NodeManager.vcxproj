@@ -106,7 +106,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>../../../Prt/API;../../PrtDist/Core/;../../../Prt/Core;../../../Prt/WinUser/;$(PSdkFolder)/Headers</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>../../../Prt/API;../../../Prt/Core;../../../Prt/WinUser/;$(PSdkFolder)/Headers</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>$(StandardPDefinitions);_CRT_SECURE_NO_WARNINGS;</PreprocessorDefinitions>
     </ClCompile>
     <Link>

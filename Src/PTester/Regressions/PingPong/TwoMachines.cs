@@ -330,6 +330,62 @@ namespace TwoMachines
             public static AnonFun3_Class AnonFun3;
             public class foo_Class : PrtFun
             {
+                #region locals
+                //Assuming: locals of functions are enumerated in "locals" list in the order they are
+                //declared in the P program: formals first, then local vars
+                //Question: is below correct:
+                //C# variable of the type Par1_Class will be instantiated when the function "F1" is 
+                //called (hence, , i.e., in the function call translation.
+                //Question: what for are the two different constructors for PrtFunDtackFrame?
+
+                internal class Par1_Class : PrtFunStackFrame
+                {
+                    public Par1_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
+
+                    }
+                    public Par1_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                    public PrtValue Par1
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+                    }
+                }
+                internal class Par2_Class : PrtFunStackFrame
+                {
+                    public Par2_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
+
+                    }
+                    public Par2_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                    public PrtValue Par2
+                    {
+                        get
+                        {
+                            return locals[1];
+                        }
+                    }
+
+                }
+                #endregion
                 public override bool IsAnonFun
                 {
                     get

@@ -1265,6 +1265,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
 							LinkMapDeclInnerConcat(name, m + 1, after),  
 							arr = out.Args(Ident("_P_RENAME_COUNT"), after).
+	COut(5, def) :- LinkMapDeclInnerConcat(name, 0, arr),
+					def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_UINT32"), NIL), 
+								  strJoin("P_GEND_LINKMAP_", name), 
+								  Init(arr)).
 	
 	LinkMapDeclOuterConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 	LinkMapDeclOuterConcat(c, NIL) :- c = count({n | LinkMapDeclInnerConcat(n, _, _)}).
@@ -1272,14 +1278,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							LinkMapDeclInnerConcat(name, 0, args),
 							m = toOrdinal(name, 0, {n | LinkMapDeclInnerConcat(n, _, _)}), 
 							LinkMapDeclOuterConcat(m + 1, after),
-							arr = out.Args(Init(args), after).
+							arr = out.Args(Ident(strJoin("P_GEND_LINKMAP_", name)), after).
 	
-	COut(5, def) :- LinkMapDeclOuterConcat(0, arr),
-					outer = count({n | LinkMapDeclInnerConcat(n, _, _)}),
-					inner = count({n | CLinkMap(_, n, _)}),
+	COut(6, def) :- LinkMapDeclOuterConcat(0, arr),
 					def = out.VarDef(
 							      NIL, 
-								  ArrType(ArrType(NmdType(NIL, "PRT_UINT32"), inner), outer), 
+								  ArrType(PtrType(NmdType(NIL, "PRT_UINT32")), NIL), 
 								  "P_GEND_LINKMAP", 
 								  Init(arr)).
 
@@ -1305,7 +1309,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	ProgForeignTypesArray(size, arr) :- size = count({ n | ModelType(n) }), size = 0, arr = out.Ident("NULL").
 	ProgForeignTypesArray(size, arr) :- size = count({ n | ModelType(n) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
 
-	COut(6, def) :-  ProgEvntArray(evArrSize, evArrName),
+	COut(7, def) :-  ProgEvntArray(evArrSize, evArrName),
 	                 ProgEvntSetArray(evSetArrSize, evSetArrName),
 					 ProgMachArray(machArrSize, machArrName),
 					 ProgGlobalFunArray(globalFunArrSize, globalFunArrName),
@@ -1326,7 +1330,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							   Args(machArrName,
 							   Args(globalFunArrName,
 							   Args(foreignTypesArrName,
-							   Args(Cast(PtrType(PtrType(NmdType(NIL, "PRT_UINT32"))), Ident("P_GEND_LINKMAP")),
+							   Args(Ident("P_GEND_LINKMAP"),
 							   Args(Ident("P_GEND_RENAMEMAP"),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),

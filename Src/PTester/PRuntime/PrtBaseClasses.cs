@@ -233,6 +233,11 @@ namespace P.Runtime
             throw new NotImplementedException();
         }
 
+        public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+        {
+            throw new NotImplementedException();
+        }
+
         public override List<PrtValue> CreateLocals(params PrtValue[] args)
         {
             throw new NotImplementedException();
@@ -250,6 +255,11 @@ namespace P.Runtime
         }
 
         public override void Execute(StateImpl application, PrtMachine parent)
+        {
+            throw new NotImplementedException();
+        }
+
+        public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
         {
             throw new NotImplementedException();
         }
@@ -275,6 +285,8 @@ namespace P.Runtime
         }
 
         public abstract List<PrtValue> CreateLocals(params PrtValue[] args);
+
+        public abstract PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc);
 
         public abstract void Execute(StateImpl application, PrtMachine parent);
     }
@@ -569,7 +581,7 @@ namespace P.Runtime
         Goto
     };
 
-    public class PrtFunStackFrame
+    public abstract class PrtFunStackFrame
     {
         public int returnTolocation;
         public List<PrtValue> locals;
@@ -597,10 +609,7 @@ namespace P.Runtime
             returnTolocation = retLocation;
         }
 
-        public PrtFunStackFrame Clone()
-        {
-            return new PrtFunStackFrame(this.fun, this.locals, this.returnTolocation);
-        }
+        public abstract PrtFunStackFrame Clone();
     }
 
     public class PrtFunStack
@@ -635,12 +644,12 @@ namespace P.Runtime
 
         public void PushFun(PrtFun fun, List<PrtValue> locals)
         {
-            funStack.Push(new PrtFunStackFrame(fun, locals));
+            funStack.Push(fun.CreateFunStackFrame(locals, 0));
         }
 
         public void PushFun(PrtFun fun, List<PrtValue> locals, int retLoc)
         {
-            funStack.Push(new PrtFunStackFrame(fun, locals, retLoc));
+            funStack.Push(fun.CreateFunStackFrame(locals, retLoc));
         }
 
         public PrtFunStackFrame PopFun()

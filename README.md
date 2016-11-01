@@ -22,6 +22,11 @@ In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Impl
 Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
 
-- **[Building Reliable Distributed Systems With P](http://www2.eecs.berkeley.edu/Pubs/TechRpts/2015/EECS-2015-198.pdf)**.
-Ankush Desai, Ethan Jackson, Amar Phanishayee, Shaz Qadeer and Sanjit A. Seshia.
-University of California, Berkeley.Technical Report No. UCB/EECS-2015-198.
+
+News
+============================================================
+- **TechWorld[2016]**: **[Microsoft open-sources P language for IoT](http://www.techworld.com.au/article/608591/microsoft-open-sources-p-language-iot/)**
+- **InfoQ**[2016]: **[Microsoft Open-Sources P Language for Safe Async Event-Driven Programming](https://www.infoq.com/news/2016/10/microsoft-p-language-opensourced)**
+- **Reddit[2016]**: **[Microsoft opensources P language](https://www.reddit.com/r/programming/comments/56nbbx/microsoft_opensources_p_language/)**
+- **Microsoft Blog**[2011]: **[Building robust USB 3.0 support](https://blogs.msdn.microsoft.com/b8/2011/08/22/building-robust-usb-3-0-support/)**
+

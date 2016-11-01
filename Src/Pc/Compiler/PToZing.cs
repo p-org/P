@@ -720,7 +720,7 @@ namespace Microsoft.Pc
 
             var ownerName = stateInfo.ownerName;
             var localDeferredSet = stateInfo.deferredEvents;
-            var actions = stateInfo.actions;
+            var actions = stateInfo.dos;
             var transitions = stateInfo.transitions;
 
             List<AST<Node>> stmts = new List<AST<Node>>();

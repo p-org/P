@@ -38,7 +38,7 @@
         private ProgramName parseSource;
 
         private bool parseFailed = false;
-
+        private PLink_Root.ModuleDecl crntModuleDecl = null;
         private LProgramTopDeclNames LinkTopDeclNames;
         private List<PLink_Root.EventName> crntEventList = new List<PLink_Root.EventName>();
         private List<PLink_Root.String> crntStringList = new List<PLink_Root.String>();
@@ -245,6 +245,30 @@
 
         #endregion
 
+        private void AddToMachineNamesList(string name, Span span)
+        {
+            if (crntStringList.Where(e => ((string)e.Symbol == name)).Count() >= 1)
+            {
+                var errFlag = new Flag(
+                                     SeverityKind.Error,
+                                     span,
+                                     Constants.BadSyntax.ToString(string.Format("Machine {0} listed multiple times in the list", name)),
+                                     Constants.BadSyntax.Code,
+                                     parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+            else
+            {
+                crntStringList.Add(MkString(name, span));
+            }
+        }
+
+        private void AddToEventList(PLink_Root.UserCnstKind kind, Span span)
+        {
+            crntEventList.Add(MkUserCnst(kind, span));
+        }
+
         private void AddToEventList(string name, Span span)
         {
             if (crntEventList.Where(e => ((string)e.Symbol == name)).Count() >= 1)
@@ -317,12 +341,34 @@
             parseLinker.ModuleDef.Add(moduleDef);
         }
 
+        private void AddPrivatesList(bool hasDecl, Span span = default(Span))
+        {
+            if (hasDecl)
+            {
+                Contract.Assert(crntEventList.Count > 0);
+                foreach (var ev in crntEventList)
+                {
+                    var rec = PLink_Root.MkModulePrivateEvents(GetCurrentModuleDecl(span), (PLink_Root.IArgType_ModulePrivateEvents__1)ev);
+                    rec.Span = ev.Span;
+                    parseLinker.ModulePrivateEvents.Add(rec);
+                }
+                crntEventList.Clear();
+            }
+            else
+            {
+                var rec = PLink_Root.MkModulePrivateEvents(GetCurrentModuleDecl(span), MkUserCnst(PLink_Root.UserCnstKind.NIL, span));
+                rec.Span = span;
+                parseLinker.ModulePrivateEvents.Add(rec);
+            }
+
+        }
+
         private void AddModuleDecl(string name, Span nameSpan, Span span)
         {
             var moduleDecl = GetCurrentModuleDecl(span);
             moduleDecl.Span = span;
             moduleDecl.name = MkString(name, nameSpan);
-
+            moduleDecl.id = (PLink_Root.IArgType_ModuleDecl__1)MkIntegerId(span);
             //add the module decl
             if (IsValidName(LProgramTopDecl.Module, name, nameSpan))
             {
@@ -330,27 +376,27 @@
             }
             parseLinker.ModuleDecl.Add(moduleDecl);
 
-            foreach (var e in crntPrivateList)
+            foreach(var machine in crntStringList)
             {
-                //add privates
-                var pri = PLink_Root.MkModulePrivateEvent(moduleDecl, (PLink_Root.IArgType_ModulePrivateEvent__1)e);
-                pri.Span = e.Span;
-                parseProgram.ModulePrivateEventsDecl.Add(pri);
+                var moduleContains = PLink_Root.MkModuleContains();
+                moduleContains.mod = (PLink_Root.IArgType_ModuleContains__0)moduleDecl;
+                moduleContains.mach = (PLink_Root.IArgType_ModuleContains__1)machine;
             }
-
-            if (isPrivateListAllEvents)
-            {
-                var pri = PLink_Root.MkModulePrivateEventAll(moduleDecl);
-                parseProgram.ModuleAllEventsPrivate.Add(pri);
-            }
-            //clear the machine names and static function names
-            topDeclNames.machineNames.Clear();
-            crntStaticFunNames.Clear();
-            crntPrivateList.Clear();
-            isPrivateListAllEvents = false;
             crntModuleDecl = null;
         }
 
+        private PLink_Root.ModuleDecl GetCurrentModuleDecl(Span span)
+        {
+            if (crntModuleDecl != null)
+            {
+                return crntModuleDecl;
+            }
+
+            crntModuleDecl = PLink_Root.MkModuleDecl();
+            crntModuleDecl.name = MkString(string.Empty, span);
+            crntModuleDecl.Span = span;
+            return crntModuleDecl;
+        }
 
         private void ResetState()
         {
@@ -358,6 +404,66 @@
             crntStringList.Clear();
             moduleExprStack.Clear();
             monitorNameListStack.Clear();
+            crntModuleDecl = null;
+        }
+
+        internal bool ParseFile(
+            ProgramName file,
+            LProgramTopDeclNames topDeclNames,
+            LProgram program,
+            Dictionary<int, SourceInfo> idToSourceInfo,
+            out List<Flag> flags)
+        {
+            flags = parseFlags = new List<Flag>();
+            this.LinkTopDeclNames = topDeclNames;
+            parseLinker = program;
+            this.idToSourceInfo = idToSourceInfo;
+            parseSource = file;
+            bool result;
+            try
+            {
+                var fi = new System.IO.FileInfo(file.Uri.LocalPath);
+                if (!fi.Exists)
+                {
+                    var badFile = new Flag(
+                        SeverityKind.Error,
+                        default(Span),
+                        Constants.BadFile.ToString(string.Format("The file {0} does not exist", fi.FullName)),
+                        Constants.BadFile.Code,
+                        file);
+                    result = false;
+                    flags.Add(badFile);
+                    return false;
+                }
+
+                var str = new System.IO.FileStream(file.Uri.LocalPath, System.IO.FileMode.Open, System.IO.FileAccess.Read);
+                var scanner = ((Scanner)Scanner);
+                scanner.SetSource(str);
+                scanner.SourceProgram = file;
+                scanner.Flags = flags;
+                scanner.Failed = false;
+                ResetState();
+                result = (!scanner.Failed) && Parse(default(System.Threading.CancellationToken)) && !parseFailed;
+                str.Close();
+            }
+            catch (Exception e)
+            {
+                var badFile = new Flag(
+                    SeverityKind.Error,
+                    default(Span),
+                    Constants.BadFile.ToString(e.Message),
+                    Constants.BadFile.Code,
+                    file);
+                flags.Add(badFile);
+                return false;
+            }
+
+            return result;
+        }
+
+        private Span ToSpan(LexLocation loc)
+        {
+            return new Span(loc.StartLine, loc.StartColumn + 1, loc.EndLine, loc.EndColumn + 1, this.parseSource);
         }
 
         public bool IsValidName(LProgramTopDecl type, string name, Span nameSpan)

@@ -30,7 +30,7 @@ machine Elevator : ElevatorInterface
 
     start state Init {
         entry {
-            TimerV = new TimerInterface(this);
+            TimerV = new Timer(this);
             DoorV = new Door(this);
             raise eUnit;
         }

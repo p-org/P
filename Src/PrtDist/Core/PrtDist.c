@@ -50,7 +50,7 @@ void s_PrtDistMkMachine(
 )
 {
 	PRT_VALUE* deserial_params = PrtDistDeserializeValue(params);
-	PRT_MACHINEINST_PRIV* newContext = PrtMkMachinePrivate((PRT_PROCESS_PRIV *)ContainerProcess, instanceOf, deserial_params);
+	PRT_MACHINEINST_PRIV* newContext = PrtMkMachinePrivate((PRT_PROCESS_PRIV *)ContainerProcess, instanceOf, instanceOf, deserial_params);
 	*retVal = PrtDistSerializeValue(newContext->id);
 }
 

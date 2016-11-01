@@ -115,14 +115,13 @@
 			 keywords.Add("sends", (int)PTokens.SENDS);
 			 keywords.Add("creates", (int)PTokens.CREATES);
 			 keywords.Add("extern", (int)PTokens.EXTERN);
-
+			 
 			 keywords.Add("module", (int)PTokens.MODULE);
 			 keywords.Add("hide", (int)PTokens.HIDE);
 			 keywords.Add("export", (int)PTokens.EXPORT);
 			 keywords.Add("safe", (int)PTokens.SAFE);
 			 keywords.Add("rename", (int)PTokens.RENAME);
 			 keywords.Add("to", (int)PTokens.TO);
-			 keywords.Add("creates", (int)PTokens.CREATES);
 			 keywords.Add("private", (int)PTokens.PRIVATE);
 			 keywords.Add("implementation", (int)PTokens.IMPLEMENTATION);
 			 keywords.Add("test", (int)PTokens.TEST);

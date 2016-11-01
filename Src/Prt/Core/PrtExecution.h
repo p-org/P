@@ -175,6 +175,7 @@ extern "C"{
 	PRT_MACHINEINST_PRIV *
 		PrtMkMachinePrivate(
 		_Inout_  PRT_PROCESS_PRIV		*process,
+		_In_  PRT_UINT32				renamedName,
 		_In_  PRT_UINT32				instanceOf,
 		_In_  PRT_VALUE					*payload
 		);

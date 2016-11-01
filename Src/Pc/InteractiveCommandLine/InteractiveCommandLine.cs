@@ -70,8 +70,8 @@ namespace Microsoft.Pc
                 {
                     try
                     {
-                        CommandLineOptions compilerOptions;
-                        var success = CommandLineOptions.ParseCompileString(inputArgs.Skip(1), out compilerOptions);
+                        CommandLineOptions compilerOptions = new CommandLineOptions();
+                        var success = compilerOptions.ParseArguments(inputArgs.Skip(1));
                         if (!success || compilerOptions.compilerService)
                         {
                             Console.WriteLine(compileErrorMsgString);
@@ -101,8 +101,8 @@ namespace Microsoft.Pc
                 {
                     try
                     {
-                        CommandLineOptions options;
-                        if (!CommandLineOptions.ParseLinkString(inputArgs.Skip(1), out options))
+                        CommandLineOptions options = new CommandLineOptions();
+                        if (!options.ParseArguments(inputArgs.Skip(1)))
                         {
                             Console.WriteLine(linkErrorMsgString);
                             continue;

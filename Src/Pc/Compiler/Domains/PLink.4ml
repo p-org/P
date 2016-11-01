@@ -31,6 +31,7 @@ domain PLink
     QueueConstraint		::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
     EventDecl			::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).
 	PermEmbeddedInEvent ::= fun (name: NonNullEventName -> perm: NonNullEventName).
+	PermEmbeddedInConstType ::= fun (machName: String -> perm: NonNullEventName).
 	AnonFunDecl		    ::= new (ownerFun: String, anonFunIndex: Natural).
 	FunDecl				::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
@@ -58,7 +59,7 @@ domain PLink
 
 	//// Module Declarations
 	ModuleDecl ::= fun (name: String -> id: any Id).
-	ModuleContains ::= new (lmod: ModuleDecl, mach: String).
+	ModuleContains ::= new (mod: ModuleDecl, mach: String).
 	ModulePrivateEvents ::= new (mod: ModuleDecl, ev: NonNullEventName + { NIL }).
 	ModuleName ::= fun (name: String -> id: any Id).
 	
@@ -146,7 +147,9 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	:- MachineDecl(mach, _, _), no MachineExports(_, inName), MachineCreatesInt(mach, ic), InterfaceTypeDecl(iName, evL, t), InterfaceTypeDecl(ic, evL, t'), 
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
-	// TODO: multiple machines must not expose the same interface.
+	err.TwoNameError(mach1, mach2, "two machines cannot export the same interface") 
+	:- MachineExports(mach1, ix1), MachineExports(mach2, ix2), mach1 != mach2, InterfaceTypeDecl(ix2, evL, _), InterfaceTypeDecl(ix1, evL, _),
+	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
 	/******************************************/
 	/*   Module System related Linker Errors */
@@ -392,7 +395,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the constructor type of created interfaces is not a subtype of constructor type of exported interfaces") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
 	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _), InterfaceTypeDecl(ix, ixL, _), icL = ixL,
-	InterfaceTypeDecl(ic, _, ct), InterfaceTypeDecl(ix, _, xt), ct != xt.			
+	InterfaceTypeDecl(ic, _, ct), InterfaceTypeDecl(ix, _, xt), ct != xt.
+	
+	//// make sure that the constructor arguments do not have private permissions in them.
+	ModuleConstructionIllegal(modL.id, ic, "compatibility error> after composition the constructor type of created interface has private permissions") 
+	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
+	ModuleLinkMap(composedMod, _, ic, renameM), ModuleRenameMap(composedMod, renameM, impM), PermEmbeddedInConstType(impM, ev), ModulePrivate(composedMod, ev).
 	
 	/**************************************************************************/
 	/*			Well-formedness condition check for the leaf modules		  */
@@ -712,7 +720,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	HOut(0, out.EnmDef(NIL, "P_IORM", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
 									   CLinkMap(_, iOrM, _), id = toOrdinal(iOrM, 0, {n | CLinkMap(_, n, _)}), enumMember = Element(IntLit(id, DEC, NIL), strJoin("P_IORM_", iOrM)); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_IORM_COUNT"), size = count({n | CLinkMap(_, n, _)}) }).  
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_IORM_COUNT"), size = count({n | CLinkMap(_, n, _)}) }). 
 
 	//// Extern declarations for defined types
 	HOut(0, def) :- TypeDef(name, _), 
@@ -1128,7 +1136,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	COut(4, def) :- EvSetDeclConcat(0, arr),
 	                def = out.VarDef(
 							      NIL, 
-								  ArrType(NmdType(NIL, "PRT_MemberOfEventNameList"), NIL), 
+								  ArrType(NmdType(NIL, "PRT_EVENTSETDECL"), NIL), 
 								  "P_GEND_EVENTSETS", 
 								  Init(arr)).
 

@@ -187,9 +187,9 @@
                 Console.WriteLine(".4ml file not expected as input without /link option");
                 return false;
             }
-            else if(isLinkerPhase && !(PFiles.Count == 1 && FormulaFiles.Count > 0))
+            else if(isLinkerPhase && !(PFiles.Count <= 1 && FormulaFiles.Count > 0))
             {
-                Console.WriteLine("must provide atleast one .4ml file and only one .p file with /link option");
+                Console.WriteLine("must provide atleast one .4ml file and atmost one .p file with /link option");
                 return false;
             }
             return true;

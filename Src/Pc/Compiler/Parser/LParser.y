@@ -45,13 +45,18 @@ NamedModuleDecl
 	;
 /* Module */
 ModuleDecl
-	: MODULE ID ModulePrivateEvents LCBRACE StringList RCBRACE			{ AddModuleDecl($2.str, ToSpan(@2), ToSpan(@1)); }
+	: MODULE ID ModulePrivateEvents LCBRACE MachineNamesList RCBRACE			{ AddModuleDecl($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
-	
+
+MachineNamesList
+	: ID							{ AddToMachineNamesList($1.str, ToSpan(@1)); }
+	| ID COMMA MachineNamesList		{ AddToMachineNamesList($1.str, ToSpan(@1)); }
+	;
+
 ModulePrivateEvents
-	: PRIVATE NonDefaultEventList SEMICOLON		{ crntPrivateList.AddRange(crntEventList); crntEventList.Clear(); }
+	: PRIVATE NonDefaultEventList SEMICOLON		{ AddPrivatesList(true, ToSpan(@1)); }
 	| PRIVATE SEMICOLON
-	|											{ isPrivateListAllEvents = true; }
+	|											{ AddPrivatesList(false); }
 	;
 
 /* Composition */
@@ -112,5 +117,5 @@ NonDefaultEventList
 
 NonDefaultEventId
 	: ID        { AddToEventList($1.str, ToSpan(@1));                      }
-	| HALT      { AddToEventList(P_Root.UserCnstKind.HALT, ToSpan(@1));    }
+	| HALT      { AddToEventList(PLink_Root.UserCnstKind.HALT, ToSpan(@1));    }
 	;

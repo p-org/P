@@ -120,6 +120,7 @@ static void PrtScheduleWork(PRT_MACHINEINST_PRIV *context)
 PRT_MACHINEINST_PRIV *
 PrtMkMachinePrivate(
 _Inout_  PRT_PROCESS_PRIV		*process,
+_In_  PRT_UINT32				renamedName,
 _In_  PRT_UINT32				instanceOf,
 _In_  PRT_VALUE					*payload
 )
@@ -141,6 +142,8 @@ _In_  PRT_VALUE					*payload
 	//
 	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
 
+	//assign the renamed name
+	context->renamedName = renamedName;
 	//
 	// Add it to the array of machines in the process
 	//

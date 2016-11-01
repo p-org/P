@@ -282,12 +282,6 @@ domain PStaticTyping extends PData
 									MachineCreates(m, NIL), iorm is MachineProtoDecl;
 									MachineCreates(m, NIL), iorm is InterfaceTypeDecl.
 
-	//// populate the link map
-	LinkMap ::= (createdIorM: String, createdM: String).
-	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM;
-									  m is MachineProtoDecl, m.name = createdIorM, m.name = createdM;
-									  MachineExports(m, createdIorM), m.name = createdM.
-
 	//Checking the constructor type error for each exported interface
 	ExportInterfaceError ::= (m: MachineDecl).
 	[rule_Classes = '"error, msg: the constructor argument type is not a subtype of the exported interface argument type"']

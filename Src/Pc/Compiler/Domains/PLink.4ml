@@ -1326,7 +1326,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							   Args(machArrName,
 							   Args(globalFunArrName,
 							   Args(foreignTypesArrName,
-							   Args(Ident("(PRT_UINT32**)P_GEND_LINKMAP"),
+							   Args(Cast(PtrType(PtrType(NmdType(NIL, "PRT_UINT32"))), Ident("P_GEND_LINKMAP")),
 							   Args(Ident("P_GEND_RENAMEMAP"),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),

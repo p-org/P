@@ -1275,9 +1275,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							arr = out.Args(Init(args), after).
 	
 	COut(5, def) :- LinkMapDeclOuterConcat(0, arr),
+					outer = count({n | LinkMapDeclInnerConcat(n, _, _)}),
+					inner = count({n | CLinkMap(_, n, _)}),
 					def = out.VarDef(
 							      NIL, 
-								  ArrType(ArrType(NmdType(NIL, "PRT_UINT32"), NIL), NIL), 
+								  ArrType(ArrType(NmdType(NIL, "PRT_UINT32"), inner), outer), 
 								  "P_GEND_LINKMAP", 
 								  Init(arr)).
 

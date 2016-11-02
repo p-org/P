@@ -9,15 +9,15 @@ machine Main {
 			otherMachine = new Other();
 			raise(unit);
 		}
-		on unit goto test;
+		on unit goto XYZ;
 	}
 	
-	state test_ {
+	state XYZ {
 		entry {
 			send otherMachine, dummy;
 			raise unit;
 		}
-		on unit goto test;
+		on unit goto XYZ;
 	}
 	
 }

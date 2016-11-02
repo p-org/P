@@ -1,4 +1,4 @@
-// P semantics test_: two machines, machine is halted with "raise halt" (unhandled)
+// P semantics XYZ: two machines, machine is halted with "raise halt" (unhandled)
 event Ping assert 1 : machine;
 event Pong assert 1;
 event Success;

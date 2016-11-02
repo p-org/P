@@ -1,7 +1,7 @@
-//Tests complex data types involving enum Types in assign/remove/insert errors): sequences, tuples, maps
-//Tests static errors; test_ under "Correct" folder tests all asserts
+//XYZs complex data types involving enum Types in assign/remove/insert errors): sequences, tuples, maps
+//XYZs static errors; XYZ under "Correct" folder XYZs all asserts
 //TODO(not included): anonymous tuples;
-//TODO(add later): tests for variables declared but not used
+//TODO(add later): XYZs for variables declared but not used
 
 #include "includedEnums.p"
 event E assert 1; 
@@ -83,7 +83,7 @@ machine Main {
 		  v1 = default(SeqFoo);
 		  v1 += (0,foo1);
           v1 += (0,foo3);
-	      mac = new Test(v1);
+	      mac = new XYZ(v1);
 		  
 		  /////////////////////////map with sequences of enum type:
 		  v1 = default(SeqFoo);
@@ -129,7 +129,7 @@ machine Main {
 		  s6 += (0,t2);                        //OK
 		  
 		  //t2[1] = s6;                       //error: invalid casting
-		  //t2[0][0] = s6[0] as Foo;          //(TODO: write a separate test) dynamic error: "value must be a member of type"
+		  //t2[0][0] = s6[0] as Foo;          //(TODO: write a separate XYZ) dynamic error: "value must be a member of type"
 		  
 		  ////////////////////////////map of sequences of enum type
 		  v1 = default(SeqFoo);
@@ -169,7 +169,7 @@ machine Main {
 		  assert sizeof(t3.x) == 1 && sizeof(t3.y) == 4;            //holds 
 		  
 		  day = mon;
-		  test_fun_param(97, day);
+		  XYZfun_param(97, day);
        }    
     }
     
@@ -183,16 +183,16 @@ machine Main {
 		return (x = default(Foo), y = default(Bar));
 	}      
 
-	fun test_fun_param(x: int, day: DayOfWeek)
+	fun XYZfun_param(x: int, day: DayOfWeek)
 	{		
-		// test_ integer coercion
+		// XYZ integer coercion
 		if (day == 0) {
 			
 		}
 	}
 }
 
-machine test_ {
+machine XYZ {
 	var ss: SeqFoo;
 	start state init {
 		entry (payload: SeqFoo) {

@@ -15,8 +15,8 @@ Safety Error Trace
 Trace-Log 0:
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State S1
-<EnqueueLog> Enqueued Event < ____test, map : ((namedTup : (field_0: 0,field_1: 0,),namedTup : (field_0: 1,field_1: tuple : (100,false,),))(namedTup : (field_0: 1,field_1: 1,),namedTup : (field_0: 10,field_1: tuple : (1000,true,),))) > in Machine ____Main-0 by ____Main-0
-<DequeueLog> Dequeued Event < ____test, map : ((namedTup : (field_0: 0,field_1: 0,),namedTup : (field_0: 1,field_1: tuple : (100,false,),))(namedTup : (field_0: 1,field_1: 1,),namedTup : (field_0: 10,field_1: tuple : (1000,true,),))) > at Machine ____Main-0
+<EnqueueLog> Enqueued Event < ____XYZ, map : ((namedTup : (field_0: 0,field_1: 0,),namedTup : (field_0: 1,field_1: tuple : (100,false,),))(namedTup : (field_0: 1,field_1: 1,),namedTup : (field_0: 10,field_1: tuple : (1000,true,),))) > in Machine ____Main-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____XYZ, map : ((namedTup : (field_0: 0,field_1: 0,),namedTup : (field_0: 1,field_1: tuple : (100,false,),))(namedTup : (field_0: 1,field_1: 1,),namedTup : (field_0: 10,field_1: tuple : (1000,true,),))) > at Machine ____Main-0
 
 Error:
 P Assertion failed:

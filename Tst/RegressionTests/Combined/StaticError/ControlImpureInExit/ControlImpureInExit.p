@@ -1,4 +1,4 @@
-// P semantics test, one machine: "Control Impure" static errors
+// P semantics XYZ, one machine: "Control Impure" static errors
 // Cases covered:
 // "pop" and "raise" in "exit" function,
 // in both anon and named functions

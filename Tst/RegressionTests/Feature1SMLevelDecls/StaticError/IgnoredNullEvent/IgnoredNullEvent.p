@@ -5,7 +5,7 @@ event E1 assert 2;
 event unit assert 1;
 
 machine Main {
-    var test_: bool;  //init with "false"
+    var XYZ: bool;  //init with "false"
     start state Real1_Init {
         entry { 
 			raise unit;
@@ -23,9 +23,9 @@ machine Main {
 		ignore null;
     }
 	fun Action2() {
-		test_ = true;   //unreachable
+		XYZ = true;   //unreachable
     }
 	fun Action3() {
-		assert(test_ == true);  //unreachable
+		assert(XYZ == true);  //unreachable
     }
 }

@@ -1,4 +1,4 @@
-//this sample tests the new syntax for observes.
+//this sample XYZs the new syntax for observes.
 event local;
 event global : int;
 

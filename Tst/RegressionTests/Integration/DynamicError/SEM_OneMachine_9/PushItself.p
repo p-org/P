@@ -1,5 +1,5 @@
-// P semantics test_: one machine, "push" of the same state; "send" in entry and exit
-// This test_ checks that upon executing "goto" transition, exit function is executed,
+// P semantics XYZ: one machine, "push" of the same state; "send" in entry and exit
+// This XYZ checks that upon executing "goto" transition, exit function is executed,
 // but upon executing "push" transition, exit function is not executed
 // Result: semantics error reported by Zing: 
 // "<Exception> Attempting to enqueue event ____E1 more than max instance of 1"

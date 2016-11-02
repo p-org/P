@@ -1,5 +1,5 @@
-// P semantics test_: one machine, "goto" to the same state; "send" in entry and exit
-// This test_ checks that upon executing "goto" transition, exit function is executed;
+// P semantics XYZ: one machine, "goto" to the same state; "send" in entry and exit
+// This XYZ checks that upon executing "goto" transition, exit function is executed;
 // E2 is sent upon executing goto; 
 // E2 is handled by Action2 after entering Real1_Init upon "goto" transition
 // Result: assert on line 30 is raised by Zing

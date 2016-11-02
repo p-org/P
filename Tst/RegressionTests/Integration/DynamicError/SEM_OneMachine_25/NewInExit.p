@@ -1,4 +1,4 @@
-// P semantics test_: one machine, "new" in exit function
+// P semantics XYZ: one machine, "new" in exit function
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -7,14 +7,14 @@ event unit assert 1;
 
 machine Main {
     var ghost_machine: machine;
-    var test_: bool;
+    var XYZ: bool;
     start state Real_Init {
         entry {			  
             raise E2;	   
         }
         on E2 goto Real_S1; //exit actions are performed before transition to Real_S1
         exit {
-			test_ = true;
+			XYZ = true;
 			ghost_machine = new Ghost(this);
         }
     }
@@ -22,7 +22,7 @@ machine Main {
     state Real_S1 {
     
 		entry {
-			assert(test_ == true);  //holds
+			assert(XYZ == true);  //holds
 			send ghost_machine, E1;
 		}
     }

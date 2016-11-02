@@ -1,10 +1,10 @@
-// P semantics test_: two machines, "send", "raise", announce invocation for non-constant event expressions
-//This test_ found null ptr deref bug in Zing
+// P semantics XYZ: two machines, "send", "raise", announce invocation for non-constant event expressions
+//This XYZ found null ptr deref bug in Zing
 event E1 assert 1;
 event E2 assert 1: bool;
 
 machine Main {
-    var test_: bool; 
+    var XYZ: bool; 
 	var mac: machine;
 	var ev1: event;
 	var ev2: event;
@@ -21,13 +21,13 @@ machine Main {
 		//on E2 do Action2;
         exit {  
 			ev2 = E2;
-            send mac, ev2, test;			 
+            send mac, ev2, XYZ;			 
 		}
 	}
 	state Real1_S1 {
 	}
     fun Action1() {
-		test_ = true;
+		XYZ = true;
     }
 	
 }

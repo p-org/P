@@ -6,7 +6,7 @@ event unit assert 1;
 
 machine Main {
     var ghost_machine: machine;
-    var test_: bool;
+    var XYZ: bool;
     start state Real_Init {
 		on E2 do (payload: int) { Action1(payload); }
         entry {
@@ -15,7 +15,7 @@ machine Main {
         }
         
         exit {
-			test_ = true;
+			XYZ = true;
         }
 		on unit push Real_S1;
 		on E4 goto Real_S2;

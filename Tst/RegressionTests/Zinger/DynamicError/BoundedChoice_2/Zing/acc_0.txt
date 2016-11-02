@@ -17,15 +17,15 @@ Trace-Log 0:
 <StateLog> Machine Main-0 entering State Init
 <RaiseLog> Machine Main-0 raised Event ____unit
 <StateLog> Machine Main-0 exiting State Init
-<StateLog> Machine Main-0 entering State test
+<StateLog> Machine Main-0 entering State XYZ
 <EnqueueLog> Enqueued Event < ____unit, null > in Machine ____Main-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____unit, null > at Machine ____Main-0
-<StateLog> Machine Main-0 exiting State test
-<StateLog> Machine Main-0 entering State test
+<StateLog> Machine Main-0 exiting State XYZ
+<StateLog> Machine Main-0 entering State XYZ
 <EnqueueLog> Enqueued Event < ____unit, null > in Machine ____Main-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____unit, null > at Machine ____Main-0
-<StateLog> Machine Main-0 exiting State test
-<StateLog> Machine Main-0 entering State test
+<StateLog> Machine Main-0 exiting State XYZ
+<StateLog> Machine Main-0 entering State XYZ
 
 Error:
 P Assertion failed:

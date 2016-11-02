@@ -1,8 +1,8 @@
-// P semantics test, one machine: "null" handler semantics 
-// Testing that null handler is enabled in the simplest case
+// P semantics XYZ, one machine: "null" handler semantics 
+// XYZing that null handler is enabled in the simplest case
 
 machine Main {
-    var test_: bool;  //init with "false"
+    var XYZ: bool;  //init with "false"
     start state Real1_Init {
         entry { 
         }
@@ -12,7 +12,7 @@ machine Main {
 	}
 	
 	state Real1_S2 {
-		entry { assert(test_ == true);}  //reachable
+		entry { assert(XYZ == true);}  //reachable
 	}
 	
 }

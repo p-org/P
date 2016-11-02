@@ -1,5 +1,5 @@
-//Tests cast operator in expressions
-//Tests static errors; test_ Correct\CastInExprsAsserts tests all asserts
+//XYZs cast operator in expressions
+//XYZs static errors; XYZ Correct\CastInExprsAsserts XYZs all asserts
 //Basic types: int, bool, event
 
 event E assert 1: int;
@@ -120,7 +120,7 @@ machine Main {
 		  assert (mac == null);        //holds
 		  mac = a as machine;           //OK
 		  assert (mac == a);            //holds
-		  a = new Test();
+		  a = new XYZ();
 		  mac = a as machine;           //OK
 		  assert (mac == a);           //holds
 		
@@ -236,7 +236,7 @@ machine Main {
     }
 }
 
-machine test_ {
+machine XYZ {
 	var ss: seq[int];
 	var yt: int;
 	var bt: bool;
@@ -252,19 +252,19 @@ machine test_ {
 		    //ss = payload as seq[int];
 			//assert(ss[0] == 3);            //holds
 		}
-		on EI1 push testEI1;
-        on EI6 push testEI6;		
-		on ET1 push testET1;
-		on ET2 push testET2;
-		on ESEQ1 push testESEQ1;
-		on ESEQ2 push testESEQ2;
-		on EMAP1 push testEMAP1;
-		on EMAP11 push testEMAP11;
-		on EMAP2 push testEMAP2;
-		on EMAP3 push testEMAP3;
+		on EI1 push XYZEI1;
+        on EI6 push XYZEI6;		
+		on ET1 push XYZET1;
+		on ET2 push XYZET2;
+		on ESEQ1 push XYZESEQ1;
+		on ESEQ2 push XYZESEQ2;
+		on EMAP1 push XYZEMAP1;
+		on EMAP11 push XYZEMAP11;
+		on EMAP2 push XYZEMAP2;
+		on EMAP3 push XYZEMAP3;
 	}
 	// int is sent
-	state testEI1 {
+	state XYZEI1 {
 		entry (payload: int) {
 			yt = payload;
 			assert(yt == 1);        //holds
@@ -273,7 +273,7 @@ machine test_ {
 		}
 	}
 	// "any as int" is sent
-	state testEI6 {
+	state XYZEI6 {
 		entry (payload: int) {
 			yt = payload;              //OK
 			assert(yt == 1);           //holds
@@ -285,7 +285,7 @@ machine test_ {
 		}
 	}
 	// tuple is sent via a var
-	state testET1 {
+	state XYZET1 {
 		entry (payload: (a: int, b: bool)) {
 			tts1 = payload;    //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
@@ -296,7 +296,7 @@ machine test_ {
 		}
 	}
 	// tuple is sent via literal
-	state testET2 {
+	state XYZET2 {
 		entry (payload: (a: int, b: bool)) {	
 			tts1 = payload as (a: int, b: int);    //error
 			tts1 = payload;    //OK
@@ -305,7 +305,7 @@ machine test_ {
 		}
 	}
 	// seq[int] sent
-	state testESEQ1 {
+	state XYZESEQ1 {
 		entry (payload: seq[int]) {	
 			s = payload;    //OK
 			assert (s[0] == 1);          //holds
@@ -325,7 +325,7 @@ machine test_ {
 		}
 	}
 	// "seq[any] as seq[int]" is sent
-	state testESEQ2 {
+	state XYZESEQ2 {
 		entry (payload: seq[int]) {	
 			s = payload;    //OK
 			assert (s[0] == 1);          //holds
@@ -348,7 +348,7 @@ machine test_ {
 		}
 	}
 	// default(map[int,int]) is sent
-	state testEMAP1 {
+	state XYZEMAP1 {
 		entry (payload: map[int,int]) {
 			mi = payload;
 			assert (mi[0] == 0);  //dynamic error: "key not found"
@@ -372,7 +372,7 @@ machine test_ {
 		}
 	}
 	// map[int,int] is sent
-	state testEMAP11 {
+	state XYZEMAP11 {
 		entry (payload: map[int,int]) {
 			mi = payload;     
 			assert (mi[0] == 1 && mi[3] == 3);  //holds
@@ -393,7 +393,7 @@ machine test_ {
 		}
 	}
 	// default(map[int,any]) is sent as map[int,int]
-	state testEMAP2 {
+	state XYZEMAP2 {
 		entry (payload: map[int,int]) {
 			mi = payload;             //OK
 			assert (mi[0] == 1 && mi[3] == 3);  ////dynamic error: "key not found"
@@ -413,7 +413,7 @@ machine test_ {
 		}
 	}
 	// map[int,any] assigned a value of  map[int,int] type is sent as map[int,int]
-	state testEMAP3 {
+	state XYZEMAP3 {
 		entry (payload: map[int,int]) {
 			mi = payload;             //OK
 			assert (mi[0] == 1 && mi[3] == 3);  //holds

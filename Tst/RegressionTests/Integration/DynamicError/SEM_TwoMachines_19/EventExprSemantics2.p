@@ -1,4 +1,4 @@
-// P semantics test_: two machines, non-constant event expressions 
+// P semantics XYZ: two machines, non-constant event expressions 
 // non-atomic event expressions
 // events are sent as payloads from Real1 to Real2,
 // and then retrieved in Real2 and sent back to Real1
@@ -14,7 +14,7 @@ event E6 assert 1: int;
 event E7 assert 1: bool;
 
 machine Main {
-    var test_: bool; 
+    var XYZ: bool; 
 	var mac: machine;
 	var ev0: event;
 	var ev1: event;

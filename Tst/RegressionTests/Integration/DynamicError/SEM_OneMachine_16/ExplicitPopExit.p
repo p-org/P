@@ -1,13 +1,13 @@
-// P semantics test_: one machine, exit actions executed upon explicit "pop"
-// This test_ checks that when the state is explicitly popped,  exit function of that state is executed
-// Compare this test_ to PushExplicitPop.p and ImplicitPopExit.p
+// P semantics XYZ: one machine, exit actions executed upon explicit "pop"
+// This XYZ checks that when the state is explicitly popped,  exit function of that state is executed
+// Compare this XYZ to PushExplicitPop.p and ImplicitPopExit.p
 
 event E2 assert 1;
 event E1 assert 1;
 event E3 assert 1;
 
 machine Main {
-    var test_: bool;
+    var XYZ: bool;
     start state Real1_Init {
         entry { 
 			send this, E1;
@@ -18,7 +18,7 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test_  = true;
+			XYZ  = true;
 			//send this, E3;
 			pop;
 		}
@@ -27,7 +27,7 @@ machine Main {
 		}
 	}
 	fun Action1() {
-		assert(test_ == false);  //reachable
+		assert(XYZ == false);  //reachable
 	}
 }
 /*****************************************************

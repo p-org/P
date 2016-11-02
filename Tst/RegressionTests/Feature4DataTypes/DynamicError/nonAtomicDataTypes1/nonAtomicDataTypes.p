@@ -1,5 +1,5 @@
-//Tests complex data types in assign/remove/insert: sequences, tuples, maps
-//Tests "index-out-of-bounds" error detection in Zinger and runtime
+//XYZs complex data types in assign/remove/insert: sequences, tuples, maps
+//XYZs "index-out-of-bounds" error detection in Zinger and runtime
 event E assert 1; 
 machine Main {
     var t : (a: seq [int], b: map[int, seq[int]]);
@@ -56,7 +56,7 @@ machine Main {
     }           
 }
 
-machine test_ {
+machine XYZ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

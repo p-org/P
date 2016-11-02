@@ -1,4 +1,4 @@
-// P semantics test_: two machines, "send", "raise", announce invocation for non-constant event expressions
+// P semantics XYZ: two machines, "send", "raise", announce invocation for non-constant event expressions
 
 event E1;
 event E2 : int;

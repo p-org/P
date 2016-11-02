@@ -1,4 +1,4 @@
-// This sample tests case when exit actions are executed before "goto" transition
+// This sample XYZs case when exit actions are executed before "goto" transition
 // Compare to AlonBug.p
 event E;
 

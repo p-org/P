@@ -1,5 +1,5 @@
-//Tests cast operator in expressions (valid casts)
-//Tests dynamic error
+//XYZs cast operator in expressions (valid casts)
+//XYZs dynamic error
 //Basic types: int, bool, event
 
 event E assert 1: int;
@@ -66,14 +66,14 @@ machine Main {
        {
 		  ////////////////////////// int vs any:
 		  a = default(any);
-		  //y = a as int;             //dynamic error: "value must be a member of type" (other test)
+		  //y = a as int;             //dynamic error: "value must be a member of type" (other XYZ)
 		  
 		  a = 1;
 		  y = a as int;             //OK
 		  assert (y == a);           //holds	  
 		  ////////////////////////// bool vs any:
 		  a = default(any);
-		  //b = a as bool;             //dynamic error: "value must be a member of type" (other test)
+		  //b = a as bool;             //dynamic error: "value must be a member of type" (other XYZ)
 		  a = true;
 		  b = a as bool;             //OK
 		  assert (b == a);           //holds
@@ -92,33 +92,33 @@ machine Main {
 		  assert (mac == null);        //holds
 		  mac = a as machine;           //OK
 		  assert (mac == a);            //holds
-		  a = new Test();
+		  a = new XYZ();
 		  mac = a as machine;           //OK
 		  assert (mac == a);           //holds
 		  ////////////////////////// map vs any:
 		  a = default(any);
-		  //m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (other test)
+		  //m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (other XYZ)
 		  m1[0] = 1;
 		  m1[1] = 2;
 		  a = m1;                      //OK
 		  assert (a == m1);            //holds
 		  ////////////////////////// seq vs any:
 		  a = default(any);
-		  //s = a as seq[int];         //dynamic error: "value must be a member of type" (other test)
+		  //s = a as seq[int];         //dynamic error: "value must be a member of type" (other XYZ)
 		  s += (0, 1);
           s += (1, 2);
 		  a = s;                      //OK
 		  assert (a == s);            //holds
 		  ////////////////////////// tuple vs any:
 		  a = default(any);
-		  ts = a as (a: int, b: int);    //dynamic error: "value must be a member of type" (this test)
+		  ts = a as (a: int, b: int);    //dynamic error: "value must be a member of type" (this XYZ)
 		  
 		  raise halt;
        }    
     }       
 }
 
-machine test_ {
+machine XYZ {
 	var ss: seq[int];
     var yt: int;
 	var tts1: (a: int, b: bool);
@@ -133,29 +133,29 @@ machine test_ {
 		    //ss = payload as seq[int];
 			//assert(ss[0] == 3);            //holds
 		}
-		on EI1 push testEI1;
-		on EI6 push testEI6;
-		on ET1 push testET1;
-		on ET2 push testET2;
-		on ESEQ1 push testESEQ1;
-		on ESEQ2 push testESEQ2;
-		on EMAP1 push testEMAP1;
-		on EMAP11 push testEMAP11;
-		on EMAP2 push testEMAP2;
-		on EMAP3 push testEMAP3;
+		on EI1 push XYZEI1;
+		on EI6 push XYZEI6;
+		on ET1 push XYZET1;
+		on ET2 push XYZET2;
+		on ESEQ1 push XYZESEQ1;
+		on ESEQ2 push XYZESEQ2;
+		on EMAP1 push XYZEMAP1;
+		on EMAP11 push XYZEMAP11;
+		on EMAP2 push XYZEMAP2;
+		on EMAP3 push XYZEMAP3;
 	}
 	// int is sent
-	state testEI1 {
+	state XYZEI1 {
 		entry (payload: any) {
 			ta = payload as any;
 			assert(ta == 1);           //holds
-			//yt = payload as int;       //dynamic error: "value must have a concrete type" (TODO: add Sent\Test.p) (no error in runtime!)
+			//yt = payload as int;       //dynamic error: "value must have a concrete type" (TODO: add Sent\XYZ.p) (no error in runtime!)
 			//assert(yt == 1);           //holds?
 			pop;
 		}
 	}
 	// "any as int" is sent
-	state testEI6 {
+	state XYZEI6 {
 		entry (payload: int) {
 			yt = payload as int;        //OK
 			assert(yt == 1);           //holds
@@ -167,7 +167,7 @@ machine test_ {
 		}
 	}
 	// tuple is sent via a var
-	state testET1 {
+	state XYZET1 {
 		entry (payload: (a: int, b: bool)) {
 			tts1 = payload as (a: int, b: bool);    //OK
 			assert (tts1.a == 1 && tts1.b == true);   //holds
@@ -177,7 +177,7 @@ machine test_ {
 		}
 	}
 	// tuple is sent via literal
-	state testET2 {
+	state XYZET2 {
 		entry (payload: (a: int, b: bool)) {
 			tts1 = payload as (a: int, b: bool);    //OK
 			assert (tts1.a == 2 && tts1.b == false);   //holds
@@ -185,7 +185,7 @@ machine test_ {
 		}
 	}
 	// seq[int] sent
-	state testESEQ1 {
+	state XYZESEQ1 {
 		entry (payload: seq[int]) {	
 			s = payload as seq[int];    //OK
 			assert (s[0] == 1);          //holds
@@ -203,7 +203,7 @@ machine test_ {
 		}
 	}
 	// "seq[any] as seq[int]" is sent
-	state testESEQ2 {
+	state XYZESEQ2 {
 		entry (payload: seq[int]) {	
 			s = payload as seq[int];    //OK
 			assert (s[0] == 1);          //holds
@@ -221,7 +221,7 @@ machine test_ {
 		}
 	}
 	// default(map[int,int]) is sent
-	state testEMAP1 {
+	state XYZEMAP1 {
 		entry (payload: map[int,int]) {
 			mi = payload;     
 			//assert (mi[0] == 0);  //dynamic error: "key not found" (TODO)
@@ -246,7 +246,7 @@ machine test_ {
 		}
 	}
 	// map[int,int] is sent (0,1) (3,3)
-	state testEMAP11 {
+	state XYZEMAP11 {
 		entry (payload: map[int,int]) {
 			mi = default(map[int,int]);
 			mi = payload;     
@@ -269,7 +269,7 @@ machine test_ {
 		}
 	}
 	// default(map[int,any]) is sent as map[int,int]
-	state testEMAP2 {
+	state XYZEMAP2 {
 		entry (payload: map[int,int]) {
 			mi = payload;             //OK
 			//assert (mi[0] == 1 && mi[3] == 3);  //dynamic error: "key not found" (TODO)
@@ -293,7 +293,7 @@ machine test_ {
 		}
 	}
 	// map[int,any] assigned a value of  map[int,int] type is sent as map[int,int]
-	state testEMAP3 {
+	state XYZEMAP3 {
 		entry (payload: map[int,int]) {
 			mi = payload;             //OK
 			assert (mi[0] == 1 && mi[3] == 3);  //holds

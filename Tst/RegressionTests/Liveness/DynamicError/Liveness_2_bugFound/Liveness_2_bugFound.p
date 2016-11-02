@@ -1,4 +1,4 @@
-// Liveness test_: simplest sample demonstrating liveness error found:
+// Liveness XYZ: simplest sample demonstrating liveness error found:
 
 event Unit;
 event UserEvent;

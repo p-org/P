@@ -1,4 +1,4 @@
-//Testing return types 
+//XYZing return types 
 type ArgType = int;
 type ResultType = int;
 

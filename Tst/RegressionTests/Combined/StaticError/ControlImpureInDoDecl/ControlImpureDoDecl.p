@@ -1,4 +1,4 @@
-// Combined tests: "Control Impure" static errors
+// Combined XYZs: "Control Impure" static errors
 // Cases covered:
 // "pop" and "raise" in "do" declaration statements,
 // used in anonymous functions (allowed) and invoked by (named) function calls (error)

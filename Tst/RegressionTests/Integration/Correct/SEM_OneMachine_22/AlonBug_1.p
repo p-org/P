@@ -1,4 +1,4 @@
-// This sample is testing the case when the deadlocked state is not the only state on the stack
+// This sample is XYZing the case when the deadlocked state is not the only state on the stack
 // State "Call" is deadlocked, b/c the Zing reports "passed", hence, "assert" on line 26
 // is not reachable, which means that the "Call" state is never popped
 // In the deadlocked state, stack contains Init and Call states 

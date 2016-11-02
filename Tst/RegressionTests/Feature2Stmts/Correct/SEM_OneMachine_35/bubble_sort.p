@@ -1,4 +1,4 @@
-//Tests sequences, "while", "if-then-else"
+//XYZs sequences, "while", "if-then-else"
 machine Main {
     var rev, sorted:seq[int];
     var i, t, s:int;

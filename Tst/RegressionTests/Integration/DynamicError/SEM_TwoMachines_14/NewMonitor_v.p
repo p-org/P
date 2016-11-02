@@ -1,13 +1,13 @@
-// P semantics test_: two machines, announce announce instantiation parameter
-// This is validation test_ for announceInvocation.p
+// P semantics XYZ: two machines, announce announce instantiation parameter
+// This is validation XYZ for announceInvocation.p
 event E2 assert 1: bool;
 
 machine Main {
-    var test_: bool; 
+    var XYZ: bool; 
 	var ev2: event;
     start state Real1_Init {
         entry { 
-			announce ev2, test;  //"null event" error in Zing
+			announce ev2, XYZ;  //"null event" error in Zing
 		}
 	}
 }

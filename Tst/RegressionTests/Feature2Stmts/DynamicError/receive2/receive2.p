@@ -1,4 +1,4 @@
-// This sample tests null event in a receive case.
+// This sample XYZs null event in a receive case.
 event E;
 event F;
 event G: int;

@@ -1,4 +1,4 @@
-// Combined tests: "Control Impure" static errors
+// Combined XYZs: "Control Impure" static errors
 // Cases covered:
 // enclosed function calls used in "do" and "goto"
 

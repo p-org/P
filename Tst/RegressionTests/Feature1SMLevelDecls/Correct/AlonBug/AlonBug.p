@@ -1,4 +1,4 @@
-// This sample tests case when exit actions are not executed
+// This sample XYZs case when exit actions are not executed
 event E;
 
 machine Main {

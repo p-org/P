@@ -1,4 +1,4 @@
-// This sample tests raise of event inside receive.
+// This sample XYZs raise of event inside receive.
 event E;
 event F;
 

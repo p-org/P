@@ -1,5 +1,5 @@
-//Tests "any" type in EQ and NE
-//TODO: Create separate tests for all failing asserts.
+//XYZs "any" type in EQ and NE
+//TODO: Create separate XYZs for all failing asserts.
 event E assert 1; 
 
 machine Main {

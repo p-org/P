@@ -1,13 +1,13 @@
-// P semantics test_: one machine, "push" transition, action inherited by the pushed state
-// This test_ checks that after "push" transition, action of the pushing state is inherited by the pushed state 
-// Compare error trace for this test_ with the one for PushExplicitPop.p
+// P semantics XYZ: one machine, "push" transition, action inherited by the pushed state
+// This XYZ checks that after "push" transition, action of the pushing state is inherited by the pushed state 
+// Compare error trace for this XYZ with the one for PushExplicitPop.p
 
 event E2 assert 1;
 event E1 assert 1;
 event E3 assert 1;
 
 machine Main {
-    var test_: bool;
+    var XYZ: bool;
     start state Real1_Init {
         entry { 
 			send this, E1;
@@ -19,12 +19,12 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test_  = true;
+			XYZ  = true;
 			send this, E3;   //E3 is handled in Real1_S1 by Action1 inherited from Real1_Init
 		}
 	}
 	fun Action1() {
-		assert(test_ == false);  //reachable
+		assert(XYZ == false);  //reachable
 	}
 }
 /*****************************************************

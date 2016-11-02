@@ -1,4 +1,4 @@
-//Tests complex data types in assign/remove/insert: sequences, tuples, maps
+//XYZs complex data types in assign/remove/insert: sequences, tuples, maps
 event E assert 1; 
 event E1 assert 1;
 event E2 assert 1;

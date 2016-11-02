@@ -1,4 +1,4 @@
-// This sample tests the semantics of push transitions: not deferral-by-default
+// This sample XYZs the semantics of push transitions: not deferral-by-default
 // (as for push statements) and inheritance of actions
 // compare to Actions_2.p (push statement case)
 

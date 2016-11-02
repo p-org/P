@@ -1,4 +1,4 @@
-// This sample tests that a receive statement ignores the event handlers of the enclosing context.
+// This sample XYZs that a receive statement ignores the event handlers of the enclosing context.
 event E;
 event F;
 event Unit;

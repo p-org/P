@@ -1,4 +1,4 @@
-//Tests complex data types in assign/remove/insert errors): sequences, tuples, maps
+//XYZs complex data types in assign/remove/insert errors): sequences, tuples, maps
 //Basic types: int, bool, event
 
 event E assert 1; 

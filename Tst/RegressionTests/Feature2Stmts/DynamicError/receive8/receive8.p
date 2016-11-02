@@ -1,4 +1,4 @@
-// This sample tests that the receives handle events in the right order.
+// This sample XYZs that the receives handle events in the right order.
 // The assert(false) statement should be reached.
 event E;
 event F;

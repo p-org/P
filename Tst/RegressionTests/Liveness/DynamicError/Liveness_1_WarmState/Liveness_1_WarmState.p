@@ -1,4 +1,4 @@
-// Liveness test_: simplest sample demonstrating "warm" (unmarked) states
+// Liveness XYZ: simplest sample demonstrating "warm" (unmarked) states
 
 event UserEvent;
 event Done;
@@ -27,7 +27,7 @@ machine Main {
 
 spec WatchDog observes Computing, Waiting
 {
-	  // For "cold" state CanGetUserInput, the test_ passes
+	  // For "cold" state CanGetUserInput, the XYZ passes
       //start cold state CanGetUserInput
 	  start state CanGetUserInput
       {

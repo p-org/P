@@ -1,4 +1,4 @@
-// Tests that event sent to a machine after it received the "halt" event is ignored by the halted machine
+// XYZs that event sent to a machine after it received the "halt" event is ignored by the halted machine
 // Case when "halt" is not explicitly handled, hence, PONG instance should be "halted"
 event Ping assert 1 : machine;
 event Pong assert 1;
@@ -31,7 +31,7 @@ machine Main {
 			raise Success;
 	}
         on Success goto Ping_WaitPong;
-		//on PongHalted do {assert(false); ;} ; //reachable (used for validating the test)
+		//on PongHalted do {assert(false); ;} ; //reachable (used for validating the XYZ)
      }
 
      state Ping_WaitPong {

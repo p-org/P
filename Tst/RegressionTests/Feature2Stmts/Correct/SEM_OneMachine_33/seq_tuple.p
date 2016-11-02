@@ -21,7 +21,7 @@ machine Main {
     }
 }
 
-machine test {
+machine test_ {
 	var ii:seq[int];
 	var rec:seq[int];
 	var i:int;

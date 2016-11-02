@@ -1,5 +1,5 @@
-// P semantics test: one machine, "push", "send" in entry and exit
-// This test checks that upon executing "goto" transition, exit function is executed,
+// P semantics test_: one machine, "push", "send" in entry and exit
+// This test_ checks that upon executing "goto" transition, exit function is executed,
 // but upon executing "push" transition, exit function is not executed
 
 event E2 assert 1;

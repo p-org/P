@@ -1,13 +1,13 @@
-// P semantics test: one machine, "goto" transition, action is not inherited by the destination state
-// This test checks that after "goto" transition, action of the src state is not inherited by the dest state 
-// Compare error trace for this test with the one for PushTransInheritance.p
+// P semantics test_: one machine, "goto" transition, action is not inherited by the destination state
+// This test_ checks that after "goto" transition, action of the src state is not inherited by the dest state 
+// Compare error trace for this test_ with the one for PushTransInheritance.p
 
 event E2 assert 1;
 event E1 assert 1;
 event E3 assert 1;
 
 machine Main {
-    var test: bool;
+    var test_: bool;
     start state Real1_Init {
         entry { 
 			send this, E1;
@@ -21,7 +21,7 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test  = true;
+			test_  = true;
 			send this, E3;    		
 		}
 		on E3 goto Real1_Init;
@@ -31,7 +31,7 @@ machine Main {
 	}
 	state Real1_S2 {
 		entry {
-			assert(test == false);  //reachable
+			assert(test_ == false);  //reachable
 		}
 	}
 }

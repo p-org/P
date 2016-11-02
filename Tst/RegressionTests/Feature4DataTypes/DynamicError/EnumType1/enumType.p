@@ -178,7 +178,7 @@ machine Main {
 	}      
 }
 
-machine Test {
+machine test_ {
 	var ss: SeqFoo;
 	start state init {
 		entry (payload: SeqFoo) {

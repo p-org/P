@@ -141,7 +141,7 @@ machine Main {
 			t.b += (0, s);
 			//t.b += (0, s1);                 //dyn error: "key must not exist"
 			//i = F();
-			//t.b += (i, s1);                     //see separatetest with dynamic error: "key must not exist"
+			//t.b += (i, s1);                     //see separatetest_ with dynamic error: "key must not exist"
 			i = F();
 			i = i + 1;
 			assert(i == 1 || i == 2);

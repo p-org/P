@@ -1,5 +1,5 @@
 //Tests complex data types in assign/remove/insert errors): sequences, tuples, maps
-//Tests static errors; test Correct\nonAtomicDataTypes tests all asserts
+//Tests static errors; test_ Correct\nonAtomicDataTypes tests all asserts
 //Basic types: int, bool, event
 
 event E assert 1; 
@@ -335,7 +335,7 @@ machine Main {
     }           
 }
 
-machine Test {
+machine test_ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

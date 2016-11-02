@@ -1,4 +1,4 @@
-﻿event Local;
+event Local;
 event Search : int;
 event SearchStarted;
 event SearchFinished;

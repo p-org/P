@@ -1,4 +1,4 @@
-// P semantics test: one machine, testing  top  "null" event handler overriding 
+// P semantics test_: one machine, testing  top  "null" event handler overriding 
 //inherited (by push transition) handler  
 
 event E1 assert 2;
@@ -6,7 +6,7 @@ event unit assert 1;
 event local;
 
 machine Main {
-    var test: bool;  //init with "false"
+    var test_: bool;  //init with "false"
     start state Real1_Init {
         entry { 
 			raise unit;
@@ -24,9 +24,9 @@ machine Main {
 		on null do Action3; //overrides inherited handler for "null"
     }
 	fun Action2() {
-		test = true;   //unreachable
+		test_ = true;   //unreachable
     }
 	fun Action3() {
-		assert(test == true);  //reachable, fails
+		assert(test_ == true);  //reachable, fails
     }
 }

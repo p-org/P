@@ -1,7 +1,7 @@
 //Tests P expressions and operators
 //Tests static errors
 //Basic types: int, bool, event
-//This test can be further extended for combined non-atomic types
+//This test_ can be further extended for combined non-atomic types
 
 event E assert 1; 
 event E1 assert 1;
@@ -192,7 +192,7 @@ machine Main {
     }           
 }
 
-machine Test {
+machine test_ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

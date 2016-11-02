@@ -1,4 +1,4 @@
-// Liveness test: simplest sample demonstrating "warm" (unmarked) states
+// Liveness test_: simplest sample demonstrating "warm" (unmarked) states
 
 event Unit;
 event UserEvent;

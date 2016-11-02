@@ -1,5 +1,5 @@
-// P semantics test: one machine, "push" with implicit "pop" when the unhandled event was sent
-// This test checks implicit popping of the state when there's an unhandled event which was sent to the queue
+// P semantics test_: one machine, "push" with implicit "pop" when the unhandled event was sent
+// This test_ checks implicit popping of the state when there's an unhandled event which was sent to the queue
 // Also, if a state is re-entered (meaning that the state was already on the stack),
 // entry function is not executed
 
@@ -8,7 +8,7 @@ event E1 assert 1;
 event E3 assert 1;
 
 machine Main {
-    var test: bool;
+    var test_: bool;
     start state Real1_Init {
         entry { 
 			send this, E1;
@@ -21,12 +21,12 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test  = true;
+			test_  = true;
 			send this, E3;   //at this point, the queue is: E1; E3; Real1_S1 pops and Real1_Init is re-entered
 		}
 	}
 	fun Action1() {
-		assert(test == false);  //reachable
+		assert(test_ == false);  //reachable
 	}
 }
 /*****************************************************

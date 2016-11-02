@@ -1,6 +1,6 @@
-// P semantics test: one machine, "push" transition, inherited action is not executed in the pushed state, due to the explicit "pop"
-// This test checks explicit popping of a state
-// Compare error trace for this test with the one for PushTransInheritance.p
+// P semantics test_: one machine, "push" transition, inherited action is not executed in the pushed state, due to the explicit "pop"
+// This test_ checks explicit popping of a state
+// Compare error trace for this test_ with the one for PushTransInheritance.p
 
 
 event E2 assert 1;
@@ -8,7 +8,7 @@ event E1 assert 1;
 event E3 assert 1;
 
 machine Main {
-    var test: bool;
+    var test_: bool;
     start state Real1_Init {
         entry { 
 			send this, E1;
@@ -19,13 +19,13 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test  = true;
+			test_  = true;
 			send this, E3;
 			pop;
 		}
 	}
 	fun Action1() {
-		assert(test == false);  //reachable
+		assert(test_ == false);  //reachable
 	}
 }
 /*****************************************************

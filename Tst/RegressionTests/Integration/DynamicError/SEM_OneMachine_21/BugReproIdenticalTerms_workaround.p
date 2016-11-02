@@ -1,7 +1,7 @@
 //Exit function performed while explicitly popping the state
 //this is a workaround for wrong Zinger line number reporting in error trace: 
 //Formula terms for asserts on lines 7 and 16 are made different
-//Compare this test to BugReproIdenticalTerms.p
+//Compare this test_ to BugReproIdenticalTerms.p
 event E;
 machine Main {
 	start state Init {

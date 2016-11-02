@@ -42,7 +42,7 @@ machine Main {
 		  
                   // P does not support short-circuit evaulation in conditional expressions.
                   // If we start supporting it later, we should uncomment the following two 
-                  // lines to create a suitable test case for it.
+                  // lines to create a suitable test_ case for it.
 		  // if (false && (s[1] == 1)) {;};  
 		  // if (true || (s[1] == 1)) {;};   
 
@@ -67,7 +67,7 @@ machine Main {
     }           
 }
 
-machine Test {
+machine test_ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

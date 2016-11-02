@@ -45,7 +45,7 @@ var me: int;
 			ev_guard = payload;
 			me = payload;
 			assert (me in tpstate);
-			//Check that the watch is set up and test the guard:
+			//Check that the watch is set up and test_ the guard:
 			//if (me in tpstate && ev_guard == me) {
 			if (tpstate[me] == false){ raise Error2; }
 			else { raise Halt; }
@@ -108,19 +108,19 @@ var mon, mon0, mon1: machine;
 	start state Init {
 		entry {
 		    //new Spinlock(0);
-			// Manual harnesses to test simplest scenarios, with a single announce;
-			// Uncomment scenarios one-by-one to test (while commenting out non-determ harness)
-			// TODO: how to use Zinger option "-m" to test everything at once? ("assumes" to be increased)
-			// manual test #1: REL, FIN  (release with no acquire; Abort2 is NOT reached )
+			// Manual harnesses to test_ simplest scenarios, with a single announce;
+			// Uncomment scenarios one-by-one to test_ (while commenting out non-determ harness)
+			// TODO: how to use Zinger option "-m" to test_ everything at once? ("assumes" to be increased)
+			// manual test_ #1: REL, FIN  (release with no acquire; Abort2 is NOT reached )
 			//announce Spinlock, REL, 0;
 			//announce Spinlock, FIN;
-			// manual test #2: ACQ, ACQ  (acq with no release: Abort1 is reached)
+			// manual test_ #2: ACQ, ACQ  (acq with no release: Abort1 is reached)
 			//announce Spinlock, ACQ, 1;
 			//announce Spinlock, ACQ, 1;
-			// manual test #3: ACQ, FIN  (FIN with unreleased lock: Abort3 is reached)
+			// manual test_ #3: ACQ, FIN  (FIN with unreleased lock: Abort3 is reached)
 			//announce Spinlock, ACQ, 0;
 			//announce Spinlock, FIN;
-			// manual test #4: ACQ, REL, REL (double release: Abort2 is NOT reached)
+			// manual test_ #4: ACQ, REL, REL (double release: Abort2 is NOT reached)
 			//announce Spinlock, ACQ, 0;
 			//announce Spinlock, REL, 0;
 			//announce Spinlock, REL, 0;

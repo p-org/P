@@ -1,5 +1,5 @@
 //Tests cast operator in expressions
-//Tests static errors; test Correct\CastInExprsAsserts tests all asserts
+//Tests static errors; test_ Correct\CastInExprsAsserts tests all asserts
 //Basic types: int, bool, event
 
 event E assert 1: int;
@@ -236,7 +236,7 @@ machine Main {
     }
 }
 
-machine Test {
+machine test_ {
 	var ss: seq[int];
 	var yt: int;
 	var bt: bool;

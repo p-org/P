@@ -1,4 +1,4 @@
-// Liveness test: "check passed"
+// Liveness test_: "check passed"
 // This is a simplest sample with FAIRNONDET in liveness
 
 event UserEvent assert 1;

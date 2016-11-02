@@ -1,4 +1,4 @@
-// why this test is in the "DynamicError" category:
+// why this test_ is in the "DynamicError" category:
 // the number of reachable states is unbounded"
 // unlimited number of "push" transitions with no "pop"
 // so zing is not running on this test

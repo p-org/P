@@ -1,5 +1,5 @@
 // INSERT for map Zinger error
-// this test found bug in Zinger: wrong error message 
+// this test_ found bug in Zinger: wrong error message 
 machine Main {
   var m: map[int,any];
   

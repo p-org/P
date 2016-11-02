@@ -1,5 +1,5 @@
-// P semantics test: two machines, machine is halted with "raise halt" (handled)
-// This test is for the case when "halt" is explicitly handled - hence, it is processed as any other event.
+// P semantics test_: two machines, machine is halted with "raise halt" (handled)
+// This test_ is for the case when "halt" is explicitly handled - hence, it is processed as any other event.
 // 
 event Ping assert 1 : machine;
 event Pong assert 1;

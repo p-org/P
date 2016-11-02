@@ -1,7 +1,7 @@
 type compTup1 = (first: int, second: (int, bool));
 type compTup2 = (first: compTup1, second: seq[compTup1]);
 
-event test : compTup2;
+event test_ : compTup2;
 
 machine Main {
 	var compVal2 : compTup2;
@@ -17,7 +17,7 @@ machine Main {
 			
 			send this, test, compVal2;
 		}
-		on test do (payload: compTup2) {
+		on test_ do (payload: compTup2) {
 			assert(payload.first.first == 1);
 			assert(payload.first.second.0 == 100);
 			assert(payload.first.second.1 == false);

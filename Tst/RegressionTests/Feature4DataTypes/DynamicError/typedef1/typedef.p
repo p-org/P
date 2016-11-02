@@ -2,7 +2,7 @@ type compTup1 = (first: int, second: (int, bool));
 type slot = (server: int, seqN: int);
 type compMap = map[slot, compTup1];
 
-event test : compMap;
+event test_ : compMap;
 
 machine Main {
 	var map1 : compMap;
@@ -29,7 +29,7 @@ machine Main {
 			
 			send this, test, map1;
 		}
-		on test do (payload: compMap) {
+		on test_ do (payload: compMap) {
 			assert(payload[slot1] == val1);
 			assert(payload[slot2] == val1);
 		}

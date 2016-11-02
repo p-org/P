@@ -7,7 +7,7 @@ event unit assert 1;
 
 machine Main {
     var ghost_machine: machine;
-    var test: bool;
+    var test_: bool;
     start state Real_Init {
         entry {
 			ghost_machine = new Ghost(this);  
@@ -17,14 +17,14 @@ machine Main {
         on E4 do Action1;   //E4, E3 have no effect on reachability of assert(false) 
         on E2 goto Real_S1; //exit actions are performed before transition to Real_S1
         exit {
-	    test = true;
+	    test_ = true;
         }
     }
 
     state Real_S1 {
     
 		entry {
-			assert(test == true);  //holds
+			assert(test_ == true);  //holds
 			raise unit;
 		}
 		on unit goto Real_S2;

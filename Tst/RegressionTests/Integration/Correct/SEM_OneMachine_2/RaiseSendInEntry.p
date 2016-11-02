@@ -1,10 +1,10 @@
-// P semantics test: two machines, machine is halted with "raise halt" (unhandled)
-// Action2 is never executed after raising E1; test passes
+// P semantics test_: two machines, machine is halted with "raise halt" (unhandled)
+// Action2 is never executed after raising E1; test_ passes
 event E1 assert 1;
 event E2 assert 1;
 
 machine Main {
-    var test: bool;  //init with "false"
+    var test_: bool;  //init with "false"
     start state Real1_Init {
         entry { 	 
 			raise E1;
@@ -16,9 +16,9 @@ machine Main {
         exit {   }
 	}
     fun Action1() {
-		test = true;
+		test_ = true;
     }
 	fun Action2() {
-		assert(test == false); //unreachable
+		assert(test_ == false); //unreachable
     }
 }

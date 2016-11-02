@@ -1,5 +1,5 @@
 //"send" in function which mutates its parameters
-//the test checks that function state is preserved if
+//the test_ checks that function state is preserved if
 //function execution is interrupted by a scheduled event ("send" in this test)
 
 event Ping assert 1 : int;

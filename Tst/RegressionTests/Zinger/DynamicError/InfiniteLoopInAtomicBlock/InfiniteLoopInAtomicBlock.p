@@ -1,4 +1,4 @@
-// Zinger test: infinite loop in atomic block
+// Zinger test_: infinite loop in atomic block
 // Tests that event sent to a machine after it raised the "halt" event is ignored by the halted machine
 
 event Ping assert 1 : machine;

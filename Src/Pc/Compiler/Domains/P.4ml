@@ -516,13 +516,12 @@ domain PStaticTyping extends PData
     // Type of THIS is the receive set implemented by the machine, machine type if the receive set is empty.
     TypeOf(c, e, i)  :- SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, i = toList(#InterfaceType, NIL, {ev | MachineReceives(c.owner, ev), ev: NonNullEventName}), i : InterfaceType;
 						SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, no MachineReceives(c.owner, _), i = BaseType(MACHINE).
-    
-	*/
-	TypeOf(c, e, BaseType(MACHINE))  :- SubSE(c, e), e = NulApp(THIS, _).
-
-	//"this" is not allowed in global functions
+    //"this" is not allowed in global functions
 	[ rule_Classes = '"error, msg: "this" is not allowed in global functions"']
 	TypeOf(c, e, ERROR)  :- SubSE(c, e), e = NulApp(THIS, _), c.owner = NIL.
+
+	*/
+	TypeOf(c, e, BaseType(MACHINE))  :- SubSE(c, e), e = NulApp(THIS, _).
 
 	TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET, _).
 

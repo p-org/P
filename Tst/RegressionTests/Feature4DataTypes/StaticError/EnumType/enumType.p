@@ -1,5 +1,5 @@
 //Tests complex data types involving enum Types in assign/remove/insert errors): sequences, tuples, maps
-//Tests static errors; test under "Correct" folder tests all asserts
+//Tests static errors; test_ under "Correct" folder tests all asserts
 //TODO(not included): anonymous tuples;
 //TODO(add later): tests for variables declared but not used
 
@@ -181,7 +181,7 @@ machine Main {
 	}      
 }
 
-machine Test {
+machine test_ {
 	var ss: SeqFoo;
 	start state init {
 		entry (payload: SeqFoo) {

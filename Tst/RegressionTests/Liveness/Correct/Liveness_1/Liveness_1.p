@@ -1,4 +1,4 @@
-// Liveness test: "check passed"
+// Liveness test_: "check passed"
 // This is a simplest sample demonstrating liveness checking
 // by Zing
 

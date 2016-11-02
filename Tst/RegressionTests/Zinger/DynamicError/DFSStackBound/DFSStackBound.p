@@ -12,7 +12,7 @@ machine Main {
 		on unit goto test;
 	}
 	
-	state test {
+	state test_ {
 		entry {
 			send otherMachine, dummy;
 			raise unit;

@@ -96,7 +96,7 @@ machine Main {
     }           
 }
 
-machine Test {
+machine test_ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

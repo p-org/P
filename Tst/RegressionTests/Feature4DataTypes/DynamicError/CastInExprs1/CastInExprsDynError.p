@@ -73,7 +73,7 @@ machine Main {
     }       
 }
 
-machine Test {
+machine test_ {
 	var ss: seq[int];
     var yt: int;
 	var tts1: (a: int, b: bool);

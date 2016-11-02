@@ -1,11 +1,11 @@
-// P semantics test: one machine, "ignore" of an unhandled event
-// Compare this test to SendInExitUnhandledEvent.p
+// P semantics test_: one machine, "ignore" of an unhandled event
+// Compare this test_ to SendInExitUnhandledEvent.p
 
 event E2 assert 2;
 event E1 assert 1;
 
 machine Main {
-    var test: bool;  //init with "false"
+    var test_: bool;  //init with "false"
     start state Real1_Init {
         entry { 
 			send this, E1;
@@ -17,12 +17,12 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test = true;
+			test_ = true;
 		}
 		//to prevent "unhandled event" exception for E2
 		ignore E2;
     }
 	fun Action2() {
-		assert(test == false);  //unreachable
+		assert(test_ == false);  //unreachable
     }
 }

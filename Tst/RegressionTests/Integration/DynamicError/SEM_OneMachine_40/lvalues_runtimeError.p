@@ -1,4 +1,4 @@
-// P semantics test: one machine, asgn to uninitialized sequence (runtime error)
+// P semantics test_: one machine, asgn to uninitialized sequence (runtime error)
 // Updating a sequence at index 1 (line 21), but the size of the sequence at that time is 0 (the initial sequence size).
 
 machine Main {

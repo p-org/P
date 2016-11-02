@@ -1,10 +1,10 @@
-// P semantics test: two machines, announce invocation with non-constant event expression with payload
-// This test found a bug (?) in pc.exe
+// P semantics test_: two machines, announce invocation with non-constant event expression with payload
+// This test_ found a bug (?) in pc.exe
 event E1 assert 1;
 event E2 assert 1: bool;
 
 machine Main {
-    var test: bool; 
+    var test_: bool; 
 	var ev2: event;
     start state Real1_Init {
         entry { 

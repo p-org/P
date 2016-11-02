@@ -1,4 +1,4 @@
-// This test found a bug in treatment of function parameters
+// This test_ found a bug in treatment of function parameters
 // in the case when there is a scheduling point inside the function (such as a send), 
 // and the mutation performed before the scheduling point is used after it
 

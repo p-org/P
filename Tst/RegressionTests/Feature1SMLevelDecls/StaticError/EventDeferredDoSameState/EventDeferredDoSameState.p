@@ -4,7 +4,7 @@ event SUCCESS;
 
 machine Main {
     var server: machine;
-	var test: bool;
+	var test_: bool;
     start state Init {
         entry {
   	    server = new Server();
@@ -28,7 +28,7 @@ machine Main {
      }
 	 
 	 fun Action1() {
-		test = true;
+		test_ = true;
     }
 }
 

@@ -2,7 +2,7 @@
 // Testing that null handler is enabled in the simplest case
 
 machine Main {
-    var test: bool;  //init with "false"
+    var test_: bool;  //init with "false"
     start state Real1_Init {
         entry { 
         }
@@ -12,7 +12,7 @@ machine Main {
 	}
 	
 	state Real1_S2 {
-		entry { assert(test == true);}  //reachable
+		entry { assert(test_ == true);}  //reachable
 	}
 	
 }

@@ -1,4 +1,4 @@
-// P semantics test: two machines, "halt" as a transition trigger for "do"
+// P semantics test_: two machines, "halt" as a transition trigger for "do"
 // Case when "halt" is explicitly handled
 event Ping assert 1 : machine;
 event Pong assert 1;

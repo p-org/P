@@ -1,6 +1,6 @@
 //Tests "Value must have a concrete type" error
 //Basic types: int, bool, event
-//This test found a bug in Zinger
+//This test_ found a bug in Zinger
 event E assert 1; 
 event E1 assert 1;
 event E2 assert 1;

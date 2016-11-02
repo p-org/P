@@ -1,9 +1,9 @@
-// P semantics test: two machines, announce invocation with non-constant event expression
+// P semantics test_: two machines, announce invocation with non-constant event expression
 event E1 assert 1;
 event E2 assert 1: bool;
 
 machine Main {
-    var test: bool; 
+    var test_: bool; 
 	var mac: machine;
 	var ev1: event;
 	var ev2: event;
@@ -26,7 +26,7 @@ machine Main {
 	state Real1_S1 {
 	}
     fun Action1() {
-		test = true;
+		test_ = true;
     }
 	
 }

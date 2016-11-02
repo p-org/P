@@ -1,4 +1,4 @@
-// This sample tests local variables and nested receive statements
+// This sample XYZs local variables and nested receive statements
 event E: int;
 event F;
 event G: int;

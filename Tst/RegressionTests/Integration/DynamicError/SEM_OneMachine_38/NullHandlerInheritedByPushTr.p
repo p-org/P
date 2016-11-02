@@ -1,5 +1,5 @@
-// P semantics test, one machine: "null" handler semantics 
-// Testing that null handler is inherited by the pushed state
+// P semantics XYZ, one machine: "null" handler semantics 
+// XYZing that null handler is inherited by the pushed state
 
 
 event E;

@@ -1,4 +1,4 @@
-//Tests sequences and type casting
+//XYZs sequences and type casting
 event unit;
 event seqpayload: seq[int];
 
@@ -15,13 +15,13 @@ machine Main {
 			l += (0,23);
 			l += (0,12);
 			l += (0,23);
-			mac = new test(l, 1);
+			mac = new XYZ(l, 1);
 			send mac, seqpayload, l;
 	   }
     }
 }
 
-machine test {
+machine XYZ {
 	var ii:seq[int];
 	var rec:seq[int];
 	var i:int;
@@ -31,10 +31,10 @@ machine test {
 			  assert( payload.0[0] == 23 );
 		      assert( payload.1 == 1 );
 		}
-		on seqpayload goto testitnow;
+		on seqpayload goto XYZitnow;
 	}
 	
-	state testitnow {
+	state XYZitnow {
 		entry (payload: seq[int]) {
 		    rec = payload;
 			i = sizeof(rec) - 1;

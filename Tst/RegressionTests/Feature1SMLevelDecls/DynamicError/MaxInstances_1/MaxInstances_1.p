@@ -1,4 +1,4 @@
-// This sample tests assert annotations on events
+// This sample XYZs assert annotations on events
 // Error: number of instances greater than asserted
 event E1 assert 1;
 event E2 assert 1 :int;

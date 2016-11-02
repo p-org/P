@@ -1,7 +1,7 @@
-//Tests P expressions and operators
-//Tests static errors
+//XYZs P expressions and operators
+//XYZs static errors
 //Basic types: int, bool, event
-//This test can be further extended for combined non-atomic types
+//This XYZ can be further extended for combined non-atomic types
 
 event E assert 1; 
 event E1 assert 1;
@@ -80,14 +80,14 @@ machine Main {
 		  assert(mac == a);      //holds
 		  
 		  a = 1;
-		  //assert(a == tbool.0);   //fails; TODO: create separate test
+		  //assert(a == tbool.0);   //fails; TODO: create separate XYZ
 		  
 		  a = !tbool.0;
 		  assert(a == tbool.1);   //holds
 		  
 		  a = null;
           assert(a != 1);        //holds
-          //assert(a == 1);        //fails; TODO: create separate test	  
+          //assert(a == 1);        //fails; TODO: create separate XYZ	  
 		  a = 1;
 		  assert(a == 1);         //holds
 		  
@@ -142,7 +142,7 @@ machine Main {
 		  assert ( t.a[0] == 3 );         //holds
 		  assert ( t.a[1] == 2 );         //holds
 		  
-		  ///////////////////////////Testing that asgns in P perform a deep copy:
+		  ///////////////////////////XYZing that asgns in P perform a deep copy:
 		  //checking how updating s affects tmp3 and t.b:
 		  assert(s[0] == 1);             //holds
 		  assert(tmp3[0][0] == 1);      //holds
@@ -192,7 +192,7 @@ machine Main {
     }           
 }
 
-machine Test {
+machine XYZ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

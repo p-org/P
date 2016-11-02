@@ -1,8 +1,8 @@
-// P semantics test: one machine, "send" to itself in entry actions
+// P semantics XYZ: one machine, "send" to itself in entry actions
 event E2 assert 1;
 
 machine Main {
-    var test: bool;  //init with "false"
+    var XYZ: bool;  //init with "false"
     start state Real1_Init {
         entry {
             send this, E2;	   

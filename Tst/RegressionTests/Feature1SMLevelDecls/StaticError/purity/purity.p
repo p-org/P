@@ -1,4 +1,4 @@
-//This sample tests checks different contexts for using data impure functions
+//This sample XYZs checks different contexts for using data impure functions
 machine M {
    var x : int;
    var y : bool;

@@ -1,5 +1,5 @@
-//Tests complex data types involving enum Types in assign/remove/insert errors): sequences, tuples, maps
-//Tests casting error on line 131
+//XYZs complex data types involving enum Types in assign/remove/insert errors): sequences, tuples, maps
+//XYZs casting error on line 131
 
 event E assert 1; 
 event E1 assert 1;
@@ -79,7 +79,7 @@ machine Main {
 		  v1 = default(SeqFoo);
 		  v1 += (0,foo1);
           v1 += (0,foo3);
-	      mac = new Test(v1);
+	      mac = new XYZ(v1);
 		  
 		  /////////////////////////map with sequences of enum type:
 		  v1 = default(SeqFoo);
@@ -178,7 +178,7 @@ machine Main {
 	}      
 }
 
-machine Test {
+machine XYZ {
 	var ss: SeqFoo;
 	start state init {
 		entry (payload: SeqFoo) {

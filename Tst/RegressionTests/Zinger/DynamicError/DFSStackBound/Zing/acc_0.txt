@@ -20,28 +20,28 @@ Trace-Log 0:
 <StateLog> Machine Other-0 entering State Init
 <RaiseLog> Machine Main-0 raised Event ____unit
 <StateLog> Machine Main-0 exiting State Init
-<StateLog> Machine Main-0 entering State test
+<StateLog> Machine Main-0 entering State XYZ
 <EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____dummy, null > at Machine ____Other-0
 <StateLog> Machine Other-0 exiting State Init
 <StateLog> Machine Other-0 entering State Init
 <RaiseLog> Machine Main-0 raised Event ____unit
-<StateLog> Machine Main-0 exiting State test
-<StateLog> Machine Main-0 entering State test
+<StateLog> Machine Main-0 exiting State XYZ
+<StateLog> Machine Main-0 entering State XYZ
 <EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____dummy, null > at Machine ____Other-0
 <StateLog> Machine Other-0 exiting State Init
 <StateLog> Machine Other-0 entering State Init
 <RaiseLog> Machine Main-0 raised Event ____unit
-<StateLog> Machine Main-0 exiting State test
-<StateLog> Machine Main-0 entering State test
+<StateLog> Machine Main-0 exiting State XYZ
+<StateLog> Machine Main-0 entering State XYZ
 <EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____dummy, null > at Machine ____Other-0
 <StateLog> Machine Other-0 exiting State Init
 <StateLog> Machine Other-0 entering State Init
 <RaiseLog> Machine Main-0 raised Event ____unit
-<StateLog> Machine Main-0 exiting State test
-<StateLog> Machine Main-0 entering State test
+<StateLog> Machine Main-0 exiting State XYZ
+<StateLog> Machine Main-0 entering State XYZ
 <EnqueueLog> Enqueued Event < ____dummy, null > in Machine ____Other-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____dummy, null > at Machine ____Other-0
 <StateLog> Machine Other-0 exiting State Init

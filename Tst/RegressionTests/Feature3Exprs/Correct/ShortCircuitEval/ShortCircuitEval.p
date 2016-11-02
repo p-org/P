@@ -1,5 +1,5 @@
-//Tests complex data types in assign/remove/insert: sequences, tuples, maps
-//Tests "index-out-of-bounds" error detection in Zinger and runtime
+//XYZs complex data types in assign/remove/insert: sequences, tuples, maps
+//XYZs "index-out-of-bounds" error detection in Zinger and runtime
 event E assert 1; 
 machine Main {   
     var t : (a: seq [int], b: map[int, seq[int]]);
@@ -42,7 +42,7 @@ machine Main {
 		  
                   // P does not support short-circuit evaulation in conditional expressions.
                   // If we start supporting it later, we should uncomment the following two 
-                  // lines to create a suitable test case for it.
+                  // lines to create a suitable XYZ case for it.
 		  // if (false && (s[1] == 1)) {;};  
 		  // if (true || (s[1] == 1)) {;};   
 
@@ -67,7 +67,7 @@ machine Main {
     }           
 }
 
-machine Test {
+machine XYZ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

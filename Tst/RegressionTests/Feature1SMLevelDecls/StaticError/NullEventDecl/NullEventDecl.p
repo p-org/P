@@ -2,7 +2,7 @@
 
 event null assert 1;  //error
 machine Main {
-    var test: bool;  //init with "false"
+    var XYZ: bool;  //init with "false"
     start state Real1_Init {
         entry {
 			raise null;

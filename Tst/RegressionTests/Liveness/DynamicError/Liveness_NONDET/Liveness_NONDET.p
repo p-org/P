@@ -1,6 +1,6 @@
-// Liveness test: "check failed"
+// Liveness XYZ: "check failed"
 // This is a simplest sample with NONDET in liveness
-// - compare this test with Correct\Liveness_FAIRNONDET
+// - compare this XYZ with Correct\Liveness_FAIRNONDET
 
 event UserEvent assert 1;
 event Done assert 1;

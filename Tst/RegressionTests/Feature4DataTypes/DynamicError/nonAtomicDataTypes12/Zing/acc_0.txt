@@ -15,8 +15,8 @@ Safety Error Trace
 Trace-Log 0:
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State S
-<CreateLog> Created Machine Test-0
-<StateLog> Machine Test-0 entering State init
+<CreateLog> Created Machine XYZ-0
+<StateLog> Machine XYZ-0 entering State init
 
 Error:
 P Assertion failed:

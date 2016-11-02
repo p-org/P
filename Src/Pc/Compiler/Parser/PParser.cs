@@ -11,7 +11,52 @@
     using Microsoft.Pc;
     using Microsoft.Formula.API.Generators;
     using Microsoft.Formula.API.Nodes;
-    
+
+    public enum PProgramTopDecl { Event, EventSet, Interface, Machine, TypeDef, Enum, FunProto, MachineProto };
+    public class PProgramTopDeclNames
+    {
+        public HashSet<string> eventNames;
+        public HashSet<string> eventSetNames;
+        public HashSet<string> moduleNames;
+        public HashSet<string> testNames;
+        public HashSet<string> typeNames;
+        public HashSet<string> machineNames;
+        public HashSet<string> interfaceNames;
+        public HashSet<string> enumNames;
+        public HashSet<string> machineProto;
+        public HashSet<string> funProto;
+        public HashSet<string> funNames;
+        public PProgramTopDeclNames()
+        {
+            eventNames = new HashSet<string>();
+            eventSetNames = new HashSet<string>();
+            interfaceNames = new HashSet<string>();
+            moduleNames = new HashSet<string>();
+            machineNames = new HashSet<string>();
+            testNames = new HashSet<string>();
+            typeNames = new HashSet<string>();
+            enumNames = new HashSet<string>();
+            funProto = new HashSet<string>();
+            machineProto = new HashSet<string>();
+            funNames = new HashSet<string>();
+
+        }
+
+        public void Reset()
+        {
+            eventNames.Clear();
+            eventSetNames.Clear();
+            interfaceNames.Clear();
+            moduleNames.Clear();
+            machineNames.Clear();
+            testNames.Clear();
+            typeNames.Clear();
+            funProto.Clear();
+            machineProto.Clear();
+            funNames.Clear();
+        }
+    }
+
 
     internal partial class PParser : ShiftReduceParser<LexValue, LexLocation>
     {
@@ -50,7 +95,8 @@
         private HashSet<string> crntFunNames = new HashSet<string>();
         private HashSet<string> crntVarNames = new HashSet<string>();
 
-        private TopDeclNames topDeclNames;
+
+        private PProgramTopDeclNames PPTopDeclNames;
 
         private Stack<P_Root.Expr> valueExprStack = new Stack<P_Root.Expr>();
         private Stack<P_Root.ExprsExt> exprsStack = new Stack<P_Root.ExprsExt>();
@@ -251,14 +297,14 @@
         internal bool ParseFile(
             ProgramName file,
             CommandLineOptions options,
-            TopDeclNames topDeclNames,
+            PProgramTopDeclNames topDeclNames,
             PProgram program,
             Dictionary<int, SourceInfo> idToSourceInfo,
             out List<Flag> flags,
             out List<string> includedFileNames)
         {
             flags = parseFlags = new List<Flag>();
-            this.topDeclNames = topDeclNames;
+            this.PPTopDeclNames = topDeclNames;
             parseProgram = program;
             this.idToSourceInfo = idToSourceInfo;
             includedFileNames = parseIncludedFileNames = new List<string>();
@@ -312,80 +358,67 @@
         }
 
 
-        public bool IsValidName(TopDecl type, string name, Span nameSpan)
+        public bool IsValidName(PProgramTopDecl type, string name, Span nameSpan)
         {
             string errorMessage = "";
             bool error = false;
             switch (type)
             {
-                case TopDecl.Event:
-                    if (topDeclNames.eventNames.Contains(name))
+                case PProgramTopDecl.Event:
+                    if (PPTopDeclNames.eventNames.Contains(name))
                     {
                         errorMessage = string.Format("An event with name {0} already declared", name);
                         error = true;
                     }
                     break;
-                case TopDecl.EventSet:
-                    if (topDeclNames.eventSetNames.Contains(name))
+                case PProgramTopDecl.EventSet:
+                    if (PPTopDeclNames.eventSetNames.Contains(name))
                     {
                         errorMessage = string.Format("A event set with name {0} already declared", name);
                         error = true;
                     }
                     break;
-                case TopDecl.Interface:
-                case TopDecl.Enum:
-                case TopDecl.TypeDef:
-                    if (topDeclNames.interfaceNames.Contains(name))
+                case PProgramTopDecl.Interface:
+                case PProgramTopDecl.Enum:
+                case PProgramTopDecl.TypeDef:
+                    if (PPTopDeclNames.interfaceNames.Contains(name))
                     {
                         errorMessage = string.Format("A interface with name {0} already declared", name);
                         error = true;
                     }
-                    else if (topDeclNames.typeNames.Contains(name))
+                    else if (PPTopDeclNames.typeNames.Contains(name))
                     {
                         errorMessage = string.Format("A typedef with name {0} already declared", name);
                         error = true;
                     }
-                    else if(topDeclNames.enumNames.Contains(name))
+                    else if(PPTopDeclNames.enumNames.Contains(name))
                     {
                         errorMessage = string.Format("An enum with name {0} already declared", name);
                         error = true;
                     }
                     break;
-                case TopDecl.Machine:
-                    if (topDeclNames.machineNames.Contains(name))
+                case PProgramTopDecl.Machine:
+                    if (PPTopDeclNames.machineNames.Contains(name))
                     {
                         errorMessage = string.Format("A machine with name {0} already declared", name);
                         error = true;
                     }
-                    else if(topDeclNames.interfaceNames.Contains(name))
+                    else if(PPTopDeclNames.interfaceNames.Contains(name))
                     {
                         errorMessage = string.Format("A interface with name {0} already declared", name);
                         error = true;
                     }
                     break;
-                case TopDecl.Module:
-                    if (topDeclNames.moduleNames.Contains(name))
-                    {
-                        errorMessage = string.Format("A module with name {0} already declared", name);
-                        error = true;
-                    }
-                    break;
-                case TopDecl.Test:
-                    if (topDeclNames.testNames.Contains(name))
-                    {
-                        errorMessage = string.Format("A test case with name {0} already declared", name);
-                        error = true;
-                    }
-                    break;
-                case TopDecl.MachineProto:
-                    if (topDeclNames.machineProto.Contains(name))
+
+                case PProgramTopDecl.MachineProto:
+                    if (PPTopDeclNames.machineProto.Contains(name))
                     {
                         errorMessage = string.Format("A machine prototype with name {0} already declared", name);
                         error = true;
                     }
                     break;
-                case TopDecl.FunProto:
-                    if (topDeclNames.funProto.Contains(name))
+                case PProgramTopDecl.FunProto:
+                    if (PPTopDeclNames.funProto.Contains(name))
                     {
                         errorMessage = string.Format("A function prototype with name {0} already declared", name);
                         error = true;
@@ -1319,9 +1352,9 @@
             {
                 var funProtoDecl = GetCurrentFunProtoDecl(span);
                 funProtoDecl.name = MkString(name, span);
-                if(IsValidName(TopDecl.FunProto, name, span))
+                if(IsValidName(PProgramTopDecl.FunProto, name, span))
                 {
-                    topDeclNames.funProto.Add(name);
+                    PPTopDeclNames.funProto.Add(name);
                 }
             }
             else
@@ -1395,9 +1428,9 @@
 
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
-            if (IsValidName(TopDecl.TypeDef, name, nameSpan))
+            if (IsValidName(PProgramTopDecl.TypeDef, name, nameSpan))
             {
-                topDeclNames.typeNames.Add(name);
+                PPTopDeclNames.typeNames.Add(name);
             }
             var type = (P_Root.IArgType_TypeDef__1)typeExprStack.Pop();
             var typeDef = P_Root.MkTypeDef(MkString(name, nameSpan), type);
@@ -1443,9 +1476,9 @@
             enumTypeDef.Span = enumTypeDefSpan;
             enumTypeDef.id = (P_Root.IArgType_EnumTypeDef__3)MkIntegerId(enumTypeDefSpan);
 
-            if (IsValidName(TopDecl.Enum, name, nameSpan))
+            if (IsValidName(PProgramTopDecl.Enum, name, nameSpan))
             {
-                topDeclNames.enumNames.Add(name);
+                PPTopDeclNames.enumNames.Add(name);
             }
             parseProgram.EnumTypeDefs.Add(enumTypeDef);
         }
@@ -1457,8 +1490,8 @@
 
         private void AddEventSet(string name, Span nameSpan, Span span)
         {
-            if (IsValidName(TopDecl.EventSet, name, nameSpan))
-                topDeclNames.eventSetNames.Add(name);
+            if (IsValidName(PProgramTopDecl.EventSet, name, nameSpan))
+                PPTopDeclNames.eventSetNames.Add(name);
 
             var eventset = new P_Root.EventSetDecl();
             eventset.name = MkString(name, nameSpan);
@@ -1510,9 +1543,9 @@
             }
             
             parseProgram.InterfaceTypeDecl.Add(inDecl);
-            if (IsValidName(TopDecl.Interface, iname, inameSpan))
+            if (IsValidName(PProgramTopDecl.Interface, iname, inameSpan))
             {
-                topDeclNames.interfaceNames.Add(iname);
+                PPTopDeclNames.interfaceNames.Add(iname);
             }
             crntInterfaceDecl = null;
         }
@@ -1948,9 +1981,9 @@
             evDecl.Span = span;
             evDecl.name = MkString(name, nameSpan);
             parseProgram.Events.Add(evDecl);
-            if (IsValidName(TopDecl.Event, name, nameSpan))
+            if (IsValidName(PProgramTopDecl.Event, name, nameSpan))
             {
-                topDeclNames.eventNames.Add(name);
+                PPTopDeclNames.eventNames.Add(name);
             }
             crntEventDecl = null;
         }
@@ -1966,9 +1999,9 @@
                 var observes = P_Root.MkObservesDecl(machDecl, (P_Root.IArgType_ObservesDecl__1)e);
                 parseProgram.Observes.Add(observes);
             }
-            if (IsValidName(TopDecl.Machine, name, nameSpan))
+            if (IsValidName(PProgramTopDecl.Machine, name, nameSpan))
             {
-                topDeclNames.machineNames.Add(name);
+                PPTopDeclNames.machineNames.Add(name);
             }
         }
 
@@ -1993,9 +2026,9 @@
             machProto.Span = span;
             parseProgram.MachineProtoDecls.Add(machProto);
             crntMachProtoDecl = null;
-            if (IsValidName(TopDecl.MachineProto, name, nameSpan))
+            if (IsValidName(PProgramTopDecl.MachineProto, name, nameSpan))
             {
-                topDeclNames.machineProto.Add(name);
+                PPTopDeclNames.machineProto.Add(name);
             }
         }
 

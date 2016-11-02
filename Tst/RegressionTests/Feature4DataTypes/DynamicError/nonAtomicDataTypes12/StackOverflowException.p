@@ -1,4 +1,4 @@
-//Tests complex data types in assign/remove/insert: sequences, tuples, maps
+//XYZs complex data types in assign/remove/insert: sequences, tuples, maps
 event E assert 1; 
 machine Main {
     var t, t1, tmp4: (a: seq [int], b: map[int, seq[int]]);
@@ -151,7 +151,7 @@ machine Main {
 		  /////////////////////////sequence as payload:
 		  s2 += (0,1);
           s2 += (0,3);
-	      mac = new Test(s2); 
+	      mac = new XYZ(s2); 
 		  
 		  ////////////////////////tuple (a: seq [int], b: map[int, seq[int]]):
 		  s7 += (0,1);
@@ -269,7 +269,7 @@ machine Main {
     }           
 }
 
-machine Test {
+machine XYZ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

@@ -1,4 +1,4 @@
-// P semantics test: one machine, the test demonstrates that "null" event handler 
+// P semantics XYZ: one machine, the XYZ demonstrates that "null" event handler 
 // is executed in a loop 
 //
 
@@ -7,7 +7,7 @@ event unit assert 1;
 event local;
 
 machine Main {
-    var test: bool;  //init with "false"
+    var XYZ: bool;  //init with "false"
 	var i: int;
     start state Real1_Init {
         entry { 
@@ -20,7 +20,7 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test = true;
+			XYZ = true;
 			i = 0;
 		}
 		//deferral of E1 overrides inherited handler:
@@ -28,7 +28,7 @@ machine Main {
 		on null do Action1; //overrides inherited handler for "null"
     }
 	fun Action2() {
-		test = true;   //unreachable
+		XYZ = true;   //unreachable
     }
 	fun Action1() {
 		if (i < 1000)

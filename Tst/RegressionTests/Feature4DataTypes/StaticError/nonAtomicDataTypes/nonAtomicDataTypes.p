@@ -1,5 +1,5 @@
-//Tests complex data types in assign/remove/insert errors): sequences, tuples, maps
-//Tests static errors; test Correct\nonAtomicDataTypes tests all asserts
+//XYZs complex data types in assign/remove/insert errors): sequences, tuples, maps
+//XYZs static errors; XYZ Correct\nonAtomicDataTypes XYZs all asserts
 //Basic types: int, bool, event
 
 event E assert 1; 
@@ -140,7 +140,7 @@ machine Main {
 		  /////////////////////////sequence as payload:
 		  s2 += (0,1);
           s2 += (0,3);
-	      mac = new Test(s2);
+	      mac = new XYZ(s2);
 		  
 		  /////////////////////////maps:
 		  m1[0] = 1;
@@ -335,7 +335,7 @@ machine Main {
     }           
 }
 
-machine Test {
+machine XYZ {
 	var ss: seq[int];
 	start state init {
 		entry (payload: seq[int]) {

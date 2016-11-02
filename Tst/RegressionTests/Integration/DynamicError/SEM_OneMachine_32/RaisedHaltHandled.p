@@ -1,9 +1,9 @@
-// P semantics test: one machine, "halt" is raised and handled
+// P semantics XYZ: one machine, "halt" is raised and handled
 
 event E1 assert 1;
 
 machine Main {
-    var test: bool;  //init with "false"
+    var XYZ: bool;  //init with "false"
     start state Real1_Init {
         entry { 
 		    send this, E1;
@@ -15,10 +15,10 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry (payload: any) {
-			test = true;
+			XYZ = true;
 		}
     }
 	fun Action2() {
-		assert(test == false);  //reachable
+		assert(XYZ == false);  //reachable
     }
 }

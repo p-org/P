@@ -1,4 +1,4 @@
-//This sample tests the interaction between receive -- new and announce.
+//This sample XYZs the interaction between receive -- new and announce.
 event E : int;
 event F;
 event G;

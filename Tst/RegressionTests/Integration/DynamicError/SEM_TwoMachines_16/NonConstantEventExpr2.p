@@ -1,10 +1,10 @@
-// P semantics test: two machines, "send", "raise" with non-constant event expressions
+// P semantics XYZ: two machines, "send", "raise" with non-constant event expressions
 // "raise" with non-constant event expression has non-null payload
 event E1 assert 1: int;
 event E2 assert 1: bool;
 
 machine Main {
-    var test: bool; 
+    var XYZ: bool; 
 	var mac: machine;
 	var ev1: event;
 	var ev2: event;
@@ -22,7 +22,7 @@ machine Main {
 		//on E2 do Action2;
         exit {  
 			ev2 = E2;
-            send mac, ev2, test;			 
+            send mac, ev2, XYZ;			 
 		}
 	}
 	state Real1_S1 {

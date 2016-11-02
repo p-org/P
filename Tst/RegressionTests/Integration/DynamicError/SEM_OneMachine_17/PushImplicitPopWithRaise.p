@@ -1,12 +1,12 @@
-// P semantics test: one machine, "push" with implicit "pop" when the unhandled event was raised
-// This test checks implicit popping of the state when there's an unhandled event which was raised
+// P semantics XYZ: one machine, "push" with implicit "pop" when the unhandled event was raised
+// This XYZ checks implicit popping of the state when there's an unhandled event which was raised
 
 event E2 assert 1;
 event E1 assert 1;
 event E3 assert 1;
 
 machine Main {
-    var test: bool;
+    var XYZ: bool;
     start state Real1_Init {
         entry { 
 			send this, E1;
@@ -19,13 +19,13 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test  = true;
+			XYZ  = true;
 			raise E1;
 			//send this, E3;
 		}
 	}
 	fun Action1() {
-		assert(test == false);  //unreachable
+		assert(XYZ == false);  //unreachable
 	}
 }
 /*****************************************************

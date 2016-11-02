@@ -1,4 +1,4 @@
-// This sample tests assert/assume annotations on events
+// This sample XYZs assert/assume annotations on events
 event E1 assert 1;
 event E2 assert 1 :int;
 event E3 assume 1;

@@ -1,10 +1,10 @@
-// P semantics test: two machines, "send", "raise", announce invocation for non-constant event expressions
+// P semantics XYZ: two machines, "send", "raise", announce invocation for non-constant event expressions
 
 event E1 assert 1;
 event E2 assert 1: bool;
 
 machine Main {
-    var test: bool; 
+    var XYZ: bool; 
 	var mac: machine;
 	var ev1: event;
 	var ev2: event;
@@ -13,7 +13,7 @@ machine Main {
         entry { 
 			mac = new Real2();
 			ev2 = E2;
-            send mac, ev2, test;	 
+            send mac, ev2, XYZ;	 
 			raise ev1;   
 			announce ev1; 
 				
@@ -24,7 +24,7 @@ machine Main {
         exit {   }
 	}
     fun Action1() {
-		test = true;
+		XYZ = true;
     }
 	
 }

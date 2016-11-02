@@ -14,6 +14,7 @@
     using Microsoft.Formula.API.Nodes;
     using Microsoft.Formula.Common;
     using Microsoft.Formula.Compiler;
+    using Microsoft.Pc.Parser;
     using Microsoft.Pc.Domains;
     using System.Diagnostics;
     using Formula.Common.Terms;
@@ -27,51 +28,7 @@
 
     public enum LivenessOption { None, Standard, Mace };
 
-    public enum TopDecl { Event, EventSet, Interface, Module, Machine, Test, TypeDef, Enum, FunProto, MachineProto };
-    public class TopDeclNames
-    {
-        public HashSet<string> eventNames;
-        public HashSet<string> eventSetNames;
-        public HashSet<string> moduleNames;
-        public HashSet<string> testNames;
-        public HashSet<string> typeNames;
-        public HashSet<string> machineNames;
-        public HashSet<string> interfaceNames;
-        public HashSet<string> enumNames;
-        public HashSet<string> machineProto;
-        public HashSet<string> funProto;
-        public HashSet<string> funNames;
-        public TopDeclNames()
-        {
-            eventNames = new HashSet<string>();
-            eventSetNames = new HashSet<string>();
-            interfaceNames = new HashSet<string>();
-            moduleNames = new HashSet<string>();
-            machineNames = new HashSet<string>();
-            testNames = new HashSet<string>();
-            typeNames = new HashSet<string>();
-            enumNames = new HashSet<string>();
-            funProto = new HashSet<string>();
-            machineProto = new HashSet<string>();
-            funNames = new HashSet<string>();
-
-        }
-
-        public void Reset()
-        {
-            eventNames.Clear();
-            eventSetNames.Clear();
-            interfaceNames.Clear();
-            moduleNames.Clear();
-            machineNames.Clear();
-            testNames.Clear();
-            typeNames.Clear();
-            funProto.Clear();
-            machineProto.Clear();
-            funNames.Clear();
-        }
-    }
-
+   
     public class SourceInfo
     {
         public Span entrySpan;
@@ -600,7 +557,7 @@
             return true;
         }
 
-        public bool ParseProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName)
+        public bool ParsePProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName)
         {
             parsedProgram = new PProgram();
             using (this.Profiler.Start("Compiler parsing ", Path.GetFileName(inputFileName)))
@@ -621,7 +578,7 @@
                     return false;
                 }
 
-                TopDeclNames topDeclNames = new TopDeclNames();
+                PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
                 Dictionary<string, ProgramName> SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
                 Queue<string> parserWorkQueue = new Queue<string>();
                 var RootFileName = RootProgramName.ToString();
@@ -724,7 +681,7 @@
             ProgramName RootProgramName;
             AST<Model> RootModel;
 
-            if (!ParseProgram(inputFileName, out parsedProgram, out RootProgramName))
+            if (!ParsePProgram(inputFileName, out parsedProgram, out RootProgramName))
             {
                 return false;
             }
@@ -1392,9 +1349,50 @@
 
             return parseTask.Result.Program;
         }
+        
+        public bool ParseLinkProgram(string inputFileName, out LProgram parsedProgram, out ProgramName RootProgramName)
+        {
+            parsedProgram = new LProgram();
+            using (this.Profiler.Start("P Link parsing ", Path.GetFileName(inputFileName)))
+            {
+                try
+                {
+                    RootProgramName = new ProgramName(Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, inputFileName)));
+                }
+                catch (Exception e)
+                {
+                    errorReporter.AddFlag(
+                        new Flag(
+                            SeverityKind.Error,
+                            default(Span),
+                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                            Constants.BadFile.Code));
+                    RootProgramName = null;
+                    return false;
+                }
 
+                LProgramTopDeclNames topDeclNames = new LProgramTopDeclNames();
+                List<Flag> parserFlags;
+                Debug.WriteLine("Loading " + inputFileName);
+                var parser = new LParser();
+                var result = parser.ParseFile(RootProgramName, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags);
+                foreach (Flag f in parserFlags)
+                {
+                    errorReporter.AddFlag(f);
+                }
+                if (!result)
+                {
+                    RootProgramName = null;
+                    return false;
+                }
+            }
+            
+            return true;
+        }
+        
         public bool Link(ICompilerOutput log, CommandLineOptions options)
         {
+            
             this.Log = log;
             this.Options = options;
             var linkModel = Factory.Instance.MkModel(
@@ -1405,19 +1403,63 @@
 
             try
             {
-                foreach (var fileName in options.inputFileNames)
+                // compile the p file into formula file 
+                var plinkFile = options.PFiles.Count == 1 ? options.PFiles.First(): "";
+
+                using (this.Profiler.Start("Parsing linker input.. ", Path.GetFileName(plinkFile)))
                 {
-                    var program = ParseFormulaFile(fileName);
-                    program.FindAll(
-                        new NodePred[]
+                    LProgram linkProgram;
+                    ProgramName RootProgramName;
+                    AST<Model> RootModel;
+                    if (options.PFiles.Count == 1)
+                    {
+                        if (!ParseLinkProgram(plinkFile, out linkProgram, out RootProgramName))
                         {
-                        NodePredFactory.Instance.Star,
-                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                        },
-                        (path, n) =>
-                        {
-                            linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
-                        });
+                            return false;
+                        }
+
+                        //// Step 0. Load PLink.4ml.
+                        LoadManifestProgram("Pc.Domains.PLink.4ml");
+
+                        //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
+                        AST<Model> rootModel = null;
+                        var mkModelResult = Factory.Instance.MkModel(
+                            MkSafeModuleName(RootProgramName.ToString()),
+                            PDomain,
+                            linkProgram.Terms,
+                            out rootModel,
+                            null,
+                            MkReservedModuleLocation(PDomain),
+                            ComposeKind.None);
+                        Contract.Assert(mkModelResult);
+                        RootModel = rootModel;
+
+                        AST<Program> modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+                        modelProgram.FindAll(
+                                new NodePred[]
+                                {
+                            NodePredFactory.Instance.Star,
+                            NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                                },
+                                (path, n) =>
+                                {
+                                    linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
+                                });
+                    }
+                    foreach (var fileName in options.FormulaFiles)
+                    {
+                        var program = ParseFormulaFile(fileName);
+                        program.FindAll(
+                            new NodePred[]
+                            {
+                            NodePredFactory.Instance.Star,
+                            NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                            },
+                            (path, n) =>
+                            {
+                                linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
+                            });
+                    }
                 }
             }
             catch (Exception)
@@ -1432,6 +1474,7 @@
                 LoadManifestProgram("Pc.Domains.PLink.4ml");
                 return InternalLink(linkProgName, linkModel);
             }
+           
         }
 
         private bool InternalLink(ProgramName linkProgramName, AST<Model> linkModel)

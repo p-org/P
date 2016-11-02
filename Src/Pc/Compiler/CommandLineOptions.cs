@@ -26,24 +26,42 @@
         public bool generateSourceInfo { get; set; } // not supported currently
         public bool compilerService { get; set; } // whether to use the compiler service.
         public string compilerId { get; set; } // for internal use only.
+        //linker phase
+        public bool isLinkerPhase { get; set; }
+        //get p file
+        public List<string> PFiles {
+            get
+            {
+                return inputFileNames.Where(f => f.EndsWith(".p")).ToList();
+            }
+        }
 
+        public List<string> FormulaFiles
+        {
+            get
+            {
+                return inputFileNames.Where(f => f.EndsWith(".4ml")).ToList();
+            }
+        }
 
         public CommandLineOptions()
         {
+            //default values
+            profile = false;
+            liveness = LivenessOption.None;
+            outputDir = null;
+            outputFormula = false;
+            shortFileNames = false;
+            printTypeInference = false;
+            compilerOutput = CompilerOutput.None;
+            inputFileNames = new List<string>();
+            compilerService = false;
+            isLinkerPhase = false;
         }
 
-        public static bool ParseCompileString(IEnumerable<string> args, out CommandLineOptions options)
+        public bool ParseArguments(IEnumerable<string> args)
         {
-            options = new CommandLineOptions();
-            List<string> inputFileNames = new List<string>();
-            bool profile = false;
-            bool outputFormula = false;
-            bool printTypeInference = false;
-            string outputDir = null;
-            bool shortFileNames = false;
-            CompilerOutput compilerOutput = CompilerOutput.None;
-            LivenessOption liveness = LivenessOption.None;
-
+            List<string> commandLineFileNames = new List<string>();
             foreach (string x in args)
             {
                 string arg = x;
@@ -67,7 +85,7 @@
                             break;
 
                         case "shared":
-                            options.compilerService = true;
+                            compilerService = true;
                             break;
 
                         case "dumpformulamodel":
@@ -77,7 +95,9 @@
                         case "printtypeinference":
                             printTypeInference = true;
                             break;
-
+                        case "link":
+                            isLinkerPhase = true;
+                            break;
                         case "generate":
                             if (colonArg == null)
                             {
@@ -136,19 +156,19 @@
                 }
                 else
                 {
-                    inputFileNames.Add(arg);
+                    commandLineFileNames.Add(arg);
                 }
             }
 
-            if (inputFileNames.Count == 0)
+            if (commandLineFileNames.Count == 0)
             {
                 Console.WriteLine("Must provide files to compile");
                 return false;
             }
-            List<string> fullInputFileNames = new List<string>();
-            foreach (var inputFileName in inputFileNames)
+            //populate the input files
+            foreach (var inputFileName in commandLineFileNames)
             {
-                if (!(inputFileName != null && inputFileName.Length > 2 && inputFileName.EndsWith(".p")))
+                if (!(inputFileName != null && inputFileName.Length > 2 && (inputFileName.EndsWith(".p") || inputFileName.EndsWith(".4ml"))))
                 {
                     Console.WriteLine("Illegal source file name: {0}", inputFileName);
                     return false;
@@ -158,89 +178,20 @@
                     Console.WriteLine("File does not exist: {0}", inputFileName);
                     return false;
                 }
-                fullInputFileNames.Add(Path.GetFullPath(inputFileName));
-            }
-            options.profile = profile;
-            options.outputFormula = outputFormula;
-            options.printTypeInference = printTypeInference;
-            options.outputDir = outputDir;
-            options.liveness = liveness;
-            options.shortFileNames = shortFileNames;
-            options.compilerOutput = compilerOutput;
-            options.inputFileNames = fullInputFileNames;
-            return true;
-        }
-
-        public static bool ParseLinkString(IEnumerable<string> args, out CommandLineOptions options)
-        {
-            options = new CommandLineOptions();
-            options.compilerOutput = CompilerOutput.Link;
-            List<string> inputFileNames = new List<string>();
-            string outputDir = null;
-            foreach (string x in args)
-            {
-                string arg = x;
-                string colonArg = null;
-                if (arg[0] == '-' || arg[0] == '/')
-                {
-                    var colonIndex = arg.IndexOf(':');
-                    if (colonIndex >= 0)
-                    {
-                        arg = x.Substring(0, colonIndex);
-                        colonArg = x.Substring(colonIndex + 1);
-                    }
-                    switch (arg.Substring(1).ToLowerInvariant())
-                    {
-                        case "shared":
-                            options.compilerService = true;
-                            break;
-
-                        case "outputdir":
-                            if (colonArg == null)
-                            {
-                                Console.WriteLine("Must supply path for output directory");
-                                return false;
-                            }
-                            if (!Directory.Exists(colonArg))
-                            {
-                                Console.WriteLine("Output directory {0} does not exist", colonArg);
-                                return false;
-                            }
-                            outputDir = colonArg;
-                            break;
-
-                        default:
-                            return false;
-                    }
-                }
-                else
-                {
-                    inputFileNames.Add(arg);
-                }
+                inputFileNames.Add(Path.GetFullPath(inputFileName));
             }
 
-            if (inputFileNames.Count == 0)
+            //check if the files are correct with respect to the compiler phase
+            if(!isLinkerPhase && FormulaFiles.Count() > 0)
             {
-                Console.WriteLine("Must provide files to link");
+                Console.WriteLine(".4ml file not expected as input without /link option");
                 return false;
             }
-            List<string> fullInputFileNames = new List<string>();
-            foreach (string inputFileName in inputFileNames)
+            else if(isLinkerPhase && !(PFiles.Count <= 1 && FormulaFiles.Count > 0))
             {
-                if (!(inputFileName != null && inputFileName.Length > 4 && inputFileName.ToLowerInvariant().EndsWith(".4ml")))
-                {
-                    Console.WriteLine("Illegal source file name: {0}, expecting *.4ml file name", inputFileName);
-                    return false;
-                }
-                if (!File.Exists(inputFileName))
-                {
-                    Console.WriteLine("File does not exist: {0}", inputFileName);
-                    return false;
-                }
-                fullInputFileNames.Add(Path.GetFullPath(inputFileName));
+                Console.WriteLine("must provide atleast one .4ml file and atmost one .p file with /link option");
+                return false;
             }
-            options.inputFileNames = fullInputFileNames;
-            options.outputDir = outputDir;
             return true;
         }
     }

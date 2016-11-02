@@ -1,6 +1,6 @@
-// Testing assignments to a nested datatype when the right hand side of the assignment 
+// XYZing assignments to a nested datatype when the right hand side of the assignment 
 // is a side-effect free function with a nondeterministic choice inside.  
-// Includes tests for tuples, maps and sequences
+// Includes XYZs for tuples, maps and sequences
 
 machine Main {
     fun F() : int {

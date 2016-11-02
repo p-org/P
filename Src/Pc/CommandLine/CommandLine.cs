@@ -11,8 +11,8 @@ namespace Microsoft.Pc
     {
         private static int Main(string[] args)
         {
-            CommandLineOptions options;
-            if (!CommandLineOptions.ParseCompileString(args, out options))
+            CommandLineOptions options = new CommandLineOptions();
+            if (!options.ParseArguments(args))
             {
                 goto error;
             }
@@ -25,12 +25,28 @@ namespace Microsoft.Pc
                 {
                     options.outputDir = Directory.GetCurrentDirectory();
                 }
-                result = svc.Compile(options, Console.Out);
+                if(!options.isLinkerPhase)
+                {
+                    result = svc.Compile(options, Console.Out);
+                }
+                else
+                {
+                    result = svc.Link(options, Console.Out);
+                }
+                
             }
             else
             {
                 var compiler = new Compiler(options.shortFileNames);
-                result = compiler.Compile(new StandardOutput(), options);
+                if(!options.isLinkerPhase)
+                {
+                    result = compiler.Compile(new StandardOutput(), options);
+                }
+                else
+                {
+                    result = compiler.Link(new StandardOutput(), options);
+                }
+                
             }
             if (!result)
             {
@@ -40,6 +56,7 @@ namespace Microsoft.Pc
 
             error:
             {
+                Console.WriteLine(" ------------ Compiler Phase ------------");
                 Console.WriteLine("USAGE: Pc.exe file.p [options]");
                 Console.WriteLine("Compiles *.p programs and produces *.4ml intermediate output which can then be passed to PLink.exe");
                 Console.WriteLine("/outputDir:path         -- where to write the linker.c and linker.h files");
@@ -54,6 +71,12 @@ namespace Microsoft.Pc
                 Console.WriteLine("    Zing: generate Zing");
                 Console.WriteLine("    C#  : generate C# code");
                 Console.WriteLine("/shared                 -- use the compiler service)"   );
+                Console.WriteLine(" ------------ Linker Phase ------------");
+                Console.WriteLine("USAGE: Pc.exe /link file1.4ml [file2.4ml ...] linkfile.p [options]");
+                Console.WriteLine("Takes the *.4ml output from pc.exe and generates the combined linker.c linker.h output from them");
+                Console.WriteLine("/outputDir:path  -- where to write the linker.c and linker.h files");
+                Console.WriteLine("/shared          -- use the compiler service");
+                Console.WriteLine("/parallel        -- run multiple tests in parallel for quicker overall test run times");
                 return -1;
             }
         }

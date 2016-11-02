@@ -1,4 +1,4 @@
-//Testing static function return type
+//XYZing static function return type
 type foo = int;
 
 fun Foo() : (foo, int) {

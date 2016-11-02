@@ -3,11 +3,11 @@
 =================================
 OUT: <CreateLog> Machine Main(1) is created
 OUT: <StateLog> Machine Main(1) entered state init
-OUT: <CreateLog> Machine test(2) is created
-OUT: <StateLog> Machine test(2) entered state init
-OUT: <EnqueueLog> Enqueued event seqpayload with payload [23, 12, 23, 12, 23, 12] on Machine test(2)
-OUT: <DequeueLog> Dequeued event seqpayload with payload [23, 12, 23, 12, 23, 12] by Machine test(2)
-OUT: <ExitLog> Machine test(2) exiting state init
-OUT: <StateLog> Machine test(2) entered state testitnow
+OUT: <CreateLog> Machine XYZ(2) is created
+OUT: <StateLog> Machine XYZ(2) entered state init
+OUT: <EnqueueLog> Enqueued event seqpayload with payload [23, 12, 23, 12, 23, 12] on Machine XYZ(2)
+OUT: <DequeueLog> Dequeued event seqpayload with payload [23, 12, 23, 12, 23, 12] by Machine XYZ(2)
+OUT: <ExitLog> Machine XYZ(2) exiting state init
+OUT: <StateLog> Machine XYZ(2) entered state XYZitnow
 OUT: 
 EXIT: 0

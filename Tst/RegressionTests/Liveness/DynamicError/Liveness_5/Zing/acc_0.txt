@@ -4,7 +4,7 @@
 OUT: ##################
 OUT: Liveness Check Failed
 OUT: ##################
-OUT: 11 distinct states explored
+OUT: 13 distinct states explored
 OUT: 
 EXIT: 6
 
@@ -29,6 +29,11 @@ Trace-Log 0:
 <DequeueLog> Dequeued Event < ____Search, 30 > at Machine ____Main-0
 <AnnounceLog> Enqueued Event < ____SearchStarted, null > to Liveness spec machine
 <StateLog> Machine Liveness-0 exiting State Searched
+<StateLog> Machine Liveness-0 entering State Searching
+<EnqueueLog> Enqueued Event < ____Search, 30 > in Machine ____Main-0 by ____Main-0
+<DequeueLog> Dequeued Event < ____Search, 30 > at Machine ____Main-0
+<AnnounceLog> Enqueued Event < ____SearchStarted, null > to Liveness spec machine
+<StateLog> Machine Liveness-0 exiting State Searching
 <StateLog> Machine Liveness-0 entering State Searching
 <EnqueueLog> Enqueued Event < ____Search, 30 > in Machine ____Main-0 by ____Main-0
 Accepting transition

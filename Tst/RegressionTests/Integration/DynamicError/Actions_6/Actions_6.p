@@ -1,4 +1,4 @@
-// This sample tests that payload works correctly with a push transition
+// This sample XYZs that payload works correctly with a push transition
 
 event E1 assert 1;
 event E2 assert 1 : int ;

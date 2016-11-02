@@ -1,8 +1,8 @@
-// Testing assignments to a nested datatype when the right hand side of the assignment 
+// XYZing assignments to a nested datatype when the right hand side of the assignment 
 // is a side-effect free function with a nondeterministic choice inside.  
 // Also, checks that non-det return value from function works correctly
 // in allowed contexts, including workarounds for nested types in the LHS
-// Includes tests for tuples, maps and sequences
+// Includes XYZs for tuples, maps and sequences
 
 machine Main {
     fun F() : int {
@@ -141,7 +141,7 @@ machine Main {
 			t.b += (0, s);
 			//t.b += (0, s1);                 //dyn error: "key must not exist"
 			//i = F();
-			//t.b += (i, s1);                     //see separatetest with dynamic error: "key must not exist"
+			//t.b += (i, s1);                     //see separateXYZ with dynamic error: "key must not exist"
 			i = F();
 			i = i + 1;
 			assert(i == 1 || i == 2);

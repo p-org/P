@@ -1,8 +1,8 @@
-// Liveness test: "check passed", however this is a false pass:
+// Liveness XYZ: "check passed", however this is a false pass:
 // WatchDog announce is never instantiated, hence, Zing ignores 
 // all invocations of it
 // TODO: need to issue a warning (or error)
-// Compare this test to Liveness_1.p
+// Compare this XYZ to Liveness_1.p
 
 event UserEvent;
 event Done;

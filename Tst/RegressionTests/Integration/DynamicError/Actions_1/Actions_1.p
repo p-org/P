@@ -1,4 +1,4 @@
-// This sample tests basic semantics of actions and goto transitions
+// This sample XYZs basic semantics of actions and goto transitions
 event E1 assert 1;
 event E2 assert 1;
 event E3 assert 1;
@@ -7,7 +7,7 @@ event unit assert 1;
 
 machine Main {
     var ghost_machine: machine;
-    var test: bool;
+    var XYZ: bool;
     start state Real_Init {
         entry {
 			ghost_machine = new Ghost(this);  
@@ -17,14 +17,14 @@ machine Main {
         on E4 do Action1;   //E4, E3 have no effect on reachability of assert(false) 
         on E2 goto Real_S1; //exit actions are performed before transition to Real_S1
         exit {
-	    test = true;
+	    XYZ = true;
         }
     }
 
     state Real_S1 {
     
 		entry {
-			assert(test == true);  //holds
+			assert(XYZ == true);  //holds
 			raise unit;
 		}
 		on unit goto Real_S2;

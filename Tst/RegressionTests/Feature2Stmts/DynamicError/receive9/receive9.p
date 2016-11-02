@@ -1,4 +1,4 @@
-// This sample tests if the events sent to 'this' are handled correctly and the payload or different types are dequeued correctly.
+// This sample XYZs if the events sent to 'this' are handled correctly and the payload or different types are dequeued correctly.
 // The assert false on line 33 should be hit because of the raise on line 27.
 event E;
 event F : int;

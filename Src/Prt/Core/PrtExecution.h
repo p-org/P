@@ -146,6 +146,7 @@ extern "C"{
 		PRT_UINT32          *currentDeferredSetCompact;
 		PRT_UINT32          *inheritedActionSetCompact;
 		PRT_UINT32          *currentActionSetCompact;
+		PRT_UINT32			renamedName;
 	} PRT_MACHINEINST_PRIV;
 
 	/** Sets a global variable to variable
@@ -174,6 +175,7 @@ extern "C"{
 	PRT_MACHINEINST_PRIV *
 		PrtMkMachinePrivate(
 		_Inout_  PRT_PROCESS_PRIV		*process,
+		_In_  PRT_UINT32				renamedName,
 		_In_  PRT_UINT32				instanceOf,
 		_In_  PRT_VALUE					*payload
 		);

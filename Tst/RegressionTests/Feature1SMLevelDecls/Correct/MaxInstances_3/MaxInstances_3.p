@@ -1,4 +1,4 @@
-// This sample tests assert/assume annotations on events
+// This sample XYZs assert/assume annotations on events
 // Number of instances greater than assumed
 event E0;
 event E1 assume 0;

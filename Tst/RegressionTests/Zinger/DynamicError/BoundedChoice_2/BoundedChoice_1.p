@@ -6,10 +6,10 @@ machine Main {
 			x = 0;
 			raise(unit);
 		}
-		on unit goto test;
+		on unit goto XYZ;
 	}
 	
-	state test {
+	state XYZ {
 		entry {
 			if($)
 			{
@@ -25,7 +25,7 @@ machine Main {
 				
 			
 		}
-		on unit goto test;
+		on unit goto XYZ;
 	}
 	
 }

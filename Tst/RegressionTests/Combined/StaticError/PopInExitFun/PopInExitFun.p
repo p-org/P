@@ -5,7 +5,7 @@
 event E1 assert 1;
 
 machine Main {
-    var test: bool;  //init with "false"
+    var XYZ: bool;  //init with "false"
     start state Real1_Init {
         entry {			   
         }
@@ -17,10 +17,10 @@ machine Main {
 	}
 	state Real1_S1 {   
 		entry {
-			assert(test == true); //unreachable
+			assert(XYZ == true); //unreachable
 		}
     }
     fun Action1() {
-		test = true;
+		XYZ = true;
     }
 }

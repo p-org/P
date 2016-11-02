@@ -1,14 +1,14 @@
-// P semantics test: one machine, "send" to itself in exit function
+// P semantics XYZ: one machine, "send" to itself in exit function
 // E2 is sent upon executing goto; however, 
 // E2 is not handled, since state Real1_Init is removed once goto is executed
 // Result: semantic error detected by Zing
-// Compare this test with SendInExitHandledEvent.p
+// Compare this XYZ with SendInExitHandledEvent.p
 
 event E2 assert 1;
 event E1 assert 1;
 
 machine Main {
-    var test: bool;  //init with "false"
+    var XYZ: bool;  //init with "false"
     start state Real1_Init {
         entry { 
 			send this, E1;
@@ -19,10 +19,10 @@ machine Main {
 	}
 	state Real1_S1 {
 		entry {
-			test = true;
+			XYZ = true;
 		}
     }
 	fun Action2() {
-		assert(test == false);  //unreachable
+		assert(XYZ == false);  //unreachable
     }
 }

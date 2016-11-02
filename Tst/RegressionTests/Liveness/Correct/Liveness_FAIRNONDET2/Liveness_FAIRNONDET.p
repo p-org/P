@@ -1,4 +1,4 @@
-// Liveness test: "check passed"
+// Liveness XYZ: "check passed"
 // This is a simplest sample with FAIRNONDET in liveness
 //checking symmetry in how FAIRNONDET works
 

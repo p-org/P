@@ -17,6 +17,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
 	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
 									   decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
+	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(#EventNameList, NIL, {ev | ObservesDecl(decl, ev) }), list : EventNameList.
+
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), TypeExpansion(ctype, ectype).
 	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev), ev : in.NonNullEventName.
 	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev), ev : in.NonNullEventName.
@@ -27,6 +29,27 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
 	link.EventDecl(name, card, NIL) :- in.EventDecl(name, card, NIL, _).
 	link.EventDecl(name, card, etype) :- in.EventDecl(name, card, type, _), TypeExpansion(type, etype).
+
+	//// Compute the permission set associated with each high level type
+	//// A(e)
+	EmbeddedPermissionsInType ::= (t: in.TypeExpr, perm: in.NonNullEventName).
+
+	EmbeddedPermissionsInType(in.BaseType(MACHINE), ev),
+	EmbeddedPermissionsInType(in.BaseType(ANY), ev)   :- in.EventDecl(ev, _, _, _).
+
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : in.InterfaceType, InterfaceTypeDeclList(i, type), in.InterfaceTypeDecl(i, es, _, _), EventSetDecl(es, ev), ev: in.NonNullEventName.	
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, NIL), EmbeddedPermissionsInType(hd, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
+											AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), NIL), EmbeddedPermissionsInType(hd, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
+	 										AllTypeExprs(type), TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.SeqType(x), EmbeddedPermissionsInType(x, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.MapType(k, v), EmbeddedPermissionsInType(v, ev).
+
+	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), EmbeddedPermissionsInType(pt, perm).
+	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), EmbeddedPermissionsInType(pt, perm).
+
 	link.ModelType(name) :- in.ModelType(name).
 	link.TypeDef(name, etype) :- in.TypeDef(name, type, id), no in.ModelType(name), TypeExpansion(type, etype).
 	link.EnumTypeDef(name, elems, values) :- in.EnumTypeDef(name, elems, values, _).
@@ -132,7 +155,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	MachineName ::= (decl: in.MachineDecl + in.MachineProtoDecl, enumName: String).
 	MachineName(d, en) :- d is in.MachineDecl, en = strJoin("P_MACHINE_", d.name).
-	MachineName(d, en) :- d is in.MachineProtoDecl, en = strJoin("P_MACHINE_", d.name).
+	MachineName(d, en) :- d is in.MachineProtoDecl, en = strJoin("P_MACHINE_", d.name). 
 
 	DeclId ::= (decl: VarDecl + in.AnonFunDecl + in.FunDecl + StateDecl + TransDecl + DoDecl, id: Natural, cname: String).
 
@@ -368,6 +391,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	TypeDepNum  ::= (id: Natural, type: in.TypeExpr).
 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
+	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.InterfaceType.
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType. 
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
@@ -396,6 +420,13 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
+	
+	//interface type
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t : in.InterfaceType, BaseType2Kind(MACHINE, kind),
+								              defs = out.Section(before, def),
+										      def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								              typeName = strJoin("P_GEND_TYPE_", toString(m)),
+                              typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).
 
 	//// Enum types
 	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), in.EnumTypeDef(name, _, _, _),
@@ -1524,10 +1555,10 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	
 	//// New Machine
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, NIL, _, x), ret = Ident("p_tmp_funstmt_ret"),
-						   LinkMap(iname, mname), MachineName(machineDecl, machineName), machineDecl.name = mname,
-						   newCall = out.FunApp(Ident("PrtMkMachine"),
-												Args(BinApp(PFLD, Ident("context"), Ident("process")),
-												Args(Ident(machineName), 
+						   IOrMName = strJoin("P_IORM_", iname),
+						   newCall = out.FunApp(Ident("PrtMkInterfaceOrMachine"),
+												Args(Ident("context"),
+												Args(Ident(IOrMName), 
 												Args(IntLit(0, DEC, U), NIL)))),
 						   ContextLineInfo(c, s, info),
 						   FunStmtCleanup(c, s, cleanup),
@@ -1535,10 +1566,10 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 						   cs = out.Seq(Seq(info, out.BinApp(ASN, ret, ec)), Seq(info, cleanup)).
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, pay, _, x), pay != NIL, ret = Ident("p_tmp_funstmt_ret"),
-						   LinkMap(iname, mname), MachineName(machineDecl, machineName), machineDecl.name = mname,
-						   newCall = out.FunApp(Ident("PrtMkMachine"),
-												Args(BinApp(PFLD, Ident("context"), Ident("process")),
-												Args(Ident(machineName),
+						   IOrMName = strJoin("P_IORM_", iname),
+						   newCall = out.FunApp(Ident("PrtMkInterfaceOrMachine"),
+												Args(Ident("context"),
+												Args(Ident(IOrMName),
 												Args(IntLit(numArgs, DEC, U), lstReverse(#Args, ecs'))))),
 						   RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1,
 						   TransformStmtArgs(c, s, 0, NIL, NIL, ecs', NIL), numArgs = lstLength(#Args, ecs') / 2,

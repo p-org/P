@@ -1,6 +1,6 @@
-//Tests complex data types in assign/remove/insert errors): sequences, tuples, maps
-//Tests that comparison of "any" type var with "null" is allowed
-//This test found a bug in Zinger
+//XYZs complex data types in assign/remove/insert errors): sequences, tuples, maps
+//XYZs that comparison of "any" type var with "null" is allowed
+//This XYZ found a bug in Zinger
 
 event E assert 1; 
 event E1 assert 1;

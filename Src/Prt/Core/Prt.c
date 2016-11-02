@@ -199,15 +199,20 @@ GetFunDeclHelper(_In_ PRT_PROCESS	*process, _In_ PRT_UINT32 instanceOf, _In_ PRT
 	}
 }
 
+
 PRT_MACHINEINST *
-PrtMkMachine(
-    _Inout_  PRT_PROCESS			*process,
-    _In_  PRT_UINT32				instanceOf,
-	_In_ PRT_UINT32					numArgs,
+PrtMkInterfaceOrMachine(
+	_In_ PRT_MACHINEINST*		creator,
+    _In_ PRT_UINT32				IorM,
+	_In_ PRT_UINT32				numArgs,
 	...
 )
 {
+	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
 	PRT_VALUE *payload = NULL;
+	PRT_UINT32 renamedName = context->process->program->linkMap[context->renamedName][IorM];
+	PRT_UINT32 instanceOf = ((PRT_PROCESS_PRIV *)context->process)->program->renameMap[renamedName];
+
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
@@ -244,6 +249,67 @@ PrtMkMachine(
 		}
 		va_end(argp);
 		payload = args[0];
+
+		if (numArgs > 1)
+		{
+			PRT_MACHINEDECL *machineDecl = context->process->program->machines[instanceOf];
+			PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFunIndex;
+			PRT_TYPE *payloadType = GetFunDeclHelper(context->process, instanceOf, entryFunIndex)->payloadType;
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
+	}
+    return (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, renamedName, instanceOf, payload);
+}
+
+PRT_MACHINEINST *
+PrtMkMachine(
+	_Inout_  PRT_PROCESS		*process,
+	_In_ PRT_UINT32				renamedMachine,
+	_In_ PRT_UINT32				numArgs,
+	...
+)
+{
+	PRT_VALUE *payload = NULL;
+	PRT_UINT32 instanceOf = ((PRT_PROCESS_PRIV *)process)->program->renameMap[renamedMachine];
+
+	if (numArgs == 0)
+	{
+		payload = PrtMkNullValue();
+	}
+	else
+	{
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				break;
+			case PRT_FUN_PARAM_XFER:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+
 		if (numArgs > 1)
 		{
 			PRT_MACHINEDECL *machineDecl = process->program->machines[instanceOf];
@@ -253,7 +319,7 @@ PrtMkMachine(
 		}
 		PrtFree(args);
 	}
-    return (PRT_MACHINEINST *)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, instanceOf, payload);
+	return (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, renamedMachine, instanceOf, payload);
 }
 
 PRT_MACHINEINST *

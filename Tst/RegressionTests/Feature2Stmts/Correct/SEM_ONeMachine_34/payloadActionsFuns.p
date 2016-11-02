@@ -1,4 +1,4 @@
-//Tests tuples, sequences and maps as payloads
+//XYZs tuples, sequences and maps as payloads
 event myTuple : (int, bool);
 event myNmTuple : (first:int, sec:bool);
 event mySeq : seq[int];

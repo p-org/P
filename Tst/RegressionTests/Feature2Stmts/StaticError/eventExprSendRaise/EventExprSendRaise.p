@@ -4,7 +4,7 @@ event E1 assert 1;
 event E2 assert 1;
 
 machine Main {
-    var test: bool; 
+    var XYZ: bool; 
 	var ev1: event;
 	var ev2: event;
 	var ev3: int;
@@ -23,10 +23,10 @@ machine Main {
         exit {   }
 	}
     fun Action1() {
-		test = true;
+		XYZ = true;
     }
 	fun Action2() {
-		assert(test == false);  //unreachable
+		assert(XYZ == false);  //unreachable
     }
 }
 spec M observes E1 {

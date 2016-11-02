@@ -281,6 +281,13 @@ domain PStaticTyping extends PData
 	MachineCreates(m, iorm.name) :- MachineCreates(m, NIL), iorm is MachineDecl;
 									MachineCreates(m, NIL), iorm is MachineProtoDecl;
 									MachineCreates(m, NIL), iorm is InterfaceTypeDecl.
+	
+	//// TODO: This will go away after fixing the zing output
+	//// populate the link map
+	LinkMap ::= (createdIorM: String, createdM: String).
+	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM;
+									  m is MachineProtoDecl, m.name = createdIorM, m.name = createdM;
+									  MachineExports(m, createdIorM), m.name = createdM.
 
 	//Checking the constructor type error for each exported interface
 	ExportInterfaceError ::= (m: MachineDecl).
@@ -504,10 +511,15 @@ domain PStaticTyping extends PData
     TypeOf(c, e, BaseType(NULL))  :- SubSE(c, e), e = NulApp(NULL, _).
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT, _).
 	
+	//// TODO: This has to be fixed for the zing output.
+	/*
     // Type of THIS is the receive set implemented by the machine, machine type if the receive set is empty.
     TypeOf(c, e, i)  :- SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, i = toList(#InterfaceType, NIL, {ev | MachineReceives(c.owner, ev), ev: NonNullEventName}), i : InterfaceType;
 						SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, no MachineReceives(c.owner, _), i = BaseType(MACHINE).
     
+	*/
+	TypeOf(c, e, BaseType(MACHINE))  :- SubSE(c, e), e = NulApp(THIS, _).
+
 	//"this" is not allowed in global functions
 	[ rule_Classes = '"error, msg: "this" is not allowed in global functions"']
 	TypeOf(c, e, ERROR)  :- SubSE(c, e), e = NulApp(THIS, _), c.owner = NIL.

@@ -9,7 +9,7 @@ Information for building P framework is available [here](https://github.com/p-or
 
 Demos
 ==========================================================
-See [fun demo video](https://www.youtube.com/watch?v=ZzLoNbMGhg4) using P to control a quadrocopter and make sense of the MavLink stream, all visualized in a live DGML diagram.
+See [fun demo video](https://www.youtube.com/watch?v=R8ztpfMPs5c) using P to control a quadrocopter and make sense of the MavLink stream, all visualized in a live DGML diagram.
 
 
 Publications

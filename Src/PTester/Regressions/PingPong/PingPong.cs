@@ -75,8 +75,23 @@ namespace MyPProgramGenerated
                         return true;
                     }
                 }
+                internal class F1StackFrame_Class : PrtFunStackFrame
+                {
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
-                public override void Execute(StateImpl application, PrtMachine parent)
+                    }
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
+                    public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     if (currFun.returnTolocation == 0)
@@ -98,6 +113,11 @@ namespace MyPProgramGenerated
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -111,6 +131,24 @@ namespace MyPProgramGenerated
                         return true;
                     }
                 }
+                internal class F1StackFrame_Class : PrtFunStackFrame
+                {
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
+
+                    }
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                    
+
+                }
 
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
@@ -134,6 +172,11 @@ namespace MyPProgramGenerated
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -147,8 +190,23 @@ namespace MyPProgramGenerated
                         return true;
                     }
                 }
+                internal class F1StackFrame_Class : PrtFunStackFrame
+                {
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
-                public override void Execute(StateImpl application, PrtMachine parent)
+                    }
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
+                    public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     if (currFun.returnTolocation == 0)
@@ -170,6 +228,11 @@ namespace MyPProgramGenerated
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -183,8 +246,25 @@ namespace MyPProgramGenerated
                         return true;
                     }
                 }
+                internal class F1StackFrame_Class : PrtFunStackFrame
+                {
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
-                public override void Execute(StateImpl application, PrtMachine parent)
+                    }
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
+
+
+                    public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     if (currFun.returnTolocation == 0)
@@ -206,6 +286,11 @@ namespace MyPProgramGenerated
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -219,8 +304,23 @@ namespace MyPProgramGenerated
                         return false;
                     }
                 }
+                internal class F1StackFrame_Class : PrtFunStackFrame
+                {
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
-                public override void Execute(StateImpl application, PrtMachine parent)
+                    }
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
+                    public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     if (currFun.returnTolocation == 0)
@@ -242,6 +342,11 @@ namespace MyPProgramGenerated
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -255,8 +360,23 @@ namespace MyPProgramGenerated
                         return true;
                     }
                 }
+                internal class F1StackFrame_Class : PrtFunStackFrame
+                {
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
-                public override void Execute(StateImpl application, PrtMachine parent)
+                    }
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
+                    public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     if (currFun.returnTolocation == 0)
@@ -278,6 +398,11 @@ namespace MyPProgramGenerated
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 
@@ -291,8 +416,23 @@ namespace MyPProgramGenerated
                         return true;
                     }
                 }
+                internal class F1StackFrame_Class : PrtFunStackFrame
+                {
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
-                public override void Execute(StateImpl application, PrtMachine parent)
+                    }
+                    public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
+                    public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     if (currFun.returnTolocation == 0)
@@ -314,6 +454,11 @@ namespace MyPProgramGenerated
 
                     //no local variables hence nothing to add
                     return locals;
+                }
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    //throw new NotImplementedException();
+                    return null;
                 }
             }
 

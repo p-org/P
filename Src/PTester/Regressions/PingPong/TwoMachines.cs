@@ -20,12 +20,12 @@ namespace TwoMachines
             return new Application();
         }
 
-        public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", typeNull, 1, false));
-        public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", typeNull, 1, false));
-        public static PrtEventValue Fail = new PrtEventValue(new PrtEvent("Fail", typeNull, PrtEvent.DefaultMaxInstances, false));
-        public static PrtEventValue Success = new PrtEventValue(new PrtEvent("Success", typeBool, PrtEvent.DefaultMaxInstances, false));
-        public static PrtEventValue Pong = new PrtEventValue(new PrtEvent("Pong", typeInt, 1, false));
-        public static PrtEventValue Ping = new PrtEventValue(new PrtEvent("Ping", typeMachine, 1, false));
+        public static PrtEventValue halt;
+        public static PrtEventValue @null;
+        public static PrtEventValue Fail;
+        public static PrtEventValue Success;
+        public static PrtEventValue Pong;
+        public static PrtEventValue Ping;
 
         static PrtType typeNull;
         static PrtType typeMachine;
@@ -35,12 +35,21 @@ namespace TwoMachines
 
         static Application()
         {
+            //types:
             typeNull = new PrtNullType();
             typeInt = new PrtIntType();
             typeBool = new PrtBoolType();
             typeMachine = new PrtMachineType();
             typeNmdtuple = new PrtNamedTupleType("a", typeInt, "b", typeInt);
-        }
+
+            //events:
+            halt = new PrtEventValue(new PrtEvent("halt", typeNull, 1, false));
+            @null = new PrtEventValue(new PrtEvent("null", typeNull, 1, false));
+            Fail = new PrtEventValue(new PrtEvent("Fail", typeNull, PrtEvent.DefaultMaxInstances, false));
+            Success = new PrtEventValue(new PrtEvent("Success", typeBool, PrtEvent.DefaultMaxInstances, false));
+            Pong = new PrtEventValue(new PrtEvent("Pong", typeInt, 1, false));
+            Ping = new PrtEventValue(new PrtEvent("Ping", typeMachine, 1, false));
+    }
         public class F2_Class : PrtFun
         {
             public override bool IsAnonFun
@@ -76,6 +85,7 @@ namespace TwoMachines
             }
             public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
             {
+                //TODO(expand)
                 //throw new NotImplementedException();
                 return null;
             }
@@ -84,21 +94,30 @@ namespace TwoMachines
         public static F2_Class F2;
         public class F1_Class : PrtFun
         {
-            #region locals
-            //Assuming: locals of functions are enumerated in "locals" list in the order they are
-            //declared in the P program: formals first, then local vars
-            //Question: is below correct:
-            //C# variable of the type Par1_Class will be instantiated when the function "F1" is 
-            //called (hence, , i.e., in the function call translation.
-            //Question: what for are the two different constructors for PrtFunDtackFrame?
             
-            internal class Par1_Class: PrtFunStackFrame
+            public override bool IsAnonFun
             {
-                public Par1_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                get
+                {
+                    return false;
+                }
+            }
+            #region F1_locals
+            //The ordering of local variables is explicit in the field “index” of the LocalVariableInfo class.
+            //Question: is below correct:
+            //C# variable of the type F1StackFrame_Class will be instantiated when the function "F1" is 
+            //called (hence, , i.e., in the function call translation).
+            //There are two constructors for PrtFunStackFrame, one which takes retLocation as an argument and one without.  
+            //The latter is used when a function is first called.  
+            //The former is used when a function has to stop execution in the middle because a scheduling point has been reached.
+
+            internal class F1StackFrame_Class : PrtFunStackFrame
+            {
+                public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                 {
 
                 }
-                public Par1_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
                     : base(fun, locs, retLocation)
                 {
 
@@ -111,24 +130,16 @@ namespace TwoMachines
                 {
                     get
                     {
+                        //correct index will be determined as: 
+                        //localNameToInfo["par1"].index
                         return locals[0];
                     }
-                }
-            }
-            internal class Par2_Class : PrtFunStackFrame
-            {
-                public Par2_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
-                {
-
-                }
-                public Par2_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
-                    : base(fun, locs, retLocation)
-                {
-
-                }
-                public override PrtFunStackFrame Clone()
-                {
-                    return this.Clone();
+                    set
+                    {
+                        //correct index will be determined as: 
+                        //localNameToInfo["par1"].index
+                        locals[0] = value;
+                    }
                 }
                 public PrtValue Par2
                 {
@@ -136,23 +147,10 @@ namespace TwoMachines
                     {
                         return locals[1];
                     }
-                }
-
-            }
-            internal class VarInt_Class : PrtFunStackFrame
-            {
-                public VarInt_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
-                {
-
-                }
-                public VarInt_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
-                    : base(fun, locs, retLocation)
-                {
-
-                }
-                public override PrtFunStackFrame Clone()
-                {
-                    return this.Clone();
+                    set
+                    {
+                        locals[1] = value;
+                    }
                 }
                 public PrtValue VarInt
                 {
@@ -160,18 +158,15 @@ namespace TwoMachines
                     {
                         return locals[2];
                     }
+                    set
+                    {
+                        locals[2] = value;
+                    }
                 }
 
-            }
-            #endregion
-            public override bool IsAnonFun
-            {
-                get
-                {
-                    return false;
-                }
-            }
 
+            }
+            #endregion F1_locals
             public override void Execute(StateImpl application, PrtMachine parent)
             {
                 PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -203,6 +198,7 @@ namespace TwoMachines
         }
 
         public static F1_Class F1;
+        
         public PrtImplMachine CreateMainMachine()
         {
             var mainMachine = new Main(this, 10, false);
@@ -338,13 +334,13 @@ namespace TwoMachines
                 //called (hence, , i.e., in the function call translation.
                 //Question: what for are the two different constructors for PrtFunDtackFrame?
 
-                internal class Par1_Class : PrtFunStackFrame
+                internal class fooStackFrame_Class : PrtFunStackFrame
                 {
-                    public Par1_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    public fooStackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                     {
 
                     }
-                    public Par1_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    public fooStackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
                         : base(fun, locs, retLocation)
                     {
 
@@ -359,32 +355,26 @@ namespace TwoMachines
                         {
                             return locals[0];
                         }
-                    }
-                }
-                internal class Par2_Class : PrtFunStackFrame
-                {
-                    public Par2_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
-                    {
-
-                    }
-                    public Par2_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
-                        : base(fun, locs, retLocation)
-                    {
-
-                    }
-                    public override PrtFunStackFrame Clone()
-                    {
-                        return this.Clone();
+                        set
+                        {
+                            locals[0] = value;
+                        }
                     }
                     public PrtValue Par2
                     {
                         get
                         {
+                            //TODO: wrong
                             return locals[1];
                         }
+                        set
+                        {
+                            //TODO: wrong
+                            locals[1] = value;
+                        }
                     }
-
                 }
+                
                 #endregion
                 public override bool IsAnonFun
                 {
@@ -621,13 +611,17 @@ namespace TwoMachines
             }
 
             #region variables
-            //Assuming: machine variables are enumerated in the "fields" in the order they are
+            //Machine variables are enumerated in the "fields" in the order they are
             //declared in the P program
             public PrtValue PongId
             {
                 get
                 {
                     return fields[0];
+                }
+                set
+                {
+                    fields[0] = value;
                 }
             }
             public PrtValue VarInt
@@ -636,6 +630,10 @@ namespace TwoMachines
                 {
                     return fields[1];
                 }
+                set
+                {
+                    fields[1] = value;
+                }
             }
             public PrtValue VarBool
             {
@@ -643,12 +641,20 @@ namespace TwoMachines
                 {
                     return fields[2];
                 }
+                set
+                {
+                    fields[2] = value;
+                }
             }
             public PrtValue VarTpl
             {
                 get
                 {
                     return fields[3];
+                }
+                set
+                {
+                    fields[3] = value;
                 }
             }
             #endregion

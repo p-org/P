@@ -59,7 +59,22 @@ namespace TwoMachines
                     return false;
                 }
             }
+            internal class F2_Class_StackFrame : PrtFunStackFrame
+            {
+                public F2_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                {
 
+                }
+                public F2_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    : base(fun, locs, retLocation)
+                {
+
+                }
+                public override PrtFunStackFrame Clone()
+                {
+                    return this.Clone();
+                }
+            }
             public override void Execute(StateImpl application, PrtMachine parent)
             {
                 PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -85,9 +100,7 @@ namespace TwoMachines
             }
             public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
             {
-                //TODO(expand)
-                //throw new NotImplementedException();
-                return null;
+                return new F2_Class_StackFrame(this, locals, retLoc);
             }
         }
 
@@ -111,13 +124,13 @@ namespace TwoMachines
             //The latter is used when a function is first called.  
             //The former is used when a function has to stop execution in the middle because a scheduling point has been reached.
 
-            internal class F1StackFrame_Class : PrtFunStackFrame
+            internal class F1_Class_StackFrame : PrtFunStackFrame
             {
-                public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                public F1_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                 {
 
                 }
-                public F1StackFrame_Class(PrtFun fun, List<PrtValue> locs, int retLocation)
+                public F1_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
                     : base(fun, locs, retLocation)
                 {
 
@@ -193,7 +206,7 @@ namespace TwoMachines
             public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
             {
                 //throw new NotImplementedException();
-                return null;
+                return new F1_Class_StackFrame(this, locals, retLoc);
             }
         }
 

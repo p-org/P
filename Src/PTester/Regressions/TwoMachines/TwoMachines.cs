@@ -2,7 +2,7 @@ using P.Runtime;
 using System.Collections.Generic;
 using System;
 
-namespace TwoMachines
+namespace P.Program
 {
     public class Application : StateImpl
     {

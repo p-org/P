@@ -1,7 +1,7 @@
 using P.Runtime;
 using System.Collections.Generic;
 
-namespace MyPProgramGenerated
+namespace P.Program
 {
     public class Application : StateImpl
     {

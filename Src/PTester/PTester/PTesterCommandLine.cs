@@ -115,7 +115,7 @@ namespace P.Tester
                 }
                 else
                 {
-                    if (options.inputFileName != "")
+                    if (options.inputFileName != null)
                     {
                         PrintHelp(arg, "Only one input file is allowed");
                         return null;
@@ -131,7 +131,7 @@ namespace P.Tester
                 }
             }
 
-            if (options.inputFileName == "")
+            if (options.inputFileName == null)
             {
                 PrintHelp(null, "No input file specified");
                 return null;
@@ -161,7 +161,7 @@ namespace P.Tester
             }
 
             var asm = Assembly.LoadFrom(options.inputFileName);
-            StateImpl s = (StateImpl)asm.CreateInstance("P.Application", 
+            StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application", 
                                                         false,
                                                         BindingFlags.CreateInstance, 
                                                         null,

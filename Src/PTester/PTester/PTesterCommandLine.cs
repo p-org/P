@@ -170,6 +170,20 @@ namespace P.Tester
                                                         new object[] { });
             if (s == null)
                 throw new ArgumentException("Invalid assembly");
+            var impls = s.ImplMachines;
+            bool doWork = true;
+            while (doWork)
+            {
+                doWork = false;
+                foreach (var impl in impls)
+                {
+                    if (impl.currentStatus == PrtMachineStatus.Enabled)
+                    {
+                        impl.PrtRunStateMachine();
+                        doWork = true;
+                    }
+                }
+            }
         }
     }
 }

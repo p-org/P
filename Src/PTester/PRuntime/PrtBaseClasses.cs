@@ -338,9 +338,9 @@ namespace P.Runtime
         public PrtFun exitFun;
         public Dictionary<PrtValue, PrtTransition> transitions;
         public Dictionary<PrtValue, PrtFun> dos;
+        public HashSet<PrtEventValue> deferredSet;
         public bool hasNullTransition;
         public StateTemperature temperature;
-        public HashSet<PrtEventValue> deferredSet;
 
         public PrtState(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature)
         {
@@ -349,6 +349,7 @@ namespace P.Runtime
             this.exitFun = exitFun;
             this.transitions = new Dictionary<PrtValue, PrtTransition>();
             this.dos = new Dictionary<PrtValue, PrtFun>();
+            this.deferredSet = new HashSet<PrtEventValue>();
             this.hasNullTransition = hasNullTransition;
             this.temperature = temperature;
         }

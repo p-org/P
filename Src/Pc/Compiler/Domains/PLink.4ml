@@ -90,7 +90,7 @@ domain PLink
 	ModuleCreates ::= (mod: ModuleExpr, i: String).
 
 	//// Module Code Gen and Compatibity Helpers
-	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, interfaceOrMachine: String, newImpMachine: String).
+	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, interfaceOrMachine: String + { NIL }, newImpMachine: String + { NIL }).
 	ModuleRenameMap ::= (mod: ModuleExpr, newName: String, impMachine: String).  // for both machines and monitors
 	ModuleSafeMap ::= (mod: ModuleExpr, newName: String, isSafe: Boolean).
 	ModuleMonitorMap ::= (mod: ModuleExpr, newMonitorName: String, impMachine: String).
@@ -555,7 +555,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine'), ImpMachine' = oldname, creatorM' = oldname, creatorM = newname, ImpMachine = newname.
 
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), MachineCreatesM(creatorM, ImpMachine), IorM =  ImpMachine;
-														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM).
+														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM);
+														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), IorM = NIL, ImpMachine = NIL.
 	
 	//TestError(x, i) :- CLinkMap(x, i, _).
 	/**************************************************************************/
@@ -566,8 +567,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	CLinkMap ::= (creatorM: String, IorM: String, impM: String).
 	// make sure that the IorM matches the name of interface created by the machine (new I).
 	// impM is the name of the real machine and not the renamed name.
-	CLinkMap(creatorM, IorM, impM) :-	ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cM, impM), no InterfaceTypeDecl(IorM, _, _), cM = IorM; //machine creation
-										ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, IorM, impM).
+	CLinkMap(creatorM, IorM, impM) :-	ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cM, impM), no InterfaceTypeDecl(IorM, _, _), cM = IorM, cM : String, impM : String; //machine creation
+										ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, IorM, impM), IorM : String, impM : String.
 	
 	CRenameMap ::= (nName: String, iName: String).
 	CRenameMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, ImpName).

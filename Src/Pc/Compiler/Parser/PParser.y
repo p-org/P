@@ -156,7 +156,7 @@ Sends
 	;
 
 Creates
-	: CREATES CreatesList							{ AddCreatesList(true, ToSpan(@1)); }
+	: CREATES CreatesList SEMICOLON					{ AddCreatesList(true, ToSpan(@1)); }
 	| CREATES SEMICOLON
 	|												{ AddCreatesList(false); }
 	;

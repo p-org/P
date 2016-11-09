@@ -2063,8 +2063,8 @@
                     var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineSends__1)ev);
                     send.Span = ev.Span;
                     parseProgram.MachineSends.Add(send);
-                    crntEventList.Clear();
                 }
+                crntEventList.Clear();
             }
             else
             {

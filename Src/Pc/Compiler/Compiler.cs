@@ -1510,7 +1510,7 @@
                 errorReporter.AddFlag(f);
             }
 
-            bool success;
+            bool success = true;
             Task<AST<Program>> extractTask;
 
             var errorProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "ErrorModel.4ml"));
@@ -1518,6 +1518,13 @@
             extractTask.Wait();
             var errorProgram = extractTask.Result;
             Contract.Assert(errorProgram != null);
+            if(Options.outputFormula)
+            {
+                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "outputError.4ml")));
+                errorProgram.Print(wr);
+                wr.Close();
+            }
             success = AddLinkerErrorFlags(errorProgram);
             errorReporter.PrintErrors(Log, Options);
             if (!success)

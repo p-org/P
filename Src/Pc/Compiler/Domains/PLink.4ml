@@ -75,6 +75,8 @@ domain PLink
 	ComposeExpr ::= new (left: any ModuleExpr, right: any ModuleExpr, id: any Id).
 	ModuleExpr ::= ModuleName + HideExpr + RenameExpr + ExportExpr + AssumeExpr + AssertExpr + SafeExpr + ComposeExpr + ModuleDecl.
 
+	
+
 	//// Test Declarations and Implementation
 	TestDecl ::= fun (name: String -> mod: any ModuleExpr, id: any Id).
 	RefinementDecl ::= fun (name: String -> lhs: any ModuleExpr, rhs: any ModuleExpr, id: any Id).
@@ -97,10 +99,15 @@ domain PLink
 	MonitorNameList ::= new (str: String, tl: any MonitorNameList + { NIL }).
 	MemberOfMonitorNameList ::= sub (MonitorNameList, String).
 	MemberOfEventNameList ::= sub (EventNameList, EventName).
+
 }
 
 domain PLinkError
 {
+	/* Rules:
+    (1) The last arg of the error term is always the error message. 
+    (2) The first arg is of type Id, is the span info otherwise the span info is default.
+    */
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 	
@@ -115,6 +122,8 @@ domain PLinkError
 	WellFormednessError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	TestOrImplDeclError ::= new (modExprId: any Id, arg: String, msg: String).
 	RefinementDeclError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
+
+	TestError ::= new (modId: any Id, arg: any Id).
 }
 
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
@@ -171,8 +180,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	AllModuleExprs ::= sub (ModuleExpr).
 	ModuleExprExpansion ::= (modExpr: ModuleExpr, eModExpr: ModuleExpr).
 	
-	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name, id), emodExpr = ModuleDecl(name, id), no ModuleDef(name, _).
-	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name, id), no ModuleDefError(_, name, _), no ModuleDecl(name, _), ModuleDef(name, modExpr'), ModuleExprExpansion(modExpr', emodExpr).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr : ModuleName, emodExpr = ModuleDecl(modExpr.name, modExpr.id), no ModuleDef(modExpr.name, _).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr : ModuleName, no ModuleDefError(_, modExpr.name, _), no ModuleDecl(modExpr.name, _), ModuleDef(modExpr.name, modExpr'), ModuleExprExpansion(modExpr', emodExpr).
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleDecl(name, id), emodExpr = ModuleDecl(name, id).
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = HideExpr(s, modExpr', id), emodExpr = HideExpr(s, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = RenameExpr(s1, s2, modExpr', id), emodExpr = RenameExpr(s1, s2, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
@@ -211,7 +220,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// private events 
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : in.NonNullEventName;
-								  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, NIL), ModuleContains(modExpr, mach), MachineReceives(mach, ev).
+								  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, NIL), ModuleContains(ModuleDecl(modExpr.name, _), mach), MachineReceives(mach, ev).
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModulePrivate(modExpr.mod, ev).
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModulePrivate(modExpr.mod, ev), ev: in.NonNullEventName;
 								  AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfEventNameList(modExpr.evtNames, ev), ev: in.NonNullEventName.
@@ -219,7 +228,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.right, ev).
 									 
 	//// sends list 
-	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSends(mach, ev), ModuleContains(modExpr, mach), no ModulePrivate(modExpr, ev). 
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSends(mach, ev), ModuleContains(ModuleDecl(modExpr.name, _), mach), no ModulePrivate(modExpr, ev). 
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModuleSends(modExpr.mod, ev).
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.left, ev);
 								AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.right, ev).
@@ -228,7 +237,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// exports list
 	AllExportedInterfaces ::= (ix: String).
 	AllExportedInterfaces(ix) :-  ExportExpr(_, ix, _, _); MachineExports(_, ix).
-	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineExports(mach, ix), ModuleContains(modExpr, mach).
+	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineExports(mach, ix), ModuleContains(ModuleDecl(modExpr.name, _), mach).
 	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr.mod, ix),
 										 toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, toSymbol(modExpr) != #ExportExpr.
 	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleExports(modExpr.mod, ix);
@@ -240,7 +249,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// creates list
 	AllCreatedInterfaces ::= (ic: String).
 	AllCreatedInterfaces(ic) :- MachineCreatesInt(_, ic).
-	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineCreatesInt(mach, ic), ModuleContains(modExpr, mach).
+	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineCreatesInt(mach, ic), ModuleContains(ModuleDecl(modExpr.name, _), mach).
 	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), ModuleCreates(modExpr.mod, ic),
 										 toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl.
 	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleCreates(modExpr.left, ic);
@@ -446,6 +455,9 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	:- mod is ModuleDecl, ModuleContains(mod, mach), ModuleContains(mod, mach'), MachineExports(mach, ix), MachineExports(mach', ix'),
 	InterfaceTypeDecl(ix, ixL, _), InterfaceTypeDecl(ix', ixL, _), mach != mach'.
 
+	//// private machines created by a module are part of the module.
+	//TODO: Add this rule.
+
 	/**************************************************************************/
 	/*			Refinement, Implementation and Test Decls are legal			  */
 	/**************************************************************************/
@@ -488,7 +500,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	/**************************************************************************/
 	
 	////populate the rename map
-	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, newName), newName = impName.
+	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), newName), newName = impName.
 	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : SafeExpr, ModuleRenameMap(modExpr.mod, newName, impName);
 													AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModuleRenameMap(modExpr.mod, newName, impName);
 													AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleRenameMap(modExpr.mod, newName, impName).
@@ -542,9 +554,10 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine'), ImpMachine' = oldname, ImpMachine = newname, creatorM != oldname;
 													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine'), ImpMachine' = oldname, creatorM' = oldname, creatorM = newname, ImpMachine = newname.
 
-	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, creatorM), MachineCreatesM(creatorM, ImpMachine), IorM =  ImpMachine;
-														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, creatorM), ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM).
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), MachineCreatesM(creatorM, ImpMachine), IorM =  ImpMachine;
+														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM).
 	
+	//TestError(x, i) :- CLinkMap(x, i, _).
 	/**************************************************************************/
 	/*     C Code Helpers
 	/**************************************************************************/
@@ -554,8 +567,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	// make sure that the IorM matches the name of interface created by the machine (new I).
 	// impM is the name of the real machine and not the renamed name.
 	CLinkMap(creatorM, IorM, impM) :-	ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cM, impM), no InterfaceTypeDecl(IorM, _, _), cM = IorM; //machine creation
-										ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cI, impM), InterfaceTypeDecl(cI, cIL, _), 
-										ModuleRenameMap(emodExpr, creatorM, realM), MachineCreatesInt(realM, cI'), InterfaceTypeDecl(cI', cIL, _), cI' = IorM.
+										ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, IorM, impM).
 	
 	CRenameMap ::= (nName: String, iName: String).
 	CRenameMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, ImpName).

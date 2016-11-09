@@ -44,7 +44,7 @@
 				return;
 			 }
 
-			 keywords = new Dictionary<string, int>(64);
+			 keywords = new Dictionary<string, int>(100);
 
 			 keywords.Add("while", (int)PTokens.WHILE);
 			 keywords.Add("if", (int)PTokens.IF);

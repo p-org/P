@@ -105,11 +105,11 @@ domain PLinkError
 	Id ::= { NIL } + Integer + String + IdList.
 	
 	//// General linker errors
-	OneNameError ::= new (name: String, msg: String).
-	TwoNameError ::= new (name1: String, name2: String, msg: String).
+	OneNameError ::= new (errorId: any Id, name: String, msg: String).
+	TwoNameError ::= new (errorId: any Id, name1: String, name2: String, msg: String).
 
 	//// Module system related linker errors
-	ModuleDefError ::= new (name: String, msg: String).
+	ModuleDefError ::= new (errorId: any Id, name: String, msg: String).
 	NoMainMachineInModExpr ::= new (modExprId: any Id, msg: String).
 	ModuleConstructionIllegal ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	WellFormednessError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
@@ -120,34 +120,34 @@ domain PLinkError
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 {
 	//// General Linker Errors
-	err.OneNameError(name, "multiple machines with same name") :- m is MachineDecl, m' is MachineDecl, m != m', m.name = m'.name, name = m.name.
+	err.OneNameError(NIL, name, "multiple machines with same name") :- m is MachineDecl, m' is MachineDecl, m != m', m.name = m'.name, name = m.name.
 
-	err.OneNameError(name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.
+	err.OneNameError(NIL, name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.
 
-	err.OneNameError(mp.name, "machine prototype not implemented") :- mp is MachineProtoDecl, no MachineDecl(mp.name, _, _).
+	err.OneNameError(NIL, mp.name, "machine prototype not implemented") :- mp is MachineProtoDecl, no MachineDecl(mp.name, _, _).
 	
-	err.OneNameError(mp.name, "constructor type does not match") :- mp is MachineProtoDecl, m is MachineDecl, mp.name = m.name, mp.constType != m.constType.
+	err.OneNameError(NIL, mp.name, "constructor type does not match") :- mp is MachineProtoDecl, m is MachineDecl, mp.name = m.name, mp.constType != m.constType.
 	
-	err.OneNameError(fp.name, "parameter type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.params != f.params.
-	err.OneNameError(fp.name, "return type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.return != f.return.
+	err.OneNameError(NIL, fp.name, "parameter type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.params != f.params.
+	err.OneNameError(NIL, fp.name, "return type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.return != f.return.
 
-	err.OneNameError(fp.name, "function prototype not implemented") :- fp is FunProtoDecl, no FunDecl(fp.name, _, _, _).
+	err.OneNameError(NIL, fp.name, "function prototype not implemented") :- fp is FunProtoDecl, no FunDecl(fp.name, _, _, _).
 
-	err.OneNameError(iname, "machine cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineDecl(iname, _, _).
-	err.OneNameError(iname, "machine prototype cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineProtoDecl(iname, _).
+	err.OneNameError(NIL, iname, "machine cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineDecl(iname, _, _).
+	err.OneNameError(NIL, iname, "machine prototype cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineProtoDecl(iname, _).
 
-	err.TwoNameError(fname, pname, "function parameter must be available at return") :- AvailableParameterDemand(fname, pname), UnavailableParameterSupply(fname, pname).
+	err.TwoNameError(NIL, fname, pname, "function parameter must be available at return") :- AvailableParameterDemand(fname, pname), UnavailableParameterSupply(fname, pname).
 
 	// The following checks are performed when there is no implementation, test decl.
-	err.OneNameError(inName, "constructor arguments of the exported interface does not match constructor argument of creator interface") 
+	err.OneNameError(NIL, inName, "constructor arguments of the exported interface does not match constructor argument of creator interface") 
 	:- MachineExports(_, inName), MachineCreatesInt(_, ic), InterfaceTypeDecl(iName, evL, t), InterfaceTypeDecl(ic, evL, t'), t != t', 
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
-	err.OneNameError(ic, "created interface is not exported by any machine") 
+	err.OneNameError(NIL, ic, "created interface is not exported by any machine") 
 	:- MachineDecl(mach, _, _), no MachineExports(_, inName), MachineCreatesInt(mach, ic), InterfaceTypeDecl(iName, evL, t), InterfaceTypeDecl(ic, evL, t'), 
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
-	err.TwoNameError(mach1, mach2, "two machines cannot export the same interface") 
+	err.TwoNameError(NIL, mach1, mach2, "two machines cannot export the same interface") 
 	:- MachineExports(mach1, ix1), MachineExports(mach2, ix2), mach1 != mach2, InterfaceTypeDecl(ix2, evL, _), InterfaceTypeDecl(ix1, evL, _),
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
@@ -156,23 +156,23 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	/*****************************************/
 
 	//// Check if the named module definition is legal ////
-	ModuleDefError(name, "undefined module") :- AllModuleExprs(modEx), modEx = ModuleName(name, _), no ModuleDecl(name, _), no ModuleDef(name, _).
+	ModuleDefError(modEx.id, name, "undefined module") :- AllModuleExprs(modEx), modEx = ModuleName(name, _), no ModuleDecl(name, _), no ModuleDef(name, _).
 
-	ModuleDefError(modName, "multiple named module definitions with the same name") :- ModuleDef(modName, expr1), ModuleDef(modName, expr2), expr1 != expr2.
+	ModuleDefError(expr1.id, modName, "multiple named module definitions with the same name") :- ModuleDef(modName, expr1), ModuleDef(modName, expr2), expr1 != expr2.
 
 	ModuleDefDepends ::= sub (modDef: ModuleDef, mName: ModuleName).
 	ModuleNameDepends ::= (name1: String, name2: String).
 	ModuleNameDepends(nmodule.name, modName.name) :- ModuleDefDepends(nmodule, modName).
 	ModuleNameDepends(name1, name3) :- ModuleNameDepends(name1, name2), ModuleNameDepends(name2, name3).
 
-	ModuleDefError(name, "named module depends on itself") :- ModuleNameDepends(name, name).
+	ModuleDefError(NIL, name, "named module depends on itself") :- ModuleNameDepends(name, name).
 
 	//// Expand ModuleExpr
 	AllModuleExprs ::= sub (ModuleExpr).
 	ModuleExprExpansion ::= (modExpr: ModuleExpr, eModExpr: ModuleExpr).
 	
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name, id), emodExpr = ModuleDecl(name, id), no ModuleDef(name, _).
-	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name, id), no ModuleDefError(name, _), no ModuleDecl(name, _), ModuleDef(name, modExpr'), ModuleExprExpansion(modExpr', emodExpr).
+	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleName(name, id), no ModuleDefError(_, name, _), no ModuleDecl(name, _), ModuleDef(name, modExpr'), ModuleExprExpansion(modExpr', emodExpr).
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = ModuleDecl(name, id), emodExpr = ModuleDecl(name, id).
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = HideExpr(s, modExpr', id), emodExpr = HideExpr(s, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
 	ModuleExprExpansion(modExpr, emodExpr) :- AllModuleExprs(modExpr), modExpr = RenameExpr(s1, s2, modExpr', id), emodExpr = RenameExpr(s1, s2, emodExpr', id),  ModuleExprExpansion(modExpr', emodExpr').
@@ -444,7 +444,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// no two machines export the same interface
 	WellFormednessError(mod.id, ix, "wellformedness error> multiple machines export the same interface") 
 	:- mod is ModuleDecl, ModuleContains(mod, mach), ModuleContains(mod, mach'), MachineExports(mach, ix), MachineExports(mach', ix'),
-	InterfaceTypeDecl(ix, ixL, _), InterfaceTypeDecl(ix', ixL, _).
+	InterfaceTypeDecl(ix, ixL, _), InterfaceTypeDecl(ix', ixL, _), mach != mach'.
 
 	/**************************************************************************/
 	/*			Refinement, Implementation and Test Decls are legal			  */

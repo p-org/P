@@ -1395,6 +1395,7 @@
             
             this.Log = log;
             this.Options = options;
+            this.errorReporter = new ErrorReporter();
             var linkModel = Factory.Instance.MkModel(
                                     "OutputLinker",
                                     false,
@@ -1410,11 +1411,13 @@
                 {
                     LProgram linkProgram;
                     ProgramName RootProgramName;
-                    AST<Model> RootModel;
+                    AST<Model> RootModel = null;
                     if (options.PFiles.Count == 1)
                     {
                         if (!ParseLinkProgram(plinkFile, out linkProgram, out RootProgramName))
                         {
+                            errorReporter.PrintErrors(Log, Options);
+                            Log.WriteMessage("Parsing failed", SeverityKind.Error);
                             return false;
                         }
 
@@ -1422,29 +1425,28 @@
                         LoadManifestProgram("Pc.Domains.PLink.4ml");
 
                         //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
-                        AST<Model> rootModel = null;
                         var mkModelResult = Factory.Instance.MkModel(
                             MkSafeModuleName(RootProgramName.ToString()),
-                            PDomain,
+                            PLinkDomain,
                             linkProgram.Terms,
-                            out rootModel,
+                            out RootModel,
                             null,
-                            MkReservedModuleLocation(PDomain),
+                            MkReservedModuleLocation(PLinkDomain),
                             ComposeKind.None);
+
                         Contract.Assert(mkModelResult);
-                        RootModel = rootModel;
 
                         AST<Program> modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
-                        modelProgram.FindAll(
-                                new NodePred[]
-                                {
+                        RootModel.FindAll(
+                            new NodePred[]
+                            {
                             NodePredFactory.Instance.Star,
                             NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                                },
-                                (path, n) =>
-                                {
-                                    linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
-                                });
+                            },
+                            (path, n) =>
+                            {
+                                linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
+                            });
                     }
                     foreach (var fileName in options.FormulaFiles)
                     {
@@ -1460,6 +1462,15 @@
                                 linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
                             });
                     }
+
+                    // Dump out the formula file corresponding to linker
+                    if(options.outputFormula)
+                    {
+                        string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                        StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
+                        linkModel.Print(wr);
+                        wr.Close();
+                    }
                 }
             }
             catch (Exception)
@@ -1470,8 +1481,8 @@
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "LinkModel.4ml"));
             using (this.Profiler.Start("Compiler linking", linkProgName.ToString()))
             {
-                LoadManifestProgram("Pc.Domains.C.4ml");
-                LoadManifestProgram("Pc.Domains.PLink.4ml");
+                //LoadManifestProgram("Pc.Domains.C.4ml");
+                //LoadManifestProgram("Pc.Domains.PLink.4ml");
                 return InternalLink(linkProgName, linkModel);
             }
            
@@ -1507,9 +1518,11 @@
             extractTask.Wait();
             var errorProgram = extractTask.Result;
             Contract.Assert(errorProgram != null);
-            success = PrintLinkerErrors(errorProgram);
+            success = AddLinkerErrorFlags(errorProgram);
+            errorReporter.PrintErrors(Log, Options);
             if (!success)
             {
+                Log.WriteMessage("Linking failed", SeverityKind.Error);
                 UninstallProgram(linkProgramName);
                 return false;
             }
@@ -1525,20 +1538,61 @@
             return success;
         }
 
-        void PrintLinkerError(FuncTerm ft, ref int linkErrorCount)
+        void AddLinkerErrorFlag(FuncTerm ft, ref int linkErrorCount)
         {
+            /* Rules:
+            (1) The last arg of the error term is always the error message. 
+            (2) The first arg if of type Id is the span info otherwise the span info is default.
+            */
+            Span errorSpan = default(Span);
+            //check if the first argument is Id.
+            var firstArg = ft.Args.First();
+            if (firstArg is Cnst)
+            {
+                if ((firstArg as Cnst).CnstKind == CnstKind.Numeric)
+                {
+                    int id = (int)(((firstArg as Cnst).GetNumericValue()).Numerator);
+                    errorSpan = errorReporter.idToSourceInfo[id].entrySpan;
+                }
+            }
+
+            string errorMessage;
             using (var it = ft.Args.GetEnumerator())
             {
                 it.MoveNext();
-                string name = (it.Current as Cnst).GetStringValue();
-                it.MoveNext();
-                string msg = (it.Current as Cnst).GetStringValue();
-                Log.WriteMessage(string.Format("{0}: {1}", name, msg), SeverityKind.Error);
+                //ignore the first term as its already accounted for.
+
+                //there can be 3 arguments or 4
+                if (ft.Args.Count == 3)
+                {
+                    it.MoveNext();
+                    string name = (it.Current as Cnst).GetStringValue();
+                    it.MoveNext();
+                    string msg = (it.Current as Cnst).GetStringValue();
+                    errorMessage = String.Format("({0}), {1}", name, msg);
+                }
+                else
+                {
+                    it.MoveNext();
+                    string name1 = (it.Current as Cnst).GetStringValue();
+                    it.MoveNext();
+                    string name2 = (it.Current as Cnst).GetStringValue();
+                    it.MoveNext();
+                    string msg = (it.Current as Cnst).GetStringValue();
+                    errorMessage = String.Format("({0}, {1}), {2}", name1, name2, msg);
+                }
+                //Add Flags
+                errorReporter.AddFlag(new Flag(
+                     SeverityKind.Error,
+                     errorSpan,
+                     errorMessage,
+                     1,
+                     errorSpan.Program));
                 linkErrorCount++;
             }
         }
 
-        bool PrintLinkerErrors(AST<Program> program)
+        bool AddLinkerErrorFlags(AST<Program> program)
         {
             int linkErrorCount = 0;
             program.FindAll(
@@ -1550,7 +1604,7 @@
                         (path, n) =>
                         {
                             ModelFact mf = (ModelFact)n;
-                            PrintLinkerError((FuncTerm)mf.Match, ref linkErrorCount);
+                            AddLinkerErrorFlag((FuncTerm)mf.Match, ref linkErrorCount);
                         });
             return linkErrorCount == 0;
         }

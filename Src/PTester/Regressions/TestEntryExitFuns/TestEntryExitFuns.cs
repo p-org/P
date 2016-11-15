@@ -74,7 +74,22 @@ namespace P.Program
                         return true;
                     }
                 }
+                internal class AnonFun0_StackFrame : PrtFunStackFrame
+                {
+                    public AnonFun0_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
+                    }
+                    public AnonFun0_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -101,7 +116,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return null;
+                    return new AnonFun0_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -115,7 +130,22 @@ namespace P.Program
                         return true;
                     }
                 }
+                internal class AnonFun1_StackFrame : PrtFunStackFrame
+                {
+                    public AnonFun1_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
+                    }
+                    public AnonFun1_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -142,7 +172,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return null;
+                    return new AnonFun1_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -156,7 +186,22 @@ namespace P.Program
                         return true;
                     }
                 }
+                internal class AnonFun2_StackFrame : PrtFunStackFrame
+                {
+                    public AnonFun2_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
+                    }
+                    public AnonFun2_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -183,7 +228,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return null;
+                    return new AnonFun2_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -197,7 +242,22 @@ namespace P.Program
                         return false;
                     }
                 }
+                internal class foo_StackFrame : PrtFunStackFrame
+                {
+                    public foo_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
+                    }
+                    public foo_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -224,7 +284,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return null;
+                    return new foo_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -238,7 +298,22 @@ namespace P.Program
                         return false;
                     }
                 }
+                internal class bar_StackFrame : PrtFunStackFrame
+                {
+                    public bar_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
+                    }
+                    public bar_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -265,7 +340,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return null;
+                    return new bar_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -279,7 +354,22 @@ namespace P.Program
                         return true;
                     }
                 }
+                internal class AnonFun3_StackFrame : PrtFunStackFrame
+                {
+                    public AnonFun3_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
+                    }
+                    public AnonFun3_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -306,7 +396,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return null;
+                    return new AnonFun3_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -320,7 +410,22 @@ namespace P.Program
                         return true;
                     }
                 }
+                internal class AnonFun4_StackFrame : PrtFunStackFrame
+                {
+                    public AnonFun4_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    {
 
+                    }
+                    public AnonFun4_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                        : base(fun, locs, retLocation)
+                    {
+
+                    }
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
@@ -347,7 +452,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return null;
+                    return new AnonFun4_StackFrame(this, locals, retLoc);
                 }
             }
 

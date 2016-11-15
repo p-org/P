@@ -75,13 +75,13 @@ namespace P.Program
                         return true;
                     }
                 }
-                internal class AnonFun1_Class_StackFrame : PrtFunStackFrame
+                internal class AnonFun1_StackFrame : PrtFunStackFrame
                 {
-                    public AnonFun1_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    public AnonFun1_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                     {
 
                     }
-                    public AnonFun1_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    public AnonFun1_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
                         : base(fun, locs, retLocation)
                     {
 
@@ -116,7 +116,7 @@ namespace P.Program
                 }
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
-                    return new AnonFun1_Class_StackFrame(this, locals, retLoc);
+                    return new AnonFun1_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -130,13 +130,13 @@ namespace P.Program
                         return true;
                     }
                 }
-                internal class AnonFun0_Class_StackFrame : PrtFunStackFrame
+                internal class AnonFun0_StackFrame : PrtFunStackFrame
                 {
-                    public AnonFun0_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    public AnonFun0_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                     {
 
                     }
-                    public AnonFun0_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    public AnonFun0_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
                         : base(fun, locs, retLocation)
                     {
 
@@ -175,7 +175,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return new AnonFun0_Class_StackFrame(this, locals, retLoc);
+                    return new AnonFun0_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -189,13 +189,13 @@ namespace P.Program
                         return true;
                     }
                 }
-                internal class AnonFun2_Class_StackFrame : PrtFunStackFrame
+                internal class AnonFun2_StackFrame : PrtFunStackFrame
                 {
-                    public AnonFun2_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    public AnonFun2_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                     {
 
                     }
-                    public AnonFun2_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    public AnonFun2_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
                         : base(fun, locs, retLocation)
                     {
 
@@ -231,7 +231,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return new AnonFun2_Class_StackFrame(this, locals, retLoc);
+                    return new AnonFun2_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -245,13 +245,13 @@ namespace P.Program
                         return true;
                     }
                 }
-                internal class AnonFun3_Class_StackFrame : PrtFunStackFrame
+                internal class AnonFun3_StackFrame : PrtFunStackFrame
                 {
-                    public AnonFun3_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    public AnonFun3_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                     {
 
                     }
-                    public AnonFun3_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    public AnonFun3_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
                         : base(fun, locs, retLocation)
                     {
 
@@ -289,7 +289,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return new AnonFun3_Class_StackFrame(this, locals, retLoc);
+                    return new AnonFun3_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -303,13 +303,13 @@ namespace P.Program
                         return false;
                     }
                 }
-                internal class Action2_Class_StackFrame : PrtFunStackFrame
+                internal class Action2_StackFrame : PrtFunStackFrame
                 {
-                    public Action2_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    public Action2_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                     {
 
                     }
-                    public Action2_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    public Action2_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
                         : base(fun, locs, retLocation)
                     {
 
@@ -345,7 +345,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return new Action2_Class_StackFrame(this, locals, retLoc);
+                    return new Action2_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -359,13 +359,13 @@ namespace P.Program
                         return true;
                     }
                 }
-                internal class AnonFun4_Class_StackFrame : PrtFunStackFrame
+                internal class AnonFun4_StackFrame : PrtFunStackFrame
                 {
-                    public AnonFun4_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    public AnonFun4_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                     {
 
                     }
-                    public AnonFun4_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    public AnonFun4_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
                         : base(fun, locs, retLocation)
                     {
 
@@ -401,7 +401,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return new AnonFun4_Class_StackFrame(this, locals, retLoc);
+                    return new AnonFun4_StackFrame(this, locals, retLoc);
                 }
             }
 
@@ -415,13 +415,13 @@ namespace P.Program
                         return true;
                     }
                 }
-                internal class AnonFun5_Class_StackFrame : PrtFunStackFrame
+                internal class AnonFun5_StackFrame : PrtFunStackFrame
                 {
-                    public AnonFun5_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
+                    public AnonFun5_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs)
                     {
 
                     }
-                    public AnonFun5_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+                    public AnonFun5_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
                         : base(fun, locs, retLocation)
                     {
 
@@ -457,7 +457,7 @@ namespace P.Program
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
                     //throw new NotImplementedException();
-                    return new AnonFun5_Class_StackFrame(this, locals, retLoc);
+                    return new AnonFun5_StackFrame(this, locals, retLoc);
                 }
             }
 

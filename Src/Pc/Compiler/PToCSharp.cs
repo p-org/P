@@ -48,7 +48,7 @@ namespace Microsoft.Pc
         #region CSharpCompiler
         string csharpFileName;
         //for storing members of the Application class:
-        static List <SyntaxNode> members = new List<SyntaxNode>();
+        static List<SyntaxNode> members = new List<SyntaxNode>();
         //final C# program:
         SyntaxNode result = null;
         static SyntaxGenerator generator;
@@ -66,7 +66,7 @@ namespace Microsoft.Pc
             //These fields were used in Zing to represent strings as ints
             //private List<AST<Node>> fieldNameInitialization;
             //private Dictionary<string, AST<FuncTerm>> fieldNameToZingExpr;
-            
+
             //This field is for emitting types; order is important
             public List<StatementSyntax> typeInitialization;
             public List<FieldDeclarationSyntax> typeDeclaration;
@@ -87,8 +87,8 @@ namespace Microsoft.Pc
 
             //public AST<Node> InitializeFieldNamesAndTypes()
             //{
-                //throw new NotImplementedException();
-                //return MkCSharpSeq(MkCSharpSeq(), MkCSharpSeq(typeInitialization));
+            //throw new NotImplementedException();
+            //return MkCSharpSeq(MkCSharpSeq(), MkCSharpSeq(typeInitialization));
             //} 
 
             public IEnumerable<AST<Node>> MainVarDecls()
@@ -249,7 +249,7 @@ namespace Microsoft.Pc
                     //    //AddTypeInitialization(MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
                     //}
                     //return tupleType;
-                  
+
                 }
                 else if (typeKind == "NmdTupType")
                 {
@@ -412,12 +412,12 @@ namespace Microsoft.Pc
         public static SyntaxNode MkCSharpStringLiteralExpression(string name)
         {
             return LiteralExpression(SyntaxKind.StringLiteralExpression,
-                Literal(name));                                         
+                Literal(name));
         }
         public static SyntaxNode MkCSharpFalseLiteralExpression()
         {
             return LiteralExpression(SyntaxKind.FalseLiteralExpression);
-                                                
+
         }
         public static SyntaxNode MkCSharpTrueLiteralExpression()
         {
@@ -438,6 +438,10 @@ namespace Microsoft.Pc
         {
             return Identifier(name);
         }
+        public static SyntaxNode MkCSharpParameter(SyntaxToken par, TypeSyntax type)
+        {
+            return Parameter(par).WithType(type);
+        }
         //public static List<SyntaxNodeOrToken> MkCSharpParameterList(SyntaxNodeOrToken[] args)
         public static List<SyntaxNodeOrToken> MkCSharpParameterList(List<SyntaxNode> args)
         {
@@ -445,13 +449,42 @@ namespace Microsoft.Pc
             for (int i = 0; i < args.Count(); i++)
             {
                 acc.Add(args[i]);
-                if (i < args.Count()-1 )
+                if (i < args.Count() - 1)
                 {
                     acc.Add(Token(SyntaxKind.CommaToken));
                 }
             }
             return acc;
         }
+        //TODO: write MkCSharpArgumentList: ArgumentSyntax elems separated by CommaTokens 
+        public static List<SyntaxNodeOrToken> MkCSharpArgumentList(params ArgumentSyntax[] args)
+        {
+            List<SyntaxNodeOrToken> acc = new List<SyntaxNodeOrToken>();
+            for (int i = 0; i < args.Count(); i++)
+            {
+                acc.Add(args[i]);
+                if (i < args.Count() - 1)
+                {
+                    acc.Add(Token(SyntaxKind.CommaToken));
+                }
+            }
+            return acc;
+        }
+        #region types
+        public static SimpleBaseTypeSyntax MkCSharpIdentifierNameType(string type)
+        {
+            return SimpleBaseType((TypeSyntax)MkCSharpIdentifierName(type));
+        }
+        public static TypeSyntax MkCSharpGenericListType(TypeSyntax type)
+        {
+            return GenericName(
+                            Identifier("List"))
+                   .WithTypeArgumentList(
+                            TypeArgumentList(
+                                SingletonSeparatedList<TypeSyntax>(
+                                    type)));
+        }
+        #endregion
         public static SyntaxNode MkCSharpFieldDeclaration(SyntaxNode type,
                         string name, SyntaxToken accessibility, SyntaxToken publicStatic)
         {
@@ -474,7 +507,7 @@ namespace Microsoft.Pc
         {
 
             Debug.Assert(names.Length > 0);
-            
+
             ExpressionSyntax lhs = IdentifierName(first);
             for (int i = 0; i < names.Length; i++)
             {
@@ -484,7 +517,7 @@ namespace Microsoft.Pc
                             lhs,
                             rhs);
             }
-            return lhs.NormalizeWhitespace();        
+            return lhs.NormalizeWhitespace();
         }
         //TODO(expand on any number of parameters)
         public static SyntaxNode MkCSharpObjectCreationExpression(SyntaxNode type, params SyntaxNode[] names)
@@ -507,7 +540,7 @@ namespace Microsoft.Pc
                         ArgumentList(
                             SingletonSeparatedList<ArgumentSyntax>(
                                 Argument(((ExpressionSyntax)names[0])))))
-                                    //IdentifierName("p1")))))
+                    //IdentifierName("p1")))))
                     .NormalizeWhitespace();
             }
             else
@@ -522,13 +555,6 @@ namespace Microsoft.Pc
                 //Insert Token(SyntaxKind.CommaToken) after each Argument except the last one 
                 //and create new SyntaxNodeOrToken[] out of the result:
                 List<SyntaxNodeOrToken> hdWithCommas = MkCSharpParameterList(hd);
-                //List <SyntaxNodeOrToken> hdWithCommas = new List<SyntaxNodeOrToken>();
-                //for (int j = 0; j < hd.Count()-1; j++)
-                //{
-                //    hdWithCommas.Add(hd[j]);
-                //    hdWithCommas.Add(Token(SyntaxKind.CommaToken));
-                //}
-                //hdWithCommas.Add(hd[hd.Count()-1]);
                 //TODO(question): in Roslyn quoter, the initialization for List<SyntaxNodeOrToken>
                 //looks different: "new SyntaxNodeOrToken[]{ el1, el2, ... }
                 //Does that matter?
@@ -551,6 +577,30 @@ namespace Microsoft.Pc
                         ParameterList(
                             SeparatedList<ParameterSyntax>(pars)))
                    .WithBody(Block(body))
+                   .NormalizeWhitespace();
+        }
+        public static ConstructorInitializerSyntax MkCSharpConstructorInitializer(SyntaxKind constrInitializer,
+            List<SyntaxNodeOrToken> pars)
+        {
+            return ConstructorInitializer(constrInitializer, ArgumentList(SeparatedList<ArgumentSyntax>(pars)));
+        }
+        public static ConstructorDeclarationSyntax MkCSharpConstructor(SyntaxToken name, SyntaxTokenList modifiers,
+            List<SyntaxNode> constrPars, ConstructorInitializerSyntax initializer, List<StatementSyntax> body)
+        {
+            List<SyntaxNodeOrToken> pars = MkCSharpParameterList(constrPars);
+            return ConstructorDeclaration(name)
+                   .WithModifiers(modifiers)
+                   .WithParameterList(ParameterList(SeparatedList<ParameterSyntax>(pars)))
+                   .WithInitializer(initializer)
+                   .WithBody(Block(body));
+        }
+        public static SyntaxNode MkCSharpClassDecl(string name, SyntaxTokenList modifiers, SeparatedSyntaxList<BaseTypeSyntax> type,
+                                 SyntaxList<MemberDeclarationSyntax> members)
+        {
+            return ClassDeclaration(name)
+                   .WithModifiers(modifiers)
+                   .WithBaseList(BaseList(type))
+                   .WithMembers(members)
                    .NormalizeWhitespace();
         }
         public static SyntaxNode MkCSharpIfThen(SyntaxNode cond, SyntaxNode then)
@@ -1514,6 +1564,56 @@ namespace Microsoft.Pc
                 (x, ch) => Fold(x, ch));
                 return new List<StatementSyntax>();
             }
+            public SyntaxNode MkFunStackFrameClass()
+            {
+                SyntaxList<MemberDeclarationSyntax> members = new SyntaxList<MemberDeclarationSyntax>();
+                string frameClassName = funName + "_StackFrame";
+                //public F1_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs) {}
+                var pars = new List<SyntaxNode> { MkCSharpParameter(MkCSharpIdentifier("locals"), MkCSharpGenericListType(IdentifierName("PrtValue"))),
+                                                  MkCSharpParameter(MkCSharpIdentifier("retLoc"), PredefinedType(Token(SyntaxKind.IntKeyword))) };
+                SyntaxTokenList modifiers = new SyntaxTokenList();
+                modifiers = modifiers.Add(Token(SyntaxKind.PublicKeyword));
+                members = members.Add(MkCSharpConstructor(MkCSharpIdentifier(frameClassName),
+                                                          modifiers,
+                                                          new List<SyntaxNode>() {
+                                                              MkCSharpParameter(MkCSharpIdentifier("fun"), (TypeSyntax) MkCSharpIdentifierName("PrtFun")),
+                                                              MkCSharpParameter(MkCSharpIdentifier("locs"), MkCSharpGenericListType(IdentifierName("PrtValue"))) },
+                                                          MkCSharpConstructorInitializer(SyntaxKind.BaseConstructorInitializer,
+                                                              MkCSharpArgumentList(new ArgumentSyntax[] { Argument(IdentifierName("fun")), Argument(IdentifierName("locs")) })),
+                                                          new List<StatementSyntax>()));
+
+                //public F2_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base(fun, locs, retLocation) {}
+                members = members.Add(MkCSharpConstructor(MkCSharpIdentifier(frameClassName),
+                                                         modifiers,
+                                                         new List<SyntaxNode>() {
+                                                              MkCSharpParameter(MkCSharpIdentifier("fun"), (TypeSyntax) MkCSharpIdentifierName("PrtFun")),
+                                                              MkCSharpParameter(MkCSharpIdentifier("locs"), MkCSharpGenericListType(IdentifierName("PrtValue"))),
+                                                              MkCSharpParameter(MkCSharpIdentifier("retLocation"), PredefinedType(Token(SyntaxKind.IntKeyword))) },
+                                                         MkCSharpConstructorInitializer(SyntaxKind.BaseConstructorInitializer,
+                                                             MkCSharpArgumentList(new ArgumentSyntax[] { Argument(IdentifierName("fun")), Argument(IdentifierName("locs")),
+                                                                                                         Argument(IdentifierName("retLocation")) })),
+                                                         new List<StatementSyntax>()));
+
+                //public override PrtFunStackFrame Clone() {return this.Clone();}
+                var body = SingletonList<StatementSyntax>(
+                             ReturnStatement(
+                                InvocationExpression(
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        ThisExpression(),
+                                        IdentifierName("Clone")))));
+                var clonePars = new List<SyntaxNode>();
+                members = members.Add((MemberDeclarationSyntax)MkCSharpMethodDeclaration(MkCSharpIdentifierName("PrtFunStackFrame"),
+                                MkCSharpIdentifier("Clone"),
+                                new[] { Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword) },
+                                body,
+                                clonePars));
+                modifiers = new SyntaxTokenList();
+                modifiers = modifiers.Add(Token(SyntaxKind.InternalKeyword));
+                return MkCSharpClassDecl(frameClassName, modifiers,
+                                         SingletonSeparatedList<BaseTypeSyntax>(MkCSharpIdentifierNameType("PrtFunStackFrame")),
+                                         members);
+            }
             //TODO(fix): replace this code with general case: Execute method for any function
             public SyntaxNode MkExecuteMethod()
             {
@@ -1732,76 +1832,12 @@ namespace Microsoft.Pc
                             ReturnStatement((ExpressionSyntax)MkCSharpObjectCreationExpression(
                                 MkCSharpIdentifierName(funName + "_StackFrame"),
                                 new [] { ThisExpression(), MkCSharpIdentifierName("locals"), MkCSharpIdentifierName("retLoc") })));
-                var pars = new List<SyntaxNode> {
-                        Parameter(
-                            Identifier("locals"))
-                        .WithType(
-                            GenericName(
-                                Identifier("List"))
-                            .WithTypeArgumentList(
-                                TypeArgumentList(
-                                    SingletonSeparatedList<TypeSyntax>(
-                                        IdentifierName("PrtValue"))))),
-                        Parameter(
-                            Identifier("retLoc"))
-                        .WithType(
-                            PredefinedType(
-                                Token(SyntaxKind.IntKeyword)))};
+                var pars = new List<SyntaxNode> { MkCSharpParameter(MkCSharpIdentifier("locals"), MkCSharpGenericListType(IdentifierName("PrtValue"))),
+                                                  MkCSharpParameter(MkCSharpIdentifier("retLoc"), PredefinedType(Token(SyntaxKind.IntKeyword))) };
                 return MkCSharpMethodDeclaration(MkCSharpIdentifierName("PrtFunStackFrame"), MkCSharpIdentifier("CreateFunStackFrame"),
                     new[] { Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword) },
                     body,
                     pars);
-                    //new SyntaxNodeOrToken[]{
-                    //    Parameter(
-                    //        Identifier("locals"))
-                    //    .WithType(
-                    //        GenericName(
-                    //            Identifier("List"))
-                    //        .WithTypeArgumentList(
-                    //            TypeArgumentList(
-                    //                SingletonSeparatedList<TypeSyntax>(
-                    //                    IdentifierName("PrtValue"))))),
-                    //    Parameter(
-                    //        Identifier("retLoc"))
-                    //    .WithType(
-                    //        PredefinedType(
-                    //            Token(SyntaxKind.IntKeyword)))});
-
-
-                //return MethodDeclaration(
-                //        IdentifierName(PrtFunStackFrame"),
-                //        Identifier("CreateFunStackFrame"))
-                //        .WithModifiers(
-                //            TokenList(
-                //                new[]{
-                //                    Token(SyntaxKind.PublicKeyword),
-                //                    Token(SyntaxKind.OverrideKeyword)}))
-                //        .WithParameterList(
-                //            ParameterList(
-                //                SeparatedList<ParameterSyntax>(
-                //                    new SyntaxNodeOrToken[]{
-                //                        Parameter(
-                //                            Identifier("locals"))
-                //                        .WithType(
-                //                            GenericName(
-                //                                Identifier("List"))
-                //                            .WithTypeArgumentList(
-                //                                TypeArgumentList(
-                //                                    SingletonSeparatedList<TypeSyntax>(
-                //                                        IdentifierName("PrtValue"))))),
-                //                        Token(SyntaxKind.CommaToken),
-                //                        Parameter(
-                //                            Identifier("retLoc"))
-                //                        .WithType(
-                //                            PredefinedType(
-                //                                Token(SyntaxKind.IntKeyword)))})))
-                //        .WithBody(
-                //            Block(
-                //                SingletonList<StatementSyntax>(
-                //                    ReturnStatement(
-                //                        LiteralExpression(
-                //                            SyntaxKind.NullLiteralExpression)))))
-                //        .NormalizeWhitespace();
             }
             public SyntaxNode MkFuncClass()
             {
@@ -1858,7 +1894,7 @@ namespace Microsoft.Pc
                         .NormalizeWhitespace();
                 }
                 funMembers = funMembers.Add(isAnonProperty);
-
+                funMembers = funMembers.Add((MemberDeclarationSyntax)MkFunStackFrameClass());
                 funMembers = funMembers.Add((MemberDeclarationSyntax)MkExecuteMethod());
                 funMembers = funMembers.Add((MemberDeclarationSyntax)MkCreateLocalsMethod());
                 funMembers = funMembers.Add((MemberDeclarationSyntax)MkCreateFunStackFrameMethod());
@@ -2674,9 +2710,6 @@ namespace Microsoft.Pc
                                 Block(mainConstructorFields
                                     ))
                     .NormalizeWhitespace();
-
-                //SyntaxNode mainConstructor = generator.ConstructorDeclaration(machName, modifiers: DeclarationModifiers.Static,
-                //    statements: mainConstructorFields);
 
                 machineMembers.Add(mainConstructor);
 

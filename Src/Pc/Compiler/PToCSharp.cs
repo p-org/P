@@ -294,6 +294,12 @@ namespace Microsoft.Pc
             }
         }
         //ZingTranslationInfo FoldName(FuncTerm ft, IEnumerable<CSharpTranslationInfo> children)
+        //In the context of expressions only; no children
+        SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
+        {
+            return null;
+
+        }
         #endregion
 
         #region Utilities
@@ -519,6 +525,18 @@ namespace Microsoft.Pc
             }
             return lhs.NormalizeWhitespace();
         }
+        public static SyntaxNode MkCSharpElementAccessExpression(string name, int index)
+        {
+            return ElementAccessExpression(
+                      IdentifierName(name))
+                   .WithArgumentList(
+                          BracketedArgumentList(
+                             SingletonSeparatedList<ArgumentSyntax>(
+                                 Argument(
+                                    LiteralExpression(
+                                       SyntaxKind.NumericLiteralExpression,
+                                          Literal(index))))));
+        }
         //TODO(expand on any number of parameters)
         public static SyntaxNode MkCSharpObjectCreationExpression(SyntaxNode type, params SyntaxNode[] names)
         {
@@ -567,6 +585,27 @@ namespace Microsoft.Pc
                        .NormalizeWhitespace();
             }
         }
+        public static AccessorDeclarationSyntax MkCSharpAccessor(string getSet, SyntaxList<StatementSyntax> body)
+        {
+            if (getSet == "get")
+            {
+                return AccessorDeclaration(SyntaxKind.GetAccessorDeclaration, Block(body));
+            }
+            else
+            {
+                return AccessorDeclaration(SyntaxKind.SetAccessorDeclaration, Block(body));
+            }
+            
+        }
+        public static SyntaxNode MkCSharpPropertyDecl(string type, string name,
+                                     SyntaxTokenList modifiers, params AccessorDeclarationSyntax[] accessorList)
+       {
+            return PropertyDeclaration(
+                      IdentifierName(type),
+                      Identifier(name))
+                   .WithModifiers(modifiers)
+                   .WithAccessorList(AccessorList(List(accessorList)));
+       }
         public static SyntaxNode MkCSharpMethodDeclaration(SyntaxNode type, SyntaxToken name, SyntaxToken[] attrs,
             SyntaxList<StatementSyntax> body, List<SyntaxNode> methodPars)
         {
@@ -885,7 +924,7 @@ namespace Microsoft.Pc
                 return l;
             }
 
-            public AST<Node> EmitLabelPrelude()
+            public SyntaxNode EmitLabelPrelude()
             {
                // var prelude = new List<AST<Node>>();
                // var tmpVar = GetTmpVar(Factory.Instance.MkCnst("StackFrame"), "retTo");
@@ -906,9 +945,9 @@ namespace Microsoft.Pc
                 throw new NotImplementedException();
             }
 
-            public void AddSideEffect(AST<Node> stmt)
+            public void AddSideEffect(SyntaxNode stmt)
             {
-                this.sideEffectsStack.Peek().Add(stmt);
+                //this.sideEffectsStack.Peek().Add(stmt);
             }
 
             public void PushSideEffectStack()
@@ -1174,17 +1213,21 @@ namespace Microsoft.Pc
                 }
             }
             //Eliminating ZingTranslationInfo: using AST<Node> instead
-            private AST<Node> Fold(Node n, IEnumerable<AST<Node>> children)
+            //TODO(questoin): two options to use for the generic Roslyn type that Fold returns:
+            //SyntaxNode and CSharpSyntaxNode.
+            //Second parameter of Fold should return List<SyntaxNode> or List<CSharpSyntaxNode>
+            private SyntaxNode Fold(Node n, List<SyntaxNode> children)
             {
                 if (n.NodeKind == NodeKind.Id || n.NodeKind == NodeKind.Cnst)
-                    return ZingData.Cnst_Nil;
+                    //return ZingData.Cnst_Nil;
+                    return MkCSharpIdentifierName("NIL");
 
                 var ft = (FuncTerm)n;
                 var funName = ((Id)ft.Function).Name;
 
                 if (funName == PData.Con_Name.Node.Name)
                 {
-                    return (AST<Node>)FoldName(ft, children);
+                    return (SyntaxNode)FoldName(ft, children);
                 }
                 else if (funName == PData.Con_Receive.Node.Name)
                 {
@@ -1284,7 +1327,8 @@ namespace Microsoft.Pc
                 }
                 else if (funName == PData.Con_IdList.Node.Name)
                 {
-                    return ZingData.Cnst_Nil;
+                    //return ZingData.Cnst_Nil;
+                    return MkCSharpIdentifierName("NIL");
                 }
                 else
                 {
@@ -1292,7 +1336,7 @@ namespace Microsoft.Pc
                     throw new NotImplementedException();
                 }
             }
-            private List<AST<Node>> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
+            private List<SyntaxNode> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
             {
                 throw new NotImplementedException();
                 //List<AST<Node>> eventStmts = new List<AST<Node>>();
@@ -1335,7 +1379,7 @@ namespace Microsoft.Pc
                 //stmts.AddRange(funStmts);
                 //return stmts;
             }
-            AST<Node> FoldReceive(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldReceive(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
                 //List<AST<Node>> stmts = new List<AST<Node>>();
@@ -1375,59 +1419,60 @@ namespace Microsoft.Pc
                 //AST<Node> node = MkCSharpSeq(stmts);
                 //return node;
             }
-            AST<Node> FoldName(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldNewStmt(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldNewStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldFunApp(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldFunApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldNulApp(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldNulApp(FuncTerm ft, List<SyntaxNode> children)
+            {
+                //No children
+                throw new NotImplementedException();
+            }
+            SyntaxNode FoldUnApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldUnApp(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldBinApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldBinApp(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldField(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldField(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldDefault(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldDefault(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldCast(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldCast(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldTuple(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldTuple(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldNamedTuple(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldNamedTuple(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldGoto(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldGoto(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldRaise(FuncTerm ft, IEnumerable<AST<Node>> children)
-            {
-                throw new NotImplementedException();
-            }
-            AST<Node> FoldSend(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> children)
             {
                 //code to be generated:
                 //Line 1 (template everything except event and <payload value>): 
@@ -1499,24 +1544,24 @@ namespace Microsoft.Pc
 
                 throw new NotImplementedException();
             }
-            AST<Node> FoldAnnounce(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldAnnounce(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldNullStmt(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldNullStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldAssert(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldAssert(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldFunStmt(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldFunStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 //throw new NotImplementedException();
                 return FoldFunApp(ft, children);
             }
-            AST<Node> FoldNulStmt(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldNulStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 //throw new NotImplementedException();
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
@@ -1528,29 +1573,30 @@ namespace Microsoft.Pc
                     //ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Pop"))));
                     //ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
                 }
-                return (AST<Node>) (ZingData.Cnst_Nil);
+                //return (SyntaxNode) (ZingData.Cnst_Nil);
+                return MkCSharpIdentifierName("NIL");
             }
-            AST<Node> FoldPrint(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldPrint(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldBinStmt(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldBinStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldReturn(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldReturn(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldWhile(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldWhile(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldIte(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldIte(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            AST<Node> FoldSeq(FuncTerm ft, IEnumerable<AST<Node>> children)
+            SyntaxNode FoldSeq(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
@@ -1559,9 +1605,10 @@ namespace Microsoft.Pc
             //TODO(expand): stopped here:
             public List<StatementSyntax> MkFunctionBody()
             {
-                var funBody = Factory.Instance.ToAST(funInfo.body).Compute<AST<Node>>(
-                x => Unfold(x),
-                (x, ch) => Fold(x, ch));
+                //TODO(question): how to fix type of ch?
+                var funBody = Factory.Instance.ToAST(funInfo.body).Compute<SyntaxNode>(
+                    x => Unfold(x),
+                    (x, ch) => Fold(x, ch.ToList()));
                 return new List<StatementSyntax>();
             }
             public SyntaxNode MkFunStackFrameClass()
@@ -1608,6 +1655,32 @@ namespace Microsoft.Pc
                                 new[] { Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword) },
                                 body,
                                 clonePars));
+
+                //Getters/setters for locals variables of the function: parameters and locals
+                foreach (var pair in funInfo.localNameToInfo)
+                {
+                    string varName = pair.Key;
+                    //Debug:
+                    Console.WriteLine("Next local of function {0} is {1}", funName, varName);
+
+                    int ind = pair.Value.index;
+                    Console.WriteLine("Index of the next local {0} is {1}", varName, ind);
+                    //Example: public PrtValue Par1 {get {return locals[0];} {set {locals[0] = value;}}
+
+                    modifiers = new SyntaxTokenList();
+                    modifiers = modifiers.Add(Token(SyntaxKind.PublicKeyword));
+                    var getBody = SingletonList<StatementSyntax>(ReturnStatement(
+                           (ExpressionSyntax) MkCSharpElementAccessExpression("locals", ind)));
+                    var setBody = SingletonList<StatementSyntax>((StatementSyntax)MkCSharpSimpleExpressionStatement(
+                            (ExpressionSyntax)MkCSharpElementAccessExpression("locals", ind),
+                            MkCSharpIdentifierName("value")));
+                    AccessorDeclarationSyntax[] accessorList = new AccessorDeclarationSyntax[]
+                        { MkCSharpAccessor("get", getBody), MkCSharpAccessor("set", setBody)};
+                    members = members.Add((MemberDeclarationSyntax)MkCSharpPropertyDecl("PrtValue", varName,
+                                          modifiers,
+                                          accessorList));
+                }
+
                 modifiers = new SyntaxTokenList();
                 modifiers = modifiers.Add(Token(SyntaxKind.InternalKeyword));
                 return MkCSharpClassDecl(frameClassName, modifiers,
@@ -2316,7 +2389,23 @@ namespace Microsoft.Pc
                     .NormalizeWhitespace();
                 machineMembers.Add(startStateProperty);
 
-                
+                //Add getters/setters for machine variables:
+                int ind = 0;
+                foreach (var pair in machInfo.localVariableToVarInfo)
+                {
+                    SyntaxTokenList modifiers = new SyntaxTokenList();
+                    modifiers = modifiers.Add(Token(SyntaxKind.PublicKeyword));
+                    var getBody = SingletonList<StatementSyntax>(ReturnStatement(
+                               (ExpressionSyntax)MkCSharpElementAccessExpression("fields", ind)));
+                    var setBody = SingletonList<StatementSyntax>((StatementSyntax)MkCSharpSimpleExpressionStatement(
+                            (ExpressionSyntax)MkCSharpElementAccessExpression("fields", ind),
+                            MkCSharpIdentifierName("value")));
+                    AccessorDeclarationSyntax[] accessorList = new AccessorDeclarationSyntax[]
+                            { MkCSharpAccessor("get", getBody), MkCSharpAccessor("set", setBody)};
+                    machineMembers.Add(MkCSharpPropertyDecl("PrtValue", pair.Key, modifiers, accessorList));
+                    ind += 1;
+                }
+                  
                 var skeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName(machName)));
                 var skeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
                   null, generator.IdentifierName("PrtImplMachine"),

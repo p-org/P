@@ -126,6 +126,45 @@ namespace P.Program
                 {
                     return this.Clone();
                 }
+
+                public PrtValue par1
+                {
+                    get
+                    {
+                        return locals[0];
+                    }
+
+                    set
+                    {
+                        locals[0] = value;
+                    }
+                }
+
+                public PrtValue par2
+                {
+                    get
+                    {
+                        return locals[1];
+                    }
+
+                    set
+                    {
+                        locals[1] = value;
+                    }
+                }
+
+                public PrtValue varInt
+                {
+                    get
+                    {
+                        return locals[2];
+                    }
+
+                    set
+                    {
+                        locals[2] = value;
+                    }
+                }
             }
 
             public override void Execute(StateImpl application, PrtMachine parent)
@@ -173,6 +212,58 @@ namespace P.Program
                 get
                 {
                     return Main_Init;
+                }
+            }
+
+            public PrtValue varTpl
+            {
+                get
+                {
+                    return fields[0];
+                }
+
+                set
+                {
+                    fields[0] = value;
+                }
+            }
+
+            public PrtValue varBool
+            {
+                get
+                {
+                    return fields[1];
+                }
+
+                set
+                {
+                    fields[1] = value;
+                }
+            }
+
+            public PrtValue varInt
+            {
+                get
+                {
+                    return fields[2];
+                }
+
+                set
+                {
+                    fields[2] = value;
+                }
+            }
+
+            public PrtValue pongId
+            {
+                get
+                {
+                    return fields[3];
+                }
+
+                set
+                {
+                    fields[3] = value;
                 }
             }
 
@@ -225,6 +316,19 @@ namespace P.Program
                     public override PrtFunStackFrame Clone()
                     {
                         return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
                     }
                 }
 
@@ -283,6 +387,19 @@ namespace P.Program
                     {
                         return this.Clone();
                     }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
                 }
 
                 public override void Execute(StateImpl application, PrtMachine parent)
@@ -339,6 +456,19 @@ namespace P.Program
                     public override PrtFunStackFrame Clone()
                     {
                         return this.Clone();
+                    }
+
+                    public PrtValue _payload_2
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
                     }
                 }
 
@@ -397,6 +527,19 @@ namespace P.Program
                     {
                         return this.Clone();
                     }
+
+                    public PrtValue _payload_1
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
                 }
 
                 public override void Execute(StateImpl application, PrtMachine parent)
@@ -453,6 +596,19 @@ namespace P.Program
                     public override PrtFunStackFrame Clone()
                     {
                         return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
                     }
                 }
 
@@ -511,6 +667,19 @@ namespace P.Program
                     {
                         return this.Clone();
                     }
+
+                    public PrtValue _payload_0
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
                 }
 
                 public override void Execute(StateImpl application, PrtMachine parent)
@@ -568,6 +737,19 @@ namespace P.Program
                     {
                         return this.Clone();
                     }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
                 }
 
                 public override void Execute(StateImpl application, PrtMachine parent)
@@ -624,6 +806,19 @@ namespace P.Program
                     public override PrtFunStackFrame Clone()
                     {
                         return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
                     }
                 }
 
@@ -739,6 +934,19 @@ namespace P.Program
                     {
                         return this.Clone();
                     }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
                 }
 
                 public override void Execute(StateImpl application, PrtMachine parent)
@@ -795,6 +1003,19 @@ namespace P.Program
                     public override PrtFunStackFrame Clone()
                     {
                         return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
                     }
                 }
 
@@ -947,6 +1168,19 @@ namespace P.Program
                     {
                         return this.Clone();
                     }
+
+                    public PrtValue payload
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
                 }
 
                 public override void Execute(StateImpl application, PrtMachine parent)
@@ -1003,6 +1237,19 @@ namespace P.Program
                     public override PrtFunStackFrame Clone()
                     {
                         return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
                     }
                 }
 
@@ -1061,6 +1308,19 @@ namespace P.Program
                     {
                         return this.Clone();
                     }
+
+                    public PrtValue _payload_3
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
                 }
 
                 public override void Execute(StateImpl application, PrtMachine parent)
@@ -1117,6 +1377,19 @@ namespace P.Program
                     public override PrtFunStackFrame Clone()
                     {
                         return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
                     }
                 }
 

@@ -32,7 +32,7 @@ namespace Microsoft.Pc
     //    }
     //}
 
-    class PToCSharp : PTranslation
+    partial class PToCSharp : PTranslation
     {
         //TODO(replace): these are Zing-related; used here for compilation only
         public static SyntaxNode PrtMkDefaultValue = MkCSharpDot("PRT_VALUE", "PrtMkDefaultValue");
@@ -293,13 +293,7 @@ namespace Microsoft.Pc
                 }
             }
         }
-        //ZingTranslationInfo FoldName(FuncTerm ft, IEnumerable<CSharpTranslationInfo> children)
-        //In the context of expressions only; no children
-        SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
-        {
-            return null;
-
-        }
+        
         #endregion
 
         #region Utilities
@@ -876,7 +870,7 @@ namespace Microsoft.Pc
                             .WithBody(Block(inits))
                             .NormalizeWhitespace());
         }
-        internal class MkFunctionDecl
+        internal partial class MkFunctionDecl
         {
             //funName is former entityName
             public string funName;
@@ -1220,6 +1214,7 @@ namespace Microsoft.Pc
             {
                 if (n.NodeKind == NodeKind.Id || n.NodeKind == NodeKind.Cnst)
                     //return ZingData.Cnst_Nil;
+                    //TODO: use "null" instead?
                     return MkCSharpIdentifierName("NIL");
 
                 var ft = (FuncTerm)n;
@@ -1419,9 +1414,20 @@ namespace Microsoft.Pc
                 //AST<Node> node = MkCSharpSeq(stmts);
                 //return node;
             }
+            //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                return null;
+                var n = GetArgByIndex(ft, 0);
+                if (n.NodeKind == NodeKind.Cnst)
+                {
+                    //var tmpVar = GetTmpVar(PrtValue, "tmp");
+                    //AddSideEffect(MkCSharpSimpleExpressionStatement(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    //AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, Factory.Instance.ToAST(n))));
+                    //return new ZingTranslationInfo(tmpVar);
+                    //return MkCSharpNumericLiteralExpression((Factory.Instance.ToAST(n))
+                }
+
             }
             SyntaxNode FoldNewStmt(FuncTerm ft, List<SyntaxNode> children)
             {
@@ -1468,82 +1474,82 @@ namespace Microsoft.Pc
             {
                 throw new NotImplementedException();
             }
-            SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
-            {
-                throw new NotImplementedException();
-            }
-            SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> children)
-            {
-                //code to be generated:
-                //Line 1 (template everything except event and <payload value>): 
-                //parent.PrtEnqueueEvent(event, <payload value>, parent);
-                //Example:parent.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
-                //public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
-                //event: children[1]
-                //<payload value>: compute from children[2-children.Count()]
+            //SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
+            //{
+            //    throw new NotImplementedException();
+            //}
+            //SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> children)
+            //{
+            //    //code to be generated:
+            //    //Line 1 (template everything except event and <payload value>): 
+            //    //parent.PrtEnqueueEvent(event, <payload value>, parent);
+            //    //Example:parent.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
+            //    //public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
+            //    //event: children[1]
+            //    //<payload value>: compute from children[2-children.Count()]
 
-                //Line 2 (template everything): 
-                //parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
-                //TODO(question):check that the last parameter is correct
-                //Example: parent.PrtFunContSend(this, currFun.locals, 1);
-                //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
+            //    //Line 2 (template everything): 
+            //    //parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
+            //    //TODO(question):check that the last parameter is correct
+            //    //Example: parent.PrtFunContSend(this, currFun.locals, 1);
+            //    //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
 
-                //List<AST<Node>> args = new List<AST<Node>>(children.Select(x => x));                  
-                ExpressionSyntax eventExpr;
-                ExpressionSyntax payloadExpr;
-                var enqueueEvent =
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("parent"),
-                                IdentifierName("PrtEnqueueEvent")))
-                        .WithArgumentList(
-                            ArgumentList(
-                                SeparatedList<ArgumentSyntax>(
-                                    new SyntaxNodeOrToken[]{
-                                        Argument(
-                                            //TODO: replace with real expr
-                                            IdentifierName("eventExpr")),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            //TODO: replace with real expr
-                                            IdentifierName("payloadExpr")),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            IdentifierName("parent"))}))))
-                    .NormalizeWhitespace();
+            //    //List<AST<Node>> args = new List<AST<Node>>(children.Select(x => x));                  
+            //    ExpressionSyntax eventExpr;
+            //    ExpressionSyntax payloadExpr;
+            //    var enqueueEvent =
+            //        ExpressionStatement(
+            //            InvocationExpression(
+            //                MemberAccessExpression(
+            //                    SyntaxKind.SimpleMemberAccessExpression,
+            //                    IdentifierName("parent"),
+            //                    IdentifierName("PrtEnqueueEvent")))
+            //            .WithArgumentList(
+            //                ArgumentList(
+            //                    SeparatedList<ArgumentSyntax>(
+            //                        new SyntaxNodeOrToken[]{
+            //                            Argument(
+            //                                //TODO: replace with real expr
+            //                                IdentifierName("eventExpr")),
+            //                            Token(SyntaxKind.CommaToken),
+            //                            Argument(
+            //                                //TODO: replace with real expr
+            //                                IdentifierName("payloadExpr")),
+            //                            Token(SyntaxKind.CommaToken),
+            //                            Argument(
+            //                                IdentifierName("parent"))}))))
+            //        .NormalizeWhitespace();
 
-                var contSend =
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("parent"),
-                                IdentifierName("PrtFunContSend")))
-                        .WithArgumentList(
-                            ArgumentList(
-                                SeparatedList<ArgumentSyntax>(
-                                    new SyntaxNodeOrToken[]{
-                                        Argument(
-                                            ThisExpression()),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName("currFun"),
-                                                IdentifierName("locals"))),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName("currFun"),
-                                                IdentifierName("returnTolocation")))}))))
-                    .NormalizeWhitespace();
+            //    var contSend =
+            //        ExpressionStatement(
+            //            InvocationExpression(
+            //                MemberAccessExpression(
+            //                    SyntaxKind.SimpleMemberAccessExpression,
+            //                    IdentifierName("parent"),
+            //                    IdentifierName("PrtFunContSend")))
+            //            .WithArgumentList(
+            //                ArgumentList(
+            //                    SeparatedList<ArgumentSyntax>(
+            //                        new SyntaxNodeOrToken[]{
+            //                            Argument(
+            //                                ThisExpression()),
+            //                            Token(SyntaxKind.CommaToken),
+            //                            Argument(
+            //                                MemberAccessExpression(
+            //                                    SyntaxKind.SimpleMemberAccessExpression,
+            //                                    IdentifierName("currFun"),
+            //                                    IdentifierName("locals"))),
+            //                            Token(SyntaxKind.CommaToken),
+            //                            Argument(
+            //                                MemberAccessExpression(
+            //                                    SyntaxKind.SimpleMemberAccessExpression,
+            //                                    IdentifierName("currFun"),
+            //                                    IdentifierName("returnTolocation")))}))))
+            //        .NormalizeWhitespace();
 
 
-                throw new NotImplementedException();
-            }
+            //    throw new NotImplementedException();
+            //}
             SyntaxNode FoldAnnounce(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();

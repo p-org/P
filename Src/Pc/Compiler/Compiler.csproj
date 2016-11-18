@@ -204,6 +204,7 @@
     <Compile Include="CommandLineOptions.cs" />
     <Compile Include="ICompilerOutput.cs" />
     <Compile Include="LProgram.cs" />
+    <Compile Include="MkFunctionDecl_temp.cs" />
     <Compile Include="Parser\LParser.cs" />
     <Compile Include="Parser\PParser.cs" />
     <Compile Include="Parser\ShiftReduceParserCode.cs" />

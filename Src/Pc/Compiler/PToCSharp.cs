@@ -37,11 +37,13 @@ namespace Microsoft.Pc
         //TODO(replace): these are Zing-related; used here for compilation only
         public static SyntaxNode PrtMkDefaultValue = MkCSharpDot("PRT_VALUE", "PrtMkDefaultValue");
         public static SyntaxNode PrtCloneValue = MkCSharpDot("PRT_VALUE", "PrtCloneValue");
+        public AST<Model> modelWithTypes;
         public PToCSharp(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo, string csharpFileName)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
             this.csharpFileName = csharpFileName;
             this.typeContext = new TypeTranslationContext(this);
+            this.modelWithTypes = modelWithTypes; 
             //GenerateTypeInfo(modelWithTypes);
         }
 
@@ -57,6 +59,7 @@ namespace Microsoft.Pc
         //Possibly, all types-realted stuff should be moved to PToCSharp (similar to Zing compiler)
         //and  TypeTranslationContext to be instantiated in the PToCSharp constructor
         //After that, ConstructType in MkFunctionDecl can be replaced with TypeTranslationContext.ConstructType
+
         TypeTranslationContext typeContext;
         internal class TypeTranslationContext
         {
@@ -164,6 +167,10 @@ namespace Microsoft.Pc
             private SyntaxNode ConstructType(FuncTerm type)
             {
                 string typeKind = ((Id)type.Function).Name;
+
+                //Debug only:
+                Console.WriteLine("typeKind in ConstructType: {0}", typeKind);
+
                 if (typeKind == "BaseType")
                 {
                     var primitiveType = ((Id)GetArgByIndex(type, 0)).Name;
@@ -221,13 +228,13 @@ namespace Microsoft.Pc
                 }
                 else if (typeKind == "NameType")
                 {
+                    //throw new NotImplementedException();
                     //NameType is for enum values only; "synonym" types are expanded by the compiler
                     //TODO(expand): there's no ref to the enum type left in C# code, which would not allow
                     //to treat casts (enum->int) properly; 
                     //therefore, code below would have to be changed, after PrtEnumType is defined in PrtTypes.cs.
-                    string typeName = "type_" + typeCount;
+                    string typeName = "typeNameType_" + typeCount;
                     var tmpVar = GetType(typeName);
-                    //TODO(question): same as in Zing compiler; is this correct?
                     AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -235,61 +242,90 @@ namespace Microsoft.Pc
                 }
                 else if (typeKind == "TupType")
                 {
-                    throw new NotImplementedException();
-                    //List<SyntaxNode> memberTypes = new List<SyntaxNode>();
-                    //while (type != null)
-                    //{
-                    //    memberTypes.Add(pTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0)));
-                    //    type = GetArgByIndex(type, 1) as FuncTerm;
-                    //}
-                    //var tupleType = GetType();
-                    //AddTypeInitialization(MkCSharpSimpleExpressionStatement(tupleType, MkCSharpCall(MkCSharpDot("PRT_TYPE", "PrtMkTupType"), Factory.Instance.MkCnst(memberTypes.Count))));
+                    List<SyntaxNode> memberTypes = new List<SyntaxNode>();
+                    while (type != null)
+                    {
+                        memberTypes.Add(PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0)));
+                        type = GetArgByIndex(type, 1) as FuncTerm;
+                    }
+                    string typeName = "typeTupType_" + typeCount;
+                    var tmpVar = GetType(typeName);
+                    //TODO(improve): create a generic method for inserting CommaToken into a generic list 
+                    List<SyntaxNodeOrToken> initializer = new List<SyntaxNodeOrToken>();
+                    foreach (var memberType in memberTypes)
+                    {
+                        initializer.Add(memberType);
+                        initializer.Add(Token(SyntaxKind.CommaToken));
+                    }
+                    initializer.RemoveAt(initializer.Count() - 1);
+                    //public static SyntaxNode MkCSharpArrayCreationExpression(TypeSyntax type, SyntaxNodeOrToken[] initializer)
+                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtTupleType"),
+                        MkCSharpArrayCreationExpression("PrtType", initializer.ToArray()))));
+                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
+                                                                   Token(SyntaxKind.StaticKeyword)));
+                    //TODO(confirm): what for is this code in PToZing.cs?
+                    //Looks like it is not needed now
                     //for (int i = 0; i < memberTypes.Count; i++)
                     //{
-                    //    //AddTypeInitialization(MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
+                    //    AddTypeInitialization(MkZingCallStmt(MkZingCall(MkZingDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
                     //}
-                    //return tupleType;
+                    return tmpVar;
 
                 }
                 else if (typeKind == "NmdTupType")
                 {
-                    throw new NotImplementedException();
-                    //List<AST<Node>> memberNames = new List<AST<Node>>();
-                    //List<AST<Node>> memberTypes = new List<AST<Node>>();
-                    //while (type != null)
-                    //{
-                    //    var typeField = (FuncTerm)GetArgByIndex(type, 0);
-                    //    memberNames.Add(GetField(((Cnst)GetArgByIndex(typeField, 0)).GetStringValue()));
-                    //    memberTypes.Add(pTypeToZingExpr((FuncTerm)GetArgByIndex(typeField, 1)));
-                    //    type = GetArgByIndex(type, 1) as FuncTerm;
-                    //}
-                    //var tupleType = GetType();
-                    //AddTypeInitialization(MkCSharpAssign(tupleType, MkCSharpCall(MkCSharpDot("PRT_TYPE", "PrtMkNmdTupType"), Factory.Instance.MkCnst(memberTypes.Count))));
-                    //for (int i = 0; i < memberTypes.Count; i++)
-                    //{
-                    //    AddTypeInitialization(MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("PRT_TYPE", "PrtSetFieldName"), tupleType, Factory.Instance.MkCnst(i), memberNames[i])));
-                    //    AddTypeInitialization(MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
-                    //}
-                    //return tupleType;
+                    List<SyntaxNode> memberNames = new List<SyntaxNode>();
+                    List<SyntaxNode> memberTypes = new List<SyntaxNode>();
 
+                    while (type != null)
+                    {
+                        var typeField = (FuncTerm)GetArgByIndex(type, 0);
+                        string nameField = ((Cnst)GetArgByIndex(typeField, 0)).GetStringValue();
+                        memberNames.Add(MkCSharpStringLiteralExpression(nameField));
+                        memberTypes.Add(PTypeToCSharpExpr((FuncTerm)GetArgByIndex(typeField, 1)));
+                        type = GetArgByIndex(type, 1) as FuncTerm;
+                    }
+                    string typeName = "typeNmdTupType_" + typeCount;
+                    var tmpVar = GetType(typeName);
+
+                    List<SyntaxNodeOrToken> initializer = new List<SyntaxNodeOrToken>();
+                    int ind = 0;
+                    foreach (var memberName in memberNames)
+                    {
+                        initializer.Add(memberName);
+                        initializer.Add(Token(SyntaxKind.CommaToken));
+                        initializer.Add(memberTypes[ind++]);
+                        initializer.Add(Token(SyntaxKind.CommaToken));
+                    }
+                    initializer.RemoveAt(initializer.Count() - 1);
+
+                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNmdTupleType"),
+                        MkCSharpArrayCreationExpression("PrtType", initializer.ToArray()))));
+                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtNmdTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
+                                                                   Token(SyntaxKind.StaticKeyword)));
+                    return tmpVar;
                 }
                 else if (typeKind == "SeqType")
                 {
-                    throw new NotImplementedException();
-                    //var innerType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0));
-                    //var seqType = GetType();
-                    //AddTypeInitialization(MkCSharpAssign(seqType, MkCSharpCall(MkCSharpDot("PRT_TYPE", "PrtMkSeqType"), innerType)));
-                    //return seqType;
+                    SyntaxNode innerType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0));
+                    string typeName = "typeSeqType_" + typeCount;
+                    var tmpVar = GetType(typeName);
+                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtSeqType"), innerType)));
+                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtSeqType"), typeName, Token(SyntaxKind.PublicKeyword),
+                                                                   Token(SyntaxKind.StaticKeyword)));
+                    return tmpVar;
                 }
                 else
                 {
-                    throw new NotImplementedException();
                     // typeKind == "MapType"
-                    //var domType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0));
-                    //var codType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 1));
-                    //var mapType = GetType();
-                    //AddTypeInitialization(MkCSharpAssign(mapType, MkCSharpCall(MkCSharpDot("PRT_TYPE", "PrtMkMapType"), domType, codType)));
-                    //return mapType;
+                    SyntaxNode keyType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0));
+                    SyntaxNode valType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 1));
+                    string typeName = "typeMapType_" + typeCount;
+                    var tmpVar = GetType(typeName);
+                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtMapType"), keyType, valType)));
+                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtMapType"), typeName, Token(SyntaxKind.PublicKeyword),
+                                                                   Token(SyntaxKind.StaticKeyword)));
+                    return tmpVar;
                 }
             }
         }
@@ -531,7 +567,24 @@ namespace Microsoft.Pc
                                        SyntaxKind.NumericLiteralExpression,
                                           Literal(index))))));
         }
-        //TODO(expand on any number of parameters)
+        //OmittedArraySizeExpression case only:
+        public static SyntaxNode MkCSharpArrayCreationExpression(string type, SyntaxNodeOrToken[] initializer)
+        {
+            //SyntaxNodeOrToken[] temp = new SyntaxNodeOrToken[initializer.Count()];
+            //temp = initializer;
+            return ArrayCreationExpression(
+                    ArrayType(IdentifierName(type))
+                    .WithRankSpecifiers(
+                         SingletonList<ArrayRankSpecifierSyntax>(
+                                    ArrayRankSpecifier(
+                                        SingletonSeparatedList<ExpressionSyntax>(
+                                            OmittedArraySizeExpression())))))
+                        .WithInitializer(
+                            InitializerExpression(
+                                            SyntaxKind.ArrayInitializerExpression,
+                                            SeparatedList<ExpressionSyntax>(initializer)));
+        }
+        //TODO(expand to any number of parameters)
         public static SyntaxNode MkCSharpObjectCreationExpression(SyntaxNode type, params SyntaxNode[] names)
         {
             //List<ArgumentSyntax> hd = new List<ArgumentSyntax>();
@@ -905,6 +958,147 @@ namespace Microsoft.Pc
                 this.isGlobalStatic = isGlobalStatic;
                 this.owner = owner;
                 this.pToCSharp = pToCSharp;
+                GenerateTypeInfo(pToCSharp.modelWithTypes);
+            }
+            void GenerateTypeInfo(AST<Model> model)
+            {
+                var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+                model.FindAll(
+                    new NodePred[]
+                    {
+                    NodePredFactory.Instance.Star,
+                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                    },
+
+                    (path, n) =>
+                    {
+                        var mf = (ModelFact)n;
+                        FuncTerm ft = (FuncTerm)mf.Match;
+                        pToCSharp.GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                    });
+
+                var terms = pToCSharp.GetBin(factBins, "TypeOf");
+                foreach (var term in terms)
+                {
+                    using (var it = term.Node.Args.GetEnumerator())
+                    {
+                        it.MoveNext();
+                        FuncTerm typingContext = (FuncTerm)it.Current;
+                        it.MoveNext();
+                        var expr = Factory.Instance.ToAST(it.Current);
+                        it.MoveNext();
+                        var type = it.Current as FuncTerm;
+                        if (type == null) continue;
+
+                        string typingContextKind = ((Id)typingContext.Function).Name;
+                        if (typingContextKind == "FunDecl")
+                        {
+                            string ownerName = pToCSharp.GetOwnerName(typingContext, 1, 0);
+                            string funName = GetName(typingContext, 0);
+                            if (ownerName == null)
+                            {
+                                pToCSharp.allStaticFuns[funName].typeInfo[expr] = type;
+                            }
+                            else
+                            {
+                                pToCSharp.allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                            }
+                        }
+                        else
+                        {
+                            // typingContextKind == "AnonFunDecl"
+                            string ownerName = pToCSharp.GetOwnerName(typingContext, 0, 0);
+                            string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(typingContext)];
+                            if (ownerName == null)
+                            {
+                                pToCSharp.allStaticFuns[funName].typeInfo[expr] = type;
+                            }
+                            else
+                            {
+                                pToCSharp.allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                            }
+                        }
+                    }
+                }
+
+                terms = pToCSharp.GetBin(factBins, "TranslatedTypeExpr");
+                foreach (var term in terms)
+                {
+                    using (var it = term.Node.Args.GetEnumerator())
+                    {
+                        it.MoveNext();
+                        var eType = (FuncTerm)it.Current;
+                        pToCSharp.typeContext.PTypeToCSharpExpr(eType);
+                    }
+                }
+
+                terms = pToCSharp.GetBin(factBins, "TypeExpansion");
+                foreach (var term in terms)
+                {
+                    using (var it = term.Node.Args.GetEnumerator())
+                    {
+                        it.MoveNext();
+                        var type = (FuncTerm)it.Current;
+                        it.MoveNext();
+                        var eType = (FuncTerm)it.Current;
+                        pToCSharp.typeContext.AddOriginalType(type, eType);
+                    }
+                }
+
+                terms = pToCSharp.GetBin(factBins, "LinkMap");
+                foreach (var term in terms)
+                {
+                    using (var it = term.Node.Args.GetEnumerator())
+                    {
+                        it.MoveNext();
+                        var createdIorM = ((Cnst)it.Current).GetStringValue();
+                        it.MoveNext();
+                        var createdM = ((Cnst)it.Current).GetStringValue();
+                        pToCSharp.linkMap.Add(createdIorM, createdM);
+                    }
+                }
+
+                terms = pToCSharp.GetBin(factBins, "MaxNumLocals");
+                foreach (var term in terms)
+                {
+                    using (var it = term.Node.Args.GetEnumerator())
+                    {
+                        it.MoveNext();
+                        FuncTerm typingContext = (FuncTerm)it.Current;
+                        string typingContextKind = ((Id)typingContext.Function).Name;
+                        if (!(typingContextKind == "FunDecl" || typingContextKind == "AnonFunDecl")) continue;
+                        it.MoveNext();
+                        var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
+
+                        if (typingContextKind == "FunDecl")
+                        {
+                            string ownerName = pToCSharp.GetOwnerName(typingContext, 1, 0);
+                            string funName = GetName(typingContext, 0);
+                            if (ownerName == null)
+                            {
+                                pToCSharp.allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                            }
+                            else
+                            {
+                                pToCSharp.allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                            }
+                        }
+                        else
+                        {
+                            // typingContextKind == "AnonFunDecl"
+                            string ownerName = pToCSharp.GetOwnerName(typingContext, 0, 0);
+                            string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(typingContext)];
+                            if (ownerName == null)
+                            {
+                                pToCSharp.allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                            }
+                            else
+                            {
+                                pToCSharp.allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                            }
+                        }
+                    }
+                }
             }
             public int LabelToId(string l)
             {
@@ -981,7 +1175,11 @@ namespace Microsoft.Pc
                 //return locals.Select(loc => PToCSharp.MkCSharpVarDecl(loc.Item2, loc.Item1));
             }
 
-           
+            private FuncTerm LookupType(Node node)
+            {
+                //return entityInfo.typeInfo[Factory.Instance.ToAST(node)];
+                return funInfo.typeInfo[Factory.Instance.ToAST(node)];
+            }
             #region FoldUnfod
             private IEnumerable<Node> Unfold(Node n)
             {

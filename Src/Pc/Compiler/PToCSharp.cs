@@ -44,7 +44,7 @@ namespace Microsoft.Pc
             this.csharpFileName = csharpFileName;
             this.typeContext = new TypeTranslationContext(this);
             this.modelWithTypes = modelWithTypes; 
-            //GenerateTypeInfo(modelWithTypes);
+            GenerateTypeInfo(modelWithTypes);
         }
 
         #region CSharpCompiler
@@ -59,7 +59,146 @@ namespace Microsoft.Pc
         //Possibly, all types-realted stuff should be moved to PToCSharp (similar to Zing compiler)
         //and  TypeTranslationContext to be instantiated in the PToCSharp constructor
         //After that, ConstructType in MkFunctionDecl can be replaced with TypeTranslationContext.ConstructType
+        void GenerateTypeInfo(AST<Model> model)
+        {
+            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            model.FindAll(
+                new NodePred[]
+                {
+                    NodePredFactory.Instance.Star,
+                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                },
 
+                (path, n) =>
+                {
+                    var mf = (ModelFact)n;
+                    FuncTerm ft = (FuncTerm)mf.Match;
+                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                });
+
+            var terms = GetBin(factBins, "TypeOf");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    it.MoveNext();
+                    var expr = Factory.Instance.ToAST(it.Current);
+                    it.MoveNext();
+                    var type = it.Current as FuncTerm;
+                    if (type == null) continue;
+
+                    string typingContextKind = ((Id)typingContext.Function).Name;
+                    if (typingContextKind == "FunDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string funName = GetName(typingContext, 0);
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].typeInfo[expr] = type;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                        }
+                    }
+                    else
+                    {
+                        // typingContextKind == "AnonFunDecl"
+                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].typeInfo[expr] = type;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
+                        }
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "TranslatedTypeExpr");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var eType = (FuncTerm)it.Current;
+                    typeContext.PTypeToCSharpExpr(eType);
+                }
+            }
+
+            terms = GetBin(factBins, "TypeExpansion");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var type = (FuncTerm)it.Current;
+                    it.MoveNext();
+                    var eType = (FuncTerm)it.Current;
+                    typeContext.AddOriginalType(type, eType);
+                }
+            }
+
+            terms = GetBin(factBins, "LinkMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var createdIorM = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var createdM = ((Cnst)it.Current).GetStringValue();
+                    linkMap.Add(createdIorM, createdM);
+                }
+            }
+
+            terms = GetBin(factBins, "MaxNumLocals");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    string typingContextKind = ((Id)typingContext.Function).Name;
+                    if (!(typingContextKind == "FunDecl" || typingContextKind == "AnonFunDecl")) continue;
+                    it.MoveNext();
+                    var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
+
+                    if (typingContextKind == "FunDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string funName = GetName(typingContext, 0);
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
+                    }
+                    else
+                    {
+                        // typingContextKind == "AnonFunDecl"
+                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
+                    }
+                }
+            }
+        }
         TypeTranslationContext typeContext;
         internal class TypeTranslationContext
         {
@@ -299,9 +438,9 @@ namespace Microsoft.Pc
                     }
                     initializer.RemoveAt(initializer.Count() - 1);
 
-                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNmdTupleType"),
-                        MkCSharpArrayCreationExpression("PrtType", initializer.ToArray()))));
-                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtNmdTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
+                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNamedTupleType"),
+                        MkCSharpArrayCreationExpression("object", initializer.ToArray()))));
+                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtNamedTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                     return tmpVar;
                 }
@@ -958,148 +1097,9 @@ namespace Microsoft.Pc
                 this.isGlobalStatic = isGlobalStatic;
                 this.owner = owner;
                 this.pToCSharp = pToCSharp;
-                GenerateTypeInfo(pToCSharp.modelWithTypes);
+                //GenerateTypeInfo(pToCSharp.modelWithTypes);
             }
-            void GenerateTypeInfo(AST<Model> model)
-            {
-                var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-                model.FindAll(
-                    new NodePred[]
-                    {
-                    NodePredFactory.Instance.Star,
-                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                    },
-
-                    (path, n) =>
-                    {
-                        var mf = (ModelFact)n;
-                        FuncTerm ft = (FuncTerm)mf.Match;
-                        pToCSharp.GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
-                    });
-
-                var terms = pToCSharp.GetBin(factBins, "TypeOf");
-                foreach (var term in terms)
-                {
-                    using (var it = term.Node.Args.GetEnumerator())
-                    {
-                        it.MoveNext();
-                        FuncTerm typingContext = (FuncTerm)it.Current;
-                        it.MoveNext();
-                        var expr = Factory.Instance.ToAST(it.Current);
-                        it.MoveNext();
-                        var type = it.Current as FuncTerm;
-                        if (type == null) continue;
-
-                        string typingContextKind = ((Id)typingContext.Function).Name;
-                        if (typingContextKind == "FunDecl")
-                        {
-                            string ownerName = pToCSharp.GetOwnerName(typingContext, 1, 0);
-                            string funName = GetName(typingContext, 0);
-                            if (ownerName == null)
-                            {
-                                pToCSharp.allStaticFuns[funName].typeInfo[expr] = type;
-                            }
-                            else
-                            {
-                                pToCSharp.allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
-                            }
-                        }
-                        else
-                        {
-                            // typingContextKind == "AnonFunDecl"
-                            string ownerName = pToCSharp.GetOwnerName(typingContext, 0, 0);
-                            string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(typingContext)];
-                            if (ownerName == null)
-                            {
-                                pToCSharp.allStaticFuns[funName].typeInfo[expr] = type;
-                            }
-                            else
-                            {
-                                pToCSharp.allMachines[ownerName].funNameToFunInfo[funName].typeInfo[expr] = type;
-                            }
-                        }
-                    }
-                }
-
-                terms = pToCSharp.GetBin(factBins, "TranslatedTypeExpr");
-                foreach (var term in terms)
-                {
-                    using (var it = term.Node.Args.GetEnumerator())
-                    {
-                        it.MoveNext();
-                        var eType = (FuncTerm)it.Current;
-                        pToCSharp.typeContext.PTypeToCSharpExpr(eType);
-                    }
-                }
-
-                terms = pToCSharp.GetBin(factBins, "TypeExpansion");
-                foreach (var term in terms)
-                {
-                    using (var it = term.Node.Args.GetEnumerator())
-                    {
-                        it.MoveNext();
-                        var type = (FuncTerm)it.Current;
-                        it.MoveNext();
-                        var eType = (FuncTerm)it.Current;
-                        pToCSharp.typeContext.AddOriginalType(type, eType);
-                    }
-                }
-
-                terms = pToCSharp.GetBin(factBins, "LinkMap");
-                foreach (var term in terms)
-                {
-                    using (var it = term.Node.Args.GetEnumerator())
-                    {
-                        it.MoveNext();
-                        var createdIorM = ((Cnst)it.Current).GetStringValue();
-                        it.MoveNext();
-                        var createdM = ((Cnst)it.Current).GetStringValue();
-                        pToCSharp.linkMap.Add(createdIorM, createdM);
-                    }
-                }
-
-                terms = pToCSharp.GetBin(factBins, "MaxNumLocals");
-                foreach (var term in terms)
-                {
-                    using (var it = term.Node.Args.GetEnumerator())
-                    {
-                        it.MoveNext();
-                        FuncTerm typingContext = (FuncTerm)it.Current;
-                        string typingContextKind = ((Id)typingContext.Function).Name;
-                        if (!(typingContextKind == "FunDecl" || typingContextKind == "AnonFunDecl")) continue;
-                        it.MoveNext();
-                        var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
-
-                        if (typingContextKind == "FunDecl")
-                        {
-                            string ownerName = pToCSharp.GetOwnerName(typingContext, 1, 0);
-                            string funName = GetName(typingContext, 0);
-                            if (ownerName == null)
-                            {
-                                pToCSharp.allStaticFuns[funName].maxNumLocals = maxNumLocals;
-                            }
-                            else
-                            {
-                                pToCSharp.allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
-                            }
-                        }
-                        else
-                        {
-                            // typingContextKind == "AnonFunDecl"
-                            string ownerName = pToCSharp.GetOwnerName(typingContext, 0, 0);
-                            string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(typingContext)];
-                            if (ownerName == null)
-                            {
-                                pToCSharp.allStaticFuns[funName].maxNumLocals = maxNumLocals;
-                            }
-                            else
-                            {
-                                pToCSharp.allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
-                            }
-                        }
-                    }
-                }
-            }
+            
             public int LabelToId(string l)
             {
                 return labels[l];

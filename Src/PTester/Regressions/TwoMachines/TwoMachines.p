@@ -8,11 +8,18 @@
 //types
 //variables: machine locals, function locals (including formal pars)
 
-type nmdtuple = (a: int, b: int);
-event Ping assert 1: machine;
-event Pong assert 1: int;
+//type nmdtuple = (a: int, b: int);
+//type tpl = (int, bool);
+event Ping assert 1: (a:int, b:bool);
+//event Ping assert 1: int;
+event Pong assert 1: seq[int];
 event Success: bool;
-event Fail: nmdtuple;
+event Fail: (int, bool);
+event NotUsed: map[int,bool];
+//event NotUsed: seq(seq(int));
+//event Fail: tpl;
+//event Fail: int;
+//event Fail: nmdtuple;
 
 fun F1(par1: int, par2: bool) {
 	var varInt: int;
@@ -30,7 +37,9 @@ machine Main
     var pongId: machine;
 	var varInt: int;
 	var varBool: bool;
-	var varTpl: nmdtuple;
+	var varTpl: (int, bool);
+	var varNmdTpl: (a:int, b:int);
+	//var varTpl: int;
 
     start hot state Init {
         entry {
@@ -38,7 +47,7 @@ machine Main
 	        //raise Success;   	   
         }
         //on Success goto Ping_SendPing with {F1(varInt, varBool);}
-		ignore Fail;
+		on Fail goto Ping_WaitPong;
 		on null goto Ping_WaitPong;
     }
 
@@ -63,7 +72,9 @@ machine Main
 		ignore Fail;
 	 }
 
-	 fun foo(par1: bool, par2: nmdtuple) {}
+	 //fun foo(par1: bool, par2: nmdtuple) {}
+	 //fun foo(par1: bool, par2: (int, bool)) {}
+	 fun foo(par1: bool, par2: int) {}
 }
 
 machine PONG assume 111 {

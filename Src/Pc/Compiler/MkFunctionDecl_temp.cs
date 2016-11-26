@@ -25,7 +25,7 @@ namespace Microsoft.Pc
     {
         internal partial class MkFunctionDecl
         {
-            #region FoldUnfod
+            #region FoldUnfold
             
             SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
             {

@@ -352,6 +352,14 @@ namespace P.Runtime
             }
         }
 
+        public PrtTupleValue(PrtTupleType tupType, params PrtValue[] elems)
+        {
+            foreach (var elem in elems)
+            {
+                fieldValues.Add(elem.Clone());
+            }
+        }
+
         public override PrtValue Clone()
         {
             var clone = new PrtTupleValue();
@@ -359,7 +367,6 @@ namespace P.Runtime
             {
                 clone.fieldValues.Add(val.Clone());
             }
-
             return clone;
         }
 
@@ -412,6 +419,18 @@ namespace P.Runtime
             foreach (var ft in tupType.fieldTypes)
             {
                 fieldValues.Add(PrtMkDefaultValue(ft));
+            }
+        }
+
+        public PrtNamedTupleValue(PrtNamedTupleType tupType, params PrtValue[] elems)
+        {
+            foreach (var fn in tupType.fieldNames)
+            {
+                fieldNames.Add(fn);
+            }
+            foreach (var elem in elems)
+            {
+                fieldValues.Add(elem);
             }
         }
 
@@ -516,7 +535,6 @@ namespace P.Runtime
                     index++;
                 }
             }
-
             return true;
         }
 
@@ -630,7 +648,6 @@ namespace P.Runtime
                         }
                     }
                 }
-
                 return true;
             }
         }

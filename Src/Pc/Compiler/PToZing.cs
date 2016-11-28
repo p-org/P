@@ -1079,12 +1079,15 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    // compiler.Options.liveness == LivenessOption.Mace
+                    // compiler.Options.liveness == LivenessOption.Sampling
                     enterStmts.Add(
                         MkZingIfThenElse(
                             MkZingEq(MkZingDot(state, "temperature"), MkZingDot("StateTemperature", "Hot")),
-                            MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_False)),
-                            MkZingCallStmt(MkZingCall(MkZingIdentifier("accept"), ZingData.Cnst_True))));
+                            MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), Factory.Instance.MkCnst("\"updatemonitor\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst("\"hot\""))),
+                            MkZingIfThenElse(
+                            MkZingEq(MkZingDot(state, "temperature"), MkZingDot("StateTemperature", "Cold")),
+                            MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), Factory.Instance.MkCnst("\"updatemonitor\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst("\"cold\""))),
+                            MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), Factory.Instance.MkCnst("\"updatemonitor\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)), Factory.Instance.MkCnst("\"warm\""))))));
                 }
             }
             enterStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("CalculateDeferredAndActionSet"), state)));
@@ -2745,6 +2748,13 @@ namespace Microsoft.Pc
 
             var doPop = MkZingIdentifier("doPop");
             var machineHandle = MkZingDot("Main", GetSpecMachineName(machineName));
+
+            //Add the liveness instrumentation if liveness sampling 
+            if(compiler.Options.liveness == LivenessOption.Sampling)
+            {
+                body = MkZingSeq(body,
+                    MkZingCallStmt(MkZingCall(MkZingIdentifier("invokescheduler"), Factory.Instance.MkCnst("\"mapmonitor\""), Factory.Instance.MkCnst(string.Format("\"{0}\"", machineName)))));
+            }
 
             body = MkZingSeq(body,
                     MkZingAssign(MkZingIdentifier(objectName), MkZingNew(Factory.Instance.MkCnst(ZingMachineClassName(machineName)), ZingData.Cnst_Nil)),

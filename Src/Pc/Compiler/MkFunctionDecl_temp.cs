@@ -26,11 +26,32 @@ namespace Microsoft.Pc
         internal partial class MkFunctionDecl
         {
             #region FoldUnfold
-            
+
+            private SyntaxNode MkPayload(SyntaxNode tupTypeExpr, List<SyntaxNode> args)
+            {
+                if (args.Count == 0)
+                {
+                    return MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("PrtValue"),
+                                IdentifierName("NullValue"));
+                }
+                else if (args.Count == 1)
+                {
+                    return args[0];
+                }
+                else
+                {
+                    // return new PrtTupleValue(tupTypeExpr, args[0], args[1], args[args.Count - 1]);
+                    return null;
+                }
+            }
+
             SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
+
             SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> children)
             {
                 //code to be generated:
@@ -48,8 +69,9 @@ namespace Microsoft.Pc
                 //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
 
                 //List<AST<Node>> args = new List<AST<Node>>(children.Select(x => x));                  
-                ExpressionSyntax eventExpr;
-                ExpressionSyntax payloadExpr;
+                SyntaxNode targetExpr; // (PrtMachineValue)children[0]
+                ExpressionSyntax eventExpr; // (PrtEventValue)children[1]
+                ExpressionSyntax payloadExpr; // MkPayload(eventExpr.payloadType, args[2..])
                 var enqueueEvent =
                     ExpressionStatement(
                         InvocationExpression(

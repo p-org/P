@@ -144,8 +144,8 @@
                         case "liveness":
                             if (string.IsNullOrEmpty(colonArg))
                                 liveness = LivenessOption.Standard;
-                            else if (colonArg == "mace")
-                                liveness = LivenessOption.Mace;
+                            else if (colonArg == "sampling")
+                                liveness = LivenessOption.Sampling;
                             else
                                 return false;
                             break;

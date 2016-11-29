@@ -21,29 +21,16 @@ using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Microsoft.Pc
 {
-    //CSharpTranslationInfo is redundant:
-    //internal class CSharpTranslationInfo
-    //{
-    //    public AST<Node> node = null;
-
-    //    public CSharpTranslationInfo(AST<Node> n)
-    //    {
-    //        this.node = n;
-    //    }
-    //}
-
     partial class PToCSharp : PTranslation
     {
         //TODO(replace): these are Zing-related; used here for compilation only
         public static SyntaxNode PrtMkDefaultValue = MkCSharpDot("PRT_VALUE", "PrtMkDefaultValue");
         public static SyntaxNode PrtCloneValue = MkCSharpDot("PRT_VALUE", "PrtCloneValue");
-        public AST<Model> modelWithTypes;
         public PToCSharp(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo, string csharpFileName)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
             this.csharpFileName = csharpFileName;
             this.typeContext = new TypeTranslationContext(this);
-            this.modelWithTypes = modelWithTypes; 
             GenerateTypeInfo(modelWithTypes);
         }
 

@@ -14,7 +14,7 @@ namespace Microsoft.Pc
         {
             bool shortFileNames = false;
             bool server = false;
-            string compileErrorMsgString = "USAGE: compile file.p [/shortFileNames] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/generate[:C,:Zing, C#]] [/liveness[:mace]] [/profile]";
+            string compileErrorMsgString = "USAGE: compile file.p [/shortFileNames] [/printTypeInference] [/dumpFormulaModel] [/outputDir:<dir>] [/generate[:C,:Zing, C#]] [/liveness[:sampling]] [/profile]";
             string linkErrorMsgString = "USAGE: link file_1.4ml ... file_n.4ml [file.p]";
             for (int i = 0; i < args.Length; i++)
             {

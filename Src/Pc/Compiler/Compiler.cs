@@ -26,7 +26,7 @@
 
     public enum CompilerOutput { None, C0, C, Zing, CSharp, Link };
 
-    public enum LivenessOption { None, Standard, Mace };
+    public enum LivenessOption { None, Standard, Sampling };
 
    
     public class SourceInfo

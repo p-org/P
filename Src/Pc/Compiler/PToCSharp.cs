@@ -1084,7 +1084,7 @@ namespace Microsoft.Pc
             //We should be able to do without this stack in C# code gen because C# method calls can be nested inside expressions
             public Stack<List<AST<Node>>> sideEffectsStack;
             //locals contain temp vars for storing intermediate results, for example, in translation of expressions
-            public List<Tuple<AST<Node>, string>> locals;
+            public List<Tuple<SyntaxNode, string>> locals;
             public Stack<bool> lhsStack;
             //labels are used for "continuations" in send, new, nondet, receive
             private Dictionary<string, int> labels;
@@ -1144,11 +1144,11 @@ namespace Microsoft.Pc
             }
 
             // type must be CSharp type
-            public SyntaxNode GetTmpVar(AST<Node> type, string baseName)
+            public SyntaxNode GetTmpVar(SyntaxNode type, string baseName)
             {
                 var tmpVarName = pToCSharp.GetUnique(baseName);
                 var tmpVar = MkCSharpIdentifierName(tmpVarName);
-                this.locals.Add(new Tuple<AST<Node>, string>(type, tmpVarName));
+                this.locals.Add(new Tuple<SyntaxNode, string>(type, tmpVarName));
                 return tmpVar;
             }
 

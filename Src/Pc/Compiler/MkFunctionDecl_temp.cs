@@ -38,12 +38,32 @@ namespace Microsoft.Pc
                 }
                 else if (args.Count == 1)
                 {
-                    return args[0];
+                    return (ExpressionSyntax)args[0];
                 }
                 else
                 {
+                    //return new PrtTupleValue(tupTypeExpr, args);
                     // return new PrtTupleValue(tupTypeExpr, args[0], args[1], args[args.Count - 1]);
-                    return null;
+                    SyntaxNode[] pars = new SyntaxNode[args.Count];
+                    pars[0] = tupTypeExpr;
+                    for (int i = 1; i < pars.Length; i++)
+                    {
+                        pars[i] = args[i - 1];
+                    }
+   
+                    return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), pars);
+                    //return ObjectCreationExpression(
+                    //            IdentifierName("PrtTupleValue"))
+                    //       .WithArgumentList(
+                    //            ArgumentList(
+                    //                SeparatedList<ArgumentSyntax>(
+                    //                    new SyntaxNodeOrToken[]{
+                    //                        Argument(
+                    //                            IdentifierName("tupTypeExpr")),
+                    //                        Token(SyntaxKind.CommaToken),
+                    //                        Argument(
+                    //                            IdentifierName("args"))})))
+                    //       .NormalizeWhitespace();
                 }
             }
 
@@ -68,10 +88,14 @@ namespace Microsoft.Pc
                 //Example: parent.PrtFunContSend(this, currFun.locals, 1);
                 //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
 
-                //List<AST<Node>> args = new List<AST<Node>>(children.Select(x => x));                  
-                SyntaxNode targetExpr; // (PrtMachineValue)children[0]
-                ExpressionSyntax eventExpr; // (PrtEventValue)children[1]
-                ExpressionSyntax payloadExpr; // MkPayload(eventExpr.payloadType, args[2..])
+                List<SyntaxNode> args = new List<SyntaxNode>(children.Select(x => x));
+                // (PrtMachineValue)args[0]                
+                SyntaxNode targetExpr = MkCSharpCastExpression("PrtMachineValue", args[0]);
+                // (PrtEventValue)args[1]
+                ExpressionSyntax eventExpr = (ExpressionSyntax)MkCSharpCastExpression("PrtEventValue", args[1]);
+                args.RemoveRange(0, 2);
+                ExpressionSyntax tupleTypeExpr = (ExpressionSyntax)MkCSharpDot(eventExpr, "payloadType");
+                ExpressionSyntax payloadExpr = (ExpressionSyntax)MkPayload(tupleTypeExpr, args);
                 var enqueueEvent =
                     ExpressionStatement(
                         InvocationExpression(

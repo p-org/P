@@ -681,6 +681,13 @@ namespace Microsoft.Pc
             }
             return lhs.NormalizeWhitespace();
         }
+        public static SyntaxNode MkCSharpDot(ExpressionSyntax first, string second)
+        {
+            return MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        ParenthesizedExpression(first),
+                        (SimpleNameSyntax)MkCSharpIdentifierName(second));
+        }
         public static SyntaxNode MkCSharpElementAccessExpression(string name, int index)
         {
             return ElementAccessExpression(
@@ -692,6 +699,12 @@ namespace Microsoft.Pc
                                     LiteralExpression(
                                        SyntaxKind.NumericLiteralExpression,
                                           Literal(index))))));
+        }
+        public static SyntaxNode MkCSharpCastExpression(string type, SyntaxNode expr)
+        {
+            return CastExpression(
+                        IdentifierName(type),
+                        ParenthesizedExpression((ExpressionSyntax)expr));
         }
         //OmittedArraySizeExpression case only:
         public static SyntaxNode MkCSharpArrayCreationExpression(string type, SyntaxNodeOrToken[] initializer)

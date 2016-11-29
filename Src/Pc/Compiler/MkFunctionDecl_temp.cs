@@ -84,7 +84,6 @@ namespace Microsoft.Pc
 
                 //Line 2 (template everything): 
                 //parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
-                //TODO(question):check that the last parameter is correct
                 //Example: parent.PrtFunContSend(this, currFun.locals, 1);
                 //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
 
@@ -113,58 +112,11 @@ namespace Microsoft.Pc
                 StatementSyntax contStmt = (StatementSyntax)MkCSharpInvocationExpression(
                     (ExpressionSyntax)MkCSharpDot("parent", "PrtFunContSend"),
                      invocationArgs);
-                //var enqueueEvent =
-                //    ExpressionStatement(
-                //        InvocationExpression(
-                //            MemberAccessExpression(
-                //                SyntaxKind.SimpleMemberAccessExpression,
-                //                IdentifierName("parent"),
-                //                IdentifierName("PrtEnqueueEvent")))
-                //        .WithArgumentList(
-                //            ArgumentList(
-                //                SeparatedList<ArgumentSyntax>(
-                //                    new SyntaxNodeOrToken[]{
-                //                        Argument(
-                //                            //TODO: replace with real expr
-                //                            IdentifierName("eventExpr")),
-                //                        Token(SyntaxKind.CommaToken),
-                //                        Argument(
-                //                            //TODO: replace with real expr
-                //                            IdentifierName("payloadExpr")),
-                //                        Token(SyntaxKind.CommaToken),
-                //                        Argument(
-                //                            IdentifierName("parent"))}))))
-                //    .NormalizeWhitespace();
 
-                //var contSend =
-                //    ExpressionStatement(
-                //        InvocationExpression(
-                //            MemberAccessExpression(
-                //                SyntaxKind.SimpleMemberAccessExpression,
-                //                IdentifierName("parent"),
-                //                IdentifierName("PrtFunContSend")))
-                //        .WithArgumentList(
-                //            ArgumentList(
-                //                SeparatedList<ArgumentSyntax>(
-                //                    new SyntaxNodeOrToken[]{
-                //                        Argument(
-                //                            ThisExpression()),
-                //                        Token(SyntaxKind.CommaToken),
-                //                        Argument(
-                //                            MemberAccessExpression(
-                //                                SyntaxKind.SimpleMemberAccessExpression,
-                //                                IdentifierName("currFun"),
-                //                                IdentifierName("locals"))),
-                //                        Token(SyntaxKind.CommaToken),
-                //                        Argument(
-                //                            MemberAccessExpression(
-                //                                SyntaxKind.SimpleMemberAccessExpression,
-                //                                IdentifierName("currFun"),
-                //                                IdentifierName("returnTolocation")))}))))
-                //    .NormalizeWhitespace();
+                var afterLabel = GetFreshLabel();
+                StatementSyntax afterStmt = MkCSharpEmptyLabeledStmt(afterLabel);
 
-                return Block(enqueueEventStmt, contStmt);
-                //throw new NotImplementedException();
+                return Block(enqueueEventStmt, contStmt, afterStmt);
             }
             
             #endregion

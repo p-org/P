@@ -849,11 +849,19 @@ namespace Microsoft.Pc
         {
             throw new NotImplementedException();
         }
-        public static SyntaxNode MkCSharpBlock(string label, SyntaxNode body)
+        public static SyntaxNode MkCSharpLabeledBlock(string label, StatementSyntax body)
         {
-            throw new NotImplementedException();
+            return Block(SingletonList<StatementSyntax>(
+                            LabeledStatement(
+                                Identifier(label),
+                                body)));
         }
-
+        public static StatementSyntax MkCSharpEmptyLabeledStmt(string label)
+        {
+            return LabeledStatement(
+                            Identifier(label),
+                            EmptyStatement());
+        }
         public static SyntaxNode MkCSharpBlocks(params SyntaxNode[] blocks)
         {
             throw new NotImplementedException();

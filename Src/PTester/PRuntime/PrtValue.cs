@@ -346,7 +346,8 @@ namespace P.Runtime
 
         public PrtTupleValue(PrtTupleType tupType)
         {
-            foreach(var ft in tupType.fieldTypes)
+            fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
+            foreach (var ft in tupType.fieldTypes)
             {
                 fieldValues.Add(PrtMkDefaultValue(ft));
             }
@@ -354,10 +355,13 @@ namespace P.Runtime
 
         public PrtTupleValue(PrtTupleType tupType, params PrtValue[] elems)
         {
+            fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
             foreach (var elem in elems)
             {
                 fieldValues.Add(elem.Clone());
             }
+            if (tupType.fieldTypes.Count != fieldValues.Count)
+                throw new PrtInternalException();
         }
 
         public override PrtValue Clone()
@@ -406,12 +410,14 @@ namespace P.Runtime
 
         public PrtNamedTupleValue()
         {
-            fieldValues = new List<PrtValue>();
             fieldNames = new List<string>();
+            fieldValues = new List<PrtValue>();
         }
 
         public PrtNamedTupleValue(PrtNamedTupleType tupType)
         {
+            fieldNames = new List<string>(tupType.fieldTypes.Count);
+            fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
             foreach (var fn in tupType.fieldNames)
             {
                 fieldNames.Add(fn);
@@ -424,14 +430,18 @@ namespace P.Runtime
 
         public PrtNamedTupleValue(PrtNamedTupleType tupType, params PrtValue[] elems)
         {
+            fieldNames = new List<string>(tupType.fieldTypes.Count);
+            fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
             foreach (var fn in tupType.fieldNames)
             {
                 fieldNames.Add(fn);
             }
             foreach (var elem in elems)
             {
-                fieldValues.Add(elem);
+                fieldValues.Add(elem.Clone());
             }
+            if (tupType.fieldTypes.Count != fieldValues.Count)
+                throw new PrtInternalException();
         }
 
         public override PrtValue Clone()

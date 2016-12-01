@@ -305,7 +305,7 @@ namespace Microsoft.Pc
                         var tmpVar = GetType("typeNull");
                         //type initialization:
                         //Main.typeNull = new PrNullType();
-                        AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNullType"))));
+                        AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNullType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeNull", Token(SyntaxKind.PublicKeyword),
                                                                     Token(SyntaxKind.StaticKeyword)));
                         return tmpVar;
@@ -313,7 +313,7 @@ namespace Microsoft.Pc
                     else if (primitiveType == "BOOL")
                     {
                         var tmpVar = GetType("typeBool");
-                        AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtBoolType"))));
+                        AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtBoolType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeBool", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                         return tmpVar;
@@ -321,7 +321,7 @@ namespace Microsoft.Pc
                     else if (primitiveType == "INT")
                     {
                         var tmpVar = GetType("typeInt");
-                        AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
+                        AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeInt", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                         return tmpVar;
@@ -329,7 +329,7 @@ namespace Microsoft.Pc
                     else if (primitiveType == "EVENT")
                     {
                         var tmpVar = GetType("typeEvent");
-                        AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtEventType"))));
+                        AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtEventType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeEvent", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                         return tmpVar;
@@ -337,7 +337,7 @@ namespace Microsoft.Pc
                     else if (primitiveType == "MACHINE")
                     {
                         var tmpVar = GetType("typeMachine");
-                        AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtMachineType"))));
+                        AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtMachineType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeMachine", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                         return tmpVar;
@@ -346,7 +346,7 @@ namespace Microsoft.Pc
                     {
                         Debug.Assert(primitiveType == "ANY", "Illegal BaseType");
                         var tmpVar = GetType("typeAny");
-                        AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtAnyType"))));
+                        AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtAnyType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeAny", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                         return tmpVar;
@@ -361,7 +361,7 @@ namespace Microsoft.Pc
                     //therefore, code below would have to be changed, after PrtEnumType is defined in PrtTypes.cs.
                     string typeName = "typeNameType_" + typeCount;
                     var tmpVar = GetType(typeName);
-                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
+                    AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                     return tmpVar;
@@ -385,7 +385,7 @@ namespace Microsoft.Pc
                     }
                     initializer.RemoveAt(initializer.Count() - 1);
                     //public static SyntaxNode MkCSharpArrayCreationExpression(TypeSyntax type, SyntaxNodeOrToken[] initializer)
-                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtTupleType"),
+                    AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtTupleType"),
                         MkCSharpArrayCreationExpression("PrtType", initializer.ToArray()))));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -425,7 +425,7 @@ namespace Microsoft.Pc
                     }
                     initializer.RemoveAt(initializer.Count() - 1);
 
-                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNamedTupleType"),
+                    AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNamedTupleType"),
                         MkCSharpArrayCreationExpression("object", initializer.ToArray()))));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtNamedTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -436,7 +436,7 @@ namespace Microsoft.Pc
                     SyntaxNode innerType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0));
                     string typeName = "typeSeqType_" + typeCount;
                     var tmpVar = GetType(typeName);
-                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtSeqType"), innerType)));
+                    AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtSeqType"), innerType)));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtSeqType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                     return tmpVar;
@@ -448,7 +448,7 @@ namespace Microsoft.Pc
                     SyntaxNode valType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 1));
                     string typeName = "typeMapType_" + typeCount;
                     var tmpVar = GetType(typeName);
-                    AddTypeInitialization(MkCSharpSimpleExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtMapType"), keyType, valType)));
+                    AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtMapType"), keyType, valType)));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtMapType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                     return tmpVar;
@@ -551,7 +551,7 @@ namespace Microsoft.Pc
 
         //public static AST<FuncTerm> MkCSharpAssign(AST<Node> lhs, AST<Node> rhs)
         //TODO(question): what's SimpleAssignmentExpression?
-        public static SyntaxNode MkCSharpSimpleExpressionStatement(SyntaxNode lhs, SyntaxNode rhs)
+        public static SyntaxNode MkCSharpSimpleAssignmentExpressionStatement(SyntaxNode lhs, SyntaxNode rhs)
         {
             return ExpressionStatement(
                      AssignmentExpression(
@@ -681,6 +681,13 @@ namespace Microsoft.Pc
             }
             return lhs.NormalizeWhitespace();
         }
+        public static SyntaxNode MkCSharpDot(ExpressionSyntax first, string second)
+        {
+            return MemberAccessExpression(
+                        SyntaxKind.SimpleMemberAccessExpression,
+                        ParenthesizedExpression(first),
+                        (SimpleNameSyntax)MkCSharpIdentifierName(second));
+        }
         public static SyntaxNode MkCSharpElementAccessExpression(string name, int index)
         {
             return ElementAccessExpression(
@@ -692,6 +699,12 @@ namespace Microsoft.Pc
                                     LiteralExpression(
                                        SyntaxKind.NumericLiteralExpression,
                                           Literal(index))))));
+        }
+        public static SyntaxNode MkCSharpCastExpression(string type, SyntaxNode expr)
+        {
+            return CastExpression(
+                        IdentifierName(type),
+                        ParenthesizedExpression((ExpressionSyntax)expr));
         }
         //OmittedArraySizeExpression case only:
         public static SyntaxNode MkCSharpArrayCreationExpression(string type, SyntaxNodeOrToken[] initializer)
@@ -770,6 +783,14 @@ namespace Microsoft.Pc
             }
             
         }
+        public static SyntaxNode MkCSharpInvocationExpression(SyntaxNode first, params ArgumentSyntax[] pars)
+        {
+            var args = MkCSharpArgumentList(pars);
+            return InvocationExpression((ExpressionSyntax)first)
+                    .WithArgumentList(
+                         ArgumentList(
+                                SeparatedList<ArgumentSyntax>(args)));
+        }
         public static SyntaxNode MkCSharpPropertyDecl(string type, string name,
                                      SyntaxTokenList modifiers, params AccessorDeclarationSyntax[] accessorList)
        {
@@ -828,11 +849,19 @@ namespace Microsoft.Pc
         {
             throw new NotImplementedException();
         }
-        public static SyntaxNode MkCSharpBlock(string label, SyntaxNode body)
+        public static SyntaxNode MkCSharpLabeledBlock(string label, StatementSyntax body)
         {
-            throw new NotImplementedException();
+            return Block(SingletonList<StatementSyntax>(
+                            LabeledStatement(
+                                Identifier(label),
+                                body)));
         }
-
+        public static StatementSyntax MkCSharpEmptyLabeledStmt(string label)
+        {
+            return LabeledStatement(
+                            Identifier(label),
+                            EmptyStatement());
+        }
         public static SyntaxNode MkCSharpBlocks(params SyntaxNode[] blocks)
         {
             throw new NotImplementedException();
@@ -1038,7 +1067,7 @@ namespace Microsoft.Pc
                         maxInstances,
                         doAssume
                     ));
-                inits.Add((StatementSyntax)MkCSharpSimpleExpressionStatement(lhs, rhs));
+                inits.Add((StatementSyntax)MkCSharpSimpleAssignmentExpressionStatement(lhs, rhs));
             }
           
             members.Add(ConstructorDeclaration(
@@ -1071,7 +1100,7 @@ namespace Microsoft.Pc
             //We should be able to do without this stack in C# code gen because C# method calls can be nested inside expressions
             public Stack<List<AST<Node>>> sideEffectsStack;
             //locals contain temp vars for storing intermediate results, for example, in translation of expressions
-            public List<Tuple<AST<Node>, string>> locals;
+            public List<Tuple<SyntaxNode, string>> locals;
             public Stack<bool> lhsStack;
             //labels are used for "continuations" in send, new, nondet, receive
             private Dictionary<string, int> labels;
@@ -1131,11 +1160,11 @@ namespace Microsoft.Pc
             }
 
             // type must be CSharp type
-            public SyntaxNode GetTmpVar(AST<Node> type, string baseName)
+            public SyntaxNode GetTmpVar(SyntaxNode type, string baseName)
             {
                 var tmpVarName = pToCSharp.GetUnique(baseName);
                 var tmpVar = MkCSharpIdentifierName(tmpVarName);
-                this.locals.Add(new Tuple<AST<Node>, string>(type, tmpVarName));
+                this.locals.Add(new Tuple<SyntaxNode, string>(type, tmpVarName));
                 return tmpVar;
             }
 
@@ -1530,11 +1559,11 @@ namespace Microsoft.Pc
                 //    var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(funName) ? pToCSharp.allStaticFuns[funName] : pToCSharp.allMachines[owner.machName].funNameToFunInfo[funName];
                 //    Debug.Assert(calleeInfo.isAnonymous);
                 //    List<SyntaxNode> ifStmts = new List<SyntaxNode>();
-                //    ifStmts.Add(MkCSharpSimpleExpressionStatement(MkCSharpIndex(MkCSharpIdentifierName("locals"), Factory.Instance.MkCnst(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)), MkCSharpCall(PrtCloneValue, MkCSharpDot("myHandle", "currentArg"))));
+                //    ifStmts.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpIndex(MkCSharpIdentifierName("locals"), Factory.Instance.MkCnst(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)), MkCSharpCall(PrtCloneValue, MkCSharpDot("myHandle", "currentArg"))));
                 //    foreach (var calleeLocal in calleeInfo.localNames)
                 //    {
                 //        var calleeLocalInfo = calleeInfo.localNameToInfo[calleeLocal];
-                //        ifStmts.Add(MkCSharpSimpleExpressionStatement(MkCSharpIndex(MkCSharpIdentifierName("locals"), Factory.Instance.MkCnst(calleeLocalInfo.index)), MkCSharpCall(PrtMkDefaultValue, pToCSharp.typeContext.PTypeToZingExpr(calleeLocalInfo.type))));
+                //        ifStmts.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpIndex(MkCSharpIdentifierName("locals"), Factory.Instance.MkCnst(calleeLocalInfo.index)), MkCSharpCall(PrtMkDefaultValue, pToCSharp.typeContext.PTypeToZingExpr(calleeLocalInfo.type))));
                 //    }
                 //    ifStmts.Add(MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), MkCSharpIdentifierName("locals"))));
                 //    ifStmts.Add(MkCSharpGoto(beforeLabel));
@@ -1607,7 +1636,7 @@ namespace Microsoft.Pc
                 if (n.NodeKind == NodeKind.Cnst)
                 {
                     //var tmpVar = GetTmpVar(PrtValue, "tmp");
-                    //AddSideEffect(MkCSharpSimpleExpressionStatement(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
+                    //AddSideEffect(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
                     //AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, Factory.Instance.ToAST(n))));
                     //return new ZingTranslationInfo(tmpVar);
                     //return MkCSharpNumericLiteralExpression((Factory.Instance.ToAST(n))
@@ -1862,7 +1891,7 @@ namespace Microsoft.Pc
                     modifiers = modifiers.Add(Token(SyntaxKind.PublicKeyword));
                     var getBody = SingletonList<StatementSyntax>(ReturnStatement(
                            (ExpressionSyntax) MkCSharpElementAccessExpression("locals", ind)));
-                    var setBody = SingletonList<StatementSyntax>((StatementSyntax)MkCSharpSimpleExpressionStatement(
+                    var setBody = SingletonList<StatementSyntax>((StatementSyntax)MkCSharpSimpleAssignmentExpressionStatement(
                             (ExpressionSyntax)MkCSharpElementAccessExpression("locals", ind),
                             MkCSharpIdentifierName("value")));
                     AccessorDeclarationSyntax[] accessorList = new AccessorDeclarationSyntax[]
@@ -2588,7 +2617,7 @@ namespace Microsoft.Pc
                     modifiers = modifiers.Add(Token(SyntaxKind.PublicKeyword));
                     var getBody = SingletonList<StatementSyntax>(ReturnStatement(
                                (ExpressionSyntax)MkCSharpElementAccessExpression("fields", ind)));
-                    var setBody = SingletonList<StatementSyntax>((StatementSyntax)MkCSharpSimpleExpressionStatement(
+                    var setBody = SingletonList<StatementSyntax>((StatementSyntax)MkCSharpSimpleAssignmentExpressionStatement(
                             (ExpressionSyntax)MkCSharpElementAccessExpression("fields", ind),
                             MkCSharpIdentifierName("value")));
                     AccessorDeclarationSyntax[] accessorList = new AccessorDeclarationSyntax[]

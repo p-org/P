@@ -26,11 +26,52 @@ namespace Microsoft.Pc
         internal partial class MkFunctionDecl
         {
             #region FoldUnfold
-            
+
+            private SyntaxNode MkPayload(SyntaxNode tupTypeExpr, List<SyntaxNode> args)
+            {
+                if (args.Count == 0)
+                {
+                    return MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("PrtValue"),
+                                IdentifierName("NullValue"));
+                }
+                else if (args.Count == 1)
+                {
+                    return (ExpressionSyntax)args[0];
+                }
+                else
+                {
+                    //return new PrtTupleValue(tupTypeExpr, args);
+                    // return new PrtTupleValue(tupTypeExpr, args[0], args[1], args[args.Count - 1]);
+                    SyntaxNode[] pars = new SyntaxNode[args.Count];
+                    pars[0] = tupTypeExpr;
+                    for (int i = 1; i < pars.Length; i++)
+                    {
+                        pars[i] = args[i - 1];
+                    }
+   
+                    return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), pars);
+                    //return ObjectCreationExpression(
+                    //            IdentifierName("PrtTupleValue"))
+                    //       .WithArgumentList(
+                    //            ArgumentList(
+                    //                SeparatedList<ArgumentSyntax>(
+                    //                    new SyntaxNodeOrToken[]{
+                    //                        Argument(
+                    //                            IdentifierName("tupTypeExpr")),
+                    //                        Token(SyntaxKind.CommaToken),
+                    //                        Argument(
+                    //                            IdentifierName("args"))})))
+                    //       .NormalizeWhitespace();
+                }
+            }
+
             SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
+
             SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> children)
             {
                 //code to be generated:
@@ -43,65 +84,39 @@ namespace Microsoft.Pc
 
                 //Line 2 (template everything): 
                 //parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
-                //TODO(question):check that the last parameter is correct
                 //Example: parent.PrtFunContSend(this, currFun.locals, 1);
                 //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
 
-                //List<AST<Node>> args = new List<AST<Node>>(children.Select(x => x));                  
-                ExpressionSyntax eventExpr;
-                ExpressionSyntax payloadExpr;
-                var enqueueEvent =
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("parent"),
-                                IdentifierName("PrtEnqueueEvent")))
-                        .WithArgumentList(
-                            ArgumentList(
-                                SeparatedList<ArgumentSyntax>(
-                                    new SyntaxNodeOrToken[]{
-                                        Argument(
-                                            //TODO: replace with real expr
-                                            IdentifierName("eventExpr")),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            //TODO: replace with real expr
-                                            IdentifierName("payloadExpr")),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            IdentifierName("parent"))}))))
-                    .NormalizeWhitespace();
+                List<SyntaxNode> args = new List<SyntaxNode>(children.Select(x => x));
+                // (PrtMachineValue)args[0]                
+                SyntaxNode targetExpr = MkCSharpCastExpression("PrtMachineValue", args[0]);
+                // (PrtEventValue)args[1]
+                ExpressionSyntax eventExpr = (ExpressionSyntax)MkCSharpCastExpression("PrtEventValue", args[1]);
+                args.RemoveRange(0, 2);
+                ExpressionSyntax tupleTypeExpr = (ExpressionSyntax)MkCSharpDot(eventExpr, "payloadType");
+                ExpressionSyntax payloadExpr = (ExpressionSyntax)MkPayload(tupleTypeExpr, args);
+                var invocationArgs = new ArgumentSyntax[]
+                {
+                    Argument(eventExpr), Argument(payloadExpr), Argument((ExpressionSyntax)MkCSharpIdentifierName("parent"))
+                };
+                StatementSyntax enqueueEventStmt = (StatementSyntax)MkCSharpInvocationExpression(
+                    (ExpressionSyntax)MkCSharpDot("parent", "PrtEnqueueEvent"),
+                     invocationArgs);
 
-                var contSend =
-                    ExpressionStatement(
-                        InvocationExpression(
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("parent"),
-                                IdentifierName("PrtFunContSend")))
-                        .WithArgumentList(
-                            ArgumentList(
-                                SeparatedList<ArgumentSyntax>(
-                                    new SyntaxNodeOrToken[]{
-                                        Argument(
-                                            ThisExpression()),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName("currFun"),
-                                                IdentifierName("locals"))),
-                                        Token(SyntaxKind.CommaToken),
-                                        Argument(
-                                            MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName("currFun"),
-                                                IdentifierName("returnTolocation")))}))))
-                    .NormalizeWhitespace();
+                invocationArgs = new ArgumentSyntax[]
+                {
+                    Argument(ThisExpression()),
+                    Argument((ExpressionSyntax)MkCSharpDot("currFun", "locals")),
+                    Argument((ExpressionSyntax)MkCSharpDot("currFun", "returnTolocation"))
+                };
+                StatementSyntax contStmt = (StatementSyntax)MkCSharpInvocationExpression(
+                    (ExpressionSyntax)MkCSharpDot("parent", "PrtFunContSend"),
+                     invocationArgs);
 
+                var afterLabel = GetFreshLabel();
+                StatementSyntax afterStmt = MkCSharpEmptyLabeledStmt(afterLabel);
 
-                throw new NotImplementedException();
+                return Block(enqueueEventStmt, contStmt, afterStmt);
             }
             
             #endregion

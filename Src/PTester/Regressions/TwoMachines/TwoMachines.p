@@ -8,20 +8,20 @@
 //types
 //variables: machine locals, function locals (including formal pars)
 
-//type nmdtuple = (a: int, b: int);
-//type tpl = (int, bool);
-event Ping assert 1: (a:int, b:bool);
-//event Ping assert 1: int;
-event Pong assert 1: seq[int];
-event Success: bool;
-event Fail: (int, bool);
-event NotUsed: map[int,bool];
-//event NotUsed: seq(seq(int));
-//event Fail: tpl;
-//event Fail: int;
-//event Fail: nmdtuple;
+type nmdtuple = (a: int, b: int);
+type tpl = (int, bool);
 
-fun F1(par1: int, par2: bool) {
+enum enumType { e1, e2, e3 }
+
+event Ping assert 1: nmdtuple;
+event Pong assert 1: seq[int];
+event Success: tpl;
+event Fail: map[any,any];
+event NotUsed: seq[seq[int]];
+event NotUsed2: map[int,map[int,any]];
+event NotUsed3: (a: seq [any], b: map[int, seq[any]]);
+
+fun F1(par1: tpl, par2: enumType) {
 	var varInt: int;
 	//send this, Ping;
 	//send this, Pong;
@@ -38,8 +38,9 @@ machine Main
 	var varInt: int;
 	var varBool: bool;
 	var varTpl: (int, bool);
-	var varNmdTpl: (a:int, b:int);
-	//var varTpl: int;
+	var varNmdTpl: nmdtuple;
+	var varEnum: enumType;
+	var varEnum2: enumType;
 
     start hot state Init {
         entry {

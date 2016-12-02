@@ -72,11 +72,11 @@ namespace Microsoft.Pc
                 throw new NotImplementedException();
             }
 
-            SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> children)
+            SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> args)
             {
                 //code to be generated:
                 //Line 1 (template everything except event and <payload value>): 
-                //parent.PrtEnqueueEvent(event, <payload value>, parent);
+                //target.PrtEnqueueEvent(event, <payload value>, parent);
                 //Example:parent.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
                 //public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
                 //event: children[1]
@@ -87,7 +87,7 @@ namespace Microsoft.Pc
                 //Example: parent.PrtFunContSend(this, currFun.locals, 1);
                 //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
 
-                List<SyntaxNode> args = new List<SyntaxNode>(children.Select(x => x));
+                //List<SyntaxNode> args = new List<SyntaxNode>(children.Select(x => x));
                 // (PrtMachineValue)args[0]                
                 SyntaxNode targetExpr = MkCSharpCastExpression("PrtMachineValue", args[0]);
                 // (PrtEventValue)args[1]
@@ -100,7 +100,7 @@ namespace Microsoft.Pc
                     Argument(eventExpr), Argument(payloadExpr), Argument((ExpressionSyntax)MkCSharpIdentifierName("parent"))
                 };
                 StatementSyntax enqueueEventStmt = (StatementSyntax)MkCSharpInvocationExpression(
-                    (ExpressionSyntax)MkCSharpDot("parent", "PrtEnqueueEvent"),
+                    (ExpressionSyntax)MkCSharpDot((ExpressionSyntax)targetExpr, "PrtEnqueueEvent"),
                      invocationArgs);
 
                 invocationArgs = new ArgumentSyntax[]

@@ -1098,7 +1098,7 @@ namespace Microsoft.Pc
             //composed; but compilation of some P expressions results in a complicated piece of code containing statements as well.  
             //These statements are emitted to the side-effect stack and popped later.  
             //We should be able to do without this stack in C# code gen because C# method calls can be nested inside expressions
-            public Stack<List<AST<Node>>> sideEffectsStack;
+            //public Stack<List<AST<Node>>> sideEffectsStack;
             //locals contain temp vars for storing intermediate results, for example, in translation of expressions
             public List<Tuple<SyntaxNode, string>> locals;
             public Stack<bool> lhsStack;
@@ -1113,6 +1113,10 @@ namespace Microsoft.Pc
                 this.isGlobalStatic = isGlobalStatic;
                 this.owner = owner;
                 this.pToCSharp = pToCSharp;
+                this.locals = new List<Tuple<SyntaxNode, string>>();
+                this.lhsStack = new Stack<bool>();
+                this.labels = new Dictionary<string, int>();
+
                 //GenerateTypeInfo(pToCSharp.modelWithTypes);
             }
             
@@ -1130,22 +1134,40 @@ namespace Microsoft.Pc
 
             public SyntaxNode EmitLabelPrelude()
             {
-               // var prelude = new List<AST<Node>>();
-               // var tmpVar = GetTmpVar(Factory.Instance.MkCnst("StackFrame"), "retTo");
+                //After the entire function gets processed, generates if/else if... (or switch)
+                //with gotos according to the labels from "labels" 
+                //(TODO: not clear): If for function "foo" there are 3 labels (foo_0, foo_1, foo_2) 
+                //then we should generate the following code:
+                // if (currFun.returnTolocation == labels[foo_0])
+                //    goto foo_0;
+                // else if (currFun.returnTolocation == labels[foo_1])
+                //    goto foo_1;
+                // else if (currFun.returnTolocation == labels[foo_2])
+                //    goto foo_2;
+                // else goto Ret;
+                // Switch stmt (TODO: not clear):
+                //  switch (currFun.returnTolocation)
+                //  case 0: goto foo_0
+                //  case 1: goto foo_1
+                //  case 2: goto foo_2
+                //  default: goto Ret
 
-               // //prelude.Add(PToCSharp.MkCSharpAssign(tmpVar, PToCSharp.MkCSharpCall(MkCSharpDot("entryCtxt", "PopReturnTo"))));
-               // //prelude.Add(PToCSharp.MkCSharpAssign(MkCSharpIdentifierName("locals"), MkCSharpDot(tmpVar, "locals")));
-               // //prelude.Add(PToCSharp.MkCSharpIfThen(PToCSharp.MkCSharpEq(MkCSharpDot(tmpVar, "pc"), Factory.Instance.MkCnst(0)), MkCSharpGoto("start")));
+                // var prelude = new List<AST<Node>>();
+                // var tmpVar = GetTmpVar(Factory.Instance.MkCnst("StackFrame"), "retTo");
 
-               // foreach (var l in labels.Keys)
-               // {
-               //     prelude.Add(PToCSharp.MkCSharpIfThen(PToCSharp.MkCSharpEq(MkCSharpDot(tmpVar, "pc"), Factory.Instance.MkCnst(labels[l])), MkCSharpGoto(l)));
-               // }
+                // //prelude.Add(PToCSharp.MkCSharpAssign(tmpVar, PToCSharp.MkCSharpCall(MkCSharpDot("entryCtxt", "PopReturnTo"))));
+                // //prelude.Add(PToCSharp.MkCSharpAssign(MkCSharpIdentifierName("locals"), MkCSharpDot(tmpVar, "locals")));
+                // //prelude.Add(PToCSharp.MkCSharpIfThen(PToCSharp.MkCSharpEq(MkCSharpDot(tmpVar, "pc"), Factory.Instance.MkCnst(0)), MkCSharpGoto("start")));
 
-               // //TODO(Zing to CSharp): convert to CSharpData
-               ///prelude.Add(MkCSharpAssert(ZingData.Cnst_False, "Internal error"));
+                // foreach (var l in labels.Keys)
+                // {
+                //     prelude.Add(PToCSharp.MkCSharpIfThen(PToCSharp.MkCSharpEq(MkCSharpDot(tmpVar, "pc"), Factory.Instance.MkCnst(labels[l])), MkCSharpGoto(l)));
+                // }
 
-               // return PToCSharp.MkCSharpSeq(prelude);
+                // //TODO(Zing to CSharp): convert to CSharpData
+                ///prelude.Add(MkCSharpAssert(ZingData.Cnst_False, "Internal error"));
+
+                // return PToCSharp.MkCSharpSeq(prelude);
                 throw new NotImplementedException();
             }
 
@@ -1154,10 +1176,10 @@ namespace Microsoft.Pc
                 //this.sideEffectsStack.Peek().Add(stmt);
             }
 
-            public void PushSideEffectStack()
-            {
-                this.sideEffectsStack.Push(new List<AST<Node>>());
-            }
+           // public void PushSideEffectStack()
+            //{
+                //this.sideEffectsStack.Push(new List<AST<Node>>());
+            //}
 
             // type must be CSharp type
             public SyntaxNode GetTmpVar(SyntaxNode type, string baseName)
@@ -1382,7 +1404,7 @@ namespace Microsoft.Pc
                         it.MoveNext();
                         yield return it.Current;
                         it.MoveNext();
-                        PushSideEffectStack();
+                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }
@@ -1393,10 +1415,10 @@ namespace Microsoft.Pc
                         it.MoveNext();
                         yield return it.Current;
                         it.MoveNext();
-                        PushSideEffectStack();
+                        //PushSideEffectStack();
                         yield return it.Current;
                         it.MoveNext();
-                        PushSideEffectStack();
+                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }
@@ -1405,10 +1427,10 @@ namespace Microsoft.Pc
                     using (var it = ft.Args.GetEnumerator())
                     {
                         it.MoveNext();
-                        PushSideEffectStack();
+                        //PushSideEffectStack();
                         yield return it.Current;
                         it.MoveNext();
-                        PushSideEffectStack();
+                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }

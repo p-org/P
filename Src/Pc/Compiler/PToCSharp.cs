@@ -1653,17 +1653,41 @@ namespace Microsoft.Pc
             //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
-                return null;
-                var n = GetArgByIndex(ft, 0);
-                if (n.NodeKind == NodeKind.Cnst)
+                //return null;
+                SyntaxNode retVal;
+                var name = GetName(ft, 0);
+                if (funInfo != null && funInfo.localNameToInfo.ContainsKey(name))
                 {
-                    //var tmpVar = GetTmpVar(PrtValue, "tmp");
-                    //AddSideEffect(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));
-                    //AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, Factory.Instance.ToAST(n))));
-                    //return new ZingTranslationInfo(tmpVar);
-                    //return MkCSharpNumericLiteralExpression((Factory.Instance.ToAST(n))
+                    //local var of a function:
+                    LocalVariableInfo entry = (funInfo.localNameToInfo[name]);
+                    int ind = entry.index;
+                    retVal = (ExpressionSyntax)MkCSharpElementAccessExpression("locals", ind);
                 }
-
+                else if (owner != null && pToCSharp.allMachines[owner.machName].localVariableToVarInfo.ContainsKey(name))
+                {
+                    retVal = MkCSharpIdentifierName(name);
+                }
+                else
+                {
+                    //PrtEvent case:
+                    //var tmpVar = GetTmpVar(PrtValue, "tmp");
+                    var type = LookupType(ft);
+                    if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
+                    {
+                        retVal = null;
+                        //AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
+                        //AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingEvent(name))));
+                    }
+                    else
+                    {
+                        //Enum case:
+                        throw new NotImplementedException();
+                        //AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
+                        //AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingEnum(name))));
+                    }
+                    //retVal = tmpVar;
+                }
+                return retVal;
             }
             SyntaxNode FoldNewStmt(FuncTerm ft, List<SyntaxNode> children)
             {
@@ -1677,6 +1701,35 @@ namespace Microsoft.Pc
             {
                 //No children
                 throw new NotImplementedException();
+                var n = GetArgByIndex(ft, 0);
+                if (n.NodeKind == NodeKind.Cnst)
+                {
+                    //TODO(question): how to get to the int value?
+                    //var tmp = MkCSharpCastExpression("PrtValue", MkCSharpNumericLiteralExpression(Factory.Instance.ToAST(n)));
+                    //return tmp;
+                    return null;
+                }
+                // n.NodeKind == NodeKind.Id
+                SyntaxNode retVal;
+                var op = ((Id)n).Name;
+                if (op == PData.Cnst_True.Node.Name)
+                {
+                    return MkCSharpCastExpression("PrtValue", MkCSharpTrueLiteralExpression());
+                }
+                else if (op == PData.Cnst_False.Node.Name)
+                {
+                    return MkCSharpCastExpression("PrtValue", MkCSharpFalseLiteralExpression());
+                }
+                else if (op == PData.Cnst_This.Node.Name)
+                {
+                    //TODO(question): this is not right!
+                    return MkCSharpCastExpression("PrtValue", MkCSharpIdentifierName("this"));
+                    //var machineType = PTypeMachine;
+                    //var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                    //ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(machineType.Node))));
+                    //ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), tmpVar, MkZingIdentifier("myHandle"))));
+                    //retVal = tmpVar;
+                }
             }
             SyntaxNode FoldUnApp(FuncTerm ft, List<SyntaxNode> children)
             {

@@ -791,6 +791,15 @@ namespace Microsoft.Pc
                          ArgumentList(
                                 SeparatedList<ArgumentSyntax>(args)));
         }
+        public static SyntaxNode MkCSharpUnaryExpression(SyntaxKind op, SyntaxNode arg)
+        {
+            return PrefixUnaryExpression(op, (ExpressionSyntax)arg);
+        }
+        public static SyntaxNode MkCSharpBinaryExpression(SyntaxKind op, SyntaxNode left, SyntaxNode right)
+        {
+            //TODO(expand) For binary plus for now:
+            return BinaryExpression(SyntaxKind.AddExpression, (ExpressionSyntax)left, (ExpressionSyntax)right);
+        }
         public static SyntaxNode MkCSharpPropertyDecl(string type, string name,
                                      SyntaxTokenList modifiers, params AccessorDeclarationSyntax[] accessorList)
        {
@@ -1653,7 +1662,6 @@ namespace Microsoft.Pc
             //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
-                //return null;
                 SyntaxNode retVal;
                 var name = GetName(ft, 0);
                 if (funInfo != null && funInfo.localNameToInfo.ContainsKey(name))
@@ -1669,23 +1677,22 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    //PrtEvent case:
+                    //PrtEvent case: emit "new PrtEventValue(eventStaticVar);"
+                    //, where eventStaticVar is eventName
                     //var tmpVar = GetTmpVar(PrtValue, "tmp");
                     var type = LookupType(ft);
                     if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                     {
-                        retVal = null;
-                        //AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeEvent.Node))));
-                        //AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetEvent"), tmpVar, MkZingEvent(name))));
+                        retVal = MkCSharpObjectCreationExpression(MkCSharpIdentifierName("PrtEventValue"), 
+                            MkCSharpIdentifierName(name));
                     }
                     else
                     {
+                        //TODO: check type and add default case to throw an exception
                         //Enum case:
-                        throw new NotImplementedException();
-                        //AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(type))));
-                        //AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingEnum(name))));
+                        retVal = MkCSharpObjectCreationExpression(MkCSharpIdentifierName("PrtIntValue"),
+                            MkCSharpIdentifierName(name));
                     }
-                    //retVal = tmpVar;
                 }
                 return retVal;
             }
@@ -1700,44 +1707,158 @@ namespace Microsoft.Pc
             SyntaxNode FoldNulApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 //No children
-                throw new NotImplementedException();
                 var n = GetArgByIndex(ft, 0);
+              
                 if (n.NodeKind == NodeKind.Cnst)
                 {
-                    //TODO(question): how to get to the int value?
-                    //var tmp = MkCSharpCastExpression("PrtValue", MkCSharpNumericLiteralExpression(Factory.Instance.ToAST(n)));
-                    //return tmp;
-                    return null;
+                    //Value of the integer:
+                    int val = (int)((Cnst)n).GetNumericValue().Numerator;
+                    //emit new PrtIntValue(a):
+                    return MkCSharpObjectCreationExpression(MkCSharpIdentifierName("PrtIntValue"),
+                            MkCSharpNumericLiteralExpression(val));
                 }
                 // n.NodeKind == NodeKind.Id
-                SyntaxNode retVal;
                 var op = ((Id)n).Name;
                 if (op == PData.Cnst_True.Node.Name)
                 {
-                    return MkCSharpCastExpression("PrtValue", MkCSharpTrueLiteralExpression());
+                    return MkCSharpObjectCreationExpression(MkCSharpIdentifierName("PrtBoolValue"),
+                            MkCSharpTrueLiteralExpression());
                 }
                 else if (op == PData.Cnst_False.Node.Name)
                 {
-                    return MkCSharpCastExpression("PrtValue", MkCSharpFalseLiteralExpression());
+                    return MkCSharpObjectCreationExpression(MkCSharpIdentifierName("PrtBoolValue"),
+                            MkCSharpFalseLiteralExpression());
                 }
                 else if (op == PData.Cnst_This.Node.Name)
                 {
-                    //TODO(question): this is not right!
-                    return MkCSharpCastExpression("PrtValue", MkCSharpIdentifierName("this"));
-                    //var machineType = PTypeMachine;
-                    //var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
-                    //ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(machineType.Node))));
-                    //ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), tmpVar, MkZingIdentifier("myHandle"))));
-                    //retVal = tmpVar;
+                    //Owner machine pointer:
+                    return MkCSharpObjectCreationExpression(MkCSharpIdentifierName("PrtMachineValue"),
+                            MkCSharpIdentifierName("parent"));
+                }
+                else if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
+                {
+                    //TODO(expand): NONDET, FAIRNONDET
+                    throw new NotImplementedException();
+                }
+                else if (op == PData.Cnst_Null.Node.Name)
+                {
+                    //Constant "@null":
+                    return MkCSharpObjectCreationExpression(MkCSharpIdentifierName("PrtEventValue"),
+                            MkCSharpIdentifierName("@null"));
+                }
+                else 
+                {
+                    //op == PData.Cnst_Halt.Node.Name
+                    //Constant "halt":
+                    return MkCSharpObjectCreationExpression(MkCSharpIdentifierName("PrtEventValue"),
+                            MkCSharpIdentifierName("halt"));
                 }
             }
             SyntaxNode FoldUnApp(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var op = ((Id)GetArgByIndex(ft, 0)).Name;
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var arg = it.Current;
+                    if (op == PData.Cnst_Not.Node.Name)
+                    {
+                        return MkCSharpUnaryExpression(SyntaxKind.LogicalNotExpression, arg);
+                    }
+                    else if (op == PData.Cnst_Neg.Node.Name)
+                    {
+                        return MkCSharpUnaryExpression(SyntaxKind.UnaryMinusExpression, arg);
+                    }
+                    else if (op == PData.Cnst_Keys.Node.Name)
+                    {
+                        //TODO(expand):
+                        throw new NotImplementedException();
+                    }
+                    else if (op == PData.Cnst_Values.Node.Name)
+                    {
+                        //TODO(expand):
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        //  op == PData.Cnst_Sizeof.Node.Name
+                        //TODO(expand):
+                        throw new NotImplementedException();
+                    }
+                }
             }
             SyntaxNode FoldBinApp(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var op = ((Id)GetArgByIndex(ft, 0)).Name;
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var arg1 = it.Current;
+                    it.MoveNext();
+                    var arg2 = it.Current;
+
+                    if (op == PData.Cnst_Add.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.AddExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_Sub.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.SubtractExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_Mul.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.MultiplyExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_IntDiv.Node.Name)
+                    {
+                        //TODO(question): would SyntaxKind.DivideExpression work for PData.Cnst_IntDiv.Node.Nam?
+                        //It seems there's no "int division" in Roslyn = checked "2/3" and "(int)a / (int)b"
+                        return MkCSharpBinaryExpression(SyntaxKind.DivideExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_And.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.BitwiseAndExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_And.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.BitwiseOrExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_Eq.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.EqualsExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_NEq.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.NotEqualsExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_Lt.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.LessThanExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_Le.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.LessThanOrEqualExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_Gt.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.GreaterThanExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_Ge.Node.Name)
+                    {
+                        return MkCSharpBinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, arg1, arg2);
+                    }
+                    else if (op == PData.Cnst_Idx.Node.Name)
+                    {
+                        //TODO(expand)
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        //TODO(expand)
+                        // op == PData.Cnst_In.Node.Name
+                        throw new NotImplementedException();
+                    }
+                }
             }
             SyntaxNode FoldField(FuncTerm ft, List<SyntaxNode> children)
             {

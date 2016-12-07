@@ -26,6 +26,7 @@ namespace CheckP
         private const string IncludeZingerOption = "inc";
         private const string IncludePrtOption = "inc";
         private const string DescrOption = "dsc";
+        private const string LinkFileOption = "link";
         private const string ArgsPcOption = "arg";
         private const string ArgsZingerOption = "arg";
         private const string ArgsPrtOption = "arg";
@@ -48,7 +49,8 @@ namespace CheckP
             ArgsPcOption,
             ArgsZingerOption,
             ArgsPrtOption,
-            DelOption
+            DelOption,
+            LinkFileOption
         };
 
         private string activeDirectory;
@@ -243,6 +245,8 @@ namespace CheckP
             Tuple<OptValueKind, object>[] includesPrt;
             bool isArgsPrt;
             Tuple<OptValueKind, object>[] prtArgs;
+            bool isLinkOption;
+            Tuple<OptValueKind, object>[] linkFile;
             try
             {
                 //Run the component of the P tool chain specified by the "activeDirectory":
@@ -263,6 +267,11 @@ namespace CheckP
                     result = ValidateOption(opts, IncludePcOption, true, 1, int.MaxValue, out isInclPc, out includesPc) &&
                             result;
                     result = ValidateOption(opts, ArgsPcOption, true, 1, int.MaxValue, out isArgsPc, out pcArgs) && result;
+                    result = ValidateOption(opts, LinkFileOption, true, 1, int.MaxValue, out isLinkOption, out linkFile) && result;
+                    if(isLinkOption && linkFile.Count() > 1)
+                    {
+                            throw new Exception("multiple link files are not supported");
+                    }
                     tmpWriter.WriteLine("=================================");
                     tmpWriter.WriteLine("         Console output          ");
                     tmpWriter.WriteLine("=================================");
@@ -287,16 +296,22 @@ namespace CheckP
                     }
                     if (compileResult)
                     {
+                        //For C code generation we can use link file
                         // link the *.4ml
                         compileArgs.inputFileNames.Clear();
                         string linkFileName = Path.ChangeExtension(inputFileName, ".4ml");
                         compileArgs.inputFileNames.Add(linkFileName);
+                        if(isLinkOption)
+                        {
+                            var linkPFile = Path.GetFullPath(Path.Combine(activeDirectory, (string)linkFile[0].Item2));
+                            compileArgs.inputFileNames.Add(linkPFile);
+                        }
                         
                         using (compiler.Profiler.Start("link", linkFileName))
                         {
                             compileResult = compiler.Link(compilerOutput, compileArgs);
                         }
-
+                        
                         if (compileResult)
                         {
                             // compile *.p again, this time with Zing option.
@@ -314,6 +329,7 @@ namespace CheckP
                                 compileResult = compiler.Compile(compilerOutput, compileArgs);
                             }
                         }
+                        
                     }
 
                     if (compileResult)

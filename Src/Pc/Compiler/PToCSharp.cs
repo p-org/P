@@ -688,10 +688,10 @@ namespace Microsoft.Pc
                         ParenthesizedExpression(first),
                         (SimpleNameSyntax)MkCSharpIdentifierName(second));
         }
-        public static SyntaxNode MkCSharpElementAccessExpression(string name, int index)
+        public static SyntaxNode MkCSharpElementAccessExpression(SyntaxNode first, int index)
         {
             return ElementAccessExpression(
-                      IdentifierName(name))
+                      (ExpressionSyntax)first)
                    .WithArgumentList(
                           BracketedArgumentList(
                              SingletonSeparatedList<ArgumentSyntax>(
@@ -699,6 +699,15 @@ namespace Microsoft.Pc
                                     LiteralExpression(
                                        SyntaxKind.NumericLiteralExpression,
                                           Literal(index))))));
+        }
+        public static SyntaxNode MkCSharpElementAccessExpression(SyntaxNode first, SyntaxNode index)
+        {
+            return ElementAccessExpression(
+                      (ExpressionSyntax)first)
+                   .WithArgumentList(
+                          BracketedArgumentList(
+                             SingletonSeparatedList<ArgumentSyntax>(
+                                 Argument((ExpressionSyntax)index))));
         }
         public static SyntaxNode MkCSharpCastExpression(string type, SyntaxNode expr)
         {
@@ -1669,7 +1678,8 @@ namespace Microsoft.Pc
                     //local var of a function:
                     LocalVariableInfo entry = (funInfo.localNameToInfo[name]);
                     int ind = entry.index;
-                    retVal = (ExpressionSyntax)MkCSharpElementAccessExpression("locals", ind);
+                    retVal = (ExpressionSyntax)MkCSharpElementAccessExpression(
+                        MkCSharpIdentifierName("locals"), ind);
                 }
                 else if (owner != null && pToCSharp.allMachines[owner.machName].localVariableToVarInfo.ContainsKey(name))
                 {
@@ -1860,6 +1870,21 @@ namespace Microsoft.Pc
                     }
                 }
             }
+            private int GetFieldIndex(string fieldName, FuncTerm nmdTupType)
+            {
+                int fieldIndex = 0;
+                while (nmdTupType != null)
+                {
+                    var fieldInfo = (FuncTerm)GetArgByIndex(nmdTupType, 0);
+                    var fieldNameInFieldInfo = (Cnst)GetArgByIndex(fieldInfo, 0);
+                    if (fieldName == fieldNameInFieldInfo.GetStringValue())
+                        return fieldIndex;
+                    nmdTupType = GetArgByIndex(nmdTupType, 1) as FuncTerm;
+                    fieldIndex++;
+                }
+                Debug.Assert(false);
+                return 0;
+            }
             SyntaxNode FoldField(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
@@ -1998,7 +2023,160 @@ namespace Microsoft.Pc
             }
             SyntaxNode FoldBinStmt(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var op = ((Id)GetArgByIndex(ft, 0)).Name;
+                var lhs = (FuncTerm)GetArgByIndex(ft, 1);
+                var type = LookupType(lhs);
+                var typeName = ((Id)type.Function).Name;
+                SyntaxNode src = null, dest = null;
+                using (var it = children.GetEnumerator())
+                {
+                    SyntaxNode index = null;
+                    it.MoveNext();
+                    src = it.Current;
+                    it.MoveNext();
+                    dest = it.Current;
+                    if (it.MoveNext())
+                    {
+                        index = it.Current;
+                    }
+
+                    if (op == PData.Cnst_Assign.Node.Name)
+                    {
+                        //arg #2 is Qualifier - ignored for now
+                        string assignType = (GetArgByIndex(ft, 2) as Id).Name;
+                        if (((Id)lhs.Function).Name == PData.Con_Field.Node.Name)
+                        {
+                            //TODO(question): is this the case of: "f[5] = e" or "f[i] = e"?
+                            var field = (Cnst)GetArgByIndex(lhs, 1);
+                            int fieldIndex;
+                            if (field.CnstKind == CnstKind.Numeric)
+                            {
+                                fieldIndex = (int)field.GetNumericValue().Numerator;
+                            }
+                            else
+                            {
+                                fieldIndex = GetFieldIndex(field.GetStringValue(), LookupType(GetArgByIndex(lhs, 0)));
+                            }
+                            if (assignType == "NONE")
+                            {
+                                //TODO: two cases are needed to use NumericLiteralExpression
+                                //for a numeric index; could be merged into one case
+                                if (field.CnstKind == CnstKind.Numeric)
+                                {
+                                    return MkCSharpSimpleAssignmentExpressionStatement(
+                                         MkCSharpElementAccessExpression(src, fieldIndex), dest);
+                                }
+                                else
+                                {
+                                    return MkCSharpSimpleAssignmentExpressionStatement(
+                                         MkCSharpElementAccessExpression(src, fieldIndex), dest);
+                                }
+                            }
+                            else if (assignType == "XFER")
+                            {
+                                //TODO(expand):
+                                throw new NotImplementedException();
+                            }
+                            else
+                            {   
+                                // assignType = "SWAP" 
+                                //TODO(expand):
+                                throw new NotImplementedException();
+                            }
+                        }
+                        else if (index == null)
+                        {
+                            if (assignType == "NONE")
+                            {
+                                return MkCSharpSimpleAssignmentExpressionStatement(dest, src);
+                            }
+                            else if (assignType == "XFER")
+                            {
+                                //TODO(expand):
+                                throw new NotImplementedException();
+                            }
+                            else
+                            {   
+                                // assignType == "SWAP"
+                                //TODO(expand):
+                                throw new NotImplementedException();
+                            }
+                        }
+                        //Asgn when lhs is not a field (?):
+                        else
+                        {
+                            lhs = (FuncTerm)GetArgByIndex(lhs, 1);
+                            type = LookupType(lhs);
+                            typeName = ((Id)type.Function).Name;
+                            if (typeName == PData.Con_SeqType.Node.Name)
+                            {
+                                if (assignType == "NONE")
+                                {
+                                    //TODO(expand):
+                                    throw new NotImplementedException();
+                                }
+                                else if (assignType == "XFER")
+                                {
+                                    //TODO(expand):
+                                    throw new NotImplementedException();
+                                }
+                                else
+                                {   
+                                    // assignType == "SWAP"
+                                    //TODO(expand):
+                                    throw new NotImplementedException();
+                                }
+                            }
+                            else
+                            {
+                                // type is PMapType
+                                if (assignType == "NONE")
+                                {
+                                    //TODO(expand):
+                                    throw new NotImplementedException();
+                                }
+                                else if (assignType == "XFER")
+                                {
+                                    //TODO(expand):
+                                    throw new NotImplementedException();
+                                }
+                                else
+                                {   
+                                    // assignType == "SWAP"
+                                    //TODO(expand):
+                                    throw new NotImplementedException();
+                                }
+                            }
+                        }
+                    }
+                    else if (op == PData.Cnst_Remove.Node.Name)
+                    {
+                        if (typeName == PData.Con_SeqType.Node.Name)
+                        {
+                            //TODO(expand):
+                            throw new NotImplementedException();
+                        }
+                        else
+                        {
+                            //TODO(expand):
+                            throw new NotImplementedException();
+                        }
+                    }
+                    else
+                    {
+                        // op == PData.Cnst_Insert.Node.Name
+                        if (typeName == PData.Con_SeqType.Node.Name)
+                        {
+                            //TODO(expand):
+                            throw new NotImplementedException();
+                        }
+                        else
+                        {
+                            //TODO(expand):
+                            throw new NotImplementedException();
+                        }
+                    }
+                }
             }
             SyntaxNode FoldReturn(FuncTerm ft, List<SyntaxNode> children)
             {
@@ -2086,9 +2264,11 @@ namespace Microsoft.Pc
                     modifiers = new SyntaxTokenList();
                     modifiers = modifiers.Add(Token(SyntaxKind.PublicKeyword));
                     var getBody = SingletonList<StatementSyntax>(ReturnStatement(
-                           (ExpressionSyntax) MkCSharpElementAccessExpression("locals", ind)));
+                           (ExpressionSyntax) MkCSharpElementAccessExpression(
+                               MkCSharpIdentifierName("locals"), ind)));
                     var setBody = SingletonList<StatementSyntax>((StatementSyntax)MkCSharpSimpleAssignmentExpressionStatement(
-                            (ExpressionSyntax)MkCSharpElementAccessExpression("locals", ind),
+                            (ExpressionSyntax)MkCSharpElementAccessExpression(
+                                MkCSharpIdentifierName("locals"), ind),
                             MkCSharpIdentifierName("value")));
                     AccessorDeclarationSyntax[] accessorList = new AccessorDeclarationSyntax[]
                         { MkCSharpAccessor("get", getBody), MkCSharpAccessor("set", setBody)};
@@ -2812,9 +2992,11 @@ namespace Microsoft.Pc
                     SyntaxTokenList modifiers = new SyntaxTokenList();
                     modifiers = modifiers.Add(Token(SyntaxKind.PublicKeyword));
                     var getBody = SingletonList<StatementSyntax>(ReturnStatement(
-                               (ExpressionSyntax)MkCSharpElementAccessExpression("fields", ind)));
+                               (ExpressionSyntax)MkCSharpElementAccessExpression(
+                                   MkCSharpIdentifierName("fields"), ind)));
                     var setBody = SingletonList<StatementSyntax>((StatementSyntax)MkCSharpSimpleAssignmentExpressionStatement(
-                            (ExpressionSyntax)MkCSharpElementAccessExpression("fields", ind),
+                            (ExpressionSyntax)MkCSharpElementAccessExpression(
+                                MkCSharpIdentifierName("fields"), ind),
                             MkCSharpIdentifierName("value")));
                     AccessorDeclarationSyntax[] accessorList = new AccessorDeclarationSyntax[]
                             { MkCSharpAccessor("get", getBody), MkCSharpAccessor("set", setBody)};

@@ -215,6 +215,7 @@ extern "C"{
 		);
     /** Gets machine instance corresponding to id in process.
     * @param[in] process    The process containing the machine id.
+	* @param[in] id  The id of the machine.
     * @returns       A pointer to a PRT_MACHINEINST or NULL if id is not valid for process.
     * @see PrtMkMachine
     * @see PRT_MACHINEINST
@@ -227,8 +228,7 @@ extern "C"{
     * @param[in,out] sender The machine that is sending this message.
     * @param[in,out] receiver The machine that will receive this message.
     * @param[in] event The event to send with this message (cloned, user frees).
-    * @param[in] payload The payload to send with this message.
-    * @param[in] doTransfer The callee is reponsible for freeing the payload iff doTransfer is true.
+    * @param[in] numArgs The number of arguments in the payload.
     */
 	PRT_API void PRT_CALL_CONV PrtSend(
 		_Inout_ PRT_MACHINEINST *sender,

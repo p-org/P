@@ -23,9 +23,6 @@ namespace Microsoft.Pc
 {
     partial class PToCSharp : PTranslation
     {
-        //TODO(replace): these are Zing-related; used here for compilation only
-        public static SyntaxNode PrtMkDefaultValue = MkCSharpDot("PRT_VALUE", "PrtMkDefaultValue");
-        public static SyntaxNode PrtCloneValue = MkCSharpDot("PRT_VALUE", "PrtCloneValue");
         public PToCSharp(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo, string csharpFileName)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
@@ -43,9 +40,6 @@ namespace Microsoft.Pc
         static SyntaxGenerator generator;
 
         #region Types
-        //Possibly, all types-realted stuff should be moved to PToCSharp (similar to Zing compiler)
-        //and  TypeTranslationContext to be instantiated in the PToCSharp constructor
-        //After that, ConstructType in MkFunctionDecl can be replaced with TypeTranslationContext.ConstructType
         void GenerateTypeInfo(AST<Model> model)
         {
             var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
@@ -192,10 +186,6 @@ namespace Microsoft.Pc
             private int fieldCount;
             private int typeCount;
 
-            //These fields were used in Zing to represent strings as ints
-            //private List<AST<Node>> fieldNameInitialization;
-            //private Dictionary<string, AST<FuncTerm>> fieldNameToZingExpr;
-
             //This field is for emitting types; order is important
             public List<StatementSyntax> typeInitialization;
             public List<FieldDeclarationSyntax> typeDeclaration;
@@ -207,57 +197,16 @@ namespace Microsoft.Pc
                 this.pToCSharp = pToCSharp;
                 fieldCount = 0;
                 typeCount = 0;
-                //fieldNameInitialization = new List<AST<Node>>();
-                //fieldNameToZingExpr = new Dictionary<string, AST<FuncTerm>>(
                 typeDeclaration = new List<FieldDeclarationSyntax>();
                 typeInitialization = new List<StatementSyntax>();
                 pTypeToCSharpExpr = new Dictionary<AST<Node>, SyntaxNode>();
             }
 
-            //public AST<Node> InitializeFieldNamesAndTypes()
-            //{
-            //throw new NotImplementedException();
-            //return MkCSharpSeq(MkCSharpSeq(), MkCSharpSeq(typeInitialization));
-            //} 
-
-            public IEnumerable<AST<Node>> MainVarDecls()
-            {
-                throw new NotImplementedException();
-                //List<AST<Node>> varDecls = new List<AST<Node>>();
-                //for (int i = 0; i < fieldCount; i++)
-                //{
-                //    varDecls.Add(MkCSharpVarDecl(string.Format("field_{0}_PRT_FIELD_NAME", i), Factory.Instance.MkCnst("PRT_FIELD_NAME"), ZingData.Cnst_Static));
-                //}
-                //for (int i = 0; i < typeCount; i++)
-                //{
-                //    varDecls.Add(MkCSharpVarDecl(string.Format("type_{0}_PRT_TYPE", i), Factory.Instance.MkCnst("PRT_TYPE"), ZingData.Cnst_Static));
-                //}
-                //return varDecls;
-            }
-
-            private AST<FuncTerm> GetField(string fieldName)
-            {
-                throw new NotImplementedException();
-                //if (fieldNameToZingExpr.ContainsKey(fieldName))
-                //return fieldNameToZingExpr[fieldName];
-                //var retVal = MkCSharpDot("Main", string.Format("field_{0}_PRT_FIELD_NAME", fieldCount));
-                //AddFieldNameInitialization(MkCSharpAssign(retVal, MkCSharpNew(Factory.Instance.MkCnst("PRT_FIELD_NAME"), ZingData.Cnst_Nil)));
-                //fieldCount++;
-                ////fieldNameToZingExpr[fieldName] = retVal;
-                //return retVal;
-            }
-
             private SyntaxNode GetType(string typeName)
             {
-                //var retVal = MkCSharpDot("Main", typeName);
                 var retVal = MkCSharpIdentifierName(typeName);
                 typeCount++;
                 return retVal;
-            }
-
-            private void AddFieldNameInitialization(AST<Node> n)
-            {
-                //fieldNameInitialization.Add(n);
             }
 
             private void AddTypeInitialization(SyntaxNode n)
@@ -295,7 +244,7 @@ namespace Microsoft.Pc
                 string typeKind = ((Id)type.Function).Name;
 
                 //Debug only:
-                Console.WriteLine("typeKind in ConstructType: {0}", typeKind);
+                //Console.WriteLine("typeKind in ConstructType: {0}", typeKind);
 
                 if (typeKind == "BaseType")
                 {
@@ -303,8 +252,6 @@ namespace Microsoft.Pc
                     if (primitiveType == "NULL")
                     {
                         var tmpVar = GetType("typeNull");
-                        //type initialization:
-                        //Main.typeNull = new PrNullType();
                         AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNullType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeNull", Token(SyntaxKind.PublicKeyword),
                                                                     Token(SyntaxKind.StaticKeyword)));
@@ -354,7 +301,6 @@ namespace Microsoft.Pc
                 }
                 else if (typeKind == "NameType")
                 {
-                    //throw new NotImplementedException();
                     //NameType is for enum values only; "synonym" types are expanded by the compiler
                     //TODO(expand): there's no ref to the enum type left in C# code, which would not allow
                     //to treat casts (enum->int) properly; 
@@ -384,17 +330,10 @@ namespace Microsoft.Pc
                         initializer.Add(Token(SyntaxKind.CommaToken));
                     }
                     initializer.RemoveAt(initializer.Count() - 1);
-                    //public static SyntaxNode MkCSharpArrayCreationExpression(TypeSyntax type, SyntaxNodeOrToken[] initializer)
                     AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtTupleType"),
                         MkCSharpArrayCreationExpression("PrtType", initializer.ToArray()))));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
-                    //TODO(confirm): what for is this code in PToZing.cs?
-                    //Looks like it is not needed now
-                    //for (int i = 0; i < memberTypes.Count; i++)
-                    //{
-                    //    AddTypeInitialization(MkZingCallStmt(MkZingCall(MkZingDot("PRT_TYPE", "PrtSetFieldType"), tupleType, Factory.Instance.MkCnst(i), memberTypes[i])));
-                    //}
                     return tmpVar;
 
                 }
@@ -459,98 +398,6 @@ namespace Microsoft.Pc
         #endregion
 
         #region Utilities
-        //This is based on PToZing.TypeTranslationContext.ConstructType
-        //and will eventually be replaced with smth similar
-        private string ConstructType(FuncTerm type)
-        {
-            string typeKind = ((Id)type.Function).Name;
-            if (typeKind == "BaseType")
-            {
-                var primitiveType = ((Id)GetArgByIndex(type, 0)).Name;
-                if (primitiveType == "NULL")
-                {
-                    return "null";
-                }
-                else if (primitiveType == "BOOL")
-                {
-                    return "bool";
-                }
-                else if (primitiveType == "INT")
-                {
-                    return "int";
-                }
-                else if (primitiveType == "EVENT")
-                {
-                    return "event";
-                }
-                else if (primitiveType == "MACHINE")
-                {
-                    return "machine";
-                }
-                else
-                {
-                    //TODO(question): how to enable Debug.Assert?
-                    Debug.Assert(primitiveType == "ANY", "Illegal BaseType");
-                    return "any";
-                }
-            }
-            else if (typeKind == "NameType")
-            {
-                return "NameType: not implemented yet";
-            }
-            else if (typeKind == "TupType")
-            {
-                return "TupType: not implemented yet";
-            }
-            else if (typeKind == "NmdTupType")
-            {
-                return "NmdTupType: not implemented";
-            }
-            else if (typeKind == "SeqType")
-            {
-                return "SeqType: not implemented";
-            }
-            else
-            {
-                // typeKind == "MapType"
-                return "MapType: not implemented";
-            }
-        }
-        //TODO(expand): write this method: consider all possible types: null, bool, int, event, machine, any
-        private string GetTypeCreationExpr(string type)
-        {
-            if (type == "null")
-            {
-                return "new PrtNullType()";
-            }
-            else if (type == "bool")
-            {
-                return "new PrtBoolType()";
-            }
-            else if (type == "int")
-            {
-                return "new PrtIntType()";
-            }
-            else if (type == "event")
-            {
-                return "new PrtEventType()";
-            }
-            else if (type == "machine")
-            {
-                return "new PrtMachineType()";
-            }
-            else if (type == "any")
-            {
-                return "new PrtAnyType()";
-            }
-            else
-            {
-                return "enum, tuple, seq or map type not implemented yet";
-            }
-        }
-
-        //public static AST<FuncTerm> MkCSharpAssign(AST<Node> lhs, AST<Node> rhs)
-        //TODO(question): what's SimpleAssignmentExpression?
         public static SyntaxNode MkCSharpSimpleAssignmentExpressionStatement(SyntaxNode lhs, SyntaxNode rhs)
         {
             return ExpressionStatement(
@@ -558,18 +405,6 @@ namespace Microsoft.Pc
                         SyntaxKind.SimpleAssignmentExpression,
                         (ExpressionSyntax)lhs, (ExpressionSyntax)rhs))
                    .NormalizeWhitespace();
-        }
-        public static SyntaxNode MkCSharpCall(SyntaxNode methodExpr, params SyntaxNode[] args)
-        {
-            throw new NotImplementedException();
-        }
-        private static SyntaxNode MkCSharpReturn(SyntaxNode rVal)
-        {
-            throw new NotImplementedException();
-        }
-        public static SyntaxNode MkCSharpCallStmt(SyntaxNode callExpr, params SyntaxNode[] attrs)
-        {
-            throw new NotImplementedException();
         }
         public static SyntaxNode MkCSharpStringLiteralExpression(string name)
         {
@@ -593,7 +428,6 @@ namespace Microsoft.Pc
         }
         public static SyntaxNode MkCSharpIdentifierName(string name)
         {
-            //throw new NotImplementedException();
             return IdentifierName(name);
         }
         public static SyntaxToken MkCSharpIdentifier(string name)
@@ -604,7 +438,6 @@ namespace Microsoft.Pc
         {
             return Parameter(par).WithType(type);
         }
-        //public static List<SyntaxNodeOrToken> MkCSharpParameterList(SyntaxNodeOrToken[] args)
         public static List<SyntaxNodeOrToken> MkCSharpParameterList(List<SyntaxNode> args)
         {
             List<SyntaxNodeOrToken> acc = new List<SyntaxNodeOrToken>();
@@ -618,7 +451,6 @@ namespace Microsoft.Pc
             }
             return acc;
         }
-        //TODO: write MkCSharpArgumentList: ArgumentSyntax elems separated by CommaTokens 
         public static List<SyntaxNodeOrToken> MkCSharpArgumentList(params ArgumentSyntax[] args)
         {
             List<SyntaxNodeOrToken> acc = new List<SyntaxNodeOrToken>();
@@ -632,6 +464,7 @@ namespace Microsoft.Pc
             }
             return acc;
         }
+
         #region types
         public static SimpleBaseTypeSyntax MkCSharpIdentifierNameType(string type)
         {
@@ -660,11 +493,6 @@ namespace Microsoft.Pc
                         TokenList(new[] { accessibility, publicStatic }))
                    .NormalizeWhitespace();
         }
-        public static SyntaxNode MkCSharpVarDecl(string varName, SyntaxNode varType, params SyntaxNode[] attrs)
-        {
-            throw new NotImplementedException();
-        }
-        //TODO(expand to any number of pars):
         public static SyntaxNode MkCSharpDot(string first, params string[] names)
         {
 
@@ -718,8 +546,6 @@ namespace Microsoft.Pc
         //OmittedArraySizeExpression case only:
         public static SyntaxNode MkCSharpArrayCreationExpression(string type, SyntaxNodeOrToken[] initializer)
         {
-            //SyntaxNodeOrToken[] temp = new SyntaxNodeOrToken[initializer.Count()];
-            //temp = initializer;
             return ArrayCreationExpression(
                     ArrayType(IdentifierName(type))
                     .WithRankSpecifiers(
@@ -732,10 +558,8 @@ namespace Microsoft.Pc
                                             SyntaxKind.ArrayInitializerExpression,
                                             SeparatedList<ExpressionSyntax>(initializer)));
         }
-        //TODO(expand to any number of parameters)
         public static SyntaxNode MkCSharpObjectCreationExpression(SyntaxNode type, params SyntaxNode[] names)
         {
-            //List<ArgumentSyntax> hd = new List<ArgumentSyntax>();
             List<SyntaxNode> hd = new List<SyntaxNode>();
             if (names.Length == 0)
             {
@@ -744,7 +568,7 @@ namespace Microsoft.Pc
                    .WithArgumentList(
                      ArgumentList());
             }
-            //TODO(fix): merge this case with the general case
+            //TODO(improve): merge this case with the general case
             else if (names.Length == 1)
             {
                 return ObjectCreationExpression(
@@ -806,7 +630,7 @@ namespace Microsoft.Pc
         }
         public static SyntaxNode MkCSharpBinaryExpression(SyntaxKind op, SyntaxNode left, SyntaxNode right)
         {
-            //TODO(expand) For binary plus for now:
+            //TODO(fix) For binary plus for now:
             return BinaryExpression(SyntaxKind.AddExpression, (ExpressionSyntax)left, (ExpressionSyntax)right);
         }
         public static SyntaxNode MkCSharpPropertyDecl(string type, string name,
@@ -854,19 +678,6 @@ namespace Microsoft.Pc
                    .WithMembers(members)
                    .NormalizeWhitespace();
         }
-        public static SyntaxNode MkCSharpIfThen(SyntaxNode cond, SyntaxNode then)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static SyntaxNode MkCSharpIfThenElse(SyntaxNode cond, SyntaxNode thenstmt, SyntaxNode elsestmt)
-        {
-            throw new NotImplementedException();
-        }
-        public static SyntaxNode MkCSharpGoto(string labelName)
-        {
-            throw new NotImplementedException();
-        }
         public static SyntaxNode MkCSharpLabeledBlock(string label, StatementSyntax body)
         {
             return Block(SingletonList<StatementSyntax>(
@@ -880,54 +691,6 @@ namespace Microsoft.Pc
                             Identifier(label),
                             EmptyStatement());
         }
-        public static SyntaxNode MkCSharpBlocks(params SyntaxNode[] blocks)
-        {
-            throw new NotImplementedException();
-        }
-
-        public static SyntaxNode MkCSharpBlocks(List<SyntaxNode> blocks)
-        {
-            throw new NotImplementedException();
-        }
-        private static SyntaxNode MkCSharpNew(SyntaxNode constructedType, SyntaxNode optionalSize)
-        {
-            throw new NotImplementedException();
-        }
-        public static SyntaxNode MkCSharpAssert(SyntaxNode condition)
-        {
-            throw new NotImplementedException(); ;
-        }
-
-        private static SyntaxNode MkCSharpAssert(SyntaxNode condition, string msg)
-        {
-            throw new NotImplementedException();
-        }
-        public static SyntaxNode MkCSharpEq(SyntaxNode e1, SyntaxNode e2)
-        {
-            throw new NotImplementedException();
-        }
-        public static SyntaxNode MkCSharpAdd(SyntaxNode a, SyntaxNode b)
-        {
-            throw new NotImplementedException();
-        }
-        private static SyntaxNode MkCSharpIndex(SyntaxNode baseExp, SyntaxNode indExp)
-        {
-            throw new NotImplementedException();
-        }
-        public static SyntaxNode MkCSharpSeq(params SyntaxNode[] stmts)
-        {
-            throw new NotImplementedException();
-           
-        }
-        public static SyntaxNode MkCSharpSeq(List<SyntaxNode> stmts)
-        {
-            throw new NotImplementedException();
-        }
-        public static SyntaxNode MkCSharpEvent(string eventName)
-        {
-            throw new NotImplementedException();
-        }
-
         #endregion
         public bool GenerateCSharp()
         {
@@ -967,7 +730,6 @@ namespace Microsoft.Pc
         private void MkAppConstructors()
         {
             //parameterless constructor
-            //TODO(expand): add inits for all fields
             var constructor_1 = generator.ConstructorDeclaration("Application", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
             members.Add(constructor_1);
 
@@ -1109,15 +871,7 @@ namespace Microsoft.Pc
             public MkMachineClass owner;
             //owner.machName is former machineName
 
-            //These fields are copied from ZingFoldContext (not needed for C#)
-            private PToCSharp pToCSharp;
-            //sideEffectsStack is used for non-atomic stmts: Seq, ITE, While in the translation of expressions.
-            //Translation of a P expression should result in a zing expression so that translated expressions can be 
-            //composed; but compilation of some P expressions results in a complicated piece of code containing statements as well.  
-            //These statements are emitted to the side-effect stack and popped later.  
-            //We should be able to do without this stack in C# code gen because C# method calls can be nested inside expressions
-            //public Stack<List<AST<Node>>> sideEffectsStack;
-            //locals contain temp vars for storing intermediate results, for example, in translation of expressions
+            private PToCSharp pToCSharp; 
             public List<Tuple<SyntaxNode, string>> locals;
             public Stack<bool> lhsStack;
             //labels are used for "continuations" in send, new, nondet, receive
@@ -1134,8 +888,6 @@ namespace Microsoft.Pc
                 this.locals = new List<Tuple<SyntaxNode, string>>();
                 this.lhsStack = new Stack<bool>();
                 this.labels = new Dictionary<string, int>();
-
-                //GenerateTypeInfo(pToCSharp.modelWithTypes);
             }
             
             public int LabelToId(string l)
@@ -1152,6 +904,7 @@ namespace Microsoft.Pc
 
             public SyntaxNode EmitLabelPrelude()
             {
+                throw new NotImplementedException();
                 //After the entire function gets processed, generates if/else if... (or switch)
                 //with gotos according to the labels from "labels" 
                 //(TODO: not clear): If for function "foo" there are 3 labels (foo_0, foo_1, foo_2) 
@@ -1186,20 +939,7 @@ namespace Microsoft.Pc
                 ///prelude.Add(MkCSharpAssert(ZingData.Cnst_False, "Internal error"));
 
                 // return PToCSharp.MkCSharpSeq(prelude);
-                throw new NotImplementedException();
             }
-
-            public void AddSideEffect(SyntaxNode stmt)
-            {
-                //this.sideEffectsStack.Peek().Add(stmt);
-            }
-
-           // public void PushSideEffectStack()
-            //{
-                //this.sideEffectsStack.Push(new List<AST<Node>>());
-            //}
-
-            // type must be CSharp type
             public SyntaxNode GetTmpVar(SyntaxNode type, string baseName)
             {
                 var tmpVarName = pToCSharp.GetUnique(baseName);
@@ -1207,30 +947,6 @@ namespace Microsoft.Pc
                 this.locals.Add(new Tuple<SyntaxNode, string>(type, tmpVarName));
                 return tmpVar;
             }
-
-            public AST<Node> EmitCSharpSideEffects(AST<Node> stmt)
-            {
-                throw new NotImplementedException();
-                //Debug.Assert(sideEffectsStack.Count > 0);
-                //var sideEffects = sideEffectsStack.Pop();
-
-                //if (sideEffects.Count > 0)
-                //{
-                //    sideEffects.Add(stmt);
-                //    return PToCSharp.MkCSharpSeq(sideEffects);
-                //}
-                //else
-                //{
-                //    return stmt;
-                //}
-            }
-
-            public IEnumerable<AST<Node>> EmitLocals()
-            {
-                throw new NotImplementedException();
-                //return locals.Select(loc => PToCSharp.MkCSharpVarDecl(loc.Item2, loc.Item1));
-            }
-
             private FuncTerm LookupType(Node node)
             {
                 //return entityInfo.typeInfo[Factory.Instance.ToAST(node)];
@@ -1460,10 +1176,6 @@ namespace Microsoft.Pc
                     }
                 }
             }
-            //Eliminating ZingTranslationInfo: using AST<Node> instead
-            //TODO(questoin): two options to use for the generic Roslyn type that Fold returns:
-            //SyntaxNode and CSharpSyntaxNode.
-            //Second parameter of Fold should return List<SyntaxNode> or List<CSharpSyntaxNode>
             private SyntaxNode Fold(Node n, List<SyntaxNode> children)
             {
                 if (n.NodeKind == NodeKind.Id || n.NodeKind == NodeKind.Cnst)
@@ -1588,85 +1300,10 @@ namespace Microsoft.Pc
             private List<SyntaxNode> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
             {
                 throw new NotImplementedException();
-                //List<AST<Node>> eventStmts = new List<AST<Node>>();
-                //List<AST<Node>> funStmts = new List<AST<Node>>();
-
-                //for (int i = 0; i < eventNames.Count; i++)
-                //{
-                //    var beforeLabel = GetFreshLabel();
-                //    var eventName = eventNames[i];
-                //    var funName = funNames[i];
-                //    var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(funName) ? pToCSharp.allStaticFuns[funName] : pToCSharp.allMachines[owner.machName].funNameToFunInfo[funName];
-                //    Debug.Assert(calleeInfo.isAnonymous);
-                //    List<SyntaxNode> ifStmts = new List<SyntaxNode>();
-                //    ifStmts.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpIndex(MkCSharpIdentifierName("locals"), Factory.Instance.MkCnst(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)), MkCSharpCall(PrtCloneValue, MkCSharpDot("myHandle", "currentArg"))));
-                //    foreach (var calleeLocal in calleeInfo.localNames)
-                //    {
-                //        var calleeLocalInfo = calleeInfo.localNameToInfo[calleeLocal];
-                //        ifStmts.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpIndex(MkCSharpIdentifierName("locals"), Factory.Instance.MkCnst(calleeLocalInfo.index)), MkCSharpCall(PrtMkDefaultValue, pToCSharp.typeContext.PTypeToZingExpr(calleeLocalInfo.type))));
-                //    }
-                //    ifStmts.Add(MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), MkCSharpIdentifierName("locals"))));
-                //    ifStmts.Add(MkCSharpGoto(beforeLabel));
-                //    eventStmts.Add(MkCSharpIfThen(MkCSharpEq(MkCSharpDot("myHandle", "currentEvent"), MkCSharpEvent(eventName)), MkCSharpSeq(ifStmts)));
-                //    if (pToCSharp.allStaticFuns.ContainsKey(funName))
-                //    {
-                //        funStmts.Add(MkCSharpBlock(beforeLabel, MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("Main", funName), MkCSharpIdentifierName("myHandle"), MkCSharpIdentifierName("entryCtxt")))));
-                //    }
-                //    else
-                //    {
-                //        funStmts.Add(MkCSharpBlock(beforeLabel, MkCSharpCallStmt(MkCSharpCall(MkCSharpIdentifierName(funName), MkCSharpIdentifierName("entryCtxt")))));
-                //    }
-                //    funStmts.Add(MkCSharpIfThenElse(
-                //                         MkCSharpEq(MkCSharpDot("entryCtxt", "reason"), MkCSharpDot("ContinuationReason", "Return")),
-                //                         MkCSharpGoto(afterAfterLabel),
-                //                         MkCSharpSeq(MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(LabelToId(beforeLabel)), MkCSharpIdentifierName("locals"))),
-                //                                   MkCSharpReturn(ZingData.Cnst_Nil))));
-                //}
-                //List<AST<Node>> stmts = new List<AST<Node>>();
-                //stmts.AddRange(eventStmts);
-                //stmts.Add(MkCSharpAssert(ZingData.Cnst_False));
-                //stmts.AddRange(funStmts);
-                //return stmts;
             }
             SyntaxNode FoldReceive(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
-                //List<AST<Node>> stmts = new List<AST<Node>>();
-                //List<string> eventNames = new List<string>();
-                //List<string> funNames = new List<string>();
-                //var cases = GetArgByIndex(ft, 0) as FuncTerm;
-                //while (cases != null)
-                //{
-                //    Node evt = GetArgByIndex(cases, 0);
-                //    string eventName = null;
-                //    if (evt is Cnst)
-                //    {
-                //        eventName = (evt as Cnst).GetStringValue();
-                //    }
-                //    else if ((evt as Id).Name == "NULL")
-                //    {
-                //        eventName = NullEvent;
-                //    }
-                //    else
-                //    {
-                //        eventName = HaltEvent;
-                //    }
-                //    eventNames.Add(eventName);
-                //    stmts.Add(MkCSharpAssign(MkCSharpDot("myHandle", "receiveSet"), MkCSharpAdd(MkCSharpDot("myHandle", "receiveSet"), MkCSharpEvent(eventName))));
-                //    var fun = GetArgByIndex(cases, 1);
-                //    string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(fun)];
-                //    funNames.Add(funName);
-                //    cases = GetArgByIndex(cases, 2) as FuncTerm;
-                //}
-                //var afterLabel = GetFreshLabel();
-                //stmts.Add(MkCSharpCallStmt(MkCSharpCall(MkCSharpDot("entryCtxt", "Receive"), Factory.Instance.MkCnst(LabelToId(afterLabel)), MkCSharpIdentifierName("locals"))));
-                //stmts.Add(MkCSharpReturn(ZingData.Cnst_Nil));
-                //stmts.Add(MkCSharpBlock(afterLabel, ZingData.Cnst_Nil));
-                //var afterAfterLabel = GetFreshLabel();
-                //stmts.AddRange(CaseFunCallHelper(eventNames, funNames, afterAfterLabel));
-                //stmts.Add(MkCSharpBlock(afterAfterLabel, ZingData.Cnst_Nil));
-                //AST<Node> node = MkCSharpSeq(stmts);
-                //return node;
             }
             //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
@@ -1689,7 +1326,6 @@ namespace Microsoft.Pc
                 {
                     //PrtEvent case: emit "new PrtEventValue(eventStaticVar);"
                     //, where eventStaticVar is eventName
-                    //var tmpVar = GetTmpVar(PrtValue, "tmp");
                     var type = LookupType(ft);
                     if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                     {
@@ -1909,82 +1545,10 @@ namespace Microsoft.Pc
             {
                 throw new NotImplementedException();
             }
+            //moned to MkFunctionDecl_temp.cs:
             //SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
-            //{
-            //    throw new NotImplementedException();
-            //}
             //SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> children)
-            //{
-            //    //code to be generated:
-            //    //Line 1 (template everything except event and <payload value>): 
-            //    //parent.PrtEnqueueEvent(event, <payload value>, parent);
-            //    //Example:parent.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
-            //    //public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
-            //    //event: children[1]
-            //    //<payload value>: compute from children[2-children.Count()]
-
-            //    //Line 2 (template everything): 
-            //    //parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
-            //    //TODO(question):check that the last parameter is correct
-            //    //Example: parent.PrtFunContSend(this, currFun.locals, 1);
-            //    //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
-
-            //    //List<AST<Node>> args = new List<AST<Node>>(children.Select(x => x));                  
-            //    ExpressionSyntax eventExpr;
-            //    ExpressionSyntax payloadExpr;
-            //    var enqueueEvent =
-            //        ExpressionStatement(
-            //            InvocationExpression(
-            //                MemberAccessExpression(
-            //                    SyntaxKind.SimpleMemberAccessExpression,
-            //                    IdentifierName("parent"),
-            //                    IdentifierName("PrtEnqueueEvent")))
-            //            .WithArgumentList(
-            //                ArgumentList(
-            //                    SeparatedList<ArgumentSyntax>(
-            //                        new SyntaxNodeOrToken[]{
-            //                            Argument(
-            //                                //TODO: replace with real expr
-            //                                IdentifierName("eventExpr")),
-            //                            Token(SyntaxKind.CommaToken),
-            //                            Argument(
-            //                                //TODO: replace with real expr
-            //                                IdentifierName("payloadExpr")),
-            //                            Token(SyntaxKind.CommaToken),
-            //                            Argument(
-            //                                IdentifierName("parent"))}))))
-            //        .NormalizeWhitespace();
-
-            //    var contSend =
-            //        ExpressionStatement(
-            //            InvocationExpression(
-            //                MemberAccessExpression(
-            //                    SyntaxKind.SimpleMemberAccessExpression,
-            //                    IdentifierName("parent"),
-            //                    IdentifierName("PrtFunContSend")))
-            //            .WithArgumentList(
-            //                ArgumentList(
-            //                    SeparatedList<ArgumentSyntax>(
-            //                        new SyntaxNodeOrToken[]{
-            //                            Argument(
-            //                                ThisExpression()),
-            //                            Token(SyntaxKind.CommaToken),
-            //                            Argument(
-            //                                MemberAccessExpression(
-            //                                    SyntaxKind.SimpleMemberAccessExpression,
-            //                                    IdentifierName("currFun"),
-            //                                    IdentifierName("locals"))),
-            //                            Token(SyntaxKind.CommaToken),
-            //                            Argument(
-            //                                MemberAccessExpression(
-            //                                    SyntaxKind.SimpleMemberAccessExpression,
-            //                                    IdentifierName("currFun"),
-            //                                    IdentifierName("returnTolocation")))}))))
-            //        .NormalizeWhitespace();
-
-
-            //    throw new NotImplementedException();
-            //}
+            
             SyntaxNode FoldAnnounce(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
@@ -2192,14 +1756,19 @@ namespace Microsoft.Pc
             }
             SyntaxNode FoldSeq(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var first = it.Current;
+                    it.MoveNext();
+                    var second = it.Current;
+                    return Block((StatementSyntax)first, (StatementSyntax)second);
+                }
             }
             #endregion
 
-            //TODO(expand): stopped here:
             public List<StatementSyntax> MkFunctionBody()
             {
-                //TODO(question): how to fix type of ch?
                 var funBody = Factory.Instance.ToAST(funInfo.body).Compute<SyntaxNode>(
                     x => Unfold(x),
                     (x, ch) => Fold(x, ch.ToList()));
@@ -2255,10 +1824,10 @@ namespace Microsoft.Pc
                 {
                     string varName = pair.Key;
                     //Debug:
-                    Console.WriteLine("Next local of function {0} is {1}", funName, varName);
+                    //Console.WriteLine("Next local of function {0} is {1}", funName, varName);
 
                     int ind = pair.Value.index;
-                    Console.WriteLine("Index of the next local {0} is {1}", varName, ind);
+                    //Console.WriteLine("Index of the next local {0} is {1}", varName, ind);
                     //Example: public PrtValue Par1 {get {return locals[0];} {set {locals[0] = value;}}
 
                     modifiers = new SyntaxTokenList();
@@ -2283,7 +1852,6 @@ namespace Microsoft.Pc
                                          SingletonSeparatedList<BaseTypeSyntax>(MkCSharpIdentifierNameType("PrtFunStackFrame")),
                                          members);
             }
-            //TODO(fix): replace this code with general case: Execute method for any function
             public SyntaxNode MkExecuteMethod()
             {
                 //Line below is a template:
@@ -2306,9 +1874,9 @@ namespace Microsoft.Pc
                                                 IdentifierName("PrtPopFunStackFrame"))))))))
                     .NormalizeWhitespace());
 
-                //TODO(expand): generate a "case" stmt (using EmitLabelPrelude) 
-                //for possibly multiple labels "Loc_XX"
-                //stored in "labels" of the former ZingFoldContext
+                //TODO(fix): generate a "case" stmt instead (using EmitLabelPrelude) 
+                //for multiple labels "Loc_XX"
+                //stored in "labels" 
                 //if (currFun.returnTolocation == 0) goto Loc_0; else goto Ret;
                 funStmts.Add(
                     IfStatement(
@@ -2342,7 +1910,6 @@ namespace Microsoft.Pc
                             MissingToken(SyntaxKind.SemicolonToken)))
                     .NormalizeWhitespace());
 
-                //TODO(expand): insert compilation result for the general case of function body
                 funStmts.AddRange(MkFunctionBody());
 
                 //Ret: parent.PrtFunContReturn(null);
@@ -3072,12 +2639,6 @@ namespace Microsoft.Pc
                                     baseConstructorArguments: baseConstructorArgs);
                 machineMembers.Add(constructor_2);
 
-                //TODO(expand): getters and setters
-                
-                //#region Functions
-
-                //TODO(expand): generate functions declared in the machine (not state-specific)
-
                 //classes for functions for each state of the machine
                 //and variable declarations for those functions:
                 foreach (var pair in machInfo.stateNameToStateInfo)
@@ -3085,14 +2646,14 @@ namespace Microsoft.Pc
                     //entry function of the state:
                     var funName = pair.Value.entryActionName;
                     FunInfo funInfo = GetFunInfo(funName);
-                    //TODO(remove)
+                    //TODO(remove): Debug only:
                     Console.WriteLine("Entry func name for state {0}: {1}", pair.Key, funName);
                     MkFunctionDecl funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
                     funDecl.AddFunClass();
 
                     //exit function of the state: 
                     funName = pair.Value.exitFunName;
-                    //TODO(remove)
+                    //TODO(remove): Debug only:
                     Console.WriteLine("Exit func name for state {0}: {1}", pair.Key, funName);
                     funInfo = GetFunInfo(funName);
                     funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
@@ -3106,7 +2667,7 @@ namespace Microsoft.Pc
 
                         if (!transition.Value.IsPush && !translator.allStaticFuns.ContainsKey(funName))
                         {
-                            //TODO(remove)
+                            //TODO(remove): Debug only:
                             Console.WriteLine("For goto transition: func name for state {0}: {1}", pair.Key, funName);
                             funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
                             funDecl.AddFunClass();
@@ -3118,7 +2679,7 @@ namespace Microsoft.Pc
                     {
                         funName = doFun.Value;
                         funInfo = GetFunInfo(funName);
-                        //TODO(remove)
+                        //TODO(remove): Debug only:
                         Console.WriteLine("For Do declaration: func name for state {0}: {1}", pair.Key, funName);
                         if (!translator.allStaticFuns.ContainsKey(funName))
                         {
@@ -3229,7 +2790,7 @@ namespace Microsoft.Pc
                     //Example: 
                     //PONG_Pong_WaitPing = new PONG_Pong_WaitPing_Class("PONG_Pong_WaitPing", AnonFun1, AnonFun0, false, StateTemperature.Warm);
                     //Consider 6 cases (write a mmethod): for each bool value of hasNullTransition, there are 3 possible "temperatures"
-                    //TODO(remove):
+                    //TODO(remove): Debug only:
                     Console.WriteLine("hasNullTransition for state {0} is {1}", stateName, pair.Value.hasNullTransition);
                     mainConstructorFields.Add(MkStateInstantiation(stateName, stateType, pair.Value.entryActionName, pair.Value.exitFunName,
                                               pair.Value.hasNullTransition, pair.Value.temperature));

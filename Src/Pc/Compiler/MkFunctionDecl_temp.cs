@@ -99,9 +99,10 @@ namespace Microsoft.Pc
                 {
                     Argument(eventExpr), Argument(payloadExpr), Argument((ExpressionSyntax)MkCSharpIdentifierName("parent"))
                 };
-                StatementSyntax enqueueEventStmt = (StatementSyntax)MkCSharpInvocationExpression(
+                StatementSyntax enqueueEventStmt = ExpressionStatement(
+                    (ExpressionSyntax)MkCSharpInvocationExpression(
                     (ExpressionSyntax)MkCSharpDot((ExpressionSyntax)targetExpr, "PrtEnqueueEvent"),
-                     invocationArgs);
+                     invocationArgs));
 
                 invocationArgs = new ArgumentSyntax[]
                 {
@@ -109,9 +110,10 @@ namespace Microsoft.Pc
                     Argument((ExpressionSyntax)MkCSharpDot("currFun", "locals")),
                     Argument((ExpressionSyntax)MkCSharpDot("currFun", "returnTolocation"))
                 };
-                StatementSyntax contStmt = (StatementSyntax)MkCSharpInvocationExpression(
+                StatementSyntax contStmt = ExpressionStatement(
+                    (ExpressionSyntax)MkCSharpInvocationExpression(
                     (ExpressionSyntax)MkCSharpDot("parent", "PrtFunContSend"),
-                     invocationArgs);
+                     invocationArgs));
 
                 var afterLabel = GetFreshLabel();
                 StatementSyntax afterStmt = MkCSharpEmptyLabeledStmt(afterLabel);

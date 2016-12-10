@@ -574,7 +574,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	CRenameMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, ImpName).
 	
 	// If there is no implementation decl then generate the normal link map
-	CLinkMap(creatorM, IorM, impM) :- MachineDecl(creatorM, _, _), MachineCreatesM(creatorM, IorM), impM = IorM, no ImplementationDecl(_, _);
+	CLinkMap(creatorM, IorM, impM) :- MachineDecl(creatorM, _, _), MachineDecl(IorM, _, _), impM = IorM, no ImplementationDecl(_, _);
 									  MachineDecl(creatorM, _, _), MachineCreatesInt(creatorM, IorM), MachineExports(impM, IorM), no ImplementationDecl(_, _).
 	
 	CRenameMap (nName, nName) :- MachineDecl(nName, _, _), no ImplementationDecl(_, _).

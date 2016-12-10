@@ -12,7 +12,7 @@ model fun StartTimer(timer : machine, time: int) {
 model fun CancelTimer(timer : machine) {
 	send timer, CANCEL;
 }
- 
+  
 // events from client to timer
 event START: int;
 event CANCEL;

@@ -25,33 +25,15 @@
     <ClInclude Include="targetver.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="linker.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="test.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="timer.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Test.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TestImpl.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="linker.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="TimerImpl.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="timer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

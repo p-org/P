@@ -11,10 +11,10 @@
     <!-- This is so that the C++ project will do incremental build of .p files correctly -->
     <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
   </PropertyGroup>
-  
+
   <UsingTask
     TaskName="CompareDates"
-    TaskFactory="CodeTaskFactory" 
+    TaskFactory="CodeTaskFactory"
     AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
     <ParameterGroup>
       <PCompile ParameterType="System.String" Required="true" />
@@ -46,54 +46,109 @@
     </Task>
   </UsingTask>
   <Target Name="CheckPFiles" Inputs="@(PFile)" Outputs="%(RootDir)%(Directory)linker.c">
-    
+
     <PropertyGroup>
       <PCompileTime>%(PCompile.ModifiedTime)</PCompileTime>
     </PropertyGroup>
-    
-    <CompareDates PCompile="@(PCompile)" PFiles="@(PFile)">  
+
+    <CompareDates PCompile="@(PCompile)" PFiles="@(PFile)">
       <Output TaskParameter="Result" PropertyName="DateCompareResult" />
     </CompareDates>
 
     <!-- this will force a recompile of the PCompile file if any of the @(PFiles) are newer  -->
     <Delete Files="@(PCompile->'%(RootDir)%(Directory)linker.c')" Condition="'$(DateCompareResult)'=='true'" />
   </Target>
-  <Target Name="CompileP" Inputs="@(PCompile);" Outputs="%(RootDir)%(Directory)%(FileName).4ml;%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;" 
+
+  <!-- this target it is tricky.  We want to have only one invocation of pc.exe passing just the list of p files
+       that need to be recompiled, and not ALl of the @(PCompile) list, so this target creates that subset 
+       using a clever ValueSetByTask trick documentated on https://msdn.microsoft.com/en-us/library/ee264087.aspx -->
+  <Target Name="IncrementalCompileP" Inputs="@(PCompile);" 
+          Outputs="%(RootDir)%(Directory)%(FileName).4ml;%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;"
           BeforeTargets="BeforeBuildGenerateSources" DependsOnTargets="CheckPFiles">
-    <Message Importance="high" Text="########## compiling p files: @(PCompile); ##################" />
-    <Message Importance="high" Condition="!Exists('$(DropFolder)\Binaries\pc.exe')"
-             Text="### pc.exe does not exist in $(DropFolder)\Binaries.  Please build it."/>
-    <PropertyGroup> 
+
+    <Message Text="########## P file changed: @(PCompile) ##################" />
+
+    <PropertyGroup>
       <WorkingDirs>@(PCompile->'%(RootDir)%(Directory)')</WorkingDirs>
       <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
     </PropertyGroup>
-    <ItemGroup>
-      <FileWrites Include="@(PCompile->'$(WorkingDir)\%(FileName).c')" />
-      <FileWrites Include="@(PCompile->'$(WorkingDir)\%(FileName).h')" />
-      <FileWrites Include="@(PCompile->'$(WorkingDir)\%(FileName).4ml')" />
-    </ItemGroup>
-    <Exec Command="$(DropFolder)\Binaries\pc.exe /generate:C0 /shared @(PCompile->'%(FullPath)')"  WorkingDirectory="$(WorkingDir)"/>
-    <CreateItem
-            Include="@(PCompile->'$(WorkingDir)\%(FileName).4ml')"
-          >
-           <Output
-               TaskParameter="Include"
-               ItemName="PLink"/>
-        </CreateItem>
+    <CreateItem Include="@(PCompile->'$(WorkingDir)\%(FileName).4ml')">
+      <Output
+          TaskParameter="Include"
+          ItemName="PLink"/>
+    </CreateItem>
+    <CreateProperty Value="true">
+      <Output TaskParameter="ValueSetByTask" PropertyName="CompileRan" />
+    </CreateProperty>
+    <!-- must always include the C file output in the final C++ compile -->
+    <CreateItem Include="@(PCompile->'$(WorkingDir)%(FileName).c')">
+      <Output
+          TaskParameter="Include"
+          ItemName="ClCompile"/>
+    </CreateItem>
+    <!-- but we conditionally create these items based on whether the compile should run or not -->
+    <CreateItem Condition="'$(CompileRan)'=='True'" Include="@(PCompile)">
+      <Output
+          TaskParameter="Include"
+          ItemName="PIncrementalCompile"/>
+    </CreateItem>
+    <CreateItem Condition="'$(CompileRan)'=='True'" Include="@(PCompile->'$(WorkingDir)%(FileName).c')">
+      <Output
+          TaskParameter="Include"
+          ItemName="POutputC"/>
+    </CreateItem>
+    <CreateItem Condition="'$(CompileRan)'=='True'" Include="@(PCompile->'$(WorkingDir)%(FileName).h')">
+      <Output
+          TaskParameter="Include"
+          ItemName="POutputH"/>
+    </CreateItem>
+    <CreateItem Condition="'$(CompileRan)'=='True'" Include="@(PCompile->'$(WorkingDir)%(FileName).4ml')">
+      <Output
+          TaskParameter="Include"
+          ItemName="POutput4ml"/>
+    </CreateItem>
   </Target>
+
+  <!-- now that we have the restricted list of P files needed to be recompiled in PIncrementalCompile we can invoke pc.exe -->
+  <Target Name="CompileP" Inputs="@(PIncrementalCompile)" Outputs="@(POutputC);@(POutputH);@(POutput4ml);%(RootDir)%(Directory)linker.c"
+          BeforeTargets="BeforeBuildGenerateSources" DependsOnTargets="IncrementalCompileP">
+
+    <Message Importance="high" Text="########## Incremental compile P files @(PIncrementalCompile) ##################" />
+
+    <PropertyGroup>
+      <WorkingDirs>@(PIncrementalCompile->'%(RootDir)%(Directory)')</WorkingDirs>
+      <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
+    </PropertyGroup>
+    <ItemGroup>
+      <FileWrites Include="@(POutputC)" />
+      <FileWrites Include="@(POutputH)" />
+      <FileWrites Include="@(POutput4ml)" />
+    </ItemGroup>
+
+    <Exec Command="$(DropFolder)\Binaries\pc.exe /generate:C0 /shared @(PIncrementalCompile->'%(FullPath)',' ')"  WorkingDirectory="$(WorkingDir)"/>
+
+  </Target>
+  
   <Target Name="LinkP" Inputs="@(PLink);" Outputs="%(RootDir)%(Directory)linker.c;%(RootDir)%(Directory)linker.c"
           DependsOnTargets="CompileP" BeforeTargets="BeforeBuildGenerateSources" >
-    <ItemGroup>
-      <FileWrites Include="%(RootDir)%(Directory)linker.c" />
-      <FileWrites Include="%(RootDir)%(Directory)linker.c" />
-    </ItemGroup>
     <PropertyGroup>
-      <!-- flatten into a semicolon separated list, we will take the first-->
       <WorkingDirs>@(PLink->'%(RootDir)%(Directory)')</WorkingDirs>
       <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
     </PropertyGroup>
-    <Message Importance="high" Text="########## link p files in $(WorkingDir) ##################" />
-    <Exec Command="$(DropFolder)\Binaries\pc.exe /link @(PLink->'%(FullPath)',' ')"  WorkingDirectory="$(WorkingDir)"/>    
+    <ItemGroup>
+      <FileWrites Include="$(WorkingDir)linker.c" />
+      <FileWrites Include="$(WorkingDir)linker.c" />
+    </ItemGroup>
+    <!-- must always include linker.c in the final C++ compile -->
+    <CreateItem Include="$(WorkingDir)linker.c">
+      <Output
+          TaskParameter="Include"
+          ItemName="ClCompile"/>
+    </CreateItem>
+    
+    <Message Importance="high" Text="########## generating p linker.c  ##################" />
+    
+    <Exec Command="$(DropFolder)\Binaries\pc.exe /link @(PLink->'%(FullPath)',' ')"  WorkingDirectory="$(WorkingDir)"/>
   </Target>
 
   <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >
@@ -103,8 +158,9 @@
     </PropertyGroup>
     <Delete Files="@(PCompile->'$(WorkingDir)\%(FileName).c')"/>
     <Delete Files="@(PCompile->'$(WorkingDir)\%(FileName).h')"/>
-    <Delete Files="$(MSBuildThisFileDirectory)\linker.c"/>
-    <Delete Files="$(MSBuildThisFileDirectory)\linker.h"/>
+    <Delete Files="@(PCompile->'$(WorkingDir)\%(FileName).4ml')"/>
+    <Delete Files="$(WorkingDir)\linker.c"/>
+    <Delete Files="$(WorkingDir)\linker.h"/>
   </Target>
 
   <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">

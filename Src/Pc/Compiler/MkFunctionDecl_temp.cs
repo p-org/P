@@ -77,7 +77,7 @@ namespace Microsoft.Pc
                 //code to be generated:
                 //Line 1 (template everything except event and <payload value>): 
                 //target.PrtEnqueueEvent(event, <payload value>, parent);
-                //Example:parent.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
+                //Example:target.PrtEnqueueEvent(dummy, PrtValue.NullValue, parent);
                 //public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
                 //event: children[1]
                 //<payload value>: compute from children[2-children.Count()]

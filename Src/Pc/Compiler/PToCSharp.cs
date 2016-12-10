@@ -902,9 +902,10 @@ namespace Microsoft.Pc
                 return l;
             }
 
-            public SyntaxNode EmitLabelPrelude()
+            public List<StatementSyntax> EmitLabelPrelude()
             {
-                throw new NotImplementedException();
+                //TODO(expand): implement case stmt for "labels"
+                return new List<StatementSyntax>();
                 //After the entire function gets processed, generates if/else if... (or switch)
                 //with gotos according to the labels from "labels" 
                 //(TODO: not clear): If for function "foo" there are 3 labels (foo_0, foo_1, foo_2) 
@@ -1555,7 +1556,17 @@ namespace Microsoft.Pc
             }
             SyntaxNode FoldNullStmt(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var op = ((Id)GetArgByIndex(ft, 0)).Name;
+                if (op == PData.Cnst_Pop.Node.Name)
+                {
+                    //POP case:
+                    throw new NotImplementedException();
+                }
+                else
+                {
+                    //SKIP case:
+                    return Block();
+                }        
             }
             SyntaxNode FoldAssert(FuncTerm ft, List<SyntaxNode> children)
             {
@@ -1769,10 +1780,23 @@ namespace Microsoft.Pc
 
             public List<StatementSyntax> MkFunctionBody()
             {
-                var funBody = Factory.Instance.ToAST(funInfo.body).Compute<SyntaxNode>(
+                SyntaxNode funBody = Factory.Instance.ToAST(funInfo.body).Compute<SyntaxNode>(
                     x => Unfold(x),
                     (x, ch) => Fold(x, ch.ToList()));
-                return new List<StatementSyntax>();
+                List<StatementSyntax> res = new List<StatementSyntax>() { (StatementSyntax)funBody };
+                //When function body is empty, the result of Fold would be:
+                //IdentifierNameSyntax IdentifierName NIL	
+                //if (funBody.Equals(IdentifierName("NIL")))
+                //{
+                //    res = new List<StatementSyntax>() { Block() };
+                //}
+                //else
+                //{
+                //    res = new List<StatementSyntax>() { (StatementSyntax)funBody };
+                //}
+                //Debug only:
+               // Console.WriteLine("MkFunctionBody returns list of {0} elements", res.Count());
+                return res;
             }
             public SyntaxNode MkFunStackFrameClass()
             {
@@ -1854,8 +1878,8 @@ namespace Microsoft.Pc
             }
             public SyntaxNode MkExecuteMethod()
             {
-                //Line below is a template:
                 List<StatementSyntax> funStmts = new List<StatementSyntax>();
+                //Line below is a template:
                 //PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                 funStmts.Add(
                     LocalDeclarationStatement(
@@ -1874,61 +1898,70 @@ namespace Microsoft.Pc
                                                 IdentifierName("PrtPopFunStackFrame"))))))))
                     .NormalizeWhitespace());
 
+                funStmts.AddRange(EmitLabelPrelude());
                 //TODO(fix): generate a "case" stmt instead (using EmitLabelPrelude) 
                 //for multiple labels "Loc_XX"
                 //stored in "labels" 
+
+                //Below if just a temporary hack for dummy function body with a single label:
                 //if (currFun.returnTolocation == 0) goto Loc_0; else goto Ret;
-                funStmts.Add(
-                    IfStatement(
-                        BinaryExpression(
-                            SyntaxKind.EqualsExpression,
-                            MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("currFun"),
-                                IdentifierName("returnTolocation")),
-                            LiteralExpression(
-                                SyntaxKind.NumericLiteralExpression,
-                                Literal(0))),
-                        GotoStatement(
-                            SyntaxKind.GotoStatement,
-                            IdentifierName("Loc_0")))
-                    .WithElse(
-                        ElseClause(
-                            GotoStatement(
-                                SyntaxKind.GotoStatement,
-                                IdentifierName("Ret"))))
-                    .NormalizeWhitespace());
+                //funStmts.Add(
+                //    IfStatement(
+                //        BinaryExpression(
+                //            SyntaxKind.EqualsExpression,
+                //            MemberAccessExpression(
+                //                SyntaxKind.SimpleMemberAccessExpression,
+                //                IdentifierName("currFun"),
+                //                IdentifierName("returnTolocation")),
+                //            LiteralExpression(
+                //                SyntaxKind.NumericLiteralExpression,
+                //                Literal(0))),
+                //        GotoStatement(
+                //            SyntaxKind.GotoStatement,
+                //            IdentifierName("Loc_0")))
+                //    .WithElse(
+                //        ElseClause(
+                //            GotoStatement(
+                //                SyntaxKind.GotoStatement,
+                //                IdentifierName("Ret"))))
+                //    .NormalizeWhitespace());
 
                 //Loc_0:
-                funStmts.Add(
-                    LabeledStatement(
-                        MkCSharpIdentifier("Loc_0"),
-                        ExpressionStatement(
-                            IdentifierName(
-                                MissingToken(SyntaxKind.IdentifierToken)))
-                        .WithSemicolonToken(
-                            MissingToken(SyntaxKind.SemicolonToken)))
-                    .NormalizeWhitespace());
+                //funStmts.Add(
+                //    LabeledStatement(
+                //        MkCSharpIdentifier("Loc_0"),
+                //        ExpressionStatement(
+                //            IdentifierName(
+                //                MissingToken(SyntaxKind.IdentifierToken)))
+                //        .WithSemicolonToken(
+                //            MissingToken(SyntaxKind.SemicolonToken)))
+                //    .NormalizeWhitespace());
 
+                //When function body is empty, do not call MkFunctionBody
+                //TODO(question about Formula): is condition below 
+                //for checking if function body is empty correct?
+                //if (funInfo.body != null)
+                //{
                 funStmts.AddRange(MkFunctionBody());
+                //}
 
                 //Ret: parent.PrtFunContReturn(null);
-                funStmts.Add(
-                    LabeledStatement(
-                        MkCSharpIdentifier("Ret"),
-                        ExpressionStatement(
-                            InvocationExpression(
-                                MemberAccessExpression(
-                                    SyntaxKind.SimpleMemberAccessExpression,
-                                    IdentifierName("parent"),
-                                    IdentifierName("PrtFunContReturn")))
-                            .WithArgumentList(
-                                ArgumentList(
-                                    SingletonSeparatedList<ArgumentSyntax>(
-                                        Argument(
-                                            LiteralExpression(
-                                                SyntaxKind.NullLiteralExpression)))))))
-                    .NormalizeWhitespace());
+                //funStmts.Add(
+                //    LabeledStatement(
+                //        MkCSharpIdentifier("Ret"),
+                //        ExpressionStatement(
+                //            InvocationExpression(
+                //                MemberAccessExpression(
+                //                    SyntaxKind.SimpleMemberAccessExpression,
+                //                    IdentifierName("parent"),
+                //                    IdentifierName("PrtFunContReturn")))
+                //            .WithArgumentList(
+                //                ArgumentList(
+                //                    SingletonSeparatedList<ArgumentSyntax>(
+                //                        Argument(
+                //                            LiteralExpression(
+                //                                SyntaxKind.NullLiteralExpression)))))))
+                //    .NormalizeWhitespace());
 
                 var executeMethodDecl =
                     MethodDeclaration(

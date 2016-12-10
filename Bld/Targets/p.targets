@@ -58,23 +58,23 @@
     <!-- this will force a recompile of the PCompile file if any of the @(PFiles) are newer  -->
     <Delete Files="@(PCompile->'%(RootDir)%(Directory)linker.c')" Condition="'$(DateCompareResult)'=='true'" />
   </Target>
-  <Target Name="CompileP" Inputs="@(PCompile);" Outputs="%(RootDir)%(Directory)%(FileName).4ml;%(RootDir)%(Directory)linker.c;%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;" 
+  <Target Name="CompileP" Inputs="@(PCompile);" Outputs="%(RootDir)%(Directory)%(FileName).4ml;%(RootDir)%(Directory)%(FileName).c;%(RootDir)%(Directory)%(FileName).h;" 
           BeforeTargets="BeforeBuildGenerateSources" DependsOnTargets="CheckPFiles">
     <Message Importance="high" Text="########## compiling p files: @(PCompile); ##################" />
     <Message Importance="high" Condition="!Exists('$(DropFolder)\Binaries\pc.exe')"
              Text="### pc.exe does not exist in $(DropFolder)\Binaries.  Please build it."/>
     <PropertyGroup> 
-      <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
-      <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
+      <WorkingDirs>@(PCompile->'%(RootDir)%(Directory)')</WorkingDirs>
+      <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
     </PropertyGroup>
     <ItemGroup>
-      <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).c')" />
-      <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).h')" />
-      <FileWrites Include="@(PCompile->'$(PDirectory)\%(FileName).4ml')" />
+      <FileWrites Include="@(PCompile->'$(WorkingDir)\%(FileName).c')" />
+      <FileWrites Include="@(PCompile->'$(WorkingDir)\%(FileName).h')" />
+      <FileWrites Include="@(PCompile->'$(WorkingDir)\%(FileName).4ml')" />
     </ItemGroup>
-    <Exec Command="$(DropFolder)\Binaries\pc.exe /generate:C0 /shared @(PCompile->'%(FullPath)')"  WorkingDirectory="@(PCompile->'%(RootDir)%(Directory)')"/>
+    <Exec Command="$(DropFolder)\Binaries\pc.exe /generate:C0 /shared @(PCompile->'%(FullPath)')"  WorkingDirectory="$(WorkingDir)"/>
     <CreateItem
-            Include="@(PCompile->'$(PDirectory)\%(FileName).4ml')"
+            Include="@(PCompile->'$(WorkingDir)\%(FileName).4ml')"
           >
            <Output
                TaskParameter="Include"
@@ -84,19 +84,25 @@
   <Target Name="LinkP" Inputs="@(PLink);" Outputs="%(RootDir)%(Directory)linker.c;%(RootDir)%(Directory)linker.c"
           DependsOnTargets="CompileP" BeforeTargets="BeforeBuildGenerateSources" >
     <ItemGroup>
-      <FileWrites Include="$(MSBuildThisFileDirectory)linker.c" />
-      <FileWrites Include="$(MSBuildThisFileDirectory)linker.h" />
+      <FileWrites Include="%(RootDir)%(Directory)linker.c" />
+      <FileWrites Include="%(RootDir)%(Directory)linker.c" />
     </ItemGroup>
-    <Exec Command="$(DropFolder)\Binaries\pc.exe /link @(PLink->'%(FullPath)')"  WorkingDirectory="@(PLink->'%(RootDir)%(Directory)')"/>    
+    <PropertyGroup>
+      <!-- flatten into a semicolon separated list, we will take the first-->
+      <WorkingDirs>@(PLink->'%(RootDir)%(Directory)')</WorkingDirs>
+      <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
+    </PropertyGroup>
+    <Message Importance="high" Text="########## link p files in $(WorkingDir) ##################" />
+    <Exec Command="$(DropFolder)\Binaries\pc.exe /link @(PLink->'%(FullPath)',' ')"  WorkingDirectory="$(WorkingDir)"/>    
   </Target>
 
   <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >
     <PropertyGroup>
-      <PFullPath>@(PCompile->'%(FullPath)')</PFullPath>
-      <PDirectory>$([System.IO.Path]::GetDirectoryName($(PFullPath)))</PDirectory>
+      <WorkingDirs>@(PCompile->'%(RootDir)%(Directory)')</WorkingDirs>
+      <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
     </PropertyGroup>
-    <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).c')"/>
-    <Delete Files="@(PCompile->'$(PDirectory)\%(FileName).h')"/>
+    <Delete Files="@(PCompile->'$(WorkingDir)\%(FileName).c')"/>
+    <Delete Files="@(PCompile->'$(WorkingDir)\%(FileName).h')"/>
     <Delete Files="$(MSBuildThisFileDirectory)\linker.c"/>
     <Delete Files="$(MSBuildThisFileDirectory)\linker.h"/>
   </Target>

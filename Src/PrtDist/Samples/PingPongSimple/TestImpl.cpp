@@ -186,8 +186,7 @@ int main(int argc, char *argv[])
 	}
 
     //create main machine 
-    PRT_VALUE* payload = PrtMkNullValue();
-    PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
+    PrtMkMachine(ContainerProcess, P_MACHINE_Client, 0);
     PrtFreeValue(payload);
 
     // Wait for the timer.

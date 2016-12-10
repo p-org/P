@@ -31,12 +31,12 @@
     <ClInclude Include="test.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Timer.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Test.c">
@@ -48,15 +48,19 @@
     <ClCompile Include="linker.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TimerImpl.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="timer.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="test.p">
       <Filter>P Sources</Filter>
     </PCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <PFile Include="timer.p">
+    <PCompile Include="timer.p">
       <Filter>P Sources</Filter>
-    </PFile>
+    </PCompile>
   </ItemGroup>
 </Project>

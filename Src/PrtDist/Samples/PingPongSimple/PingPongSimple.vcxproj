@@ -176,6 +176,7 @@
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="test.h" />
+    <ClInclude Include="timer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="linker.c" />
@@ -187,18 +188,17 @@
     </ClCompile>
     <ClCompile Include="Test.c" />
     <ClCompile Include="TestImpl.cpp" />
-    <ClCompile Include="Timer.c" />
+    <ClCompile Include="timer.c" />
+    <ClCompile Include="TimerImpl.c" />
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="test.p" />
+    <PCompile Include="timer.p" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\..\Tst\Tools\DgmlMonitorLib\DgmlMonitorLib.vcxproj">
       <Project>{b81f7e46-ff83-4534-aba2-64a5c723fedb}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <PFile Include="timer.p" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

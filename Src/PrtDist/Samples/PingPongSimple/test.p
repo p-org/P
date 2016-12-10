@@ -1,12 +1,16 @@
-#include "timer.p"
+//Functions for interacting with the timer machine
+extern fun CreateTimer(owner : machine): machine;
+extern fun StartTimer(timer : machine, time: int);
+extern fun CancelTimer(timer : machine);
+event TIMEOUT: machine;
 
 // PingPong.p 
 event PING assert 1: machine; 
 event PONG assert 1; 
 event SUCCESS;
-
+ 
 machine Client {
-  var server: machine;
+  var server: machine; 
   start state Init { 
     entry { 	
 	  print "Client created\n";

@@ -187,7 +187,6 @@ int main(int argc, char *argv[])
 
     //create main machine 
     PrtMkMachine(ContainerProcess, P_MACHINE_Client, 0);
-    PrtFreeValue(payload);
 
     // Wait for the timer.
 	int iterations = 10;

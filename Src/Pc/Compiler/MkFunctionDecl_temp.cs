@@ -101,7 +101,7 @@ namespace Microsoft.Pc
                 };
                 StatementSyntax enqueueEventStmt = ExpressionStatement(
                     (ExpressionSyntax)MkCSharpInvocationExpression(
-                    (ExpressionSyntax)MkCSharpDot((ExpressionSyntax)targetExpr, "PrtEnqueueEvent"),
+                    MkCSharpDot(MkCSharpDot((ExpressionSyntax)targetExpr, "mach"), "PrtEnqueueEvent"),
                      invocationArgs));
 
                 invocationArgs = new ArgumentSyntax[]

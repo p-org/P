@@ -406,7 +406,7 @@ namespace Microsoft.Pc
                         (ExpressionSyntax)lhs, (ExpressionSyntax)rhs))
                    .NormalizeWhitespace();
         }
-        public static SyntaxNode MkCSharpStringLiteralExpression(string name)
+        public static LiteralExpressionSyntax MkCSharpStringLiteralExpression(string name)
         {
             return LiteralExpression(SyntaxKind.StringLiteralExpression,
                 Literal(name));
@@ -421,7 +421,7 @@ namespace Microsoft.Pc
             return LiteralExpression(SyntaxKind.TrueLiteralExpression);
 
         }
-        public static SyntaxNode MkCSharpNumericLiteralExpression(int arg)
+        public static LiteralExpressionSyntax MkCSharpNumericLiteralExpression(int arg)
         {
             return LiteralExpression(SyntaxKind.NumericLiteralExpression,
                 Literal(arg));
@@ -902,45 +902,20 @@ namespace Microsoft.Pc
                 return l;
             }
 
-            public List<StatementSyntax> EmitLabelPrelude()
+            public SwitchStatementSyntax EmitLabelPrelude()
             {
-                //TODO(expand): implement case stmt for "labels"
-                return new List<StatementSyntax>();
-                //After the entire function gets processed, generates if/else if... (or switch)
-                //with gotos according to the labels from "labels" 
-                //(TODO: not clear): If for function "foo" there are 3 labels (foo_0, foo_1, foo_2) 
-                //then we should generate the following code:
-                // if (currFun.returnTolocation == labels[foo_0])
-                //    goto foo_0;
-                // else if (currFun.returnTolocation == labels[foo_1])
-                //    goto foo_1;
-                // else if (currFun.returnTolocation == labels[foo_2])
-                //    goto foo_2;
-                // else goto Ret;
-                // Switch stmt (TODO: not clear):
-                //  switch (currFun.returnTolocation)
-                //  case 0: goto foo_0
-                //  case 1: goto foo_1
-                //  case 2: goto foo_2
-                //  default: goto Ret
-
-                // var prelude = new List<AST<Node>>();
-                // var tmpVar = GetTmpVar(Factory.Instance.MkCnst("StackFrame"), "retTo");
-
-                // //prelude.Add(PToCSharp.MkCSharpAssign(tmpVar, PToCSharp.MkCSharpCall(MkCSharpDot("entryCtxt", "PopReturnTo"))));
-                // //prelude.Add(PToCSharp.MkCSharpAssign(MkCSharpIdentifierName("locals"), MkCSharpDot(tmpVar, "locals")));
-                // //prelude.Add(PToCSharp.MkCSharpIfThen(PToCSharp.MkCSharpEq(MkCSharpDot(tmpVar, "pc"), Factory.Instance.MkCnst(0)), MkCSharpGoto("start")));
-
-                // foreach (var l in labels.Keys)
-                // {
-                //     prelude.Add(PToCSharp.MkCSharpIfThen(PToCSharp.MkCSharpEq(MkCSharpDot(tmpVar, "pc"), Factory.Instance.MkCnst(labels[l])), MkCSharpGoto(l)));
-                // }
-
-                // //TODO(Zing to CSharp): convert to CSharpData
-                ///prelude.Add(MkCSharpAssert(ZingData.Cnst_False, "Internal error"));
-
-                // return PToCSharp.MkCSharpSeq(prelude);
+                SyntaxList<SwitchSectionSyntax> caseList = new SyntaxList<SwitchSectionSyntax>();
+                foreach (var l in labels.Keys)
+                {
+                    SyntaxList<SwitchLabelSyntax> switchLabels = new SyntaxList<SwitchLabelSyntax>();
+                    switchLabels.Add(CaseSwitchLabel(MkCSharpNumericLiteralExpression(labels[l])));
+                    SyntaxList <StatementSyntax> switchStmts = new SyntaxList<StatementSyntax>();
+                    switchStmts.Add(GotoStatement(SyntaxKind.GotoStatement, MkCSharpStringLiteralExpression(l)));
+                    caseList.Add(SwitchSection(switchLabels, switchStmts));
+                }
+                return SwitchStatement(MkCSharpDot("currFun", "returnToLocation"), caseList);
             }
+
             public SyntaxNode GetTmpVar(SyntaxNode type, string baseName)
             {
                 var tmpVarName = pToCSharp.GetUnique(baseName);
@@ -1775,26 +1750,6 @@ namespace Microsoft.Pc
             }
             #endregion
 
-            public List<StatementSyntax> MkFunctionBody()
-            {
-                SyntaxNode funBody = Factory.Instance.ToAST(funInfo.body).Compute<SyntaxNode>(
-                    x => Unfold(x),
-                    (x, ch) => Fold(x, ch.ToList()));
-                List<StatementSyntax> res = new List<StatementSyntax>() { (StatementSyntax)funBody };
-                //When function body is empty, the result of Fold would be:
-                //IdentifierNameSyntax IdentifierName NIL	
-                //if (funBody.Equals(IdentifierName("NIL")))
-                //{
-                //    res = new List<StatementSyntax>() { Block() };
-                //}
-                //else
-                //{
-                //    res = new List<StatementSyntax>() { (StatementSyntax)funBody };
-                //}
-                //Debug only:
-               // Console.WriteLine("MkFunctionBody returns list of {0} elements", res.Count());
-                return res;
-            }
             public SyntaxNode MkFunStackFrameClass()
             {
                 SyntaxList<MemberDeclarationSyntax> members = new SyntaxList<MemberDeclarationSyntax>();
@@ -1873,6 +1828,25 @@ namespace Microsoft.Pc
                                          SingletonSeparatedList<BaseTypeSyntax>(MkCSharpIdentifierNameType("PrtFunStackFrame")),
                                          members);
             }
+
+            private List<StatementSyntax> Flatten(StatementSyntax stmt)
+            {
+                List<StatementSyntax> stmtList = new List<StatementSyntax>();
+                BlockSyntax blockStmt = stmt as BlockSyntax;
+                if (blockStmt == null)
+                {
+                    stmtList.Add(stmt);
+                }
+                else
+                {
+                    foreach (var x in blockStmt.Statements)
+                    {
+                        stmtList.AddRange(Flatten(x));
+                    }
+                }
+                return stmtList;
+            }
+
             public SyntaxNode MkExecuteMethod()
             {
                 List<StatementSyntax> funStmts = new List<StatementSyntax>();
@@ -1910,52 +1884,13 @@ namespace Microsoft.Pc
                                                 IdentifierName("PrtPopFunStackFrame"))))))))
                     .NormalizeWhitespace());
 
-                funStmts.AddRange(EmitLabelPrelude());
-                //TODO(fix): generate a "case" stmt instead (using EmitLabelPrelude) 
-                //for multiple labels "Loc_XX"
-                //stored in "labels" 
+                // Compute the body before calculating the label prelude
+                SyntaxNode funBody = Factory.Instance.ToAST(funInfo.body).Compute<SyntaxNode>(
+                   x => Unfold(x),
+                   (x, ch) => Fold(x, ch.ToList()));
 
-                //Below if just a temporary hack for dummy function body with a single label:
-                //if (currFun.returnTolocation == 0) goto Loc_0; else goto Ret;
-                //funStmts.Add(
-                //    IfStatement(
-                //        BinaryExpression(
-                //            SyntaxKind.EqualsExpression,
-                //            MemberAccessExpression(
-                //                SyntaxKind.SimpleMemberAccessExpression,
-                //                IdentifierName("currFun"),
-                //                IdentifierName("returnTolocation")),
-                //            LiteralExpression(
-                //                SyntaxKind.NumericLiteralExpression,
-                //                Literal(0))),
-                //        GotoStatement(
-                //            SyntaxKind.GotoStatement,
-                //            IdentifierName("Loc_0")))
-                //    .WithElse(
-                //        ElseClause(
-                //            GotoStatement(
-                //                SyntaxKind.GotoStatement,
-                //                IdentifierName("Ret"))))
-                //    .NormalizeWhitespace());
-
-                //Loc_0:
-                //funStmts.Add(
-                //    LabeledStatement(
-                //        MkCSharpIdentifier("Loc_0"),
-                //        ExpressionStatement(
-                //            IdentifierName(
-                //                MissingToken(SyntaxKind.IdentifierToken)))
-                //        .WithSemicolonToken(
-                //            MissingToken(SyntaxKind.SemicolonToken)))
-                //    .NormalizeWhitespace());
-
-                //When function body is empty, do not call MkFunctionBody
-                //TODO(question about Formula): is condition below 
-                //for checking if function body is empty correct?
-                //if (funInfo.body != null)
-                //{
-                funStmts.AddRange(MkFunctionBody());
-                //}
+                funStmts.Add(EmitLabelPrelude());
+                funStmts.AddRange(Flatten((StatementSyntax)funBody));
 
                 //Ret: parent.PrtFunContReturn(null);
                 //funStmts.Add(

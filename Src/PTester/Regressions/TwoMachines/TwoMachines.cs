@@ -174,24 +174,19 @@ namespace P.Program
                 {
                     Main parent = (Main)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    switch (currFun.returnToLocation)
                     {
-                        {
-                            (((PrtMachineValue)(new PrtMachineValue((PrtImplMachine)(parent)))).mach).PrtEnqueueEvent((PrtEventValue)(boolPayloadEvent), new PrtBoolValue(true), parent);
-                            parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
-                            AnonFun0_0:
-                                ;
-                        }
-
-                        {
-                            parent.varBool = new PrtBoolValue(false);
-                            {
-                                (((PrtMachineValue)(new PrtMachineValue((PrtImplMachine)(parent)))).mach).PrtEnqueueEvent((PrtEventValue)(boolPayloadEvent), parent.varBool, parent);
-                                parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
-                                AnonFun0_1:
-                                    ;
-                            }
-                        }
                     }
+
+                    (((PrtMachineValue)(new PrtMachineValue((PrtImplMachine)(parent)))).mach).PrtEnqueueEvent((PrtEventValue)(boolPayloadEvent), new PrtBoolValue(true), parent);
+                    parent.PrtFunContSend(this, currFun.locals, currFun.returnToLocation);
+                    AnonFun0_0:
+                        ;
+                    parent.varBool = new PrtBoolValue(false);
+                    (((PrtMachineValue)(new PrtMachineValue((PrtImplMachine)(parent)))).mach).PrtEnqueueEvent((PrtEventValue)(boolPayloadEvent), parent.varBool, parent);
+                    parent.PrtFunContSend(this, currFun.locals, currFun.returnToLocation);
+                    AnonFun0_1:
+                        ;
                 }
 
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
@@ -256,6 +251,7 @@ namespace P.Program
                 {
                     Main parent = (Main)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    switch (currFun.returnToLocation)
                     {
                     }
                 }

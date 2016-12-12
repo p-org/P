@@ -111,7 +111,7 @@ namespace P.Program
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                    if (currFun.returnTolocation == 0)
+                    if (currFun.returnToLocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;
@@ -168,7 +168,7 @@ namespace P.Program
                 public override void Execute(StateImpl application, PrtMachine parent)
                 {
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                    if (currFun.returnTolocation == 0)
+                    if (currFun.returnToLocation == 0)
                         goto Loc_0;
                     else
                         goto Ret;

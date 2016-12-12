@@ -83,7 +83,7 @@ namespace Microsoft.Pc
                 //<payload value>: compute from children[2-children.Count()]
 
                 //Line 2 (template everything): 
-                //parent.PrtFunContSend(this, currFun.locals, currFun.returnTolocation);
+                //parent.PrtFunContSend(this, currFun.locals, currFun.returnToLocation);
                 //Example: parent.PrtFunContSend(this, currFun.locals, 1);
                 //public void PrtFunContSend(PrtFun fun, List<PrtValue> locals, int ret)
 
@@ -108,7 +108,7 @@ namespace Microsoft.Pc
                 {
                     Argument(ThisExpression()),
                     Argument((ExpressionSyntax)MkCSharpDot("currFun", "locals")),
-                    Argument((ExpressionSyntax)MkCSharpDot("currFun", "returnTolocation"))
+                    Argument((ExpressionSyntax)MkCSharpDot("currFun", "returnToLocation"))
                 };
                 StatementSyntax contStmt = ExpressionStatement(
                     (ExpressionSyntax)MkCSharpInvocationExpression(

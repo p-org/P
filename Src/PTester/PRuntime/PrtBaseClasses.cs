@@ -584,7 +584,7 @@ namespace P.Runtime
 
     public abstract class PrtFunStackFrame
     {
-        public int returnTolocation;
+        public int returnToLocation;
         public List<PrtValue> locals;
         
         public PrtFun fun;
@@ -596,7 +596,7 @@ namespace P.Runtime
             {
                 locals.Add(l.Clone());
             }
-            returnTolocation = 0;
+            returnToLocation = 0;
         }
 
         public PrtFunStackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
@@ -607,7 +607,7 @@ namespace P.Runtime
             {
                 locals.Add(l.Clone());
             }
-            returnTolocation = retLocation;
+            returnToLocation = retLocation;
         }
 
         public abstract PrtFunStackFrame Clone();

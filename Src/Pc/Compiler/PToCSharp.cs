@@ -908,10 +908,10 @@ namespace Microsoft.Pc
                 foreach (var l in labels.Keys)
                 {
                     SyntaxList<SwitchLabelSyntax> switchLabels = new SyntaxList<SwitchLabelSyntax>();
-                    switchLabels.Add(CaseSwitchLabel(MkCSharpNumericLiteralExpression(labels[l])));
+                    switchLabels = switchLabels.Add(CaseSwitchLabel(MkCSharpNumericLiteralExpression(labels[l])));
                     SyntaxList <StatementSyntax> switchStmts = new SyntaxList<StatementSyntax>();
-                    switchStmts.Add(GotoStatement(SyntaxKind.GotoStatement, MkCSharpStringLiteralExpression(l)));
-                    caseList.Add(SwitchSection(switchLabels, switchStmts));
+                    switchStmts = switchStmts.Add(GotoStatement(SyntaxKind.GotoStatement, MkCSharpIdentifierName(l)));
+                    caseList = caseList.Add(SwitchSection(switchLabels, switchStmts));
                 }
                 return SwitchStatement(MkCSharpDot("currFun", "returnToLocation"), caseList);
             }
@@ -1889,7 +1889,10 @@ namespace Microsoft.Pc
                    x => Unfold(x),
                    (x, ch) => Fold(x, ch.ToList()));
 
-                funStmts.Add(EmitLabelPrelude());
+                if (labels.Count != 0)
+                {
+                    funStmts.Add(EmitLabelPrelude());
+                }
                 funStmts.AddRange(Flatten((StatementSyntax)funBody));
 
                 //Ret: parent.PrtFunContReturn(null);

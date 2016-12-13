@@ -426,6 +426,10 @@ namespace Microsoft.Pc
             return LiteralExpression(SyntaxKind.NumericLiteralExpression,
                 Literal(arg));
         }
+        public static GotoStatementSyntax MkCSharpGoto(string label)
+        {
+            return GotoStatement(SyntaxKind.GotoStatement, MkCSharpIdentifierName(label));
+        }
         public static IdentifierNameSyntax MkCSharpIdentifierName(string name)
         {
             return IdentifierName(name);
@@ -558,7 +562,7 @@ namespace Microsoft.Pc
                                             SyntaxKind.ArrayInitializerExpression,
                                             SeparatedList<ExpressionSyntax>(initializer)));
         }
-        public static SyntaxNode MkCSharpObjectCreationExpression(SyntaxNode type, params SyntaxNode[] names)
+        public static ObjectCreationExpressionSyntax MkCSharpObjectCreationExpression(SyntaxNode type, params SyntaxNode[] names)
         {
             List<SyntaxNode> hd = new List<SyntaxNode>();
             if (names.Length == 0)
@@ -616,6 +620,10 @@ namespace Microsoft.Pc
             }
             
         }
+        public static StatementSyntax MkCSharpPrint(string msg)
+        {
+            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("Console", "Write"), Argument(MkCSharpStringLiteralExpression(msg))));
+        }
         public static InvocationExpressionSyntax MkCSharpInvocationExpression(SyntaxNode first, params ArgumentSyntax[] pars)
         {
             var args = MkCSharpArgumentList(pars);
@@ -624,11 +632,11 @@ namespace Microsoft.Pc
                          ArgumentList(
                                 SeparatedList<ArgumentSyntax>(args)));
         }
-        public static SyntaxNode MkCSharpUnaryExpression(SyntaxKind op, SyntaxNode arg)
+        public static PrefixUnaryExpressionSyntax MkCSharpUnaryExpression(SyntaxKind op, SyntaxNode arg)
         {
             return PrefixUnaryExpression(op, (ExpressionSyntax)arg);
         }
-        public static SyntaxNode MkCSharpBinaryExpression(SyntaxKind op, SyntaxNode left, SyntaxNode right)
+        public static BinaryExpressionSyntax MkCSharpBinaryExpression(SyntaxKind op, SyntaxNode left, SyntaxNode right)
         {
             //TODO(fix) For binary plus for now:
             return BinaryExpression(SyntaxKind.AddExpression, (ExpressionSyntax)left, (ExpressionSyntax)right);
@@ -678,14 +686,14 @@ namespace Microsoft.Pc
                    .WithMembers(members)
                    .NormalizeWhitespace();
         }
-        public static SyntaxNode MkCSharpLabeledBlock(string label, StatementSyntax body)
+        public static BlockSyntax MkCSharpLabeledBlock(string label, StatementSyntax body)
         {
             return Block(SingletonList<StatementSyntax>(
                             LabeledStatement(
                                 Identifier(label),
                                 body)));
         }
-        public static StatementSyntax MkCSharpEmptyLabeledStmt(string label)
+        public static LabeledStatementSyntax MkCSharpEmptyLabeledStatement(string label)
         {
             return LabeledStatement(
                             Identifier(label),
@@ -909,7 +917,7 @@ namespace Microsoft.Pc
                     SyntaxList<SwitchLabelSyntax> switchLabels = new SyntaxList<SwitchLabelSyntax>();
                     switchLabels = switchLabels.Add(CaseSwitchLabel(MkCSharpNumericLiteralExpression(i)));
                     SyntaxList <StatementSyntax> switchStmts = new SyntaxList<StatementSyntax>();
-                    switchStmts = switchStmts.Add(GotoStatement(SyntaxKind.GotoStatement, MkCSharpIdentifierName(GetLabel(i))));
+                    switchStmts = switchStmts.Add(MkCSharpGoto(GetLabel(i)));
                     caseList = caseList.Add(SwitchSection(switchLabels, switchStmts));
                 }
                 return SwitchStatement(MkCSharpDot("currFun", "returnToLocation"), caseList);
@@ -1519,37 +1527,100 @@ namespace Microsoft.Pc
             {
                 throw new NotImplementedException();
             }
-            //moned to MkFunctionDecl_temp.cs:
-            //SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
-            //SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> children)
-            
+
+            private SyntaxNode MkPayload(SyntaxNode tupTypeExpr, List<SyntaxNode> args)
+            {
+                if (args.Count == 0)
+                {
+                    return MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("PrtValue"),
+                                IdentifierName("NullValue"));
+                }
+                else if (args.Count == 1)
+                {
+                    return (ExpressionSyntax)args[0];
+                }
+                else
+                {
+                    SyntaxNode[] pars = new SyntaxNode[args.Count];
+                    pars[0] = tupTypeExpr;
+                    for (int i = 1; i < pars.Length; i++)
+                    {
+                        pars[i] = args[i - 1];
+                    }
+                    return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), pars);
+                }
+            }
+
+            SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
+            {
+                throw new NotImplementedException();
+            }
+
+            SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> args)
+            {
+                SyntaxNode targetExpr = MkCSharpCastExpression("PrtMachineValue", args[0]);
+                ExpressionSyntax eventExpr = (ExpressionSyntax)MkCSharpCastExpression("PrtEventValue", args[1]);
+                args.RemoveRange(0, 2);
+                ExpressionSyntax tupleTypeExpr = (ExpressionSyntax)MkCSharpDot(eventExpr, "payloadType");
+                ExpressionSyntax payloadExpr = (ExpressionSyntax)MkPayload(tupleTypeExpr, args);
+                var invocationArgs = new ArgumentSyntax[]
+                {
+                    Argument(eventExpr), Argument(payloadExpr), Argument((ExpressionSyntax)MkCSharpIdentifierName("parent"))
+                };
+                StatementSyntax enqueueEventStmt = ExpressionStatement(
+                    MkCSharpInvocationExpression(
+                        MkCSharpDot(MkCSharpDot((ExpressionSyntax)targetExpr, "mach"), "PrtEnqueueEvent"),
+                        invocationArgs));
+
+                invocationArgs = new ArgumentSyntax[]
+                {
+                    Argument(ThisExpression()),
+                    Argument((ExpressionSyntax)MkCSharpDot("currFun", "locals")),
+                    Argument((ExpressionSyntax)MkCSharpDot("currFun", "returnToLocation"))
+                };
+                StatementSyntax contStmt = ExpressionStatement(
+                    (ExpressionSyntax)MkCSharpInvocationExpression(
+                    (ExpressionSyntax)MkCSharpDot("parent", "PrtFunContSend"),
+                     invocationArgs));
+
+                var afterLabel = GetFreshLabel();
+                StatementSyntax afterStmt = MkCSharpEmptyLabeledStatement(afterLabel);
+                return Block(enqueueEventStmt, contStmt, afterStmt);
+            }
+
             SyntaxNode FoldAnnounce(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
-            SyntaxNode FoldNullStmt(FuncTerm ft, List<SyntaxNode> children)
-            {
-                var op = ((Id)GetArgByIndex(ft, 0)).Name;
-                if (op == PData.Cnst_Pop.Node.Name)
-                {
-                    //POP case:
-                    throw new NotImplementedException();
-                }
-                else
-                {
-                    //SKIP case:
-                    return Block();
-                }        
-            }
+
             SyntaxNode FoldAssert(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                Cnst msgCnst = GetArgByIndex(ft, 1) as Cnst;
+                using (var it = children.GetEnumerator())
+                {
+                    string errorMsg;
+                    it.MoveNext();
+                    if (msgCnst != null)
+                    {
+                        errorMsg = pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), msgCnst.GetStringValue());
+                    }
+                    else
+                    {
+                        errorMsg = pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Assert failed");
+                    }
+                    return IfStatement(
+                        MkCSharpDot((ExpressionSyntax)it.Current, "bl"),
+                        ThrowStatement(MkCSharpObjectCreationExpression(IdentifierName("PrtAssertFailureException"), MkCSharpStringLiteralExpression(errorMsg))));
+                }
             }
+
             SyntaxNode FoldFunStmt(FuncTerm ft, List<SyntaxNode> children)
             {
-                //throw new NotImplementedException();
                 return FoldFunApp(ft, children);
             }
+
             SyntaxNode FoldNulStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
@@ -1563,10 +1634,24 @@ namespace Microsoft.Pc
                 }
                 return Block(stmtList);
             }
+
             SyntaxNode FoldPrint(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                string msg = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
+                List<StatementSyntax> stmts = new List<StatementSyntax>();
+                stmts.Add(MkCSharpPrint(msg));
+                FuncTerm seg = GetArgByIndex(ft, 1) as FuncTerm;
+                while (seg != null)
+                {
+                    int formatArg = (int)(GetArgByIndex(seg, 0) as Cnst).GetNumericValue().Numerator;
+                    string str = (GetArgByIndex(seg, 1) as Cnst).GetStringValue();
+                    seg = GetArgByIndex(seg, 2) as FuncTerm;
+                    stmts.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot((ExpressionSyntax)children[formatArg], "ToString"))));
+                    stmts.Add(MkCSharpPrint(str));
+                }
+                return Block(stmts);
             }
+
             SyntaxNode FoldBinStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
@@ -1724,18 +1809,76 @@ namespace Microsoft.Pc
                     }
                 }
             }
+
             SyntaxNode FoldReturn(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                AST<FuncTerm> returnType = PTypeNull;
+                if (funInfo != null)
+                {
+                    returnType = funInfo.returnType;
+                }
+                List<StatementSyntax> stmtList = new List<StatementSyntax>();
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    if (returnType.Equals(PTypeNull))
+                    {
+                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "Return"), Argument(MkCSharpIdentifierName("locals")))));
+                    }
+                    else
+                    {
+                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "ReturnVal"), Argument((ExpressionSyntax)it.Current), Argument(MkCSharpIdentifierName("locals")))));
+                    }
+                    stmtList.Add(ReturnStatement());
+                    return Block(stmtList);
+                }
             }
+
             SyntaxNode FoldWhile(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var condExpr = MkCSharpDot((ExpressionSyntax)it.Current, "bl");
+                    it.MoveNext();
+                    var loopStart = pToCSharp.GetUnique(funName + "_loop_start");
+                    var loopEnd = pToCSharp.GetUnique(funName + "_loop_end");
+                    var body = it.Current;
+                    var res = MkCSharpLabeledBlock(loopStart, 
+                        Block(
+                            IfStatement(MkCSharpUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(loopEnd)),
+                            (StatementSyntax)body,
+                            MkCSharpGoto(loopStart),
+                            MkCSharpEmptyLabeledStatement(loopEnd)));
+                    return res;
+                }
             }
+
             SyntaxNode FoldIte(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var condExpr = MkCSharpDot((ExpressionSyntax)it.Current, "bl");
+                    it.MoveNext();
+                    var thenStmt = it.Current;
+                    it.MoveNext();
+                    var elseStmt = it.Current;
+
+                    var ifName = pToCSharp.GetUnique(funName + "_if");
+                    var elseLabel = ifName + "_else";
+                    var afterLabel = ifName + "_end";
+                    var cookedElse = MkCSharpLabeledBlock(elseLabel, (StatementSyntax)elseStmt);
+                    var cookedThen = (StatementSyntax)thenStmt;
+                    var res = Block(IfStatement(MkCSharpUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(elseLabel)),
+                        cookedThen,
+                        MkCSharpGoto(afterLabel),
+                        cookedElse,
+                        MkCSharpEmptyLabeledStatement(afterLabel));
+                    return res;
+                }
             }
+
             SyntaxNode FoldSeq(FuncTerm ft, List<SyntaxNode> children)
             {
                 using (var it = children.GetEnumerator())

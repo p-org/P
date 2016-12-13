@@ -60,12 +60,6 @@ namespace Microsoft.Pc
         }
 
         #region Static helpers
-        private string SpanToString(Span span, string msg)
-        {
-            Flag flag = new Flag(SeverityKind.Error, span, msg, 0, span.Program);
-            return ErrorReporter.FormatError(flag, compiler.Options).Replace(@"\", @"\\");
-        }
-
         private static AST<Model> Add(AST<Model> m, AST<FuncTerm> ft)
         {
             return Factory.Instance.AddFact(m, Factory.Instance.MkModelFact(null, ft));
@@ -2342,7 +2336,6 @@ namespace Microsoft.Pc
                 ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
             }
             return new ZingTranslationInfo(ZingData.Cnst_Nil);
-
         }
 
         ZingTranslationInfo FoldAssert(FuncTerm ft, IEnumerable<ZingTranslationInfo> children, ZingFoldContext ctxt)
@@ -2351,7 +2344,6 @@ namespace Microsoft.Pc
             using (var it = children.GetEnumerator())
             {
                 it.MoveNext();
-                var funInfo = allStaticFuns.ContainsKey(ctxt.entityName) ? allStaticFuns[ctxt.entityName] : allMachines[ctxt.machineName].funNameToFunInfo[ctxt.entityName];
                 if (msgCnst != null)
                 {
                     return new ZingTranslationInfo(MkZingAssert(MkZingDot(it.Current.node, "bl"), msgCnst.GetStringValue()));

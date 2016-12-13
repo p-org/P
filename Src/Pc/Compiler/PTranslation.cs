@@ -249,6 +249,12 @@ namespace Microsoft.Pc
         public static AST<FuncTerm> PTypeMachine = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("MACHINE"));
         public static AST<FuncTerm> PTypeAny = AddArgs(Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")), Factory.Instance.MkId("ANY"));
 
+        public string SpanToString(Span span, string msg)
+        {
+            Flag flag = new Flag(SeverityKind.Error, span, msg, 0, span.Program);
+            return ErrorReporter.FormatError(flag, compiler.Options).Replace(@"\", @"\\");
+        }
+
         public Span LookupSpan(FuncTerm ft)
         {
             string name = ((Id)ft.Function).Name;

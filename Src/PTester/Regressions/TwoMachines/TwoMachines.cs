@@ -177,20 +177,21 @@ namespace P.Program
                     switch (currFun.returnToLocation)
                     {
                         case 1:
-                            goto AnonFun0_0;
-                        case 2:
                             goto AnonFun0_1;
+                        case 2:
+                            goto AnonFun0_2;
                     }
 
                     (((PrtMachineValue)(new PrtMachineValue((PrtImplMachine)(parent)))).mach).PrtEnqueueEvent((PrtEventValue)(boolPayloadEvent), new PrtBoolValue(true), parent);
                     parent.PrtFunContSend(this, currFun.locals, currFun.returnToLocation);
-                    AnonFun0_0:
+                    AnonFun0_1:
                         ;
                     parent.varBool = new PrtBoolValue(false);
                     (((PrtMachineValue)(new PrtMachineValue((PrtImplMachine)(parent)))).mach).PrtEnqueueEvent((PrtEventValue)(boolPayloadEvent), parent.varBool, parent);
                     parent.PrtFunContSend(this, currFun.locals, currFun.returnToLocation);
-                    AnonFun0_1:
+                    AnonFun0_2:
                         ;
+                    parent.PrtFunContReturn(null);
                 }
 
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)
@@ -255,6 +256,7 @@ namespace P.Program
                 {
                     Main parent = (Main)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    parent.PrtFunContReturn(null);
                 }
 
                 public override List<PrtValue> CreateLocals(params PrtValue[] args)

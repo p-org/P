@@ -875,7 +875,7 @@ namespace Microsoft.Pc
             public List<Tuple<SyntaxNode, string>> locals;
             public Stack<bool> lhsStack;
             //labels are used for "continuations" in send, new, nondet, receive
-            private Dictionary<string, int> labels;
+            private int labelCount;
 
             public MkFunctionDecl(string funName, FunInfo funInfo, bool isGlobalStatic, MkMachineClass owner, PToCSharp pToCSharp)
             {
@@ -887,30 +887,29 @@ namespace Microsoft.Pc
                 this.pToCSharp = pToCSharp;
                 this.locals = new List<Tuple<SyntaxNode, string>>();
                 this.lhsStack = new Stack<bool>();
-                this.labels = new Dictionary<string, int>();
+                this.labelCount = 0;
             }
             
-            public int LabelToId(string l)
-            {
-                return labels[l];
-            }
-
             public string GetFreshLabel()
             {
-                var l = pToCSharp.GetUnique(funName);
-                labels[l] = labels.Count + 1;
-                return l;
+                labelCount++;
+                return string.Format("{0}_{1}", funName, labelCount);
+            }
+
+            public string GetLabel(int i)
+            {
+                return string.Format("{0}_{1}", funName, i);
             }
 
             public SwitchStatementSyntax EmitLabelPrelude()
             {
                 SyntaxList<SwitchSectionSyntax> caseList = new SyntaxList<SwitchSectionSyntax>();
-                foreach (var l in labels.Keys)
+                for (int i = 1; i <= labelCount; i++)
                 {
                     SyntaxList<SwitchLabelSyntax> switchLabels = new SyntaxList<SwitchLabelSyntax>();
-                    switchLabels = switchLabels.Add(CaseSwitchLabel(MkCSharpNumericLiteralExpression(labels[l])));
+                    switchLabels = switchLabels.Add(CaseSwitchLabel(MkCSharpNumericLiteralExpression(i)));
                     SyntaxList <StatementSyntax> switchStmts = new SyntaxList<StatementSyntax>();
-                    switchStmts = switchStmts.Add(GotoStatement(SyntaxKind.GotoStatement, MkCSharpIdentifierName(l)));
+                    switchStmts = switchStmts.Add(GotoStatement(SyntaxKind.GotoStatement, MkCSharpIdentifierName(GetLabel(i))));
                     caseList = caseList.Add(SwitchSection(switchLabels, switchStmts));
                 }
                 return SwitchStatement(MkCSharpDot("currFun", "returnToLocation"), caseList);
@@ -1889,29 +1888,26 @@ namespace Microsoft.Pc
                    x => Unfold(x),
                    (x, ch) => Fold(x, ch.ToList()));
 
-                if (labels.Count != 0)
+                if (labelCount > 0)
                 {
                     funStmts.Add(EmitLabelPrelude());
                 }
                 funStmts.AddRange(Flatten((StatementSyntax)funBody));
 
-                //Ret: parent.PrtFunContReturn(null);
-                //funStmts.Add(
-                //    LabeledStatement(
-                //        MkCSharpIdentifier("Ret"),
-                //        ExpressionStatement(
-                //            InvocationExpression(
-                //                MemberAccessExpression(
-                //                    SyntaxKind.SimpleMemberAccessExpression,
-                //                    IdentifierName("parent"),
-                //                    IdentifierName("PrtFunContReturn")))
-                //            .WithArgumentList(
-                //                ArgumentList(
-                //                    SingletonSeparatedList<ArgumentSyntax>(
-                //                        Argument(
-                //                            LiteralExpression(
-                //                                SyntaxKind.NullLiteralExpression)))))))
-                //    .NormalizeWhitespace());
+                funStmts.Add(
+                        ExpressionStatement(
+                            InvocationExpression(
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("parent"),
+                                    IdentifierName("PrtFunContReturn")))
+                            .WithArgumentList(
+                                ArgumentList(
+                                    SingletonSeparatedList<ArgumentSyntax>(
+                                        Argument(
+                                            LiteralExpression(
+                                                SyntaxKind.NullLiteralExpression))))))
+                    .NormalizeWhitespace());
 
                 var executeMethodDecl =
                     MethodDeclaration(

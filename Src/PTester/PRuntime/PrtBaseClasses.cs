@@ -167,7 +167,6 @@ namespace P.Runtime
             continuation.retLocals = retLocals;
         }
 
-
         public void PrtFunContReturnVal(PrtValue val, List<PrtValue> retLocals)
         {
             continuation.reason = PrtContinuationReason.Return;
@@ -178,6 +177,11 @@ namespace P.Runtime
         public void PrtFunContPop()
         {
             continuation.reason = PrtContinuationReason.Pop;
+        }
+
+        public void PrtFunContGoto()
+        {
+            continuation.reason = PrtContinuationReason.Goto;
         }
 
         public void PrtFunContRaise()
@@ -202,7 +206,6 @@ namespace P.Runtime
         {
             PrtPushFunStackFrame(fun, locals, ret);
             continuation.reason = PrtContinuationReason.Receive;
-
         }
 
         void PrtFunContNondet(PrtFun fun, List<PrtValue> locals, int ret)

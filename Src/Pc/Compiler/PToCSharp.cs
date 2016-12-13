@@ -1590,9 +1590,20 @@ namespace Microsoft.Pc
                 return Block(enqueueEventStmt, contStmt, afterStmt);
             }
 
-            SyntaxNode FoldAnnounce(FuncTerm ft, List<SyntaxNode> children)
+            SyntaxNode FoldAnnounce(FuncTerm ft, List<SyntaxNode> args)
             {
-                throw new NotImplementedException();
+                ExpressionSyntax eventExpr = (ExpressionSyntax)MkCSharpCastExpression("PrtEventValue", args[0]);
+                args.RemoveAt(0);
+                ExpressionSyntax tupleTypeExpr = (ExpressionSyntax)MkCSharpDot(eventExpr, "payloadType");
+                ExpressionSyntax payloadExpr = (ExpressionSyntax)MkPayload(tupleTypeExpr, args);
+                var invocationArgs = new ArgumentSyntax[]
+                {
+                    Argument(eventExpr), Argument(payloadExpr), Argument((ExpressionSyntax)MkCSharpIdentifierName("parent"))
+                };
+                StatementSyntax announceEventStmt = ExpressionStatement(
+                    MkCSharpInvocationExpression(IdentifierName("Announce"), invocationArgs));
+
+                return announceEventStmt;
             }
 
             SyntaxNode FoldAssert(FuncTerm ft, List<SyntaxNode> children)

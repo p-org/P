@@ -595,18 +595,18 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Field, toSymbol(t1) != #TupType, toSymbol(t1) != #NmdTupType.
     
     PureIntOp ::= { ADD, SUB, MUL, INTDIV }.
-    TypeOf(c, e, bint)             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOp, t1 = bint, t2 = bint, bint = BaseType(INT).
-	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer value"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOp, t1 != BaseType(INT).    
-	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), op : PureIntOp, TypeOf(c, e2, t2), t2 != BaseType(INT).     
+    TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOp, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
+	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer (or enum constant) value"']
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOp, t1 != BaseType(INT), toSymbol(t1) != #NameType.    
+	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer (or enum constant) value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), op : PureIntOp, TypeOf(c, e2, t2), t2 != BaseType(INT), toSymbol(t2) != #NameType.     
     
     PureIntRel ::= { LT, LE, GT, GE }.
-    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntRel, t1 = bint, t2 = bint, bint = BaseType(INT).
-	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer value"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntRel, t1 != BaseType(INT).    
-	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer value"']
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureIntRel, t2 != BaseType(INT).    
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntRel, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
+	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer (or enum constant) value"']
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntRel, t1 != BaseType(INT), toSymbol(t1) != #NameType.    
+	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer (or enum constant) value"']
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureIntRel, t2 != BaseType(INT), toSymbol(t2) != #NameType.    
     
     PureBoolOp ::= { AND, OR }.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureBoolOp, t1 = bbool, t2 = bbool, bbool = BaseType(BOOL).
@@ -620,12 +620,12 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Values cannot be compared because their types are incompatible"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PolyRel, TypeRel(t1, t2, k), k = EMPTY.
     
-    TypeOf(c, e, inner)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = SeqType(inner), t2 = BaseType(INT).
+    TypeOf(c, e, inner)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = SeqType(inner), TypeRel(t2, BaseType(INT), SUB).
     TypeOf(c, e, cod)              :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).
 	[ rule_Classes = '"error, msg: Indexer must be applied to a sequence or map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(IDX, _, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
 	[ rule_Classes = '"error, msg: Index must be an integer"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 : SeqType, t2 != BaseType(INT).
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 : SeqType, t2 != BaseType(INT), toSymbol(t2) != #NameType.
 	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
     
@@ -966,7 +966,7 @@ domain PStaticTyping extends PData
 	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
 		
-	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(BaseType(INT), TupType(value, NIL)), TypeRel(value, inner, SUB).
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(index, TupType(value, NIL)), TypeRel(index, BaseType(INT), SUB), TypeRel(value, inner, SUB).
 	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = MapType(dom, cod), t2 = TupType(key, TupType(value, NIL)), TypeRel(value, cod, SUB), TypeRel(key, dom, SUB).	
 	[ rule_Classes = '"error, msg: insert must be applied to a sequence or a map"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinStmt(INSERT, _, _, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
@@ -974,7 +974,7 @@ domain PStaticTyping extends PData
 	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, _, _, arg2, _), TypeOf(c, arg2, t2), toSymbol(t2) != #TupType; 
 	                                  SubSE(c, e), e = BinStmt(INSERT, _, _, arg2, _), TypeOf(c, arg2, t2), t2 : TupType, lstLength(#TupType, t2) != 2.
     [ rule_Classes = '"error, msg: key must be an integer"']
-    TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx != BaseType(INT).	
+    TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx != BaseType(INT), toSymbol(idx) != #NameType.	
     [ rule_Classes = '"error, msg: value must be a subtype of sequence type"']
     TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), TypeRel(value, inner, k), k != SUB, value != inner.	
 	[ rule_Classes = '"error, msg: key not in the domain of the map"']

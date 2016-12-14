@@ -123,7 +123,7 @@ machine ProposerMachine {
       proposeValue = serverid * 10 + 1;
       nextProposalId = (serverid = serverid, round = 1);
       majority = GC_NumOfAccptNodes/2 + 1;
-      timer = new CreateTimer(this);
+      timer = CreateTimer(this);
       goto ProposerPhaseOne;
     }
   }
@@ -165,12 +165,13 @@ machine ProposerMachine {
       }
     }
 
-    on reject goto ProposerPhaseOne with (payload: ProposalIdType){
+    on reject do (payload: ProposalIdType){
       if(nextProposalId.round <= payload.round)
       {
         nextProposalId.round = payload.round;
       }
       CancelTimer(timer);
+      goto ProposerPhaseOne;
     }
 
     on TIMEOUT goto ProposerPhaseOne;
@@ -195,14 +196,16 @@ machine ProposerMachine {
       StartTimer(timer, 100);
     }
 
-    on reject goto ProposerPhaseOne with (payload : ProposalIdType)
+    on reject do (payload : ProposalIdType)
     {
       if(nextProposalId.round <= payload.round)
       {
         nextProposalId.round = payload.round;
       }
       CancelTimer(timer);
+      goto ProposerPhaseOne;
     }
+    
     on accepted do (payload: ProposalType) {
       if(ProposalIdEqual(payload.pid, nextProposalId)){
         numOfAcceptRecv = numOfAcceptRecv + 1;

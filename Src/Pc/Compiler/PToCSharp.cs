@@ -749,13 +749,22 @@ namespace Microsoft.Pc
             var constructorParameters = new SyntaxNode[] {
                 generator.ParameterDeclaration("initialize",
                     generator.TypeExpression(SpecialType.System_Boolean)) };
+            List<SyntaxNode> stmtList = new List<SyntaxNode>();
+            foreach (var machineName in allMachines.Keys)
+            {
+                if (allMachines[machineName].IsReal) continue;
+                stmtList.Add(generator.ExpressionStatement(
+                                generator.InvocationExpression(generator.IdentifierName(string.Format("CreateMachine_{0}", machineName)), 
+                                                               ThisExpression())));
+            }
             var constructorBody = generator.ExpressionStatement(
                 generator.InvocationExpression(
                     generator.IdentifierName("CreateMachine_Main"),
                     ThisExpression(),
                     MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue"))));
+            stmtList.Add(constructorBody);
             var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0],
-                                                                statements: new SyntaxNode[] { constructorBody });
+                                                                statements: stmtList.ToArray());
             members.Add(constructor_2);
             //Generate "new Application();" 
             var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Application")));
@@ -2496,84 +2505,105 @@ namespace Microsoft.Pc
                 funDecl.AddFunClass();
             }
         }
+
         private void MkCreateMachineMethods()
         {
             foreach (var machineName in allMachines.Keys)
             {
-                //CreateMainMachine method declaration:
-                List<SyntaxNode> fields = new List<SyntaxNode>();
-                //stmt1: var mainMachine = new Main(this, mainMachineMaxQueueSize, true);
-                MachineInfo machineInfo = allMachines[machineName];
-                //There are three cases:
-                //- default (no constraint on queue size): maxQueueSizeAssumed == false; maxQueueSize = default (10?) 
-                //- assume <maxQueueSize>: maxQueueSize > 0, maxQueueSizeAssumed == true;
-                //- assert <maxQueueSize>: maxQueueSize > 0, maxQueueSizeAssumed == false;   
-                if (machineInfo.maxQueueSize > 0)
+                if (allMachines[machineName].IsReal)
                 {
-                    fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "machine",
-                                   generator.ObjectCreationExpression(generator.IdentifierName(machineName),
-                                   new List<SyntaxNode>() { generator.IdentifierName("application"), generator.LiteralExpression(machineInfo.maxQueueSize),
-                                                            generator.LiteralExpression(machineInfo.maxQueueSizeAssumed)})));
+                    MkCreateRealMachineMethod(machineName);
                 }
                 else
                 {
-                    //TODO(question): 10 is the default maxQueueSize for Main machine
-                    //TODO: create "PrtImplMachine.DefaultMaxBuffer"
-                    fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "machine",
-                                   generator.ObjectCreationExpression(generator.IdentifierName(machineName),
-                                   new List<SyntaxNode>() { generator.IdentifierName("application"), generator.LiteralExpression(10),
-                                                            generator.LiteralExpression(machineInfo.maxQueueSizeAssumed) })));
+                    MkCreateSpecMachineMethod(machineName);
                 }
-
-                fields.Add(MkCSharpSimpleAssignmentExpressionStatement(
-                    MkCSharpDot("machine", "currentTrigger"),
-                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue"))));
-                fields.Add(MkCSharpSimpleAssignmentExpressionStatement(
-                    MkCSharpDot("machine", "currentPayload"),
-                    IdentifierName("payload")));
-
-                //stmt2: AddImplMachineToStateImpl(mainMachine);
-                fields.Add(generator.InvocationExpression(MkCSharpDot("application", "AddImplMachineToStateImpl"),
-                                     new List<SyntaxNode>() { generator.IdentifierName("machine") }));
-                //stmt3: return mainMachine;
-                fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
-                //public PrtImplMachine CreateMainMachine() {stmt1; stmt2; stmt3};
-                var methodPars = new SyntaxNode[] {
-                    generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")),
-                    generator.ParameterDeclaration("payload", generator.IdentifierName("PrtValue")) };
-                var makeCreateMachineDecl = generator.MethodDeclaration(string.Format("CreateMachine_{0}", machineName), methodPars,
-                  null, generator.IdentifierName("PrtImplMachine"),
-                  Accessibility.Public, DeclarationModifiers.Static,
-                  statements: fields);
-                members.Add(makeCreateMachineDecl);
             }
         }
+
+        private void MkCreateRealMachineMethod(string machineName)
+        {
+            List<SyntaxNode> fields = new List<SyntaxNode>();
+            //stmt1: var machine = new Machine(this, machineMaxQueueSize, true);
+            MachineInfo machineInfo = allMachines[machineName];
+            //There are three cases:
+            //- default (no constraint on queue size): maxQueueSizeAssumed == false; maxQueueSize = default (10?) 
+            //- assume <maxQueueSize>: maxQueueSize > 0, maxQueueSizeAssumed == true;
+            //- assert <maxQueueSize>: maxQueueSize > 0, maxQueueSizeAssumed == false;   
+            if (machineInfo.maxQueueSize > 0)
+            {
+                fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "machine",
+                               generator.ObjectCreationExpression(generator.IdentifierName(machineName),
+                               new List<SyntaxNode>() { generator.IdentifierName("application"), generator.LiteralExpression(machineInfo.maxQueueSize),
+                                                            generator.LiteralExpression(machineInfo.maxQueueSizeAssumed)})));
+            }
+            else
+            {
+                //TODO(question): 10 is the default maxQueueSize for Main machine
+                //TODO: create "PrtImplMachine.DefaultMaxBuffer"
+                fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "machine",
+                               generator.ObjectCreationExpression(generator.IdentifierName(machineName),
+                               new List<SyntaxNode>() { generator.IdentifierName("application"), generator.LiteralExpression(10),
+                                                            generator.LiteralExpression(machineInfo.maxQueueSizeAssumed) })));
+            }
+
+            //stmt2: machine.currentPayload = payload;
+            fields.Add(MkCSharpSimpleAssignmentExpressionStatement(
+                MkCSharpDot("machine", "currentPayload"),
+                IdentifierName("payload")));
+
+            //stmt3: AddImplMachineToStateImpl(machine);
+            fields.Add(generator.InvocationExpression(MkCSharpDot("application", "AddImplMachineToStateImpl"),
+                                 new List<SyntaxNode>() { generator.IdentifierName("machine") }));
+
+            //stmt4: return machine;
+            fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
+
+            //public PrtImplMachine CreateMainMachine() {stmt1; stmt2; stmt3; stmt4; };
+            var methodPars = new SyntaxNode[] {
+                    generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")),
+                    generator.ParameterDeclaration("payload", generator.IdentifierName("PrtValue")) };
+            var makeCreateMachineDecl = generator.MethodDeclaration(string.Format("CreateMachine_{0}", machineName), methodPars,
+              null, generator.IdentifierName("PrtImplMachine"),
+              Accessibility.Public, DeclarationModifiers.Static,
+              statements: fields);
+            members.Add(makeCreateMachineDecl);
+        }
+
+        private void MkCreateSpecMachineMethod(string machineName)
+        {
+            List<SyntaxNode> fields = new List<SyntaxNode>();
+            //stmt1: var machine = new Machine(this);
+            fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "machine",
+                           generator.ObjectCreationExpression(generator.IdentifierName(machineName),
+                           new List<SyntaxNode>() { generator.IdentifierName("application") })));
+
+            //stmt2: AddSpecMachineToStateImpl(machine);
+            fields.Add(generator.InvocationExpression(MkCSharpDot("application", "AddSpecMachineToStateImpl"),
+                                 new List<SyntaxNode>() { generator.IdentifierName("machine") }));
+
+            //public void CreateMainMachine() {stmt1; stmt2; };
+            var methodPars = new SyntaxNode[] {
+                    generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")) };
+            var makeCreateMachineDecl = generator.MethodDeclaration(string.Format("CreateMachine_{0}", machineName), methodPars,
+              null, null,
+              Accessibility.Public, DeclarationModifiers.Static,
+              statements: fields);
+            members.Add(makeCreateMachineDecl);
+        }
+
         private void MkMachineClasses()
         {
-            //TODO(expand) For now: only calls MkMainMachineClass  
             //Debug only:
             Console.WriteLine("Number of machines: {0}", allMachines.Count());
             foreach (var pair in allMachines)
             {
                 MkMachineClass mkMachine;
-                if ((pair.Value).IsReal)
-                {
-                    //Regular machine:
-                    //Debug only:
-                    Console.WriteLine("Next Real machine: name: {0}", pair.Key);
-                    mkMachine = new MkMachineClass(this, pair.Key, pair.Value);
-                    SyntaxNode node = mkMachine.MkRealMachineClass();
-                    members.Add(node);
-                }
-                else
-                {
-                    //monitor machine
-                    //Debug only:
-                    Console.WriteLine("Next Spec machine: name: {0}", pair.Key);
-                    mkMachine = new MkMachineClass(this, pair.Key, pair.Value);
-                    SyntaxNode node = mkMachine.MkSpecMachineClass();
-                    members.Add(node);
-                }
+                //Debug only:
+                Console.WriteLine("Next machine: name: {0}", pair.Key);
+                mkMachine = new MkMachineClass(this, pair.Key, pair.Value);
+                SyntaxNode node = mkMachine.MkClass();
+                members.Add(node);
             }
         }
         internal class MkMachineClass
@@ -2805,9 +2835,8 @@ namespace Microsoft.Pc
                 {
                     return machineInfo.funNameToFunInfo[funName];
                 }
-                //return null;
             }
-            public SyntaxNode MkRealMachineClass()
+            public SyntaxNode MkClass()
             {
                 //StartState property (getter only, since there's no setter in the base class):
                 string startState = machineInfo.initStateName;
@@ -2854,7 +2883,7 @@ namespace Microsoft.Pc
 
                 var skeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName(machineName)));
                 var skeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
-                  null, generator.IdentifierName("PrtImplMachine"),
+                  null, generator.IdentifierName(machineInfo.IsReal ? "PrtImplMachine" : "PrtSpecMachine"),
                   Accessibility.Public,
                   DeclarationModifiers.Override,
                   new SyntaxNode[] { skeletonMethodBody });
@@ -2870,14 +2899,17 @@ namespace Microsoft.Pc
                      generator.IdentifierName("app"), generator.IdentifierName("NextMachineInstanceNumber")), returnMethodPars));
 
                 //(StateImpl app)
-                var methodPars = new SyntaxNode[] { generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")) };
-                var nextInstanceNumberMethodDecl = generator.MethodDeclaration("NextInstanceNumber", methodPars,
-                  //null, generator.IdentifierName("int"),
-                  null, generator.TypeExpression(SpecialType.System_Int32),
-                  Accessibility.Public,
-                  DeclarationModifiers.Override,
-                  new SyntaxNode[] { nextInstanceNumberMethodBody });
-                machineMembers.Add(nextInstanceNumberMethodDecl);
+                if (machineInfo.IsReal)
+                {
+                    var methodPars = new SyntaxNode[] { generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")) };
+                    var nextInstanceNumberMethodDecl = generator.MethodDeclaration("NextInstanceNumber", methodPars,
+                      //null, generator.IdentifierName("int"),
+                      null, generator.TypeExpression(SpecialType.System_Int32),
+                      Accessibility.Public,
+                      DeclarationModifiers.Override,
+                      new SyntaxNode[] { nextInstanceNumberMethodBody });
+                    machineMembers.Add(nextInstanceNumberMethodDecl);
+                }
 
                 //Name property (getter only):
                 var nameProperty =
@@ -2909,16 +2941,30 @@ namespace Microsoft.Pc
                 //Machine class constructor
                 //public PONG(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
                 //TODO(expand): add inits for all fields
-                var constructorPars = new SyntaxNode[]
+                if (machineInfo.IsReal)
                 {
-                generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")),
-                generator.ParameterDeclaration("maxB", generator.TypeExpression(SpecialType.System_Int32)),
-                generator.ParameterDeclaration("assume", generator.TypeExpression(SpecialType.System_Boolean))
-                };
-                var baseConstructorArgs = new SyntaxNode[] { generator.IdentifierName("app"), generator.IdentifierName("maxB"), generator.IdentifierName("assume") };
-                var constructor_2 = generator.ConstructorDeclaration(machineName, constructorPars, Accessibility.Public,
-                                    baseConstructorArguments: baseConstructorArgs);
-                machineMembers.Add(constructor_2);
+                    var constructorPars = new SyntaxNode[]
+                    {
+                        generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl")),
+                        generator.ParameterDeclaration("maxB", generator.TypeExpression(SpecialType.System_Int32)),
+                        generator.ParameterDeclaration("assume", generator.TypeExpression(SpecialType.System_Boolean))
+                    };
+                    var baseConstructorArgs = new SyntaxNode[] { generator.IdentifierName("app"), generator.IdentifierName("maxB"), generator.IdentifierName("assume") };
+                    var constructor_2 = generator.ConstructorDeclaration(machineName, constructorPars, Accessibility.Public,
+                                        baseConstructorArguments: baseConstructorArgs);
+                    machineMembers.Add(constructor_2);
+                }
+                else
+                {
+                    var constructorPars = new SyntaxNode[]
+                    {
+                        generator.ParameterDeclaration("app", generator.IdentifierName("StateImpl"))
+                    };
+                    var baseConstructorArgs = new SyntaxNode[] { generator.IdentifierName("app") };
+                    var constructor_2 = generator.ConstructorDeclaration(machineName, constructorPars, Accessibility.Public,
+                                        baseConstructorArguments: baseConstructorArgs);
+                    machineMembers.Add(constructor_2);
+                }
 
                 //classes for functions for each state of the machine
                 //and variable declarations for those functions:
@@ -3245,16 +3291,10 @@ namespace Microsoft.Pc
                 var mainMachineClassDecl = generator.ClassDeclaration(
                   machineName, typeParameters: null,
                   accessibility: Accessibility.Public,
-                  baseType: generator.IdentifierName("PrtImplMachine"),
+                  baseType: generator.IdentifierName(machineInfo.IsReal ? "PrtImplMachine" : "PrtSpecMachine"),
                   members: machineMembers);
 
                 return mainMachineClassDecl;
-            }
-
-            public SyntaxNode MkSpecMachineClass()
-            {
-                //TODO(expand)
-                return null;
             }
         }
         private void MkCSharpOutput()

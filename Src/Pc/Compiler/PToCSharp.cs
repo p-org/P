@@ -618,7 +618,7 @@ namespace Microsoft.Pc
 
         public static ExpressionSyntax MkCSharpNot(ExpressionSyntax expr)
         {
-            return MkCSharpUnaryExpression(SyntaxKind.LogicalNotExpression, expr);
+            return PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, expr);
         }
         public static StatementSyntax MkCSharpAssert(ExpressionSyntax expr, string errorMsg)
         {
@@ -1427,11 +1427,15 @@ namespace Microsoft.Pc
                     var arg = it.Current;
                     if (op == PData.Cnst_Not.Node.Name)
                     {
-                        return MkCSharpUnaryExpression(SyntaxKind.LogicalNotExpression, arg);
+                        return MkCSharpObjectCreationExpression(
+                            IdentifierName("PrtBoolValue"),
+                            PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg), "bl")));
                     }
                     else if (op == PData.Cnst_Neg.Node.Name)
                     {
-                        return MkCSharpUnaryExpression(SyntaxKind.UnaryMinusExpression, arg);
+                        return MkCSharpObjectCreationExpression(
+                            IdentifierName("PrtIntValue"),
+                            PrefixUnaryExpression(SyntaxKind.UnaryMinusExpression, MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg), "nt")));
                     }
                     else if (op == PData.Cnst_Keys.Node.Name)
                     {
@@ -1463,51 +1467,95 @@ namespace Microsoft.Pc
 
                     if (op == PData.Cnst_Add.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.AddExpression, arg1, arg2);
+                        var arg1Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        var arg2Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtIntValue"), 
+                                BinaryExpression(SyntaxKind.AddExpression, arg1Int, arg2Int));
                     }
                     else if (op == PData.Cnst_Sub.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.SubtractExpression, arg1, arg2);
+                        var arg1Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        var arg2Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtIntValue"), 
+                                BinaryExpression(SyntaxKind.SubtractExpression, arg1Int, arg2Int));
                     }
                     else if (op == PData.Cnst_Mul.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.MultiplyExpression, arg1, arg2);
+                        var arg1Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        var arg2Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtIntValue"), 
+                                BinaryExpression(SyntaxKind.MultiplyExpression, arg1Int, arg2Int));
                     }
                     else if (op == PData.Cnst_IntDiv.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.DivideExpression, arg1, arg2);
+                        var arg1Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        var arg2Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtIntValue"), 
+                                BinaryExpression(SyntaxKind.DivideExpression, arg1Int, arg2Int));
                     }
                     else if (op == PData.Cnst_And.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.LogicalAndExpression, arg1, arg2);
+                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "bl");
+                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "bl");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtBoolValue"), 
+                                BinaryExpression(SyntaxKind.LogicalAndExpression, arg1Bool, arg2Bool));
                     }
                     else if (op == PData.Cnst_Or.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.LogicalOrExpression, arg1, arg2);
+                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "bl");
+                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "bl");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtBoolValue"), 
+                                BinaryExpression(SyntaxKind.LogicalOrExpression, arg1Bool, arg2Bool));
                     }
                     else if (op == PData.Cnst_Eq.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.EqualsExpression, arg1, arg2);
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtBoolValue"), 
+                                MkCSharpInvocationExpression(MkCSharpDot(arg1, "IsEqual"), arg2));
                     }
                     else if (op == PData.Cnst_NEq.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.NotEqualsExpression, arg1, arg2);
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtBoolValue"),
+                                PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, MkCSharpInvocationExpression(MkCSharpDot(arg1, "IsEqual"), arg2)));
                     }
                     else if (op == PData.Cnst_Lt.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.LessThanExpression, arg1, arg2);
+                        var arg1Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        var arg2Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtBoolValue"), 
+                                BinaryExpression(SyntaxKind.LessThanExpression, arg1Int, arg2Int));
                     }
                     else if (op == PData.Cnst_Le.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.LessThanOrEqualExpression, arg1, arg2);
+                        var arg1Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        var arg2Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtBoolValue"), 
+                                BinaryExpression(SyntaxKind.LessThanOrEqualExpression, arg1Int, arg2Int));
                     }
                     else if (op == PData.Cnst_Gt.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.GreaterThanExpression, arg1, arg2);
+                        var arg1Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        var arg2Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtBoolValue"), 
+                                BinaryExpression(SyntaxKind.GreaterThanExpression, arg1Int, arg2Int));
                     }
                     else if (op == PData.Cnst_Ge.Node.Name)
                     {
-                        return BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, arg1, arg2);
+                        var arg1Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        var arg2Int = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        return MkCSharpObjectCreationExpression(
+                                IdentifierName("PrtBoolValue"), 
+                                BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, arg1Int, arg2Int));
                     }
                     else if (op == PData.Cnst_Idx.Node.Name)
                     {
@@ -1911,7 +1959,7 @@ namespace Microsoft.Pc
                     var body = it.Current;
                     var res = MkCSharpLabeledBlock(loopStart,
                         Block(
-                            IfStatement(MkCSharpUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(loopEnd)),
+                            IfStatement(PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(loopEnd)),
                             (StatementSyntax)body,
                             MkCSharpGoto(loopStart),
                             MkCSharpEmptyLabeledStatement(loopEnd)));
@@ -1935,7 +1983,7 @@ namespace Microsoft.Pc
                     var afterLabel = ifName + "_end";
                     var cookedElse = MkCSharpLabeledBlock(elseLabel, (StatementSyntax)elseStmt);
                     var cookedThen = (StatementSyntax)thenStmt;
-                    var res = Block(IfStatement(MkCSharpUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(elseLabel)),
+                    var res = Block(IfStatement(PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(elseLabel)),
                         cookedThen,
                         MkCSharpGoto(afterLabel),
                         cookedElse,

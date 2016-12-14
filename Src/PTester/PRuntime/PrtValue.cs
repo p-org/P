@@ -355,13 +355,13 @@ namespace P.Runtime
 
         public PrtTupleValue(PrtTupleType tupType, params PrtValue[] elems)
         {
+            if (tupType.fieldTypes.Count != elems.Count())
+                throw new PrtInternalException();
             fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
             foreach (var elem in elems)
             {
                 fieldValues.Add(elem.Clone());
             }
-            if (tupType.fieldTypes.Count != fieldValues.Count)
-                throw new PrtInternalException();
         }
 
         public override PrtValue Clone()
@@ -376,17 +376,13 @@ namespace P.Runtime
 
         public override bool IsEqual(PrtValue val)
         {
-            Debug.Assert(val is PrtTupleValue, "Error in type checking, invalid equals invocation");
+            if (val is PrtNamedTupleValue) return val.IsEqual(this);
             var tupValue = (val as PrtTupleValue);
-            Debug.Assert(tupValue.fieldValues.Count == this.fieldValues.Count, "Error in type checking, tuple sizes not equal");
-
-            int index = 0;
-            while (index < fieldValues.Count)
+            if (tupValue == null) return false;
+            if (tupValue.fieldValues.Count != this.fieldValues.Count) return false;
+            for (int i = 0;  i < fieldValues.Count; i++)
             {
-                if (!this.fieldValues[index].IsEqual(tupValue.fieldValues[index]))
-                    return false;
-
-                index++;
+                if (!this.fieldValues[i].IsEqual(tupValue.fieldValues[i])) return false;
             }
             return true;
         }
@@ -403,51 +399,40 @@ namespace P.Runtime
         }
     }
 
-    public class PrtNamedTupleValue : PrtValue
+    public class PrtNamedTupleValue : PrtTupleValue
     {
         public List<string> fieldNames;
-        public List<PrtValue> fieldValues;
 
-        public PrtNamedTupleValue()
+        public PrtNamedTupleValue() : base()
         {
             fieldNames = new List<string>();
-            fieldValues = new List<PrtValue>();
         }
 
-        public PrtNamedTupleValue(PrtNamedTupleType tupType)
+        public PrtNamedTupleValue(PrtNamedTupleType tupType) : base (tupType)
         {
             fieldNames = new List<string>(tupType.fieldTypes.Count);
-            fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
             foreach (var fn in tupType.fieldNames)
             {
                 fieldNames.Add(fn);
             }
-            foreach (var ft in tupType.fieldTypes)
-            {
-                fieldValues.Add(PrtMkDefaultValue(ft));
-            }
         }
 
-        public PrtNamedTupleValue(PrtNamedTupleType tupType, params PrtValue[] elems)
+        public PrtNamedTupleValue(PrtNamedTupleType tupType, params PrtValue[] elems) : base (tupType, elems)
         {
             fieldNames = new List<string>(tupType.fieldTypes.Count);
-            fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
             foreach (var fn in tupType.fieldNames)
             {
                 fieldNames.Add(fn);
             }
-            foreach (var elem in elems)
-            {
-                fieldValues.Add(elem.Clone());
-            }
-            if (tupType.fieldTypes.Count != fieldValues.Count)
-                throw new PrtInternalException();
         }
 
         public override PrtValue Clone()
         {
             var clone = new PrtNamedTupleValue();
-            clone.fieldNames = this.fieldNames;
+            foreach (var name in fieldNames)
+            {
+                clone.fieldNames.Add(name);
+            }
             foreach (var val in fieldValues)
             {
                 clone.fieldValues.Add(val.Clone());
@@ -457,19 +442,13 @@ namespace P.Runtime
 
         public override bool IsEqual(PrtValue val)
         {
-            Debug.Assert(val is PrtNamedTupleValue, "Error in type checking, invalid equals invocation");
-            var tup = (val as PrtNamedTupleValue);
-            var tupValues = tup.fieldValues;
-            Debug.Assert(tup.fieldValues.Count == this.fieldValues.Count, "Error in type checking, tuple sizes not equal");
-
-            int index = 0;
-
-            while (index < tupValues.Count)
+            var tup = val as PrtNamedTupleValue;
+            if (tup == null) return false;
+            if (tup.fieldValues.Count != this.fieldValues.Count) return false;
+            for (int i = 0; i < tup.fieldValues.Count; i++)
             {
-                if (!this.fieldValues[index].IsEqual(tupValues[index]))
-                    return false;
-
-                index++;
+                if (this.fieldNames[i] != tup.fieldNames[i]) return false;
+                if (!this.fieldValues[i].IsEqual(tup.fieldValues[i])) return false;
             }
             return true;
         }

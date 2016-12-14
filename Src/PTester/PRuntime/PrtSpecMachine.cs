@@ -14,6 +14,12 @@ namespace P.Runtime
 
         public abstract PrtSpecMachine MakeSkeleton();
 
+        public PrtSpecMachine() : base()
+        {
+            observes = new List<PrtValue>();
+            IsHot = false;
+        }
+
         public PrtSpecMachine(StateImpl app) : base()
         {
             observes = new List<PrtValue>();

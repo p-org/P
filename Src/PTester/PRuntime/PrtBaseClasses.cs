@@ -167,7 +167,6 @@ namespace P.Runtime
             continuation.retLocals = retLocals;
         }
 
-
         public void PrtFunContReturnVal(PrtValue val, List<PrtValue> retLocals)
         {
             continuation.reason = PrtContinuationReason.Return;
@@ -178,6 +177,11 @@ namespace P.Runtime
         public void PrtFunContPop()
         {
             continuation.reason = PrtContinuationReason.Pop;
+        }
+
+        public void PrtFunContGoto()
+        {
+            continuation.reason = PrtContinuationReason.Goto;
         }
 
         public void PrtFunContRaise()
@@ -191,21 +195,20 @@ namespace P.Runtime
             continuation.reason = PrtContinuationReason.Send;
         }
 
-        void PrtFunContNewMachine(PrtFun fun, List<PrtValue> locals, PrtImplMachine o, int ret)
+        public void PrtFunContNewMachine(PrtFun fun, List<PrtValue> locals, PrtImplMachine o, int ret)
         {
             PrtPushFunStackFrame(fun, locals, ret);
             continuation.reason = PrtContinuationReason.NewMachine;
             continuation.createdMachine = o;
         }
 
-        void PrtFunContReceive(PrtFun fun, List<PrtValue> locals, int ret)
+        public void PrtFunContReceive(PrtFun fun, List<PrtValue> locals, int ret)
         {
             PrtPushFunStackFrame(fun, locals, ret);
             continuation.reason = PrtContinuationReason.Receive;
-
         }
 
-        void PrtFunContNondet(PrtFun fun, List<PrtValue> locals, int ret)
+        public void PrtFunContNondet(PrtFun fun, List<PrtValue> locals, int ret)
         {
             PrtPushFunStackFrame(fun, locals, ret);
             continuation.reason = PrtContinuationReason.Nondet;
@@ -657,14 +660,10 @@ namespace P.Runtime
         {
             return funStack.Pop();
         }
-
-        
-
     }
 
     public class PrtContinuation
     {
-        
         public PrtContinuationReason reason;
         public PrtImplMachine createdMachine;
         public int receiveIndex;

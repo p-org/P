@@ -1,3 +1,7 @@
+spec Blah observes Ping {
+	start state Init {}
+}
+
 //Testing:
 //two machines; global static funs and local funs;
 //goto transitions with/without  functions

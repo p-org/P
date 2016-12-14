@@ -511,7 +511,7 @@ namespace Microsoft.Pc
             return lhs.NormalizeWhitespace();
         }
 
-        public static SyntaxNode MkCSharpElementAccessExpression(SyntaxNode first, int index)
+        public static ElementAccessExpressionSyntax MkCSharpElementAccessExpression(SyntaxNode first, int index)
         {
             return ElementAccessExpression(
                       (ExpressionSyntax)first)
@@ -523,7 +523,7 @@ namespace Microsoft.Pc
                                        SyntaxKind.NumericLiteralExpression,
                                           Literal(index))))));
         }
-        public static SyntaxNode MkCSharpElementAccessExpression(SyntaxNode first, SyntaxNode index)
+        public static ElementAccessExpressionSyntax MkCSharpElementAccessExpression(SyntaxNode first, SyntaxNode index)
         {
             return ElementAccessExpression(
                       (ExpressionSyntax)first)
@@ -736,7 +736,6 @@ namespace Microsoft.Pc
             MkStaticFunctions();
             MkCreateMachineMethods();
             MkMachineClasses();
-            //MkMonitorClasses(elements, workspace, generator);
             MkCSharpOutput();
             EmitCSharpOutput(csharpFileName);
             return true;
@@ -1585,14 +1584,41 @@ namespace Microsoft.Pc
                 Debug.Assert(false);
                 return 0;
             }
+
             SyntaxNode FoldField(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var expr = GetArgByIndex(ft, 0);
+                var field = (Cnst)GetArgByIndex(ft, 1);
+                int fieldIndex;
+                if (field.CnstKind == CnstKind.Numeric)
+                {
+                    fieldIndex = (int)field.GetNumericValue().Numerator;
+                }
+                else
+                {
+                    fieldIndex = GetFieldIndex(field.GetStringValue(), LookupType(expr));
+                }
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var arg = (ExpressionSyntax)it.Current;
+                    var accessExpr = MkCSharpElementAccessExpression(MkCSharpDot(arg, "fieldValues"), fieldIndex);
+                    if (lhsStack.Count > 0 && lhsStack.Peek())
+                    {
+                        return accessExpr;
+                    }
+                    else
+                    {
+                        return MkCSharpInvocationExpression(MkCSharpDot(accessExpr, "Clone"));
+                    }
+                }
             }
+
             SyntaxNode FoldDefault(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
+
             SyntaxNode FoldCast(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();

@@ -111,11 +111,9 @@ namespace P.Runtime
         }
     }
 
-
-    public class PrtNamedTupleType : PrtType
+    public class PrtNamedTupleType : PrtTupleType
     {
         public List<string> fieldNames;
-        public List<PrtType> fieldTypes;
 
         public PrtNamedTupleType(params object[] args)
         {
@@ -145,5 +143,4 @@ namespace P.Runtime
             return retStr;
         }
     }
-
 }

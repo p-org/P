@@ -16,7 +16,7 @@
 event Ping assert 1: machine;
 //event Ping1 assert 1: nmdtuple;
 //event Pong assert 1: seq[int];
-//event Success: tpl;
+event Success;
 //event Fail: map[any,any];
 //event NotUsed: seq[seq[int]];
 //event NotUsed2: map[int,map[int,any]];
@@ -51,8 +51,8 @@ machine Main
 			send this, boolPayloadEvent, true;
 			varBool = false;
 			send this, boolPayloadEvent, varBool;
-			//pongId = new PONG();
-	        //raise Success;   	   
+			pongId = new PONG();
+	        raise Success;   	   
         }
         //on Success goto Ping_SendPing with {F1(varInt, varBool);}
 		//on Fail goto Ping_WaitPong;
@@ -90,12 +90,12 @@ machine Main
 	 //fun foo(par1: bool, par2: int) {}
 }
 
-//machine PONG assume 111 {
-	//start state Pong_WaitPing {
-        //entry { }
+machine PONG assume 111 {
+	start state Pong_WaitPing {
+        entry { }
         //on Ping goto Pong_SendPong with {F2();}
 		//ignore Success;
-    //}
+    }
 
     //state Pong_SendPong {
 	//entry (payload: machine) {
@@ -107,4 +107,4 @@ machine Main
 		//defer Fail;
     //}
 	//fun foo() {}
-//}
+}

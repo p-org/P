@@ -376,7 +376,7 @@ namespace P.Runtime
 
         public override bool IsEqual(PrtValue val)
         {
-            if (val is PrtNamedTupleValue) return val.IsEqual(this);
+            if (val is PrtNamedTupleValue) return false;
             var tupValue = (val as PrtTupleValue);
             if (tupValue == null) return false;
             if (tupValue.fieldValues.Count != this.fieldValues.Count) return false;

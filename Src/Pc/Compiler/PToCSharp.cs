@@ -189,7 +189,7 @@ namespace Microsoft.Pc
             //This field is for emitting types; order is important
             public List<StatementSyntax> typeInitialization;
             public List<FieldDeclarationSyntax> typeDeclaration;
-            private Dictionary<AST<Node>, SyntaxNode> pTypeToCSharpExpr;
+            private Dictionary<AST<Node>, ExpressionSyntax> pTypeToCSharpExpr;
             private PToCSharp pToCSharp;
 
             public TypeTranslationContext(PToCSharp pToCSharp)
@@ -199,10 +199,10 @@ namespace Microsoft.Pc
                 typeCount = 0;
                 typeDeclaration = new List<FieldDeclarationSyntax>();
                 typeInitialization = new List<StatementSyntax>();
-                pTypeToCSharpExpr = new Dictionary<AST<Node>, SyntaxNode>();
+                pTypeToCSharpExpr = new Dictionary<AST<Node>, ExpressionSyntax>();
             }
 
-            private SyntaxNode GetType(string typeName)
+            private ExpressionSyntax GetType(string typeName)
             {
                 var retVal = IdentifierName(typeName);
                 typeCount++;
@@ -219,7 +219,7 @@ namespace Microsoft.Pc
                 typeDeclaration.Add((FieldDeclarationSyntax)n);
             }
 
-            public SyntaxNode PTypeToCSharpExpr(FuncTerm pType)
+            public ExpressionSyntax PTypeToCSharpExpr(FuncTerm pType)
             {
                 var pTypeAST = Factory.Instance.ToAST(pType);
                 if (!pTypeToCSharpExpr.ContainsKey(pTypeAST))
@@ -239,7 +239,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            private SyntaxNode ConstructType(FuncTerm type)
+            private ExpressionSyntax ConstructType(FuncTerm type)
             {
                 string typeKind = ((Id)type.Function).Name;
 
@@ -886,29 +886,20 @@ namespace Microsoft.Pc
         }
         internal partial class MkFunctionDecl
         {
-            //funName is former entityName
             public string funName;
             public string funType;
-            //funInfo is former entityInfo
             public FunInfo funInfo;
-            //TODO: might not be needed
-            public bool isGlobalStatic;
-            //null if global function:
-            public MkMachineClass owner;
-            //owner.machName is former machineName
-
+            public MkMachineClass owner;  // null if global function
             private PToCSharp pToCSharp;
             public List<Tuple<SyntaxNode, string>> locals;
             public Stack<bool> lhsStack;
-            //labels are used for "continuations" in send, new, nondet, receive
-            private int labelCount;
+            private int labelCount; // labels are used for "continuations" in send, new, nondet, receive, function calls
 
-            public MkFunctionDecl(string funName, FunInfo funInfo, bool isGlobalStatic, MkMachineClass owner, PToCSharp pToCSharp)
+            public MkFunctionDecl(string funName, FunInfo funInfo, MkMachineClass owner, PToCSharp pToCSharp)
             {
                 this.funName = funName;
                 this.funType = funName + "_Class";
                 this.funInfo = funInfo;
-                this.isGlobalStatic = isGlobalStatic;
                 this.owner = owner;
                 this.pToCSharp = pToCSharp;
                 this.locals = new List<Tuple<SyntaxNode, string>>();
@@ -1625,20 +1616,44 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldDefault(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var typeArg = (FuncTerm)GetArgByIndex(ft, 0);
+                return MkCSharpInvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("PrtValue"),
+                                IdentifierName("PrtMkDefaultValue")), 
+                            pToCSharp.typeContext.PTypeToCSharpExpr(typeArg));
             }
 
             SyntaxNode FoldCast(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var typeArg = (FuncTerm)GetArgByIndex(ft, 1);
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var valueArg = it.Current;
+                    return MkCSharpInvocationExpression(
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("PrtValue"),
+                                    IdentifierName("PrtCastValue")), 
+                                (ExpressionSyntax)valueArg, 
+                                pToCSharp.typeContext.PTypeToCSharpExpr(typeArg));
+                }
             }
+
             SyntaxNode FoldTuple(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var tupType = LookupType(ft);
+                children.Insert(0, pToCSharp.typeContext.PTypeToCSharpExpr(tupType));
+                return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), children.ToArray());
             }
+
             SyntaxNode FoldNamedTuple(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var tupType = LookupType(ft);
+                children.Insert(0, pToCSharp.typeContext.PTypeToCSharpExpr(tupType));
+                return MkCSharpObjectCreationExpression(IdentifierName("PrtNamedTupleValue"), children.ToArray());
             }
 
             private ExpressionSyntax MkPayload(SyntaxNode tupTypeExpr, List<SyntaxNode> args)
@@ -2439,7 +2454,7 @@ namespace Microsoft.Pc
                 {
                     //Class declaration:
                     List<SyntaxNode> whereToAdd;
-                    whereToAdd = (this.isGlobalStatic) ? PToCSharp.members : owner.machineMembers;
+                    whereToAdd = (this.owner == null) ? PToCSharp.members : owner.machineMembers;
 
                     whereToAdd.Add(MkFuncClass());
                     //Variable declaration:
@@ -2461,7 +2476,7 @@ namespace Microsoft.Pc
                     //Add function variable instantiation to:
                     //PToCsharp class for global static functions;
                     //Main constructor for other functions
-                    if (this.isGlobalStatic)
+                    if (this.owner == null)
                     {
                         PToCSharp.members.Add(
                             ExpressionStatement(
@@ -2501,7 +2516,7 @@ namespace Microsoft.Pc
             {
                 var funName = pair.Key;
                 var funType = funName + "_Class";
-                MkFunctionDecl funDecl = new MkFunctionDecl(funName, pair.Value, true, null, this);
+                MkFunctionDecl funDecl = new MkFunctionDecl(funName, pair.Value, null, this);
                 funDecl.AddFunClass();
             }
         }
@@ -2975,7 +2990,7 @@ namespace Microsoft.Pc
                     FunInfo funInfo = GetFunInfo(funName);
                     //TODO(remove): Debug only:
                     Console.WriteLine("Entry func name for state {0}: {1}", pair.Key, funName);
-                    MkFunctionDecl funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
+                    MkFunctionDecl funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
                     funDecl.AddFunClass();
 
                     //exit function of the state: 
@@ -2983,7 +2998,7 @@ namespace Microsoft.Pc
                     //TODO(remove): Debug only:
                     Console.WriteLine("Exit func name for state {0}: {1}", pair.Key, funName);
                     funInfo = GetFunInfo(funName);
-                    funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
+                    funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
                     funDecl.AddFunClass();
 
                     //Functions in transitions:
@@ -2996,7 +3011,7 @@ namespace Microsoft.Pc
                         {
                             //TODO(remove): Debug only:
                             Console.WriteLine("For goto transition: func name for state {0}: {1}", pair.Key, funName);
-                            funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
+                            funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
                             funDecl.AddFunClass();
                         }
                     }
@@ -3010,7 +3025,7 @@ namespace Microsoft.Pc
                         Console.WriteLine("For Do declaration: func name for state {0}: {1}", pair.Key, funName);
                         if (!translator.allStaticFuns.ContainsKey(funName))
                         {
-                            funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
+                            funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
                             funDecl.AddFunClass();
                         }
                     }

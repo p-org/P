@@ -553,6 +553,7 @@ namespace P.Runtime
             keys = new List<PrtValue>();
         }
 
+
         public override PrtValue Clone()
         {
             var clone = new PrtMapValue();
@@ -570,6 +571,20 @@ namespace P.Runtime
         public int SizeOf()
         {
             return values.Count();
+        }
+
+        public PrtSeqValue Keys()
+        {
+            var seqKeys = new PrtSeqValue();
+            seqKeys.elements.AddRange((this.Clone() as PrtMapValue).keys);
+            return seqKeys;
+        }
+
+        public PrtSeqValue Values()
+        {
+            var seqValues = new PrtSeqValue();
+            seqValues.elements.AddRange((this.Clone() as PrtMapValue).values);
+            return seqValues;
         }
 
         public bool Contains(PrtValue key)

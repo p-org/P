@@ -146,7 +146,6 @@ machine ProposerMachine {
     ignore accepted;
     entry {
       numOfAgreeRecv = 0;
-      nextProposalId.round = nextProposalId.round + 1;
       SendToAllAcceptors(prepare, (proposer = this, proposal = (pid = nextProposalId, value = proposeValue)));
       StartTimer(timer, 100);
     }
@@ -168,7 +167,7 @@ machine ProposerMachine {
     on reject do (payload: ProposalIdType){
       if(nextProposalId.round <= payload.round)
       {
-        nextProposalId.round = payload.round;
+        nextProposalId.round = payload.round + 1;
       }
       CancelTimer(timer);
       goto ProposerPhaseOne;
@@ -189,6 +188,7 @@ machine ProposerMachine {
   }
 
   state ProposerPhaseTwo {
+    ignore agree;
     entry {
       numOfAcceptRecv = 0;
       proposeValue = GetValueToBeProposed();

@@ -14,7 +14,7 @@ model fun StartTimer(timer : machine, time: int) {
 model fun CancelTimer(timer : machine) {
 	send timer, CANCEL;
   receive {
-    case CANCEL_SUCCESS: {};
+    case CANCEL_SUCCESS: {}
     case CANCEL_FAILURE: { 
       receive {
         case TIMEOUT: {}

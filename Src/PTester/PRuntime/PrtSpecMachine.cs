@@ -170,7 +170,7 @@ namespace P.Runtime
                 }
 
                 DoHandleEvent:
-                if (!currentTrigger.IsEqual(PrtValue.NullValue))
+                if (!currentTrigger.Equals(PrtValue.NullValue))
                 {
                     currEventValue = currentTrigger;
                     currentTrigger = PrtValue.NullValue;

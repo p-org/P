@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace P.Runtime
 {
-    public abstract class PrtValue
+    public abstract class PrtValue : IEquatable<PrtValue>
     {
         public static PrtNullValue NullValue = new PrtNullValue();
         public static PrtEventValue HaltEvent = new PrtEventValue(new PrtEvent("Halt", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
@@ -48,11 +48,14 @@ namespace P.Runtime
             }
         }
 
-        public abstract string GetString();
-
-        public abstract bool IsEqual(PrtValue value);
+        public override string ToString()
+        {
+            throw new NotImplementedException("ToString function is not overriden in the derived class");
+        }
 
         public abstract int Size();
+
+        public abstract bool Equals(PrtValue val);
 
         public static bool PrtInhabitsType(PrtValue value, PrtType type)
         {
@@ -196,7 +199,7 @@ namespace P.Runtime
         public static PrtValue PrtCastValue(PrtValue value, PrtType type)
         {
             if (!PrtInhabitsType(value, type))
-                throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.GetString(), type.GetString()));
+                throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), type.ToString()));
             return value.Clone();
         }
 
@@ -209,12 +212,12 @@ namespace P.Runtime
             return this;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return "null";
         }
 
-        public override bool IsEqual(PrtValue value)
+        public override bool Equals(PrtValue value)
         {
             if (value is PrtNullValue)
                 return true;
@@ -247,13 +250,13 @@ namespace P.Runtime
             return new PrtIntValue(this.nt);
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             Debug.Assert(val is PrtIntValue, "Error in type checking, invalid equals invocation");
             return this.nt == (val as PrtIntValue).nt;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return nt.ToString();
         }
@@ -283,13 +286,13 @@ namespace P.Runtime
             return new PrtBoolValue(this.bl);
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             Debug.Assert(val is PrtBoolValue, "Error in type checking, invalid equals invocation");
             return this.bl == (val as PrtBoolValue).bl;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return bl.ToString();
         }
@@ -314,13 +317,13 @@ namespace P.Runtime
             return new PrtEventValue(this.evt);
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             Debug.Assert(val is PrtEventValue, "Error in type checking, invalid equals invocation");
             return this.evt == (val as PrtEventValue).evt;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return evt.name;
         }
@@ -345,13 +348,13 @@ namespace P.Runtime
             return new PrtMachineValue(this.mach);
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             Debug.Assert(val is PrtMachineValue, "Error in type checking, invalid equals invocation");
             return this.mach == (val as PrtMachineValue).mach;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
         }
@@ -401,7 +404,7 @@ namespace P.Runtime
             return clone;
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             if (val is PrtNamedTupleValue) return false;
             var tupValue = (val as PrtTupleValue);
@@ -409,17 +412,17 @@ namespace P.Runtime
             if (tupValue.fieldValues.Count != this.fieldValues.Count) return false;
             for (int i = 0;  i < fieldValues.Count; i++)
             {
-                if (!this.fieldValues[i].IsEqual(tupValue.fieldValues[i])) return false;
+                if (!this.fieldValues[i].Equals(tupValue.fieldValues[i])) return false;
             }
             return true;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "<";
             foreach (var field in fieldValues)
             {
-                retStr = retStr + field.GetString() + ",";
+                retStr = retStr + field.ToString() + ",";
             }
             retStr += ">";
             return retStr;
@@ -472,7 +475,7 @@ namespace P.Runtime
             return clone;
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             var tup = val as PrtNamedTupleValue;
             if (tup == null) return false;
@@ -480,19 +483,19 @@ namespace P.Runtime
             for (int i = 0; i < tup.fieldValues.Count; i++)
             {
                 if (this.fieldNames[i] != tup.fieldNames[i]) return false;
-                if (!this.fieldValues[i].IsEqual(tup.fieldValues[i])) return false;
+                if (!this.fieldValues[i].Equals(tup.fieldValues[i])) return false;
             }
             return true;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "<";
             int index = 0;
 
             while (index < fieldValues.Count)
             {
-                retStr += fieldNames[index] + ":" + fieldValues[index].GetString() + ", ";
+                retStr += fieldNames[index] + ":" + fieldValues[index].ToString() + ", ";
                 index++;
             }
             retStr += ">";
@@ -520,6 +523,41 @@ namespace P.Runtime
             return clone;
         }
 
+        public PrtValue ElementAt(PrtValue index)
+        {
+            var _index = index as PrtIntValue;
+            if (_index == null)
+            {
+                //TODO: Problem
+                throw new Exception();
+            }
+            else
+            {
+                if (_index.nt < Size())
+                { 
+                    return elements[_index.nt];
+                }
+                else
+                {
+                    //TODO: Problem
+                    throw new Exception();
+                }
+            }
+        }
+
+        public PrtValue ElementAt(int index)
+        {
+            if (index < Size())
+            {
+                return elements[index];
+            }
+            else
+            {
+                //TODO: Problem
+                throw new Exception();
+            }
+        }
+
         public void Insert(int index, PrtValue val)
         {
             //TODO: raise an exception for invalid index
@@ -537,7 +575,7 @@ namespace P.Runtime
             return elements.Count();
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             Debug.Assert(val is PrtSeqValue, "Error in type checking, invalid equals invocation");
             var seqVal = val as PrtSeqValue;
@@ -550,7 +588,7 @@ namespace P.Runtime
                 int index = 0;
                 while (index < this.elements.Count)
                 {
-                    if (!this.elements[index].IsEqual(seqVal.elements[index]))
+                    if (!this.elements[index].Equals(seqVal.elements[index]))
                         return false;
 
                     index++;
@@ -559,7 +597,7 @@ namespace P.Runtime
             return true;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "(";
             int index = 0;
@@ -604,6 +642,16 @@ namespace P.Runtime
             return values.Count();
         }
 
+        public PrtValue LookUp(PrtValue key)
+        {
+            if (!Contains(key))
+            {
+                //TODO: raise an exception for invalid update
+            }
+            var index = keys.FindIndex((k => k.Equals(key)));
+            return values[index].Clone();
+        }
+
         public PrtSeqValue Keys()
         {
             var seqKeys = new PrtSeqValue();
@@ -620,7 +668,7 @@ namespace P.Runtime
 
         public bool Contains(PrtValue key)
         {
-            return keys.Where(k => k.IsEqual(key)).Count() > 0;
+            return keys.Where(k => k.Equals(key)).Count() > 0;
         }
 
         public void Add(PrtValue key, PrtValue val)
@@ -657,7 +705,7 @@ namespace P.Runtime
             values[index] = val.Clone();
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             Debug.Assert(val is PrtMapValue, "Error in type checking, invalid equals invocation");
             var mapVal = val as PrtMapValue;
@@ -675,9 +723,9 @@ namespace P.Runtime
                     }
                     else
                     {
-                        var index = this.keys.FindIndex(_k => _k.IsEqual(k));
-                        var _index = mapVal.keys.FindIndex(_k => _k.IsEqual(k));
-                        if (this.values[index].IsEqual(mapVal.values[_index]))
+                        var index = this.keys.FindIndex(_k => _k.Equals(k));
+                        var _index = mapVal.keys.FindIndex(_k => _k.Equals(k));
+                        if (this.values[index].Equals(mapVal.values[_index]))
                         {
                             return false;
                         }
@@ -687,14 +735,14 @@ namespace P.Runtime
             }
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "(";
             int index = 0;
 
             while (index < values.Count)
             {
-                retStr += "(" + keys[index].GetString() + "," + values[index].GetString() + "), ";
+                retStr += "(" + keys[index].ToString() + "," + values[index].ToString() + "), ";
                 index++;
             }
             retStr += ")";

@@ -120,7 +120,7 @@ namespace P.Runtime
 
             if (!(prtType is PrtNullType) && !PrtValue.PrtInhabitsType(arg, prtType))
             {
-                throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.GetString(), prtType.GetString(), ev.evt.name));
+                throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.ToString(), prtType.ToString(), ev.evt.name));
             }
             else if (prtType is PrtNullType && !(arg is PrtNullValue))
             {
@@ -137,7 +137,7 @@ namespace P.Runtime
             {
                 stateImpl.Trace(
                     @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
-                    ev.evt.name, arg.GetString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
+                    ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
 
                 this.eventQueue.EnqueueEvent(e, arg);
                 if (this.maxBufferSize != -1 && this.eventQueue.Size() > this.maxBufferSize)
@@ -174,7 +174,7 @@ namespace P.Runtime
 
                 stateImpl.Trace(
                     "<DequeueLog> Dequeued Event < {0}, {1} > at Machine {2}-{3}\n",
-                    (currentTrigger as PrtEventValue).evt.name, currentPayload.GetString(), Name, instanceNumber);
+                    (currentTrigger as PrtEventValue).evt.name, currentPayload.ToString(), Name, instanceNumber);
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.SUCCESS;
             }
@@ -454,7 +454,7 @@ namespace P.Runtime
 
             DoHandleEvent:
             Debug.Assert(receiveSet.Count == 0, "The machine must not be blocked on a receive");
-            if(!currentTrigger.IsEqual(PrtValue.NullValue))
+            if(!currentTrigger.Equals(PrtValue.NullValue))
             {
                 currEventValue = currentTrigger;
                 currentTrigger = PrtValue.NullValue;

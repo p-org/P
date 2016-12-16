@@ -101,7 +101,7 @@ namespace P.Runtime
                     throw new PrtInvalidPopStatement();
                 }
                 //TODO : Handle the monitor machine case separately for the halt event
-                else if (eventValue.IsEqual(PrtValue.HaltEvent))
+                else if (eventValue.Equals(PrtValue.HaltEvent))
                 {
                     throw new PrtUnhandledEventException();
                 }

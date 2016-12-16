@@ -52,6 +52,8 @@ namespace P.Runtime
 
         public abstract bool IsEqual(PrtValue value);
 
+        public abstract int Size();
+
         public static bool PrtInhabitsType(PrtValue value, PrtType type)
         {
             if (type is PrtAnyType)
@@ -219,6 +221,11 @@ namespace P.Runtime
             else
                 return false;
         }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class PrtIntValue : PrtValue
@@ -249,6 +256,11 @@ namespace P.Runtime
         public override string GetString()
         {
             return nt.ToString();
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -281,6 +293,11 @@ namespace P.Runtime
         {
             return bl.ToString();
         }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class PrtEventValue : PrtValue
@@ -307,6 +324,11 @@ namespace P.Runtime
         {
             return evt.name;
         }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
+        }
     }
 
     public class PrtMachineValue : PrtValue
@@ -332,6 +354,11 @@ namespace P.Runtime
         public override string GetString()
         {
             return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -396,6 +423,11 @@ namespace P.Runtime
             }
             retStr += ">";
             return retStr;
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -500,7 +532,7 @@ namespace P.Runtime
             elements.RemoveAt(index);
         }
 
-        public int SizeOf()
+        public override int Size()
         {
             return elements.Count();
         }
@@ -553,7 +585,6 @@ namespace P.Runtime
             keys = new List<PrtValue>();
         }
 
-
         public override PrtValue Clone()
         {
             var clone = new PrtMapValue();
@@ -568,7 +599,7 @@ namespace P.Runtime
             return clone;
         }
 
-        public int SizeOf()
+        public override int Size()
         {
             return values.Count();
         }

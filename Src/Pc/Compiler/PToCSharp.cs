@@ -1130,7 +1130,6 @@ namespace Microsoft.Pc
                         it.MoveNext();
                         yield return it.Current;
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }
@@ -1141,10 +1140,8 @@ namespace Microsoft.Pc
                         it.MoveNext();
                         yield return it.Current;
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }
@@ -1153,10 +1150,8 @@ namespace Microsoft.Pc
                     using (var it = ft.Args.GetEnumerator())
                     {
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }
@@ -1438,19 +1433,16 @@ namespace Microsoft.Pc
                     }
                     else if (op == PData.Cnst_Keys.Node.Name)
                     {
-                        //TODO(expand):
-                        throw new NotImplementedException();
+                        return MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", arg), "Keys"));
                     }
                     else if (op == PData.Cnst_Values.Node.Name)
                     {
-                        //TODO(expand):
-                        throw new NotImplementedException();
+                        return MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", arg), "Values"));
                     }
                     else
                     {
                         //  op == PData.Cnst_Sizeof.Node.Name
-                        //TODO(expand):
-                        throw new NotImplementedException();
+                        return MkCSharpInvocationExpression(MkCSharpDot((ExpressionSyntax)arg, "Size"));
                     }
                 }
             }

@@ -1442,7 +1442,8 @@ namespace Microsoft.Pc
                     else
                     {
                         //  op == PData.Cnst_Sizeof.Node.Name
-                        return MkCSharpInvocationExpression(MkCSharpDot((ExpressionSyntax)arg, "Size"));
+                        return MkCSharpInvocationExpression(
+                                    MkCSharpObjectCreationExpression(IdentifierName("PrtIntValue"), MkCSharpDot((ExpressionSyntax)arg, "Size")));
                     }
                 }
             }
@@ -1550,14 +1551,34 @@ namespace Microsoft.Pc
                     }
                     else if (op == PData.Cnst_Idx.Node.Name)
                     {
-                        //TODO(expand)
-                        throw new NotImplementedException();
+                        var type = LookupType(GetArgByIndex(ft, 1));
+                        var typeOp = ((Id)type.Function).Name;
+                        if (typeOp == PData.Con_SeqType.Node.Name)
+                        {
+                            arg1 = MkCSharpCastExpression("PrtSeqValue", arg1);
+                        }
+                        else
+                        {
+                            // op == PData.Con_MapType.Node.Name
+                            arg1 = MkCSharpCastExpression("PrtMapValue", arg1);
+                        }
+                        var lookupExpr = MkCSharpInvocationExpression(MkCSharpDot(arg1, "Lookup"), arg2);
+                        if (lhsStack.Count > 0 && lhsStack.Peek())
+                        {
+                            return lookupExpr;
+                        }
+                        else
+                        {
+                            return MkCSharpInvocationExpression(MkCSharpDot(lookupExpr, "Clone"));
+                        }
+
                     }
                     else
                     {
-                        //TODO(expand)
                         // op == PData.Cnst_In.Node.Name
-                        throw new NotImplementedException();
+                        return MkCSharpInvocationExpression(
+                                MkCSharpObjectCreationExpression(IdentifierName("PrtBoolValue"), 
+                                                                 MkCSharpDot(MkCSharpCastExpression("PrtMapValue", arg2), "Contains"), arg1));
                     }
                 }
             }

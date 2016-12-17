@@ -1284,14 +1284,17 @@ namespace Microsoft.Pc
                     throw new NotImplementedException();
                 }
             }
+
             private List<SyntaxNode> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
             {
                 throw new NotImplementedException();
             }
+
             SyntaxNode FoldReceive(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
+
             //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
@@ -1327,6 +1330,7 @@ namespace Microsoft.Pc
                 }
                 return retVal;
             }
+
             SyntaxNode FoldNewStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 SyntaxNode aout = null;
@@ -1358,10 +1362,12 @@ namespace Microsoft.Pc
                 }
                 return Block(stmtList);
             }
+
             SyntaxNode FoldFunApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 throw new NotImplementedException();
             }
+
             SyntaxNode FoldNulApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 //No children
@@ -1412,6 +1418,7 @@ namespace Microsoft.Pc
                             IdentifierName("halt"));
                 }
             }
+
             SyntaxNode FoldUnApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
@@ -1447,6 +1454,7 @@ namespace Microsoft.Pc
                     }
                 }
             }
+
             SyntaxNode FoldBinApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
@@ -1834,22 +1842,21 @@ namespace Microsoft.Pc
                 var lhs = (FuncTerm)GetArgByIndex(ft, 1);
                 var type = LookupType(lhs);
                 var typeName = ((Id)type.Function).Name;
-                SyntaxNode src = null, dest = null;
+                ExpressionSyntax src = null, dest = null;
                 using (var it = children.GetEnumerator())
                 {
-                    SyntaxNode index = null;
+                    ExpressionSyntax index = null;
                     it.MoveNext();
-                    src = it.Current;
+                    src = (ExpressionSyntax)it.Current;
                     it.MoveNext();
-                    dest = it.Current;
+                    dest = (ExpressionSyntax)it.Current;
                     if (it.MoveNext())
                     {
-                        index = it.Current;
+                        index = (ExpressionSyntax)it.Current;
                     }
 
                     if (op == PData.Cnst_Assign.Node.Name)
                     {
-                        //arg #2 is Qualifier - ignored for now
                         string assignType = (GetArgByIndex(ft, 2) as Id).Name;
                         if (((Id)lhs.Function).Name == PData.Con_Field.Node.Name)
                         {
@@ -1866,50 +1873,48 @@ namespace Microsoft.Pc
                             }
                             if (assignType == "NONE")
                             {
-                                //TODO: two cases are needed to use NumericLiteralExpression
-                                //for a numeric index; could be merged into one case
-                                if (field.CnstKind == CnstKind.Numeric)
-                                {
-                                    return MkCSharpSimpleAssignmentExpressionStatement(
-                                         MkCSharpElementAccessExpression(src, fieldIndex), dest);
-                                }
-                                else
-                                {
-                                    return MkCSharpSimpleAssignmentExpressionStatement(
-                                         MkCSharpElementAccessExpression(src, fieldIndex), dest);
-                                }
+                                return MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "Update"),
+                                            MkCSharpNumericLiteralExpression(fieldIndex),
+                                            MkCSharpInvocationExpression(MkCSharpDot(src, "Clone")));
                             }
                             else if (assignType == "XFER")
                             {
-                                //TODO(expand):
-                                throw new NotImplementedException();
+                                return MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "Update"),
+                                            MkCSharpNumericLiteralExpression(fieldIndex),
+                                            src);
                             }
                             else
                             {
                                 // assignType = "SWAP" 
-                                //TODO(expand):
-                                throw new NotImplementedException();
+                                return MkCSharpSimpleAssignmentExpressionStatement(
+                                    src,
+                                    MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "UpdateAndReturnOldValue"),
+                                            MkCSharpNumericLiteralExpression(fieldIndex),
+                                            src));
                             }
                         }
                         else if (index == null)
                         {
                             if (assignType == "NONE")
                             {
-                                return MkCSharpSimpleAssignmentExpressionStatement(dest, src);
+                                return MkCSharpSimpleAssignmentExpressionStatement(dest, MkCSharpInvocationExpression(MkCSharpDot(src, "Clone")));
                             }
                             else if (assignType == "XFER")
                             {
-                                //TODO(expand):
-                                throw new NotImplementedException();
+                                return MkCSharpSimpleAssignmentExpressionStatement(dest, src);
                             }
                             else
                             {
                                 // assignType == "SWAP"
-                                //TODO(expand):
-                                throw new NotImplementedException();
+                                return Block(
+                                    MkCSharpSimpleAssignmentExpressionStatement(IdentifierName("swap"), dest),
+                                    MkCSharpSimpleAssignmentExpressionStatement(dest, src),
+                                    MkCSharpSimpleAssignmentExpressionStatement(src, IdentifierName("swap")));
                             }
                         }
-                        //Asgn when lhs is not a field (?):
                         else
                         {
                             lhs = (FuncTerm)GetArgByIndex(lhs, 1);
@@ -1919,19 +1924,27 @@ namespace Microsoft.Pc
                             {
                                 if (assignType == "NONE")
                                 {
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
+                                            index,
+                                            MkCSharpInvocationExpression(MkCSharpDot(src, "Clone")));
                                 }
                                 else if (assignType == "XFER")
                                 {
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return MkCSharpInvocationExpression(
+                                           MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
+                                           index,
+                                           src);
                                 }
                                 else
                                 {
                                     // assignType == "SWAP"
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return MkCSharpSimpleAssignmentExpressionStatement(
+                                                src,
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "UpdateAndReturnOldValue"),
+                                                    index,
+                                                    src));
                                 }
                             }
                             else
@@ -1939,19 +1952,27 @@ namespace Microsoft.Pc
                                 // type is PMapType
                                 if (assignType == "NONE")
                                 {
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Update"),
+                                            index,
+                                            MkCSharpInvocationExpression(MkCSharpDot(src, "Clone")));
                                 }
                                 else if (assignType == "XFER")
                                 {
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return MkCSharpInvocationExpression(
+                                           MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Update"),
+                                           index,
+                                           src);
                                 }
                                 else
                                 {
                                     // assignType == "SWAP"
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return MkCSharpSimpleAssignmentExpressionStatement(
+                                                src,
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "UpdateAndReturnOldValue"),
+                                                    index,
+                                                    src));
                                 }
                             }
                         }
@@ -1960,13 +1981,11 @@ namespace Microsoft.Pc
                     {
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
-                            //TODO(expand):
-                            throw new NotImplementedException();
+                            return MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Remove"), src);
                         }
                         else
                         {
-                            //TODO(expand):
-                            throw new NotImplementedException();
+                            return MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Remove"), src);
                         }
                     }
                     else
@@ -1974,13 +1993,17 @@ namespace Microsoft.Pc
                         // op == PData.Cnst_Insert.Node.Name
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
-                            //TODO(expand):
-                            throw new NotImplementedException();
+                            return MkCSharpInvocationExpression(
+                                MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Insert"), 
+                                MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                                MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0));
                         }
                         else
                         {
-                            //TODO(expand):
-                            throw new NotImplementedException();
+                            return MkCSharpInvocationExpression(
+                                MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Insert"),
+                                MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                                MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0));
                         }
                     }
                 }
@@ -2209,6 +2232,16 @@ namespace Microsoft.Pc
                             SingletonSeparatedList<VariableDeclaratorSyntax>(
                                 VariableDeclarator(
                                     Identifier("createdMachine")))))
+                        .NormalizeWhitespace());
+
+                funStmts.Add(
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            IdentifierName("PrtValue"))
+                        .WithVariables(
+                            SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                VariableDeclarator(
+                                    Identifier("swap")))))
                         .NormalizeWhitespace());
 
                 // Compute the body before calculating the label prelude

@@ -338,6 +338,13 @@ namespace P.Runtime
             }
         }
 
+        public PrtValue UpdateAndReturnOldValue(int index, PrtValue val)
+        {
+            var oldVal = fieldValues[index];
+            fieldValues[index] = val;
+            return oldVal;
+        }
+
         public override PrtValue Clone()
         {
             var clone = new PrtTupleValue();
@@ -483,7 +490,12 @@ namespace P.Runtime
             {
                 throw new PrtAssertFailureException("Illegal index for Insert");
             }
-            elements.Insert(index, val.Clone());
+            elements.Insert(index, val);
+        }
+
+        public void Insert(PrtValue index, PrtValue val)
+        {
+            Insert(((PrtIntValue)index).nt, val);
         }
 
         public void Update(int index, PrtValue val)
@@ -494,12 +506,23 @@ namespace P.Runtime
             }
             if (index == elements.Count)
             {
-                elements.Insert(index, val.Clone());
+                elements.Insert(index, val);
             }
             else
             {
-                elements[index] = val.Clone();
+                elements[index] = val;
             }
+        }
+
+        public PrtValue UpdateAndReturnOldValue(int index, PrtValue val)
+        {
+            if (index < 0 || index >= elements.Count)
+            {
+                throw new PrtAssertFailureException("Illegal index for UpdateAndReturnOldValue");
+            }
+            var oldVal = elements[index];
+            elements[index] = val;
+            return oldVal;
         }
 
         public void Remove(int index)
@@ -625,19 +648,6 @@ namespace P.Runtime
             return keyToValueMap.ContainsKey(new PrtMapKey(key, 0));
         }
 
-        public void Add(PrtValue key, PrtValue val)
-        {
-            if (Contains(key))
-            {
-                throw new PrtAssertFailureException("Illegal key in Add");
-            }
-            else
-            {
-                keyToValueMap[new PrtMapKey(key.Clone(), nextKeyIndex)] = val.Clone();
-                nextKeyIndex++;
-            }
-        }
-
         public void Remove(PrtValue key)
         {
             if (!Contains(key))
@@ -649,7 +659,15 @@ namespace P.Runtime
 
         public void Update(PrtValue key, PrtValue val)
         {
-            keyToValueMap[new PrtMapKey(key, 0)] = val.Clone();
+            keyToValueMap[new PrtMapKey(key, 0)] = val;
+        }
+
+        public PrtValue UpdateAndReturnOldValue(PrtValue key, PrtValue val)
+        {
+            var prtKey = new PrtMapKey(key, 0);
+            var oldVal = keyToValueMap[prtKey];
+            keyToValueMap[prtKey] = val;
+            return oldVal;
         }
 
         public override bool Equals(PrtValue val)

@@ -338,6 +338,11 @@ namespace P.Runtime
             }
         }
 
+        public void Update(int index, PrtValue val)
+        {
+            fieldValues[index] = val;
+        }
+
         public PrtValue UpdateAndReturnOldValue(int index, PrtValue val)
         {
             var oldVal = fieldValues[index];

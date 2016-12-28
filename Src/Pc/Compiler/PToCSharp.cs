@@ -1298,19 +1298,15 @@ namespace Microsoft.Pc
             //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
-                SyntaxNode retVal;
                 var name = GetName(ft, 0);
                 if (funInfo != null && funInfo.localNameToInfo.ContainsKey(name))
                 {
                     //local var of a function:
-                    LocalVariableInfo entry = (funInfo.localNameToInfo[name]);
-                    int ind = entry.index;
-                    retVal = (ExpressionSyntax)MkCSharpElementAccessExpression(
-                        IdentifierName("locals"), ind);
+                    return MkCSharpElementAccessExpression(MkCSharpDot("currFun", "locals"), funInfo.localNameToInfo[name].index);
                 }
                 else if (owner != null && pToCSharp.allMachines[owner.machineName].localVariableToVarInfo.ContainsKey(name))
                 {
-                    retVal = MkCSharpDot("parent", name);
+                    return MkCSharpDot("parent", name);
                 }
                 else
                 {
@@ -1318,17 +1314,15 @@ namespace Microsoft.Pc
                     var type = LookupType(ft);
                     if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                     {
-                        retVal = IdentifierName(name);
+                        return IdentifierName(name);
                     }
                     else
                     {
                         //TODO: check type and add default case to throw an exception
                         //Enum case:
-                        retVal = MkCSharpObjectCreationExpression(IdentifierName("PrtIntValue"),
-                            IdentifierName(name));
+                        return MkCSharpObjectCreationExpression(IdentifierName("PrtIntValue"), IdentifierName(name));
                     }
                 }
-                return retVal;
             }
 
             SyntaxNode FoldNewStmt(FuncTerm ft, List<SyntaxNode> children)
@@ -1407,15 +1401,13 @@ namespace Microsoft.Pc
                 else if (op == PData.Cnst_Null.Node.Name)
                 {
                     //Constant "@null":
-                    return MkCSharpObjectCreationExpression(IdentifierName("PrtEventValue"),
-                            IdentifierName("@null"));
+                    return IdentifierName("@null");
                 }
                 else
                 {
                     //op == PData.Cnst_Halt.Node.Name
                     //Constant "halt":
-                    return MkCSharpObjectCreationExpression(IdentifierName("PrtEventValue"),
-                            IdentifierName("halt"));
+                    return IdentifierName("halt");
                 }
             }
 
@@ -1449,8 +1441,9 @@ namespace Microsoft.Pc
                     else
                     {
                         //  op == PData.Cnst_Sizeof.Node.Name
-                        return MkCSharpInvocationExpression(
-                                    MkCSharpObjectCreationExpression(IdentifierName("PrtIntValue"), MkCSharpDot((ExpressionSyntax)arg, "Size")));
+                        return MkCSharpObjectCreationExpression(
+                                        IdentifierName("PrtIntValue"), 
+                                        MkCSharpInvocationExpression(MkCSharpDot((ExpressionSyntax)arg, "Size")));
                     }
                 }
             }
@@ -1499,16 +1492,16 @@ namespace Microsoft.Pc
                     }
                     else if (op == PData.Cnst_And.Node.Name)
                     {
-                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "bl");
-                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "bl");
+                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
+                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
                         return MkCSharpObjectCreationExpression(
                                 IdentifierName("PrtBoolValue"), 
                                 BinaryExpression(SyntaxKind.LogicalAndExpression, arg1Bool, arg2Bool));
                     }
                     else if (op == PData.Cnst_Or.Node.Name)
                     {
-                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "bl");
-                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "bl");
+                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
+                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
                         return MkCSharpObjectCreationExpression(
                                 IdentifierName("PrtBoolValue"), 
                                 BinaryExpression(SyntaxKind.LogicalOrExpression, arg1Bool, arg2Bool));
@@ -1517,13 +1510,13 @@ namespace Microsoft.Pc
                     {
                         return MkCSharpObjectCreationExpression(
                                 IdentifierName("PrtBoolValue"), 
-                                MkCSharpInvocationExpression(MkCSharpDot(arg1, "IsEqual"), arg2));
+                                MkCSharpInvocationExpression(MkCSharpDot(arg1, "Equals"), arg2));
                     }
                     else if (op == PData.Cnst_NEq.Node.Name)
                     {
                         return MkCSharpObjectCreationExpression(
                                 IdentifierName("PrtBoolValue"),
-                                PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, MkCSharpInvocationExpression(MkCSharpDot(arg1, "IsEqual"), arg2)));
+                                PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, MkCSharpInvocationExpression(MkCSharpDot(arg1, "Equals"), arg2)));
                     }
                     else if (op == PData.Cnst_Lt.Node.Name)
                     {
@@ -1584,9 +1577,8 @@ namespace Microsoft.Pc
                     else
                     {
                         // op == PData.Cnst_In.Node.Name
-                        return MkCSharpInvocationExpression(
-                                MkCSharpObjectCreationExpression(IdentifierName("PrtBoolValue"), 
-                                                                 MkCSharpDot(MkCSharpCastExpression("PrtMapValue", arg2), "Contains"), arg1));
+                        return MkCSharpObjectCreationExpression(IdentifierName("PrtBoolValue"),
+                                                                MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", arg2), "Contains"), arg1));
                     }
                 }
             }
@@ -1623,7 +1615,7 @@ namespace Microsoft.Pc
                 {
                     it.MoveNext();
                     var arg = (ExpressionSyntax)it.Current;
-                    var accessExpr = MkCSharpElementAccessExpression(MkCSharpDot(arg, "fieldValues"), fieldIndex);
+                    var accessExpr = MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", arg), "fieldValues"), fieldIndex);
                     if (lhsStack.Count > 0 && lhsStack.Peek())
                     {
                         return accessExpr;
@@ -1727,7 +1719,7 @@ namespace Microsoft.Pc
                 children.RemoveAt(0);
                 var eventPayloadTypeExpr = MkCSharpDot(eventExpr, "evt", "payloadType");
                 var payloadVar = MkPayload(eventPayloadTypeExpr, children);
-                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "IsEqual"), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue")));
+                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue")));
                 var assertStmt = MkCSharpAssert(MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = MkCSharpPrint(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(eventExpr, "evt", "name"));
                 var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), eventExpr);
@@ -1873,27 +1865,29 @@ namespace Microsoft.Pc
                             }
                             if (assignType == "NONE")
                             {
-                                return MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "Update"),
-                                            MkCSharpNumericLiteralExpression(fieldIndex),
-                                            MkCSharpInvocationExpression(MkCSharpDot(src, "Clone")));
+                                return ExpressionStatement(
+                                            MkCSharpInvocationExpression(
+                                                MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "Update"),
+                                                MkCSharpNumericLiteralExpression(fieldIndex),
+                                                MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                             }
                             else if (assignType == "XFER")
                             {
-                                return MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "Update"),
-                                            MkCSharpNumericLiteralExpression(fieldIndex),
-                                            src);
+                                return ExpressionStatement(
+                                            MkCSharpInvocationExpression(
+                                                MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "Update"),
+                                                MkCSharpNumericLiteralExpression(fieldIndex),
+                                                src));
                             }
                             else
                             {
                                 // assignType = "SWAP" 
                                 return MkCSharpSimpleAssignmentExpressionStatement(
-                                    src,
-                                    MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "UpdateAndReturnOldValue"),
-                                            MkCSharpNumericLiteralExpression(fieldIndex),
-                                            src));
+                                            src,
+                                            MkCSharpInvocationExpression(
+                                                MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "UpdateAndReturnOldValue"),
+                                                MkCSharpNumericLiteralExpression(fieldIndex),
+                                                src));
                             }
                         }
                         else if (index == null)
@@ -1924,17 +1918,19 @@ namespace Microsoft.Pc
                             {
                                 if (assignType == "NONE")
                                 {
-                                    return MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
-                                            index,
-                                            MkCSharpInvocationExpression(MkCSharpDot(src, "Clone")));
+                                    return ExpressionStatement(
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
+                                                    index,
+                                                    MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 }
                                 else if (assignType == "XFER")
                                 {
-                                    return MkCSharpInvocationExpression(
-                                           MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
-                                           index,
-                                           src);
+                                    return ExpressionStatement(
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
+                                                    index,
+                                                    src));
                                 }
                                 else
                                 {
@@ -1952,17 +1948,19 @@ namespace Microsoft.Pc
                                 // type is PMapType
                                 if (assignType == "NONE")
                                 {
-                                    return MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Update"),
-                                            index,
-                                            MkCSharpInvocationExpression(MkCSharpDot(src, "Clone")));
+                                    return ExpressionStatement(
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Update"),
+                                                    index,
+                                                    MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 }
                                 else if (assignType == "XFER")
                                 {
-                                    return MkCSharpInvocationExpression(
-                                           MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Update"),
-                                           index,
-                                           src);
+                                    return ExpressionStatement(
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Update"),
+                                                    index,
+                                                    src));
                                 }
                                 else
                                 {
@@ -1981,11 +1979,11 @@ namespace Microsoft.Pc
                     {
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
-                            return MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Remove"), src);
+                            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Remove"), src));
                         }
                         else
                         {
-                            return MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Remove"), src);
+                            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Remove"), src));
                         }
                     }
                     else
@@ -1993,17 +1991,19 @@ namespace Microsoft.Pc
                         // op == PData.Cnst_Insert.Node.Name
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
-                            return MkCSharpInvocationExpression(
-                                MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Insert"), 
-                                MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
-                                MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0));
+                            return ExpressionStatement(
+                                        MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Insert"), 
+                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0)));
                         }
                         else
                         {
-                            return MkCSharpInvocationExpression(
-                                MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Insert"),
-                                MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
-                                MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0));
+                            return ExpressionStatement(
+                                        MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Insert"),
+                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0)));
                         }
                     }
                 }
@@ -2022,11 +2022,11 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     if (returnType.Equals(PTypeNull))
                     {
-                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "Return"), IdentifierName("locals"))));
+                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "Return"), MkCSharpDot("currFun", "locals"))));
                     }
                     else
                     {
-                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "ReturnVal"), (ExpressionSyntax)it.Current, IdentifierName("locals"))));
+                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "ReturnVal"), (ExpressionSyntax)it.Current, MkCSharpDot("currFun", "locals"))));
                     }
                     stmtList.Add(ReturnStatement());
                     return Block(stmtList);
@@ -3050,16 +3050,14 @@ namespace Microsoft.Pc
                     //Functions in transitions:
                     foreach (var transition in pair.Value.transitions)
                     {
+                        if (transition.Value.IsPush) continue;
                         funName = transition.Value.transFunName;
+                        if (translator.allStaticFuns.ContainsKey(funName)) continue;
                         funInfo = GetFunInfo(funName);
-
-                        if (!transition.Value.IsPush && !translator.allStaticFuns.ContainsKey(funName))
-                        {
-                            //TODO(remove): Debug only:
-                            Console.WriteLine("For goto transition: func name for state {0}: {1}", pair.Key, funName);
-                            funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
-                            funDecl.AddFunClass();
-                        }
+                        //TODO(remove): Debug only:
+                        Console.WriteLine("For goto transition: func name for state {0}: {1}", pair.Key, funName);
+                        funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
+                        funDecl.AddFunClass();
                     }
 
                     //Functions in dos: loop over StateInfo.actions (to be renamed into StateInfo.dos):
@@ -3384,20 +3382,10 @@ namespace Microsoft.Pc
 
         private void EmitCSharpOutput(string fileName)
         {
-            StringBuilder sb = new StringBuilder();
-            using (StringWriter writer = new StringWriter(sb))
-            {
-                result.WriteTo(writer);
-
-                //Debug only:
-                //Console.WriteLine(writer);
-
-                System.IO.StreamWriter file = new System.IO.StreamWriter(fileName);
-                file.WriteLine(result);
-
-                file.Close();
-
-            }
+            System.IO.StreamWriter file = new System.IO.StreamWriter(fileName);
+            file.WriteLine("#pragma warning disable CS0162, CS0168");
+            file.WriteLine(result);
+            file.Close();
         }
 
         #endregion

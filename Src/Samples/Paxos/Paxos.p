@@ -214,6 +214,7 @@ machine ProposerMachine {
       if(numOfAcceptRecv == majority)
       {
         CancelTimer(timer);
+        assert(false);
         // done proposing lets halt
         raise halt;
       }

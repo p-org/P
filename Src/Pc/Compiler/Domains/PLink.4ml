@@ -425,7 +425,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// make sure that new M in the module are for private machines.
 	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M, but not all its events are private")
-	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), MachineReceives(newM, ev), no ModulePrivate(mod, ev).
+	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), MachineCreatesM(mach, newM), MachineReceives(newM, ev), no ModulePrivate(mod, ev).
 
 	//// ix is not disjoint from EP
 	WellFormednessError(mod.id, ix, "wellformedness error> the exported interfaces are not disjoint from private events") 
@@ -456,7 +456,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	InterfaceTypeDecl(ix, ixL, _), InterfaceTypeDecl(ix', ixL, _), mach != mach'.
 
 	//// private machines created by a module are part of the module.
-	//TODO: Add this rule.
+	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M is not included in the module")
+	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), no ModuleContains(mod, newM).
+
+	//// make sure that the constructor arguments do not have private permissions in them.
+	WellFormednessError(mod.id, mach, "wellformedness error> constructor type of the machine has private permissions")
+	:- mod is ModuleDecl, ModuleContains(mod, mach), PermEmbeddedInConstType(mach, ev), ModulePrivate(mod, ev).
 
 	/**************************************************************************/
 	/*			Refinement, Implementation and Test Decls are legal			  */

@@ -709,5 +709,12 @@ namespace P.Runtime
 
             return clonedVal;
         }
+
+        public bool ReturnAndResetNondet()
+        {
+            var ret = nondet;
+            nondet = false;
+            return ret;
+        }
     }
 }

@@ -609,8 +609,13 @@ namespace Microsoft.Pc
             {
                 return AccessorDeclaration(SyntaxKind.SetAccessorDeclaration, Block(body));
             }
-
         }
+
+        public static ExpressionSyntax MkCSharpEq(ExpressionSyntax expr1, ExpressionSyntax expr2)
+        {
+            return BinaryExpression(SyntaxKind.EqualsExpression, expr1, expr2);
+        }
+
         public static ExpressionSyntax MkCSharpNeq(ExpressionSyntax expr1, ExpressionSyntax expr2)
         {
             return BinaryExpression(SyntaxKind.NotEqualsExpression, expr1, expr2);
@@ -1285,14 +1290,79 @@ namespace Microsoft.Pc
                 }
             }
 
-            private List<SyntaxNode> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
+            private List<StatementSyntax> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
             {
-                throw new NotImplementedException();
+                List<StatementSyntax> eventStmts = new List<StatementSyntax>();
+                List<StatementSyntax> funStmts = new List<StatementSyntax>();
+
+                for (int i = 0; i < eventNames.Count; i++)
+                {
+                    var beforeLabelId = GetFreshLabelId();
+                    var beforeLabel = GetLabelFromLabelId(beforeLabelId);
+                    var eventName = eventNames[i];
+                    var funName = funNames[i];
+                    var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(funName) ? pToCSharp.allStaticFuns[funName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[funName];
+                    Debug.Assert(calleeInfo.isAnonymous);
+                    List<StatementSyntax> ifStmts = new List<StatementSyntax>();
+                    ifStmts.Add(ExpressionStatement(MkCSharpInvocationExpression(
+                        MkCSharpDot("parent", "PrtPushFunStackFrame"), 
+                        IdentifierName(funName), MkCSharpInvocationExpression(MkCSharpDot(funName, "CreateLocals"), MkCSharpDot("parent", "currentPayload")))));
+                    ifStmts.Add(MkCSharpGoto(beforeLabel));
+                    eventStmts.Add(IfStatement(MkCSharpEq(MkCSharpDot("parent", "currentTrigger"), IdentifierName(eventName)), Block(ifStmts)));
+                    funStmts.Add(MkCSharpLabeledBlock(beforeLabel, ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent")))));
+                    var elseStmt = Block(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(funName), MkCSharpDot("currFun", "locals"), MkCSharpNumericLiteralExpression(beforeLabelId))),
+                                         ReturnStatement());
+                    funStmts.Add(IfStatement(
+                                         MkCSharpEq(MkCSharpDot("parent", "continuation", "reason"), IdentifierName("PrtContinuationReason.Return")),
+                                         MkCSharpGoto(afterAfterLabel),
+                                         ElseClause(elseStmt)));
+                }
+                List<StatementSyntax> stmts = new List<StatementSyntax>();
+                stmts.AddRange(eventStmts);
+                stmts.Add(MkCSharpAssert(MkCSharpFalseLiteralExpression(), "Internal error"));
+                stmts.AddRange(funStmts);
+                return stmts;
             }
 
             SyntaxNode FoldReceive(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                List<StatementSyntax> stmts = new List<StatementSyntax>();
+                List<string> eventNames = new List<string>();
+                List<string> funNames = new List<string>();
+                var cases = GetArgByIndex(ft, 0) as FuncTerm;
+                while (cases != null)
+                {
+                    Node evt = GetArgByIndex(cases, 0);
+                    string eventName = null;
+                    if (evt is Cnst)
+                    {
+                        eventName = (evt as Cnst).GetStringValue();
+                    }
+                    else if ((evt as Id).Name == "NULL")
+                    {
+                        eventName = NullEvent;
+                    }
+                    else
+                    {
+                        eventName = HaltEvent;
+                    }
+                    eventNames.Add(eventName);
+                    stmts.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "receiveSet", "Add"), IdentifierName(eventName))));
+                    var fun = GetArgByIndex(cases, 1);
+                    string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(fun)];
+                    funNames.Add(funName);
+                    cases = GetArgByIndex(cases, 2) as FuncTerm;
+                }
+                var afterLabelId = GetFreshLabelId();
+                var afterLabel = GetLabelFromLabelId(afterLabelId);
+                stmts.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContReceive"), ThisExpression(), MkCSharpDot("currFun", "locals"), MkCSharpNumericLiteralExpression(afterLabelId))));
+                stmts.Add(ReturnStatement());
+                stmts.Add(MkCSharpEmptyLabeledStatement(afterLabel));
+                var afterAfterLabelId = GetFreshLabelId();
+                var afterAfterLabel = GetLabelFromLabelId(afterAfterLabelId);
+                stmts.AddRange(CaseFunCallHelper(eventNames, funNames, afterAfterLabel));
+                stmts.Add(MkCSharpEmptyLabeledStatement(afterAfterLabel));
+                return Block(stmts);
             }
 
             //In the context of expressions only; no children
@@ -1359,7 +1429,12 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldFunApp(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                string calleeName = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
+                var paramList = new List<ExpressionSyntax>();
+                paramList.Add(IdentifierName("application"));
+                paramList.Add(IdentifierName("parent"));
+                children.ForEach(x => paramList.Add((ExpressionSyntax)x));
+                return MkCSharpInvocationExpression(MkCSharpDot(calleeName, "ExecuteToCompletion"), paramList.ToArray());
             }
 
             SyntaxNode FoldNulApp(FuncTerm ft, List<SyntaxNode> children)
@@ -1794,7 +1869,55 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldFunStmt(FuncTerm ft, List<SyntaxNode> children)
             {
-                return FoldFunApp(ft, children);
+                List<bool> isSwapParameter = new List<bool>();
+                var exprs = GetArgByIndex(ft, 1) as FuncTerm;
+                while (exprs != null)
+                {
+                    var qualifier = GetArgByIndex(exprs, 0) as Id;
+                    isSwapParameter.Add(qualifier.Name == "SWAP");
+                    exprs = GetArgByIndex(exprs, 2) as FuncTerm;
+                }
+
+                var calleeName = GetName(ft, 0);
+                var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(calleeName) ? pToCSharp.allStaticFuns[calleeName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[calleeName];
+
+                List<StatementSyntax> stmtList = new List<StatementSyntax>();
+                List<ExpressionSyntax> paramList = new List<ExpressionSyntax>();
+                int parameterCount = 0;
+                List<StatementSyntax> processOutput = new List<StatementSyntax>();
+                foreach (var child in children)
+                {
+                    if (parameterCount == calleeInfo.parameterNames.Count)
+                    {
+                        // output variable
+                        processOutput.Add(MkCSharpSimpleAssignmentExpressionStatement(child, MkCSharpDot("parent", "continuation", "retVal")));
+                        break;
+                    }
+                    var calleeArg = calleeInfo.parameterNames[parameterCount];
+                    var calleeArgInfo = calleeInfo.localNameToInfo[calleeArg];
+                    paramList.Add((ExpressionSyntax)child);
+                    if (isSwapParameter[parameterCount])
+                    {
+                        processOutput.Add(
+                            MkCSharpSimpleAssignmentExpressionStatement(
+                                child, 
+                                MkCSharpElementAccessExpression(MkCSharpDot("parent", "continuation", "retLocals"), MkCSharpNumericLiteralExpression(calleeArgInfo.index))));
+                    }
+                    parameterCount++;
+                }
+
+                var beforeLabelId = GetFreshLabelId();
+                var beforeLabel = GetLabelFromLabelId(beforeLabelId);
+                stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(calleeName), MkCSharpInvocationExpression(MkCSharpDot(calleeName, "CreateLocals"), paramList.ToArray()))));
+                stmtList.Add(MkCSharpEmptyLabeledStatement(beforeLabel));
+                stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(calleeName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
+                var elseStmt = Block(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(calleeName), MkCSharpDot("currFun", "locals"), MkCSharpNumericLiteralExpression(beforeLabelId))),
+                                     ReturnStatement());
+                stmtList.Add(IfStatement(
+                                     MkCSharpEq(MkCSharpDot("parent", "continuation", "reason"), IdentifierName("PrtContinuationReason.Return")),
+                                     Block(processOutput),
+                                     ElseClause(elseStmt)));
+                return Block(stmtList);
             }
 
             SyntaxNode FoldNulStmt(FuncTerm ft, List<SyntaxNode> children)
@@ -2022,11 +2145,11 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     if (returnType.Equals(PTypeNull))
                     {
-                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "Return"), MkCSharpDot("currFun", "locals"))));
+                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContReturn"), MkCSharpDot("currFun", "locals"))));
                     }
                     else
                     {
-                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "ReturnVal"), (ExpressionSyntax)it.Current, MkCSharpDot("currFun", "locals"))));
+                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContReturnVal"), (ExpressionSyntax)it.Current, MkCSharpDot("currFun", "locals"))));
                     }
                     stmtList.Add(ReturnStatement());
                     return Block(stmtList);
@@ -2560,9 +2683,7 @@ namespace Microsoft.Pc
         {
             foreach (var pair in allStaticFuns)
             {
-                var funName = pair.Key;
-                var funType = funName + "_Class";
-                MkFunctionDecl funDecl = new MkFunctionDecl(funName, pair.Value, null, this);
+                MkFunctionDecl funDecl = new MkFunctionDecl(pair.Key, pair.Value, null, this);
                 funDecl.AddFunClass();
             }
         }
@@ -3027,53 +3148,11 @@ namespace Microsoft.Pc
                     machineMembers.Add(constructor_2);
                 }
 
-                //classes for functions for each state of the machine
-                //and variable declarations for those functions:
-                foreach (var pair in machineInfo.stateNameToStateInfo)
+                // Fun classes for all functions of the machine:
+                foreach (var pair in machineInfo.funNameToFunInfo)
                 {
-                    //entry function of the state:
-                    var funName = pair.Value.entryActionName;
-                    FunInfo funInfo = GetFunInfo(funName);
-                    //TODO(remove): Debug only:
-                    Console.WriteLine("Entry func name for state {0}: {1}", pair.Key, funName);
-                    MkFunctionDecl funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
+                    MkFunctionDecl funDecl = new MkFunctionDecl(pair.Key, pair.Value, this, translator);
                     funDecl.AddFunClass();
-
-                    //exit function of the state: 
-                    funName = pair.Value.exitFunName;
-                    //TODO(remove): Debug only:
-                    Console.WriteLine("Exit func name for state {0}: {1}", pair.Key, funName);
-                    funInfo = GetFunInfo(funName);
-                    funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
-                    funDecl.AddFunClass();
-
-                    //Functions in transitions:
-                    foreach (var transition in pair.Value.transitions)
-                    {
-                        if (transition.Value.IsPush) continue;
-                        funName = transition.Value.transFunName;
-                        if (translator.allStaticFuns.ContainsKey(funName)) continue;
-                        funInfo = GetFunInfo(funName);
-                        //TODO(remove): Debug only:
-                        Console.WriteLine("For goto transition: func name for state {0}: {1}", pair.Key, funName);
-                        funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
-                        funDecl.AddFunClass();
-                    }
-
-                    //Functions in dos: loop over StateInfo.actions (to be renamed into StateInfo.dos):
-                    foreach (var doFun in pair.Value.dos)
-                    {
-                        funName = doFun.Value;
-                        funInfo = GetFunInfo(funName);
-                        //TODO(remove): Debug only:
-                        Console.WriteLine("For Do declaration: func name for state {0}: {1}", pair.Key, funName);
-                        if (!translator.allStaticFuns.ContainsKey(funName))
-                        {
-                            funDecl = new MkFunctionDecl(funName, funInfo, this, translator);
-                            funDecl.AddFunClass();
-                        }
-                    }
-
                 }
 
                 //State classes for all states of the machine:

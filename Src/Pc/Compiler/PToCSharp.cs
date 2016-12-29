@@ -697,13 +697,7 @@ namespace Microsoft.Pc
                    .WithMembers(members)
                    .NormalizeWhitespace();
         }
-        public static BlockSyntax MkCSharpLabeledBlock(string label, StatementSyntax body)
-        {
-            return Block(SingletonList<StatementSyntax>(
-                            LabeledStatement(
-                                Identifier(label),
-                                body)));
-        }
+        
         public static LabeledStatementSyntax MkCSharpEmptyLabeledStatement(string label)
         {
             return LabeledStatement(
@@ -1309,7 +1303,8 @@ namespace Microsoft.Pc
                         IdentifierName(funName), MkCSharpInvocationExpression(MkCSharpDot(funName, "CreateLocals"), MkCSharpDot("parent", "currentPayload")))));
                     ifStmts.Add(MkCSharpGoto(beforeLabel));
                     eventStmts.Add(IfStatement(MkCSharpEq(MkCSharpDot("parent", "currentTrigger"), IdentifierName(eventName)), Block(ifStmts)));
-                    funStmts.Add(MkCSharpLabeledBlock(beforeLabel, ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent")))));
+                    funStmts.Add(MkCSharpEmptyLabeledStatement(beforeLabel));
+                    funStmts.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
                     var elseStmt = Block(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(funName), MkCSharpDot("currFun", "locals"), MkCSharpNumericLiteralExpression(beforeLabelId))),
                                          ReturnStatement());
                     funStmts.Add(IfStatement(
@@ -1844,7 +1839,7 @@ namespace Microsoft.Pc
                     eventExpr, payloadExpr, (ExpressionSyntax)IdentifierName("parent")
                 };
                 StatementSyntax announceEventStmt = ExpressionStatement(
-                    MkCSharpInvocationExpression(IdentifierName("Announce"), invocationArgs));
+                    MkCSharpInvocationExpression(MkCSharpDot("application", "Announce"), invocationArgs));
                 return announceEventStmt;
             }
 
@@ -2166,13 +2161,13 @@ namespace Microsoft.Pc
                     var loopStart = pToCSharp.GetUnique(funName + "_loop_start");
                     var loopEnd = pToCSharp.GetUnique(funName + "_loop_end");
                     var body = it.Current;
-                    var res = MkCSharpLabeledBlock(loopStart,
-                        Block(
-                            IfStatement(PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(loopEnd)),
-                            (StatementSyntax)body,
-                            MkCSharpGoto(loopStart),
-                            MkCSharpEmptyLabeledStatement(loopEnd)));
-                    return res;
+                    var stmtList = new List<StatementSyntax>();
+                    stmtList.Add(MkCSharpEmptyLabeledStatement(loopStart));
+                    stmtList.Add(IfStatement(PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(loopEnd)));
+                    stmtList.Add((StatementSyntax)body);
+                    stmtList.Add(MkCSharpGoto(loopStart));
+                    stmtList.Add(MkCSharpEmptyLabeledStatement(loopEnd));
+                    return Block(stmtList);
                 }
             }
 
@@ -2190,9 +2185,10 @@ namespace Microsoft.Pc
                     var ifName = pToCSharp.GetUnique(funName + "_if");
                     var elseLabel = ifName + "_else";
                     var afterLabel = ifName + "_end";
-                    var cookedElse = MkCSharpLabeledBlock(elseLabel, (StatementSyntax)elseStmt);
                     var cookedThen = (StatementSyntax)thenStmt;
-                    var res = Block(IfStatement(PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(elseLabel)),
+                    var cookedElse = Block(MkCSharpEmptyLabeledStatement(elseLabel), (StatementSyntax)elseStmt);
+                    var res = Block(
+                        IfStatement(PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), MkCSharpGoto(elseLabel)),
                         cookedThen,
                         MkCSharpGoto(afterLabel),
                         cookedElse,
@@ -3462,7 +3458,7 @@ namespace Microsoft.Pc
         private void EmitCSharpOutput(string fileName)
         {
             System.IO.StreamWriter file = new System.IO.StreamWriter(fileName);
-            file.WriteLine("#pragma warning disable CS0162, CS0168");
+            file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168");
             file.WriteLine(result);
             file.Close();
         }

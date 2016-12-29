@@ -7,47 +7,50 @@ namespace P.Runtime
 {
     public abstract class PrtType
     {
-        public abstract string GetString();
+        public override string ToString()
+        {
+            throw new NotImplementedException("ToString function is not overriden in the derived class");
+        }
     }
 
     public class PrtNullType : PrtType
     {
-        public override string GetString()
+        public override string ToString()
         {
             return "NULL";
         }
     }
     public class PrtAnyType : PrtType
     {
-        public override string GetString()
+        public override string ToString()
         {
             return "ANY";
         }
     }
     public class PrtMachineType : PrtType
     {
-        public override string GetString()
+        public override string ToString()
         {
             return "MACHINE";
         }
     }
     public class PrtIntType : PrtType
     {
-        public override string GetString()
+        public override string ToString()
         {
             return "INT";
         }
     }
     public class PrtBoolType : PrtType
     {
-        public override string GetString()
+        public override string ToString()
         {
             return "BOOL";
         }
     }
     public class PrtEventType : PrtType
     {
-        public override string GetString()
+        public override string ToString()
         {
             return "EVENT";
         }
@@ -63,9 +66,9 @@ namespace P.Runtime
             this.valType = v;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
-            return String.Format("({0} -> {1})", keyType.GetString(), valType.GetString());
+            return String.Format("({0} -> {1})", keyType.ToString(), valType.ToString());
         }
     }
 
@@ -78,9 +81,9 @@ namespace P.Runtime
             this.elemType = s;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
-            return String.Format("seq[{0}]", elemType.GetString());
+            return String.Format("seq[{0}]", elemType.ToString());
         }
     }
 
@@ -99,12 +102,12 @@ namespace P.Runtime
             }
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "<";
             foreach (var f in fieldTypes)
             {
-                retStr += f.GetString() + ", ";
+                retStr += f.ToString() + ", ";
             }
             retStr += ">";
             return retStr;
@@ -131,13 +134,13 @@ namespace P.Runtime
             }
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "<";
             int index = 0;
             while (index < fieldTypes.Count)
             {
-                retStr += fieldNames[index] + ":" + fieldTypes[index].GetString() + ", ";
+                retStr += fieldNames[index] + ":" + fieldTypes[index].ToString() + ", ";
             }
             retStr += ">";
             return retStr;

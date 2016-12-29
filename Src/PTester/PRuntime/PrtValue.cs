@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace P.Runtime
 {
-    public abstract class PrtValue
+    public abstract class PrtValue : IEquatable<PrtValue>
     {
         public static PrtNullValue NullValue = new PrtNullValue();
         public static PrtEventValue HaltEvent = new PrtEventValue(new PrtEvent("Halt", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
@@ -15,13 +15,14 @@ namespace P.Runtime
         public static PrtValue PrtMkDefaultValue(PrtType type)
         {
             if (type is PrtAnyType || type is PrtNullType || type is PrtEventType || type is PrtMachineType)
+            {
                 return new PrtNullValue();
-
-            else if(type is PrtIntType)
+            }
+            else if (type is PrtIntType)
             {
                 return new PrtIntValue();
             }
-            else if(type is PrtBoolType)
+            else if (type is PrtBoolType)
             {
                 return new PrtBoolValue();
             }
@@ -37,20 +38,24 @@ namespace P.Runtime
             {
                 return new PrtNamedTupleValue(type as PrtNamedTupleType);
             }
-            else if(type is PrtTupleType)
+            else if (type is PrtTupleType)
             {
                 return new PrtTupleValue(type as PrtTupleType);
             }
             else
             {
-                Debug.Assert(false, "Invalid type !!");
-                return null;
+                throw new PrtInternalException("Invalid type in PrtMkDefaultType");
             }
         }
 
-        public abstract string GetString();
+        public override string ToString()
+        {
+            throw new NotImplementedException("ToString method is not overridden in the derived class");
+        }
 
-        public abstract bool IsEqual(PrtValue value);
+        public abstract int Size();
+
+        public abstract bool Equals(PrtValue val);
 
         public static bool PrtInhabitsType(PrtValue value, PrtType type)
         {
@@ -58,20 +63,11 @@ namespace P.Runtime
             {
                 return true;
             }
-
-            if (value is PrtNullValue)
+            else if (value is PrtNullValue)
             {
-                if (type is PrtEventType || type is PrtMachineType)
-                {
-                    return true;
-                }
-                else
-                {
-                    return false;
-                }
+                return (type is PrtEventType || type is PrtMachineType);
             }
-
-            if (type is PrtIntType)
+            else if (type is PrtIntType)
             {
                 return value is PrtIntValue;
             }
@@ -87,117 +83,69 @@ namespace P.Runtime
             {
                 return value is PrtMachineValue;
             }
+            else if (type is PrtNamedTupleType) // must come before PrtTupleType since PrtNamedTupleType derives from PrtTupleType
+            {
+                var nmtupType = type as PrtNamedTupleType;
+                var nmtupVal = value as PrtNamedTupleValue;
+                if (nmtupVal == null) return false;
+                if (nmtupVal.fieldValues.Count != nmtupType.fieldTypes.Count) return false;
+                for (int i = 0; i < nmtupVal.fieldValues.Count; i++)
+                {
+                    if (nmtupVal.fieldNames[i] != nmtupType.fieldNames[i]) return false;
+                }
+                for (int i = 0; i < nmtupVal.fieldValues.Count; i++)
+                {
+                    if (!PrtInhabitsType(nmtupVal.fieldValues[i], nmtupType.fieldTypes[i])) return false;
+                }
+                return true;
+            }
             else if (type is PrtTupleType)
             {
-                if ((!(value is PrtTupleValue)) || (value as PrtTupleValue).fieldValues.Count != (type as PrtTupleType).fieldTypes.Count)
+                var tupType = type as PrtTupleType;
+                var tupVal = value as PrtTupleValue;
+                if (tupVal == null) return false;
+                if (tupVal.fieldValues.Count != tupType.fieldTypes.Count) return false;
+                for (int i = 0; i < tupVal.fieldValues.Count; i++)
                 {
-                    return false;
+                    if (!PrtInhabitsType(tupVal.fieldValues[i], tupType.fieldTypes[i])) return false;
                 }
-                else
-                {
-                    int index = 0;
-                    var tupVal = (value as PrtTupleValue);
-                    var tupType = (type as PrtTupleType);
-                    while (index < tupVal.fieldValues.Count)
-                    {
-                        if (!PrtInhabitsType(tupVal.fieldValues[index], tupType.fieldTypes[index]))
-                        {
-                            return false;
-                        }
-                        index++;
-                    }
-
-                    return true;
-                }
-            }
-            else if (type is PrtNamedTupleType)
-            {
-                if ((!(value is PrtNamedTupleValue)) || (value as PrtNamedTupleValue).fieldValues.Count != (type as PrtNamedTupleType).fieldTypes.Count)
-                {
-                    return false;
-                }
-                else
-                {
-                    int index = 0;
-                    var nmtupVal = (value as PrtNamedTupleValue);
-                    var nmtupType = (type as PrtNamedTupleType);
-                    while (index < nmtupVal.fieldValues.Count)
-                    {
-                        if (nmtupVal.fieldNames[index] != nmtupType.fieldNames[index])
-                        {
-                            return false;
-                        }
-                        else if (!PrtInhabitsType(nmtupVal.fieldValues[index], nmtupType.fieldTypes[index]))
-                        {
-                            return false;
-                        }
-                        index++;
-                    }
-
-                    return true;
-                }
+                return true;
             }
             else if (type is PrtMapType)
             {
-                if (!(value is PrtMapValue))
+                var mapType = type as PrtMapType;
+                var mapVal = value as PrtMapValue;
+                if (mapVal == null) return false;
+                foreach (var p in mapVal.keyToValueMap)
                 {
-                    return false;
+                    if (!PrtInhabitsType(p.Key.key, mapType.keyType)) return false;
+                    if (!PrtInhabitsType(p.Value, mapType.valType)) return false;
                 }
-                else
-                {
-                    var mapVal = (value as PrtMapValue);
-                    foreach (var key in mapVal.keys)
-                    {
-                        if (!PrtInhabitsType(key, (type as PrtMapType).keyType))
-                        {
-                            return false;
-                        }
-                    }
-                    foreach (var val in mapVal.values)
-                    {
-                        if (!PrtInhabitsType(val, (type as PrtMapType).valType))
-                        {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
+                return true;
             }
             else if (type is PrtSeqType)
             {
-                if (!(value is PrtSeqValue))
+                var seqType = type as PrtSeqType;
+                var seqVal = value as PrtSeqValue;
+                if (seqVal == null) return false;
+                foreach (var elem in seqVal.elements)
                 {
-                    return false;
+                    if (!PrtInhabitsType(elem, seqType.elemType)) return false;
                 }
-                else
-                {
-                    var seqVal = (value as PrtSeqValue);
-                    foreach (var elem in seqVal.elements)
-                    {
-                        if (!PrtInhabitsType(elem, (type as PrtSeqType).elemType))
-                        {
-                            return false;
-                        }
-                    }
-
-                    return true;
-                }
+                return true;
             }
             else
             {
-                Debug.Assert(false, "Unknown type");
-                return false;
+                throw new PrtInternalException("Unknown type in PrtInhabitsType");
             }
         }
 
         public static PrtValue PrtCastValue(PrtValue value, PrtType type)
         {
             if (!PrtInhabitsType(value, type))
-                throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.GetString(), type.GetString()));
+                throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), type.ToString()));
             return value.Clone();
         }
-
     }
 
     public class PrtNullValue : PrtValue
@@ -207,17 +155,19 @@ namespace P.Runtime
             return this;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return "null";
         }
 
-        public override bool IsEqual(PrtValue value)
+        public override bool Equals(PrtValue value)
         {
-            if (value is PrtNullValue)
-                return true;
-            else
-                return false;
+            return (value is PrtNullValue);
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -240,15 +190,21 @@ namespace P.Runtime
             return new PrtIntValue(this.nt);
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
-            Debug.Assert(val is PrtIntValue, "Error in type checking, invalid equals invocation");
-            return this.nt == (val as PrtIntValue).nt;
+            var intVal = val as PrtIntValue;
+            if (intVal == null) return false;
+            return this.nt == intVal.nt;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return nt.ToString();
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -271,15 +227,21 @@ namespace P.Runtime
             return new PrtBoolValue(this.bl);
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
-            Debug.Assert(val is PrtBoolValue, "Error in type checking, invalid equals invocation");
-            return this.bl == (val as PrtBoolValue).bl;
+            var boolVal = val as PrtBoolValue;
+            if (boolVal == null) return false;
+            return this.bl == boolVal.bl;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return bl.ToString();
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -297,15 +259,21 @@ namespace P.Runtime
             return new PrtEventValue(this.evt);
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
-            Debug.Assert(val is PrtEventValue, "Error in type checking, invalid equals invocation");
-            return this.evt == (val as PrtEventValue).evt;
+            var eventVal = val as PrtEventValue;
+            if (eventVal == null) return false;
+            return this.evt == eventVal.evt;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return evt.name;
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -323,15 +291,21 @@ namespace P.Runtime
             return new PrtMachineValue(this.mach);
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
-            Debug.Assert(val is PrtMachineValue, "Error in type checking, invalid equals invocation");
-            return this.mach == (val as PrtMachineValue).mach;
+            var machineVal = val as PrtMachineValue;
+            if (machineVal == null) return false;
+            return this.mach == machineVal.mach;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -356,12 +330,24 @@ namespace P.Runtime
         public PrtTupleValue(PrtTupleType tupType, params PrtValue[] elems)
         {
             if (tupType.fieldTypes.Count != elems.Count())
-                throw new PrtInternalException();
+                throw new PrtInternalException("Number of fields is different from number of arguments");
             fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
             foreach (var elem in elems)
             {
                 fieldValues.Add(elem.Clone());
             }
+        }
+
+        public void Update(int index, PrtValue val)
+        {
+            fieldValues[index] = val;
+        }
+
+        public PrtValue UpdateAndReturnOldValue(int index, PrtValue val)
+        {
+            var oldVal = fieldValues[index];
+            fieldValues[index] = val;
+            return oldVal;
         }
 
         public override PrtValue Clone()
@@ -374,28 +360,33 @@ namespace P.Runtime
             return clone;
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
-            if (val is PrtNamedTupleValue) return val.IsEqual(this);
+            if (val is PrtNamedTupleValue) return false;
             var tupValue = (val as PrtTupleValue);
             if (tupValue == null) return false;
             if (tupValue.fieldValues.Count != this.fieldValues.Count) return false;
             for (int i = 0;  i < fieldValues.Count; i++)
             {
-                if (!this.fieldValues[i].IsEqual(tupValue.fieldValues[i])) return false;
+                if (!this.fieldValues[i].Equals(tupValue.fieldValues[i])) return false;
             }
             return true;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "<";
             foreach (var field in fieldValues)
             {
-                retStr = retStr + field.GetString() + ",";
+                retStr = retStr + field.ToString() + ",";
             }
             retStr += ">";
             return retStr;
+        }
+
+        public override int Size()
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -440,7 +431,7 @@ namespace P.Runtime
             return clone;
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
             var tup = val as PrtNamedTupleValue;
             if (tup == null) return false;
@@ -448,20 +439,17 @@ namespace P.Runtime
             for (int i = 0; i < tup.fieldValues.Count; i++)
             {
                 if (this.fieldNames[i] != tup.fieldNames[i]) return false;
-                if (!this.fieldValues[i].IsEqual(tup.fieldValues[i])) return false;
+                if (!this.fieldValues[i].Equals(tup.fieldValues[i])) return false;
             }
             return true;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "<";
-            int index = 0;
-
-            while (index < fieldValues.Count)
+            for (int i = 0; i < fieldValues.Count; i++)
             {
-                retStr += fieldNames[index] + ":" + fieldValues[index].GetString() + ", ";
-                index++;
+                retStr += fieldNames[i] + ":" + fieldValues[i].ToString() + ", ";
             }
             retStr += ">";
             return retStr;
@@ -484,172 +472,227 @@ namespace P.Runtime
             {
                 clone.elements.Add(val.Clone());
             }
-
             return clone;
+        }
+
+        public PrtValue Lookup(int index)
+        {
+            if (index < 0 || index >= elements.Count)
+            {
+                throw new PrtAssertFailureException("Illegal index for Lookup");
+            }
+            return elements[index];
+        }
+
+        public PrtValue Lookup(PrtValue index)
+        {
+            return Lookup(((PrtIntValue)index).nt);
         }
 
         public void Insert(int index, PrtValue val)
         {
-            //TODO: raise an exception for invalid index
-            elements.Insert(index, val.Clone());
+            if (index < 0 || index > elements.Count)
+            {
+                throw new PrtAssertFailureException("Illegal index for Insert");
+            }
+            elements.Insert(index, val);
+        }
+
+        public void Insert(PrtValue index, PrtValue val)
+        {
+            Insert(((PrtIntValue)index).nt, val);
+        }
+
+        public void Update(int index, PrtValue val)
+        {
+            if (index < 0 || index > elements.Count)
+            {
+                throw new PrtAssertFailureException("Illegal index for Update");
+            }
+            if (index == elements.Count)
+            {
+                elements.Insert(index, val);
+            }
+            else
+            {
+                elements[index] = val;
+            }
+        }
+
+        public PrtValue UpdateAndReturnOldValue(int index, PrtValue val)
+        {
+            if (index < 0 || index >= elements.Count)
+            {
+                throw new PrtAssertFailureException("Illegal index for UpdateAndReturnOldValue");
+            }
+            var oldVal = elements[index];
+            elements[index] = val;
+            return oldVal;
         }
 
         public void Remove(int index)
         {
-            //TODO: raise an exception for invalid index
+            if (index < 0 || index >= elements.Count)
+            {
+                throw new PrtAssertFailureException("Illegal index for Remove");
+            }
             elements.RemoveAt(index);
         }
 
-        public int SizeOf()
+        public override int Size()
         {
             return elements.Count();
         }
 
-        public override bool IsEqual(PrtValue val)
+        public override bool Equals(PrtValue val)
         {
-            Debug.Assert(val is PrtSeqValue, "Error in type checking, invalid equals invocation");
             var seqVal = val as PrtSeqValue;
-            if (seqVal.elements.Count != this.elements.Count)
+            if (seqVal == null) return false;
+            if (seqVal.elements.Count != this.elements.Count) return false;
+            for (int i = 0; i < this.elements.Count; i++)
             {
-                return false;
-            }
-            else
-            {
-                int index = 0;
-                while (index < this.elements.Count)
-                {
-                    if (!this.elements[index].IsEqual(seqVal.elements[index]))
-                        return false;
-
-                    index++;
-                }
+                if (!this.elements[i].Equals(seqVal.elements[i])) return false;
             }
             return true;
         }
 
-        public override string GetString()
+        public override string ToString()
         {
             string retStr = "(";
-            int index = 0;
-
-            while (index < elements.Count)
+            for (int i = 0; i < elements.Count; i++)
             {
-                retStr += elements[index] + ", ";
-                index++;
+                retStr += elements[i] + ", ";
             }
             retStr += ")";
             return retStr;
         }
     }
 
+    public class PrtMapKey
+    {
+        public PrtValue key;
+        public int keyIndex;
+        public PrtMapKey(PrtValue x, int i)
+        {
+            key = x;
+            keyIndex = i;
+        }
+        public override bool Equals(object obj)
+        {
+            var mapKey = obj as PrtMapKey;
+            if (mapKey == null) return false;
+            return key.Equals(mapKey);
+        }
+
+        public override int GetHashCode()
+        {
+            return key.GetHashCode();
+        }
+    }
+
     public class PrtMapValue : PrtValue
     {
-        public List<PrtValue> keys;
-        public List<PrtValue> values;
+        public int nextKeyIndex;
+        public Dictionary<PrtMapKey, PrtValue> keyToValueMap;
 
         public PrtMapValue()
         {
-            values = new List<PrtValue>();
-            keys = new List<PrtValue>();
+            nextKeyIndex = 0;
+            keyToValueMap = new Dictionary<PrtMapKey, PrtValue>();
         }
 
         public override PrtValue Clone()
         {
             var clone = new PrtMapValue();
-            foreach (var v in values)
+            int count = 0;
+            foreach (var k in keyToValueMap.Keys.OrderBy(x => x.keyIndex))
             {
-                clone.values.Add(v.Clone());
+                clone.keyToValueMap[new PrtMapKey(k.key.Clone(), count)] = keyToValueMap[k].Clone();
+                count++;
             }
-            foreach (var k in keys)
-            {
-                clone.keys.Add(k.Clone());
-            }
+            clone.nextKeyIndex = count;
             return clone;
         }
 
-        public int SizeOf()
+        public override int Size()
         {
-            return values.Count();
+            return keyToValueMap.Count;
+        }
+
+        public PrtValue Lookup(PrtValue key)
+        {
+            if (!Contains(key))
+            {
+                throw new PrtAssertFailureException("Illegal key in Lookup");
+            }
+            return keyToValueMap[new PrtMapKey(key, 0)];
+        }
+
+        public PrtSeqValue Keys()
+        {
+            var seqKeys = new PrtSeqValue();
+            foreach (var k in keyToValueMap.Keys.OrderBy(x => x.keyIndex))
+            {
+                seqKeys.elements.Add(k.key.Clone());
+            }
+            return seqKeys;
+        }
+
+        public PrtSeqValue Values()
+        {
+            var seqValues = new PrtSeqValue();
+            foreach (var k in keyToValueMap.Keys.OrderBy(x => x.keyIndex))
+            {
+                seqValues.elements.Add(keyToValueMap[k].Clone());
+            }
+            return seqValues;
         }
 
         public bool Contains(PrtValue key)
         {
-            return keys.Where(k => k.IsEqual(key)).Count() > 0;
-        }
-
-        public void Add(PrtValue key, PrtValue val)
-        {
-            if (Contains(key))
-            {
-                //TODO: raise an exception for invalid add
-            }
-            else
-            {
-                keys.Add(key.Clone());
-                values.Add(val.Clone());
-            }
+            return keyToValueMap.ContainsKey(new PrtMapKey(key, 0));
         }
 
         public void Remove(PrtValue key)
         {
             if (!Contains(key))
             {
-                //TODO: raise an exception for invalid remove
+                throw new PrtAssertFailureException("Illegal key in Remove");
             }
-            var index = keys.FindIndex((k => k.Equals(key)));
-            keys.RemoveAt(index);
-            values.RemoveAt(index);
+            keyToValueMap.Remove(new PrtMapKey(key, 0));
         }
 
         public void Update(PrtValue key, PrtValue val)
         {
-            if (!Contains(key))
-            {
-                //TODO: raise an exception for invalid update
-            }
-            var index = keys.FindIndex((k => k.Equals(key)));
-            values[index] = val.Clone();
+            keyToValueMap[new PrtMapKey(key, 0)] = val;
         }
 
-        public override bool IsEqual(PrtValue val)
+        public PrtValue UpdateAndReturnOldValue(PrtValue key, PrtValue val)
         {
-            Debug.Assert(val is PrtMapValue, "Error in type checking, invalid equals invocation");
-            var mapVal = val as PrtMapValue;
-            if (mapVal.keys.Count != this.keys.Count)
-            {
-                return false;
-            }
-            else
-            {
-                foreach (var k in this.keys)
-                {
-                    if (!mapVal.Contains(k))
-                    {
-                        return false;
-                    }
-                    else
-                    {
-                        var index = this.keys.FindIndex(_k => _k.IsEqual(k));
-                        var _index = mapVal.keys.FindIndex(_k => _k.IsEqual(k));
-                        if (this.values[index].IsEqual(mapVal.values[_index]))
-                        {
-                            return false;
-                        }
-                    }
-                }
-                return true;
-            }
+            var prtKey = new PrtMapKey(key, 0);
+            var oldVal = keyToValueMap[prtKey];
+            keyToValueMap[prtKey] = val;
+            return oldVal;
         }
 
-        public override string GetString()
+        public override bool Equals(PrtValue val)
+        {
+            var mapVal = val as PrtMapValue;
+            if (mapVal == null) return false;
+            if (this.keyToValueMap.Count != mapVal.keyToValueMap.Count) return false;
+            foreach (var k in this.keyToValueMap.Keys)
+            {
+                if (!mapVal.Contains(k.key)) return false;
+            }
+            return true;
+        }
+
+        public override string ToString()
         {
             string retStr = "(";
-            int index = 0;
-
-            while (index < values.Count)
+            foreach (var k in keyToValueMap.Keys.OrderBy(x => x.keyIndex))
             {
-                retStr += "(" + keys[index].GetString() + "," + values[index].GetString() + "), ";
-                index++;
+                retStr += "(" + k.key.ToString() + "," + keyToValueMap[k].ToString() + "), ";
             }
             retStr += ")";
             return retStr;

@@ -15,7 +15,7 @@ namespace P.Runtime
         protected PrtValue eventValue;
         protected PrtStateStack stateStack;
         protected PrtFunStack invertedFunStack;
-        protected PrtContinuation continuation;
+        public PrtContinuation continuation;
         public PrtMachineStatus currentStatus;
         protected PrtNextStatemachineOperation nextSMOperation;
         protected PrtStateExitReason stateExitReason;
@@ -101,7 +101,7 @@ namespace P.Runtime
                     throw new PrtInvalidPopStatement();
                 }
                 //TODO : Handle the monitor machine case separately for the halt event
-                else if (eventValue.IsEqual(PrtValue.HaltEvent))
+                else if (eventValue.Equals(PrtValue.HaltEvent))
                 {
                     throw new PrtUnhandledEventException();
                 }
@@ -292,6 +292,17 @@ namespace P.Runtime
         public abstract PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc);
 
         public abstract void Execute(StateImpl application, PrtMachine parent);
+
+        public PrtValue ExecuteToCompletion(StateImpl application, PrtMachine parent, params PrtValue[] args)
+        {
+            parent.PrtPushFunStackFrame(this, CreateLocals(args));
+            Execute(application, parent);
+            if (parent.continuation.reason != PrtContinuationReason.Return)
+            {
+                throw new PrtInternalException("Unexpected continuation reason");
+            }
+            return parent.continuation.retVal.Clone();
+        }
     }
 
     public class PrtEvent

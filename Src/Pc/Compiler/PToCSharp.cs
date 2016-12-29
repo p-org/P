@@ -189,7 +189,7 @@ namespace Microsoft.Pc
             //This field is for emitting types; order is important
             public List<StatementSyntax> typeInitialization;
             public List<FieldDeclarationSyntax> typeDeclaration;
-            private Dictionary<AST<Node>, SyntaxNode> pTypeToCSharpExpr;
+            private Dictionary<AST<Node>, ExpressionSyntax> pTypeToCSharpExpr;
             private PToCSharp pToCSharp;
 
             public TypeTranslationContext(PToCSharp pToCSharp)
@@ -199,10 +199,10 @@ namespace Microsoft.Pc
                 typeCount = 0;
                 typeDeclaration = new List<FieldDeclarationSyntax>();
                 typeInitialization = new List<StatementSyntax>();
-                pTypeToCSharpExpr = new Dictionary<AST<Node>, SyntaxNode>();
+                pTypeToCSharpExpr = new Dictionary<AST<Node>, ExpressionSyntax>();
             }
 
-            private SyntaxNode GetType(string typeName)
+            private ExpressionSyntax GetType(string typeName)
             {
                 var retVal = IdentifierName(typeName);
                 typeCount++;
@@ -219,7 +219,7 @@ namespace Microsoft.Pc
                 typeDeclaration.Add((FieldDeclarationSyntax)n);
             }
 
-            public SyntaxNode PTypeToCSharpExpr(FuncTerm pType)
+            public ExpressionSyntax PTypeToCSharpExpr(FuncTerm pType)
             {
                 var pTypeAST = Factory.Instance.ToAST(pType);
                 if (!pTypeToCSharpExpr.ContainsKey(pTypeAST))
@@ -239,7 +239,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            private SyntaxNode ConstructType(FuncTerm type)
+            private ExpressionSyntax ConstructType(FuncTerm type)
             {
                 string typeKind = ((Id)type.Function).Name;
 
@@ -609,8 +609,13 @@ namespace Microsoft.Pc
             {
                 return AccessorDeclaration(SyntaxKind.SetAccessorDeclaration, Block(body));
             }
-
         }
+
+        public static ExpressionSyntax MkCSharpEq(ExpressionSyntax expr1, ExpressionSyntax expr2)
+        {
+            return BinaryExpression(SyntaxKind.EqualsExpression, expr1, expr2);
+        }
+
         public static ExpressionSyntax MkCSharpNeq(ExpressionSyntax expr1, ExpressionSyntax expr2)
         {
             return BinaryExpression(SyntaxKind.NotEqualsExpression, expr1, expr2);
@@ -886,29 +891,20 @@ namespace Microsoft.Pc
         }
         internal partial class MkFunctionDecl
         {
-            //funName is former entityName
             public string funName;
             public string funType;
-            //funInfo is former entityInfo
             public FunInfo funInfo;
-            //TODO: might not be needed
-            public bool isGlobalStatic;
-            //null if global function:
-            public MkMachineClass owner;
-            //owner.machName is former machineName
-
+            public MkMachineClass owner;  // null if global function
             private PToCSharp pToCSharp;
             public List<Tuple<SyntaxNode, string>> locals;
             public Stack<bool> lhsStack;
-            //labels are used for "continuations" in send, new, nondet, receive
-            private int labelCount;
+            private int labelCount; // labels are used for "continuations" in send, new, nondet, receive, function calls
 
-            public MkFunctionDecl(string funName, FunInfo funInfo, bool isGlobalStatic, MkMachineClass owner, PToCSharp pToCSharp)
+            public MkFunctionDecl(string funName, FunInfo funInfo, MkMachineClass owner, PToCSharp pToCSharp)
             {
                 this.funName = funName;
                 this.funType = funName + "_Class";
                 this.funInfo = funInfo;
-                this.isGlobalStatic = isGlobalStatic;
                 this.owner = owner;
                 this.pToCSharp = pToCSharp;
                 this.locals = new List<Tuple<SyntaxNode, string>>();
@@ -1139,7 +1135,6 @@ namespace Microsoft.Pc
                         it.MoveNext();
                         yield return it.Current;
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }
@@ -1150,10 +1145,8 @@ namespace Microsoft.Pc
                         it.MoveNext();
                         yield return it.Current;
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }
@@ -1162,10 +1155,8 @@ namespace Microsoft.Pc
                     using (var it = ft.Args.GetEnumerator())
                     {
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                         it.MoveNext();
-                        //PushSideEffectStack();
                         yield return it.Current;
                     }
                 }
@@ -1298,30 +1289,94 @@ namespace Microsoft.Pc
                     throw new NotImplementedException();
                 }
             }
-            private List<SyntaxNode> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
+
+            private List<StatementSyntax> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
             {
-                throw new NotImplementedException();
+                List<StatementSyntax> eventStmts = new List<StatementSyntax>();
+                List<StatementSyntax> funStmts = new List<StatementSyntax>();
+
+                for (int i = 0; i < eventNames.Count; i++)
+                {
+                    var beforeLabelId = GetFreshLabelId();
+                    var beforeLabel = GetLabelFromLabelId(beforeLabelId);
+                    var eventName = eventNames[i];
+                    var funName = funNames[i];
+                    var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(funName) ? pToCSharp.allStaticFuns[funName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[funName];
+                    Debug.Assert(calleeInfo.isAnonymous);
+                    List<StatementSyntax> ifStmts = new List<StatementSyntax>();
+                    ifStmts.Add(ExpressionStatement(MkCSharpInvocationExpression(
+                        MkCSharpDot("parent", "PrtPushFunStackFrame"), 
+                        IdentifierName(funName), MkCSharpInvocationExpression(MkCSharpDot(funName, "CreateLocals"), MkCSharpDot("parent", "currentPayload")))));
+                    ifStmts.Add(MkCSharpGoto(beforeLabel));
+                    eventStmts.Add(IfStatement(MkCSharpEq(MkCSharpDot("parent", "currentTrigger"), IdentifierName(eventName)), Block(ifStmts)));
+                    funStmts.Add(MkCSharpLabeledBlock(beforeLabel, ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent")))));
+                    var elseStmt = Block(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(funName), MkCSharpDot("currFun", "locals"), MkCSharpNumericLiteralExpression(beforeLabelId))),
+                                         ReturnStatement());
+                    funStmts.Add(IfStatement(
+                                         MkCSharpEq(MkCSharpDot("parent", "continuation", "reason"), IdentifierName("PrtContinuationReason.Return")),
+                                         MkCSharpGoto(afterAfterLabel),
+                                         ElseClause(elseStmt)));
+                }
+                List<StatementSyntax> stmts = new List<StatementSyntax>();
+                stmts.AddRange(eventStmts);
+                stmts.Add(MkCSharpAssert(MkCSharpFalseLiteralExpression(), "Internal error"));
+                stmts.AddRange(funStmts);
+                return stmts;
             }
+
             SyntaxNode FoldReceive(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                List<StatementSyntax> stmts = new List<StatementSyntax>();
+                List<string> eventNames = new List<string>();
+                List<string> funNames = new List<string>();
+                var cases = GetArgByIndex(ft, 0) as FuncTerm;
+                while (cases != null)
+                {
+                    Node evt = GetArgByIndex(cases, 0);
+                    string eventName = null;
+                    if (evt is Cnst)
+                    {
+                        eventName = (evt as Cnst).GetStringValue();
+                    }
+                    else if ((evt as Id).Name == "NULL")
+                    {
+                        eventName = NullEvent;
+                    }
+                    else
+                    {
+                        eventName = HaltEvent;
+                    }
+                    eventNames.Add(eventName);
+                    stmts.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "receiveSet", "Add"), IdentifierName(eventName))));
+                    var fun = GetArgByIndex(cases, 1);
+                    string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(fun)];
+                    funNames.Add(funName);
+                    cases = GetArgByIndex(cases, 2) as FuncTerm;
+                }
+                var afterLabelId = GetFreshLabelId();
+                var afterLabel = GetLabelFromLabelId(afterLabelId);
+                stmts.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContReceive"), ThisExpression(), MkCSharpDot("currFun", "locals"), MkCSharpNumericLiteralExpression(afterLabelId))));
+                stmts.Add(ReturnStatement());
+                stmts.Add(MkCSharpEmptyLabeledStatement(afterLabel));
+                var afterAfterLabelId = GetFreshLabelId();
+                var afterAfterLabel = GetLabelFromLabelId(afterAfterLabelId);
+                stmts.AddRange(CaseFunCallHelper(eventNames, funNames, afterAfterLabel));
+                stmts.Add(MkCSharpEmptyLabeledStatement(afterAfterLabel));
+                return Block(stmts);
             }
+
             //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
-                SyntaxNode retVal;
                 var name = GetName(ft, 0);
                 if (funInfo != null && funInfo.localNameToInfo.ContainsKey(name))
                 {
                     //local var of a function:
-                    LocalVariableInfo entry = (funInfo.localNameToInfo[name]);
-                    int ind = entry.index;
-                    retVal = (ExpressionSyntax)MkCSharpElementAccessExpression(
-                        IdentifierName("locals"), ind);
+                    return MkCSharpElementAccessExpression(MkCSharpDot("currFun", "locals"), funInfo.localNameToInfo[name].index);
                 }
                 else if (owner != null && pToCSharp.allMachines[owner.machineName].localVariableToVarInfo.ContainsKey(name))
                 {
-                    retVal = MkCSharpDot("parent", name);
+                    return MkCSharpDot("parent", name);
                 }
                 else
                 {
@@ -1329,18 +1384,17 @@ namespace Microsoft.Pc
                     var type = LookupType(ft);
                     if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                     {
-                        retVal = IdentifierName(name);
+                        return IdentifierName(name);
                     }
                     else
                     {
                         //TODO: check type and add default case to throw an exception
                         //Enum case:
-                        retVal = MkCSharpObjectCreationExpression(IdentifierName("PrtIntValue"),
-                            IdentifierName(name));
+                        return MkCSharpObjectCreationExpression(IdentifierName("PrtIntValue"), IdentifierName(name));
                     }
                 }
-                return retVal;
             }
+
             SyntaxNode FoldNewStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 SyntaxNode aout = null;
@@ -1372,10 +1426,17 @@ namespace Microsoft.Pc
                 }
                 return Block(stmtList);
             }
+
             SyntaxNode FoldFunApp(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                string calleeName = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
+                var paramList = new List<ExpressionSyntax>();
+                paramList.Add(IdentifierName("application"));
+                paramList.Add(IdentifierName("parent"));
+                children.ForEach(x => paramList.Add((ExpressionSyntax)x));
+                return MkCSharpInvocationExpression(MkCSharpDot(calleeName, "ExecuteToCompletion"), paramList.ToArray());
             }
+
             SyntaxNode FoldNulApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 //No children
@@ -1415,17 +1476,16 @@ namespace Microsoft.Pc
                 else if (op == PData.Cnst_Null.Node.Name)
                 {
                     //Constant "@null":
-                    return MkCSharpObjectCreationExpression(IdentifierName("PrtEventValue"),
-                            IdentifierName("@null"));
+                    return IdentifierName("@null");
                 }
                 else
                 {
                     //op == PData.Cnst_Halt.Node.Name
                     //Constant "halt":
-                    return MkCSharpObjectCreationExpression(IdentifierName("PrtEventValue"),
-                            IdentifierName("halt"));
+                    return IdentifierName("halt");
                 }
             }
+
             SyntaxNode FoldUnApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
@@ -1447,22 +1507,22 @@ namespace Microsoft.Pc
                     }
                     else if (op == PData.Cnst_Keys.Node.Name)
                     {
-                        //TODO(expand):
-                        throw new NotImplementedException();
+                        return MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", arg), "Keys"));
                     }
                     else if (op == PData.Cnst_Values.Node.Name)
                     {
-                        //TODO(expand):
-                        throw new NotImplementedException();
+                        return MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", arg), "Values"));
                     }
                     else
                     {
                         //  op == PData.Cnst_Sizeof.Node.Name
-                        //TODO(expand):
-                        throw new NotImplementedException();
+                        return MkCSharpObjectCreationExpression(
+                                        IdentifierName("PrtIntValue"), 
+                                        MkCSharpInvocationExpression(MkCSharpDot((ExpressionSyntax)arg, "Size")));
                     }
                 }
             }
+
             SyntaxNode FoldBinApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
@@ -1507,16 +1567,16 @@ namespace Microsoft.Pc
                     }
                     else if (op == PData.Cnst_And.Node.Name)
                     {
-                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "bl");
-                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "bl");
+                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
+                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
                         return MkCSharpObjectCreationExpression(
                                 IdentifierName("PrtBoolValue"), 
                                 BinaryExpression(SyntaxKind.LogicalAndExpression, arg1Bool, arg2Bool));
                     }
                     else if (op == PData.Cnst_Or.Node.Name)
                     {
-                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg1), "bl");
-                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtIntValue", arg2), "bl");
+                        var arg1Bool = MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
+                        var arg2Bool = MkCSharpDot(MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
                         return MkCSharpObjectCreationExpression(
                                 IdentifierName("PrtBoolValue"), 
                                 BinaryExpression(SyntaxKind.LogicalOrExpression, arg1Bool, arg2Bool));
@@ -1525,13 +1585,13 @@ namespace Microsoft.Pc
                     {
                         return MkCSharpObjectCreationExpression(
                                 IdentifierName("PrtBoolValue"), 
-                                MkCSharpInvocationExpression(MkCSharpDot(arg1, "IsEqual"), arg2));
+                                MkCSharpInvocationExpression(MkCSharpDot(arg1, "Equals"), arg2));
                     }
                     else if (op == PData.Cnst_NEq.Node.Name)
                     {
                         return MkCSharpObjectCreationExpression(
                                 IdentifierName("PrtBoolValue"),
-                                PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, MkCSharpInvocationExpression(MkCSharpDot(arg1, "IsEqual"), arg2)));
+                                PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, MkCSharpInvocationExpression(MkCSharpDot(arg1, "Equals"), arg2)));
                     }
                     else if (op == PData.Cnst_Lt.Node.Name)
                     {
@@ -1567,14 +1627,33 @@ namespace Microsoft.Pc
                     }
                     else if (op == PData.Cnst_Idx.Node.Name)
                     {
-                        //TODO(expand)
-                        throw new NotImplementedException();
+                        var type = LookupType(GetArgByIndex(ft, 1));
+                        var typeOp = ((Id)type.Function).Name;
+                        if (typeOp == PData.Con_SeqType.Node.Name)
+                        {
+                            arg1 = MkCSharpCastExpression("PrtSeqValue", arg1);
+                        }
+                        else
+                        {
+                            // op == PData.Con_MapType.Node.Name
+                            arg1 = MkCSharpCastExpression("PrtMapValue", arg1);
+                        }
+                        var lookupExpr = MkCSharpInvocationExpression(MkCSharpDot(arg1, "Lookup"), arg2);
+                        if (lhsStack.Count > 0 && lhsStack.Peek())
+                        {
+                            return lookupExpr;
+                        }
+                        else
+                        {
+                            return MkCSharpInvocationExpression(MkCSharpDot(lookupExpr, "Clone"));
+                        }
+
                     }
                     else
                     {
-                        //TODO(expand)
                         // op == PData.Cnst_In.Node.Name
-                        throw new NotImplementedException();
+                        return MkCSharpObjectCreationExpression(IdentifierName("PrtBoolValue"),
+                                                                MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", arg2), "Contains"), arg1));
                     }
                 }
             }
@@ -1611,7 +1690,7 @@ namespace Microsoft.Pc
                 {
                     it.MoveNext();
                     var arg = (ExpressionSyntax)it.Current;
-                    var accessExpr = MkCSharpElementAccessExpression(MkCSharpDot(arg, "fieldValues"), fieldIndex);
+                    var accessExpr = MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", arg), "fieldValues"), fieldIndex);
                     if (lhsStack.Count > 0 && lhsStack.Peek())
                     {
                         return accessExpr;
@@ -1625,20 +1704,44 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldDefault(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var typeArg = (FuncTerm)GetArgByIndex(ft, 0);
+                return MkCSharpInvocationExpression(
+                            MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("PrtValue"),
+                                IdentifierName("PrtMkDefaultValue")), 
+                            pToCSharp.typeContext.PTypeToCSharpExpr(typeArg));
             }
 
             SyntaxNode FoldCast(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var typeArg = (FuncTerm)GetArgByIndex(ft, 1);
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var valueArg = it.Current;
+                    return MkCSharpInvocationExpression(
+                                MemberAccessExpression(
+                                    SyntaxKind.SimpleMemberAccessExpression,
+                                    IdentifierName("PrtValue"),
+                                    IdentifierName("PrtCastValue")), 
+                                (ExpressionSyntax)valueArg, 
+                                pToCSharp.typeContext.PTypeToCSharpExpr(typeArg));
+                }
             }
+
             SyntaxNode FoldTuple(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var tupType = LookupType(ft);
+                children.Insert(0, pToCSharp.typeContext.PTypeToCSharpExpr(tupType));
+                return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), children.ToArray());
             }
+
             SyntaxNode FoldNamedTuple(FuncTerm ft, List<SyntaxNode> children)
             {
-                throw new NotImplementedException();
+                var tupType = LookupType(ft);
+                children.Insert(0, pToCSharp.typeContext.PTypeToCSharpExpr(tupType));
+                return MkCSharpObjectCreationExpression(IdentifierName("PrtNamedTupleValue"), children.ToArray());
             }
 
             private ExpressionSyntax MkPayload(SyntaxNode tupTypeExpr, List<SyntaxNode> args)
@@ -1691,7 +1794,7 @@ namespace Microsoft.Pc
                 children.RemoveAt(0);
                 var eventPayloadTypeExpr = MkCSharpDot(eventExpr, "evt", "payloadType");
                 var payloadVar = MkPayload(eventPayloadTypeExpr, children);
-                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "IsEqual"), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue")));
+                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue")));
                 var assertStmt = MkCSharpAssert(MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = MkCSharpPrint(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(eventExpr, "evt", "name"));
                 var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), eventExpr);
@@ -1766,7 +1869,55 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldFunStmt(FuncTerm ft, List<SyntaxNode> children)
             {
-                return FoldFunApp(ft, children);
+                List<bool> isSwapParameter = new List<bool>();
+                var exprs = GetArgByIndex(ft, 1) as FuncTerm;
+                while (exprs != null)
+                {
+                    var qualifier = GetArgByIndex(exprs, 0) as Id;
+                    isSwapParameter.Add(qualifier.Name == "SWAP");
+                    exprs = GetArgByIndex(exprs, 2) as FuncTerm;
+                }
+
+                var calleeName = GetName(ft, 0);
+                var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(calleeName) ? pToCSharp.allStaticFuns[calleeName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[calleeName];
+
+                List<StatementSyntax> stmtList = new List<StatementSyntax>();
+                List<ExpressionSyntax> paramList = new List<ExpressionSyntax>();
+                int parameterCount = 0;
+                List<StatementSyntax> processOutput = new List<StatementSyntax>();
+                foreach (var child in children)
+                {
+                    if (parameterCount == calleeInfo.parameterNames.Count)
+                    {
+                        // output variable
+                        processOutput.Add(MkCSharpSimpleAssignmentExpressionStatement(child, MkCSharpDot("parent", "continuation", "retVal")));
+                        break;
+                    }
+                    var calleeArg = calleeInfo.parameterNames[parameterCount];
+                    var calleeArgInfo = calleeInfo.localNameToInfo[calleeArg];
+                    paramList.Add((ExpressionSyntax)child);
+                    if (isSwapParameter[parameterCount])
+                    {
+                        processOutput.Add(
+                            MkCSharpSimpleAssignmentExpressionStatement(
+                                child, 
+                                MkCSharpElementAccessExpression(MkCSharpDot("parent", "continuation", "retLocals"), MkCSharpNumericLiteralExpression(calleeArgInfo.index))));
+                    }
+                    parameterCount++;
+                }
+
+                var beforeLabelId = GetFreshLabelId();
+                var beforeLabel = GetLabelFromLabelId(beforeLabelId);
+                stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(calleeName), MkCSharpInvocationExpression(MkCSharpDot(calleeName, "CreateLocals"), paramList.ToArray()))));
+                stmtList.Add(MkCSharpEmptyLabeledStatement(beforeLabel));
+                stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(calleeName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
+                var elseStmt = Block(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(calleeName), MkCSharpDot("currFun", "locals"), MkCSharpNumericLiteralExpression(beforeLabelId))),
+                                     ReturnStatement());
+                stmtList.Add(IfStatement(
+                                     MkCSharpEq(MkCSharpDot("parent", "continuation", "reason"), IdentifierName("PrtContinuationReason.Return")),
+                                     Block(processOutput),
+                                     ElseClause(elseStmt)));
+                return Block(stmtList);
             }
 
             SyntaxNode FoldNulStmt(FuncTerm ft, List<SyntaxNode> children)
@@ -1806,22 +1957,21 @@ namespace Microsoft.Pc
                 var lhs = (FuncTerm)GetArgByIndex(ft, 1);
                 var type = LookupType(lhs);
                 var typeName = ((Id)type.Function).Name;
-                SyntaxNode src = null, dest = null;
+                ExpressionSyntax src = null, dest = null;
                 using (var it = children.GetEnumerator())
                 {
-                    SyntaxNode index = null;
+                    ExpressionSyntax index = null;
                     it.MoveNext();
-                    src = it.Current;
+                    src = (ExpressionSyntax)it.Current;
                     it.MoveNext();
-                    dest = it.Current;
+                    dest = (ExpressionSyntax)it.Current;
                     if (it.MoveNext())
                     {
-                        index = it.Current;
+                        index = (ExpressionSyntax)it.Current;
                     }
 
                     if (op == PData.Cnst_Assign.Node.Name)
                     {
-                        //arg #2 is Qualifier - ignored for now
                         string assignType = (GetArgByIndex(ft, 2) as Id).Name;
                         if (((Id)lhs.Function).Name == PData.Con_Field.Node.Name)
                         {
@@ -1838,50 +1988,50 @@ namespace Microsoft.Pc
                             }
                             if (assignType == "NONE")
                             {
-                                //TODO: two cases are needed to use NumericLiteralExpression
-                                //for a numeric index; could be merged into one case
-                                if (field.CnstKind == CnstKind.Numeric)
-                                {
-                                    return MkCSharpSimpleAssignmentExpressionStatement(
-                                         MkCSharpElementAccessExpression(src, fieldIndex), dest);
-                                }
-                                else
-                                {
-                                    return MkCSharpSimpleAssignmentExpressionStatement(
-                                         MkCSharpElementAccessExpression(src, fieldIndex), dest);
-                                }
+                                return ExpressionStatement(
+                                            MkCSharpInvocationExpression(
+                                                MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "Update"),
+                                                MkCSharpNumericLiteralExpression(fieldIndex),
+                                                MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                             }
                             else if (assignType == "XFER")
                             {
-                                //TODO(expand):
-                                throw new NotImplementedException();
+                                return ExpressionStatement(
+                                            MkCSharpInvocationExpression(
+                                                MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "Update"),
+                                                MkCSharpNumericLiteralExpression(fieldIndex),
+                                                src));
                             }
                             else
                             {
                                 // assignType = "SWAP" 
-                                //TODO(expand):
-                                throw new NotImplementedException();
+                                return MkCSharpSimpleAssignmentExpressionStatement(
+                                            src,
+                                            MkCSharpInvocationExpression(
+                                                MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", dest), "UpdateAndReturnOldValue"),
+                                                MkCSharpNumericLiteralExpression(fieldIndex),
+                                                src));
                             }
                         }
                         else if (index == null)
                         {
                             if (assignType == "NONE")
                             {
-                                return MkCSharpSimpleAssignmentExpressionStatement(dest, src);
+                                return MkCSharpSimpleAssignmentExpressionStatement(dest, MkCSharpInvocationExpression(MkCSharpDot(src, "Clone")));
                             }
                             else if (assignType == "XFER")
                             {
-                                //TODO(expand):
-                                throw new NotImplementedException();
+                                return MkCSharpSimpleAssignmentExpressionStatement(dest, src);
                             }
                             else
                             {
                                 // assignType == "SWAP"
-                                //TODO(expand):
-                                throw new NotImplementedException();
+                                return Block(
+                                    MkCSharpSimpleAssignmentExpressionStatement(IdentifierName("swap"), dest),
+                                    MkCSharpSimpleAssignmentExpressionStatement(dest, src),
+                                    MkCSharpSimpleAssignmentExpressionStatement(src, IdentifierName("swap")));
                             }
                         }
-                        //Asgn when lhs is not a field (?):
                         else
                         {
                             lhs = (FuncTerm)GetArgByIndex(lhs, 1);
@@ -1891,19 +2041,29 @@ namespace Microsoft.Pc
                             {
                                 if (assignType == "NONE")
                                 {
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return ExpressionStatement(
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
+                                                    index,
+                                                    MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 }
                                 else if (assignType == "XFER")
                                 {
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return ExpressionStatement(
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
+                                                    index,
+                                                    src));
                                 }
                                 else
                                 {
                                     // assignType == "SWAP"
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return MkCSharpSimpleAssignmentExpressionStatement(
+                                                src,
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "UpdateAndReturnOldValue"),
+                                                    index,
+                                                    src));
                                 }
                             }
                             else
@@ -1911,19 +2071,29 @@ namespace Microsoft.Pc
                                 // type is PMapType
                                 if (assignType == "NONE")
                                 {
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return ExpressionStatement(
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Update"),
+                                                    index,
+                                                    MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 }
                                 else if (assignType == "XFER")
                                 {
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return ExpressionStatement(
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Update"),
+                                                    index,
+                                                    src));
                                 }
                                 else
                                 {
                                     // assignType == "SWAP"
-                                    //TODO(expand):
-                                    throw new NotImplementedException();
+                                    return MkCSharpSimpleAssignmentExpressionStatement(
+                                                src,
+                                                MkCSharpInvocationExpression(
+                                                    MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "UpdateAndReturnOldValue"),
+                                                    index,
+                                                    src));
                                 }
                             }
                         }
@@ -1932,13 +2102,11 @@ namespace Microsoft.Pc
                     {
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
-                            //TODO(expand):
-                            throw new NotImplementedException();
+                            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Remove"), src));
                         }
                         else
                         {
-                            //TODO(expand):
-                            throw new NotImplementedException();
+                            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Remove"), src));
                         }
                     }
                     else
@@ -1946,13 +2114,19 @@ namespace Microsoft.Pc
                         // op == PData.Cnst_Insert.Node.Name
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
-                            //TODO(expand):
-                            throw new NotImplementedException();
+                            return ExpressionStatement(
+                                        MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Insert"), 
+                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0)));
                         }
                         else
                         {
-                            //TODO(expand):
-                            throw new NotImplementedException();
+                            return ExpressionStatement(
+                                        MkCSharpInvocationExpression(
+                                            MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Insert"),
+                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0)));
                         }
                     }
                 }
@@ -1971,11 +2145,11 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     if (returnType.Equals(PTypeNull))
                     {
-                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "Return"), IdentifierName("locals"))));
+                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContReturn"), MkCSharpDot("currFun", "locals"))));
                     }
                     else
                     {
-                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("entryCtxt", "ReturnVal"), (ExpressionSyntax)it.Current, IdentifierName("locals"))));
+                        stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContReturnVal"), (ExpressionSyntax)it.Current, MkCSharpDot("currFun", "locals"))));
                     }
                     stmtList.Add(ReturnStatement());
                     return Block(stmtList);
@@ -2181,6 +2355,16 @@ namespace Microsoft.Pc
                             SingletonSeparatedList<VariableDeclaratorSyntax>(
                                 VariableDeclarator(
                                     Identifier("createdMachine")))))
+                        .NormalizeWhitespace());
+
+                funStmts.Add(
+                    LocalDeclarationStatement(
+                        VariableDeclaration(
+                            IdentifierName("PrtValue"))
+                        .WithVariables(
+                            SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                VariableDeclarator(
+                                    Identifier("swap")))))
                         .NormalizeWhitespace());
 
                 // Compute the body before calculating the label prelude
@@ -2439,7 +2623,7 @@ namespace Microsoft.Pc
                 {
                     //Class declaration:
                     List<SyntaxNode> whereToAdd;
-                    whereToAdd = (this.isGlobalStatic) ? PToCSharp.members : owner.machineMembers;
+                    whereToAdd = (this.owner == null) ? PToCSharp.members : owner.machineMembers;
 
                     whereToAdd.Add(MkFuncClass());
                     //Variable declaration:
@@ -2461,7 +2645,7 @@ namespace Microsoft.Pc
                     //Add function variable instantiation to:
                     //PToCsharp class for global static functions;
                     //Main constructor for other functions
-                    if (this.isGlobalStatic)
+                    if (this.owner == null)
                     {
                         PToCSharp.members.Add(
                             ExpressionStatement(
@@ -2499,9 +2683,7 @@ namespace Microsoft.Pc
         {
             foreach (var pair in allStaticFuns)
             {
-                var funName = pair.Key;
-                var funType = funName + "_Class";
-                MkFunctionDecl funDecl = new MkFunctionDecl(funName, pair.Value, true, null, this);
+                MkFunctionDecl funDecl = new MkFunctionDecl(pair.Key, pair.Value, null, this);
                 funDecl.AddFunClass();
             }
         }
@@ -2966,55 +3148,11 @@ namespace Microsoft.Pc
                     machineMembers.Add(constructor_2);
                 }
 
-                //classes for functions for each state of the machine
-                //and variable declarations for those functions:
-                foreach (var pair in machineInfo.stateNameToStateInfo)
+                // Fun classes for all functions of the machine:
+                foreach (var pair in machineInfo.funNameToFunInfo)
                 {
-                    //entry function of the state:
-                    var funName = pair.Value.entryActionName;
-                    FunInfo funInfo = GetFunInfo(funName);
-                    //TODO(remove): Debug only:
-                    Console.WriteLine("Entry func name for state {0}: {1}", pair.Key, funName);
-                    MkFunctionDecl funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
+                    MkFunctionDecl funDecl = new MkFunctionDecl(pair.Key, pair.Value, this, translator);
                     funDecl.AddFunClass();
-
-                    //exit function of the state: 
-                    funName = pair.Value.exitFunName;
-                    //TODO(remove): Debug only:
-                    Console.WriteLine("Exit func name for state {0}: {1}", pair.Key, funName);
-                    funInfo = GetFunInfo(funName);
-                    funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
-                    funDecl.AddFunClass();
-
-                    //Functions in transitions:
-                    foreach (var transition in pair.Value.transitions)
-                    {
-                        funName = transition.Value.transFunName;
-                        funInfo = GetFunInfo(funName);
-
-                        if (!transition.Value.IsPush && !translator.allStaticFuns.ContainsKey(funName))
-                        {
-                            //TODO(remove): Debug only:
-                            Console.WriteLine("For goto transition: func name for state {0}: {1}", pair.Key, funName);
-                            funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
-                            funDecl.AddFunClass();
-                        }
-                    }
-
-                    //Functions in dos: loop over StateInfo.actions (to be renamed into StateInfo.dos):
-                    foreach (var doFun in pair.Value.dos)
-                    {
-                        funName = doFun.Value;
-                        funInfo = GetFunInfo(funName);
-                        //TODO(remove): Debug only:
-                        Console.WriteLine("For Do declaration: func name for state {0}: {1}", pair.Key, funName);
-                        if (!translator.allStaticFuns.ContainsKey(funName))
-                        {
-                            funDecl = new MkFunctionDecl(funName, funInfo, false, this, translator);
-                            funDecl.AddFunClass();
-                        }
-                    }
-
                 }
 
                 //State classes for all states of the machine:
@@ -3323,20 +3461,10 @@ namespace Microsoft.Pc
 
         private void EmitCSharpOutput(string fileName)
         {
-            StringBuilder sb = new StringBuilder();
-            using (StringWriter writer = new StringWriter(sb))
-            {
-                result.WriteTo(writer);
-
-                //Debug only:
-                //Console.WriteLine(writer);
-
-                System.IO.StreamWriter file = new System.IO.StreamWriter(fileName);
-                file.WriteLine(result);
-
-                file.Close();
-
-            }
+            System.IO.StreamWriter file = new System.IO.StreamWriter(fileName);
+            file.WriteLine("#pragma warning disable CS0162, CS0168");
+            file.WriteLine(result);
+            file.Close();
         }
 
         #endregion

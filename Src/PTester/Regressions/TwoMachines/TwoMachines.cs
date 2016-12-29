@@ -588,7 +588,7 @@ namespace P.Program
                     createdMachine = ((parent).continuation).createdMachine;
                     ((parent).continuation).createdMachine = null;
                     (parent).pongId = new PrtMachineValue(createdMachine);
-                    if (!!(Success).IsEqual(PrtValue.NullValue))
+                    if (!!(Success).Equals(PrtValue.NullValue))
                         throw new PrtAssertFailureException("C:\\\\Users\\\\qadeer\\\\Work\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\TwoMachines\\\\TwoMachines.p (59, 10): Raised event must be non-null");
                     Console.Write("<RaiseLog> Machine Main-{0} raised Event {1}\\n", (parent).instanceNumber, ((Success).evt).name);
                     (parent).currentTrigger = Success;

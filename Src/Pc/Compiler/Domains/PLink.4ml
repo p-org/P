@@ -459,10 +459,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M is not included in the module")
 	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), no ModuleContains(mod, newM).
 
-	//// make sure that the constructor arguments do not have private permissions in them.
-	WellFormednessError(mod.id, mach, "wellformedness error> constructor type of the machine has private permissions")
-	:- mod is ModuleDecl, ModuleContains(mod, mach), PermEmbeddedInConstType(mach, ev), ModulePrivate(mod, ev).
-
 	/**************************************************************************/
 	/*			Refinement, Implementation and Test Decls are legal			  */
 	/**************************************************************************/

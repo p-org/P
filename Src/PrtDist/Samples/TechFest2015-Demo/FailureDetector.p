@@ -85,7 +85,7 @@ machine FailureDetector {
 		var i: int;
 		i = 0;
 		while (i < sizeof(nodes)) {
-			alive += (nodes[i], true);
+			alive[nodes[i]] = true;
 			i = i + 1;
 		}
 	 }

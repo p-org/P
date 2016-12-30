@@ -23,7 +23,7 @@ machine Driver {
 				container = _CREATECONTAINER();
 				n = CreateNode(container);
 				nodeseq += (i, n);
-				nodemap += (n, true);
+				nodemap[n] = true;
 				i = i + 1;
 			}
 			announce L_INIT, nodemap;

@@ -19,7 +19,7 @@ machine Main {
 			while (i < 2) {
 			    n = new Node();
 				nodeseq += (i, n);
-				nodemap += (n, true);
+				nodemap[n] = true;
 				i = i + 1;
 			}
 			announce M_START, nodemap;
@@ -104,7 +104,7 @@ machine FailureDetector {
 	 fun InitializeAliveSet(i: int) {
 		i = 0;
 		while (i < sizeof(nodes)) {
-			alive += (nodes[i], true);
+			alive[nodes[i]] = true;
 			i = i + 1;
 		}
 	 }

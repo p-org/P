@@ -42,12 +42,12 @@ machine Main {
 		  a = default(any);
 		  assert (a == null);
 		  
-		  m5 += (1,true);
+		  m5[1] = true;
 		  assert (m5[1] == true);
 		  m5 = default(map[int,any]);
 		  assert (m5[0] == null);               //dynamic error: key not found
 		  //assert (m5[1] == null);             //dynamic error: key not found
-		  m5 += (1,E);
+		  m5[1] = E;
 		  assert (m5[1] == E);
 		  
 		  raise halt;

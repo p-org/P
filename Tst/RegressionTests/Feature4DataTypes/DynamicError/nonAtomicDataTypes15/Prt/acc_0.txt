@@ -1,8 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state S
-OUT: 
-ERROR: ASSERT: key must not be in map
-EXIT: 1

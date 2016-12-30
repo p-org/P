@@ -1,6 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: nonDetFunctionInExpr_6.p (36, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: Compilation failed
-EXIT: -1

@@ -5,7 +5,7 @@ event c: int;
 fun F1() 
 {
 	var mInt : map[int, int];
-	mInt += (0, 10);
+	mInt[0] = 10;
 	send this, c, mInt[0];
 }
 

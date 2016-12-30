@@ -31,8 +31,8 @@ machine Main {
 			i = default(int);
 			//++++++++++++++++++++++++++++++++++++++++++3. Maps: 
 			//+++++++++++++++++++++++++++++++3.1. Value assigned into map is non-det:
-			m += (0,1);
-			m += (1,2);
+			m[0] = 1;
+			m[1] = 2;
 			
 			m[2] = F() + 2;             //static error
 		}

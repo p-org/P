@@ -471,32 +471,6 @@ extern "C"{
 		_In_ PRT_VALUE* key, 
 		_In_ PRT_VALUE* value);
 
-	/** Inserts (key, value) in map.
-	* requires that key is not already in the map
-	* @param[in,out] map   A map to mutate.
-	* @param[in]     key   The key to update (will be cloned if cloneKey is PRT_TRUE).
-	* @param[in]     cloneKey Only set to false if key will be forever owned by this map.
-	* @param[in]     value The value to which the key maps (will be cloned if cloneValue is PRT_TRUE).
-	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this map.
-	*/
-	PRT_API void PRT_CALL_CONV PrtMapInsertEx(
-		_Inout_ PRT_VALUE *map, 
-		_In_ PRT_VALUE* key, 
-		_In_ PRT_BOOLEAN cloneKey, 
-		_In_ PRT_VALUE* value, 
-		_In_ PRT_BOOLEAN cloneValue);
-
-	/** Inserts (key, value) in map.
-	* requires that key is not already in the map
-	* @param[in,out] map   A map to mutate.
-	* @param[in]     key   The key to update (will be cloned).
-	* @param[in]     value The value to which the key maps (will be cloned).
-	*/
-	PRT_API void PRT_CALL_CONV PrtMapInsert(
-		_Inout_ PRT_VALUE *map, 
-		_In_ PRT_VALUE* key, 
-		_In_ PRT_VALUE* value);
-
 	/** Remove the key from the map.
 	* If the key is not in then map, then the map is unchanged.
 	* @param[in,out] map   A map to mutate.

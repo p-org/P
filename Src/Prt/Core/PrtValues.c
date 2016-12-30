@@ -759,18 +759,6 @@ void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In
 	PrtMapUpdateEx(map, key, PRT_TRUE, value, PRT_TRUE);
 }
 
-void PRT_CALL_CONV PrtMapInsertEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
-{
-	PrtAssert(!PrtMapExists(map, key), "key must not be in map");
-
-	PrtMapUpdateEx(map, key, cloneKey, value, cloneValue);
-}
-
-void PRT_CALL_CONV PrtMapInsert(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value)
-{
-	PrtMapInsertEx(map, key, PRT_TRUE, value, PRT_TRUE);
-}
-
 void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");

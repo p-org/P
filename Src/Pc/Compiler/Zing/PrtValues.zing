@@ -492,13 +492,6 @@ class PRT_VALUE {
         return oldValue;
     }
 
-	static void PrtMapInsert(PRT_VALUE map, PRT_VALUE key, PRT_VALUE value) {
-	    bool b;
-		b = map.map.Exists(key);
-		assert(!b, "key must not exist in map");
-	    map.map.Set(key, value);
-	}
-
     static void PrtMapRemove(PRT_VALUE map, PRT_VALUE key) {
         map.map.Remove(key);
     }

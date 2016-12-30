@@ -539,6 +539,11 @@ namespace P.Runtime
             elements.RemoveAt(index);
         }
 
+        public void Remove(PrtValue index)
+        {
+            Remove(((PrtIntValue)index).nt);
+        }
+
         public override int Size()
         {
             return elements.Count();

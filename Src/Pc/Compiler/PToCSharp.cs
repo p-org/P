@@ -1734,11 +1734,11 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    SyntaxNode[] pars = new SyntaxNode[args.Count];
+                    SyntaxNode[] pars = new SyntaxNode[args.Count+1];
                     pars[0] = tupTypeExpr;
-                    for (int i = 1; i < pars.Length; i++)
+                    for (int i = 0; i < args.Count; i++)
                     {
-                        pars[i] = args[i - 1];
+                        pars[i+1] = args[i];
                     }
                     return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), pars);
                 }

@@ -32,7 +32,8 @@ namespace P.Runtime
     public abstract class PrtImplMachine : PrtMachine
     {
         #region Fields
-        
+        public static int DefaultMaxBufferSize = int.MaxValue;
+
         public PrtEventBuffer eventQueue;
         public HashSet<PrtValue> receiveSet;
         public int maxBufferSize;
@@ -137,9 +138,8 @@ namespace P.Runtime
                 stateImpl.Trace(
                     @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
                     ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
-
                 this.eventQueue.EnqueueEvent(e, arg);
-                if (this.maxBufferSize != -1 && this.eventQueue.Size() > this.maxBufferSize)
+                if (this.maxBufferSize != DefaultMaxBufferSize && this.eventQueue.Size() > this.maxBufferSize)
                 {
                     if (this.doAssume)
                     {

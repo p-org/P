@@ -183,7 +183,6 @@ namespace Microsoft.Pc
         TypeTranslationContext typeContext;
         internal class TypeTranslationContext
         {
-            private int fieldCount;
             private int typeCount;
 
             //This field is for emitting types; order is important
@@ -195,7 +194,6 @@ namespace Microsoft.Pc
             public TypeTranslationContext(PToCSharp pToCSharp)
             {
                 this.pToCSharp = pToCSharp;
-                fieldCount = 0;
                 typeCount = 0;
                 typeDeclaration = new List<FieldDeclarationSyntax>();
                 typeInitialization = new List<StatementSyntax>();
@@ -2407,11 +2405,12 @@ namespace Microsoft.Pc
 
                 return executeMethodDecl;
             }
-            //TODO(fix): replace this code with general case: CreateLocals method for any function
             public SyntaxNode MkCreateLocalsMethod()
             {
+                List<StatementSyntax> stmtList = new List<StatementSyntax>();
+
                 //var locals = new List<PrtValue>();
-                var stmt1 =
+                stmtList.Add(
                     LocalDeclarationStatement(
                         VariableDeclaration(
                             IdentifierName("var"))
@@ -2430,10 +2429,10 @@ namespace Microsoft.Pc
                                                         IdentifierName("PrtValue")))))
                                         .WithArgumentList(
                                             ArgumentList()))))))
-                    .NormalizeWhitespace();
+                    .NormalizeWhitespace());
 
                 //foreach (var item in args)
-                var stmt2 =
+                stmtList.Add(
                     ForEachStatement(
                         IdentifierName("var"),
                         Identifier("item"),
@@ -2455,20 +2454,21 @@ namespace Microsoft.Pc
                                                             SyntaxKind.SimpleMemberAccessExpression,
                                                             IdentifierName("item"),
                                                             IdentifierName("Clone")))))))))))
-                    .NormalizeWhitespace();
+                    .NormalizeWhitespace());
 
-                ////no local variables hence nothing to add
+                foreach(var varName in funInfo.localNames)
+                {
+                    var varInfo = funInfo.localNameToInfo[varName];
+                    var defaultValue = MkCSharpInvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("PrtMkDefaultValue")), 
+                        pToCSharp.typeContext.PTypeToCSharpExpr(varInfo.type));
+                    stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("locals", "Add"), defaultValue)));
+                }
+
                 //return locals;
-                var stmt3 =
-                    ReturnStatement(
-                        IdentifierName("locals"))
-                    .WithReturnKeyword(
-                        Token(
-                            TriviaList(
-                                Comment("//no local variables hence nothing to add")),
-                            SyntaxKind.ReturnKeyword,
-                            TriviaList()))
-                    .NormalizeWhitespace();
+                stmtList.Add(
+                    ReturnStatement(IdentifierName("locals"))
+                    .NormalizeWhitespace());
 
                 //public override List<PrtValue> CreateLocals(params PrtValue[] args) { ... }
                 var createLocalsMethodDecl =
@@ -2502,7 +2502,7 @@ namespace Microsoft.Pc
                                                 SingletonSeparatedList<ExpressionSyntax>(
                                                     OmittedArraySizeExpression()))))))))
                     .WithBody(
-                        Block(stmt1, stmt2, stmt3))
+                        Block(stmtList))
                     .NormalizeWhitespace();
 
                 return createLocalsMethodDecl;
@@ -2703,12 +2703,12 @@ namespace Microsoft.Pc
             }
             else
             {
-                //TODO(question): 10 is the default maxQueueSize for Main machine
-                //TODO: create "PrtImplMachine.DefaultMaxBuffer"
                 fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "machine",
                                generator.ObjectCreationExpression(generator.IdentifierName(machineName),
-                               new List<SyntaxNode>() { generator.IdentifierName("application"), generator.LiteralExpression(10),
-                                                            generator.LiteralExpression(machineInfo.maxQueueSizeAssumed) })));
+                               new List<SyntaxNode>() {
+                                   generator.IdentifierName("application"),
+                                   MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtImplMachine"), IdentifierName("DefaultMaxBufferSize")),
+                                   generator.LiteralExpression(machineInfo.maxQueueSizeAssumed) })));
             }
 
             //stmt2: machine.currentPayload = payload;
@@ -2763,8 +2763,6 @@ namespace Microsoft.Pc
             foreach (var pair in allMachines)
             {
                 MkMachineClass mkMachine;
-                //Debug only:
-                Console.WriteLine("Next machine: name: {0}", pair.Key);
                 mkMachine = new MkMachineClass(this, pair.Key, pair.Value);
                 SyntaxNode node = mkMachine.MkClass();
                 members.Add(node);
@@ -3021,7 +3019,6 @@ namespace Microsoft.Pc
                                     Block(
                                         SingletonList<StatementSyntax>(
                                             ReturnStatement(
-                                                //TODO(bug): replace with init state name from machineInfo, + "_State"
                                                 IdentifierName(startState))))))))
                     .NormalizeWhitespace();
                 machineMembers.Add(startStateProperty);
@@ -3107,7 +3104,10 @@ namespace Microsoft.Pc
                 List<SyntaxNode> constructorStmtList = new List<SyntaxNode>();
                 foreach (var varInfo in machineInfo.localVariableToVarInfo.Values)
                 {
-                    var defaultValue = MkCSharpInvocationExpression(IdentifierName("PrtValue.PrtMkDefaultValue"), translator.typeContext.PTypeToCSharpExpr(varInfo.type));
+                    var defaultValue = MkCSharpInvocationExpression(MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("PrtValue"),
+                                IdentifierName("PrtMkDefaultValue")), translator.typeContext.PTypeToCSharpExpr(varInfo.type));
                     constructorStmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("fields", "Add"), defaultValue)));
                 }
                 if (machineInfo.IsReal)
@@ -3143,6 +3143,18 @@ namespace Microsoft.Pc
                 {
                     MkFunctionDecl funDecl = new MkFunctionDecl(pair.Key, pair.Value, this, translator);
                     funDecl.AddFunClass();
+                }
+
+                foreach (var pair in machineInfo.stateNameToStateInfo)
+                {
+                    string stateName = pair.Key;
+                    string stateType = stateName + "_Class";
+                    //state instantiation for the machine class constructor:
+                    //Example: 
+                    //PONG_Pong_WaitPing = new PONG_Pong_WaitPing_Class("PONG_Pong_WaitPing", AnonFun1, AnonFun0, false, StateTemperature.Warm);
+                    //Consider 6 cases (write a mmethod): for each bool value of hasNullTransition, there are 3 possible "temperatures"
+                    mainConstructorFields.Add(MkStateInstantiation(stateName, stateType, pair.Value.entryActionName, pair.Value.exitFunName,
+                                              pair.Value.hasNullTransition, pair.Value.temperature));
                 }
 
                 //State classes for all states of the machine:
@@ -3240,15 +3252,6 @@ namespace Microsoft.Pc
                                 Token(SyntaxKind.StaticKeyword)}))
                         .NormalizeWhitespace();
                     machineMembers.Add(stateDeclaration);
-
-                    //state instantiation for the machine class constructor:
-                    //Example: 
-                    //PONG_Pong_WaitPing = new PONG_Pong_WaitPing_Class("PONG_Pong_WaitPing", AnonFun1, AnonFun0, false, StateTemperature.Warm);
-                    //Consider 6 cases (write a mmethod): for each bool value of hasNullTransition, there are 3 possible "temperatures"
-                    //TODO(remove): Debug only:
-                    Console.WriteLine("hasNullTransition for state {0} is {1}", stateName, pair.Value.hasNullTransition);
-                    mainConstructorFields.Add(MkStateInstantiation(stateName, stateType, pair.Value.entryActionName, pair.Value.exitFunName,
-                                              pair.Value.hasNullTransition, pair.Value.temperature));
 
                     //Add DoDecls to the StateInfo:
                     //Example: Main_Ping_SendPing.dos.Add(Pong, foo);

@@ -215,11 +215,6 @@ namespace P.Runtime
         }
         #endregion
     }
-    public class PrtCommonFunctions
-    {
-        public static PrtIgnoreFun IgnoreFun = new PrtIgnoreFun();
-        public static PrtSkipFun SkipFun = new PrtSkipFun();
-    }
 
     public class PrtIgnoreFun : PrtFun
     {
@@ -247,34 +242,10 @@ namespace P.Runtime
         }
     }
 
-    public class PrtSkipFun : PrtFun
-    {
-        public override bool IsAnonFun
-        {
-            get
-            {
-                return true;
-            }
-        }
-
-        public override void Execute(StateImpl application, PrtMachine parent)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
-        {
-            throw new NotImplementedException();
-        }
-
-        public override List<PrtValue> CreateLocals(params PrtValue[] args)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public abstract class PrtFun
     {
+        public static PrtIgnoreFun IgnoreFun = new PrtIgnoreFun();
+
         public abstract bool IsAnonFun
         {
             get;

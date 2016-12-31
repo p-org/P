@@ -498,7 +498,7 @@ namespace P.Program
                 Main_InitPingPong = new Main_InitPingPong_Class("Main_InitPingPong", AnonFun1, AnonFun0, false, StateTemperature.Warm);
                 PrtTransition transition_1 = new PrtTransition(AnonFun2, Main_Fail, false);
                 Main_InitPingPong.transitions.Add(dummy, transition_1);
-                PrtTransition transition_2 = new PrtTransition(PrtCommonFunctions.SkipFun, Main_Success, true);
+                PrtTransition transition_2 = new PrtTransition(PrtFun.IgnoreFun, Main_Success, true);
                 Main_InitPingPong.transitions.Add(E, transition_2);
                 Main_Fail = new Main_Fail_Class("Main_Fail", AnonFun3, AnonFun0, false, StateTemperature.Warm);
                 PrtTransition transition_3 = new PrtTransition(Action2, Main_InitPingPong, false);
@@ -508,7 +508,7 @@ namespace P.Program
                 Main_Success = new Main_Success_Class("Main_Success", AnonFun0, AnonFun0, false, StateTemperature.Warm);
                 PrtTransition transition_5 = new PrtTransition(AnonFun5, Main_InitPingPong, false);
                 Main_Success.transitions.Add(dummy, transition_5);
-                PrtTransition transition_6 = new PrtTransition(PrtCommonFunctions.SkipFun, Main_Fail, true);
+                PrtTransition transition_6 = new PrtTransition(PrtFun.IgnoreFun, Main_Fail, true);
                 Main_Success.transitions.Add(E, transition_6);
             }
         }

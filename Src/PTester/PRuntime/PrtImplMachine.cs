@@ -293,7 +293,7 @@ namespace P.Runtime
 
             DoAction:
             currAction = PrtFindActionHandler(eventValue);
-            if(currAction == PrtCommonFunctions.IgnoreFun)
+            if(currAction == PrtFun.IgnoreFun)
             {
                 //Trace: Performed ignore action for the event
                 PrtResetTriggerAndPayload();

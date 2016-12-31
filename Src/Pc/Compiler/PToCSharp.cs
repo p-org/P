@@ -3254,11 +3254,6 @@ namespace Microsoft.Pc
                     machineMembers.Add(stateDeclaration);
 
                     //Add DoDecls to the StateInfo:
-                    //Example: Main_Ping_SendPing.dos.Add(Pong, foo);
-                    //Note: "ignore E" is considered a DeDecl with the default "ignore" function, and is present in StateInfo.actions
-                    //TODO(question): do I have to use pre-defined 
-                    //public class PrtIgnoreFun : PrtFun
-                    //for "ignore" function?
                     foreach (var doFun in pair.Value.dos)
                     {
                         mainConstructorFields.Add(
@@ -3280,6 +3275,35 @@ namespace Microsoft.Pc
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
                                                     IdentifierName(doFun.Value))}))))
+                            .NormalizeWhitespace()
+                            );
+                    }
+
+                    //Add ignored events
+                    foreach (var ignoredEvent in pair.Value.ignoredEvents)
+                    {
+                        mainConstructorFields.Add(
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName(stateName),
+                                            IdentifierName("dos")),
+                                        IdentifierName("Add")))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                Argument(
+                                                    IdentifierName(ignoredEvent)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    MemberAccessExpression(
+                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                        IdentifierName("PrtFun"),
+                                                                        IdentifierName("IgnoreFun")))}))))
                             .NormalizeWhitespace()
                             );
                     }
@@ -3313,8 +3337,6 @@ namespace Microsoft.Pc
                     {
                         string trigger = transition.Key;
                         string transition_name = "transition" + "_" + transition_count;
-                        //For push transition, transition.Value.transFunName name is null - 
-                        //replacing wuth PrtCommonFunctions.SkipFun
                         if (transition.Value.IsPush)
                         {
                             //push transition:
@@ -3337,8 +3359,8 @@ namespace Microsoft.Pc
                                                                 Argument(
                                                                     MemberAccessExpression(
                                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName("PrtCommonFunctions"),
-                                                                        IdentifierName("SkipFun"))),
+                                                                        IdentifierName("PrtFun"),
+                                                                        IdentifierName("IgnoreFun"))),
                                                                         Token(SyntaxKind.CommaToken),
                                                                 Argument(
                                                                     IdentifierName(transition.Value.target)),

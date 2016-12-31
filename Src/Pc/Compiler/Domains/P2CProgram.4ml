@@ -54,7 +54,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.TypeDef(name, etype) :- in.TypeDef(name, type, id), no in.ModelType(name), TypeExpansion(type, etype).
 	link.EnumTypeDef(name, elems, values) :- in.EnumTypeDef(name, elems, values, _).
 	link.EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
-	                               list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }), list : EventNameList.
+	                               list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }).
 	link.InterfaceTypeDecl(name, list, etype) :- in.InterfaceTypeDecl(name, esname, type, _), TypeExpansion(type, etype),
 	                                             eventset is EventSetDecl(esname, _), 
 	                                             list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }), list : EventNameList.
@@ -90,10 +90,13 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })).
 	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
 	NamedEventNameList(list, NIL, "") :- SubSE(c, s), s: Receive, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | ReceiveCases(c, s, x), ev = x.trig })).
-	NamedEventNameList(list, EventNameList(NULL, list'), name') :- NamedEventNameList(EventNameList(NULL, list), list', name), name' = strJoin("null", name).
-	NamedEventNameList(list, EventNameList(HALT, list'), name') :- NamedEventNameList(EventNameList(HALT, list), list', name), name' = strJoin("halt", name).
-	NamedEventNameList(list, EventNameList(ev, list'), name') :- NamedEventNameList(EventNameList(ev, list), list', name), ev: String, name' = strJoin(ev, name).
-	link.EventSet(evsetName, list) :- NamedEventNameList(NIL, list, name), evsetName = strJoin("P_GEND_EVENTSET_", name).
+	NamedEventNameList(list, EventNameList(NULL, list'), name') :- NamedEventNameList(EventNameList(NULL, list), list', name), name' = strJoin(name, strJoin("_", "null")).
+	NamedEventNameList(list, EventNameList(HALT, list'), name') :- NamedEventNameList(EventNameList(HALT, list), list', name), name' = strJoin(name, strJoin("_", "halt")).
+	NamedEventNameList(list, EventNameList(ev, list'), name') :- NamedEventNameList(EventNameList(ev, list), list', name), ev: String, name' = strJoin(name, strJoin("_", ev)).
+	link.EventSet(evsetName, list) :- NamedEventNameList(NIL, list, name), evsetName = strJoin("P_GEND_EVENTSET", name).
+
+	UniqueEventSetName ::= (String, EventNameList + { NIL }).
+	UniqueEventSetName(esName, list) :- link.EventSet(_, list), esNames = toList(in.#StringList, NIL, {x | link.EventSet(x, list)}), esName = esNames.hd.
 
 	link.AvailableParameterDemand(e.name, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
 												FunAvailable(decl, c.owner), decl: in.FunProtoDecl, decl.name = e.name.
@@ -919,7 +922,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									   c = toOrdinal(receive, 0, {r | r: Receive, SubSE(decl, r)}), 
 									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
 									   CaseDeclConcat(nCases, decl, cases, casesInit), AnonOrNamedFunName(decl, declName),
-									   link.EventSet(index, toList(#EventNameList, NIL, { ev | ReceiveCases(decl, receive, x), ev = x.trig })),
+									   UniqueEventSetName(index, toList(#EventNameList, NIL, { ev | ReceiveCases(decl, receive, x), ev = x.trig })),
 									   def = out.Init(
 												Args(IntLit(label, DEC, U),
 												Args(Ident(index),
@@ -1067,9 +1070,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	StateEventSetIndices ::= (state: StateDecl, transIndex: String, doIndex: String, deferIndex: String).
 	StateEventSetIndices(s, ti, doi, dfi) :- 
 	                     s is StateDecl,
-						 link.EventSet(ti, toList(#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })),
-						 link.EventSet(doi, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })),
-						 link.EventSet(dfi, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
+						 UniqueEventSetName(ti, toList(#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })),
+						 UniqueEventSetName(doi, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })),
+						 UniqueEventSetName(dfi, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
 
     StateEntryAction  ::= (decl: StateDecl, funName: String).
 	StateEntryAction(s, funname) :- s is StateDecl, act = s.entryAction, act : in.AnonFunDecl, AnonOrNamedFunName(act, funname). 

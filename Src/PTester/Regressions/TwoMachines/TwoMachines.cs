@@ -13,7 +13,7 @@ namespace P.Program
         public Application(bool initialize): base ()
         {
             CreateMachine_Blah(this);
-            CreateMachine_Main(this, PrtValue.NullValue);
+            CreateMachine_Main(this, @null);
         }
 
         public override StateImpl MakeSkeleton()
@@ -580,7 +580,7 @@ namespace P.Program
                     return;
                     AnonFun0_2:
                         ;
-                    createdMachine = CreateMachine_PONG(application, PrtValue.NullValue);
+                    createdMachine = CreateMachine_PONG(application, @null);
                     (parent).PrtFunContNewMachine(this, (currFun).locals, createdMachine, 3);
                     return;
                     AnonFun0_3:
@@ -588,11 +588,11 @@ namespace P.Program
                     createdMachine = ((parent).continuation).createdMachine;
                     ((parent).continuation).createdMachine = null;
                     (parent).pongId = new PrtMachineValue(createdMachine);
-                    if (!!(Success).Equals(PrtValue.NullValue))
+                    if (!!(Success).Equals(@null))
                         throw new PrtAssertFailureException("C:\\\\Users\\\\qadeer\\\\Work\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\TwoMachines\\\\TwoMachines.p (59, 10): Raised event must be non-null");
                     Console.Write("<RaiseLog> Machine Main-{0} raised Event {1}\\n", (parent).instanceNumber, ((Success).evt).name);
                     (parent).currentTrigger = Success;
-                    (parent).currentPayload = PrtValue.NullValue;
+                    (parent).currentPayload = @null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);

@@ -31,12 +31,12 @@ namespace P.Runtime
         {
             this.instanceNumber = 0;
             this.fields = new List<PrtValue>();
-            this.eventValue = PrtValue.NullValue;
+            this.eventValue = PrtValue.@null;
             this.stateStack = new PrtStateStack();
             this.invertedFunStack = new PrtFunStack();
             this.continuation = new PrtContinuation();
-            this.currentTrigger = PrtValue.NullValue;
-            this.currentPayload = PrtValue.NullValue;
+            this.currentTrigger = PrtValue.@null;
+            this.currentPayload = PrtValue.@null;
             this.currentStatus = PrtMachineStatus.Enabled;
             this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
             this.stateExitReason = PrtStateExitReason.NotExit;
@@ -101,7 +101,7 @@ namespace P.Runtime
                     throw new PrtInvalidPopStatement();
                 }
                 //TODO : Handle the monitor machine case separately for the halt event
-                else if (eventValue.Equals(PrtValue.HaltEvent))
+                else if (eventValue.Equals(PrtValue.halt))
                 {
                     throw new PrtUnhandledEventException();
                 }
@@ -308,7 +308,6 @@ namespace P.Runtime
     public class PrtEvent
     {
         public static int DefaultMaxInstances = int.MaxValue;
-        
 
         public string name;
         public PrtType payloadType;
@@ -580,7 +579,7 @@ namespace P.Runtime
         public bool HasNullTransitionOrAction()
         {
             if (TopOfStack.state.hasNullTransition) return true;
-            return TopOfStack.actionSet.Contains(PrtValue.NullValue);
+            return TopOfStack.actionSet.Contains(PrtValue.@null);
         }
     }
 

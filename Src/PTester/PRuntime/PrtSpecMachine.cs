@@ -28,7 +28,7 @@ namespace P.Runtime
             //Push the start state function on the funStack.
             PrtPushState(StartState);
             //Execute the entry function
-            PrtEnqueueEvent(PrtValue.NullValue, PrtValue.NullValue, null);
+            PrtEnqueueEvent(PrtValue.@null, PrtValue.@null, null);
         }
         public object Clone()
         {
@@ -85,8 +85,8 @@ namespace P.Runtime
                 if (currAction == PrtCommonFunctions.IgnoreFun)
                 {
                     //Trace: Performed ignore action for the event
-                    currentTrigger = PrtValue.NullValue;
-                    currentPayload = PrtValue.NullValue;
+                    currentTrigger = PrtValue.@null;
+                    currentPayload = PrtValue.@null;
                 }
                 else
                 {
@@ -170,10 +170,10 @@ namespace P.Runtime
                 }
 
                 DoHandleEvent:
-                if (!currentTrigger.Equals(PrtValue.NullValue))
+                if (!currentTrigger.Equals(PrtValue.@null))
                 {
                     currEventValue = currentTrigger;
-                    currentTrigger = PrtValue.NullValue;
+                    currentTrigger = PrtValue.@null;
                 }
                 else
                 {

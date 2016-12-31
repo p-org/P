@@ -92,6 +92,14 @@ namespace P.Runtime
     {
         public List<PrtType> fieldTypes;
 
+        public PrtTupleType() 
+        {
+            /*
+               This constructor is added only to prevent the other constructor from being called
+               when an instance of PrtNamedTupleType is created.
+             */
+        }
+
         public PrtTupleType(params PrtType[] fields)
         {
             Debug.Assert(fields.Count() > 0);

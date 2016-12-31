@@ -107,9 +107,12 @@ namespace P.Runtime
 
         public void Announce(PrtValue ev, PrtValue payload, PrtMachine parent)
         {
-            foreach(var spec in specObservers[ev])
+            if (specObservers.ContainsKey(ev))
             {
-                spec.PrtEnqueueEvent(ev, payload, parent);
+                foreach (var spec in specObservers[ev])
+                {
+                    spec.PrtEnqueueEvent(ev, payload, parent);
+                }
             }
         }
 

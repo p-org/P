@@ -398,6 +398,13 @@ namespace Microsoft.Pc
         #endregion
 
         #region Utilities
+        public static string EventName(string rawName)
+        {
+            if (rawName == NullEvent)
+                return "@null";
+            else
+                return rawName;
+        }
         public static ExpressionStatementSyntax MkCSharpSimpleAssignmentExpressionStatement(SyntaxNode lhs, SyntaxNode rhs)
         {
             return ExpressionStatement(
@@ -760,7 +767,7 @@ namespace Microsoft.Pc
                 generator.InvocationExpression(
                     generator.IdentifierName("CreateMachine_Main"),
                     ThisExpression(),
-                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue"))));
+                    IdentifierName("@null")));
             stmtList.Add(constructorBody);
             var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0],
                                                                 statements: stmtList.ToArray());
@@ -800,18 +807,10 @@ namespace Microsoft.Pc
                     doAssume = MkCSharpFalseLiteralExpression();
                 }
 
-                //Example: public static PrtEventValue halt;
-                //public static PrtEventValue @null;
-                string eventNameOrNull = pair.Key;
-                if (pair.Key == NullEvent)
-                {
-                    //"@null" is used as event name for the null event; this is done to disambiguate null as a C# keyword
-                    //output with "@null" compiles
-                    eventNameOrNull = "@" + eventNameOrNull;
-                }
+                string eventNameOrNull = EventName(pair.Key);
                 members.Add(
                 MkCSharpFieldDeclaration(IdentifierName("PrtEventValue"),
-                    eventNameOrNull,
+                    EventName(pair.Key),
                     Token(SyntaxKind.PublicKeyword),
                     Token(SyntaxKind.StaticKeyword)
                     )
@@ -854,15 +853,7 @@ namespace Microsoft.Pc
                     doAssume = MkCSharpFalseLiteralExpression();
                 }
 
-                //Example: halt = new PrtEventValue(new PrtEvent("halt", typeNull, 1, false));
-                string eventNameOrNull = pair.Key;
-                if (pair.Key == NullEvent)
-                {
-                    //"@null" is used as event name for the null event; this is done to disambiguate null as a C# keyword
-                    //output with "@null" compiles
-                    eventNameOrNull = "@" + eventNameOrNull;
-                }
-                SyntaxNode lhs = IdentifierName(eventNameOrNull);
+                SyntaxNode lhs = IdentifierName(EventName(pair.Key));
                 SyntaxNode rhs = MkCSharpObjectCreationExpression(
                     IdentifierName("PrtEventValue"),
                     MkCSharpObjectCreationExpression(
@@ -1159,9 +1150,9 @@ namespace Microsoft.Pc
             private SyntaxNode Fold(Node n, List<SyntaxNode> children)
             {
                 if (n.NodeKind == NodeKind.Id || n.NodeKind == NodeKind.Cnst)
-                    //return ZingData.Cnst_Nil;
-                    //TODO: use "null" instead?
-                    return IdentifierName("NIL");
+                {
+                    return null;
+                }
 
                 var ft = (FuncTerm)n;
                 var funName = ((Id)ft.Function).Name;
@@ -1735,10 +1726,7 @@ namespace Microsoft.Pc
             {
                 if (args.Count == 0)
                 {
-                    return MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("PrtValue"),
-                                IdentifierName("NullValue"));
+                    return IdentifierName("@null");
                 }
                 else if (args.Count == 1)
                 {
@@ -1768,7 +1756,7 @@ namespace Microsoft.Pc
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(pToCSharp.typeContext.PTypeToCSharpExpr(entryFunInfo.PayloadType), children);
                 var traceStmt = MkCSharpPrint(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(stateExpr, "name"));
-                var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("null"));
+                var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("@null"));
                 var assignStmt2 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var assignStmt3 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "destOfGoto"), stateExpr);
                 var createRetCtxt = ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContGoto")));
@@ -1781,7 +1769,7 @@ namespace Microsoft.Pc
                 children.RemoveAt(0);
                 var eventPayloadTypeExpr = MkCSharpDot(eventExpr, "evt", "payloadType");
                 var payloadVar = MkPayload(eventPayloadTypeExpr, children);
-                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue")));
+                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), IdentifierName("@null"));
                 var assertStmt = MkCSharpAssert(MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = MkCSharpPrint(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
                 var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), eventExpr);
@@ -1913,8 +1901,8 @@ namespace Microsoft.Pc
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 if (op == PData.Cnst_Pop.Node.Name)
                 {
-                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("null")));
-                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), IdentifierName("null")));
+                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("@null")));
+                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), IdentifierName("@null")));
                     stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPopState"), MkCSharpTrueLiteralExpression())));
                     stmtList.Add(ReturnStatement());
                 }
@@ -2004,7 +1992,7 @@ namespace Microsoft.Pc
                             if (assignType == "NONE")
                             {
                                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
-                                src = (ExpressionSyntax) TranslatePossibleNondet(src, stmtList);
+                                src = (ExpressionSyntax)TranslatePossibleNondet(src, stmtList);
                                 stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(dest, MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 return Block(stmtList);
                             }
@@ -2101,22 +2089,11 @@ namespace Microsoft.Pc
                     else
                     {
                         // op == PData.Cnst_Insert.Node.Name
-                        if (typeName == PData.Con_SeqType.Node.Name)
-                        {
-                            return ExpressionStatement(
-                                        MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Insert"), 
-                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
-                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0)));
-                        }
-                        else
-                        {
-                            return ExpressionStatement(
-                                        MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Insert"),
-                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
-                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0)));
-                        }
+                        return ExpressionStatement(
+                                    MkCSharpInvocationExpression(
+                                        MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Insert"),
+                                        MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                                        MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 1)));
                     }
                 }
             }
@@ -2532,8 +2509,6 @@ namespace Microsoft.Pc
             }
             public SyntaxNode MkCreateFunStackFrameMethod()
             {
-                //TODO(expand): returns "null" for now
-                //Body: return new F2_StackFrame(this, locals, retLoc);
                 var body = SingletonList<StatementSyntax>(
                             ReturnStatement((ExpressionSyntax)MkCSharpObjectCreationExpression(
                                 IdentifierName(funName + "_StackFrame"),
@@ -3129,7 +3104,12 @@ namespace Microsoft.Pc
 
                 //Machine class constructor
                 //public PONG(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
-                //TODO(expand): add inits for all fields
+                List<SyntaxNode> constructorStmtList = new List<SyntaxNode>();
+                foreach (var varInfo in machineInfo.localVariableToVarInfo.Values)
+                {
+                    var defaultValue = MkCSharpInvocationExpression(IdentifierName("PrtValue.PrtMkDefaultValue"), translator.typeContext.PTypeToCSharpExpr(varInfo.type));
+                    constructorStmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("fields", "Add"), defaultValue)));
+                }
                 if (machineInfo.IsReal)
                 {
                     var constructorPars = new SyntaxNode[]
@@ -3139,8 +3119,10 @@ namespace Microsoft.Pc
                         generator.ParameterDeclaration("assume", generator.TypeExpression(SpecialType.System_Boolean))
                     };
                     var baseConstructorArgs = new SyntaxNode[] { generator.IdentifierName("app"), generator.IdentifierName("maxB"), generator.IdentifierName("assume") };
+
                     var constructor_2 = generator.ConstructorDeclaration(machineName, constructorPars, Accessibility.Public,
-                                        baseConstructorArguments: baseConstructorArgs);
+                                        baseConstructorArguments: baseConstructorArgs,
+                                        statements: constructorStmtList);
                     machineMembers.Add(constructor_2);
                 }
                 else
@@ -3151,7 +3133,8 @@ namespace Microsoft.Pc
                     };
                     var baseConstructorArgs = new SyntaxNode[] { generator.IdentifierName("app") };
                     var constructor_2 = generator.ConstructorDeclaration(machineName, constructorPars, Accessibility.Public,
-                                        baseConstructorArguments: baseConstructorArgs);
+                                        baseConstructorArguments: baseConstructorArgs,
+                                        statements: constructorStmtList);
                     machineMembers.Add(constructor_2);
                 }
 
@@ -3408,7 +3391,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                     Argument(
-                                                        IdentifierName(trigger)),
+                                                        IdentifierName(EventName(trigger))),
                                                     Token(SyntaxKind.CommaToken),
                                                     Argument(
                                                         IdentifierName(transition_name))}))))

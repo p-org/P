@@ -7,8 +7,8 @@ namespace P.Runtime
 {
     public abstract class PrtValue : IEquatable<PrtValue>
     {
-        public static PrtNullValue NullValue = new PrtNullValue();
-        public static PrtEventValue HaltEvent = new PrtEventValue(new PrtEvent("Halt", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
+        public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
+        public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", new PrtAnyType(), PrtEvent.DefaultMaxInstances, false));
 
         public abstract PrtValue Clone();
 
@@ -16,7 +16,7 @@ namespace P.Runtime
         {
             if (type is PrtAnyType || type is PrtNullType || type is PrtEventType || type is PrtMachineType)
             {
-                return new PrtNullValue();
+                return @null;
             }
             else if (type is PrtIntType)
             {
@@ -63,9 +63,9 @@ namespace P.Runtime
             {
                 return true;
             }
-            else if (value is PrtNullValue)
+            else if (value.Equals(@null))
             {
-                return (type is PrtEventType || type is PrtMachineType);
+                return (type is PrtNullType || type is PrtEventType || type is PrtMachineType);
             }
             else if (type is PrtIntType)
             {
@@ -145,29 +145,6 @@ namespace P.Runtime
             if (!PrtInhabitsType(value, type))
                 throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), type.ToString()));
             return value.Clone();
-        }
-    }
-
-    public class PrtNullValue : PrtValue
-    {
-        public override PrtValue Clone()
-        {
-            return this;
-        }
-
-        public override string ToString()
-        {
-            return "null";
-        }
-
-        public override bool Equals(PrtValue value)
-        {
-            return (value is PrtNullValue);
-        }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -263,7 +240,7 @@ namespace P.Runtime
         {
             var eventVal = val as PrtEventValue;
             if (eventVal == null) return false;
-            return this.evt == eventVal.evt;
+            return this.evt.name == eventVal.evt.name;
         }
 
         public override string ToString()

@@ -55,6 +55,40 @@ namespace P.Runtime
             return "EVENT";
         }
     }
+    public class PrtUninterpretedEnumType : PrtType
+    {
+        public string name;
+        public HashSet<string> enumConstants;
+        public string defaultValue;
+
+        public PrtUninterpretedEnumType(string typeName, params string[] args)
+        {
+            name = typeName;
+            enumConstants = new HashSet<string>(args);
+            defaultValue = args[0];
+        }
+        public override string ToString()
+        {
+            return name;
+        }
+    }
+    public class PrtInterpretedEnumType : PrtType
+    {
+        public string name;
+        public HashSet<int> enumConstants;
+        public int defaultValue;
+
+        public PrtInterpretedEnumType(string typeName, params int[] args)
+        {
+            name = typeName;
+            enumConstants = new HashSet<int>(args);
+            defaultValue = args[0];
+        }
+        public override string ToString()
+        {
+            return name;
+        }
+    }
     public class PrtMapType : PrtType
     {
         public PrtType keyType;

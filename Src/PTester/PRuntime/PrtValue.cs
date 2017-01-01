@@ -22,6 +22,16 @@ namespace P.Runtime
             {
                 return new PrtIntValue();
             }
+            else if (type is PrtUninterpretedEnumType)
+            {
+                PrtUninterpretedEnumType enumType = type as PrtUninterpretedEnumType;
+                return new PrtEnumValue(enumType.defaultValue);
+            }
+            else if (type is PrtInterpretedEnumType)
+            {
+                PrtInterpretedEnumType enumType = type as PrtInterpretedEnumType;
+                return new PrtIntValue(enumType.defaultValue);
+            }
             else if (type is PrtBoolType)
             {
                 return new PrtBoolValue();
@@ -53,7 +63,10 @@ namespace P.Runtime
             throw new NotImplementedException("ToString method is not overridden in the derived class");
         }
 
-        public abstract int Size();
+        public virtual int Size()
+        {
+            throw new NotImplementedException("Size method is not overridden in the derived class");
+        }
 
         public abstract bool Equals(PrtValue val);
 
@@ -66,6 +79,20 @@ namespace P.Runtime
             else if (value.Equals(@null))
             {
                 return (type is PrtNullType || type is PrtEventType || type is PrtMachineType);
+            }
+            else if (type is PrtUninterpretedEnumType)
+            {
+                PrtUninterpretedEnumType enumType = type as PrtUninterpretedEnumType;
+                PrtEnumValue enumValue = value as PrtEnumValue;
+                if (enumValue == null) return false;
+                return enumType.enumConstants.Contains(enumValue.enumConstant);
+            }
+            else if (type is PrtInterpretedEnumType)
+            {
+                PrtInterpretedEnumType enumType = type as PrtInterpretedEnumType;
+                PrtIntValue intValue = value as PrtIntValue;
+                if (intValue == null) return false;
+                return enumType.enumConstants.Contains(intValue.nt);
             }
             else if (type is PrtIntType)
             {
@@ -178,11 +205,6 @@ namespace P.Runtime
         {
             return nt.ToString();
         }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     public class PrtBoolValue : PrtValue
@@ -215,11 +237,6 @@ namespace P.Runtime
         {
             return bl.ToString();
         }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     public class PrtEventValue : PrtValue
@@ -247,10 +264,27 @@ namespace P.Runtime
         {
             return evt.name;
         }
+    }
 
-        public override int Size()
+    public class PrtEnumValue : PrtValue
+    {
+        public string enumConstant;
+
+        public PrtEnumValue(string n)
         {
-            throw new NotImplementedException();
+            enumConstant = n;
+        }
+
+        public override PrtValue Clone()
+        {
+            return new PrtEnumValue(this.enumConstant);
+        }
+
+        public override bool Equals(PrtValue val)
+        {
+            PrtEnumValue enumVal = val as PrtEnumValue;
+            if (val == null) return false;
+            return this.enumConstant == enumVal.enumConstant;
         }
     }
 
@@ -278,11 +312,6 @@ namespace P.Runtime
         public override string ToString()
         {
             return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
-        }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -359,11 +388,6 @@ namespace P.Runtime
             }
             retStr += ">";
             return retStr;
-        }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
         }
     }
 

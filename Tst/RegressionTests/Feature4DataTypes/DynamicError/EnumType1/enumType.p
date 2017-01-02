@@ -136,8 +136,8 @@ machine Main {
 		  v3 += (1,foo4);
 		  
 		  t2 = default(MapIntSeqFoo);
-		  t2 += (0, v1);
-		  t2 += (1,v3);
+		  t2[0] =  v1;
+		  t2[1] = v3;
 		  
 		  assert sizeof(t2) == 2;            //holds
 		  assert t2[0][0] == foo1 && t2[0][1] == foo2;   //holds
@@ -151,9 +151,9 @@ machine Main {
 		  v2 += (0,t1);
 		  
 		  t0[0] = foo0;              
-		  t0 += (1,foo1);
+		  t0[1] = foo1;
 		  t0[2] = foo2;              
-		  t0 += (3,foo3);
+		  t0[3] = foo3;
 		  assert t0[0] == foo0 && t0[1] == foo1 && t0[2] == foo2 && t0[3] == foo3;   //holds
 		  
 		  //var t3: (x: SeqTuple, y: MapIntFoo);

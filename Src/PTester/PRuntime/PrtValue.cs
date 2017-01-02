@@ -7,8 +7,8 @@ namespace P.Runtime
 {
     public abstract class PrtValue : IEquatable<PrtValue>
     {
-        public static PrtNullValue NullValue = new PrtNullValue();
-        public static PrtEventValue HaltEvent = new PrtEventValue(new PrtEvent("Halt", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
+        public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
+        public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", new PrtAnyType(), PrtEvent.DefaultMaxInstances, false));
 
         public abstract PrtValue Clone();
 
@@ -16,11 +16,16 @@ namespace P.Runtime
         {
             if (type is PrtAnyType || type is PrtNullType || type is PrtEventType || type is PrtMachineType)
             {
-                return new PrtNullValue();
+                return @null;
             }
             else if (type is PrtIntType)
             {
                 return new PrtIntValue();
+            }
+            else if (type is PrtEnumType)
+            {
+                PrtEnumType enumType = type as PrtEnumType;
+                return new PrtEnumValue(enumType.DefaultConstant, 0);
             }
             else if (type is PrtBoolType)
             {
@@ -53,7 +58,10 @@ namespace P.Runtime
             throw new NotImplementedException("ToString method is not overridden in the derived class");
         }
 
-        public abstract int Size();
+        public virtual int Size()
+        {
+            throw new NotImplementedException("Size method is not overridden in the derived class");
+        }
 
         public abstract bool Equals(PrtValue val);
 
@@ -63,9 +71,16 @@ namespace P.Runtime
             {
                 return true;
             }
-            else if (value is PrtNullValue)
+            else if (value.Equals(@null))
             {
-                return (type is PrtEventType || type is PrtMachineType);
+                return (type is PrtNullType || type is PrtEventType || type is PrtMachineType);
+            }
+            else if (type is PrtEnumType)
+            {
+                PrtEnumType enumType = type as PrtEnumType;
+                PrtIntValue intValue = value as PrtIntValue;
+                if (intValue == null) return false;
+                return enumType.enumConstants.ContainsKey(intValue.nt);
             }
             else if (type is PrtIntType)
             {
@@ -148,29 +163,6 @@ namespace P.Runtime
         }
     }
 
-    public class PrtNullValue : PrtValue
-    {
-        public override PrtValue Clone()
-        {
-            return this;
-        }
-
-        public override string ToString()
-        {
-            return "null";
-        }
-
-        public override bool Equals(PrtValue value)
-        {
-            return (value is PrtNullValue);
-        }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class PrtIntValue : PrtValue
     {
         public int nt;
@@ -200,11 +192,6 @@ namespace P.Runtime
         public override string ToString()
         {
             return nt.ToString();
-        }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -238,11 +225,6 @@ namespace P.Runtime
         {
             return bl.ToString();
         }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
-        }
     }
 
     public class PrtEventValue : PrtValue
@@ -263,17 +245,27 @@ namespace P.Runtime
         {
             var eventVal = val as PrtEventValue;
             if (eventVal == null) return false;
-            return this.evt == eventVal.evt;
+            return this.evt.name == eventVal.evt.name;
         }
 
         public override string ToString()
         {
             return evt.name;
         }
+    }
 
-        public override int Size()
+    public class PrtEnumValue : PrtIntValue
+    {
+        public string constName;
+
+        public PrtEnumValue(string name, int val) : base(val)
         {
-            throw new NotImplementedException();
+            constName = name;
+        }
+
+        public override PrtValue Clone()
+        {
+            return new PrtEnumValue(this.constName, this.nt);
         }
     }
 
@@ -301,11 +293,6 @@ namespace P.Runtime
         public override string ToString()
         {
             return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
-        }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -382,11 +369,6 @@ namespace P.Runtime
             }
             retStr += ">";
             return retStr;
-        }
-
-        public override int Size()
-        {
-            throw new NotImplementedException();
         }
     }
 
@@ -537,6 +519,11 @@ namespace P.Runtime
                 throw new PrtAssertFailureException("Illegal index for Remove");
             }
             elements.RemoveAt(index);
+        }
+
+        public void Remove(PrtValue index)
+        {
+            Remove(((PrtIntValue)index).nt);
         }
 
         public override int Size()

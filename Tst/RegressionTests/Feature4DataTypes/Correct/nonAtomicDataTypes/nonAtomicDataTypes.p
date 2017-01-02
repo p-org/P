@@ -63,9 +63,9 @@ machine Main {
 		  a = true;
 		  a = default(any);
 		  
-		  m5 += (1,true);
+		  m5[1]  = true;
 		  m5 = default(map[int,any]);
-		  m5 += (1,E);   
+		  m5[1] = E;   
 		  /////////////////////////tuples:
 		  //ts = (a = 1, b = 2);
 		  //ts = (a = 1);           //parsing error
@@ -166,9 +166,9 @@ machine Main {
 		  s6 += (0,m9);   
 		  s12 += (0,1);
 		  s12 += (1,2);
-		  m10 += (1, 100);
-		  m10 += (5, true);
-		  m10 += (10, s12);   //seq type used as "any"
+		  m10[1] =  100;
+		  m10[5] = true;
+		  m10[10] = s12;   //seq type used as "any"
 		  s6 += (1,m10);
 		  assert(s6[0][0] == E);    
 		  assert(s6[0][1] == null);  
@@ -204,18 +204,18 @@ machine Main {
 		  s8 += (2,(3,3));
 		  ////////////////////////map: var m2: map[int,map[int,any]];
 		  m5 = default(map[int,any]);
-		  m5 += (1,true);
-		  m5 += (2,E);
-		  m5 += (5,5);
+		  m5[1] = true;
+		  m5[2] = E;
+		  m5[5] = 5;
 		  
 		  m6 = default(map[int,any]);
-		  m6 += (0,0);
-		  m6 += (2,2);
-		  m6 += (4,4);
-		  m6 += (6,E);
+		  m6[0] = 0;
+		  m6[2] = 2;
+		  m6[4] = 4;
+		  m6[6] = E;
 		  //OK above
-		  m2 += (1,m5);
-		  m2 += (2,m6);		  
+		  m2[1] = m5;
+		  m2[2] = m6;		  
 		  ////////////////////////////////////////////
           t.a[foo()] = 2;  
 		  
@@ -225,8 +225,8 @@ machine Main {
 		  tmp2.a[foo()] = 1;
 		  assert ( tmp2 != t);
 		  //m11 += (null,null);   //dynamic error: "key must not exist in map"
-		  m11 += (1,null);      //OK
-		  m11 += (null,1);      //OK
+		  m11[1] = null;      //OK
+		  m11[null] = 1;      //OK
 
 		  y = default(int);
 		  tmp1 = IncY();

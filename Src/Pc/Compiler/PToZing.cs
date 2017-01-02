@@ -442,7 +442,7 @@ namespace Microsoft.Pc
             {
                 foreach (var tuple in allEnums[enumName])
                 {
-                    fields.Add(MkZingVarDecl(string.Format("{0}_SM_ENUM", tuple.Item1), ZingData.Cnst_Int, ZingData.Cnst_Static));
+                    fields.Add(MkZingVarDecl(string.Format("{0}_SM_ENUM", tuple.Key), ZingData.Cnst_Int, ZingData.Cnst_Static));
                 }
             }
             foreach (var machine in allMachines.Values)
@@ -549,7 +549,7 @@ namespace Microsoft.Pc
             {
                 foreach (var tuple in allEnums[enumName])
                 {
-                    var assignStmt = MkZingAssign(MkZingEnum(tuple.Item1), Factory.Instance.MkCnst(tuple.Item2));
+                    var assignStmt = MkZingAssign(MkZingEnum(tuple.Key), Factory.Instance.MkCnst(tuple.Value));
                     runBodyStmts.Add(assignStmt);
                 }
             }

@@ -1,1 +1,0 @@
-dsc: zinger.exe, RHS of asgn depends on nondet return value from function

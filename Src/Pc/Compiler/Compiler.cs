@@ -557,8 +557,9 @@
             return true;
         }
 
-        public bool ParsePProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName)
+        public bool ParsePProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out bool fileOrDependChanged)
         {
+            fileOrDependChanged = false;
             parsedProgram = new PProgram();
             using (this.Profiler.Start("Compiler parsing ", Path.GetFileName(inputFileName)))
             {
@@ -602,6 +603,9 @@
                         return false;
                     }
 
+                    //check if the parsed file has changed
+                    fileOrDependChanged = fileOrDependChanged | CheckIfPFileShouldBeCompiled(currFileName);
+
                     string currDirectoryName = Path.GetDirectoryName(Path.GetFullPath(currFileName));
                     foreach (var fileName in includedFileNames)
                     {
@@ -629,6 +633,23 @@
                 }
             }
             return true;
+        }
+
+        bool CheckIfPFileShouldBeCompiled(string fullPFilePath)
+        {
+            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            var gen4mlFilePath = outputDirName + "\\" + Path.GetFileNameWithoutExtension(fullPFilePath) + ".4ml";
+            var lastWriteTimePFile = File.GetLastWriteTime(fullPFilePath);
+            var lastWriteTime4mlFile = File.Exists(gen4mlFilePath) ? File.GetLastWriteTime(gen4mlFilePath) : DateTime.MinValue;
+
+            if(DateTime.Compare(lastWriteTimePFile, lastWriteTime4mlFile) < 0)
+            {
+                return false;
+            }
+            else
+            {
+                return true;
+            }
         }
 
         void InstallProgram(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, out AST<Model> RootModel)
@@ -680,10 +701,17 @@
             PProgram parsedProgram;
             ProgramName RootProgramName;
             AST<Model> RootModel;
-
-            if (!ParsePProgram(inputFileName, out parsedProgram, out RootProgramName))
+            bool doCompileFile = false;
+            if (!ParsePProgram(inputFileName, out parsedProgram, out RootProgramName, out doCompileFile))
             {
                 return false;
+            }
+
+            //If file has not changed and no rebuild required.
+            if(!(doCompileFile || Options.reBuild))
+            {
+                Log.WriteMessage(string.Format("ignoring file {0} ...", inputFileName), SeverityKind.Info);
+                return true;
             }
 
             InstallProgram(inputFileName, parsedProgram, RootProgramName, out RootModel);

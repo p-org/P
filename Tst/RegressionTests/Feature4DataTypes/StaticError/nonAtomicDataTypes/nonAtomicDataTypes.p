@@ -166,9 +166,9 @@ machine Main {
 		  
 		  m3[true] = false;         //error
 		  
-		  m3 += 1;                  //error
-		  m4 += (1);                //error
-		  m3[2] += true;            //error
+		  //m3 += 1;                  //error
+		  //m4 += (1);                //error
+		  //m3[2] += true;            //error
 		  
 		  m3[false] = true;         //error
 		  
@@ -213,9 +213,9 @@ machine Main {
 		  s6 += (0,m9);   
 		  s12 += (0,1);
 		  s12 += (1,2);
-		  m10 += (1, 100);
-		  m10 += (5, true);
-		  m10 += (10, s12);   //seq type used as "any"
+		  //m10 += (1, 100);
+		  //m10 += (5, true);
+		  //m10 += (10, s12);   //seq type used as "any"
 		  s6 += (1,m10);
 		  assert(s6[0][0] == E);    
 		  assert(s6[0][1] == null);  
@@ -256,19 +256,6 @@ machine Main {
 		  m7[false] = s8;     //error
 		  
 		  ////////////////////////map: var m2: map[int,map[int,any]];
-		  m5 = default(map[int,any]);
-		  m5 += (1,true);
-		  m5 += (2,E);
-		  m5 += (5,5);
-		  
-		  m6 = default(map[int,any]);
-		  m6 += (0,0);
-		  m6 += (2,2);
-		  m6 += (4,4);
-		  m6 += (6,E);
-		  
-		  m2 += (1,m5);
-		  m2 += (2,m6);
 		  
 		  m2[true] = m5;   //error
 		  
@@ -288,11 +275,7 @@ machine Main {
 		  tmp2 = (a = s, b = null);     //error
 		  tmp2 = (a = null, b = null);    //error
 		  tmp2 = (a = s1, b = null);      //error
-		  tmp3 += (0,null);      //error
-		  tmp3 += (null,s);      //error		  
-		  m11 += (null,null);   //OK
-		  m11 += (1,null);      //OK
-		  m11 += (null,1);      //OK
+
 		  
 		  tmp1 = IncY();
 		  //assert ( tmp1 == y + 1);

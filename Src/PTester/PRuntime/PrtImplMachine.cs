@@ -32,7 +32,8 @@ namespace P.Runtime
     public abstract class PrtImplMachine : PrtMachine
     {
         #region Fields
-        
+        public static int DefaultMaxBufferSize = int.MaxValue;
+
         public PrtEventBuffer eventQueue;
         public HashSet<PrtValue> receiveSet;
         public int maxBufferSize;
@@ -100,31 +101,30 @@ namespace P.Runtime
         #region State machine helper functions
         public void PrtResetTriggerAndPayload()
         {
-            currentTrigger = PrtValue.NullValue;
-            currentPayload = PrtValue.NullValue;
+            currentTrigger = PrtValue.@null;
+            currentPayload = PrtValue.@null;
         }
 
         public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
         {
-            
-            if (e is PrtNullValue)
-            {
-                throw new PrtIllegalEnqueueException("Enqueued event must be non-null");
-            }
-            PrtType prtType;
             PrtEventValue ev = e as PrtEventValue;
-            
+            if (ev.evt.name == "null")
+            {
+                throw new PrtIllegalEnqueueException("Enqueued event must not be null");
+            }
+            PrtType prtType = ev.evt.payloadType;
 
             //assertion to check if argument passed inhabits the payload type.
-            prtType = ev.evt.payloadType;
-
-            if (!(prtType is PrtNullType) && !PrtValue.PrtInhabitsType(arg, prtType))
+            if (prtType is PrtNullType)
+            {
+                if (!arg.Equals(PrtValue.@null))
+                {
+                    throw new PrtIllegalEnqueueException("Did not expect a payload value");
+                }
+            }
+            else if (!PrtValue.PrtInhabitsType(arg, prtType))
             {
                 throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.ToString(), prtType.ToString(), ev.evt.name));
-            }
-            else if (prtType is PrtNullType && !(arg is PrtNullValue))
-            {
-                throw new PrtIllegalEnqueueException("Did not expect a payload value");
             }
 
             if (currentStatus == PrtMachineStatus.Halted)
@@ -138,9 +138,8 @@ namespace P.Runtime
                 stateImpl.Trace(
                     @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
                     ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
-
                 this.eventQueue.EnqueueEvent(e, arg);
-                if (this.maxBufferSize != -1 && this.eventQueue.Size() > this.maxBufferSize)
+                if (this.maxBufferSize != DefaultMaxBufferSize && this.eventQueue.Size() > this.maxBufferSize)
                 {
                     if (this.doAssume)
                     {
@@ -187,8 +186,8 @@ namespace P.Runtime
                 stateImpl.Trace(
                     "<NullTransLog> Null transition taken by Machine {0}-{1}\n",
                     Name, instanceNumber);
-                currentPayload = PrtValue.NullValue;
-                currentTrigger = PrtValue.NullValue;
+                currentPayload = PrtValue.@null;
+                currentTrigger = PrtValue.@null;
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.NULL;
             }
@@ -229,7 +228,7 @@ namespace P.Runtime
 
         public bool PrtHasNullReceiveCase()
         {
-            return receiveSet.Contains(PrtValue.HaltEvent);
+            return receiveSet.Contains(PrtValue.halt);
         }
         #endregion
 
@@ -294,7 +293,7 @@ namespace P.Runtime
 
             DoAction:
             currAction = PrtFindActionHandler(eventValue);
-            if(currAction == PrtCommonFunctions.IgnoreFun)
+            if(currAction == PrtFun.IgnoreFun)
             {
                 //Trace: Performed ignore action for the event
                 PrtResetTriggerAndPayload();
@@ -454,10 +453,10 @@ namespace P.Runtime
 
             DoHandleEvent:
             Debug.Assert(receiveSet.Count == 0, "The machine must not be blocked on a receive");
-            if(!currentTrigger.Equals(PrtValue.NullValue))
+            if(!currentTrigger.Equals(PrtValue.@null))
             {
                 currEventValue = currentTrigger;
-                currentTrigger = PrtValue.NullValue;
+                currentTrigger = PrtValue.@null;
             }
             else
             {
@@ -493,7 +492,7 @@ namespace P.Runtime
             if(receiveSet.Count == 0)
             {
                 stateExitReason = PrtStateExitReason.NotExit;
-                PrtExecuteReceiveCase(PrtValue.NullValue);
+                PrtExecuteReceiveCase(PrtValue.@null);
                 goto CheckFunLastOperation;
             }
             dequeueStatus = PrtDequeueEvent(false);

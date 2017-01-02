@@ -68,11 +68,6 @@ machine Main {
 			s += (1,1);
 			s1 += (0,2);
 			s1 += (1,3);
-			t.b += (0, s);
-			t.b += (1, s1);
-			//+++++++++++++++++++++++++++++++3.1. Value assigned into map is non-det (var m: map[int,int];):
-			m += (0,1);
-			m += (1,2);
 			//static error is not reported for line below, see separate XYZ
             //D:\PLanguageGitHub\P\Tst\RegressionXYZs\Feature3Exprs\StaticError\NonDetFunctionInExpr_6\nonDetFunctionInExpr_6.p
 			//m += (2,F());             //static error: not reported
@@ -96,7 +91,6 @@ machine Main {
 			//t.b += (F(), s1);              //static error: not reported
 			//+++++++++++++++++++++++++++++++3.4. Index into map in -= is non-det:
 			t.b -= (0);
-			t.b += (0, s);
 			t.b -= (F());                                //static error
 			//+++++++++++++++++++++++++++++++3.5. Index into keys sequence in map is non-det:
 			t.b = default(map[int, seq[int]]);
@@ -106,8 +100,6 @@ machine Main {
 			s += (1,1);
 			s1 += (0,2);
 			s1 += (1,3);
-			t.b += (0, s);
-			t.b += (1, s1);
 			//static error is not reported for line below, see separate XYZ
             //D:\PLanguageGitHub\P\Tst\RegressionXYZs\Feature3Exprs\StaticError\NonDetFunctionInExpr_6\nonDetFunctionInExpr_11.p 			
 			//j = keys(t.b)[F()];                          //static error: not reported                          	

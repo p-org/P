@@ -71,11 +71,11 @@ machine Main {
 		  a = default(any);
 		  //assert (a == null);   //error: "Value must have a concrete type"
 		  
-		  m5 += (1,true);
+		  m5[1] = true;
 		  assert (m5[1] == true);  //holds
 		  m5 = default(map[int,any]);
 		  //assert (m5[1] == null);  //error: "key not found"
-		  m5 += (1,E);
+		  m5[1] = E;
 		  assert (m5[1] == E);     //holds
 		  
 	      ////////////////////////machine type:
@@ -201,9 +201,9 @@ machine Main {
 		  s6 += (0,m9);   
 		  s12 += (0,1);
 		  s12 += (1,2);
-		  m10 += (1, 100);
-		  m10 += (5, true);
-		  m10 += (10, s12);   //seq type used as "any"
+		  m10[1] = 100;
+		  m10[5] = true;
+		  m10[10] =  s12;   //seq type used as "any"
 		  s6 += (1,m10);
 		  assert(s6[0][0] == E);    //holds
 		  assert(s6[0][1] == null);  //holds
@@ -282,14 +282,14 @@ machine Main {
 		  
 		  //m10 += (1, 100);                //error: "key must exist in map"??
 		  m10[1] = 100;                       //OK
-		  m10 += (2, 200);
-		  m10 += (3, 300);
-		  m10 += (4, 400);
+		  m10[2] = 200;
+		  m10[3] = 300;
+		  m10[4] = 400;
 		  m10[5] = 500;
-		  m2 += (0, m10);
+		  m2[0] = m10;
 		  assert (m2[0] == m10);
 		  m10[3] = 333;
-		  m2 += (1, m10);
+		  m2[1] = m10;
 		  assert (m2[1] == m10);
 		  i = 1;
 		  while (i < 5)

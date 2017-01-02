@@ -183,7 +183,6 @@ namespace Microsoft.Pc
         TypeTranslationContext typeContext;
         internal class TypeTranslationContext
         {
-            private int fieldCount;
             private int typeCount;
 
             //This field is for emitting types; order is important
@@ -195,7 +194,6 @@ namespace Microsoft.Pc
             public TypeTranslationContext(PToCSharp pToCSharp)
             {
                 this.pToCSharp = pToCSharp;
-                fieldCount = 0;
                 typeCount = 0;
                 typeDeclaration = new List<FieldDeclarationSyntax>();
                 typeInitialization = new List<StatementSyntax>();
@@ -301,13 +299,20 @@ namespace Microsoft.Pc
                 }
                 else if (typeKind == "NameType")
                 {
-                    //NameType is for enum values only; "synonym" types are expanded by the compiler
-                    //TODO(expand): there's no ref to the enum type left in C# code, which would not allow
-                    //to treat casts (enum->int) properly; 
-                    //therefore, code below would have to be changed, after PrtEnumType is defined in PrtTypes.cs.
+                    string enumTypeName = (GetArgByIndex(type, 0) as Cnst).GetStringValue();
+                    List<ExpressionSyntax> args = new List<ExpressionSyntax>();
+                    args.Add(MkCSharpStringLiteralExpression(enumTypeName));
+                    foreach (var x in pToCSharp.allEnums[enumTypeName])
+                    {
+                        args.Add(MkCSharpStringLiteralExpression(x.Key));
+                        args.Add(MkCSharpNumericLiteralExpression(x.Value));
+                    }
                     string typeName = "typeNameType_" + typeCount;
                     var tmpVar = GetType(typeName);
-                    AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
+                    AddTypeInitialization(
+                        MkCSharpSimpleAssignmentExpressionStatement(
+                            tmpVar, 
+                            MkCSharpObjectCreationExpression(IdentifierName("PrtEnumType"), args.ToArray())));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                     return tmpVar;
@@ -398,6 +403,13 @@ namespace Microsoft.Pc
         #endregion
 
         #region Utilities
+        public static string EventName(string rawName)
+        {
+            if (rawName == NullEvent)
+                return "@null";
+            else
+                return rawName;
+        }
         public static ExpressionStatementSyntax MkCSharpSimpleAssignmentExpressionStatement(SyntaxNode lhs, SyntaxNode rhs)
         {
             return ExpressionStatement(
@@ -760,7 +772,7 @@ namespace Microsoft.Pc
                 generator.InvocationExpression(
                     generator.IdentifierName("CreateMachine_Main"),
                     ThisExpression(),
-                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue"))));
+                    IdentifierName("@null")));
             stmtList.Add(constructorBody);
             var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0],
                                                                 statements: stmtList.ToArray());
@@ -800,18 +812,10 @@ namespace Microsoft.Pc
                     doAssume = MkCSharpFalseLiteralExpression();
                 }
 
-                //Example: public static PrtEventValue halt;
-                //public static PrtEventValue @null;
-                string eventNameOrNull = pair.Key;
-                if (pair.Key == NullEvent)
-                {
-                    //"@null" is used as event name for the null event; this is done to disambiguate null as a C# keyword
-                    //output with "@null" compiles
-                    eventNameOrNull = "@" + eventNameOrNull;
-                }
+                string eventNameOrNull = EventName(pair.Key);
                 members.Add(
                 MkCSharpFieldDeclaration(IdentifierName("PrtEventValue"),
-                    eventNameOrNull,
+                    EventName(pair.Key),
                     Token(SyntaxKind.PublicKeyword),
                     Token(SyntaxKind.StaticKeyword)
                     )
@@ -854,15 +858,7 @@ namespace Microsoft.Pc
                     doAssume = MkCSharpFalseLiteralExpression();
                 }
 
-                //Example: halt = new PrtEventValue(new PrtEvent("halt", typeNull, 1, false));
-                string eventNameOrNull = pair.Key;
-                if (pair.Key == NullEvent)
-                {
-                    //"@null" is used as event name for the null event; this is done to disambiguate null as a C# keyword
-                    //output with "@null" compiles
-                    eventNameOrNull = "@" + eventNameOrNull;
-                }
-                SyntaxNode lhs = IdentifierName(eventNameOrNull);
+                SyntaxNode lhs = IdentifierName(EventName(pair.Key));
                 SyntaxNode rhs = MkCSharpObjectCreationExpression(
                     IdentifierName("PrtEventValue"),
                     MkCSharpObjectCreationExpression(
@@ -1159,9 +1155,9 @@ namespace Microsoft.Pc
             private SyntaxNode Fold(Node n, List<SyntaxNode> children)
             {
                 if (n.NodeKind == NodeKind.Id || n.NodeKind == NodeKind.Cnst)
-                    //return ZingData.Cnst_Nil;
-                    //TODO: use "null" instead?
-                    return IdentifierName("NIL");
+                {
+                    return null;
+                }
 
                 var ft = (FuncTerm)n;
                 var funName = ((Id)ft.Function).Name;
@@ -1354,7 +1350,6 @@ namespace Microsoft.Pc
                 return Block(stmts);
             }
 
-            //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
                 var name = GetName(ft, 0);
@@ -1369,7 +1364,6 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    //PrtEvent case: emit "new PrtEventValue(eventStaticVar);", where eventStaticVar is eventName
                     var type = LookupType(ft);
                     if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                     {
@@ -1377,9 +1371,12 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        //TODO: check type and add default case to throw an exception
-                        //Enum case:
-                        return MkCSharpObjectCreationExpression(IdentifierName("PrtIntValue"), IdentifierName(name));
+                        // enum constant
+                        var enumTypeName = (GetArgByIndex(type, 0) as Cnst).GetStringValue();
+                        return MkCSharpObjectCreationExpression(
+                            IdentifierName("PrtEnumValue"),
+                            MkCSharpStringLiteralExpression(name), 
+                            MkCSharpNumericLiteralExpression(pToCSharp.allEnums[enumTypeName][name]));
                     }
                 }
             }
@@ -1735,10 +1732,7 @@ namespace Microsoft.Pc
             {
                 if (args.Count == 0)
                 {
-                    return MemberAccessExpression(
-                                SyntaxKind.SimpleMemberAccessExpression,
-                                IdentifierName("PrtValue"),
-                                IdentifierName("NullValue"));
+                    return IdentifierName("@null");
                 }
                 else if (args.Count == 1)
                 {
@@ -1746,11 +1740,11 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    SyntaxNode[] pars = new SyntaxNode[args.Count];
+                    SyntaxNode[] pars = new SyntaxNode[args.Count+1];
                     pars[0] = tupTypeExpr;
-                    for (int i = 1; i < pars.Length; i++)
+                    for (int i = 0; i < args.Count; i++)
                     {
-                        pars[i] = args[i - 1];
+                        pars[i+1] = args[i];
                     }
                     return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), pars);
                 }
@@ -1768,7 +1762,7 @@ namespace Microsoft.Pc
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(pToCSharp.typeContext.PTypeToCSharpExpr(entryFunInfo.PayloadType), children);
                 var traceStmt = MkCSharpPrint(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(stateExpr, "name"));
-                var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("null"));
+                var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("@null"));
                 var assignStmt2 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var assignStmt3 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "destOfGoto"), stateExpr);
                 var createRetCtxt = ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContGoto")));
@@ -1781,7 +1775,7 @@ namespace Microsoft.Pc
                 children.RemoveAt(0);
                 var eventPayloadTypeExpr = MkCSharpDot(eventExpr, "evt", "payloadType");
                 var payloadVar = MkPayload(eventPayloadTypeExpr, children);
-                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("NullValue")));
+                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), IdentifierName("@null"));
                 var assertStmt = MkCSharpAssert(MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = MkCSharpPrint(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
                 var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), eventExpr);
@@ -1913,8 +1907,8 @@ namespace Microsoft.Pc
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 if (op == PData.Cnst_Pop.Node.Name)
                 {
-                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("null")));
-                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), IdentifierName("null")));
+                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("@null")));
+                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), IdentifierName("@null")));
                     stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPopState"), MkCSharpTrueLiteralExpression())));
                     stmtList.Add(ReturnStatement());
                 }
@@ -2004,7 +1998,7 @@ namespace Microsoft.Pc
                             if (assignType == "NONE")
                             {
                                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
-                                src = (ExpressionSyntax) TranslatePossibleNondet(src, stmtList);
+                                src = (ExpressionSyntax)TranslatePossibleNondet(src, stmtList);
                                 stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(dest, MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 return Block(stmtList);
                             }
@@ -2101,22 +2095,11 @@ namespace Microsoft.Pc
                     else
                     {
                         // op == PData.Cnst_Insert.Node.Name
-                        if (typeName == PData.Con_SeqType.Node.Name)
-                        {
-                            return ExpressionStatement(
-                                        MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Insert"), 
-                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
-                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0)));
-                        }
-                        else
-                        {
-                            return ExpressionStatement(
-                                        MkCSharpInvocationExpression(
-                                            MkCSharpDot(MkCSharpCastExpression("PrtMapValue", dest), "Insert"),
-                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
-                                            MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0)));
-                        }
+                        return ExpressionStatement(
+                                    MkCSharpInvocationExpression(
+                                        MkCSharpDot(MkCSharpCastExpression("PrtSeqValue", dest), "Insert"),
+                                        MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                                        MkCSharpElementAccessExpression(MkCSharpDot(MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 1)));
                     }
                 }
             }
@@ -2430,11 +2413,12 @@ namespace Microsoft.Pc
 
                 return executeMethodDecl;
             }
-            //TODO(fix): replace this code with general case: CreateLocals method for any function
             public SyntaxNode MkCreateLocalsMethod()
             {
+                List<StatementSyntax> stmtList = new List<StatementSyntax>();
+
                 //var locals = new List<PrtValue>();
-                var stmt1 =
+                stmtList.Add(
                     LocalDeclarationStatement(
                         VariableDeclaration(
                             IdentifierName("var"))
@@ -2453,10 +2437,10 @@ namespace Microsoft.Pc
                                                         IdentifierName("PrtValue")))))
                                         .WithArgumentList(
                                             ArgumentList()))))))
-                    .NormalizeWhitespace();
+                    .NormalizeWhitespace());
 
                 //foreach (var item in args)
-                var stmt2 =
+                stmtList.Add(
                     ForEachStatement(
                         IdentifierName("var"),
                         Identifier("item"),
@@ -2478,20 +2462,21 @@ namespace Microsoft.Pc
                                                             SyntaxKind.SimpleMemberAccessExpression,
                                                             IdentifierName("item"),
                                                             IdentifierName("Clone")))))))))))
-                    .NormalizeWhitespace();
+                    .NormalizeWhitespace());
 
-                ////no local variables hence nothing to add
+                foreach(var varName in funInfo.localNames)
+                {
+                    var varInfo = funInfo.localNameToInfo[varName];
+                    var defaultValue = MkCSharpInvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("PrtMkDefaultValue")), 
+                        pToCSharp.typeContext.PTypeToCSharpExpr(varInfo.type));
+                    stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("locals", "Add"), defaultValue)));
+                }
+
                 //return locals;
-                var stmt3 =
-                    ReturnStatement(
-                        IdentifierName("locals"))
-                    .WithReturnKeyword(
-                        Token(
-                            TriviaList(
-                                Comment("//no local variables hence nothing to add")),
-                            SyntaxKind.ReturnKeyword,
-                            TriviaList()))
-                    .NormalizeWhitespace();
+                stmtList.Add(
+                    ReturnStatement(IdentifierName("locals"))
+                    .NormalizeWhitespace());
 
                 //public override List<PrtValue> CreateLocals(params PrtValue[] args) { ... }
                 var createLocalsMethodDecl =
@@ -2525,15 +2510,13 @@ namespace Microsoft.Pc
                                                 SingletonSeparatedList<ExpressionSyntax>(
                                                     OmittedArraySizeExpression()))))))))
                     .WithBody(
-                        Block(stmt1, stmt2, stmt3))
+                        Block(stmtList))
                     .NormalizeWhitespace();
 
                 return createLocalsMethodDecl;
             }
             public SyntaxNode MkCreateFunStackFrameMethod()
             {
-                //TODO(expand): returns "null" for now
-                //Body: return new F2_StackFrame(this, locals, retLoc);
                 var body = SingletonList<StatementSyntax>(
                             ReturnStatement((ExpressionSyntax)MkCSharpObjectCreationExpression(
                                 IdentifierName(funName + "_StackFrame"),
@@ -2728,12 +2711,12 @@ namespace Microsoft.Pc
             }
             else
             {
-                //TODO(question): 10 is the default maxQueueSize for Main machine
-                //TODO: create "PrtImplMachine.DefaultMaxBuffer"
                 fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "machine",
                                generator.ObjectCreationExpression(generator.IdentifierName(machineName),
-                               new List<SyntaxNode>() { generator.IdentifierName("application"), generator.LiteralExpression(10),
-                                                            generator.LiteralExpression(machineInfo.maxQueueSizeAssumed) })));
+                               new List<SyntaxNode>() {
+                                   generator.IdentifierName("application"),
+                                   MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtImplMachine"), IdentifierName("DefaultMaxBufferSize")),
+                                   generator.LiteralExpression(machineInfo.maxQueueSizeAssumed) })));
             }
 
             //stmt2: machine.currentPayload = payload;
@@ -2788,8 +2771,6 @@ namespace Microsoft.Pc
             foreach (var pair in allMachines)
             {
                 MkMachineClass mkMachine;
-                //Debug only:
-                Console.WriteLine("Next machine: name: {0}", pair.Key);
                 mkMachine = new MkMachineClass(this, pair.Key, pair.Value);
                 SyntaxNode node = mkMachine.MkClass();
                 members.Add(node);
@@ -3013,7 +2994,6 @@ namespace Microsoft.Pc
                     }
                 }
             }
-            //public enum FunContext { EntryFun, ExitFun, Transitions, Dos } 
             public FunInfo GetFunInfo(string funName)
             {
                 if (translator.allStaticFuns.ContainsKey(funName))
@@ -3046,7 +3026,6 @@ namespace Microsoft.Pc
                                     Block(
                                         SingletonList<StatementSyntax>(
                                             ReturnStatement(
-                                                //TODO(bug): replace with init state name from machineInfo, + "_State"
                                                 IdentifierName(startState))))))))
                     .NormalizeWhitespace();
                 machineMembers.Add(startStateProperty);
@@ -3129,7 +3108,15 @@ namespace Microsoft.Pc
 
                 //Machine class constructor
                 //public PONG(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
-                //TODO(expand): add inits for all fields
+                List<SyntaxNode> constructorStmtList = new List<SyntaxNode>();
+                foreach (var varInfo in machineInfo.localVariableToVarInfo.Values)
+                {
+                    var defaultValue = MkCSharpInvocationExpression(MemberAccessExpression(
+                                SyntaxKind.SimpleMemberAccessExpression,
+                                IdentifierName("PrtValue"),
+                                IdentifierName("PrtMkDefaultValue")), translator.typeContext.PTypeToCSharpExpr(varInfo.type));
+                    constructorStmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("fields", "Add"), defaultValue)));
+                }
                 if (machineInfo.IsReal)
                 {
                     var constructorPars = new SyntaxNode[]
@@ -3139,8 +3126,10 @@ namespace Microsoft.Pc
                         generator.ParameterDeclaration("assume", generator.TypeExpression(SpecialType.System_Boolean))
                     };
                     var baseConstructorArgs = new SyntaxNode[] { generator.IdentifierName("app"), generator.IdentifierName("maxB"), generator.IdentifierName("assume") };
+
                     var constructor_2 = generator.ConstructorDeclaration(machineName, constructorPars, Accessibility.Public,
-                                        baseConstructorArguments: baseConstructorArgs);
+                                        baseConstructorArguments: baseConstructorArgs,
+                                        statements: constructorStmtList);
                     machineMembers.Add(constructor_2);
                 }
                 else
@@ -3151,7 +3140,8 @@ namespace Microsoft.Pc
                     };
                     var baseConstructorArgs = new SyntaxNode[] { generator.IdentifierName("app") };
                     var constructor_2 = generator.ConstructorDeclaration(machineName, constructorPars, Accessibility.Public,
-                                        baseConstructorArguments: baseConstructorArgs);
+                                        baseConstructorArguments: baseConstructorArgs,
+                                        statements: constructorStmtList);
                     machineMembers.Add(constructor_2);
                 }
 
@@ -3160,6 +3150,18 @@ namespace Microsoft.Pc
                 {
                     MkFunctionDecl funDecl = new MkFunctionDecl(pair.Key, pair.Value, this, translator);
                     funDecl.AddFunClass();
+                }
+
+                foreach (var pair in machineInfo.stateNameToStateInfo)
+                {
+                    string stateName = pair.Key;
+                    string stateType = stateName + "_Class";
+                    //state instantiation for the machine class constructor:
+                    //Example: 
+                    //PONG_Pong_WaitPing = new PONG_Pong_WaitPing_Class("PONG_Pong_WaitPing", AnonFun1, AnonFun0, false, StateTemperature.Warm);
+                    //Consider 6 cases (write a mmethod): for each bool value of hasNullTransition, there are 3 possible "temperatures"
+                    mainConstructorFields.Add(MkStateInstantiation(stateName, stateType, pair.Value.entryActionName, pair.Value.exitFunName,
+                                              pair.Value.hasNullTransition, pair.Value.temperature));
                 }
 
                 //State classes for all states of the machine:
@@ -3258,21 +3260,7 @@ namespace Microsoft.Pc
                         .NormalizeWhitespace();
                     machineMembers.Add(stateDeclaration);
 
-                    //state instantiation for the machine class constructor:
-                    //Example: 
-                    //PONG_Pong_WaitPing = new PONG_Pong_WaitPing_Class("PONG_Pong_WaitPing", AnonFun1, AnonFun0, false, StateTemperature.Warm);
-                    //Consider 6 cases (write a mmethod): for each bool value of hasNullTransition, there are 3 possible "temperatures"
-                    //TODO(remove): Debug only:
-                    Console.WriteLine("hasNullTransition for state {0} is {1}", stateName, pair.Value.hasNullTransition);
-                    mainConstructorFields.Add(MkStateInstantiation(stateName, stateType, pair.Value.entryActionName, pair.Value.exitFunName,
-                                              pair.Value.hasNullTransition, pair.Value.temperature));
-
                     //Add DoDecls to the StateInfo:
-                    //Example: Main_Ping_SendPing.dos.Add(Pong, foo);
-                    //Note: "ignore E" is considered a DeDecl with the default "ignore" function, and is present in StateInfo.actions
-                    //TODO(question): do I have to use pre-defined 
-                    //public class PrtIgnoreFun : PrtFun
-                    //for "ignore" function?
                     foreach (var doFun in pair.Value.dos)
                     {
                         mainConstructorFields.Add(
@@ -3294,6 +3282,35 @@ namespace Microsoft.Pc
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
                                                     IdentifierName(doFun.Value))}))))
+                            .NormalizeWhitespace()
+                            );
+                    }
+
+                    //Add ignored events
+                    foreach (var ignoredEvent in pair.Value.ignoredEvents)
+                    {
+                        mainConstructorFields.Add(
+                            ExpressionStatement(
+                                InvocationExpression(
+                                    MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression,
+                                        MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName(stateName),
+                                            IdentifierName("dos")),
+                                        IdentifierName("Add")))
+                                .WithArgumentList(
+                                    ArgumentList(
+                                        SeparatedList<ArgumentSyntax>(
+                                            new SyntaxNodeOrToken[]{
+                                                Argument(
+                                                    IdentifierName(ignoredEvent)),
+                                                Token(SyntaxKind.CommaToken),
+                                                Argument(
+                                                    MemberAccessExpression(
+                                                                        SyntaxKind.SimpleMemberAccessExpression,
+                                                                        IdentifierName("PrtFun"),
+                                                                        IdentifierName("IgnoreFun")))}))))
                             .NormalizeWhitespace()
                             );
                     }
@@ -3327,8 +3344,6 @@ namespace Microsoft.Pc
                     {
                         string trigger = transition.Key;
                         string transition_name = "transition" + "_" + transition_count;
-                        //For push transition, transition.Value.transFunName name is null - 
-                        //replacing wuth PrtCommonFunctions.SkipFun
                         if (transition.Value.IsPush)
                         {
                             //push transition:
@@ -3351,8 +3366,8 @@ namespace Microsoft.Pc
                                                                 Argument(
                                                                     MemberAccessExpression(
                                                                         SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName("PrtCommonFunctions"),
-                                                                        IdentifierName("SkipFun"))),
+                                                                        IdentifierName("PrtFun"),
+                                                                        IdentifierName("IgnoreFun"))),
                                                                         Token(SyntaxKind.CommaToken),
                                                                 Argument(
                                                                     IdentifierName(transition.Value.target)),
@@ -3408,7 +3423,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                     Argument(
-                                                        IdentifierName(trigger)),
+                                                        IdentifierName(EventName(trigger))),
                                                     Token(SyntaxKind.CommaToken),
                                                     Argument(
                                                         IdentifierName(transition_name))}))))

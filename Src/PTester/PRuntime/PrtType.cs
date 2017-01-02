@@ -41,6 +41,36 @@ namespace P.Runtime
             return "INT";
         }
     }
+    public class PrtEnumType : PrtType
+    {
+        public string name;
+        public Dictionary<int, string> enumConstants;
+        public PrtEnumType(string typeName, params object[] args)
+        {
+            name = typeName;
+            enumConstants = new Dictionary<int, string>();
+            int i = 0;
+            while (i < args.Count())
+            {
+                string enumConstantName = (string)args[i];
+                i++;
+                int enumConstantValue = (int)args[i];
+                i++;
+                enumConstants[enumConstantValue] = enumConstantName;
+            }
+        }
+        public override string ToString()
+        {
+            return name;
+        }
+        public string DefaultConstant
+        {
+            get
+            {
+                return enumConstants[0];
+            }
+        }
+    }
     public class PrtBoolType : PrtType
     {
         public override string ToString()
@@ -91,6 +121,14 @@ namespace P.Runtime
     public class PrtTupleType : PrtType
     {
         public List<PrtType> fieldTypes;
+
+        public PrtTupleType() 
+        {
+            /*
+               This constructor is added only to prevent the other constructor from being called
+               when an instance of PrtNamedTupleType is created.
+             */
+        }
 
         public PrtTupleType(params PrtType[] fields)
         {

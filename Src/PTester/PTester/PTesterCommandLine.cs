@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using P.Runtime;
@@ -170,11 +171,11 @@ namespace P.Tester
                                                         new object[] { });
             if (s == null)
                 throw new ArgumentException("Invalid assembly");
-            var impls = s.ImplMachines;
             bool doWork = true;
             while (doWork)
             {
                 doWork = false;
+                var impls =  new List<PrtImplMachine>(s.ImplMachines);
                 foreach (var impl in impls)
                 {
                     if (impl.currentStatus == PrtMachineStatus.Enabled)

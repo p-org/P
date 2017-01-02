@@ -351,7 +351,7 @@ namespace Microsoft.Pc
         public Compiler compiler;
         public Dictionary<AST<Node>, string> funToFileName;
         public Dictionary<string, EventInfo> allEvents;
-        public Dictionary<string, List<Tuple<string, int>>> allEnums;
+        public Dictionary<string, Dictionary<string, int>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, string> linkMap;
         public Dictionary<string, FunInfo> allStaticFuns;
@@ -419,7 +419,7 @@ namespace Microsoft.Pc
 
             funToFileName = new Dictionary<AST<Node>, string>();
             allEvents = new Dictionary<string, EventInfo>();
-            allEnums = new Dictionary<string, List<Tuple<string, int>>>();
+            allEnums = new Dictionary<string, Dictionary<string, int>>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
@@ -486,14 +486,14 @@ namespace Microsoft.Pc
                     FuncTerm strIter = it.Current as FuncTerm;
                     it.MoveNext();
                     FuncTerm valIter = it.Current as FuncTerm;
-                    var constants = new List<Tuple<string, int>>();
+                    var constants = new Dictionary<string, int>();
                     if (valIter == null)
                     {
                         var val = 0;
                         while (strIter != null)
                         {
                             var constant = (GetArgByIndex(strIter, 0) as Cnst).GetStringValue();
-                            constants.Add(Tuple.Create<string, int>(constant, val));
+                            constants[constant] = val;
                             strIter = GetArgByIndex(strIter, 1) as FuncTerm;
                             val++;
                         }
@@ -504,7 +504,7 @@ namespace Microsoft.Pc
                         {
                             var constant = (GetArgByIndex(strIter, 0) as Cnst).GetStringValue();
                             var val = (GetArgByIndex(valIter, 0) as Cnst).GetNumericValue();
-                            constants.Add(Tuple.Create<string, int>(constant, (int)val.Numerator));
+                            constants[constant] = (int)val.Numerator;
                             strIter = GetArgByIndex(strIter, 1) as FuncTerm;
                             valIter = GetArgByIndex(valIter, 1) as FuncTerm;
                         }

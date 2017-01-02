@@ -143,8 +143,8 @@ machine Main {
 		  v3 = default(SeqFoo);
 		  v3 += (0,foo3);
 		  v3[1] = foo4;
-		  t2 += (0, v1);
-		  t2 += (1,v3);
+		  //t2 += (0, v1);
+		  //t2 += (1,v3);
 		  //assert sizeof(t2) == 2;            //holds
 		  //assert t2[0] == ((0,foo1), (1,foo2));   //holds
 		  //assert t2[1] == ((0,foo3), (1,foo4));   //holds
@@ -157,9 +157,9 @@ machine Main {
 		  v2[0] = t1;
 		  
 		  t0[0] = foo0;              //error
-		  t0 += (1,foo1);
+		  //t0 += (1,foo1);
 		  t0[2] = foo2;              //error
-		  t0 += (3,foo3);
+		  //t0 += (3,foo3);
 		  //assert t0[0] = foo0 && t0[1] = foo1 && t0[2] = foo2 && t0[3] = foo3;   //holds
 		  
 		  //var t3: (x: SeqTuple, y: MapIntFoo);

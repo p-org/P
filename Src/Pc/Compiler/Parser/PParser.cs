@@ -1994,11 +1994,28 @@
             machDecl.Span = span;
             machDecl.name = MkString(name, nameSpan);
             machDecl.kind = MkUserCnst(kind, span);
-            foreach (var e in crntObservesList)
+            if(crntObservesList.Count > 0)
             {
-                var observes = P_Root.MkObservesDecl(machDecl, (P_Root.IArgType_ObservesDecl__1)e);
+                var anonEventSetName = "__AnonEventSet_" + anonEventSetCounter;
+                anonEventSetCounter++;
+                var eventset = new P_Root.EventSetDecl();
+                eventset.name = MkString(anonEventSetName, nameSpan);
+                eventset.id = (P_Root.IArgType_EventSetDecl__1)MkIntegerId(nameSpan);
+                eventset.Span = span;
+                parseProgram.EventSetDecl.Add(eventset);
+                foreach (var ev in crntObservesList)
+                {
+                    var eventsetContains = new P_Root.EventSetContains();
+                    eventsetContains.evset = eventset;
+                    eventsetContains.ev = (P_Root.IArgType_EventSetContains__1)ev;
+                    eventsetContains.Span = ev.Span;
+                    parseProgram.EventSetContains.Add(eventsetContains);
+                }
+                var observes = P_Root.MkObservesDecl(machDecl, (P_Root.IArgType_ObservesDecl__1)MkString(anonEventSetName, nameSpan));
                 parseProgram.Observes.Add(observes);
+                crntObservesList.Clear();
             }
+
             if (IsValidName(PProgramTopDecl.Machine, name, nameSpan))
             {
                 PPTopDeclNames.machineNames.Add(name);

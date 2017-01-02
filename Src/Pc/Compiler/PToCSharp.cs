@@ -2750,6 +2750,10 @@ namespace Microsoft.Pc
                            generator.ObjectCreationExpression(generator.IdentifierName(machineName),
                            new List<SyntaxNode>() { generator.IdentifierName("application") })));
 
+            foreach (var x in allMachines[machineName].observesEvents)
+            {
+                fields.Add(MkCSharpInvocationExpression(MkCSharpDot("machine", "observes", "Add"), IdentifierName(x)));
+            }
             //stmt2: AddSpecMachineToStateImpl(machine);
             fields.Add(generator.InvocationExpression(MkCSharpDot("application", "AddSpecMachineToStateImpl"),
                                  new List<SyntaxNode>() { generator.IdentifierName("machine") }));

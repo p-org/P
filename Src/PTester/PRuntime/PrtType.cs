@@ -41,6 +41,36 @@ namespace P.Runtime
             return "INT";
         }
     }
+    public class PrtEnumType : PrtType
+    {
+        public string name;
+        public Dictionary<int, string> enumConstants;
+        public PrtEnumType(string typeName, params object[] args)
+        {
+            name = typeName;
+            enumConstants = new Dictionary<int, string>();
+            int i = 0;
+            while (i < args.Count())
+            {
+                string enumConstantName = (string)args[i];
+                i++;
+                int enumConstantValue = (int)args[i];
+                i++;
+                enumConstants[enumConstantValue] = enumConstantName;
+            }
+        }
+        public override string ToString()
+        {
+            return name;
+        }
+        public string DefaultConstant
+        {
+            get
+            {
+                return enumConstants[0];
+            }
+        }
+    }
     public class PrtBoolType : PrtType
     {
         public override string ToString()
@@ -53,40 +83,6 @@ namespace P.Runtime
         public override string ToString()
         {
             return "EVENT";
-        }
-    }
-    public class PrtUninterpretedEnumType : PrtType
-    {
-        public string name;
-        public HashSet<string> enumConstants;
-        public string defaultValue;
-
-        public PrtUninterpretedEnumType(string typeName, params string[] args)
-        {
-            name = typeName;
-            enumConstants = new HashSet<string>(args);
-            defaultValue = args[0];
-        }
-        public override string ToString()
-        {
-            return name;
-        }
-    }
-    public class PrtInterpretedEnumType : PrtType
-    {
-        public string name;
-        public HashSet<int> enumConstants;
-        public int defaultValue;
-
-        public PrtInterpretedEnumType(string typeName, params int[] args)
-        {
-            name = typeName;
-            enumConstants = new HashSet<int>(args);
-            defaultValue = args[0];
-        }
-        public override string ToString()
-        {
-            return name;
         }
     }
     public class PrtMapType : PrtType

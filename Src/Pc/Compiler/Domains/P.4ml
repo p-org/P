@@ -1463,13 +1463,9 @@ domain PStaticTyping extends PData
 	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name), t != s, t != BaseType(ANY).
 	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name), t != s, t != BaseType(ANY). 
 	
-	// Each enum type with no integer values has empty intersection with all types except itself and ANY
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, NIL, _), t != s, t != BaseType(ANY).
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, NIL, _), t != s, t != BaseType(ANY). 
-
-	// Each enum type with integer values has empty intersection with all types except itself and ANY and INT
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, x, _), x != NIL, t != s, t != BaseType(ANY), t != BaseType(INT).
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, x, _), x != NIL, t != s, t != BaseType(ANY), t != BaseType(INT). 
+	// Each enum type has empty intersection with all types except itself and ANY and INT
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, t != BaseType(ANY), t != BaseType(INT).
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, t != BaseType(ANY), t != BaseType(INT). 
     
     // The NULL type has empty intersections with NonNullBase and complex types.
     NonNullBase ::= (TypeExpr).
@@ -1607,8 +1603,8 @@ domain PStaticTyping extends PData
 	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s : InterfaceType, t = BaseType(ANY).
 
 	// Enum types with values are a subtype of int
-	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, x, _), x != NIL, t = BaseType(INT).
-	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, x, _), x != NIL, t = BaseType(INT).
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
+	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
 
     // Sequences are subtype related if their inner types are subtype related.
     TypeRel(s, t, SUB)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 

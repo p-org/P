@@ -299,13 +299,20 @@ namespace Microsoft.Pc
                 }
                 else if (typeKind == "NameType")
                 {
-                    //NameType is for enum values only; "synonym" types are expanded by the compiler
-                    //TODO(expand): there's no ref to the enum type left in C# code, which would not allow
-                    //to treat casts (enum->int) properly; 
-                    //therefore, code below would have to be changed, after PrtEnumType is defined in PrtTypes.cs.
+                    string enumTypeName = (GetArgByIndex(type, 0) as Cnst).GetStringValue();
+                    List<ExpressionSyntax> args = new List<ExpressionSyntax>();
+                    args.Add(MkCSharpStringLiteralExpression(enumTypeName));
+                    foreach (var x in pToCSharp.allEnums[enumTypeName])
+                    {
+                        args.Add(MkCSharpStringLiteralExpression(x.Key));
+                        args.Add(MkCSharpNumericLiteralExpression(x.Value));
+                    }
                     string typeName = "typeNameType_" + typeCount;
                     var tmpVar = GetType(typeName);
-                    AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
+                    AddTypeInitialization(
+                        MkCSharpSimpleAssignmentExpressionStatement(
+                            tmpVar, 
+                            MkCSharpObjectCreationExpression(IdentifierName("PrtEnumType"), args.ToArray())));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
                     return tmpVar;
@@ -1343,7 +1350,6 @@ namespace Microsoft.Pc
                 return Block(stmts);
             }
 
-            //In the context of expressions only; no children
             SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
             {
                 var name = GetName(ft, 0);
@@ -1358,7 +1364,6 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    //PrtEvent case: emit "new PrtEventValue(eventStaticVar);", where eventStaticVar is eventName
                     var type = LookupType(ft);
                     if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                     {
@@ -1366,9 +1371,12 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        //TODO: check type and add default case to throw an exception
-                        //Enum case:
-                        return MkCSharpObjectCreationExpression(IdentifierName("PrtIntValue"), IdentifierName(name));
+                        // enum constant
+                        var enumTypeName = (GetArgByIndex(type, 0) as Cnst).GetStringValue();
+                        return MkCSharpObjectCreationExpression(
+                            IdentifierName("PrtEnumValue"),
+                            MkCSharpStringLiteralExpression(name), 
+                            MkCSharpNumericLiteralExpression(pToCSharp.allEnums[enumTypeName][name]));
                     }
                 }
             }
@@ -2986,7 +2994,6 @@ namespace Microsoft.Pc
                     }
                 }
             }
-            //public enum FunContext { EntryFun, ExitFun, Transitions, Dos } 
             public FunInfo GetFunInfo(string funName)
             {
                 if (translator.allStaticFuns.ContainsKey(funName))

@@ -22,15 +22,10 @@ namespace P.Runtime
             {
                 return new PrtIntValue();
             }
-            else if (type is PrtUninterpretedEnumType)
+            else if (type is PrtEnumType)
             {
-                PrtUninterpretedEnumType enumType = type as PrtUninterpretedEnumType;
-                return new PrtEnumValue(enumType.defaultValue);
-            }
-            else if (type is PrtInterpretedEnumType)
-            {
-                PrtInterpretedEnumType enumType = type as PrtInterpretedEnumType;
-                return new PrtIntValue(enumType.defaultValue);
+                PrtEnumType enumType = type as PrtEnumType;
+                return new PrtEnumValue(enumType.DefaultConstant, 0);
             }
             else if (type is PrtBoolType)
             {
@@ -80,19 +75,12 @@ namespace P.Runtime
             {
                 return (type is PrtNullType || type is PrtEventType || type is PrtMachineType);
             }
-            else if (type is PrtUninterpretedEnumType)
+            else if (type is PrtEnumType)
             {
-                PrtUninterpretedEnumType enumType = type as PrtUninterpretedEnumType;
-                PrtEnumValue enumValue = value as PrtEnumValue;
-                if (enumValue == null) return false;
-                return enumType.enumConstants.Contains(enumValue.enumConstant);
-            }
-            else if (type is PrtInterpretedEnumType)
-            {
-                PrtInterpretedEnumType enumType = type as PrtInterpretedEnumType;
+                PrtEnumType enumType = type as PrtEnumType;
                 PrtIntValue intValue = value as PrtIntValue;
                 if (intValue == null) return false;
-                return enumType.enumConstants.Contains(intValue.nt);
+                return enumType.enumConstants.ContainsKey(intValue.nt);
             }
             else if (type is PrtIntType)
             {
@@ -266,25 +254,18 @@ namespace P.Runtime
         }
     }
 
-    public class PrtEnumValue : PrtValue
+    public class PrtEnumValue : PrtIntValue
     {
-        public string enumConstant;
+        public string constName;
 
-        public PrtEnumValue(string n)
+        public PrtEnumValue(string name, int val) : base(val)
         {
-            enumConstant = n;
+            constName = name;
         }
 
         public override PrtValue Clone()
         {
-            return new PrtEnumValue(this.enumConstant);
-        }
-
-        public override bool Equals(PrtValue val)
-        {
-            PrtEnumValue enumVal = val as PrtEnumValue;
-            if (val == null) return false;
-            return this.enumConstant == enumVal.enumConstant;
+            return new PrtEnumValue(this.constName, this.nt);
         }
     }
 

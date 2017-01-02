@@ -159,7 +159,7 @@ namespace P.Runtime
             }
 
             //Announce it to all the monitors
-            stateImpl.Announce(e, arg, source);
+            stateImpl.Announce(e as PrtEventValue, arg, source);
         }
 
         public PrtDequeueReturnStatus PrtDequeueEvent(bool hasNullTransition)

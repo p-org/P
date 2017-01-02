@@ -71,6 +71,23 @@ namespace P.Runtime
             }
         }
     }
+
+    public class PrtInterfaceType: PrtType
+    {
+        public string name;
+        public List<PrtEventValue> permissions;
+        public PrtInterfaceType(string name)
+        {
+            this.name = name;
+            permissions = new List<PrtEventValue>();
+        }
+
+        public override string ToString()
+        {
+            return name;
+        }
+    }
+
     public class PrtBoolType : PrtType
     {
         public override string ToString()

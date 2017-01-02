@@ -8,7 +8,7 @@ namespace P.Runtime
     public abstract class PrtSpecMachine : PrtMachine
     {
         #region Fields
-        public List<PrtValue> observes;
+        public List<PrtEventValue> observes;
         public bool IsHot;
         #endregion
 
@@ -16,13 +16,13 @@ namespace P.Runtime
 
         public PrtSpecMachine() : base()
         {
-            observes = new List<PrtValue>();
+            observes = new List<PrtEventValue>();
             IsHot = false;
         }
 
         public PrtSpecMachine(StateImpl app) : base()
         {
-            observes = new List<PrtValue>();
+            observes = new List<PrtEventValue>();
             IsHot = false;
             stateImpl = app;
             //Push the start state function on the funStack.

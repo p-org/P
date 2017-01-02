@@ -15,7 +15,7 @@ namespace P.Runtime
         {
             implMachines = new List<PrtImplMachine>();
             specMachines = new List<PrtSpecMachine>();
-            specObservers = new Dictionary<PrtValue, List<PrtSpecMachine>>();
+            specObservers = new Dictionary<PrtEventValue, List<PrtSpecMachine>>();
         }
         #endregion
 
@@ -43,7 +43,7 @@ namespace P.Runtime
         /// </summary>
         private Exception exception;
 
-        private Dictionary<PrtValue, List<PrtSpecMachine>> specObservers;
+        private Dictionary<PrtEventValue, List<PrtSpecMachine>> specObservers;
         #endregion
 
         #region Getters and Setters
@@ -105,7 +105,7 @@ namespace P.Runtime
             return implMachines.Where(m => m.GetType() == machineType).Count() + 1;
         }
 
-        public void Announce(PrtValue ev, PrtValue payload, PrtMachine parent)
+        public void Announce(PrtEventValue ev, PrtValue payload, PrtMachine parent)
         {
             if (specObservers.ContainsKey(ev))
             {

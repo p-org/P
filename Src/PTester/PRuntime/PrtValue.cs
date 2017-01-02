@@ -14,7 +14,7 @@ namespace P.Runtime
 
         public static PrtValue PrtMkDefaultValue(PrtType type)
         {
-            if (type is PrtAnyType || type is PrtNullType || type is PrtEventType || type is PrtMachineType)
+            if (type is PrtAnyType || type is PrtNullType || type is PrtEventType || type is PrtMachineType || type is PrtInterfaceType)
             {
                 return @null;
             }
@@ -96,7 +96,33 @@ namespace P.Runtime
             }
             else if (type is PrtMachineType)
             {
-                return value is PrtMachineValue;
+                return (value is PrtMachineValue || value is PrtInterfaceValue);
+            }
+            else if (type is PrtInterfaceType)
+            {
+                var interValue = value as PrtInterfaceValue;
+                if(interValue == null)
+                {
+                    return false;
+                }
+                else
+                {
+                    if(interValue.permissions.Count() != (type as PrtInterfaceType).permissions.Count())
+                    {
+                        return false;
+                    }
+                    else
+                    {
+                        foreach(var ev in interValue.permissions)
+                        {
+                            if (!(type as PrtInterfaceType).permissions.Contains(ev))
+                            {
+                                return false;
+                            }
+                        }
+                        return true;
+                    }
+                }
             }
             else if (type is PrtNamedTupleType) // must come before PrtTupleType since PrtNamedTupleType derives from PrtTupleType
             {
@@ -269,6 +295,38 @@ namespace P.Runtime
         }
     }
 
+    public class PrtInterfaceValue : PrtValue
+    {
+        public PrtImplMachine mach;
+        public List<PrtEventValue> permissions;
+
+        public PrtInterfaceValue(PrtImplMachine m, List<PrtEventValue> perm)
+        {
+            mach = m;
+            permissions = new List<PrtEventValue>();
+            foreach(var ev in perm)
+            {
+                permissions.Add(ev);
+            }
+        }
+
+        public override PrtValue Clone()
+        {
+            return new PrtInterfaceValue(mach, permissions);
+        }
+
+        public override string ToString()
+        {
+            return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
+        }
+
+        public override bool Equals(PrtValue val)
+        {
+            var machineVal = val as PrtMachineValue;
+            if (machineVal == null) return false;
+            return this.mach == machineVal.mach;
+        }
+    }
     public class PrtMachineValue : PrtValue
     {
         public PrtImplMachine mach;

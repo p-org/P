@@ -90,7 +90,7 @@ domain PData
     MachineDecl    ::= fun (name: String -> kind: { REAL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
 	MachineProtoDecl ::= fun (name: String -> constType: any TypeExpr).
 
-	ObservesDecl   ::= new (spec: MachineDecl, evSetName: String).
+	ObservesDecl   ::= new (spec: MachineDecl, ev: NonNullEventName).
 
     VarDecl        ::= fun (name: String, owner: MachineDecl -> type: any TypeExpr, id: any Id).
     
@@ -208,10 +208,14 @@ domain PStructuralTyping extends PData
 
 	//no defer in Spec
 	[rule_Classes = '"error, msg: defer not allowed in spec machine"']
-	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), s.owner.kind = SPEC.		
+	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), s.owner.kind = SPEC.	
+
+	//event in spec is defined
+	[rule_Classes = '"error, msg: event in observes list is undefined"']
+	OneDeclError(obs.spec) :- obs is ObservesDecl, obs.spec.kind = SPEC, no EventDecl(obs.ev, _, _, _).	
 
 	//event in eventset not declared
-	[rule_Classes = '"error, msg: unknown event in the eventset"']
+	[rule_Classes = '"error, msg: unknown event in eventset"']
 	OneDeclError(eventset) :- EventSetContains(eventset, ev), ev != HALT, no EventDecl(ev, _, _, _).
 
 	//eventset in interface type

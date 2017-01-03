@@ -644,7 +644,7 @@ namespace Microsoft.Pc
                 var currentObservesSet = MkZingDot("Main", GetObservesSetName(machineName));
                 runBodyStmts.Add(MkZingAssign(currentObservesSet, MkZingNew(SmEventSet, ZingData.Cnst_Nil)));
                 List<AST<Node>> stmts = new List<AST<Node>>();
-                AddEventSet(stmts, allEventSets[machineInfo.observesEventSet], currentObservesSet);
+                AddEventSet(stmts, machineInfo.observesEvents, currentObservesSet);
                 runBodyStmts.Add(MkZingSeq(stmts));
             }
             runBodyStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("Main", "CreateMachine_Main"), MkZingIdentifier("nullValue"))));

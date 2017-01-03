@@ -198,7 +198,7 @@ namespace Microsoft.Pc
         public string initStateName;
         public Dictionary<string, StateInfo> stateNameToStateInfo;
         public Dictionary<string, VariableInfo> localVariableToVarInfo;
-        public string observesEventSet;
+        public List<string> observesEvents;
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public SpecType specType;
 
@@ -210,6 +210,7 @@ namespace Microsoft.Pc
             initStateName = null;
             stateNameToStateInfo = new Dictionary<string, StateInfo>();
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
+            observesEvents = new List<string>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             specType = SpecType.SAFETY;
             funNameToFunInfo["ignore"] = new FunInfo(false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
@@ -354,7 +355,6 @@ namespace Microsoft.Pc
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, string> linkMap;
         public Dictionary<string, FunInfo> allStaticFuns;
-        public Dictionary<string, List<string>> allEventSets;
         public Dictionary<AST<Node>, string> anonFunToName;
         public Dictionary<int, SourceInfo> idToSourceInfo;
 
@@ -451,7 +451,6 @@ namespace Microsoft.Pc
                 }
             }
 
-
             terms = GetBin(factBins, "EventDecl");
             foreach (var term in terms)
             {
@@ -547,28 +546,7 @@ namespace Microsoft.Pc
                     var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     it.MoveNext();
-                    allMachines[machineName].observesEventSet = ((Cnst)it.Current).GetStringValue();
-                }
-            }
-
-            terms = GetBin(factBins, "EventSetContains");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var eventSetDecl = (FuncTerm)it.Current;
-                    var eventSetName = GetName(eventSetDecl, 0);
-                    it.MoveNext();
-                    if(!allEventSets.ContainsKey(eventSetName))
-                    {
-                        allEventSets[eventSetName] = new List<string>();
-                        allEventSets[eventSetName].Add(((Cnst)it.Current).GetStringValue());
-                    }
-                    else
-                    {
-                        allEventSets[eventSetName].Add(((Cnst)it.Current).GetStringValue());
-                    }
+                    allMachines[machineName].observesEvents.Add(((Cnst)it.Current).GetStringValue());
                 }
             }
 

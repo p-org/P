@@ -585,6 +585,9 @@
                 var RootFileName = RootProgramName.ToString();
                 SeenFileNames[RootFileName] = RootProgramName;
                 parserWorkQueue.Enqueue(RootFileName);
+                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                var root4mlFilePath = outputDirName + "\\" + Path.GetFileNameWithoutExtension(RootFileName) + ".4ml";
+                var lastCompileTime = File.Exists(root4mlFilePath) ? File.GetLastWriteTime(root4mlFilePath) : DateTime.MinValue;
                 while (parserWorkQueue.Count > 0)
                 {
                     List<string> includedFileNames;
@@ -604,7 +607,7 @@
                     }
 
                     //check if the parsed file has changed
-                    fileOrDependChanged = fileOrDependChanged | CheckIfPFileShouldBeCompiled(currFileName);
+                    fileOrDependChanged = fileOrDependChanged | CheckIfPFileShouldBeCompiled(currFileName, lastCompileTime);
 
                     string currDirectoryName = Path.GetDirectoryName(Path.GetFullPath(currFileName));
                     foreach (var fileName in includedFileNames)
@@ -635,14 +638,10 @@
             return true;
         }
 
-        bool CheckIfPFileShouldBeCompiled(string fullPFilePath)
+        bool CheckIfPFileShouldBeCompiled(string fullPFilePath, DateTime lastCompileTime)
         {
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-            var gen4mlFilePath = outputDirName + "\\" + Path.GetFileNameWithoutExtension(fullPFilePath) + ".4ml";
             var lastWriteTimePFile = File.GetLastWriteTime(fullPFilePath);
-            var lastWriteTime4mlFile = File.Exists(gen4mlFilePath) ? File.GetLastWriteTime(gen4mlFilePath) : DateTime.MinValue;
-
-            if(DateTime.Compare(lastWriteTimePFile, lastWriteTime4mlFile) < 0)
+            if(DateTime.Compare(lastWriteTimePFile, lastCompileTime) < 0)
             {
                 return false;
             }

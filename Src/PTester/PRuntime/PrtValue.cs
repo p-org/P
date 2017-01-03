@@ -295,14 +295,12 @@ namespace P.Runtime
         }
     }
 
-    public class PrtInterfaceValue : PrtValue
+    public class PrtInterfaceValue : PrtMachineValue
     {
-        public PrtImplMachine mach;
         public List<PrtEventValue> permissions;
 
-        public PrtInterfaceValue(PrtImplMachine m, List<PrtEventValue> perm)
+        public PrtInterfaceValue(PrtImplMachine m, List<PrtEventValue> perm): base(m)
         {
-            mach = m;
             permissions = new List<PrtEventValue>();
             foreach(var ev in perm)
             {
@@ -327,6 +325,7 @@ namespace P.Runtime
             return this.mach == machineVal.mach;
         }
     }
+
     public class PrtMachineValue : PrtValue
     {
         public PrtImplMachine mach;

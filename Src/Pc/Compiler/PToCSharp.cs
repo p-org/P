@@ -399,10 +399,7 @@ namespace Microsoft.Pc
                     while (type != null)
                     {
                         string evName = ((Cnst)GetArgByIndex(type, 0)).GetStringValue();
-                        var eventValue = MkCSharpObjectCreationExpression(
-                            IdentifierName("PrtEventValue"),
-                            IdentifierName(evName));
-                        eventValues.Add(eventValue);
+                        eventValues.Add(IdentifierName(evName));
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     // typekind == "InterfaceType"
@@ -413,11 +410,11 @@ namespace Microsoft.Pc
                     List<StatementSyntax> addEventsStmtList = new List<StatementSyntax>();
                     foreach(var evNode in eventValues)
                     {
-                        addEventsStmtList.Add(
-                            ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(IdentifierName(typeName), "Add"), evNode))
+                        AddTypeInitialization(
+                            ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(IdentifierName(typeName), "permissions","Add"), evNode))
                             );
                     }
-                    AddTypeInitialization(Block(addEventsStmtList));
+                    //AddTypeInitialization(Block(addEventsStmtList).WithoutTrivia());
                     return tmpVar;
                 }
             }
@@ -759,7 +756,6 @@ namespace Microsoft.Pc
 
             List<AST<Node>> elements = new List<AST<Node>>();
             MkAppConstructors();
-            MkEventSets();
             MkEvents();
             MkTypes();
             MkStaticAppConstructor();
@@ -775,6 +771,7 @@ namespace Microsoft.Pc
             EmitCSharpOutput(csharpFileName);
             return true;
         }
+
         private void MkAppConstructors()
         {
             //parameterless constructor
@@ -825,20 +822,7 @@ namespace Microsoft.Pc
             }
         }
 
-        private void MkEventSets()
-        {
-            foreach (var evset in allEventSets)
-            {
-                members.Add(
-                MkCSharpFieldDeclaration(MkCSharpGenericListType(IdentifierName("PrtEventValue")),
-                    EventName(evset.Key),
-                    Token(SyntaxKind.PublicKeyword),
-                    Token(SyntaxKind.StaticKeyword)
-                    )
-                );
-            }
-        }
-
+        
         private void MkTypes()
         {
             members.AddRange(typeContext.typeDeclaration);
@@ -886,17 +870,6 @@ namespace Microsoft.Pc
                         doAssume
                     ));
                 inits.Add((StatementSyntax)MkCSharpSimpleAssignmentExpressionStatement(lhs, rhs));
-            }
-
-            //initialize the event sets
-            foreach(var evset in allEventSets)
-            {
-                SyntaxNode lhs = IdentifierName(evset.Key);
-                SyntaxNode rhs = MkCSharpObjectCreationExpression(MkCSharpGenericListType(IdentifierName("PrtEventValue")));
-                foreach(var ev in evset.Value)
-                {
-                    MkCSharpInvocationExpression(MkCSharpDot(evset.Key, "Add"), IdentifierName(ev));
-                }
             }
 
             members.Add(ConstructorDeclaration(
@@ -1476,8 +1449,7 @@ namespace Microsoft.Pc
                 }
                 else if (op == PData.Cnst_This.Node.Name)
                 {
-                    return MkCSharpObjectCreationExpression(IdentifierName("PrtMachineValue"),
-                            MkCSharpCastExpression("PrtImplMachine", IdentifierName("parent")));
+                    return MkCSharpDot(ThisExpression(), "self");
                 }
                 else if (op == PData.Cnst_Nondet.Node.Name)
                 {
@@ -1814,6 +1786,7 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> args)
             {
+                //check if the send is legal and event is in the permissions.
                 var targetExpr = MkCSharpCastExpression("PrtMachineValue", args[0]);
                 ExpressionSyntax eventExpr = MkCSharpCastExpression("PrtEventValue", args[1]);
                 args.RemoveRange(0, 2);
@@ -1821,7 +1794,7 @@ namespace Microsoft.Pc
                 ExpressionSyntax payloadExpr = MkPayload(tupleTypeExpr, args);
                 var invocationArgs = new ExpressionSyntax[]
                 {
-                    eventExpr, payloadExpr, IdentifierName("parent")
+                    eventExpr, payloadExpr, IdentifierName("parent"), targetExpr
                 };
                 StatementSyntax enqueueEventStmt = ExpressionStatement(
                     MkCSharpInvocationExpression(
@@ -2747,6 +2720,22 @@ namespace Microsoft.Pc
                                    generator.LiteralExpression(machineInfo.maxQueueSizeAssumed) })));
             }
 
+            //initialize the permission set for self
+            foreach(var ev in allMachines[machineName].receiveSet)
+            {
+                fields.Add(
+                    MkCSharpInvocationExpression(MkCSharpDot(IdentifierName("machine"), "self", "permissions", "Add"), IdentifierName(ev))
+                    );
+            }
+
+            //initialize the send set
+            foreach (var ev in allMachines[machineName].sendsSet)
+            {
+                fields.Add(
+                    MkCSharpInvocationExpression(MkCSharpDot(IdentifierName("machine"), "sends", "Add"), IdentifierName(ev))
+                    );
+            }
+
             //stmt2: machine.currentPayload = payload;
             fields.Add(MkCSharpSimpleAssignmentExpressionStatement(
                 MkCSharpDot("machine", "currentPayload"),
@@ -2756,6 +2745,7 @@ namespace Microsoft.Pc
             fields.Add(generator.InvocationExpression(MkCSharpDot("application", "AddImplMachineToStateImpl"),
                                  new List<SyntaxNode>() { generator.IdentifierName("machine") }));
 
+            
             //stmt4: return machine;
             fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
 
@@ -2778,9 +2768,11 @@ namespace Microsoft.Pc
                            generator.ObjectCreationExpression(generator.IdentifierName(machineName),
                            new List<SyntaxNode>() { generator.IdentifierName("application") })));
 
-            
-            fields.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("machine", "observes"), IdentifierName(allMachines[machineName].observesEventSet)));
-            
+
+            foreach (var x in allMachines[machineName].observesEvents)
+            {
+                fields.Add(MkCSharpInvocationExpression(MkCSharpDot("machine", "observes", "Add"), IdentifierName(x)));
+            }
             //stmt2: AddSpecMachineToStateImpl(machine);
             fields.Add(generator.InvocationExpression(MkCSharpDot("application", "AddSpecMachineToStateImpl"),
                                  new List<SyntaxNode>() { generator.IdentifierName("machine") }));

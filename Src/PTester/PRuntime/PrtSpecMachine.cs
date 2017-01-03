@@ -44,7 +44,7 @@ namespace P.Runtime
             return clonedMonitor;
         }
 
-        public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
+        public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source, PrtMachineValue target = null)
         {
             int numOfStepsTaken = 0;
             // set the currentTrigger and currentPayload fields

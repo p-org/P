@@ -199,6 +199,8 @@ namespace Microsoft.Pc
         public Dictionary<string, StateInfo> stateNameToStateInfo;
         public Dictionary<string, VariableInfo> localVariableToVarInfo;
         public List<string> observesEvents;
+        public List<string> receiveSet;
+        public List<string> sendsSet;
         public Dictionary<string, FunInfo> funNameToFunInfo;
         public SpecType specType;
 
@@ -211,6 +213,8 @@ namespace Microsoft.Pc
             stateNameToStateInfo = new Dictionary<string, StateInfo>();
             localVariableToVarInfo = new Dictionary<string, VariableInfo>();
             observesEvents = new List<string>();
+            receiveSet = new List<string>();
+            sendsSet = new List<string>();
             funNameToFunInfo = new Dictionary<string, FunInfo>();
             specType = SpecType.SAFETY;
             funNameToFunInfo["ignore"] = new FunInfo(false, null, PToZing.PTypeNull, null, Factory.Instance.AddArg(Factory.Instance.MkFuncTerm(PData.Con_NulStmt), PData.Cnst_Skip).Node);
@@ -423,7 +427,6 @@ namespace Microsoft.Pc
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
-            allEventSets = new Dictionary<string, List<string>>();
             allStaticFuns = new Dictionary<string, FunInfo>();
             linkMap = new Dictionary<string, string>();
 
@@ -547,6 +550,38 @@ namespace Microsoft.Pc
                     var machineName = GetName(machineDecl, 0);
                     it.MoveNext();
                     allMachines[machineName].observesEvents.Add(((Cnst)it.Current).GetStringValue());
+                }
+            }
+
+            terms = GetBin(factBins, "MachineReceives");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var machineDecl = (FuncTerm)it.Current;
+                    var machineName = GetName(machineDecl, 0);
+                    it.MoveNext();
+                    if(it.Current is Cnst)
+                    {
+                        allMachines[machineName].receiveSet.Add(((Cnst)it.Current).GetStringValue());
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "MachineSends");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var machineDecl = (FuncTerm)it.Current;
+                    var machineName = GetName(machineDecl, 0);
+                    it.MoveNext();
+                    if (it.Current is Cnst)
+                    {
+                        allMachines[machineName].sendsSet.Add(((Cnst)it.Current).GetStringValue());
+                    }
                 }
             }
 

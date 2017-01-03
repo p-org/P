@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25420.1
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTester", "PTester\PTester.csproj", "{56FF7823-8BE6-4EEA-8B5D-656D801DC87D}"
 EndProject
@@ -18,6 +18,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestEntryExitFuns", "Regressions\TestEntryExitFuns\TestEntryExitFuns.csproj", "{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TwoMachines", "Regressions\TwoMachines\TwoMachines.csproj", "{05E6BA8B-6CB0-49E6-9E16-40163D686FD6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Interfaces", "Regressions\Interfaces\Interfaces.csproj", "{72C78652-1366-46DA-B290-2B347D782E58}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -112,6 +114,18 @@ Global
 		{05E6BA8B-6CB0-49E6-9E16-40163D686FD6}.Release|x64.Build.0 = Release|x64
 		{05E6BA8B-6CB0-49E6-9E16-40163D686FD6}.Release|x86.ActiveCfg = Release|x86
 		{05E6BA8B-6CB0-49E6-9E16-40163D686FD6}.Release|x86.Build.0 = Release|x86
+		{72C78652-1366-46DA-B290-2B347D782E58}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Debug|x64.Build.0 = Debug|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Debug|x86.Build.0 = Debug|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Release|Any CPU.Build.0 = Release|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Release|x64.ActiveCfg = Release|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Release|x64.Build.0 = Release|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Release|x86.ActiveCfg = Release|Any CPU
+		{72C78652-1366-46DA-B290-2B347D782E58}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -121,5 +135,6 @@ Global
 		{6DE09DF5-085D-4EC8-819B-009189658069} = {F8D28E4E-51CF-4085-A86A-F94DD052C3A8}
 		{56E290F2-CE11-4EAA-8AD1-4FAA1CC9EAA7} = {F8D28E4E-51CF-4085-A86A-F94DD052C3A8}
 		{05E6BA8B-6CB0-49E6-9E16-40163D686FD6} = {F8D28E4E-51CF-4085-A86A-F94DD052C3A8}
+		{72C78652-1366-46DA-B290-2B347D782E58} = {F8D28E4E-51CF-4085-A86A-F94DD052C3A8}
 	EndGlobalSection
 EndGlobal

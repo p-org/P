@@ -33,11 +33,12 @@ namespace P.Runtime
     {
         #region Fields
         public static int DefaultMaxBufferSize = int.MaxValue;
-
         public PrtEventBuffer eventQueue;
         public HashSet<PrtValue> receiveSet;
         public int maxBufferSize;
         public bool doAssume;
+        public PrtInterfaceValue self;
+        
         #endregion
 
         #region Clone and Undo
@@ -89,6 +90,7 @@ namespace P.Runtime
             this.maxBufferSize = maxBuff;
             this.doAssume = assume;
             this.stateImpl = app;
+            this.self = new PrtInterfaceValue(this, new List<PrtEventValue>());
             //Push the start state function on the funStack.
             PrtPushState(StartState);
         }
@@ -105,13 +107,30 @@ namespace P.Runtime
             currentPayload = PrtValue.@null;
         }
 
-        public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source)
+        public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source, PrtMachineValue target = null)
         {
+            
             PrtEventValue ev = e as PrtEventValue;
             if (ev.evt.name == "null")
             {
                 throw new PrtIllegalEnqueueException("Enqueued event must not be null");
             }
+
+            //check if the sent event is in source send set
+            if(!source.sends.Contains(e as PrtEventValue))
+            {
+                throw new PrtIllegalEnqueueException(String.Format("Machine <0> cannot send event {1}", source.Name, e.ToString()));
+            }
+
+            //check if the sent event is in target permissions
+            if(target is PrtInterfaceValue)
+            {
+                if(!(target as PrtInterfaceValue).permissions.Contains(e as PrtEventValue))
+                {
+                    throw new PrtIllegalEnqueueException(String.Format("Event {1} is not in the permission set of the target", e.ToString()));
+                }
+            }
+
             PrtType prtType = ev.evt.payloadType;
 
             //assertion to check if argument passed inhabits the payload type.
@@ -126,6 +145,8 @@ namespace P.Runtime
             {
                 throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.ToString(), prtType.ToString(), ev.evt.name));
             }
+
+            //check if the event sent is in the permissions
 
             if (currentStatus == PrtMachineStatus.Halted)
             {

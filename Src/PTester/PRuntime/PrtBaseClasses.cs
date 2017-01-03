@@ -10,6 +10,7 @@ namespace P.Runtime
     public abstract class PrtMachine
     {
         #region Fields
+        public List<PrtEventValue> sends;
         public int instanceNumber;
         public List<PrtValue> fields;
         protected PrtValue eventValue;
@@ -40,7 +41,7 @@ namespace P.Runtime
             this.currentStatus = PrtMachineStatus.Enabled;
             this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
             this.stateExitReason = PrtStateExitReason.NotExit;
-            
+            this.sends = new List<PrtEventValue>();
             this.stateImpl = null;
         }
         #endregion
@@ -56,7 +57,7 @@ namespace P.Runtime
             get;
         }
 
-        public abstract void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source);
+        public abstract void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source, PrtMachineValue target = null);
 
         public PrtState CurrentState
         {

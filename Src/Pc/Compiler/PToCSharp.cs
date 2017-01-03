@@ -790,29 +790,6 @@ namespace Microsoft.Pc
         {
             foreach (var pair in allEvents)
             {
-                SyntaxNode payloadType = typeContext.PTypeToCSharpExpr((pair.Value).payloadType);
-                SyntaxNode maxInstances;
-                if ((pair.Value).maxInstances == -1)
-                {
-                    String s = "PrtEvent.DefaultMaxInstances";
-                    maxInstances = IdentifierName(s);
-                }
-                else
-                {
-                    maxInstances = MkCSharpNumericLiteralExpression((pair.Value).maxInstances);
-                }
-
-                SyntaxNode doAssume;
-                if ((pair.Value).maxInstancesAssumed)
-                {
-                    doAssume = MkCSharpTrueLiteralExpression();
-                }
-                else
-                {
-                    doAssume = MkCSharpFalseLiteralExpression();
-                }
-
-                string eventNameOrNull = EventName(pair.Key);
                 members.Add(
                 MkCSharpFieldDeclaration(IdentifierName("PrtEventValue"),
                     EventName(pair.Key),

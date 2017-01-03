@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.IO;
 using System.Linq;
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
@@ -385,16 +383,41 @@ namespace Microsoft.Pc
                                                                    Token(SyntaxKind.StaticKeyword)));
                     return tmpVar;
                 }
-                else
+                else if(typeKind == "MapType")
                 {
-                    // typeKind == "MapType"
                     SyntaxNode keyType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0));
                     SyntaxNode valType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 1));
                     string typeName = "typeMapType_" + typeCount;
                     var tmpVar = GetType(typeName);
                     AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtMapType"), keyType, valType)));
-                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtMapType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                   Token(SyntaxKind.StaticKeyword)));
+                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtMapType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
+                    return tmpVar;
+                }
+                else
+                {
+                    List<ExpressionSyntax> eventValues = new List<ExpressionSyntax>();
+                    while (type != null)
+                    {
+                        string evName = ((Cnst)GetArgByIndex(type, 0)).GetStringValue();
+                        var eventValue = MkCSharpObjectCreationExpression(
+                            IdentifierName("PrtEventValue"),
+                            IdentifierName(evName));
+                        eventValues.Add(eventValue);
+                        type = GetArgByIndex(type, 1) as FuncTerm;
+                    }
+                    // typekind == "InterfaceType"
+                    string typeName = "typeInterfaceType_" + typeCount;
+                    var tmpVar = GetType(typeName);
+                    AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtInterfaceType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
+                    // initialize the interface type
+                    List<StatementSyntax> addEventsStmtList = new List<StatementSyntax>();
+                    foreach(var evNode in eventValues)
+                    {
+                        addEventsStmtList.Add(
+                            ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(IdentifierName(typeName), "Add"), evNode))
+                            );
+                    }
+                    AddTypeInitialization(Block(addEventsStmtList));
                     return tmpVar;
                 }
             }
@@ -719,11 +742,11 @@ namespace Microsoft.Pc
 
         public bool GenerateCSharp()
         {
-            if (!allMachines.ContainsKey("Main"))
-            {
-                Console.WriteLine("Unable to generate CSharp code since Main machine is absent.");
-                return false;
-            }
+            //if (!allMachines.ContainsKey("Main"))
+            //{
+            //    Console.WriteLine("Unable to generate CSharp code since Main machine is absent.");
+            //    return false;
+            //}
             var workspace = new AdhocWorkspace();
 
             // Get the SyntaxGenerator for the specified language

@@ -423,6 +423,7 @@ namespace Microsoft.Pc
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
+            allEventSets = new Dictionary<string, List<string>>();
             allStaticFuns = new Dictionary<string, FunInfo>();
             linkMap = new Dictionary<string, string>();
 
@@ -559,9 +560,10 @@ namespace Microsoft.Pc
                     var eventSetDecl = (FuncTerm)it.Current;
                     var eventSetName = GetName(eventSetDecl, 0);
                     it.MoveNext();
-                    if(allEventSets.ContainsKey(eventSetName))
+                    if(!allEventSets.ContainsKey(eventSetName))
                     {
                         allEventSets[eventSetName] = new List<string>();
+                        allEventSets[eventSetName].Add(((Cnst)it.Current).GetStringValue());
                     }
                     else
                     {

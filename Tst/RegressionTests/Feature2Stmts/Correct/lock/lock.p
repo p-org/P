@@ -7,7 +7,7 @@ machine Lock {
 
 	start state Unheld {
 		entry (v: any) {
-			data = v xfer;
+			data = v move;
 		}
 		on ACQUIRE_REQ goto Held;
 	}
@@ -16,7 +16,7 @@ machine Lock {
 		entry (client: machine) {
 			var v: any;
 			data = v swap;
-			send client, ACQUIRE_RESP, v xfer;
+			send client, ACQUIRE_RESP, v move;
 		}
 		defer ACQUIRE_REQ;
 		on RELEASE goto Unheld;
@@ -46,7 +46,7 @@ machine Client {
 					v = data swap;
 					Process(data swap);
 					v = data swap;
-					send lock, RELEASE, v xfer;
+					send lock, RELEASE, v move;
 				}
 			}
 			i = i + 1;

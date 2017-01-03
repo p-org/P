@@ -1823,9 +1823,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	TransformStmtArgs(c, s, i, x, ii, args', tl) :- TransformStmtArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(SWAP, _, tl)),
 												   RhsTrans(c, s, i, j, out.Args(ec, _)), 
 												   args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_SWAP"), args)).
-	TransformStmtArgs(c, s, i, x, ii, args', tl) :- TransformStmtArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(XFER, _, tl)), 
+	TransformStmtArgs(c, s, i, x, ii, args', tl) :- TransformStmtArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(MOVE, _, tl)), 
 												   RhsTrans(c, s, i, j, out.Args(ec, _)), 
-												   args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_XFER"), args)).
+												   args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_MOVE"), args)).
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
 						   s = in.FunStmt(name, NIL, _, label, x), AnonOrNamedFunName(funDecl, funName), FunAvailable(funDecl, c.owner), funDecl.name = name,
@@ -2063,7 +2063,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	LhsExprs(c, s, i', args) :- LhsExprs(c, s, i, a), i' = i + 1, RhsExpr(c, s, i', trans, doFree), args = out.Args(trans, Args(doFree, a)). 
 
 	QualToStatus ::= (in.Qualifier, String).
-	QualToStatus(XFER, "PRT_FUN_PARAM_XFER").
+	QualToStatus(MOVE, "PRT_FUN_PARAM_MOVE").
 	QualToStatus(SWAP, "PRT_FUN_PARAM_SWAP").
 
 	TransLocalVar ::= (TypingContext, in.Name, out.Expr).

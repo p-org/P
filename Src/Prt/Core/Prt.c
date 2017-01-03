@@ -240,7 +240,7 @@ PrtMkInterfaceOrMachine(
 			case PRT_FUN_PARAM_SWAP:
 				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
 				break;
-			case PRT_FUN_PARAM_XFER:
+			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
 				args[i] = *argPtr;
 				*argPtr = NULL;
@@ -300,7 +300,7 @@ PrtMkMachine(
 			case PRT_FUN_PARAM_SWAP:
 				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
 				break;
-			case PRT_FUN_PARAM_XFER:
+			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
 				args[i] = *argPtr;
 				*argPtr = NULL;
@@ -376,7 +376,7 @@ PrtSend(
 			case PRT_FUN_PARAM_SWAP:
 				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
 				break;
-			case PRT_FUN_PARAM_XFER:
+			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
 				args[i] = *argPtr;
 				*argPtr = NULL;

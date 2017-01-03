@@ -1951,7 +1951,7 @@ namespace Microsoft.Pc
                                                 MkCSharpNumericLiteralExpression(fieldIndex),
                                                 MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                             }
-                            else if (assignType == "XFER")
+                            else if (assignType == "MOVE")
                             {
                                 return ExpressionStatement(
                                             MkCSharpInvocationExpression(
@@ -1979,7 +1979,7 @@ namespace Microsoft.Pc
                                 stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(dest, MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 return Block(stmtList);
                             }
-                            else if (assignType == "XFER")
+                            else if (assignType == "MOVE")
                             {
                                 return MkCSharpSimpleAssignmentExpressionStatement(dest, src);
                             }
@@ -2007,7 +2007,7 @@ namespace Microsoft.Pc
                                                     index,
                                                     MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 }
-                                else if (assignType == "XFER")
+                                else if (assignType == "MOVE")
                                 {
                                     return ExpressionStatement(
                                                 MkCSharpInvocationExpression(
@@ -2037,7 +2037,7 @@ namespace Microsoft.Pc
                                                     index,
                                                     MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 }
-                                else if (assignType == "XFER")
+                                else if (assignType == "MOVE")
                                 {
                                     return ExpressionStatement(
                                                 MkCSharpInvocationExpression(

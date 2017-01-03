@@ -14,7 +14,7 @@ machine Main {
 			y = 1;
 			g = g_local swap;
 			F(g_local swap, y);
-			g = g_local xfer;
+			g = g_local move;
 			assert g == 1;
 			assert y == 1;
 			raise E, 1;
@@ -27,7 +27,7 @@ machine Main {
 			var g_local: int;
 			g = g_local swap; 
 			F(g_local swap, 1);
-			g = g_local xfer;
+			g = g_local move;
 		}
 	}
 

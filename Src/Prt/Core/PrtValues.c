@@ -386,7 +386,7 @@ void PRT_CALL_CONV PrtTupleSetLinear(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 i
 	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
 
 	PRT_VALUE *oldValue = tuple->valueUnion.tuple->values[index];
-	if (status == PRT_FUN_PARAM_XFER)
+	if (status == PRT_FUN_PARAM_MOVE)
 	{
 		if (oldValue != NULL)
 		{
@@ -449,7 +449,7 @@ void PRT_CALL_CONV PrtSeqUpdateLinear(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *in
 	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_VALUE *oldValue = seq->valueUnion.seq->values[index->valueUnion.nt];
-	if (status == PRT_FUN_PARAM_XFER)
+	if (status == PRT_FUN_PARAM_MOVE)
 	{
 		if (oldValue != NULL)
 		{
@@ -730,7 +730,7 @@ void PRT_CALL_CONV PrtMapUpdateLinear(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *ke
 {
 	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
 	PRT_VALUE *oldValue = PrtMapUpdateHelper(map, key, cloneKey, *value, PRT_FALSE);
-	if (status == PRT_FUN_PARAM_XFER)
+	if (status == PRT_FUN_PARAM_MOVE)
 	{
 		if (oldValue != NULL)
 		{

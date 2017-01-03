@@ -57,7 +57,7 @@
 			 keywords.Add("true", (int)PTokens.TRUE);
 			 keywords.Add("false", (int)PTokens.FALSE);
 			 keywords.Add("swap", (int)PTokens.SWAP);
-			 keywords.Add("xfer", (int)PTokens.XFER);
+			 keywords.Add("move", (int)PTokens.MOVE);
 			 keywords.Add("sizeof", (int)PTokens.SIZEOF);
 			 keywords.Add("keys", (int)PTokens.KEYS);
 			 keywords.Add("values", (int)PTokens.VALUES);

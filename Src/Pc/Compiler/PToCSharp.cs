@@ -39,7 +39,7 @@ namespace Microsoft.Pc
         SyntaxNode result = null;
         static SyntaxGenerator generator;
 
-        #region Types
+        #region Generate P Types
         void GenerateTypeInfo(AST<Model> model)
         {
             var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
@@ -474,7 +474,6 @@ namespace Microsoft.Pc
             return acc;
         }
 
-        #region types
         public static SimpleBaseTypeSyntax MkCSharpIdentifierNameType(string type)
         {
             return SimpleBaseType((TypeSyntax)IdentifierName(type));
@@ -488,7 +487,7 @@ namespace Microsoft.Pc
                                 SingletonSeparatedList(
                                     type)));
         }
-        #endregion
+
         public static SyntaxNode MkCSharpFieldDeclaration(SyntaxNode type,
                         string name, SyntaxToken accessibility, SyntaxToken publicStatic)
         {
@@ -717,6 +716,7 @@ namespace Microsoft.Pc
                             EmptyStatement());
         }
         #endregion
+
         public bool GenerateCSharp()
         {
             if (!allMachines.ContainsKey("Main"))
@@ -736,6 +736,7 @@ namespace Microsoft.Pc
 
             List<AST<Node>> elements = new List<AST<Node>>();
             MkAppConstructors();
+            MkEventSets();
             MkEvents();
             MkTypes();
             MkStaticAppConstructor();
@@ -786,33 +787,11 @@ namespace Microsoft.Pc
               new SyntaxNode[] { makeSkeletonMethodBody });
             members.Add(makeSkeletonMethodDecl);
         }
+
         private void MkEvents()
         {
             foreach (var pair in allEvents)
             {
-                SyntaxNode payloadType = typeContext.PTypeToCSharpExpr((pair.Value).payloadType);
-                SyntaxNode maxInstances;
-                if ((pair.Value).maxInstances == -1)
-                {
-                    String s = "PrtEvent.DefaultMaxInstances";
-                    maxInstances = IdentifierName(s);
-                }
-                else
-                {
-                    maxInstances = MkCSharpNumericLiteralExpression((pair.Value).maxInstances);
-                }
-
-                SyntaxNode doAssume;
-                if ((pair.Value).maxInstancesAssumed)
-                {
-                    doAssume = MkCSharpTrueLiteralExpression();
-                }
-                else
-                {
-                    doAssume = MkCSharpFalseLiteralExpression();
-                }
-
-                string eventNameOrNull = EventName(pair.Key);
                 members.Add(
                 MkCSharpFieldDeclaration(IdentifierName("PrtEventValue"),
                     EventName(pair.Key),
@@ -822,6 +801,21 @@ namespace Microsoft.Pc
                 );
             }
         }
+
+        private void MkEventSets()
+        {
+            foreach (var evset in allEventSets)
+            {
+                members.Add(
+                MkCSharpFieldDeclaration(MkCSharpGenericListType(IdentifierName("PrtEventValue")),
+                    EventName(evset.Key),
+                    Token(SyntaxKind.PublicKeyword),
+                    Token(SyntaxKind.StaticKeyword)
+                    )
+                );
+            }
+        }
+
         private void MkTypes()
         {
             members.AddRange(typeContext.typeDeclaration);
@@ -869,6 +863,17 @@ namespace Microsoft.Pc
                         doAssume
                     ));
                 inits.Add((StatementSyntax)MkCSharpSimpleAssignmentExpressionStatement(lhs, rhs));
+            }
+
+            //initialize the event sets
+            foreach(var evset in allEventSets)
+            {
+                SyntaxNode lhs = IdentifierName(evset.Key);
+                SyntaxNode rhs = MkCSharpObjectCreationExpression(MkCSharpGenericListType(IdentifierName("PrtEventValue")));
+                foreach(var ev in evset.Value)
+                {
+                    MkCSharpInvocationExpression(MkCSharpDot(evset.Key, "Add"), IdentifierName(ev));
+                }
             }
 
             members.Add(ConstructorDeclaration(
@@ -2750,10 +2755,9 @@ namespace Microsoft.Pc
                            generator.ObjectCreationExpression(generator.IdentifierName(machineName),
                            new List<SyntaxNode>() { generator.IdentifierName("application") })));
 
-            foreach (var x in allMachines[machineName].observesEvents)
-            {
-                fields.Add(MkCSharpInvocationExpression(MkCSharpDot("machine", "observes", "Add"), IdentifierName(x)));
-            }
+            
+            fields.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("machine", "observes"), IdentifierName(allMachines[machineName].observesEventSet)));
+            
             //stmt2: AddSpecMachineToStateImpl(machine);
             fields.Add(generator.InvocationExpression(MkCSharpDot("application", "AddSpecMachineToStateImpl"),
                                  new List<SyntaxNode>() { generator.IdentifierName("machine") }));

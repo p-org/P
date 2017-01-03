@@ -20,7 +20,7 @@ event eNo assert 1;
 event eUnit assert 1;
 
 
-
+//interfaces
 type OSRDriverInterface() = {
   eSwitchStatusChange, eD0Exit, eD0Entry, eOperationSuccess, eTransferSuccess,
   eTransferFailure, eTimerFired, eTimerStopped,eStoppingSuccess, eStoppingFailure

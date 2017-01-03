@@ -586,7 +586,7 @@
                 SeenFileNames[RootFileName] = RootProgramName;
                 parserWorkQueue.Enqueue(RootFileName);
                 string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-                var root4mlFilePath = outputDirName + Path.GetFileNameWithoutExtension(RootFileName) + ".4ml";
+                var root4mlFilePath = outputDirName + "\\" + Path.GetFileNameWithoutExtension(RootFileName) + ".4ml";
                 var lastCompileTime = File.Exists(root4mlFilePath) ? File.GetLastWriteTime(root4mlFilePath) : DateTime.MinValue;
                 while (parserWorkQueue.Count > 0)
                 {

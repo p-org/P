@@ -414,7 +414,6 @@ namespace Microsoft.Pc
                             ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot(IdentifierName(typeName), "permissions","Add"), evNode))
                             );
                     }
-                    //AddTypeInitialization(Block(addEventsStmtList).WithoutTrivia());
                     return tmpVar;
                 }
             }

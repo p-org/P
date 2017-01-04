@@ -270,7 +270,7 @@
             id = 0;
             if (term.Args.Count() == 0) return false;
             var idTerm = term.Args.Last();
-            var symbol = idTerm.Symbol as BaseCnstSymb;
+            var symbol = idTerm.Args[0].Symbol as BaseCnstSymb;
             if (symbol == null) return false;
             if (symbol.CnstKind != CnstKind.Numeric) return false;
             id = (int)((Rational)symbol.Raw).Numerator;

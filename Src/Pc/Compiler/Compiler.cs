@@ -762,9 +762,47 @@
             string dllFileName = fileName + ".dll";
             string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
 
-            using (this.Profiler.Start("Generating CSharp", csharpFileName))
+            using (this.Profiler.Start("Generating 4ml output", Path.GetFileName(RootProgramName.ToString())))
             {
-                var pToCSharp = new PToCSharp(this, RootModelWithTypes, idToSourceInfo, csharpFileName);
+                LoadManifestProgram("Pc.Domains.C.4ml");
+                LoadManifestProgram("Pc.Domains.PLink.4ml");
+                LoadManifestProgram("Pc.Domains.P2CProgram.4ml");
+
+                //// Apply the P2C transform.
+                var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
+                transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
+                transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
+                transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.eraseModel ? "TRUE" : "FALSE"));
+                var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModel.Node.Name + "_CModel"));
+                transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModel.Node.Name + "_LinkModel"));
+
+                List<Flag> appFlags;
+                Task<ApplyResult> apply;
+                Formula.Common.Rules.ExecuterStatistics stats;
+                CompilerEnv.Apply(transStep, false, false, out appFlags, out apply, out stats);
+                apply.RunSynchronously();
+                foreach (Flag f in appFlags)
+                {
+                    errorReporter.AddFlag(f);
+                }
+
+                //// Extract the link model
+                var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
+                var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, null);
+                linkExtractTask.Wait();
+                var linkModel = linkExtractTask.Result.FindAny(
+                                    new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
+                Contract.Assert(linkModel != null);
+
+                string outputFileName = Path.ChangeExtension(fileName, ".4ml");
+                Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
+                StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
+                linkModel.Print(wr);
+                wr.Close();
+            }
+            using (this.Profiler.Start("Generating CSharp Code", csharpFileName))
+            {
+                var pToCSharp = new PToCSharpCompiler(this, RootModelWithTypes, idToSourceInfo, csharpFileName);
                 var success = pToCSharp.GenerateCSharp();
                 UninstallProgram(RootProgramNameWithTypes);
                 return success;
@@ -1245,6 +1283,7 @@
 
         bool InternalGenerateC(ProgramName RootProgramName, AST<Model> RootModel)
         {
+
             string RootFileName = RootProgramName.ToString();
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             
@@ -1567,6 +1606,10 @@
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
             success = Render(cProgram, "CLinkModel", progName);
+
+            #region Generate C# Linker code
+
+            #endregion
 
             UninstallProgram(linkProgramName);
             return success;

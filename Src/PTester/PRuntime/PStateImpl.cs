@@ -127,7 +127,7 @@ namespace P.Runtime
         #endregion
 
 
-        public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload = null, out PrtImplMachine createdMachine)
+        public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload, out PrtImplMachine createdMachine)
         {
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
             var impMachineName = renameMap[renamedImpMachine];

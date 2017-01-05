@@ -200,11 +200,10 @@ namespace P.Runtime
             continuation.reason = PrtContinuationReason.Send;
         }
 
-        public void PrtFunContNewMachine(PrtFun fun, List<PrtValue> locals, PrtImplMachine o, int ret)
+        public void PrtFunContNewMachine(PrtFun fun, List<PrtValue> locals, int ret)
         {
             PrtPushFunStackFrame(fun, locals, ret);
             continuation.reason = PrtContinuationReason.NewMachine;
-            continuation.createdMachine = o;
         }
 
         public void PrtFunContReceive(PrtFun fun, List<PrtValue> locals, int ret)
@@ -651,7 +650,6 @@ namespace P.Runtime
     public class PrtContinuation
     {
         public PrtContinuationReason reason;
-        public PrtImplMachine createdMachine;
         public int receiveIndex;
         public PrtValue retVal;
         public List<PrtValue> retLocals;
@@ -663,7 +661,6 @@ namespace P.Runtime
         public PrtContinuation()
         {
             reason = PrtContinuationReason.Return;
-            createdMachine = null;
             retVal = null;
             nondet = false;
             retLocals = new List<PrtValue>();
@@ -674,7 +671,6 @@ namespace P.Runtime
         {
             var clonedVal = new PrtContinuation();
             clonedVal.reason = this.reason;
-            clonedVal.createdMachine = this.createdMachine;
             clonedVal.receiveIndex = this.receiveIndex;
             clonedVal.retVal = this.retVal.Clone();
             foreach(var loc in retLocals)

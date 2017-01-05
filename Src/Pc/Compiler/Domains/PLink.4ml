@@ -110,7 +110,9 @@ domain PLinkError
     */
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
-	
+	EventName         ::= String + { NULL, HALT }.
+	EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
+
 	//// General linker errors
 	OneNameError ::= new (errorId: any Id, name: String, msg: String).
 	TwoNameError ::= new (errorId: any Id, name1: String, name2: String, msg: String).
@@ -122,6 +124,13 @@ domain PLinkError
 	WellFormednessError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	TestOrImplDeclError ::= new (modExprId: any Id, arg: String, msg: String).
 	RefinementDeclError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
+
+	
+	CSharpLinkMap ::= (testName: String, newMachineName: String, interfaceOrMachine: String, newImpMachine: String).
+	CSharpRenameMap ::= (testName: String, newName: String, impMachine: String).
+	CSharpSafeMap ::= (testName: String, newName: String, isSafe: Boolean).
+	CSharpMonitorMap ::= (testName: String, newMonitorName: String, impMachine: String).
+	CSharpInterfaceMap ::= (interfaceName: String, evList: EventNameList).
 
 	TestError ::= new (modId: any Id, arg: any Id).
 }
@@ -464,7 +473,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	/**************************************************************************/
 
 	////Implementation and test module expr must be closed with respect to creates
-	[rule_Classes = '"error, msg: "']
 	TestOrImplDeclError(modExpr.id, ic, "top level module expressions must be closed with respect to created interfaces (all created interfaces must be exported)") 
 	:- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix),InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _);
 	TestDecl(_, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _);
@@ -559,6 +567,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM);
 														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), IorM = NIL, ImpMachine = NIL.
 	
+	CSharpLinkMap(testName, MachineName, interfaceOrMachine, ImpMachine) :- TestDecl(testName, modExpr, _), ModuleLinkMap(modExpr, MachineName, interfaceOrMachine, ImpMachine), interfaceOrMachine: String, ImpMachine: String.
+	CSharpRenameMap(testName, newName, impName) :- TestDecl(testName, modExpr, _), ModuleRenameMap(modExpr, newName, impName).
+	CSharpSafeMap(testName, mname, isSafe):- TestDecl(testName, modExpr, _), ModuleSafeMap(modExpr, mname, isSafe).
+	CSharpMonitorMap(testName, monName, impMachine) :- TestDecl(testName, modExpr, _), ModuleMonitorMap(modExpr, monName, impMachine).
+	CSharpInterfaceMap(interfaceName, evList) :- InterfaceTypeDecl(interfaceName, evList, _).
+
 	//TestError(x, i) :- CLinkMap(x, i, _).
 	/**************************************************************************/
 	/*     C Code Helpers
@@ -1094,16 +1108,16 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
     /*************************************************************/	
 	EventPackList ::= (dat: EventPackData, tl: EventPackList + { NIL }).
 	EventPackData ::= (arrIndex: Natural, events: Natural). 
-	EventPacking  ::= (list: EventNameList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
+	EventPacking  ::= (list: in.EventNameList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
 
 	EventId ::= (trig: String + { NULL, HALT }, id: Natural).
 	EventId(trig, id) :- trig : String, ev is EventDecl, ev.name = trig, DeclId(ev, id, _).
 	EventId(NULL, id) :- DeclId(NULL, id, _).
 	EventId(HALT, id) :- DeclId(HALT, id, _).
 
-	EventSetId ::= (EventSet, EventNameList + { NIL }, EventName, Natural).
-	EventSetId(eventset, list, ev, id) :- eventset is EventSet(_, EventNameList(ev, list)), EventId(ev, id).
-	EventSetId(eventset, list, ev, id) :- EventSetId(eventset, EventNameList(ev, list), _, _), EventId(ev, id).
+	EventSetId ::= (EventSet, in.EventNameList + { NIL }, in.EventName, Natural).
+	EventSetId(eventset, list, ev, id) :- eventset is EventSet(_, in.EventNameList(ev, list)), EventId(ev, id).
+	EventSetId(eventset, list, ev, id) :- EventSetId(eventset, in.EventNameList(ev, list), _, _), EventId(ev, id).
 
 	EventPacking(eventset.list, rlist, size, NIL) :- 
 		 eventset is EventSet,

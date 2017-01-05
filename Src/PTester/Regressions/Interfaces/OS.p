@@ -1,6 +1,5 @@
 include "Headers.p"
 
-
 machine SwitchMachine : SwitchInterface
 sends eSwitchStatusChange; 
 creates;
@@ -135,3 +134,4 @@ creates;
 		on eUnit goto Timer_Init;
 	}
 }
+		

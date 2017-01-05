@@ -22,13 +22,14 @@ namespace Microsoft.Pc
         public PToCSharpCompiler(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo, string csharpFileName)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
-            this.csharpFileName = csharpFileName;
+            this.localCSharpFileName = csharpFileName;
             this.typeContext = new TypeTranslationContext(this);
             GenerateTypeInfo(modelWithTypes);
         }
 
         #region CSharpCompiler
-        string csharpFileName;
+        string localCSharpFileName;
+        static string csharpFileName;
         //for storing members of the Application class:
         static List<SyntaxNode> members = new List<SyntaxNode>();
         //final C# program:
@@ -38,6 +39,7 @@ namespace Microsoft.Pc
         #region Generate P Types
         void GenerateTypeInfo(AST<Model> model)
         {
+            csharpFileName = localCSharpFileName;
             var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
             model.FindAll(
                 new NodePred[]
@@ -180,7 +182,6 @@ namespace Microsoft.Pc
         internal class TypeTranslationContext
         {
             private int typeCount;
-
             //This field is for emitting types; order is important
             public List<StatementSyntax> typeInitialization;
             public List<FieldDeclarationSyntax> typeDeclaration;
@@ -196,12 +197,15 @@ namespace Microsoft.Pc
                 pTypeToCSharpExpr = new Dictionary<AST<Node>, ExpressionSyntax>();
             }
 
-            private ExpressionSyntax GetType(string typeName)
+            private ExpressionSyntax GetNextType(string typeName)
             {
-                var retVal = IdentifierName(typeName);
+                var typeClass = Path.GetFileNameWithoutExtension(csharpFileName) + "_Types";
+                var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(typeClass), IdentifierName(typeName));
                 typeCount++;
                 return retVal;
             }
+
+            
 
             private void AddTypeInitialization(SyntaxNode n)
             {
@@ -215,6 +219,7 @@ namespace Microsoft.Pc
 
             public ExpressionSyntax PTypeToCSharpExpr(FuncTerm pType)
             {
+                
                 var pTypeAST = Factory.Instance.ToAST(pType);
                 if (!pTypeToCSharpExpr.ContainsKey(pTypeAST))
                 {
@@ -245,7 +250,7 @@ namespace Microsoft.Pc
                     var primitiveType = ((Id)GetArgByIndex(type, 0)).Name;
                     if (primitiveType == "NULL")
                     {
-                        var tmpVar = GetType("typeNull");
+                        var tmpVar = GetNextType("typeNull");
                         AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtNullType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeNull", Token(SyntaxKind.PublicKeyword),
                                                                     Token(SyntaxKind.StaticKeyword)));
@@ -253,7 +258,7 @@ namespace Microsoft.Pc
                     }
                     else if (primitiveType == "BOOL")
                     {
-                        var tmpVar = GetType("typeBool");
+                        var tmpVar = GetNextType("typeBool");
                         AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtBoolType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeBool", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -261,7 +266,7 @@ namespace Microsoft.Pc
                     }
                     else if (primitiveType == "INT")
                     {
-                        var tmpVar = GetType("typeInt");
+                        var tmpVar = GetNextType("typeInt");
                         AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeInt", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -269,7 +274,7 @@ namespace Microsoft.Pc
                     }
                     else if (primitiveType == "EVENT")
                     {
-                        var tmpVar = GetType("typeEvent");
+                        var tmpVar = GetNextType("typeEvent");
                         AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtEventType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeEvent", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -277,7 +282,7 @@ namespace Microsoft.Pc
                     }
                     else if (primitiveType == "MACHINE")
                     {
-                        var tmpVar = GetType("typeMachine");
+                        var tmpVar = GetNextType("typeMachine");
                         AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtMachineType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeMachine", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -286,7 +291,7 @@ namespace Microsoft.Pc
                     else
                     {
                         Debug.Assert(primitiveType == "ANY", "Illegal BaseType");
-                        var tmpVar = GetType("typeAny");
+                        var tmpVar = GetNextType("typeAny");
                         AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtAnyType"))));
                         AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtType"), "typeAny", Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -304,7 +309,7 @@ namespace Microsoft.Pc
                         args.Add(MkCSharpNumericLiteralExpression(x.Value));
                     }
                     string typeName = "typeNameType_" + typeCount;
-                    var tmpVar = GetType(typeName);
+                    var tmpVar = GetNextType(typeName);
                     AddTypeInitialization(
                         MkCSharpSimpleAssignmentExpressionStatement(
                             tmpVar,
@@ -322,7 +327,7 @@ namespace Microsoft.Pc
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     string typeName = "typeTupType_" + typeCount;
-                    var tmpVar = GetType(typeName);
+                    var tmpVar = GetNextType(typeName);
                     //TODO(improve): create a generic method for inserting CommaToken into a generic list 
                     List<SyntaxNodeOrToken> initializer = new List<SyntaxNodeOrToken>();
                     foreach (var memberType in memberTypes)
@@ -352,7 +357,7 @@ namespace Microsoft.Pc
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     string typeName = "typeNmdTupType_" + typeCount;
-                    var tmpVar = GetType(typeName);
+                    var tmpVar = GetNextType(typeName);
 
                     List<SyntaxNodeOrToken> initializer = new List<SyntaxNodeOrToken>();
                     int ind = 0;
@@ -375,7 +380,7 @@ namespace Microsoft.Pc
                 {
                     SyntaxNode innerType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0));
                     string typeName = "typeSeqType_" + typeCount;
-                    var tmpVar = GetType(typeName);
+                    var tmpVar = GetNextType(typeName);
                     AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtSeqType"), innerType)));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtSeqType"), typeName, Token(SyntaxKind.PublicKeyword),
                                                                    Token(SyntaxKind.StaticKeyword)));
@@ -386,7 +391,7 @@ namespace Microsoft.Pc
                     SyntaxNode keyType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0));
                     SyntaxNode valType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 1));
                     string typeName = "typeMapType_" + typeCount;
-                    var tmpVar = GetType(typeName);
+                    var tmpVar = GetNextType(typeName);
                     AddTypeInitialization(MkCSharpSimpleAssignmentExpressionStatement(tmpVar, MkCSharpObjectCreationExpression(IdentifierName("PrtMapType"), keyType, valType)));
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtMapType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
                     return tmpVar;
@@ -396,13 +401,14 @@ namespace Microsoft.Pc
                     List<ExpressionSyntax> eventValues = new List<ExpressionSyntax>();
                     while (type != null)
                     {
+                        //TODO: HANDLE HALT (only handles string right now)
                         string evName = ((Cnst)GetArgByIndex(type, 0)).GetStringValue();
-                        eventValues.Add(IdentifierName(evName));
+                        eventValues.Add(GetEventVar(evName));
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     // typekind == "InterfaceType"
                     string typeName = "typeInterfaceType_" + typeCount;
-                    var tmpVar = GetType(typeName);
+                    var tmpVar = GetNextType(typeName);
                     AddTypeDeclaration(MkCSharpFieldDeclaration(IdentifierName("PrtInterfaceType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
                     // initialize the interface type
                     List<StatementSyntax> addEventsStmtList = new List<StatementSyntax>();
@@ -427,6 +433,14 @@ namespace Microsoft.Pc
             else
                 return rawName;
         }
+
+        public static ExpressionSyntax GetEventVar(string eventName)
+        {
+            var eventClass = Path.GetFileNameWithoutExtension(csharpFileName) + "_Events";
+            var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(eventName));
+            return retVal;
+        }
+
         public static ExpressionStatementSyntax MkCSharpSimpleAssignmentExpressionStatement(SyntaxNode lhs, SyntaxNode rhs)
         {
             return ExpressionStatement(
@@ -741,6 +755,7 @@ namespace Microsoft.Pc
             // Get the SyntaxGenerator for the specified language
             generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
             members = new List<SyntaxNode>();
+            csharpFileName = localCSharpFileName;
 
             // Create using/Imports directives
             var usingDirectives = generator.NamespaceImportDeclaration("System");
@@ -836,7 +851,29 @@ namespace Microsoft.Pc
 
         private void MkTypes()
         {
-            members.AddRange(typeContext.typeDeclaration);
+            string typesClassName = Path.GetFileNameWithoutExtension(csharpFileName) + "_Types";
+            List<SyntaxNode> typeDeclarations = new List<SyntaxNode>();
+            typeDeclarations.AddRange(typeContext.typeDeclaration);
+
+            var staticConstructor =
+                    ConstructorDeclaration(
+                        Identifier(typesClassName))
+                            .WithModifiers(
+                                TokenList(
+                                    Token(SyntaxKind.StaticKeyword)))
+                            .WithBody(
+                                Block(typeContext.typeInitialization
+                                    ))
+                    .NormalizeWhitespace();
+
+            typeDeclarations.Add(staticConstructor);
+
+            var typesClass = generator.ClassDeclaration(
+              typesClassName, typeParameters: null,
+              accessibility: Accessibility.Private,
+              members: typeDeclarations);
+
+            members.Add(typesClass);
         }
         
         internal partial class MkFunctionDecl
@@ -1327,7 +1364,7 @@ namespace Microsoft.Pc
                     var type = LookupType(ft);
                     if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                     {
-                        return IdentifierName(name);
+                        return GetEventVar(name);
                     }
                     else
                     {
@@ -1419,7 +1456,7 @@ namespace Microsoft.Pc
                 }
                 else if (op == PData.Cnst_Null.Node.Name)
                 {
-                    return IdentifierName("@null");
+                    return GetEventVar("@null");
                 }
                 else
                 {
@@ -1688,7 +1725,7 @@ namespace Microsoft.Pc
             {
                 if (args.Count == 0)
                 {
-                    return IdentifierName("@null");
+                    return GetEventVar("@null");
                 }
                 else if (args.Count == 1)
                 {
@@ -1712,7 +1749,7 @@ namespace Microsoft.Pc
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(children);
                 var traceStmt = MkCSharpPrint(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(stateExpr, "name"));
-                var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("@null"));
+                var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), GetEventVar("@null"));
                 var assignStmt2 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var assignStmt3 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "destOfGoto"), stateExpr);
                 var createRetCtxt = ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContGoto")));
@@ -1724,7 +1761,7 @@ namespace Microsoft.Pc
                 var eventExpr = (ExpressionSyntax)children[0];
                 children.RemoveAt(0);
                 var payloadVar = MkPayload(children);
-                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), IdentifierName("@null"));
+                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), GetEventVar("@null"));
                 var assertStmt = MkCSharpAssert(MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = MkCSharpPrint(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
                 var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), eventExpr);
@@ -1855,8 +1892,8 @@ namespace Microsoft.Pc
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 if (op == PData.Cnst_Pop.Node.Name)
                 {
-                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("@null")));
-                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), IdentifierName("@null")));
+                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), GetEventVar("@null")));
+                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), GetEventVar("@null")));
                     stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPopState"), MkCSharpTrueLiteralExpression())));
                     stmtList.Add(ReturnStatement());
                 }
@@ -2661,7 +2698,7 @@ namespace Microsoft.Pc
             foreach (var ev in allMachines[machineName].receiveSet)
             {
                 fields.Add(
-                    MkCSharpInvocationExpression(MkCSharpDot(IdentifierName("machine"), "self", "permissions", "Add"), IdentifierName(ev))
+                    MkCSharpInvocationExpression(MkCSharpDot(IdentifierName("machine"), "self", "permissions", "Add"), GetEventVar(ev))
                     );
             }
 
@@ -2669,7 +2706,7 @@ namespace Microsoft.Pc
             foreach (var ev in allMachines[machineName].sendsSet)
             {
                 fields.Add(
-                    MkCSharpInvocationExpression(MkCSharpDot(IdentifierName("machine"), "sends", "Add"), IdentifierName(ev))
+                    MkCSharpInvocationExpression(MkCSharpDot(IdentifierName("machine"), "sends", "Add"), GetEventVar(ev))
                     );
             }
 
@@ -3287,7 +3324,7 @@ namespace Microsoft.Pc
                                     ArgumentList(
                                         SingletonSeparatedList<ArgumentSyntax>(
                                             Argument(
-                                                IdentifierName(deferredEvent))))))
+                                                GetEventVar(deferredEvent))))))
                             .NormalizeWhitespace()
                         );
                     }
@@ -3378,7 +3415,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                     Argument(
-                                                        IdentifierName(EventName(trigger))),
+                                                        GetEventVar(EventName(trigger))),
                                                     Token(SyntaxKind.CommaToken),
                                                     Argument(
                                                         IdentifierName(transition_name))}))))
@@ -3416,6 +3453,7 @@ namespace Microsoft.Pc
         {
             var applicationcClassDeclaration = generator.ClassDeclaration(
               "Application", typeParameters: null,
+              modifiers: DeclarationModifiers.Partial,
               accessibility: Accessibility.Public,
               baseType: generator.IdentifierName("StateImpl"),
               members: members);

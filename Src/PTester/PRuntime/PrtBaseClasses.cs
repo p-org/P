@@ -11,6 +11,8 @@ namespace P.Runtime
     {
         #region Fields
         public List<PrtEventValue> sends;
+        public string renamedName;
+        public bool isSafe;
         public int instanceNumber;
         public List<PrtValue> fields;
         protected PrtValue eventValue;
@@ -43,6 +45,8 @@ namespace P.Runtime
             this.stateExitReason = PrtStateExitReason.NotExit;
             this.sends = new List<PrtEventValue>();
             this.stateImpl = null;
+            this.renamedName = null;
+            this.isSafe = false;
         }
         #endregion
 

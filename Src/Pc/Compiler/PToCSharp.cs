@@ -738,11 +738,6 @@ namespace Microsoft.Pc
 
         public bool GenerateCSharp()
         {
-            //if (!allMachines.ContainsKey("Main"))
-            //{
-            //    Console.WriteLine("Unable to generate CSharp code since Main machine is absent.");
-            //    return false;
-            //}
             var workspace = new AdhocWorkspace();
 
             // Get the SyntaxGenerator for the specified language
@@ -2739,11 +2734,6 @@ namespace Microsoft.Pc
             fields.Add(MkCSharpSimpleAssignmentExpressionStatement(
                 MkCSharpDot("machine", "currentPayload"),
                 IdentifierName("payload")));
-
-            //stmt3: AddImplMachineToStateImpl(machine);
-            fields.Add(generator.InvocationExpression(MkCSharpDot("application", "AddImplMachineToStateImpl"),
-                                 new List<SyntaxNode>() { generator.IdentifierName("machine") }));
-
             
             //stmt4: return machine;
             fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));

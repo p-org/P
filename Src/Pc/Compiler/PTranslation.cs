@@ -262,8 +262,8 @@ namespace Microsoft.Pc
         public Span LookupSpan(FuncTerm ft)
         {
             string name = ((Id)ft.Function).Name;
-            Node id = ft.Args.Last();
-            int integerId = (int)(id as Cnst).GetNumericValue().Numerator;
+            var id = ft.Args.Last();
+            int integerId = (int)((id as FuncTerm).Args.First() as Cnst).GetNumericValue().Numerator;
             return idToSourceInfo[integerId].entrySpan;
         }
 

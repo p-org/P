@@ -16,6 +16,11 @@ namespace P.Runtime
             implMachines = new List<PrtImplMachine>();
             specMachines = new List<PrtSpecMachine>();
             specObservers = new Dictionary<PrtEventValue, List<PrtSpecMachine>>();
+            exception = null;
+            linkMap = new Dictionary<string, Dictionary<string, string>>();
+            renameMap = new Dictionary<string, string>();
+            isSafeMap = new Dictionary<string, bool>();
+            monitorMap = new Dictionary<string, List<string>>();
         }
         #endregion
 
@@ -44,6 +49,14 @@ namespace P.Runtime
         private Exception exception;
 
         private Dictionary<PrtEventValue, List<PrtSpecMachine>> specObservers;
+
+        public Dictionary<string, Dictionary<string, string>> linkMap;
+        public Dictionary<string, string> renameMap;
+        public Dictionary<string, bool> isSafeMap;
+        public Dictionary<string, List<string>> monitorMap;
+        public delegate PrtImplMachine CreateMachineDelegate(StateImpl application, PrtValue payload);
+        public Dictionary<string, CreateMachineDelegate> createMap;
+        public Dictionary<string, List<PrtEventValue>> interfaceMap;
         #endregion
 
         #region Getters and Setters
@@ -94,11 +107,42 @@ namespace P.Runtime
                 clonedState.specMachines.Add((PrtSpecMachine)monitor.Clone());
             }
 
+            clonedState.exception = this.exception;
+
+            foreach(var item in specObservers)
+            {
+                clonedState.specObservers.Add(item.Key.Clone() as PrtEventValue, item.Value.ToList());
+            }
+
+            //the following values are not going to change and hence no need to clone them.
+            clonedState.linkMap = linkMap;
+            clonedState.renameMap = renameMap;
+            clonedState.isSafeMap = isSafeMap;
+            clonedState.monitorMap = monitorMap;
+            clonedState.createMap = createMap;
+
             return clonedState;
 
         }
         #endregion
 
+
+        public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload = null)
+        {
+            var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
+            var impMachineName = renameMap[renamedImpMachine];
+            var machine = createMap[impMachineName](this, payload);
+            machine.isSafe = isSafeMap[renamedImpMachine];
+            machine.renamedName = renamedImpMachine;
+            if(interfaceMap.ContainsKey(interfaceOrMachineName))
+            {
+                return new PrtInterfaceValue(machine, interfaceMap[interfaceOrMachineName]);
+            }
+            else
+            {
+                return new PrtInterfaceValue(machine, machine.self.permissions);
+            }
+        }
 
         public int NextMachineInstanceNumber(Type machineType)
         {

@@ -570,7 +570,7 @@ namespace P.Program
                             goto AnonFun4_1;
                     }
 
-                    (parent).Driver = CreateInterfaceOrMachine((parent).renamedName, "OSRDriverInterface", User_Events.@null);
+                    (parent).Driver = (application).CreateInterfaceOrMachine((parent).renamedName, "OSRDriverInterface", User_Events.@null);
                     (parent).PrtFunContNewMachine(this, (currFun).locals, 1);
                     return;
                     AnonFun4_1:

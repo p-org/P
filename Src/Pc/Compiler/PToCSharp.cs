@@ -1385,12 +1385,6 @@ namespace Microsoft.Pc
                     children.RemoveAt(children.Count - 1);
                 }
                 var createdIorM = GetName(ft, 0);
-                var machineName = pToCSharp.linkMap[createdIorM];
-                MachineInfo machineInfo = pToCSharp.allMachines[machineName];
-                string initStateEntryActionName = machineInfo.stateNameToStateInfo[machineInfo.initStateName].entryActionName;
-                FunInfo entryFunInfo = pToCSharp.allStaticFuns.ContainsKey(initStateEntryActionName)
-                                        ? pToCSharp.allStaticFuns[initStateEntryActionName]
-                                        : machineInfo.funNameToFunInfo[initStateEntryActionName];
                 var payloadVar = MkPayload(children);
                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
                 stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(IdentifierName("createdMachine"), MkCSharpInvocationExpression(IdentifierName(string.Format("CreateMachine_{0}", machineName)), IdentifierName("application"), payloadVar)));

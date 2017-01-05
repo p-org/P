@@ -2759,7 +2759,7 @@ namespace P.Program
                 PrtTransition transition_4 = new PrtTransition(AnonFun13, TimerMachine_SendTimerFired, false);
                 TimerMachine_TimerStarted.transitions.Add(OS_Events.eUnit, transition_4);
                 TimerMachine_Timer_Init.dos.Add(OS_Events.eStopTimer, ignore);
-                TimerMachine_Timer_Init.dos.Add(eStopTimer, PrtFun.IgnoreFun);
+                TimerMachine_Timer_Init.dos.Add(OS_Events.eStopTimer, PrtFun.IgnoreFun);
                 PrtTransition transition_5 = new PrtTransition(AnonFun14, TimerMachine_TimerStarted, false);
                 TimerMachine_Timer_Init.transitions.Add(OS_Events.eStartDebounceTimer, transition_5);
                 PrtTransition transition_6 = new PrtTransition(AnonFun15, TimerMachine_Timer_Init, false);

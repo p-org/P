@@ -127,7 +127,7 @@ namespace P.Runtime
         #endregion
 
 
-        public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload, out PrtImplMachine createdMachine)
+        public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
         {
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
             var impMachineName = renameMap[renamedImpMachine];
@@ -135,7 +135,6 @@ namespace P.Runtime
             machine.isSafe = isSafeMap[renamedImpMachine];
             machine.renamedName = renamedImpMachine;
             AddImplMachineToStateImpl(machine);
-            createdMachine = machine;
             if(interfaceMap.ContainsKey(interfaceOrMachineName))
             {
                 return new PrtInterfaceValue(machine, interfaceMap[interfaceOrMachineName]);

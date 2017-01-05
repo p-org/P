@@ -1393,12 +1393,12 @@ namespace Microsoft.Pc
                 {
                     stmtList.Add(
                         MkCSharpSimpleAssignmentExpressionStatement(aout,
-                        MkCSharpInvocationExpression(IdentifierName("CreateInterfaceOrMachine"), MkCSharpDot("parent", "renamedName"), MkCSharpStringLiteralExpression(createdIorM), payloadVar)));
+                        MkCSharpInvocationExpression(MkCSharpDot("application", "CreateInterfaceOrMachine"), MkCSharpDot("parent", "renamedName"), MkCSharpStringLiteralExpression(createdIorM), payloadVar)));
                 }
                 else
                 {
                     stmtList.Add(
-                        ExpressionStatement(MkCSharpInvocationExpression(IdentifierName("CreateInterfaceOrMachine"), MkCSharpDot("parent", "renamedName"), MkCSharpStringLiteralExpression(createdIorM), payloadVar))
+                        ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("application", "CreateInterfaceOrMachine"), MkCSharpDot("parent", "renamedName"), MkCSharpStringLiteralExpression(createdIorM), payloadVar))
                         );
                 }
                 int afterLabelId = GetFreshLabelId();

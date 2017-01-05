@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace P.Program
 {
-    public class Application : StateImpl
+    public partial class Application : StateImpl
     {
         private class User_Events
         {
@@ -570,7 +570,7 @@ namespace P.Program
                             goto AnonFun4_1;
                     }
 
-                    (parent).Driver = CreateInterfaceOrMachine((parent).renamedName, OSRDriverInterface, User_Events.@null);
+                    (parent).Driver = CreateInterfaceOrMachine((parent).renamedName, "OSRDriverInterface", User_Events.@null);
                     (parent).PrtFunContNewMachine(this, (currFun).locals, 1);
                     return;
                     AnonFun4_1:

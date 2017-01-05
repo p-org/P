@@ -1393,12 +1393,12 @@ namespace Microsoft.Pc
                 {
                     stmtList.Add(
                         MkCSharpSimpleAssignmentExpressionStatement(aout,
-                        MkCSharpInvocationExpression(IdentifierName("CreateInterfaceOrMachine"), MkCSharpDot("parent", "renamedName"), IdentifierName(createdIorM), payloadVar)));
+                        MkCSharpInvocationExpression(IdentifierName("CreateInterfaceOrMachine"), MkCSharpDot("parent", "renamedName"), MkCSharpStringLiteralExpression(createdIorM), payloadVar)));
                 }
                 else
                 {
                     stmtList.Add(
-                        ExpressionStatement(MkCSharpInvocationExpression(IdentifierName("CreateInterfaceOrMachine"), MkCSharpDot("parent", "renamedName"), IdentifierName(createdIorM), payloadVar))
+                        ExpressionStatement(MkCSharpInvocationExpression(IdentifierName("CreateInterfaceOrMachine"), MkCSharpDot("parent", "renamedName"), MkCSharpStringLiteralExpression(createdIorM), payloadVar))
                         );
                 }
                 int afterLabelId = GetFreshLabelId();
@@ -1444,7 +1444,7 @@ namespace Microsoft.Pc
                 }
                 else if (op == PData.Cnst_This.Node.Name)
                 {
-                    return MkCSharpDot(ThisExpression(), "self");
+                    return MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("parent"), IdentifierName("self"));
                 }
                 else if (op == PData.Cnst_Nondet.Node.Name)
                 {
@@ -3270,7 +3270,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                 Argument(
-                                                    IdentifierName(doFun.Key)),
+                                                    GetEventVar(doFun.Key)),
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
                                                     IdentifierName(doFun.Value))}))))
@@ -3296,7 +3296,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                 Argument(
-                                                    IdentifierName(ignoredEvent)),
+                                                    GetEventVar(ignoredEvent)),
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
                                                     MemberAccessExpression(
@@ -3306,7 +3306,7 @@ namespace Microsoft.Pc
                             .NormalizeWhitespace()
                             );
                     }
-
+                    
                     //Add deferred events (if any) to the state:
                     foreach (var deferredEvent in pair.Value.deferredEvents)
                     {

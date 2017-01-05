@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace P.Program
 {
-    public class Application : StateImpl
+    public partial class Application : StateImpl
     {
         private class OSRDriver_Events
         {
@@ -3964,17 +3964,17 @@ namespace P.Program
                             goto AnonFun46_3;
                     }
 
-                    (parent).TimerV = CreateInterfaceOrMachine((parent).renamedName, TimerInterface, (this).self);
+                    (parent).TimerV = CreateInterfaceOrMachine((parent).renamedName, "TimerInterface", (this).self);
                     (parent).PrtFunContNewMachine(this, (currFun).locals, 1);
                     return;
                     AnonFun46_1:
                         ;
-                    (parent).LEDV = CreateInterfaceOrMachine((parent).renamedName, LEDInterface, (this).self);
+                    (parent).LEDV = CreateInterfaceOrMachine((parent).renamedName, "LEDInterface", (this).self);
                     (parent).PrtFunContNewMachine(this, (currFun).locals, 2);
                     return;
                     AnonFun46_2:
                         ;
-                    (parent).SwitchV = CreateInterfaceOrMachine((parent).renamedName, SwitchInterface, (this).self);
+                    (parent).SwitchV = CreateInterfaceOrMachine((parent).renamedName, "SwitchInterface", (this).self);
                     (parent).PrtFunContNewMachine(this, (currFun).locals, 3);
                     return;
                     AnonFun46_3:
@@ -5394,13 +5394,13 @@ namespace P.Program
                 OSRDriverMachine_sDxDriver = new OSRDriverMachine_sDxDriver_Class("OSRDriverMachine_sDxDriver", AnonFun43, AnonFun44, false, StateTemperature.Warm);
                 OSRDriverMachine_Driver_Init = new OSRDriverMachine_Driver_Init_Class("OSRDriverMachine_Driver_Init", AnonFun46, AnonFun47, false, StateTemperature.Warm);
                 OSRDriverMachine_sReturningTimerStoppedDriver = new OSRDriverMachine_sReturningTimerStoppedDriver_Class("OSRDriverMachine_sReturningTimerStoppedDriver", AnonFun49, AnonFun50, false, StateTemperature.Warm);
-                OSRDriverMachine_sWaitingForTimerToFlushDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sWaitingForTimerToFlushDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sWaitingForTimerToFlushDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sWaitingForTimerToFlushDriver.deferredSet.Add(eSwitchStatusChange);
-                OSRDriverMachine_sWaitingForTimerToFlushDriver.deferredSet.Add(eD0Exit);
+                OSRDriverMachine_sWaitingForTimerToFlushDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sWaitingForTimerToFlushDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
                 PrtTransition transition_1 = new PrtTransition(AnonFun2, OSRDriverMachine_sReturningTimerStoppedDriver, false);
                 OSRDriverMachine_sWaitingForTimerToFlushDriver.transitions.Add(OSRDriver_Events.eTimerFired, transition_1);
-                OSRDriverMachine_sStoppingTimerDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sStoppingTimerDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sStoppingTimerDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
                 PrtTransition transition_2 = new PrtTransition(AnonFun5, OSRDriverMachine_sReturningTimerStoppedDriver, false);
                 OSRDriverMachine_sStoppingTimerDriver.transitions.Add(OSRDriver_Events.eTimerFired, transition_2);
@@ -5408,29 +5408,29 @@ namespace P.Program
                 OSRDriverMachine_sStoppingTimerDriver.transitions.Add(OSRDriver_Events.eStoppingFailure, transition_3);
                 PrtTransition transition_4 = new PrtTransition(AnonFun7, OSRDriverMachine_sReturningTimerStoppedDriver, false);
                 OSRDriverMachine_sStoppingTimerDriver.transitions.Add(OSRDriver_Events.eStoppingSuccess, transition_4);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sStoppingTimerOnD0ExitDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.deferredSet.Add(eSwitchStatusChange);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.deferredSet.Add(eD0Exit);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
                 PrtTransition transition_5 = new PrtTransition(PrtFun.IgnoreFun, OSRDriverMachine_sStoppingTimerDriver, true);
                 OSRDriverMachine_sStoppingTimerOnD0ExitDriver.transitions.Add(OSRDriver_Events.eUnit, transition_5);
                 PrtTransition transition_6 = new PrtTransition(AnonFun10, OSRDriverMachine_sCompletingD0ExitDriver, false);
                 OSRDriverMachine_sStoppingTimerOnD0ExitDriver.transitions.Add(OSRDriver_Events.eTimerStopped, transition_6);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.deferredSet.Add(eSwitchStatusChange);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.deferredSet.Add(eD0Exit);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
                 PrtTransition transition_7 = new PrtTransition(AnonFun13, OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver, false);
                 OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.transitions.Add(OSRDriver_Events.eTimerStopped, transition_7);
                 PrtTransition transition_8 = new PrtTransition(PrtFun.IgnoreFun, OSRDriverMachine_sStoppingTimerDriver, true);
                 OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.transitions.Add(OSRDriver_Events.eUnit, transition_8);
-                OSRDriverMachine_sUpdatingLedStateToStableDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sUpdatingLedStateToStableDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sUpdatingLedStateToStableDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sUpdatingLedStateToStableDriver.deferredSet.Add(eSwitchStatusChange);
-                OSRDriverMachine_sUpdatingLedStateToStableDriver.deferredSet.Add(eD0Exit);
+                OSRDriverMachine_sUpdatingLedStateToStableDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sUpdatingLedStateToStableDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
                 PrtTransition transition_9 = new PrtTransition(AnonFun16, OSRDriverMachine_sWaitingForSwitchStatusChangeDriver, false);
                 OSRDriverMachine_sUpdatingLedStateToStableDriver.transitions.Add(OSRDriver_Events.eTransferSuccess, transition_9);
-                OSRDriverMachine_sWaitingForTimerDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sWaitingForTimerDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sWaitingForTimerDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
                 PrtTransition transition_10 = new PrtTransition(AnonFun19, OSRDriverMachine_sStoppingTimerOnD0ExitDriver, false);
                 OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(OSRDriver_Events.eD0Exit, transition_10);
@@ -5438,21 +5438,21 @@ namespace P.Program
                 OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(OSRDriver_Events.eSwitchStatusChange, transition_11);
                 PrtTransition transition_12 = new PrtTransition(AnonFun21, OSRDriverMachine_sUpdatingLedStateToStableDriver, false);
                 OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(OSRDriver_Events.eTimerFired, transition_12);
-                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sUpdatingLedStateToUnstableDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.deferredSet.Add(eSwitchStatusChange);
-                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.deferredSet.Add(eD0Exit);
+                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
                 PrtTransition transition_13 = new PrtTransition(AnonFun24, OSRDriverMachine_sWaitingForTimerDriver, false);
                 OSRDriverMachine_sUpdatingLedStateToUnstableDriver.transitions.Add(OSRDriver_Events.eTransferSuccess, transition_13);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sUpdatingBarGraphStateDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.deferredSet.Add(eSwitchStatusChange);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.deferredSet.Add(eD0Exit);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
                 PrtTransition transition_14 = new PrtTransition(AnonFun27, OSRDriverMachine_sUpdatingLedStateToUnstableDriver, false);
                 OSRDriverMachine_sUpdatingBarGraphStateDriver.transitions.Add(OSRDriver_Events.eTransferFailure, transition_14);
                 PrtTransition transition_15 = new PrtTransition(AnonFun28, OSRDriverMachine_sUpdatingLedStateToUnstableDriver, false);
                 OSRDriverMachine_sUpdatingBarGraphStateDriver.transitions.Add(OSRDriver_Events.eTransferSuccess, transition_15);
-                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
                 PrtTransition transition_16 = new PrtTransition(AnonFun31, OSRDriverMachine_sWaitingForTimerDriver, false);
                 OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.transitions.Add(OSRDriver_Events.eNo, transition_16);
@@ -5460,24 +5460,24 @@ namespace P.Program
                 OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.transitions.Add(OSRDriver_Events.eYes, transition_17);
                 PrtTransition transition_18 = new PrtTransition(AnonFun35, OSRDriverMachine_sDxDriver, false);
                 OSRDriverMachine_sCompletingD0ExitDriver.transitions.Add(OSRDriver_Events.eOperationSuccess, transition_18);
-                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
                 PrtTransition transition_19 = new PrtTransition(AnonFun38, OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver, false);
                 OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.transitions.Add(OSRDriver_Events.eSwitchStatusChange, transition_19);
                 PrtTransition transition_20 = new PrtTransition(AnonFun39, OSRDriverMachine_sCompletingD0ExitDriver, false);
                 OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.transitions.Add(OSRDriver_Events.eD0Exit, transition_20);
-                OSRDriverMachine_sCompleteD0EntryDriver.deferredSet.Add(eSwitchStatusChange);
+                OSRDriverMachine_sCompleteD0EntryDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
                 PrtTransition transition_21 = new PrtTransition(AnonFun42, OSRDriverMachine_sWaitingForSwitchStatusChangeDriver, false);
                 OSRDriverMachine_sCompleteD0EntryDriver.transitions.Add(OSRDriver_Events.eOperationSuccess, transition_21);
-                OSRDriverMachine_sDxDriver.dos.Add(eD0Exit, ignore);
+                OSRDriverMachine_sDxDriver.dos.Add(OSRDriver_Events.eD0Exit, ignore);
                 OSRDriverMachine_sDxDriver.dos.Add(eD0Exit, PrtFun.IgnoreFun);
-                OSRDriverMachine_sDxDriver.deferredSet.Add(eSwitchStatusChange);
+                OSRDriverMachine_sDxDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
                 PrtTransition transition_22 = new PrtTransition(AnonFun45, OSRDriverMachine_sCompleteD0EntryDriver, false);
                 OSRDriverMachine_sDxDriver.transitions.Add(OSRDriver_Events.eD0Entry, transition_22);
-                OSRDriverMachine_Driver_Init.deferredSet.Add(eSwitchStatusChange);
+                OSRDriverMachine_Driver_Init.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
                 PrtTransition transition_23 = new PrtTransition(AnonFun48, OSRDriverMachine_sDxDriver, false);
                 OSRDriverMachine_Driver_Init.transitions.Add(OSRDriver_Events.eUnit, transition_23);
-                OSRDriverMachine_sReturningTimerStoppedDriver.dos.Add(eD0Entry, ignore);
+                OSRDriverMachine_sReturningTimerStoppedDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
                 OSRDriverMachine_sReturningTimerStoppedDriver.dos.Add(eD0Entry, PrtFun.IgnoreFun);
             }
         }

@@ -5,7 +5,7 @@ using System.Collections.Generic;
 
 namespace P.Program
 {
-    public class Application : StateImpl
+    public partial class Application : StateImpl
     {
         private class OS_Events
         {
@@ -2747,18 +2747,18 @@ namespace P.Program
                 TimerMachine_TimerStarted = new TimerMachine_TimerStarted_Class("TimerMachine_TimerStarted", AnonFun4, AnonFun5, false, StateTemperature.Warm);
                 TimerMachine_Timer_Init = new TimerMachine_Timer_Init_Class("TimerMachine_Timer_Init", AnonFun6, AnonFun7, false, StateTemperature.Warm);
                 TimerMachine__Init = new TimerMachine__Init_Class("TimerMachine__Init", AnonFun8, AnonFun9, false, StateTemperature.Warm);
-                TimerMachine_ConsmachineeringStoppingTimer.deferredSet.Add(eStartDebounceTimer);
+                TimerMachine_ConsmachineeringStoppingTimer.deferredSet.Add(OS_Events.eStartDebounceTimer);
                 PrtTransition transition_1 = new PrtTransition(AnonFun10, TimerMachine_Timer_Init, false);
                 TimerMachine_ConsmachineeringStoppingTimer.transitions.Add(OS_Events.eUnit, transition_1);
-                TimerMachine_SendTimerFired.deferredSet.Add(eStartDebounceTimer);
+                TimerMachine_SendTimerFired.deferredSet.Add(OS_Events.eStartDebounceTimer);
                 PrtTransition transition_2 = new PrtTransition(AnonFun11, TimerMachine_Timer_Init, false);
                 TimerMachine_SendTimerFired.transitions.Add(OS_Events.eUnit, transition_2);
-                TimerMachine_TimerStarted.deferredSet.Add(eStartDebounceTimer);
+                TimerMachine_TimerStarted.deferredSet.Add(OS_Events.eStartDebounceTimer);
                 PrtTransition transition_3 = new PrtTransition(AnonFun12, TimerMachine_ConsmachineeringStoppingTimer, false);
                 TimerMachine_TimerStarted.transitions.Add(OS_Events.eStopTimer, transition_3);
                 PrtTransition transition_4 = new PrtTransition(AnonFun13, TimerMachine_SendTimerFired, false);
                 TimerMachine_TimerStarted.transitions.Add(OS_Events.eUnit, transition_4);
-                TimerMachine_Timer_Init.dos.Add(eStopTimer, ignore);
+                TimerMachine_Timer_Init.dos.Add(OS_Events.eStopTimer, ignore);
                 TimerMachine_Timer_Init.dos.Add(eStopTimer, PrtFun.IgnoreFun);
                 PrtTransition transition_5 = new PrtTransition(AnonFun14, TimerMachine_TimerStarted, false);
                 TimerMachine_Timer_Init.transitions.Add(OS_Events.eStartDebounceTimer, transition_5);

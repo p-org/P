@@ -1693,8 +1693,6 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldTuple(FuncTerm ft, List<SyntaxNode> children)
             {
-                var tupType = LookupType(ft);
-                children.Insert(0, pToCSharp.typeContext.PTypeToCSharpExpr(tupType));
                 return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), children.ToArray());
             }
 
@@ -1717,13 +1715,7 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    SyntaxNode[] pars = new SyntaxNode[args.Count+1];
-                    pars[0] = tupTypeExpr;
-                    for (int i = 0; i < args.Count; i++)
-                    {
-                        pars[i+1] = args[i];
-                    }
-                    return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), pars);
+                    return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), args.ToArray());
                 }
             }
 

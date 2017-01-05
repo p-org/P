@@ -314,11 +314,9 @@ namespace P.Runtime
             }
         }
 
-        public PrtTupleValue(PrtTupleType tupType, params PrtValue[] elems)
+        public PrtTupleValue(params PrtValue[] elems)
         {
-            if (tupType.fieldTypes.Count != elems.Count())
-                throw new PrtInternalException("Number of fields is different from number of arguments");
-            fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
+            fieldValues = new List<PrtValue>(elems.Count());
             foreach (var elem in elems)
             {
                 fieldValues.Add(elem.Clone());
@@ -390,7 +388,7 @@ namespace P.Runtime
             }
         }
 
-        public PrtNamedTupleValue(PrtNamedTupleType tupType, params PrtValue[] elems) : base (tupType, elems)
+        public PrtNamedTupleValue(PrtNamedTupleType tupType, params PrtValue[] elems) : base (elems)
         {
             fieldNames = new List<string>(tupType.fieldTypes.Count);
             foreach (var fn in tupType.fieldNames)

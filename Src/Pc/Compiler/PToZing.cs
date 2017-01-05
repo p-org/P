@@ -2416,7 +2416,7 @@ namespace Microsoft.Pc
                             var returnStmt = MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtTupleSet"), dest, Factory.Instance.MkCnst(fieldIndex), src));
                             return new ZingTranslationInfo(returnStmt);
                         }
-                        else if (assignType == "XFER")
+                        else if (assignType == "MOVE")
                         {
                             var returnStmt = 
                                 MkZingSeq(
@@ -2436,7 +2436,7 @@ namespace Microsoft.Pc
                         {
                             return new ZingTranslationInfo(MkZingAssignWithClone(dest, src));
                         }
-                        else if (assignType == "XFER")
+                        else if (assignType == "MOVE")
                         {
                             return new ZingTranslationInfo(MkZingSeq(MkZingAssign(dest, src), MkZingAssign(src, MkZingIdentifier("null"))));
                         }
@@ -2458,7 +2458,7 @@ namespace Microsoft.Pc
                                 var returnStmt = MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtSeqSet"), dest, index, src));
                                 return new ZingTranslationInfo(returnStmt);
                             }
-                            else if (assignType == "XFER")
+                            else if (assignType == "MOVE")
                             {
                                 var returnStmt =
                                     MkZingSeq(
@@ -2480,7 +2480,7 @@ namespace Microsoft.Pc
                                 var returnStmt = MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSet"), dest, index, src));
                                 return new ZingTranslationInfo(returnStmt);
                             }
-                            else if (assignType == "XFER")
+                            else if (assignType == "MOVE")
                             {
                                 var returnStmt =
                                     MkZingSeq(

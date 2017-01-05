@@ -22,20 +22,20 @@ machine Main {
 	fun A(y: int) : bool 
 	{ 
 		var b: int;
-		Foo(b xfer); 
+		Foo(b move); 
 		return true;
 	}
 
 	fun B(y: int) : bool 
 	{ 
 		var b: int;
-		b = y xfer;
+		b = y move;
 		return true;
 	}
 
 	fun C(y: int) : bool 
 	{ 
-		Foo(y xfer); 
+		Foo(y move); 
 		return true;
 	}
 }

@@ -1391,7 +1391,7 @@ namespace Microsoft.Pc
                 FunInfo entryFunInfo = pToCSharp.allStaticFuns.ContainsKey(initStateEntryActionName)
                                         ? pToCSharp.allStaticFuns[initStateEntryActionName]
                                         : machineInfo.funNameToFunInfo[initStateEntryActionName];
-                var payloadVar = MkPayload(pToCSharp.typeContext.PTypeToCSharpExpr(entryFunInfo.PayloadType), children);
+                var payloadVar = MkPayload(children);
                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
                 stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(IdentifierName("createdMachine"), MkCSharpInvocationExpression(IdentifierName(string.Format("CreateMachine_{0}", machineName)), IdentifierName("application"), payloadVar)));
                 int afterLabelId = GetFreshLabelId();
@@ -1710,8 +1710,6 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldTuple(FuncTerm ft, List<SyntaxNode> children)
             {
-                var tupType = LookupType(ft);
-                children.Insert(0, pToCSharp.typeContext.PTypeToCSharpExpr(tupType));
                 return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), children.ToArray());
             }
 
@@ -1722,7 +1720,7 @@ namespace Microsoft.Pc
                 return MkCSharpObjectCreationExpression(IdentifierName("PrtNamedTupleValue"), children.ToArray());
             }
 
-            private ExpressionSyntax MkPayload(SyntaxNode tupTypeExpr, List<SyntaxNode> args)
+            private ExpressionSyntax MkPayload(List<SyntaxNode> args)
             {
                 if (args.Count == 0)
                 {
@@ -1734,13 +1732,7 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    SyntaxNode[] pars = new SyntaxNode[args.Count+1];
-                    pars[0] = tupTypeExpr;
-                    for (int i = 0; i < args.Count; i++)
-                    {
-                        pars[i+1] = args[i];
-                    }
-                    return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), pars);
+                    return MkCSharpObjectCreationExpression(IdentifierName("PrtTupleValue"), args.ToArray());
                 }
             }
 
@@ -1754,7 +1746,7 @@ namespace Microsoft.Pc
                 FunInfo entryFunInfo = pToCSharp.allStaticFuns.ContainsKey(stateEntryActionName)
                                         ? pToCSharp.allStaticFuns[stateEntryActionName]
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
-                var payloadVar = MkPayload(pToCSharp.typeContext.PTypeToCSharpExpr(entryFunInfo.PayloadType), children);
+                var payloadVar = MkPayload(children);
                 var traceStmt = MkCSharpPrint(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(stateExpr, "name"));
                 var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), IdentifierName("@null"));
                 var assignStmt2 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), payloadVar);
@@ -1768,7 +1760,7 @@ namespace Microsoft.Pc
                 var eventExpr = (ExpressionSyntax)children[0];
                 children.RemoveAt(0);
                 var eventPayloadTypeExpr = MkCSharpDot(eventExpr, "evt", "payloadType");
-                var payloadVar = MkPayload(eventPayloadTypeExpr, children);
+                var payloadVar = MkPayload(children);
                 var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), IdentifierName("@null"));
                 var assertStmt = MkCSharpAssert(MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = MkCSharpPrint(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
@@ -1785,7 +1777,7 @@ namespace Microsoft.Pc
                 ExpressionSyntax eventExpr = MkCSharpCastExpression("PrtEventValue", args[1]);
                 args.RemoveRange(0, 2);
                 ExpressionSyntax tupleTypeExpr = MkCSharpDot(eventExpr, "evt", "payloadType");
-                ExpressionSyntax payloadExpr = MkPayload(tupleTypeExpr, args);
+                ExpressionSyntax payloadExpr = MkPayload(args);
                 var invocationArgs = new ExpressionSyntax[]
                 {
                     eventExpr, payloadExpr, IdentifierName("parent"), targetExpr
@@ -1814,7 +1806,7 @@ namespace Microsoft.Pc
                 ExpressionSyntax eventExpr = (ExpressionSyntax)MkCSharpCastExpression("PrtEventValue", args[0]);
                 args.RemoveAt(0);
                 ExpressionSyntax tupleTypeExpr = (ExpressionSyntax)MkCSharpDot(eventExpr, "payloadType");
-                ExpressionSyntax payloadExpr = (ExpressionSyntax)MkPayload(tupleTypeExpr, args);
+                ExpressionSyntax payloadExpr = (ExpressionSyntax)MkPayload(args);
                 var invocationArgs = new ExpressionSyntax[]
                 {
                     eventExpr, payloadExpr, (ExpressionSyntax)IdentifierName("parent")
@@ -1969,7 +1961,7 @@ namespace Microsoft.Pc
                                                 MkCSharpNumericLiteralExpression(fieldIndex),
                                                 MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                             }
-                            else if (assignType == "XFER")
+                            else if (assignType == "MOVE")
                             {
                                 return ExpressionStatement(
                                             MkCSharpInvocationExpression(
@@ -1997,7 +1989,7 @@ namespace Microsoft.Pc
                                 stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(dest, MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 return Block(stmtList);
                             }
-                            else if (assignType == "XFER")
+                            else if (assignType == "MOVE")
                             {
                                 return MkCSharpSimpleAssignmentExpressionStatement(dest, src);
                             }
@@ -2025,7 +2017,7 @@ namespace Microsoft.Pc
                                                     index,
                                                     MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 }
-                                else if (assignType == "XFER")
+                                else if (assignType == "MOVE")
                                 {
                                     return ExpressionStatement(
                                                 MkCSharpInvocationExpression(
@@ -2055,7 +2047,7 @@ namespace Microsoft.Pc
                                                     index,
                                                     MkCSharpInvocationExpression(MkCSharpDot(src, "Clone"))));
                                 }
-                                else if (assignType == "XFER")
+                                else if (assignType == "MOVE")
                                 {
                                     return ExpressionStatement(
                                                 MkCSharpInvocationExpression(

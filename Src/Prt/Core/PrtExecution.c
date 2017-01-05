@@ -12,7 +12,7 @@ void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV *context, 
 	PrtAssert(PrtIsValidValue(*value), "value is not valid");
 
 	PRT_VALUE *oldValue = context->varValues[varIndex];
-	if (status == PRT_FUN_PARAM_XFER)
+	if (status == PRT_FUN_PARAM_MOVE)
 	{
 		if (oldValue != NULL)
 		{
@@ -53,7 +53,7 @@ void PRT_CALL_CONV PrtSetLocalVarLinear(_Inout_ PRT_VALUE **locals, _In_ PRT_UIN
 	PrtAssert(PrtIsValidValue(*value), "value is not valid");
 
 	PRT_VALUE *oldValue = locals[varIndex];
-	if (status == PRT_FUN_PARAM_XFER)
+	if (status == PRT_FUN_PARAM_MOVE)
 	{
 		if (oldValue != NULL)
 		{
@@ -490,7 +490,7 @@ PrtGoto(
 			case PRT_FUN_PARAM_SWAP:
 				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
 				break;
-			case PRT_FUN_PARAM_XFER:
+			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
 				args[i] = *argPtr;
 				*argPtr = NULL;
@@ -553,7 +553,7 @@ PrtRaise(
 			case PRT_FUN_PARAM_SWAP:
 				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
 				break;
-			case PRT_FUN_PARAM_XFER:
+			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
 				args[i] = *argPtr;
 				*argPtr = NULL;
@@ -781,7 +781,7 @@ PrtPushNewFrame(
 					locals[count] = *argPtr;
 					*argPtr = NULL;
 					break;
-				case PRT_FUN_PARAM_XFER:
+				case PRT_FUN_PARAM_MOVE:
 					PrtAssert(!isFunApp, "Illegal status value");
 					argPtr = va_arg(argp, PRT_VALUE **);
 					locals[count] = *argPtr;
@@ -1023,7 +1023,7 @@ DoEntry:
 	{
 		PrtLog(PRT_STEP_ENTRY, NULL, context, NULL, NULL);
 		PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].entryFunIndex;
-		PrtPushNewEventHandlerFrame(context, entryFunIndex, PRT_FUN_PARAM_XFER, NULL);
+		PrtPushNewEventHandlerFrame(context, entryFunIndex, PRT_FUN_PARAM_MOVE, NULL);
 	}
 	PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
 	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
@@ -1046,7 +1046,7 @@ DoAction:
 		if (context->funStack.length == 0)
 		{
 			PrtLog(PRT_STEP_DO, NULL, context, NULL, NULL);
-			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_XFER, NULL);
+			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_MOVE, NULL);
 		}
 		funIndex = PrtBottomOfFunStack(context)->funIndex;
 		funDecl = GetFunDeclFromIndex(context, funIndex);
@@ -1405,7 +1405,7 @@ PrtDequeueEvent(
 					if (triggerIndex == rcase->triggerEventIndex)
 					{
 						frame->rcase = rcase;
-						PrtPushNewEventHandlerFrame(context, rcase->funIndex, PRT_FUN_PARAM_XFER, frame->locals);
+						PrtPushNewEventHandlerFrame(context, rcase->funIndex, PRT_FUN_PARAM_MOVE, frame->locals);
 						break;
 					}
 				}
@@ -1448,7 +1448,7 @@ PrtDequeueEvent(
 				if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEventIndex)
 				{
 					frame->rcase = rcase;
-					PrtPushNewEventHandlerFrame(context, rcase->funIndex, PRT_FUN_PARAM_XFER, frame->locals);
+					PrtPushNewEventHandlerFrame(context, rcase->funIndex, PRT_FUN_PARAM_MOVE, frame->locals);
 					break;
 				}
 			}

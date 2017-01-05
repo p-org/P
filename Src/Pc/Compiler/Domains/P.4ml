@@ -11,7 +11,7 @@ domain PData
     /*************************************************************/
     /****************          Type Language          ************/
     /*************************************************************/    
-    Qualifier       ::= { NONE, SWAP, XFER }.
+    Qualifier       ::= { NONE, MOVE, SWAP }.
     
 	StringList		::= new (hd: String, tl: any StringList + { NIL }).
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
@@ -679,11 +679,11 @@ domain PStaticTyping extends PData
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
 	[ rule_Classes = '"error, msg: linear argument should be passed for exactly one parameter"']
 	QualifierError(c, e, expr) :- StmtArgs(c, e, Exprs(qual, expr, tl)), StmtArgs(c, e, Exprs(_, expr, tl')), qual != NONE, tl != tl'.
-	[ rule_Classes = '"error, msg: xfer or swap not allowed"']
+	[ rule_Classes = '"error, msg: move or swap not allowed"']
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: FunApp, exprs = Exprs(qual, expr, _), qual != NONE.
-	[ rule_Classes = '"error, msg: xfer or swap not allowed"']
+	[ rule_Classes = '"error, msg: move or swap not allowed"']
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Announce, exprs = Exprs(qual, expr, _), qual != NONE.
-	[ rule_Classes = '"error, msg: xfer or swap not allowed"']
+	[ rule_Classes = '"error, msg: move or swap not allowed"']
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Print, exprs = Exprs(qual, expr, _), qual != NONE.
 	[ rule_Classes = '"error, msg: swap not allowed"']
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: NewStmt, exprs = Exprs(qual, expr, _), qual = SWAP.
@@ -698,9 +698,9 @@ domain PStaticTyping extends PData
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
 	[ rule_Classes = '"error, msg: argument should be a local variable"']
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
-	[ rule_Classes = '"error, msg: xfer or swap not allowed"']
+	[ rule_Classes = '"error, msg: move or swap not allowed"']
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(REMOVE, _, qual, expr, _), qual != NONE.
-	[ rule_Classes = '"error, msg: xfer or swap not allowed"']
+	[ rule_Classes = '"error, msg: move or swap not allowed"']
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(INSERT, _, qual, expr, _), qual != NONE.
 
 	EnvVars ::= (AnonFunDecl, String, NmdTupType + { NIL }).
@@ -730,8 +730,8 @@ domain PStaticTyping extends PData
 
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: NewStmt, UnavailableBefore(c, s, n), s.aout = NIL.
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: NewStmt, UnavailableBefore(c, s, n), s.aout = Name(n', _), n' != n.
-	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(XFER, Name(n, _), _)), s: NewStmt, s.aout = NIL.
-	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(XFER, Name(n, _), _)), s: NewStmt, s.aout = Name(n', _), n' != n.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: NewStmt, s.aout = NIL.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: NewStmt, s.aout = Name(n', _), n' != n.
 
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Announce, UnavailableBefore(c, s, n).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Assert, UnavailableBefore(c, s, n).
@@ -740,17 +740,17 @@ domain PStaticTyping extends PData
 
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: FunStmt, UnavailableBefore(c, s, n), s.aout = NIL.
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: FunStmt, UnavailableBefore(c, s, n), s.aout = Name(n', _), n' != n.
-	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(XFER, Name(n, _), _)), s: FunStmt, s.aout = NIL.
-	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(XFER, Name(n, _), _)), s: FunStmt, s.aout = Name(n', _), n' != n.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: FunStmt, s.aout = NIL.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: FunStmt, s.aout = Name(n', _), n' != n.
 
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Send, UnavailableBefore(c, s, n).
-	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(XFER, Name(n, _), _)), s: Send.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: Send.
 
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(op, _, _, _, _), op != ASSIGN, UnavailableBefore(c, s, n).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, e, _, _, _), toSymbol(e) != #Name, UnavailableBefore(c, s, n).
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n', _), _, _, _), UnavailableBefore(c, s, n), n' != n.
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, e, XFER, Name(n, _), _), toSymbol(e) != #Name.
-	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n', _), XFER, Name(n, _), _), n' != n.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, e, MOVE, Name(n, _), _), toSymbol(e) != #Name.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n', _), MOVE, Name(n, _), _), n' != n.
 
 	NeededBefore ::= (TypingContext, Stmt, ExprsExt + { NIL }).
 	NeededBefore(c, s, e) :- SubSE(c, s), s: NewStmt, e = s.args.

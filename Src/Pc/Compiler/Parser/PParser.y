@@ -385,7 +385,7 @@ TupTypeList
 
 QualifierOrNone
 	: SWAP		{ qualifier.Push(MkUserCnst(P_Root.UserCnstKind.SWAP, ToSpan(@1))); }
-	| XFER		{ qualifier.Push(MkUserCnst(P_Root.UserCnstKind.XFER, ToSpan(@1))); }
+	| MOVE		{ qualifier.Push(MkUserCnst(P_Root.UserCnstKind.MOVE, ToSpan(@1))); }
 	|			{ qualifier.Push(P_Root.MkUserCnst(P_Root.UserCnstKind.NONE)); }
 	;
 

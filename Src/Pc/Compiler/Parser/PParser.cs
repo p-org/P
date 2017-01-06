@@ -1523,7 +1523,7 @@
             {
                 //declaration contains set of events
                 Contract.Assert(crntEventList.Count() > 0);
-                var anonEventSetName = "__AnonEventSet_" + anonEventSetCounter;
+                var anonEventSetName = "__AnonEventSet_" + iname;
                 anonEventSetCounter++;
                 var eventset = new P_Root.EventSetDecl();
                 eventset.name = MkString(anonEventSetName, iesnameSpan);
@@ -2505,7 +2505,6 @@
             crntStateNames.Clear();
             crntFunNames.Clear();
             crntVarNames.Clear();
-            anonEventSetCounter = 0;
         }
         #endregion
     }

@@ -273,18 +273,18 @@ Src/PrtDist/Samples/PingPong/program.h
 /Src/Pc/Compiler/TokensTokens.dat
 /Src/Prt/Samples/ForeignTypes/linker.h
 /Src/Prt/Samples/ForeignTypes/linker.c
-/Src/Prt/Samples/ForeignTypes/ForeignStringType.4ml
-/Src/Prt/Samples/ModelFnAndMachines/ServerClient.4ml
 /Src/Prt/Samples/ModelFnAndMachines/linker.h
 /Src/Prt/Samples/ModelFnAndMachines/linker.c
-/Src/PrtDist/Samples/PingPong/PingPong.4ml
 /Src/PrtDist/Samples/PingPong/linker.h
 /Src/PrtDist/Samples/PingPong/linker.c
-/Src/PrtDist/Samples/PingPongFast/test.4ml
 /Src/PrtDist/Samples/PingPongFast/linker.h
 /Src/PrtDist/Samples/PingPongFast/linker.c
-/Src/PrtDist/Samples/PingPongSimple/test.4ml
 /Src/PrtDist/Samples/PingPongSimple/linker.h
 /Src/PrtDist/Samples/PingPongSimple/linker.c
+/Src/PrtDist/Samples/PingPongSimple/Timer.c
+/Src/PrtDist/Samples/PingPongSimple/timer.h
 /Bld/Drops/Binaries
 /Src/Pc/packages
+
+# all .4ml files.
+*.4ml

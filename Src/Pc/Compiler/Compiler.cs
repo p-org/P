@@ -1592,6 +1592,7 @@
                 wr.Close();
             }
             success = AddLinkerErrorFlags(errorProgram);
+            
             errorReporter.PrintErrors(Log, Options);
             if (!success)
             {
@@ -1599,6 +1600,8 @@
                 UninstallProgram(linkProgramName);
                 return false;
             }
+
+            var linker = new PToCSharpLinker(errorProgram);
 
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
             extractTask = apply.Result.GetOutputModel("CLinkModel", progName, null);
@@ -1621,6 +1624,12 @@
             (1) The last arg of the error term is always the error message. 
             (2) The first arg if of type Id is the span info otherwise the span info is default.
             */
+            if((ft.Function as Id).Name.ToString().StartsWith("CSharp"))
+            {
+                //Console.WriteLine("Ignored");
+                return;
+            }
+
             Span errorSpan = default(Span);
             //check if the first argument is Id.
             var firstArg = ft.Args.First();

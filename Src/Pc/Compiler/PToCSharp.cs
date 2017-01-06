@@ -3489,14 +3489,51 @@ namespace Microsoft.Pc
     {
         private List<SyntaxNode> members;
         static SyntaxGenerator generator;
-        public PToCSharpLinker(Compiler compiler, AST<Model> linkerModel)
+
+        public PToCSharpLinker(AST<Program> linkerModel)
         {
             GenerateLinkerInfo(linkerModel);
         }
 
-        void GenerateLinkerInfo(AST<Model> model)
+        void GenerateLinkerInfo(AST<Program> model)
         {
+            
+            var linkerModel = model.FindAny(
+                new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
 
+            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            linkerModel.FindAll(
+                new NodePred[]
+                {
+                    NodePredFactory.Instance.Star,
+                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                },
+
+                (path, n) =>
+                {
+                    var mf = (ModelFact)n;
+                    FuncTerm ft = (FuncTerm)mf.Match;
+                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                });
+
+
+        }
+
+        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
+        {
+            var fun = (Id)ft.Function;
+            return GetBin(factBins, fun.Name);
+        }
+
+        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, string name)
+        {
+            LinkedList<AST<FuncTerm>> bin;
+            if (!factBins.TryGetValue(name, out bin))
+            {
+                bin = new LinkedList<AST<FuncTerm>>();
+                factBins.Add(name, bin);
+            }
+            return bin;
         }
 
         private void MkAppConstructors()

@@ -126,13 +126,13 @@ domain PLinkError
 	RefinementDeclError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 
 	
-	CSharpLinkMap ::= (testName: String, newMachineName: String, interfaceOrMachine: String, newImpMachine: String).
-	CSharpRenameMap ::= (testName: String, newName: String, impMachine: String).
-	CSharpSafeMap ::= (testName: String, newName: String, isSafe: Boolean).
-	CSharpMonitorMap ::= (testName: String, newMonitorName: String, impMachine: String).
-	CSharpInterfaceMap ::= (interfaceName: String, evList: EventNameList).
+	CSharpLinkMap ::= new (testName: String, newMachineName: String, interfaceOrMachine: String, newImpMachine: String).
+	CSharpRenameMap ::= new (testName: String, newName: String, impMachine: String).
+	CSharpSafeMap ::= new (testName: String, newName: String, isSafe: Boolean).
+	CSharpMonitorMap ::= new (testName: String, newMonitorName: String, impMachine: String).
+	CSharpInterfaceMap ::= new (interfaceName: String, evList: EventNameList).
 
-	TestError ::= new (modId: any Id, arg: any Id).
+	TestError ::= new (modId: String, arg: any String).
 }
 
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
@@ -573,7 +573,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	CSharpMonitorMap(testName, monName, impMachine) :- TestDecl(testName, modExpr, _), ModuleMonitorMap(modExpr, monName, impMachine).
 	CSharpInterfaceMap(interfaceName, evList) :- InterfaceTypeDecl(interfaceName, evList, _).
 
-	//TestError(x, i) :- CLinkMap(x, i, _).
+	//TestError(x, x) :- InterfaceTypeDecl(x, _, _).
 	/**************************************************************************/
 	/*     C Code Helpers
 	/**************************************************************************/

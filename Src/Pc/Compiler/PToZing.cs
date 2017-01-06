@@ -3142,7 +3142,7 @@ namespace Microsoft.Pc
                     AddTypeInitialization(MkZingAssign(seqType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkSeqType"), innerType)));
                     return seqType;
                 }
-                else
+                else if(typeKind == "MapType")
                 {
                     // typeKind == "MapType"
                     var domType = PTypeToZingExpr((FuncTerm)GetArgByIndex(type, 0));
@@ -3150,6 +3150,13 @@ namespace Microsoft.Pc
                     var mapType = GetType();
                     AddTypeInitialization(MkZingAssign(mapType, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkMapType"), domType, codType)));
                     return mapType;
+                }
+                else
+                {
+                    // its InterfaceType so consider it as machine type
+                    var tmpVar = GetType();
+                    AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_MACHINE"))));
+                    return tmpVar;
                 }
             }
         }

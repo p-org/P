@@ -130,7 +130,6 @@ domain PLinkError
 	CSharpRenameMap ::= new (testName: String, newName: String, impMachine: String).
 	CSharpSafeMap ::= new (testName: String, newName: String, isSafe: Boolean).
 	CSharpMonitorMap ::= new (testName: String, newMonitorName: String, impMachine: String).
-	CSharpInterfaceMap ::= new (interfaceName: String, evList: EventNameList).
 
 	TestError ::= new (modId: String, arg: any String).
 }
@@ -571,7 +570,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	CSharpRenameMap(testName, newName, impName) :- TestDecl(testName, modExpr, _), ModuleRenameMap(modExpr, newName, impName).
 	CSharpSafeMap(testName, mname, isSafe):- TestDecl(testName, modExpr, _), ModuleSafeMap(modExpr, mname, isSafe).
 	CSharpMonitorMap(testName, monName, impMachine) :- TestDecl(testName, modExpr, _), ModuleMonitorMap(modExpr, monName, impMachine).
-	CSharpInterfaceMap(interfaceName, evList) :- InterfaceTypeDecl(interfaceName, evList, _).
 
 	//TestError(x, x) :- InterfaceTypeDecl(x, _, _).
 	/**************************************************************************/

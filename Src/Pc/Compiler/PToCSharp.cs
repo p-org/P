@@ -3488,10 +3488,28 @@ namespace Microsoft.Pc
     class PToCSharpLinker
     {
         private List<SyntaxNode> members;
-        static SyntaxGenerator generator;
+        private SyntaxGenerator generator;
+        
+        internal class TestCaseInfo
+        {
+            public Dictionary<string, Dictionary<string, string>> linkMap;
+            public Dictionary<string, string> renameMap;
+            public Dictionary<string, bool> isSafeMap;
+            public Dictionary<string, List<string>> monitorMap;
+            public TestCaseInfo()
+            {
+                linkMap = new Dictionary<string, Dictionary<string, string>>();
+                renameMap = new Dictionary<string, string>();
+                isSafeMap = new Dictionary<string, bool>();
+                monitorMap = new Dictionary<string, List<string>>();
+            }
+        }
+
+        private Dictionary<string, TestCaseInfo> allTests;
 
         public PToCSharpLinker(AST<Program> linkerModel)
         {
+            allTests = new Dictionary<string, TestCaseInfo>();
             GenerateLinkerInfo(linkerModel);
         }
 
@@ -3515,8 +3533,182 @@ namespace Microsoft.Pc
                     FuncTerm ft = (FuncTerm)mf.Match;
                     GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
                 });
+            LinkedList<AST<FuncTerm>> terms;
+
+            terms = GetBin(factBins, "CSharpLinkMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var currMachineName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var IorMName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var impMachineName = ((Cnst)it.Current).GetStringValue();
+
+                    var testInfo = new TestCaseInfo();
+                    if(allTests.ContainsKey(name))
+                    {
+                        if(allTests[name].linkMap.ContainsKey(currMachineName))
+                        {
+                            allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
+                        }
+                        else
+                        {
+                            allTests[name].linkMap[currMachineName] = new Dictionary<string, string>();
+                            allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
+                        }
+                    }
+                    else
+                    {
+                        allTests[name] = new TestCaseInfo();
+                        allTests[name].linkMap[currMachineName] = new Dictionary<string, string>();
+                        allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "CSharpLinkMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var currMachineName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var IorMName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var impMachineName = ((Cnst)it.Current).GetStringValue();
+
+                    var testInfo = new TestCaseInfo();
+                    if (allTests.ContainsKey(name))
+                    {
+                        if (allTests[name].linkMap.ContainsKey(currMachineName))
+                        {
+                            allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
+                        }
+                        else
+                        {
+                            allTests[name].linkMap[currMachineName] = new Dictionary<string, string>();
+                            allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
+                        }
+                    }
+                    else
+                    {
+                        allTests[name] = new TestCaseInfo();
+                        allTests[name].linkMap[currMachineName] = new Dictionary<string, string>();
+                        allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "CSharpRenameMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var renamedMachineName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var impName = ((Cnst)it.Current).GetStringValue();
+                   
+
+                    var testInfo = new TestCaseInfo();
+                    if (allTests.ContainsKey(name))
+                    {
+                        if (allTests[name].renameMap.ContainsKey(renamedMachineName))
+                        {
+                            Console.WriteLine("Internal Error");
+                            Environment.Exit(-1);
+                        }
+                        else
+                        {
+                            allTests[name].renameMap.Add(renamedMachineName, impName);
+                        }
+                    }
+                    else
+                    {
+                        allTests[name] = new TestCaseInfo();
+                        allTests[name].renameMap.Add(renamedMachineName, impName);
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "CSharpSafeMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var renamedMachineName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var isSafe = (it.Current as Id).Name == PData.Cnst_True.Node.Name;
 
 
+                    var testInfo = new TestCaseInfo();
+                    if (allTests.ContainsKey(name))
+                    {
+                        if (allTests[name].isSafeMap.ContainsKey(renamedMachineName))
+                        {
+                            Console.WriteLine("Internal Error");
+                            Environment.Exit(-1);
+                        }
+                        else
+                        {
+                            allTests[name].isSafeMap.Add(renamedMachineName, isSafe);
+                        }
+                    }
+                    else
+                    {
+                        allTests[name] = new TestCaseInfo();
+                        allTests[name].isSafeMap.Add(renamedMachineName, isSafe);
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "CSharpMonitorMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var newMonitorName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var impMachine = ((Cnst)it.Current).GetStringValue();
+
+
+                    var testInfo = new TestCaseInfo();
+                    if (allTests.ContainsKey(name))
+                    {
+                        if (allTests[name].monitorMap.ContainsKey(newMonitorName))
+                        {
+                            allTests[name].monitorMap[newMonitorName].Add(impMachine);
+                        }
+                        else
+                        {
+                            allTests[name].monitorMap[newMonitorName] = new List<string>();
+                            allTests[name].monitorMap[newMonitorName].Add(impMachine);
+                        }
+                    }
+                    else
+                    {
+                        allTests[name] = new TestCaseInfo();
+                        allTests[name].monitorMap[newMonitorName] = new List<string>();
+                        allTests[name].monitorMap[newMonitorName].Add(impMachine);
+                    }
+                }
+            }
         }
 
         public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
@@ -3536,17 +3728,21 @@ namespace Microsoft.Pc
             return bin;
         }
 
-        private void MkAppConstructors()
+        private List<SyntaxNode> MkAppConstructors(string testName)
         {
-            /*
+
             //parameterless constructor
+            List<SyntaxNode> constructorList = new List<SyntaxNode>();
             var constructor_1 = generator.ConstructorDeclaration("Application", null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
-            members.Add(constructor_1);
+            constructorList.Add(constructor_1);
 
             var constructorParameters = new SyntaxNode[] {
                 generator.ParameterDeclaration("initialize",
                     generator.TypeExpression(SpecialType.System_Boolean)) };
             List<SyntaxNode> stmtList = new List<SyntaxNode>();
+
+            //TODO create Monitors and the Main machine
+            /*
             foreach (var machineName in allMachines.Keys)
             {
                 if (allMachines[machineName].IsReal) continue;
@@ -3554,15 +3750,19 @@ namespace Microsoft.Pc
                                 generator.InvocationExpression(generator.IdentifierName(string.Format("CreateMachine_{0}", machineName)),
                                                                ThisExpression())));
             }
+            
+
             var constructorBody = generator.ExpressionStatement(
                 generator.InvocationExpression(
                     generator.IdentifierName("CreateMachine_Main"),
                     ThisExpression(),
                     IdentifierName("@null")));
             stmtList.Add(constructorBody);
+            */
             var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0],
                                                                 statements: stmtList.ToArray());
-            members.Add(constructor_2);
+            constructorList.Add(constructor_2);
+
             //Generate "new Application();" 
             var makeSkeletonMethodBody = generator.ReturnStatement(generator.ObjectCreationExpression(generator.IdentifierName("Application")));
             var makeSkeletonMethodDecl = generator.MethodDeclaration("MakeSkeleton", null,
@@ -3570,37 +3770,46 @@ namespace Microsoft.Pc
               Accessibility.Public,
               DeclarationModifiers.Override,
               new SyntaxNode[] { makeSkeletonMethodBody });
-            members.Add(makeSkeletonMethodDecl);
-            */
+            constructorList.Add(makeSkeletonMethodDecl);
+
+
+            return constructorList;
         }
 
 
-        private void MkStaticAppConstructor()
+        private SyntaxNode MkStaticAppConstructor()
         {
+            //Initialize all the maps
 
-            members.Add(ConstructorDeclaration(
+            var stmtList = new List<SwitchStatementSyntax>();
+            var staticConstrutor = ConstructorDeclaration(
                                Identifier("Application"))
                             .WithModifiers(
                                TokenList(
                                     Token(SyntaxKind.StaticKeyword)))
-                            .WithBody(Block())
-                            .NormalizeWhitespace());
+                            .WithBody(Block(stmtList))
+                            .NormalizeWhitespace();
+            return staticConstrutor;
         }
 
-        public bool GenerateCSharpLinker()
+        public void GenerateCSharpLinkerOutput(string outputDir)
         {
-            SyntaxNode finalOutput = null;
+            foreach(var testCase in allTests)
+            {
+                SyntaxNode finalOutput = null;
 
-            var workspace = new AdhocWorkspace();
-            // Get the SyntaxGenerator for the specified language
-            generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
-            members = new List<SyntaxNode>();
 
-            // Create using/Imports directives
-            var usingDirectives = generator.NamespaceImportDeclaration("System");
+                var workspace = new AdhocWorkspace();
+                // Get the SyntaxGenerator for the specified language
+                generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
 
-            EmitCSharpOutput(finalOutput, "linker.cs");
-            return true;
+                var members = new List<SyntaxNode>();
+                // Create using/Imports directives
+                var usingDirectives = generator.NamespaceImportDeclaration("System");
+
+                var outputFile = outputDir + "\\" + testCase + ".cs";
+                EmitCSharpOutput(finalOutput, outputFile);
+            }
         }
 
         private void EmitCSharpOutput(SyntaxNode finalOutput, string fileName)

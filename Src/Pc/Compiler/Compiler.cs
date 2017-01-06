@@ -1584,9 +1584,9 @@
             extractTask.Wait();
             var errorProgram = extractTask.Result;
             Contract.Assert(errorProgram != null);
-            if(Options.outputFormula)
+            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            if (Options.outputFormula)
             {
-                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "outputError.4ml")));
                 errorProgram.Print(wr);
                 wr.Close();
@@ -1602,6 +1602,7 @@
             }
 
             var linker = new PToCSharpLinker(errorProgram);
+            linker.GenerateCSharpLinkerOutput(outputDirName);
 
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
             extractTask = apply.Result.GetOutputModel("CLinkModel", progName, null);

@@ -3798,7 +3798,6 @@ namespace Microsoft.Pc
             {
                 SyntaxNode finalOutput = null;
 
-
                 var workspace = new AdhocWorkspace();
                 // Get the SyntaxGenerator for the specified language
                 generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
@@ -3806,8 +3805,26 @@ namespace Microsoft.Pc
                 var members = new List<SyntaxNode>();
                 // Create using/Imports directives
                 var usingDirectives = generator.NamespaceImportDeclaration("System");
+                members.AddRange(MkAppConstructors(testCase.Key));
+                members.Add(MkStaticAppConstructor());
 
-                var outputFile = outputDir + "\\" + testCase + ".cs";
+                //create the class
+                var applicationcClassDeclaration = generator.ClassDeclaration(
+                  "Application", typeParameters: null,
+                  modifiers: DeclarationModifiers.Partial,
+                  accessibility: Accessibility.Public,
+                  baseType: generator.IdentifierName("StateImpl"),
+                  members: members);
+                var programNameSpaceDeclaration = generator.NamespaceDeclaration("P.Program", applicationcClassDeclaration);
+
+                // Get a CompilationUnit (code file) for the generated code
+                finalOutput = generator.CompilationUnit(
+                            generator.NamespaceImportDeclaration("P.Runtime"),
+                            generator.NamespaceImportDeclaration("System"),
+                            generator.NamespaceImportDeclaration("System.Collections.Generic"),
+                            programNameSpaceDeclaration).
+                                NormalizeWhitespace();
+                var outputFile = outputDir + "\\" + testCase.Key + ".cs";
                 EmitCSharpOutput(finalOutput, outputFile);
             }
         }

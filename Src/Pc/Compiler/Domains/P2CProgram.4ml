@@ -117,14 +117,15 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 		
 	out.File(headerFileName, body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
 								      headerFileName = strJoin(%outputFileName, ".h"),
+									  headerLockId = strJoin("P_", strJoin(strUpper(strReplace(headerFileName, ".", "_")), "_")),
 									  ifdefBegin = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("extern \"C\"{")), NIL),
 									  ifdefEnd = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("}")), NIL),
 									  body = PpITE(
 									   IFNDEF,
-									   Ident("P_PROGRAM_H"),
+									   Ident(headerLockId),
 									   Section(
 										   Section(
-											  PpDefine(Ident("P_PROGRAM_H"), NIL),
+											  PpDefine(Ident(headerLockId), NIL),
 											  PpInclude("linker.h", FALSE)
 											  ),
 										   Section(ifdefBegin, Section(cmp, ifdefEnd))),

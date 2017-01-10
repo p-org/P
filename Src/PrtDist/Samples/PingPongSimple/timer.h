@@ -1,6 +1,6 @@
 
-  #ifndef P_PROGRAM_H
-    #define P_PROGRAM_H
+  #ifndef P_TIMER_H_
+    #define P_TIMER_H_
     #include "linker.h"
     #ifdef __cplusplus
       extern "C"{

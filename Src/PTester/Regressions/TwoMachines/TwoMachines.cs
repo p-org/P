@@ -1,79 +1,90 @@
+#pragma warning disable CS0162, CS0164, CS0168
 using P.Runtime;
 using System;
 using System.Collections.Generic;
 
 namespace P.Program
 {
-    public class Application : StateImpl
+    public partial class Application : StateImpl
     {
-        public Application(): base ()
+        private class TwoMachines_Events
         {
+            public static PrtEventValue halt;
+            public static PrtEventValue @null;
+            public static PrtEventValue boolPayloadEvent;
+            public static PrtEventValue Success;
+            public static PrtEventValue intPayloadEvent;
+            public static PrtEventValue Ping;
+            static TwoMachines_Events()
+            {
+                halt = new PrtEventValue(new PrtEvent("halt", TwoMachines_Types.typeNull, 1, false));
+                @null = new PrtEventValue(new PrtEvent("null", TwoMachines_Types.typeNull, 1, false));
+                boolPayloadEvent = new PrtEventValue(new PrtEvent("boolPayloadEvent", TwoMachines_Types.typeBool, PrtEvent.DefaultMaxInstances, false));
+                Success = new PrtEventValue(new PrtEvent("Success", TwoMachines_Types.typeNull, PrtEvent.DefaultMaxInstances, false));
+                intPayloadEvent = new PrtEventValue(new PrtEvent("intPayloadEvent", TwoMachines_Types.typeInt, PrtEvent.DefaultMaxInstances, false));
+                Ping = new PrtEventValue(new PrtEvent("Ping", TwoMachines_Types.typeMachine, 1, false));
+            }
         }
 
-        public Application(bool initialize): base ()
+        private class TwoMachines_Types
         {
-            CreateMachine_Blah(this);
-            CreateMachine_Main(this, @null);
-        }
-
-        public override StateImpl MakeSkeleton()
-        {
-            return new Application();
-        }
-
-        public static PrtEventValue halt;
-        public static PrtEventValue @null;
-        public static PrtEventValue boolPayloadEvent;
-        public static PrtEventValue Success;
-        public static PrtEventValue intPayloadEvent;
-        public static PrtEventValue Ping;
-        public static PrtType typeNull;
-        public static PrtNamedTupleType typeNmdTupType_1;
-        public static PrtNamedTupleType typeNmdTupType_2;
-        public static PrtNamedTupleType typeNmdTupType_3;
-        public static PrtType typeAny;
-        public static PrtType typeEvent;
-        public static PrtType typeMachine;
-        public static PrtType typeBool;
-        public static PrtType typeInt;
-        static Application()
-        {
-            typeNull = new PrtNullType();
-            typeNmdTupType_1 = new PrtNamedTupleType(new object[]{"_payload_1", typeNull});
-            typeNmdTupType_2 = new PrtNamedTupleType(new object[]{"_payload_0", typeNull});
-            typeNmdTupType_3 = new PrtNamedTupleType(new object[]{"_payload_skip", typeNull});
-            typeAny = new PrtAnyType();
-            typeEvent = new PrtEventType();
-            typeMachine = new PrtMachineType();
-            typeBool = new PrtBoolType();
-            typeInt = new PrtIntType();
-            halt = new PrtEventValue(new PrtEvent("halt", typeNull, 1, false));
-            @null = new PrtEventValue(new PrtEvent("null", typeNull, 1, false));
-            boolPayloadEvent = new PrtEventValue(new PrtEvent("boolPayloadEvent", typeBool, PrtEvent.DefaultMaxInstances, false));
-            Success = new PrtEventValue(new PrtEvent("Success", typeNull, PrtEvent.DefaultMaxInstances, false));
-            intPayloadEvent = new PrtEventValue(new PrtEvent("intPayloadEvent", typeInt, PrtEvent.DefaultMaxInstances, false));
-            Ping = new PrtEventValue(new PrtEvent("Ping", typeMachine, 1, false));
+            public static PrtType typeNull;
+            public static PrtNamedTupleType typeNmdTupType_1;
+            public static PrtNamedTupleType typeNmdTupType_2;
+            public static PrtNamedTupleType typeNmdTupType_3;
+            public static PrtType typeAny;
+            public static PrtType typeInt;
+            public static PrtType typeEvent;
+            public static PrtType typeMachine;
+            public static PrtType typeBool;
+            static TwoMachines_Types()
+            {
+                TwoMachines_Types.typeNull = new PrtNullType();
+                TwoMachines_Types.typeNmdTupType_1 = new PrtNamedTupleType(new object[]{"_payload_1", TwoMachines_Types.typeNull});
+                TwoMachines_Types.typeNmdTupType_2 = new PrtNamedTupleType(new object[]{"_payload_0", TwoMachines_Types.typeNull});
+                TwoMachines_Types.typeNmdTupType_3 = new PrtNamedTupleType(new object[]{"_payload_skip", TwoMachines_Types.typeNull});
+                TwoMachines_Types.typeAny = new PrtAnyType();
+                TwoMachines_Types.typeInt = new PrtIntType();
+                TwoMachines_Types.typeEvent = new PrtEventType();
+                TwoMachines_Types.typeMachine = new PrtMachineType();
+                TwoMachines_Types.typeBool = new PrtBoolType();
+            }
         }
 
         public static void CreateMachine_Blah(StateImpl application)
         {
             var machine = new Blah(application);
+            ((machine).observes).Add(Ping);
             (application).AddSpecMachineToStateImpl(machine);
         }
 
         public static PrtImplMachine CreateMachine_PONG(StateImpl application, PrtValue payload)
         {
             var machine = new PONG(application, 111, true);
+            (((machine).self).permissions).Add(TwoMachines_Events.Success);
+            (((machine).self).permissions).Add(TwoMachines_Events.boolPayloadEvent);
+            (((machine).self).permissions).Add(TwoMachines_Events.Ping);
+            (((machine).self).permissions).Add(TwoMachines_Events.intPayloadEvent);
+            ((machine).sends).Add(TwoMachines_Events.Success);
+            ((machine).sends).Add(TwoMachines_Events.boolPayloadEvent);
+            ((machine).sends).Add(TwoMachines_Events.intPayloadEvent);
+            ((machine).sends).Add(TwoMachines_Events.Ping);
             (machine).currentPayload = payload;
-            (application).AddImplMachineToStateImpl(machine);
             return machine;
         }
 
         public static PrtImplMachine CreateMachine_Main(StateImpl application, PrtValue payload)
         {
-            var machine = new Main(application, 10, false);
+            var machine = new Main(application, PrtImplMachine.DefaultMaxBufferSize, false);
+            (((machine).self).permissions).Add(TwoMachines_Events.Success);
+            (((machine).self).permissions).Add(TwoMachines_Events.boolPayloadEvent);
+            (((machine).self).permissions).Add(TwoMachines_Events.intPayloadEvent);
+            (((machine).self).permissions).Add(TwoMachines_Events.Ping);
+            ((machine).sends).Add(TwoMachines_Events.Success);
+            ((machine).sends).Add(TwoMachines_Events.boolPayloadEvent);
+            ((machine).sends).Add(TwoMachines_Events.intPayloadEvent);
+            ((machine).sends).Add(TwoMachines_Events.Ping);
             (machine).currentPayload = payload;
-            (application).AddImplMachineToStateImpl(machine);
             return machine;
         }
 
@@ -108,23 +119,23 @@ namespace P.Program
             {
             }
 
-            public class AnonFun1_Class : PrtFun
+            public class ignore_Class : PrtFun
             {
                 public override bool IsAnonFun
                 {
                     get
                     {
-                        return true;
+                        return false;
                     }
                 }
 
-                internal class AnonFun1_StackFrame : PrtFunStackFrame
+                internal class ignore_StackFrame : PrtFunStackFrame
                 {
-                    public AnonFun1_StackFrame(PrtFun fun, List<PrtValue> locs): base (fun, locs)
+                    public ignore_StackFrame(PrtFun fun, List<PrtValue> locs): base (fun, locs)
                     {
                     }
 
-                    public AnonFun1_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base (fun, locs, retLocation)
+                    public ignore_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base (fun, locs, retLocation)
                     {
                     }
 
@@ -132,26 +143,13 @@ namespace P.Program
                     {
                         return this.Clone();
                     }
-
-                    public PrtValue _payload_skip
-                    {
-                        get
-                        {
-                            return locals[0];
-                        }
-
-                        set
-                        {
-                            locals[0] = value;
-                        }
-                    }
                 }
 
                 public override void Execute(StateImpl application, PrtMachine _parent)
                 {
                     Blah parent = (Blah)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                    PrtImplMachine createdMachine;
+                    PrtValue swap;
                     parent.PrtFunContReturn(null);
                 }
 
@@ -163,17 +161,16 @@ namespace P.Program
                         locals.Add(item.Clone());
                     }
 
-                    //no local variables hence nothing to add
                     return locals;
                 }
 
                 public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
                 {
-                    return new AnonFun1_StackFrame(this, locals, retLoc);
+                    return new ignore_StackFrame(this, locals, retLoc);
                 }
             }
 
-            public static AnonFun1_Class AnonFun1;
+            public static ignore_Class ignore;
             public class AnonFun0_Class : PrtFun
             {
                 public override bool IsAnonFun
@@ -217,7 +214,7 @@ namespace P.Program
                 {
                     Blah parent = (Blah)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                    PrtImplMachine createdMachine;
+                    PrtValue swap;
                     parent.PrtFunContReturn(null);
                 }
 
@@ -229,7 +226,6 @@ namespace P.Program
                         locals.Add(item.Clone());
                     }
 
-                    //no local variables hence nothing to add
                     return locals;
                 }
 
@@ -240,6 +236,71 @@ namespace P.Program
             }
 
             public static AnonFun0_Class AnonFun0;
+            public class AnonFun1_Class : PrtFun
+            {
+                public override bool IsAnonFun
+                {
+                    get
+                    {
+                        return true;
+                    }
+                }
+
+                internal class AnonFun1_StackFrame : PrtFunStackFrame
+                {
+                    public AnonFun1_StackFrame(PrtFun fun, List<PrtValue> locs): base (fun, locs)
+                    {
+                    }
+
+                    public AnonFun1_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base (fun, locs, retLocation)
+                    {
+                    }
+
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
+                }
+
+                public override void Execute(StateImpl application, PrtMachine _parent)
+                {
+                    Blah parent = (Blah)(_parent);
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    PrtValue swap;
+                    parent.PrtFunContReturn(null);
+                }
+
+                public override List<PrtValue> CreateLocals(params PrtValue[] args)
+                {
+                    var locals = new List<PrtValue>();
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
+
+                    return locals;
+                }
+
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    return new AnonFun1_StackFrame(this, locals, retLoc);
+                }
+            }
+
+            public static AnonFun1_Class AnonFun1;
             public class Blah_Init_Class : PrtState
             {
                 public Blah_Init_Class(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature): base (name, entryFun, exitFun, hasNullTransition, temperature)
@@ -250,8 +311,9 @@ namespace P.Program
             public static Blah_Init_Class Blah_Init;
             static Blah()
             {
-                AnonFun1 = new AnonFun1_Class();
+                ignore = new ignore_Class();
                 AnonFun0 = new AnonFun0_Class();
+                AnonFun1 = new AnonFun1_Class();
                 Blah_Init = new Blah_Init_Class("Blah_Init", AnonFun1, AnonFun0, false, StateTemperature.Warm);
             }
         }
@@ -292,6 +354,58 @@ namespace P.Program
             {
             }
 
+            public class ignore_Class : PrtFun
+            {
+                public override bool IsAnonFun
+                {
+                    get
+                    {
+                        return false;
+                    }
+                }
+
+                internal class ignore_StackFrame : PrtFunStackFrame
+                {
+                    public ignore_StackFrame(PrtFun fun, List<PrtValue> locs): base (fun, locs)
+                    {
+                    }
+
+                    public ignore_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base (fun, locs, retLocation)
+                    {
+                    }
+
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
+
+                public override void Execute(StateImpl application, PrtMachine _parent)
+                {
+                    PONG parent = (PONG)(_parent);
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    PrtValue swap;
+                    parent.PrtFunContReturn(null);
+                }
+
+                public override List<PrtValue> CreateLocals(params PrtValue[] args)
+                {
+                    var locals = new List<PrtValue>();
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
+
+                    return locals;
+                }
+
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    return new ignore_StackFrame(this, locals, retLoc);
+                }
+            }
+
+            public static ignore_Class ignore;
             public class AnonFun0_Class : PrtFun
             {
                 public override bool IsAnonFun
@@ -335,7 +449,7 @@ namespace P.Program
                 {
                     PONG parent = (PONG)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                    PrtImplMachine createdMachine;
+                    PrtValue swap;
                     parent.PrtFunContReturn(null);
                 }
 
@@ -347,7 +461,6 @@ namespace P.Program
                         locals.Add(item.Clone());
                     }
 
-                    //no local variables hence nothing to add
                     return locals;
                 }
 
@@ -401,7 +514,7 @@ namespace P.Program
                 {
                     PONG parent = (PONG)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                    PrtImplMachine createdMachine;
+                    PrtValue swap;
                     parent.PrtFunContReturn(null);
                 }
 
@@ -413,7 +526,6 @@ namespace P.Program
                         locals.Add(item.Clone());
                     }
 
-                    //no local variables hence nothing to add
                     return locals;
                 }
 
@@ -424,6 +536,71 @@ namespace P.Program
             }
 
             public static AnonFun1_Class AnonFun1;
+            public class AnonFun2_Class : PrtFun
+            {
+                public override bool IsAnonFun
+                {
+                    get
+                    {
+                        return true;
+                    }
+                }
+
+                internal class AnonFun2_StackFrame : PrtFunStackFrame
+                {
+                    public AnonFun2_StackFrame(PrtFun fun, List<PrtValue> locs): base (fun, locs)
+                    {
+                    }
+
+                    public AnonFun2_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base (fun, locs, retLocation)
+                    {
+                    }
+
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
+                }
+
+                public override void Execute(StateImpl application, PrtMachine _parent)
+                {
+                    PONG parent = (PONG)(_parent);
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    PrtValue swap;
+                    parent.PrtFunContReturn(null);
+                }
+
+                public override List<PrtValue> CreateLocals(params PrtValue[] args)
+                {
+                    var locals = new List<PrtValue>();
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
+
+                    return locals;
+                }
+
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    return new AnonFun2_StackFrame(this, locals, retLoc);
+                }
+            }
+
+            public static AnonFun2_Class AnonFun2;
             public class PONG_Pong_WaitPing_Class : PrtState
             {
                 public PONG_Pong_WaitPing_Class(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature): base (name, entryFun, exitFun, hasNullTransition, temperature)
@@ -434,8 +611,10 @@ namespace P.Program
             public static PONG_Pong_WaitPing_Class PONG_Pong_WaitPing;
             static PONG()
             {
+                ignore = new ignore_Class();
                 AnonFun0 = new AnonFun0_Class();
                 AnonFun1 = new AnonFun1_Class();
+                AnonFun2 = new AnonFun2_Class();
                 PONG_Pong_WaitPing = new PONG_Pong_WaitPing_Class("PONG_Pong_WaitPing", AnonFun0, AnonFun1, false, StateTemperature.Warm);
             }
         }
@@ -513,8 +692,63 @@ namespace P.Program
 
             public Main(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
             {
+                (fields).Add(PrtValue.PrtMkDefaultValue(TwoMachines_Types.typeBool));
+                (fields).Add(PrtValue.PrtMkDefaultValue(TwoMachines_Types.typeInt));
+                (fields).Add(PrtValue.PrtMkDefaultValue(TwoMachines_Types.typeMachine));
             }
 
+            public class ignore_Class : PrtFun
+            {
+                public override bool IsAnonFun
+                {
+                    get
+                    {
+                        return false;
+                    }
+                }
+
+                internal class ignore_StackFrame : PrtFunStackFrame
+                {
+                    public ignore_StackFrame(PrtFun fun, List<PrtValue> locs): base (fun, locs)
+                    {
+                    }
+
+                    public ignore_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base (fun, locs, retLocation)
+                    {
+                    }
+
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+                }
+
+                public override void Execute(StateImpl application, PrtMachine _parent)
+                {
+                    Main parent = (Main)(_parent);
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    PrtValue swap;
+                    parent.PrtFunContReturn(null);
+                }
+
+                public override List<PrtValue> CreateLocals(params PrtValue[] args)
+                {
+                    var locals = new List<PrtValue>();
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
+
+                    return locals;
+                }
+
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    return new ignore_StackFrame(this, locals, retLoc);
+                }
+            }
+
+            public static ignore_Class ignore;
             public class AnonFun0_Class : PrtFun
             {
                 public override bool IsAnonFun
@@ -558,7 +792,7 @@ namespace P.Program
                 {
                     Main parent = (Main)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                    PrtImplMachine createdMachine;
+                    PrtValue swap;
                     switch ((currFun).returnToLocation)
                     {
                         case 1:
@@ -569,30 +803,27 @@ namespace P.Program
                             goto AnonFun0_3;
                     }
 
-                    (((PrtMachineValue)(new PrtMachineValue((PrtImplMachine)(parent)))).mach).PrtEnqueueEvent((PrtEventValue)(boolPayloadEvent), new PrtBoolValue(true), parent);
+                    (((PrtMachineValue)(parent.self)).mach).PrtEnqueueEvent((PrtEventValue)(TwoMachines_Events.boolPayloadEvent), new PrtBoolValue(true), parent, (PrtMachineValue)(parent.self));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun0_1:
                         ;
-                    (parent).varBool = new PrtBoolValue(false);
-                    (((PrtMachineValue)(new PrtMachineValue((PrtImplMachine)(parent)))).mach).PrtEnqueueEvent((PrtEventValue)(boolPayloadEvent), (parent).varBool, parent);
+                    (parent).varBool = (new PrtBoolValue(false)).Clone();
+                    (((PrtMachineValue)(parent.self)).mach).PrtEnqueueEvent((PrtEventValue)(TwoMachines_Events.boolPayloadEvent), (parent).varBool, parent, (PrtMachineValue)(parent.self));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun0_2:
                         ;
-                    createdMachine = CreateMachine_PONG(application, @null);
-                    (parent).PrtFunContNewMachine(this, (currFun).locals, createdMachine, 3);
+                    (parent).pongId = (application).CreateInterfaceOrMachine((parent).renamedName, "PONG", TwoMachines_Events.@null);
+                    (parent).PrtFunContNewMachine(this, (currFun).locals, 3);
                     return;
                     AnonFun0_3:
                         ;
-                    createdMachine = ((parent).continuation).createdMachine;
-                    ((parent).continuation).createdMachine = null;
-                    (parent).pongId = new PrtMachineValue(createdMachine);
-                    if (!!(Success).Equals(@null))
+                    if (!!(TwoMachines_Events.Success).Equals(TwoMachines_Events.@null))
                         throw new PrtAssertFailureException("C:\\\\Users\\\\qadeer\\\\Work\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\TwoMachines\\\\TwoMachines.p (59, 10): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine Main-{0} raised Event {1}\\n", (parent).instanceNumber, ((Success).evt).name);
-                    (parent).currentTrigger = Success;
-                    (parent).currentPayload = @null;
+                    Console.Write("<RaiseLog> Machine Main-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(TwoMachines_Events.Success)).evt).name);
+                    (parent).currentTrigger = TwoMachines_Events.Success;
+                    (parent).currentPayload = TwoMachines_Events.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -606,7 +837,6 @@ namespace P.Program
                         locals.Add(item.Clone());
                     }
 
-                    //no local variables hence nothing to add
                     return locals;
                 }
 
@@ -660,7 +890,7 @@ namespace P.Program
                 {
                     Main parent = (Main)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                    PrtImplMachine createdMachine;
+                    PrtValue swap;
                     parent.PrtFunContReturn(null);
                 }
 
@@ -672,7 +902,6 @@ namespace P.Program
                         locals.Add(item.Clone());
                     }
 
-                    //no local variables hence nothing to add
                     return locals;
                 }
 
@@ -683,6 +912,71 @@ namespace P.Program
             }
 
             public static AnonFun1_Class AnonFun1;
+            public class AnonFun2_Class : PrtFun
+            {
+                public override bool IsAnonFun
+                {
+                    get
+                    {
+                        return true;
+                    }
+                }
+
+                internal class AnonFun2_StackFrame : PrtFunStackFrame
+                {
+                    public AnonFun2_StackFrame(PrtFun fun, List<PrtValue> locs): base (fun, locs)
+                    {
+                    }
+
+                    public AnonFun2_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base (fun, locs, retLocation)
+                    {
+                    }
+
+                    public override PrtFunStackFrame Clone()
+                    {
+                        return this.Clone();
+                    }
+
+                    public PrtValue _payload_skip
+                    {
+                        get
+                        {
+                            return locals[0];
+                        }
+
+                        set
+                        {
+                            locals[0] = value;
+                        }
+                    }
+                }
+
+                public override void Execute(StateImpl application, PrtMachine _parent)
+                {
+                    Main parent = (Main)(_parent);
+                    PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
+                    PrtValue swap;
+                    parent.PrtFunContReturn(null);
+                }
+
+                public override List<PrtValue> CreateLocals(params PrtValue[] args)
+                {
+                    var locals = new List<PrtValue>();
+                    foreach (var item in args)
+                    {
+                        locals.Add(item.Clone());
+                    }
+
+                    return locals;
+                }
+
+                public override PrtFunStackFrame CreateFunStackFrame(List<PrtValue> locals, int retLoc)
+                {
+                    return new AnonFun2_StackFrame(this, locals, retLoc);
+                }
+            }
+
+            public static AnonFun2_Class AnonFun2;
             public class Main_Init_Class : PrtState
             {
                 public Main_Init_Class(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature): base (name, entryFun, exitFun, hasNullTransition, temperature)
@@ -693,8 +987,10 @@ namespace P.Program
             public static Main_Init_Class Main_Init;
             static Main()
             {
+                ignore = new ignore_Class();
                 AnonFun0 = new AnonFun0_Class();
                 AnonFun1 = new AnonFun1_Class();
+                AnonFun2 = new AnonFun2_Class();
                 Main_Init = new Main_Init_Class("Main_Init", AnonFun0, AnonFun1, false, StateTemperature.Hot);
             }
         }

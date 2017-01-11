@@ -3454,7 +3454,6 @@ namespace Microsoft.Pc
 
     class PToCSharpLinker
     {
-        private List<SyntaxNode> members;
         private SyntaxGenerator generator;
         private List<string> inputFiles;
         private ICompilerOutput Log { get; set; }

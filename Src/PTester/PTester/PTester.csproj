@@ -176,6 +176,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="PTConfig.cs" />
     <Compile Include="PTester.cs" />
     <Compile Include="PTesterCommandLine.cs" />
     <Compile Include="PTesterUtilities.cs" />
@@ -184,10 +185,6 @@
     <None Include="app.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\PExplorer\PTExplorer.csproj">
-      <Project>{1498d554-6c2a-4f8c-bcf3-a6f7c8803700}</Project>
-      <Name>PTExplorer</Name>
-    </ProjectReference>
     <ProjectReference Include="..\PRuntime\PRuntime.csproj">
       <Project>{1cb4a7ca-b1d6-42e1-8a6f-919369fdcfc9}</Project>
       <Name>PRuntime</Name>

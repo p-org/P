@@ -3830,8 +3830,8 @@ namespace Microsoft.Pc
                                 NormalizeWhitespace();
                 var outputFile = outputDir + "\\" + testCase.Key + ".cs";
                 EmitLinkerCS(finalOutput, outputFile);
-                Log.WriteMessage(string.Format("Generated linker-output: {0}.cs", testCase.Key), SeverityKind.Info);
-                //EmitCSDll(outputDir, testCase.Key);
+                Log.WriteMessage(string.Format("Writing {0}.cs ...", testCase.Key), SeverityKind.Info);
+                EmitCSDll(outputDir, testCase.Key);
             }
         }
 
@@ -3841,13 +3841,13 @@ namespace Microsoft.Pc
 
             allCSFiles.Add(outputDir + "\\" + testCaseName + ".cs");
             allCSFiles.AddRange(inputFiles.Select(fileName => outputDir + "\\" + fileName + ".cs").ToList());
-            Log.WriteMessage(string.Format("Generating {0}.dll ...", testCaseName), SeverityKind.Info);
+            
             string cs_code = "";
             foreach(var file in allCSFiles)
             {
                 if (!File.Exists(file))
                 {
-                    Log.WriteMessage(string.Format("{0} not found, recompile the corresponding P file", file), SeverityKind.Warning);
+                    //Log.WriteMessage(string.Format("{0} not found, recompile the corresponding P file", file), SeverityKind.Warning);
                     return;
                 }
                 using (var sr = new StreamReader(file))
@@ -3856,6 +3856,7 @@ namespace Microsoft.Pc
                 }
             }
 
+            Log.WriteMessage(string.Format("Writing {0}.dll ...", testCaseName), SeverityKind.Info);
             var tree = CSharpSyntaxTree.ParseText(cs_code);
 
             var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);

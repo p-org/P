@@ -22,24 +22,22 @@ namespace Microsoft.Pc
         public PToCSharpCompiler(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo, string csharpFileName)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
-            this.localCSharpFileName = csharpFileName;
+            this.cSharpFileName = csharpFileName;
             this.typeContext = new TypeTranslationContext(this);
             GenerateTypeInfo(modelWithTypes);
         }
 
         #region CSharpCompiler
-        string localCSharpFileName;
-        static string csharpFileName;
+        string cSharpFileName;
         //for storing members of the Application class:
-        static List<SyntaxNode> members = new List<SyntaxNode>();
+        List<SyntaxNode> members = new List<SyntaxNode>();
         //final C# program:
         SyntaxNode result = null;
-        static SyntaxGenerator generator;
+        SyntaxGenerator generator;
 
         #region Generate P Types
         void GenerateTypeInfo(AST<Model> model)
         {
-            csharpFileName = localCSharpFileName;
             var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
             model.FindAll(
                 new NodePred[]
@@ -66,7 +64,6 @@ namespace Microsoft.Pc
                     var expr = Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
                     var type = it.Current as FuncTerm;
-                    if (type == null) continue;
 
                     string typingContextKind = ((Id)typingContext.Function).Name;
                     if (typingContextKind == "FunDecl")
@@ -122,61 +119,6 @@ namespace Microsoft.Pc
                     typeContext.AddOriginalType(type, eType);
                 }
             }
-
-            terms = GetBin(factBins, "LinkMap");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var createdIorM = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var createdM = ((Cnst)it.Current).GetStringValue();
-                    linkMap.Add(createdIorM, createdM);
-                }
-            }
-
-            terms = GetBin(factBins, "MaxNumLocals");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    FuncTerm typingContext = (FuncTerm)it.Current;
-                    string typingContextKind = ((Id)typingContext.Function).Name;
-                    if (!(typingContextKind == "FunDecl" || typingContextKind == "AnonFunDecl")) continue;
-                    it.MoveNext();
-                    var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
-
-                    if (typingContextKind == "FunDecl")
-                    {
-                        string ownerName = GetOwnerName(typingContext, 1, 0);
-                        string funName = GetName(typingContext, 0);
-                        if (ownerName == null)
-                        {
-                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
-                        }
-                        else
-                        {
-                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
-                        }
-                    }
-                    else
-                    {
-                        // typingContextKind == "AnonFunDecl"
-                        string ownerName = GetOwnerName(typingContext, 0, 0);
-                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
-                        if (ownerName == null)
-                        {
-                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
-                        }
-                        else
-                        {
-                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
-                        }
-                    }
-                }
-            }
         }
         TypeTranslationContext typeContext;
         internal class TypeTranslationContext
@@ -199,7 +141,7 @@ namespace Microsoft.Pc
 
             private ExpressionSyntax GetNextType(string typeName)
             {
-                var typeClass = Path.GetFileNameWithoutExtension(csharpFileName) + "_Types";
+                var typeClass = Path.GetFileNameWithoutExtension(pToCSharp.cSharpFileName) + "_Types";
                 var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(typeClass), IdentifierName(typeName));
                 typeCount++;
                 return retVal;
@@ -403,7 +345,7 @@ namespace Microsoft.Pc
                     {
                         //TODO: HANDLE HALT (only handles string right now)
                         string evName = ((Cnst)GetArgByIndex(type, 0)).GetStringValue();
-                        eventValues.Add(GetEventVar(evName));
+                        eventValues.Add(pToCSharp.GetEventVar(evName));
                         type = GetArgByIndex(type, 1) as FuncTerm;
                     }
                     // typekind == "InterfaceType"
@@ -434,9 +376,9 @@ namespace Microsoft.Pc
                 return rawName;
         }
 
-        public static ExpressionSyntax GetEventVar(string eventName)
+        public ExpressionSyntax GetEventVar(string eventName)
         {
-            var eventClass = Path.GetFileNameWithoutExtension(csharpFileName) + "_Events";
+            var eventClass = Path.GetFileNameWithoutExtension(cSharpFileName) + "_Events";
             var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(eventName));
             return retVal;
         }
@@ -755,7 +697,6 @@ namespace Microsoft.Pc
             // Get the SyntaxGenerator for the specified language
             generator = SyntaxGenerator.GetGenerator(workspace, LanguageNames.CSharp);
             members = new List<SyntaxNode>();
-            csharpFileName = localCSharpFileName;
 
             // Create using/Imports directives
             var usingDirectives = generator.NamespaceImportDeclaration("System");
@@ -768,17 +709,16 @@ namespace Microsoft.Pc
             MkCreateMachineMethods();
             MkMachineClasses();
             MkCSharpOutput();
-            EmitCSharpOutput(csharpFileName);
+            EmitCSharpOutput();
             return true;
         }
 
 
         private void MkEvents()
         {
-
             List<SyntaxNode> evDeclarations = new List<SyntaxNode>();
             List<StatementSyntax> eventInitializationStmts = new List<StatementSyntax>();
-            string eventsClassName = Path.GetFileNameWithoutExtension(csharpFileName) + "_Events";
+            string eventsClassName = Path.GetFileNameWithoutExtension(cSharpFileName) + "_Events";
             foreach (var pair in allEvents)
             {
                 //add declaration
@@ -851,7 +791,7 @@ namespace Microsoft.Pc
 
         private void MkTypes()
         {
-            string typesClassName = Path.GetFileNameWithoutExtension(csharpFileName) + "_Types";
+            string typesClassName = Path.GetFileNameWithoutExtension(cSharpFileName) + "_Types";
             List<SyntaxNode> typeDeclarations = new List<SyntaxNode>();
             typeDeclarations.AddRange(typeContext.typeDeclaration);
 
@@ -1364,7 +1304,7 @@ namespace Microsoft.Pc
                     var type = LookupType(ft);
                     if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                     {
-                        return GetEventVar(name);
+                        return pToCSharp.GetEventVar(name);
                     }
                     else
                     {
@@ -1456,7 +1396,7 @@ namespace Microsoft.Pc
                 }
                 else if (op == PData.Cnst_Null.Node.Name)
                 {
-                    return GetEventVar("@null");
+                    return pToCSharp.GetEventVar("@null");
                 }
                 else
                 {
@@ -1725,7 +1665,7 @@ namespace Microsoft.Pc
             {
                 if (args.Count == 0)
                 {
-                    return GetEventVar("@null");
+                    return pToCSharp.GetEventVar("@null");
                 }
                 else if (args.Count == 1)
                 {
@@ -1749,7 +1689,7 @@ namespace Microsoft.Pc
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(children);
                 var traceStmt = MkCSharpPrint(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(stateExpr, "name"));
-                var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), GetEventVar("@null"));
+                var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar("@null"));
                 var assignStmt2 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var assignStmt3 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "destOfGoto"), stateExpr);
                 var createRetCtxt = ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtFunContGoto")));
@@ -1761,7 +1701,7 @@ namespace Microsoft.Pc
                 var eventExpr = (ExpressionSyntax)children[0];
                 children.RemoveAt(0);
                 var payloadVar = MkPayload(children);
-                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), GetEventVar("@null"));
+                var equalsExpr = MkCSharpInvocationExpression(MkCSharpDot(eventExpr, "Equals"), pToCSharp.GetEventVar("@null"));
                 var assertStmt = MkCSharpAssert(MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = MkCSharpPrint(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\\n", owner.machineName), MkCSharpDot("parent", "instanceNumber"), MkCSharpDot(MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
                 var assignStmt1 = MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), eventExpr);
@@ -1892,8 +1832,8 @@ namespace Microsoft.Pc
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 if (op == PData.Cnst_Pop.Node.Name)
                 {
-                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), GetEventVar("@null")));
-                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), GetEventVar("@null")));
+                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar("@null")));
+                    stmtList.Add(MkCSharpSimpleAssignmentExpressionStatement(MkCSharpDot("parent", "currentPayload"), pToCSharp.GetEventVar("@null")));
                     stmtList.Add(ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("parent", "PrtPopState"), MkCSharpTrueLiteralExpression())));
                     stmtList.Add(ReturnStatement());
                 }
@@ -2588,7 +2528,7 @@ namespace Microsoft.Pc
                 {
                     //Class declaration:
                     List<SyntaxNode> whereToAdd;
-                    whereToAdd = (this.owner == null) ? PToCSharpCompiler.members : owner.machineMembers;
+                    whereToAdd = (this.owner == null) ? pToCSharp.members : owner.machineMembers;
 
                     whereToAdd.Add(MkFuncClass());
                     //Variable declaration:
@@ -2612,7 +2552,7 @@ namespace Microsoft.Pc
                     //Main constructor for other functions
                     if (this.owner == null)
                     {
-                        PToCSharpCompiler.members.Add(
+                        pToCSharp.members.Add(
                             ExpressionStatement(
                                 AssignmentExpression(
                                     SyntaxKind.SimpleAssignmentExpression,
@@ -2999,6 +2939,7 @@ namespace Microsoft.Pc
             }
             public SyntaxNode MkClass()
             {
+                var generator = translator.generator;
                 //StartState property (getter only, since there's no setter in the base class):
                 string startState = machineInfo.initStateName;
                 var startStateProperty =
@@ -3270,7 +3211,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                 Argument(
-                                                    GetEventVar(doFun.Key)),
+                                                    translator.GetEventVar(doFun.Key)),
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
                                                     IdentifierName(doFun.Value))}))))
@@ -3296,7 +3237,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                 Argument(
-                                                    GetEventVar(ignoredEvent)),
+                                                    translator.GetEventVar(ignoredEvent)),
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
                                                     MemberAccessExpression(
@@ -3324,7 +3265,7 @@ namespace Microsoft.Pc
                                     ArgumentList(
                                         SingletonSeparatedList<ArgumentSyntax>(
                                             Argument(
-                                                GetEventVar(deferredEvent))))))
+                                                translator.GetEventVar(deferredEvent))))))
                             .NormalizeWhitespace()
                         );
                     }
@@ -3415,7 +3356,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                     Argument(
-                                                        GetEventVar(EventName(trigger))),
+                                                        translator.GetEventVar(EventName(trigger))),
                                                     Token(SyntaxKind.CommaToken),
                                                     Argument(
                                                         IdentifierName(transition_name))}))))
@@ -3469,9 +3410,9 @@ namespace Microsoft.Pc
             result = generator.CompilationUnit(programNameSpaceDeclaration).NormalizeWhitespace();
         }
 
-        private void EmitCSharpOutput(string fileName)
+        private void EmitCSharpOutput()
         {
-            System.IO.StreamWriter file = new System.IO.StreamWriter(fileName);
+            System.IO.StreamWriter file = new System.IO.StreamWriter(cSharpFileName);
             file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168");
             file.WriteLine(result);
             file.Close();

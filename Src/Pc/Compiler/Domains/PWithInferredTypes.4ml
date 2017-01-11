@@ -12,7 +12,7 @@ domain PWithInferredTypes extends PData
     Typeable ::= Expr + Stmt + Exprs + NamedExprs + Cases.
     
     //// The type judgement. NIL is a placeholder for untyped constructs.
-    TypeOf ::= new (cntxt: any TypingContext, expr: any Typeable, type: any TypeExpr).
+    TypeOf ::= new (cntxt: any TypingContext, expr: any Expr, type: any TypeExpr).
 
 	//// The expansion of NameTypes in TypeExprs
 	TypeExpansion ::= new (type: any TypeExpr, eType: any TypeExpr).
@@ -33,7 +33,7 @@ domain PWithInferredTypes extends PData
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 {
     out._(x) :- x is in.Data.
-	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t), t: in.TypeExpr.
+	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t), e: in.Expr, t: in.TypeExpr.
 	out.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
 	out.TranslatedBody(c, s) :- in.TranslatedBody(c, s).
 	out.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).

@@ -50,13 +50,13 @@ namespace P.Runtime
 
         private Dictionary<PrtEventValue, List<PrtSpecMachine>> specObservers;
 
-        public Dictionary<string, Dictionary<string, string>> linkMap;
-        public Dictionary<string, string> renameMap;
-        public Dictionary<string, bool> isSafeMap;
-        public Dictionary<string, List<string>> monitorMap;
+        public static Dictionary<string, Dictionary<string, string>> linkMap;
+        public static Dictionary<string, string> renameMap;
+        public static Dictionary<string, bool> isSafeMap;
+        public static Dictionary<string, List<string>> monitorMap;
         public delegate PrtImplMachine CreateMachineDelegate(StateImpl application, PrtValue payload);
-        public Dictionary<string, CreateMachineDelegate> createMap;
-        public Dictionary<string, List<PrtEventValue>> interfaceMap;
+        public static Dictionary<string, CreateMachineDelegate> createMap;
+        public static Dictionary<string, List<PrtEventValue>> interfaceMap;
         #endregion
 
         #region Getters and Setters
@@ -114,13 +114,6 @@ namespace P.Runtime
                 clonedState.specObservers.Add(item.Key.Clone() as PrtEventValue, item.Value.ToList());
             }
 
-            //the following values are not going to change and hence no need to clone them.
-            clonedState.linkMap = linkMap;
-            clonedState.renameMap = renameMap;
-            clonedState.isSafeMap = isSafeMap;
-            clonedState.monitorMap = monitorMap;
-            clonedState.createMap = createMap;
-
             return clonedState;
 
         }
@@ -143,6 +136,17 @@ namespace P.Runtime
             {
                 return new PrtInterfaceValue(machine, machine.self.permissions);
             }
+        }
+
+        public void CreateMainMachine()
+        {
+            if(renameMap.ContainsKey("Main"))
+            {
+                throw new PrtInternalException("No Main Machine");
+            }
+            var impMachineName = renameMap["Main"];
+            var machine = createMap[impMachineName](this, PrtValue.@null);
+            AddImplMachineToStateImpl(machine);
         }
 
         public int NextMachineInstanceNumber(Type machineType)

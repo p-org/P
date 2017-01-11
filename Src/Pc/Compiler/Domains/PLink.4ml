@@ -571,7 +571,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	CSharpSafeMap(testName, mname, isSafe):- TestDecl(testName, modExpr, _), ModuleSafeMap(modExpr, mname, isSafe).
 	CSharpMonitorMap(testName, monName, impMachine) :- TestDecl(testName, modExpr, _), ModuleMonitorMap(modExpr, monName, impMachine).
 
-	//TestError(x, x) :- InterfaceTypeDecl(x, _, _).
+	//If there is no testdecl then generate linkmap corresponding to CLinkMap
+	CSharpRenameMap("output", newName, impName) :- no TestDecl(_, _, _), CRenameMap (newName, impName).
+	CSharpLinkMap("output", creatorM, IorM, impM) :- no TestDecl(_, _, _), CLinkMap(creatorM, IorM, impM).
+	CSharpSafeMap("output", newName, FALSE) :- no TestDecl(_, _, _), CRenameMap (newName, _).
+
 	/**************************************************************************/
 	/*     C Code Helpers
 	/**************************************************************************/

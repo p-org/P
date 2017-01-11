@@ -3466,12 +3466,7 @@ namespace Microsoft.Pc
             var programNameSpaceDeclaration = generator.NamespaceDeclaration("P.Program", applicationcClassDeclaration);
 
             // Get a CompilationUnit (code file) for the generated code
-            result = generator.CompilationUnit(
-                        generator.NamespaceImportDeclaration("P.Runtime"),
-                        generator.NamespaceImportDeclaration("System"),
-                        generator.NamespaceImportDeclaration("System.Collections.Generic"),
-                        programNameSpaceDeclaration).
-                            NormalizeWhitespace();
+            result = generator.CompilationUnit(programNameSpaceDeclaration).NormalizeWhitespace();
         }
 
         private void EmitCSharpOutput(string fileName)
@@ -3489,7 +3484,8 @@ namespace Microsoft.Pc
     {
         private List<SyntaxNode> members;
         private SyntaxGenerator generator;
-        
+        private List<string> inputFiles;
+        private ICompilerOutput Log { get; set; }
         internal class TestCaseInfo
         {
             public Dictionary<string, Dictionary<string, string>> linkMap;
@@ -3507,8 +3503,10 @@ namespace Microsoft.Pc
 
         private Dictionary<string, TestCaseInfo> allTests;
 
-        public PToCSharpLinker(AST<Program> linkerModel)
+        public PToCSharpLinker(ICompilerOutput log, AST<Program> linkerModel, List<string> inputFilesNames)
         {
+            this.inputFiles = inputFilesNames.ToList();
+            Log = log;
             allTests = new Dictionary<string, TestCaseInfo>();
             GenerateLinkerInfo(linkerModel);
         }
@@ -3535,42 +3533,7 @@ namespace Microsoft.Pc
                 });
             LinkedList<AST<FuncTerm>> terms;
 
-            terms = GetBin(factBins, "CSharpLinkMap");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var name = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var currMachineName = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var IorMName = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var impMachineName = ((Cnst)it.Current).GetStringValue();
-
-                    var testInfo = new TestCaseInfo();
-                    if(allTests.ContainsKey(name))
-                    {
-                        if(allTests[name].linkMap.ContainsKey(currMachineName))
-                        {
-                            allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
-                        }
-                        else
-                        {
-                            allTests[name].linkMap[currMachineName] = new Dictionary<string, string>();
-                            allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
-                        }
-                    }
-                    else
-                    {
-                        allTests[name] = new TestCaseInfo();
-                        allTests[name].linkMap[currMachineName] = new Dictionary<string, string>();
-                        allTests[name].linkMap[currMachineName].Add(IorMName, impMachineName);
-                    }
-                }
-            }
-
+            
             terms = GetBin(factBins, "CSharpLinkMap");
             foreach (var term in terms)
             {
@@ -3825,11 +3788,68 @@ namespace Microsoft.Pc
                             programNameSpaceDeclaration).
                                 NormalizeWhitespace();
                 var outputFile = outputDir + "\\" + testCase.Key + ".cs";
-                EmitCSharpOutput(finalOutput, outputFile);
+                EmitLinkerCS(finalOutput, outputFile);
+                Log.WriteMessage(string.Format("Generated linker-output: {0}.cs", testCase.Key), SeverityKind.Info);
+                EmitCSDll(outputDir, testCase.Key);
             }
         }
 
-        private void EmitCSharpOutput(SyntaxNode finalOutput, string fileName)
+        private void EmitCSDll(string outputDir, string testCaseName)
+        {
+            List<string> allCSFiles = new List<string>();
+
+            allCSFiles.Add(outputDir + "\\" + testCaseName + ".cs");
+            allCSFiles.AddRange(inputFiles.Select(fileName => outputDir + "\\" + fileName + ".cs").ToList());
+            Log.WriteMessage(string.Format("Generating {0}.dll ...", testCaseName), SeverityKind.Info);
+            string cs_code = "";
+            foreach(var file in allCSFiles)
+            {
+                if (!File.Exists(file))
+                {
+                    Log.WriteMessage(string.Format("{0} not found, recompile the corresponding P file", file), SeverityKind.Warning);
+                    return;
+                }
+                using (var sr = new StreamReader(file))
+                {
+                    cs_code = string.Concat(cs_code, sr.ReadToEnd());
+                }
+            }
+
+            var tree = CSharpSyntaxTree.ParseText(cs_code);
+
+            var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
+            var pruntime = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\prt.dll";
+            if(!File.Exists(pruntime))
+            {
+                Log.WriteMessage(string.Format("could not find file {0}", pruntime), SeverityKind.Error);
+                return;
+            }
+            CSharpCompilation compilation = CSharpCompilation.Create(
+            testCaseName,
+            new[] { tree },
+            new [] { mscorlib, MetadataReference.CreateFromFile(pruntime) },
+            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
+
+
+            var outputDll = outputDir + "\\" + testCaseName + ".dll";
+            var emitResult = compilation.Emit(outputDll);
+
+            //If our compilation failed, we can discover exactly why.
+            if (!emitResult.Success)
+            {
+                Log.WriteMessage(string.Format("C# file corresponding to dll generated : {0}_dllerror.cs", testCaseName), SeverityKind.Error);
+                using (var sw = new StreamWriter(outputDir + "\\" + testCaseName + "._dllerror.cs"))
+                {
+                    sw.WriteLine(tree);
+                }
+                foreach (var diagnostic in emitResult.Diagnostics)
+                {
+                    Log.WriteMessage(diagnostic.ToString(), SeverityKind.Error);
+                }
+                return;
+            }
+        }
+        private void EmitLinkerCS(SyntaxNode finalOutput, string fileName)
         {
             System.IO.StreamWriter file = new System.IO.StreamWriter(fileName);
             file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168");

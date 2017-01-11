@@ -1605,7 +1605,7 @@
                 return false;
             }
 
-            var linker = new PToCSharpLinker(errorProgram);
+            var linker = new PToCSharpLinker(Log, errorProgram, Options.FormulaFiles.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
             linker.GenerateCSharpLinkerOutput(outputDirName);
 
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
@@ -1615,10 +1615,7 @@
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
             success = Render(cProgram, "CLinkModel", progName);
-
-            #region Generate C# Linker code
-
-            #endregion
+            
 
             UninstallProgram(linkProgramName);
             return success;

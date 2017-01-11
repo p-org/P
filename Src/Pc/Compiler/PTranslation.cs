@@ -886,6 +886,60 @@ namespace Microsoft.Pc
                 }
             }
 
+            terms = GetBin(factBins, "LinkMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var createdIorM = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var createdM = ((Cnst)it.Current).GetStringValue();
+                    linkMap.Add(createdIorM, createdM);
+                }
+            }
+
+            terms = GetBin(factBins, "MaxNumLocals");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    string typingContextKind = ((Id)typingContext.Function).Name;
+                    it.MoveNext();
+                    var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
+
+                    if (typingContextKind == "FunDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string funName = GetName(typingContext, 0);
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
+                    }
+                    else
+                    {
+                        // typingContextKind == "AnonFunDecl"
+                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
+                    }
+                }
+            }
+
             if (compiler.Options.liveness != LivenessOption.None)
             {
                 foreach (var machineName in allMachines.Keys)

@@ -12,7 +12,7 @@ domain PWithInferredTypes extends PData
     Typeable ::= Expr + Stmt + Exprs + NamedExprs + Cases.
     
     //// The type judgement. NIL is a placeholder for untyped constructs.
-    TypeOf ::= new (cntxt: any TypingContext, expr: any Typeable, type: any TypeExpr + { ERROR, NIL }).
+    TypeOf ::= new (cntxt: any TypingContext, expr: any Typeable, type: any TypeExpr).
 
 	//// The expansion of NameTypes in TypeExprs
 	TypeExpansion ::= new (type: any TypeExpr, eType: any TypeExpr).
@@ -24,7 +24,7 @@ domain PWithInferredTypes extends PData
 	TranslatedTypeExpr ::= new (eType: any TypeExpr).
 
 	//// The maximum number of local variables in any context
-	MaxNumLocals ::= new (ctxt: TypingContext + Stmt + Cases, n: Natural).
+	MaxNumLocals ::= new (ctxt: TypingContext, n: Natural).
 
 	//// Link map : map from interface or machine name to created machine
 	LinkMap ::= new (createdIorM: String, createdM: String).
@@ -33,10 +33,10 @@ domain PWithInferredTypes extends PData
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 {
     out._(x) :- x is in.Data.
-	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t).
+	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t), t: in.TypeExpr.
 	out.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
 	out.TranslatedBody(c, s) :- in.TranslatedBody(c, s).
 	out.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).
-	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n).
+	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n), c: in.TypingContext.
 	out.LinkMap(m,n) :- in.LinkMap(m,n).
 }

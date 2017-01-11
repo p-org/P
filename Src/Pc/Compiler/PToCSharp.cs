@@ -346,28 +346,14 @@ namespace Microsoft.Pc
         #region Generate P Types
         void GenerateTypeInfo(AST<Model> model)
         {
-            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-            model.FindAll(
-                new NodePred[]
-                {
-                    NodePredFactory.Instance.Star,
-                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                },
-
-                (path, n) =>
-                {
-                    var mf = (ModelFact)n;
-                    FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
-                });
-
             var terms = GetBin(factBins, "TypeOf");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    var typingContextAlias = Factory.Instance.ToAST(it.Current);
+                    FuncTerm typingContext = aliasToTerm[typingContextAlias];
                     it.MoveNext();
                     var expr = Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
@@ -391,7 +377,7 @@ namespace Microsoft.Pc
                     {
                         // typingContextKind == "AnonFunDecl"
                         string ownerName = GetOwnerName(typingContext, 0, 0);
-                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        string funName = anonFunToName[typingContextAlias];
                         if (ownerName == null)
                         {
                             allStaticFuns[funName].typeInfo[expr] = type;
@@ -3845,7 +3831,7 @@ namespace Microsoft.Pc
                 var outputFile = outputDir + "\\" + testCase.Key + ".cs";
                 EmitLinkerCS(finalOutput, outputFile);
                 Log.WriteMessage(string.Format("Generated linker-output: {0}.cs", testCase.Key), SeverityKind.Info);
-                EmitCSDll(outputDir, testCase.Key);
+                //EmitCSDll(outputDir, testCase.Key);
             }
         }
 

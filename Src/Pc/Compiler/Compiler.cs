@@ -1008,6 +1008,16 @@
             }
         }
 
+        private static string AliasFunc(Symbol s)
+        {
+            if (s.PrintableName.EndsWith("FunDecl"))
+                return "FunDecl";
+            else if (s.PrintableName.EndsWith("AnonFunDecl"))
+                return "AnonFunDecl";
+            else
+                return null;
+        }
+
         private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel, out ProgramName RootProgramNameWithTypes, out AST<Model> RootModelWithTypes)
         {
             LoadManifestProgram("Pc.Domains.PWithInferredTypes.4ml");
@@ -1021,11 +1031,11 @@
             CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
             RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_WithTypes.4ml"));
-            string aliasPrefix = null;
+            Func<Symbol, string> aliasPrefixFunc = (x => AliasFunc(x));
             var extractTask = apply.Result.GetOutputModel(
                 RootModuleWithTypes,
                 RootProgramNameWithTypes,
-                aliasPrefix);
+                aliasPrefixFunc);
             extractTask.Wait();
             RootModelWithTypes = (AST<Model>)extractTask.Result.FindAny(
                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });

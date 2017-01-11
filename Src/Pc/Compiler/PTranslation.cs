@@ -354,6 +354,8 @@ namespace Microsoft.Pc
 
         public Compiler compiler;
         public Dictionary<string, LinkedList<AST<FuncTerm>>> factBins;
+        public Dictionary<AST<Node>, FuncTerm> aliasToTerm;
+        public Dictionary<AST<FuncTerm>, Node> termToAlias;
         public Dictionary<AST<Node>, string> funToFileName;
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, List<string>> allInterfaces;
@@ -369,6 +371,8 @@ namespace Microsoft.Pc
             this.compiler = compiler;
             this.idToSourceInfo = idToSourceInfo;
             this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            this.aliasToTerm = new Dictionary<AST<Node>, FuncTerm>();
+            this.termToAlias = new Dictionary<AST<FuncTerm>, Node>();
             model.FindAll(
                 new NodePred[]
                 {
@@ -378,8 +382,17 @@ namespace Microsoft.Pc
                 (path, n) =>
                 {
                     var mf = (ModelFact)n;
-                    FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ((Id)ft.Function).Name).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                    Id binding = mf.Binding;
+                    FuncTerm match = (FuncTerm)mf.Match;
+                    string matchName = ((Id)match.Function).Name;
+                    var matchAst = (AST<FuncTerm>)Factory.Instance.ToAST(match);
+                    if (binding != null)
+                    {
+                        var bindingAst = Factory.Instance.ToAST(binding);
+                        aliasToTerm[bindingAst] = match;
+                        termToAlias[matchAst] = binding;
+                    }
+                    GetBin(factBins, matchName).AddLast(matchAst);
                 });
             GenerateProgramData(model);
         }
@@ -643,6 +656,7 @@ namespace Microsoft.Pc
             terms = GetBin(factBins, "FunDecl");
             foreach (var term in terms)
             {
+                var termAlias = Factory.Instance.ToAST(termToAlias[term]);
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
@@ -658,7 +672,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
-                    var body = translatedBody[term];
+                    var body = translatedBody[termAlias];
                     var funInfo = new FunInfo(false, parameters, returnTypeName, locals, body);
                     if (owner is FuncTerm)
                     {
@@ -684,7 +698,7 @@ namespace Microsoft.Pc
             terms = GetBin(factBins, "AnonFunDecl");
             foreach (var term in terms)
             {
-                if (anonFunToName.ContainsKey(term)) continue;
+                var termAlias = Factory.Instance.ToAST(termToAlias[term]);
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
@@ -694,14 +708,14 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
-                    var body = translatedBody[term];
+                    var body = translatedBody[termAlias];
                     it.MoveNext();
                     var envVars = it.Current as FuncTerm;
                     if (machineDecl == null)
                     {
                         var funName = "AnonFunStatic" + anonFunCounterStatic;
                         allStaticFuns[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
-                        anonFunToName[term] = funName;
+                        anonFunToName[termAlias] = funName;
                         anonFunCounterStatic++;
                     }
                     else
@@ -710,7 +724,7 @@ namespace Microsoft.Pc
                         var machineInfo = allMachines[machineName];
                         var funName = "AnonFun" + anonFunCounter[machineName];
                         machineInfo.funNameToFunInfo[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
-                        anonFunToName[term] = funName;
+                        anonFunToName[termAlias] = funName;
                         anonFunCounter[machineName]++;
                     }
                 }
@@ -929,7 +943,8 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    var typingContextAlias = Factory.Instance.ToAST(it.Current);
+                    FuncTerm typingContext = aliasToTerm[typingContextAlias];
                     string typingContextKind = ((Id)typingContext.Function).Name;
                     it.MoveNext();
                     var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
@@ -951,7 +966,7 @@ namespace Microsoft.Pc
                     {
                         // typingContextKind == "AnonFunDecl"
                         string ownerName = GetOwnerName(typingContext, 0, 0);
-                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        string funName = anonFunToName[typingContextAlias];
                         if (ownerName == null)
                         {
                             allStaticFuns[funName].maxNumLocals = maxNumLocals;

@@ -346,21 +346,6 @@ namespace Microsoft.Pc
         #region Generate P Types
         void GenerateTypeInfo(AST<Model> model)
         {
-            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-            model.FindAll(
-                new NodePred[]
-                {
-                    NodePredFactory.Instance.Star,
-                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                },
-
-                (path, n) =>
-                {
-                    var mf = (ModelFact)n;
-                    FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
-                });
-
             var terms = GetBin(factBins, "TypeOf");
             foreach (var term in terms)
             {

@@ -353,6 +353,7 @@ namespace Microsoft.Pc
         }
 
         public Compiler compiler;
+        public Dictionary<string, LinkedList<AST<FuncTerm>>> factBins;
         public Dictionary<AST<Node>, string> funToFileName;
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, List<string>> allInterfaces;
@@ -367,16 +368,23 @@ namespace Microsoft.Pc
         {
             this.compiler = compiler;
             this.idToSourceInfo = idToSourceInfo;
+            this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            model.FindAll(
+                new NodePred[]
+                {
+                        NodePredFactory.Instance.Star,
+                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                },
+                (path, n) =>
+                {
+                    var mf = (ModelFact)n;
+                    FuncTerm ft = (FuncTerm)mf.Match;
+                    GetBin(factBins, ((Id)ft.Function).Name).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
+                });
             GenerateProgramData(model);
         }
 
-        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
-        {
-            var fun = (Id)ft.Function;
-            return GetBin(factBins, fun.Name);
-        }
-
-        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, string name)
+        public static LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, string name)
         {
             Contract.Requires(!string.IsNullOrEmpty(name));
             LinkedList<AST<FuncTerm>> bin;
@@ -388,7 +396,7 @@ namespace Microsoft.Pc
             return bin;
         }
 
-        public string GetMachineName(FuncTerm ft, int index)
+        public static string GetMachineName(FuncTerm ft, int index)
         {
             FuncTerm machineDecl = (FuncTerm)GetArgByIndex(ft, index);
             var machineName = GetName(machineDecl, 0);
@@ -408,20 +416,6 @@ namespace Microsoft.Pc
 
         private void GenerateProgramData(AST<Model> model)
         {
-            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-            model.FindAll(
-                new NodePred[]
-                {
-                        NodePredFactory.Instance.Star,
-                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                },
-                (path, n) =>
-                {
-                    var mf = (ModelFact)n;
-                    FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
-                });
-
             funToFileName = new Dictionary<AST<Node>, string>();
             allEvents = new Dictionary<string, EventInfo>();
             allInterfaces = new Dictionary<string, List<string>>();

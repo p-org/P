@@ -874,7 +874,10 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    FuncTerm annotationContext = (FuncTerm)it.Current;
+                    FuncTerm annotationContext = 
+                        it.Current.NodeKind == NodeKind.Id 
+                        ? aliasToTerm[Factory.Instance.ToAST(it.Current)] 
+                        : (FuncTerm)it.Current;
                     string annotationContextKind = ((Id)annotationContext.Function).Name;
                     if (annotationContextKind != "FunDecl") continue;
                     string ownerName = GetOwnerName(annotationContext, 1, 0);

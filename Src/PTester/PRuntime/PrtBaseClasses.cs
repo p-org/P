@@ -50,7 +50,6 @@ namespace P.Runtime
         }
         #endregion
 
-
         public abstract string Name
         {
             get;

@@ -14,13 +14,8 @@ namespace P.Runtime
         protected StateImpl()
         {
             implMachines = new List<PrtImplMachine>();
-            specMachines = new List<PrtSpecMachine>();
-            specObservers = new Dictionary<PrtEventValue, List<PrtSpecMachine>>();
+            specMachinesMap = new Dictionary<string, PrtSpecMachine>();
             exception = null;
-            linkMap = new Dictionary<string, Dictionary<string, string>>();
-            renameMap = new Dictionary<string, string>();
-            isSafeMap = new Dictionary<string, bool>();
-            monitorMap = new Dictionary<string, List<string>>();
         }
         #endregion
 
@@ -41,22 +36,22 @@ namespace P.Runtime
         /// <summary>
         /// List of monitors
         /// </summary>
-        private List<PrtSpecMachine> specMachines;
+        private Dictionary<string, PrtSpecMachine> specMachinesMap;
 
         /// <summary>
         /// Stores the exception encoutered during exploration.
         /// </summary>
         private Exception exception;
 
-        private Dictionary<PrtEventValue, List<PrtSpecMachine>> specObservers;
-
-        public static Dictionary<string, Dictionary<string, string>> linkMap;
-        public static Dictionary<string, string> renameMap;
-        public static Dictionary<string, bool> isSafeMap;
-        public static Dictionary<string, List<string>> monitorMap;
         public delegate PrtImplMachine CreateMachineDelegate(StateImpl application, PrtValue payload);
-        public static Dictionary<string, CreateMachineDelegate> createMap;
-        public static Dictionary<string, List<PrtEventValue>> interfaceMap;
+        public delegate PrtSpecMachine CreateSpecDelegate(StateImpl application);
+        public static Dictionary<string, Dictionary<string, string>> linkMap = new Dictionary<string, Dictionary<string, string>>();
+        public static Dictionary<string, string> renameMap = new Dictionary<string, string>();
+        public static Dictionary<string, bool> isSafeMap = new Dictionary<string, bool>();
+        public static Dictionary<string, List<string>> monitorMap = new Dictionary<string, List<string>>();
+        public static Dictionary<string, CreateMachineDelegate> createMachineMap = new Dictionary<string, CreateMachineDelegate>();
+        public static Dictionary<string, CreateSpecDelegate> createSpecMap = new Dictionary<string, CreateSpecDelegate>();
+        public static Dictionary<string, List<PrtEventValue>> interfaceMap = new Dictionary<string, List<PrtEventValue>>();
         #endregion
 
         #region Getters and Setters
@@ -71,7 +66,7 @@ namespace P.Runtime
                     enabled = enabled || (x.currentStatus == PrtMachineStatus.Enabled);
                 }
                 bool hot = false;
-                foreach (var x in specMachines)
+                foreach (var x in specMachinesMap.Values)
                 {
                     if (hot) break;
                     hot = hot || x.IsHot;
@@ -86,6 +81,7 @@ namespace P.Runtime
             set { exception = value; }
         }
 
+        
         #endregion
 
         #region Clone Function
@@ -101,30 +97,31 @@ namespace P.Runtime
                 clonedState.implMachines.Add(machine.Clone());
             }
 
-            clonedState.specMachines = new List<PrtSpecMachine>();
-            foreach (var monitor in specMachines)
+            clonedState.specMachinesMap = new Dictionary<string, PrtSpecMachine>();
+            foreach (var monitor in specMachinesMap)
             {
-                clonedState.specMachines.Add((PrtSpecMachine)monitor.Clone());
+                clonedState.specMachinesMap.Add(monitor.Key, (monitor.Value).Clone());
             }
 
             clonedState.exception = this.exception;
-
-            foreach(var item in specObservers)
-            {
-                clonedState.specObservers.Add(item.Key.Clone() as PrtEventValue, item.Value.ToList());
-            }
 
             return clonedState;
 
         }
         #endregion
 
-
+        private List<PrtSpecMachine> GetMonitors(string currMachine)
+        {
+            var allMonitors = monitorMap.Where(mon => mon.Value.Contains(currMachine))
+                                        .Select(item => item.Key)
+                                        .Select(monName => specMachinesMap[monName]).ToList();
+            return allMonitors;
+        }
         public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
         {
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
             var impMachineName = renameMap[renamedImpMachine];
-            var machine = createMap[impMachineName](this, payload);
+            var machine = createMachineMap[impMachineName](this, payload);
             machine.isSafe = isSafeMap[renamedImpMachine];
             machine.renamedName = renamedImpMachine;
             AddImplMachineToStateImpl(machine);
@@ -145,10 +142,20 @@ namespace P.Runtime
                 throw new PrtInternalException("No Main Machine");
             }
             var impMachineName = renameMap["Main"];
-            var machine = createMap[impMachineName](this, PrtValue.@null);
+            var machine = createMachineMap[impMachineName](this, PrtValue.@null);
+            machine.isSafe = isSafeMap["Main"];
+            machine.renamedName = "Main";
             AddImplMachineToStateImpl(machine);
         }
 
+        public void CreateSpecMachine(string renamedSpecName)
+        {
+            var impSpecMachine = renameMap[renamedSpecName];
+            var machine = createSpecMap[impSpecMachine](this);
+            machine.isSafe = isSafeMap[renamedSpecName];
+            machine.renamedName = renamedSpecName;
+            AddSpecMachineToStateImpl(machine);
+        }
         public int NextMachineInstanceNumber(Type machineType)
         {
             return implMachines.Where(m => m.GetType() == machineType).Count() + 1;
@@ -156,11 +163,12 @@ namespace P.Runtime
 
         public void Announce(PrtEventValue ev, PrtValue payload, PrtMachine parent)
         {
-            if (specObservers.ContainsKey(ev))
+            var allMonitors = GetMonitors(parent.renamedName);
+            foreach(var mon in allMonitors)
             {
-                foreach (var spec in specObservers[ev])
+                if(mon.observes.Contains(ev))
                 {
-                    spec.PrtEnqueueEvent(ev, payload, parent);
+                    mon.PrtEnqueueEvent(ev, payload, parent);
                 }
             }
         }
@@ -172,19 +180,7 @@ namespace P.Runtime
 
         public void AddSpecMachineToStateImpl(PrtSpecMachine spec)
         {
-            specMachines.Add(spec);
-            foreach(var ev in spec.observes)
-            {
-                if(specObservers.ContainsKey(ev))
-                {
-                    specObservers[ev].Add(spec);
-                }
-                else
-                {
-                    specObservers[ev] = new List<PrtSpecMachine>();
-                    specObservers[ev].Add(spec);
-                }
-            }
+            specMachinesMap.Add(spec.renamedName, spec);
         }
 
         public void Trace(string message, params object[] arguments)

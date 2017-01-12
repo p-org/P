@@ -2699,18 +2699,15 @@ namespace Microsoft.Pc
             {
                 fields.Add(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), IdentifierName(x)));
             }
-            //stmt2: AddSpecMachineToStateImpl(machine);
-            fields.Add(generator.InvocationExpression(CSharpHelper.MkCSharpDot("application", "AddSpecMachineToStateImpl"),
-                                 new List<SyntaxNode>() { generator.IdentifierName("machine") }));
-
+            
             //public void CreateMainMachine() {stmt1; stmt2; };
             var methodPars = new SyntaxNode[] {
                     generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")) };
-            var makeCreateMachineDecl = generator.MethodDeclaration(string.Format("CreateMachine_{0}", machineName), methodPars,
+            var makeCreateSpecDecl = generator.MethodDeclaration(string.Format("CreateSpec_{0}", machineName), methodPars,
               null, null,
               Accessibility.Public, DeclarationModifiers.Static,
               statements: fields);
-            members.Add(makeCreateMachineDecl);
+            members.Add(makeCreateSpecDecl);
         }
 
         private void MkMachineClasses()
@@ -3723,16 +3720,48 @@ namespace Microsoft.Pc
                 stmtList.Add(ExpressionStatement(renameadd));
             }
             //create map
-            foreach (var impMachine in allTests[testName].renameMap.Values)
+            foreach (var renameItem in allTests[testName].renameMap)
             {
-                var createadd = CSharpHelper.MkCSharpInvocationExpression(
-                    CSharpHelper.MkCSharpDot("createMap", "Add"),
-                    CSharpHelper.MkCSharpStringLiteralExpression(impMachine),
-                    IdentifierName(string.Format("CreateMachine_{0}", impMachine))
+                if(allTests[testName].monitorMap.ContainsKey(renameItem.Key))
+                {
+                    //its a monitor
+                    var createadd = CSharpHelper.MkCSharpInvocationExpression(
+                    CSharpHelper.MkCSharpDot("createSpecMap", "Add"),
+                    CSharpHelper.MkCSharpStringLiteralExpression(renameItem.Value),
+                    IdentifierName(string.Format("CreateSpec_{0}", renameItem.Value))
                     );
-                stmtList.Add(ExpressionStatement(createadd));
+                    stmtList.Add(ExpressionStatement(createadd));
+                }
+                else
+                {
+                    //its a machine
+                    var createadd = CSharpHelper.MkCSharpInvocationExpression(
+                    CSharpHelper.MkCSharpDot("createMachineMap", "Add"),
+                    CSharpHelper.MkCSharpStringLiteralExpression(renameItem.Value),
+                    IdentifierName(string.Format("CreateMachine_{0}", renameItem.Value))
+                    );
+                    stmtList.Add(ExpressionStatement(createadd));
+                }
+                
             }
 
+            //monitor map
+            foreach(var monitor in allTests[testName].monitorMap)
+            {
+                SeparatedSyntaxList<ExpressionSyntax> machines = new SeparatedSyntaxList<ExpressionSyntax>();
+                machines = machines.AddRange(monitor.Value.Select(x => CSharpHelper.MkCSharpStringLiteralExpression(x)));
+
+                var addstmt =
+                    CSharpHelper.MkCSharpInvocationExpression(
+                        CSharpHelper.MkCSharpDot("monitorMap", "Add"),
+                        CSharpHelper.MkCSharpStringLiteralExpression(monitor.Key),
+                        ObjectCreationExpression(
+                            CSharpHelper.MkCSharpGenericListType(IdentifierName("string")),
+                            ArgumentList(),
+                            InitializerExpression(SyntaxKind.CollectionInitializerExpression, machines))
+                        );
+                stmtList.Add(ExpressionStatement(addstmt));
+            }
             //link map
             //declare temp variable 
             var dictStringString = 

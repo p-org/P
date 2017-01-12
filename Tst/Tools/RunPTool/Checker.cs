@@ -302,7 +302,8 @@ namespace CheckP
                         compileArgs.inputFileNames.Clear();
                         string linkFileName = Path.ChangeExtension(inputFileName, ".4ml");
                         compileArgs.inputFileNames.Add(linkFileName);
-                        if(isLinkOption)
+                        compileArgs.reBuild = true;
+                        if (isLinkOption)
                         {
                             var linkPFile = Path.GetFullPath(Path.Combine(activeDirectory, (string)linkFile[0].Item2));
                             compileArgs.inputFileNames.Add(linkPFile);
@@ -319,7 +320,7 @@ namespace CheckP
                             compileArgs.inputFileNames.Clear();
                             compileArgs.inputFileNames.Add(inputFileName);
                             compileArgs.compilerOutput = CompilerOutput.Zing;
-
+                            compileArgs.reBuild = true;
                             if (liveness)
                             {
                                 compileArgs.liveness = LivenessOption.Standard;
@@ -336,7 +337,7 @@ namespace CheckP
                             compileArgs.inputFileNames.Clear();
                             compileArgs.inputFileNames.Add(inputFileName);
                             compileArgs.compilerOutput = CompilerOutput.CSharp;
-
+                            compileArgs.reBuild = true;
                             if (liveness)
                             {
                                 compileArgs.liveness = LivenessOption.Standard;

@@ -3830,7 +3830,7 @@ namespace Microsoft.Pc
                                 NormalizeWhitespace();
                 var outputFile = outputDir + "\\" + testCase.Key + ".cs";
                 EmitLinkerCS(finalOutput, outputFile);
-                Log.WriteMessage(string.Format("Writing {0}.cs ...", testCase.Key), SeverityKind.Info);
+                //Log.WriteMessage(string.Format("Writing {0}.cs ...", testCase.Key), SeverityKind.Info);
                 EmitCSDll(outputDir, testCase.Key);
             }
         }

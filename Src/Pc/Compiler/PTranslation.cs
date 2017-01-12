@@ -799,15 +799,18 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var targetStateName = GetNameFromQualifiedName(stateOwnerMachineName, (FuncTerm)it.Current);
                     it.MoveNext();
-                    if (it.Current.NodeKind == NodeKind.Id)
+                    if (it.Current.NodeKind == NodeKind.Cnst)
+                    {
+                        var exitFunName = ((Cnst)it.Current).GetStringValue();
+                        stateTable.transitions[eventName] = new TransitionInfo(targetStateName, exitFunName);
+                    }
+                    else if (it.Current.NodeKind == NodeKind.Id && (it.Current as Id).Name == "PUSH")
                     {
                         stateTable.transitions[eventName] = new TransitionInfo(targetStateName);
                     }
                     else
                     {
-                        var exitFunName = it.Current.NodeKind == NodeKind.Cnst
-                                            ? ((Cnst)it.Current).GetStringValue()
-                                            : anonFunToName[Factory.Instance.ToAST(it.Current)];
+                        var exitFunName = anonFunToName[Factory.Instance.ToAST(it.Current)];
                         stateTable.transitions[eventName] = new TransitionInfo(targetStateName, exitFunName);
                     }
                 }
@@ -849,18 +852,14 @@ namespace Microsoft.Pc
                     {
                         stateTable.dos[eventName] = ((Cnst)action).GetStringValue();
                     }
-                    else if (action.NodeKind == NodeKind.Id)
+                    else if (action.NodeKind == NodeKind.Id && (action as Id).Name == "DEFER")
                     {
-                        if (((Id)action).Name == "DEFER")
-                        {
-                            stateTable.deferredEvents.Add(eventName);
-                        }
-                        else
-                        {
-                            // ((Id)action).Name == "IGNORE"
-                            stateTable.ignoredEvents.Add(eventName);
-                            stateTable.dos[eventName] = "ignore";
-                        }
+                        stateTable.deferredEvents.Add(eventName);
+                    }
+                    else if (action.NodeKind == NodeKind.Id && (action as Id).Name == "IGNORE")
+                    {
+                        stateTable.ignoredEvents.Add(eventName);
+                        stateTable.dos[eventName] = "ignore";
                     }
                     else
                     {

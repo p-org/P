@@ -540,45 +540,43 @@ namespace P.Runtime
             Insert(((PrtIntValue)index).nt, val);
         }
 
-        public void Update(int index, PrtValue val)
+        public void Update(PrtValue index, PrtValue val)
         {
-            if (index < 0 || index > elements.Count)
+            var intIndex = (index as PrtIntValue).nt;
+            if (intIndex < 0 || intIndex > elements.Count)
             {
                 throw new PrtAssertFailureException("Illegal index for Update");
             }
-            if (index == elements.Count)
+            if (intIndex == elements.Count)
             {
-                elements.Insert(index, val);
+                elements.Insert(intIndex, val);
             }
             else
             {
-                elements[index] = val;
+                elements[intIndex] = val;
             }
         }
 
-        public PrtValue UpdateAndReturnOldValue(int index, PrtValue val)
+        public PrtValue UpdateAndReturnOldValue(PrtValue index, PrtValue val)
         {
-            if (index < 0 || index >= elements.Count)
+            var intIndex = (index as PrtIntValue).nt;
+            if (intIndex < 0 || intIndex >= elements.Count)
             {
                 throw new PrtAssertFailureException("Illegal index for UpdateAndReturnOldValue");
             }
-            var oldVal = elements[index];
-            elements[index] = val;
+            var oldVal = elements[intIndex];
+            elements[intIndex] = val;
             return oldVal;
-        }
-
-        public void Remove(int index)
-        {
-            if (index < 0 || index >= elements.Count)
-            {
-                throw new PrtAssertFailureException("Illegal index for Remove");
-            }
-            elements.RemoveAt(index);
         }
 
         public void Remove(PrtValue index)
         {
-            Remove(((PrtIntValue)index).nt);
+            var intIndex = (index as PrtIntValue).nt;
+            if (intIndex < 0 || intIndex >= elements.Count)
+            {
+                throw new PrtAssertFailureException("Illegal index for Remove");
+            }
+            elements.RemoveAt(intIndex);
         }
 
         public override int Size()

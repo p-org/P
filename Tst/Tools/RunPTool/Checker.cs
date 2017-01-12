@@ -330,6 +330,23 @@ namespace CheckP
                                 compileResult = compiler.Compile(compilerOutput, compileArgs);
                             }
                         }
+
+                        if(compileResult)
+                        {
+                            compileArgs.inputFileNames.Clear();
+                            compileArgs.inputFileNames.Add(inputFileName);
+                            compileArgs.compilerOutput = CompilerOutput.CSharp;
+
+                            if (liveness)
+                            {
+                                compileArgs.liveness = LivenessOption.Standard;
+                            }
+
+                            using (compiler.Profiler.Start("compile csharp", linkFileName))
+                            {
+                                compileResult = compiler.Compile(compilerOutput, compileArgs);
+                            }
+                        }
                         
                     }
 

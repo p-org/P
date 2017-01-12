@@ -1411,7 +1411,7 @@ namespace Microsoft.Pc
                 else
                 {
                     //op == PData.Cnst_Halt.Node.Name
-                    return IdentifierName("halt");
+                    return pToCSharp.GetEventVar("halt");
                 }
             }
 
@@ -2713,7 +2713,7 @@ namespace Microsoft.Pc
         private void MkMachineClasses()
         {
             //Debug only:
-            Console.WriteLine("Number of machines: {0}", allMachines.Count());
+            //Console.WriteLine("Number of machines: {0}", allMachines.Count());
             foreach (var pair in allMachines)
             {
                 MkMachineClass mkMachine;

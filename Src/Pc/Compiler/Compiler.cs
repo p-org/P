@@ -796,7 +796,7 @@
                 Contract.Assert(linkModel != null);
 
                 string outputFileName = Path.ChangeExtension(fileName, ".4ml");
-                Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
+                //Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
                 linkModel.Print(wr);
                 wr.Close();

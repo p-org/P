@@ -673,7 +673,7 @@ namespace Microsoft.Pc
         {
             
             var eventClass = "Events_" + Math.Abs(Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode()).ToString();
-            var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(eventName));
+            var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(EventName(eventName)));
             return retVal;
         }
 
@@ -1275,7 +1275,9 @@ namespace Microsoft.Pc
                         eventName = HaltEvent;
                     }
                     eventNames.Add(eventName);
-                    stmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "receiveSet", "Add"), pToCSharp.GetEventVar(eventName))));
+                    stmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
+                        CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtImplMachine", IdentifierName("parent")), "receiveSet", "Add"), 
+                        pToCSharp.GetEventVar(eventName))));
                     var fun = GetArgByIndex(cases, 1);
                     string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(fun)];
                     funNames.Add(funName);
@@ -1780,7 +1782,7 @@ namespace Microsoft.Pc
                     {
                         errorMsg = pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Assert failed");
                     }
-                    return CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpDot((ExpressionSyntax)it.Current, "bl"), errorMsg);
+                    return CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue",it.Current), "bl"), errorMsg);
                 }
             }
 
@@ -2698,14 +2700,17 @@ namespace Microsoft.Pc
 
             foreach (var x in allMachines[machineName].observesEvents)
             {
-                fields.Add(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), IdentifierName(x)));
+                fields.Add(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), GetEventVar(x)));
             }
-            
+
+            //stmt4: return machine;
+            fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
+
             //public void CreateMainMachine() {stmt1; stmt2; };
             var methodPars = new SyntaxNode[] {
                     generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")) };
             var makeCreateSpecDecl = generator.MethodDeclaration(string.Format("CreateSpec_{0}", machineName), methodPars,
-              null, generator.IdentifierName("PrtSpecMachine"),
+              null, IdentifierName("PrtSpecMachine"),
               Accessibility.Public, DeclarationModifiers.Static,
               statements: fields);
             members.Add(makeCreateSpecDecl);
@@ -3226,7 +3231,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                 Argument(
-                                                    translator.GetEventVar(doFun.Key)),
+                                                    translator.GetEventVar(EventName(doFun.Key))),
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
                                                     IdentifierName(doFun.Value))}))))

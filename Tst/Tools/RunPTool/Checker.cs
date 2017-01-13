@@ -291,10 +291,28 @@ namespace CheckP
                     var compilerOutput = new CompilerTestOutputStream(tmpWriter);
 
                     bool compileResult = false;
+
                     using (compiler.Profiler.Start("compile", inputFileName))
                     {
                         compileResult = compiler.Compile(compilerOutput, compileArgs);
                     }
+                    if (compileResult)
+                    {
+                        compileArgs.inputFileNames.Clear();
+                        compileArgs.inputFileNames.Add(inputFileName);
+                        compileArgs.compilerOutput = CompilerOutput.CSharp;
+                        compileArgs.reBuild = true;
+                        if (liveness)
+                        {
+                            compileArgs.liveness = LivenessOption.Standard;
+                        }
+
+                        using (compiler.Profiler.Start("compile csharp", inputFileName))
+                        {
+                            compileResult = compiler.Compile(compilerOutput, compileArgs);
+                        }
+                    }
+
                     if (compileResult)
                     {
                         //For C code generation we can use link file
@@ -308,49 +326,32 @@ namespace CheckP
                             var linkPFile = Path.GetFullPath(Path.Combine(activeDirectory, (string)linkFile[0].Item2));
                             compileArgs.inputFileNames.Add(linkPFile);
                         }
-                        
+
                         using (compiler.Profiler.Start("link", linkFileName))
                         {
                             compileResult = compiler.Link(compilerOutput, compileArgs);
                         }
-                        
-                        if (compileResult)
-                        {
-                            // compile *.p again, this time with Zing option.
-                            compileArgs.inputFileNames.Clear();
-                            compileArgs.inputFileNames.Add(inputFileName);
-                            compileArgs.compilerOutput = CompilerOutput.Zing;
-                            compileArgs.reBuild = true;
-                            if (liveness)
-                            {
-                                compileArgs.liveness = LivenessOption.Standard;
-                            }
-                            
-                            using (compiler.Profiler.Start("compile zing", linkFileName))
-                            {
-                                compileResult = compiler.Compile(compilerOutput, compileArgs);
-                            }
-                        }
-
-                        if(compileResult)
-                        {
-                            compileArgs.inputFileNames.Clear();
-                            compileArgs.inputFileNames.Add(inputFileName);
-                            compileArgs.compilerOutput = CompilerOutput.CSharp;
-                            compileArgs.reBuild = true;
-                            if (liveness)
-                            {
-                                compileArgs.liveness = LivenessOption.Standard;
-                            }
-
-                            using (compiler.Profiler.Start("compile csharp", linkFileName))
-                            {
-                                compileResult = compiler.Compile(compilerOutput, compileArgs);
-                            }
-                        }
-                        
                     }
 
+                    if (compileResult)
+                    {
+                        // compile *.p again, this time with Zing option.
+                        compileArgs.inputFileNames.Clear();
+                        compileArgs.inputFileNames.Add(inputFileName);
+                        compileArgs.compilerOutput = CompilerOutput.Zing;
+                        compileArgs.reBuild = true;
+                        if (liveness)
+                        {
+                            compileArgs.liveness = LivenessOption.Standard;
+                        }
+                            
+                        using (compiler.Profiler.Start("compile zing", inputFileName))
+                        {
+                            compileResult = compiler.Compile(compilerOutput, compileArgs);
+                        }
+                    }
+
+                    
                     if (compileResult)
                     {
                         tmpWriter.WriteLine("EXIT: 0");

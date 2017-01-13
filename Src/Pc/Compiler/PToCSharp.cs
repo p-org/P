@@ -3426,7 +3426,7 @@ namespace Microsoft.Pc
 
         private void EmitCSharpOutput()
         {
-            System.IO.StreamWriter file = new System.IO.StreamWriter(cSharpFileName);
+            System.IO.StreamWriter file = new System.IO.StreamWriter(Path.Combine(compiler.Options.outputDir, cSharpFileName));
             file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168");
             file.WriteLine(result);
             file.Close();
@@ -3885,7 +3885,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            Log.WriteMessage(string.Format("Writing {0}.dll ...", testCaseName), SeverityKind.Info);
+            //Log.WriteMessage(string.Format("Writing {0}.dll ...", testCaseName), SeverityKind.Info);
             var tree = CSharpSyntaxTree.ParseText(cs_code);
 
             var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);

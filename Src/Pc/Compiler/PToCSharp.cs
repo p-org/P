@@ -1275,7 +1275,9 @@ namespace Microsoft.Pc
                         eventName = HaltEvent;
                     }
                     eventNames.Add(eventName);
-                    stmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "receiveSet", "Add"), pToCSharp.GetEventVar(eventName))));
+                    stmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
+                        CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtImplMachine", IdentifierName("parent")), "receiveSet", "Add"), 
+                        pToCSharp.GetEventVar(eventName))));
                     var fun = GetArgByIndex(cases, 1);
                     string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(fun)];
                     funNames.Add(funName);

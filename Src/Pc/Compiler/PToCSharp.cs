@@ -435,7 +435,7 @@ namespace Microsoft.Pc
 
             private ExpressionSyntax GetNextType(string typeName)
             {
-                var typeClass = "Types_" + Path.GetFileNameWithoutExtension(pToCSharp.cSharpFileName).GetHashCode().ToString();
+                var typeClass = "Types_" + Math.Abs(Path.GetFileNameWithoutExtension(pToCSharp.cSharpFileName).GetHashCode()).ToString();
                 var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(typeClass), IdentifierName(typeName));
                 typeCount++;
                 return retVal;
@@ -671,7 +671,8 @@ namespace Microsoft.Pc
 
         public ExpressionSyntax GetEventVar(string eventName)
         {
-            var eventClass = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode().ToString();
+            
+            var eventClass = "Events_" + Math.Abs(Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode()).ToString();
             var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(eventName));
             return retVal;
         }
@@ -703,7 +704,7 @@ namespace Microsoft.Pc
         {
             List<SyntaxNode> evDeclarations = new List<SyntaxNode>();
             List<StatementSyntax> eventInitializationStmts = new List<StatementSyntax>();
-            string eventsClassName = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode().ToString();
+            string eventsClassName = "Events_" + Math.Abs(Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode()).ToString();
             foreach (var pair in allEvents)
             {
                 //add declaration
@@ -796,7 +797,7 @@ namespace Microsoft.Pc
 
         private void MkTypes()
         {
-            string typesClassName = "Types_" + Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode().ToString();
+            string typesClassName = "Types_" + Math.Abs(Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode()).ToString();
             List<SyntaxNode> typeDeclarations = new List<SyntaxNode>();
             typeDeclarations.AddRange(typeContext.typeDeclaration);
 

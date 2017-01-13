@@ -435,7 +435,7 @@ namespace Microsoft.Pc
 
             private ExpressionSyntax GetNextType(string typeName)
             {
-                var typeClass = Path.GetFileNameWithoutExtension(pToCSharp.cSharpFileName) + "_Types";
+                var typeClass = "Types_" + Path.GetFileNameWithoutExtension(pToCSharp.cSharpFileName).GetHashCode().ToString();
                 var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(typeClass), IdentifierName(typeName));
                 typeCount++;
                 return retVal;
@@ -671,7 +671,7 @@ namespace Microsoft.Pc
 
         public ExpressionSyntax GetEventVar(string eventName)
         {
-            var eventClass = Path.GetFileNameWithoutExtension(cSharpFileName) + "_Events";
+            var eventClass = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode().ToString();
             var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(eventName));
             return retVal;
         }
@@ -703,7 +703,7 @@ namespace Microsoft.Pc
         {
             List<SyntaxNode> evDeclarations = new List<SyntaxNode>();
             List<StatementSyntax> eventInitializationStmts = new List<StatementSyntax>();
-            string eventsClassName = Path.GetFileNameWithoutExtension(cSharpFileName) + "_Events";
+            string eventsClassName = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode().ToString();
             foreach (var pair in allEvents)
             {
                 //add declaration
@@ -796,7 +796,7 @@ namespace Microsoft.Pc
 
         private void MkTypes()
         {
-            string typesClassName = Path.GetFileNameWithoutExtension(cSharpFileName) + "_Types";
+            string typesClassName = "Types_" + Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode().ToString();
             List<SyntaxNode> typeDeclarations = new List<SyntaxNode>();
             typeDeclarations.AddRange(typeContext.typeDeclaration);
 
@@ -1234,7 +1234,7 @@ namespace Microsoft.Pc
                         CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"),
                         IdentifierName(funName), CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(funName, "CreateLocals"), CSharpHelper.MkCSharpDot("parent", "currentPayload")))));
                     ifStmts.Add(CSharpHelper.MkCSharpGoto(beforeLabel));
-                    eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), IdentifierName(eventName)), Block(ifStmts)));
+                    eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(eventName)), Block(ifStmts)));
                     funStmts.Add(CSharpHelper.MkCSharpEmptyLabeledStatement(beforeLabel));
                     funStmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
                     var elseStmt = Block(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(funName), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
@@ -1274,7 +1274,7 @@ namespace Microsoft.Pc
                         eventName = HaltEvent;
                     }
                     eventNames.Add(eventName);
-                    stmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "receiveSet", "Add"), IdentifierName(eventName))));
+                    stmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "receiveSet", "Add"), pToCSharp.GetEventVar(eventName))));
                     var fun = GetArgByIndex(cases, 1);
                     string funName = pToCSharp.anonFunToName[Factory.Instance.ToAST(fun)];
                     funNames.Add(funName);
@@ -3659,16 +3659,13 @@ namespace Microsoft.Pc
                     generator.TypeExpression(SpecialType.System_Boolean)) };
             List<SyntaxNode> stmtList = new List<SyntaxNode>();
 
-            //TODO create Monitors
-            /*
-            foreach (var machineName in allMachines.Keys)
+
+            foreach (var monName in allTests[testName].monitorMap.Keys)
             {
-                if (allMachines[machineName].IsReal) continue;
-                stmtList.Add(generator.ExpressionStatement(
-                                generator.InvocationExpression(generator.IdentifierName(string.Format("CreateMachine_{0}", machineName)),
-                                                               ThisExpression())));
+                stmtList.Add(ExpressionStatement(
+                                CSharpHelper.MkCSharpInvocationExpression(IdentifierName("CreateSpecMachine"), CSharpHelper.MkCSharpStringLiteralExpression(monName))));
             }
-            */
+            
 
             var constructorBody = generator.ExpressionStatement(
                 generator.InvocationExpression(
@@ -3888,7 +3885,6 @@ namespace Microsoft.Pc
             //Log.WriteMessage(string.Format("Writing {0}.dll ...", testCaseName), SeverityKind.Info);
             var tree = CSharpSyntaxTree.ParseText(cs_code);
 
-            var mscorlib = MetadataReference.CreateFromFile(typeof(object).Assembly.Location);
             var pruntime = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\prt.dll";
             if(!File.Exists(pruntime))
             {
@@ -3898,7 +3894,11 @@ namespace Microsoft.Pc
             CSharpCompilation compilation = CSharpCompilation.Create(
             testCaseName,
             new[] { tree },
-            new [] { mscorlib, MetadataReference.CreateFromFile(pruntime) },
+            new [] {
+                MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
+                MetadataReference.CreateFromFile(pruntime),
+                MetadataReference.CreateFromFile(typeof(Enumerable).Assembly.Location)
+            },
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
 

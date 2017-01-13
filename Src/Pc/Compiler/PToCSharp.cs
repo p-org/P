@@ -673,7 +673,7 @@ namespace Microsoft.Pc
         {
             
             var eventClass = "Events_" + Math.Abs(Path.GetFileNameWithoutExtension(cSharpFileName).GetHashCode()).ToString();
-            var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(eventName));
+            var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(EventName(eventName)));
             return retVal;
         }
 
@@ -2698,14 +2698,17 @@ namespace Microsoft.Pc
 
             foreach (var x in allMachines[machineName].observesEvents)
             {
-                fields.Add(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), IdentifierName(x)));
+                fields.Add(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), GetEventVar(x)));
             }
-            
+
+            //stmt4: return machine;
+            fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
+
             //public void CreateMainMachine() {stmt1; stmt2; };
             var methodPars = new SyntaxNode[] {
                     generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")) };
             var makeCreateSpecDecl = generator.MethodDeclaration(string.Format("CreateSpec_{0}", machineName), methodPars,
-              null, null,
+              null, IdentifierName("PrtSpecMachine"),
               Accessibility.Public, DeclarationModifiers.Static,
               statements: fields);
             members.Add(makeCreateSpecDecl);
@@ -3226,7 +3229,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                 Argument(
-                                                    translator.GetEventVar(doFun.Key)),
+                                                    translator.GetEventVar(EventName(doFun.Key))),
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(
                                                     IdentifierName(doFun.Value))}))))

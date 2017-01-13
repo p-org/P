@@ -288,3 +288,8 @@ Src/PrtDist/Samples/PingPong/program.h
 
 # all .4ml files.
 *.4ml
+/Src/PrtDist/Samples/PingPongSimple/output.cs
+/Src/PrtDist/Samples/PingPongFast/output.cs
+/Src/PrtDist/Samples/PingPong/output.cs
+/Src/Prt/Samples/ModelFnAndMachines/output.cs
+/Src/Prt/Samples/ForeignTypes/output.cs

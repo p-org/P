@@ -2705,7 +2705,7 @@ namespace Microsoft.Pc
             var methodPars = new SyntaxNode[] {
                     generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")) };
             var makeCreateSpecDecl = generator.MethodDeclaration(string.Format("CreateSpec_{0}", machineName), methodPars,
-              null, null,
+              null, generator.IdentifierName("PrtSpecMachine"),
               Accessibility.Public, DeclarationModifiers.Static,
               statements: fields);
             members.Add(makeCreateSpecDecl);

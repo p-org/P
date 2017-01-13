@@ -1782,7 +1782,7 @@ namespace Microsoft.Pc
                     {
                         errorMsg = pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Assert failed");
                     }
-                    return CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpDot((ExpressionSyntax)it.Current, "bl"), errorMsg);
+                    return CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue",it.Current), "bl"), errorMsg);
                 }
             }
 

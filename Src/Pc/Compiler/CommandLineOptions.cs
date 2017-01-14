@@ -138,11 +138,6 @@
                                 Console.WriteLine("Must supply path for output directory");
                                 return false;
                             }
-                            if (!Directory.Exists(colonArg))
-                            {
-                                Console.WriteLine("Output directory {0} does not exist", colonArg);
-                                return false;
-                            }
                             outputDir = colonArg;
                             break;
 

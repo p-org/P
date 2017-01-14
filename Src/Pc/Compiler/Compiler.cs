@@ -56,9 +56,16 @@
 
     public class ConsoleProfiler : IProfiler
     {
+        ICompilerOutput Log;
+
+        public ConsoleProfiler(ICompilerOutput log)
+        {
+            this.Log = log;
+        }
+
         public IDisposable Start(string operation, string message)
         {
-            return new ConsoleProfileWatcher(operation, message);
+            return new ConsoleProfileWatcher(Log, operation, message);
         }
 
         class ConsoleProfileWatcher: IDisposable
@@ -66,9 +73,11 @@
             Stopwatch watch = new Stopwatch();
             string operation;
             string message;
+            ICompilerOutput Log;
 
-            public ConsoleProfileWatcher(string operation, string message)
+            public ConsoleProfileWatcher(ICompilerOutput log, string operation, string message)
             {
+                this.Log = log;
                 this.operation = operation;
                 this.message = message;
                 watch.Start();
@@ -76,7 +85,8 @@
             public void Dispose()
             {
                 watch.Stop();
-                string msg = string.Format("{0}: {0} took {1} ms, {2}", DateTime.Now.Ticks, operation, watch.Elapsed.ToString(), message);
+                string msg = string.Format("{0}: {1} {2} {3}", DateTime.Now.ToShortTimeString(), watch.Elapsed.ToString(), operation, message);
+                Log.WriteMessage(msg, SeverityKind.Info);
             }
         }
 
@@ -531,14 +541,14 @@
                 envParams = new EnvParams(new Tuple<EnvParamKind, object>(EnvParamKind.Msgs_SuppressPaths, true));
             }
             CompilerEnv = new Env(envParams);
-            Profiler = new NullProfiler();
+            this.Profiler = new NullProfiler();
         }
 
         public bool Compile(ICompilerOutput log, CommandLineOptions options)
         {
-            if (options.profile && this.Profiler == null)
+            if (options.profile)
             {
-                this.Profiler = new ConsoleProfiler();
+                this.Profiler = new ConsoleProfiler(log);
             }
             options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             this.Log = log;
@@ -586,6 +596,10 @@
                 SeenFileNames[RootFileName] = RootProgramName;
                 parserWorkQueue.Enqueue(RootFileName);
                 string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                if (!Directory.Exists(outputDirName))
+                {
+                    Directory.CreateDirectory(outputDirName);
+                }
                 var root4mlFilePath = outputDirName + "\\" + Path.GetFileNameWithoutExtension(RootFileName) + ".4ml";
                 var lastCompileTime = File.Exists(root4mlFilePath) ? File.GetLastWriteTime(root4mlFilePath) : DateTime.MinValue;
                 while (parserWorkQueue.Count > 0)
@@ -1471,7 +1485,10 @@
         
         public bool Link(ICompilerOutput log, CommandLineOptions options)
         {
-            
+            if (options.profile)
+            {
+                this.Profiler = new ConsoleProfiler(log);
+            }
             this.Log = log;
             this.Options = options;
             this.errorReporter = new ErrorReporter();

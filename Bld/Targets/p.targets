@@ -7,67 +7,58 @@
     <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
     <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
+    <PGeneratedDir>$(ProjectDir)\PGenerated</PGeneratedDir>
+    <PCompileOptions>/generate:C0 /shared /outputDir:$(PGeneratedDir)</PCompileOptions>
+    <PLinkOptions>/link /outputDir:$(PGeneratedDir)</PLinkOptions>
+    <PCompileOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PCompileOptions) /profile</PCompileOptions>
+    <PLinkOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PLinkOptions) /profile></PLinkOptions>
   </PropertyGroup>
 
   <!-- Invoke pc.exe - pc.exe will do the right thing based on which p files (or include files) have actually changed. -->
   <Target Name="CompileP" Inputs="@(PCompile);"
-          Outputs="@(PCompile->'%(RootDir)%(Directory)%(FileName).4ml');@(PCompile->'%(RootDir)%(Directory)%(FileName).c');@(PCompile->'%(RootDir)%(Directory)%(FileName).h')"
+          Outputs="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml');@(PCompile->'$(PGeneratedDir)\%(FileName).c');@(PCompile->'$(PGeneratedDir)\%(FileName).h')"
           BeforeTargets="BeforeBuildGenerateSources" >
 
-    <PropertyGroup>
-      <WorkingDirs>@(PCompile->'%(RootDir)%(Directory)')</WorkingDirs>
-      <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
-    </PropertyGroup>
-
     <ItemGroup>
-      <PLink Include="@(PCompile->'%(RootDir)%(Directory)\%(FileName).4ml')"/>
-      <ClCompile Include="@(PCompile->'%(RootDir)%(Directory)%(FileName).c')"/>
+      <PLink Include="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml')"/>
+      <ClCompile Include="@(PCompile->'$(PGeneratedDir)\%(FileName).c')"/>
     </ItemGroup>
 
       <ItemGroup>
-        <FileWrites Include="@(PCompile->'%(RootDir)%(Directory)%(FileName).4ml')" />
-        <FileWrites Include="@(PCompile->'%(RootDir)%(Directory)%(FileName).c')" />
-        <FileWrites Include="@(PCompile->'%(RootDir)%(Directory)%(FileName).h')" />
+        <FileWrites Include="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml')" />
+        <FileWrites Include="@(PCompile->'$(PGeneratedDir)\%(FileName).c')" />
+        <FileWrites Include="@(PCompile->'$(PGeneratedDir)\%(FileName).h')" />
       </ItemGroup>
 
       <Message Importance="high" Text="########## compiling p files @(PCompile)  ##################" />
-      <Exec Command="$(DropFolder)\Binaries\pc.exe /generate:C0 /shared @(PCompile->'%(FullPath)',' ')"  WorkingDirectory="$(WorkingDir)"/>
+      <Exec Command="$(DropFolder)\Binaries\pc.exe $(PCompileOptions) @(PCompile->'%(FullPath)',' ')"/>
       <Message Importance="high" Text="########## compiling p files complete ##################" />
 
     </Target>
 
-  <Target Name="LinkP" Inputs="@(PLink);" Outputs="%(RootDir)%(Directory)linker.c;%(RootDir)%(Directory)linker.c"
+  <Target Name="LinkP" Inputs="@(PLink);" Outputs="$(PGeneratedDir)\linker.c;$(PGeneratedDir)\linker.h"
           DependsOnTargets="CompileP" BeforeTargets="BeforeBuildGenerateSources" >
-    <PropertyGroup>
-      <WorkingDirs>@(PLink->'%(RootDir)%(Directory)')</WorkingDirs>
-      <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
-    </PropertyGroup>
     <ItemGroup>
-      <FileWrites Include="$(WorkingDir)linker.c" />
-      <FileWrites Include="$(WorkingDir)linker.c" />
+      <FileWrites Include="$(PGeneratedDir)\linker.c" />
+      <FileWrites Include="$(PGeneratedDir)\linker.h" />
     </ItemGroup>
+    
     <!-- must always include linker.c in the final C++ compile -->
-    <CreateItem Include="$(WorkingDir)linker.c">
-      <Output
-          TaskParameter="Include"
-          ItemName="ClCompile"/>
-    </CreateItem>
-
+    <ItemGroup>
+      <ClCompile Include="$(PGeneratedDir)\linker.c"/>
+    </ItemGroup>
+    
     <Message Importance="high" Text="########## generating p linker.c  ##################" />
-    <Exec Command="$(DropFolder)\Binaries\pc.exe /link @(PLink->'%(FullPath)',' ')"  WorkingDirectory="$(WorkingDir)"/>
+    <Exec Command="$(DropFolder)\Binaries\pc.exe $(PLinkOptions) @(PLink->'%(FullPath)',' ')"/>
     <Message Importance="high" Text="########## generating p linker complete ##################" />
   </Target>
 
-  <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >
-    <PropertyGroup>
-      <WorkingDirs>@(PCompile->'%(RootDir)%(Directory)')</WorkingDirs>
-      <WorkingDir>$(WorkingDirs.Split(';')[0])</WorkingDir>
-    </PropertyGroup>
-    <Delete Files="@(PCompile->'$(WorkingDir)\%(FileName).c')"/>
-    <Delete Files="@(PCompile->'$(WorkingDir)\%(FileName).h')"/>
-    <Delete Files="@(PCompile->'$(WorkingDir)\%(FileName).4ml')"/>
-    <Delete Files="$(WorkingDir)\linker.c"/>
-    <Delete Files="$(WorkingDir)\linker.h"/>
+  <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >   
+    <Delete Files="@(PCompile->'$(PGeneratedDir)\%(FileName).c')"/>
+    <Delete Files="@(PCompile->'$(PGeneratedDir)\%(FileName).h')"/>
+    <Delete Files="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml')"/>
+    <Delete Files="$(PGeneratedDir)\linker.c"/>
+    <Delete Files="$(PGeneratedDir)\linker.h"/>
   </Target>
 
   <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">

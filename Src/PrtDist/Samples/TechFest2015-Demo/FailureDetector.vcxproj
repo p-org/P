@@ -96,7 +96,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>$(StandardPDefinitions);_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -118,7 +118,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>$(StandardPDefinitions);_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -136,7 +136,7 @@
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -156,7 +156,7 @@
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -171,16 +171,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
-    <ClCompile Include="Driver.c" />
-    <ClCompile Include="linker.c" />
     <ClCompile Include="Timer.c" />
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="Driver.p" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Driver.h" />
-    <ClInclude Include="linker.h" />
   </ItemGroup>
   <ItemGroup>
     <PFile Include="FailureDetector.p" />

@@ -7,13 +7,7 @@
     <ClCompile Include="modelFunctions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ServerClient.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="timer.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="linker.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -29,14 +23,6 @@
     <Filter Include="P Sources">
       <UniqueIdentifier>{3afa939e-91e3-4830-93c8-de595cb1ee9f}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="ServerClient.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="linker.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="ServerClient.p">

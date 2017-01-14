@@ -226,17 +226,12 @@ stubs.c
 Src/PrtDist/Binaries/clusterconfiguration.xml
 *.idb
 /Ext/PsTools
-/Src/Prt/Samples/ForeignTypes/output.cs
 /Src/Prt/Samples/ForeignTypes/Tester.ipdb
 /Src/Prt/Samples/ForeignTypes/Tester.iobj
 /Src/Prt/Samples/ForeignTypes/Tester.exe
 /Src/Prt/Samples/ForeignTypes/ForeignStringType.dll
-/Src/PrtDist/Samples/PingPong/output.cs
 /Src/PrtDist/Samples/PingPongSimple/PRT_CONTAINER_LOG_1.txt
 /Src/PrtDist/Samples/PingPongSimple/test.dll
-/Src/PrtDist/Samples/PingPongSimple/output.cs
-/Src/PrtDist/Samples/PingPongFast/output.cs
-/Src/Prt/Samples/ModelFnAndMachines/output.cs
 /Src/Prt/Samples/ModelFnAndMachines/ServerClient.dll
 /Src/PrtDist/Samples/TechFest2015-Demo/Driver.dll
 /Src/PrtDist/Samples/PingPong/PingPong.dll

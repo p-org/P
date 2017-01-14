@@ -59,12 +59,12 @@ namespace Microsoft.Pc
                 Console.WriteLine(" ------------ Compiler Phase ------------");
                 Console.WriteLine("USAGE: Pc.exe file.p [options]");
                 Console.WriteLine("Compiles *.p programs and produces *.4ml intermediate output which can then be passed to PLink.exe");
-                Console.WriteLine("/outputDir:path         -- where to write the linker.c and linker.h files");
+                Console.WriteLine("/outputDir:path         -- where to write the generated *.c, *.h and *.4ml files");
                 Console.WriteLine("/liveness[:sampling]    -- these control what the Zing program is looking for");
                 Console.WriteLine("/shortFileNames         -- print only file names in error messages");
                 Console.WriteLine("/printTypeInference     -- dumps compiler type inference information (in formula)");
                 Console.WriteLine("/dumpFormulaModel       -- write the entire formula model to a file named 'output.4ml'");
-                Console.WriteLine("/profile                -- print detailed timing information)");
+                Console.WriteLine("/profile                -- print detailed timing information");
                 Console.WriteLine("/rebuild                -- rebuild all the P files");
                 Console.WriteLine("/generate:[C0,C,Zing,C#]");
                 Console.WriteLine("    C0  : generate C without model functions");
@@ -75,9 +75,11 @@ namespace Microsoft.Pc
                 Console.WriteLine(" ------------ Linker Phase ------------");
                 Console.WriteLine("USAGE: Pc.exe /link file1.4ml [file2.4ml ...] linkfile.p [options]");
                 Console.WriteLine("Takes the *.4ml output from pc.exe and generates the combined linker.c linker.h output from them");
-                Console.WriteLine("/outputDir:path  -- where to write the linker.c and linker.h files");
+                Console.WriteLine("/outputDir:path  -- where to write the generated linker.c and linker.h files");
                 Console.WriteLine("/shared          -- use the compiler service");
                 Console.WriteLine("/parallel        -- run multiple tests in parallel for quicker overall test run times");
+                Console.WriteLine("/profile         -- print detailed timing information");
+                Console.WriteLine("Profiling can also be enabled by setting the environment variable PCOMPILE_PROFILE=1");
                 return -1;
             }
         }

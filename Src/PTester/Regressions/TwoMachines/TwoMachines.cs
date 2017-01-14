@@ -2,12 +2,11 @@
 using P.Runtime;
 using System;
 using System.Collections.Generic;
-
 namespace P.Program
 {
     public partial class Application : StateImpl
     {
-        private class TwoMachines_Events
+        private class Events_769040646
         {
             public static PrtEventValue halt;
             public static PrtEventValue @null;
@@ -15,18 +14,18 @@ namespace P.Program
             public static PrtEventValue Success;
             public static PrtEventValue intPayloadEvent;
             public static PrtEventValue Ping;
-            static TwoMachines_Events()
+            static Events_769040646()
             {
-                halt = new PrtEventValue(new PrtEvent("halt", TwoMachines_Types.typeNull, 1, false));
-                @null = new PrtEventValue(new PrtEvent("null", TwoMachines_Types.typeNull, 1, false));
-                boolPayloadEvent = new PrtEventValue(new PrtEvent("boolPayloadEvent", TwoMachines_Types.typeBool, PrtEvent.DefaultMaxInstances, false));
-                Success = new PrtEventValue(new PrtEvent("Success", TwoMachines_Types.typeNull, PrtEvent.DefaultMaxInstances, false));
-                intPayloadEvent = new PrtEventValue(new PrtEvent("intPayloadEvent", TwoMachines_Types.typeInt, PrtEvent.DefaultMaxInstances, false));
-                Ping = new PrtEventValue(new PrtEvent("Ping", TwoMachines_Types.typeMachine, 1, false));
+                halt = new PrtEventValue(new PrtEvent("halt", Types_769040646.typeNull, 1, false));
+                @null = new PrtEventValue(new PrtEvent("null", Types_769040646.typeNull, 1, false));
+                boolPayloadEvent = new PrtEventValue(new PrtEvent("boolPayloadEvent", Types_769040646.typeBool, PrtEvent.DefaultMaxInstances, false));
+                Success = new PrtEventValue(new PrtEvent("Success", Types_769040646.typeNull, PrtEvent.DefaultMaxInstances, false));
+                intPayloadEvent = new PrtEventValue(new PrtEvent("intPayloadEvent", Types_769040646.typeInt, PrtEvent.DefaultMaxInstances, false));
+                Ping = new PrtEventValue(new PrtEvent("Ping", Types_769040646.typeMachine, 1, false));
             }
         }
 
-        private class TwoMachines_Types
+        private class Types_769040646
         {
             public static PrtType typeNull;
             public static PrtNamedTupleType typeNmdTupType_1;
@@ -37,38 +36,38 @@ namespace P.Program
             public static PrtType typeEvent;
             public static PrtType typeMachine;
             public static PrtType typeBool;
-            static TwoMachines_Types()
+            static Types_769040646()
             {
-                TwoMachines_Types.typeNull = new PrtNullType();
-                TwoMachines_Types.typeNmdTupType_1 = new PrtNamedTupleType(new object[]{"_payload_1", TwoMachines_Types.typeNull});
-                TwoMachines_Types.typeNmdTupType_2 = new PrtNamedTupleType(new object[]{"_payload_0", TwoMachines_Types.typeNull});
-                TwoMachines_Types.typeNmdTupType_3 = new PrtNamedTupleType(new object[]{"_payload_skip", TwoMachines_Types.typeNull});
-                TwoMachines_Types.typeAny = new PrtAnyType();
-                TwoMachines_Types.typeInt = new PrtIntType();
-                TwoMachines_Types.typeEvent = new PrtEventType();
-                TwoMachines_Types.typeMachine = new PrtMachineType();
-                TwoMachines_Types.typeBool = new PrtBoolType();
+                Types_769040646.typeNull = new PrtNullType();
+                Types_769040646.typeNmdTupType_1 = new PrtNamedTupleType(new object[]{"_payload_1", Types_769040646.typeNull});
+                Types_769040646.typeNmdTupType_2 = new PrtNamedTupleType(new object[]{"_payload_0", Types_769040646.typeNull});
+                Types_769040646.typeNmdTupType_3 = new PrtNamedTupleType(new object[]{"_payload_skip", Types_769040646.typeNull});
+                Types_769040646.typeAny = new PrtAnyType();
+                Types_769040646.typeInt = new PrtIntType();
+                Types_769040646.typeEvent = new PrtEventType();
+                Types_769040646.typeMachine = new PrtMachineType();
+                Types_769040646.typeBool = new PrtBoolType();
             }
         }
 
-        public static void CreateMachine_Blah(StateImpl application)
+        public static PrtSpecMachine CreateSpec_Blah(StateImpl application)
         {
             var machine = new Blah(application);
-            ((machine).observes).Add(Ping);
-            (application).AddSpecMachineToStateImpl(machine);
+            ((machine).observes).Add(Events_769040646.Ping);
+            return machine;
         }
 
         public static PrtImplMachine CreateMachine_PONG(StateImpl application, PrtValue payload)
         {
             var machine = new PONG(application, 111, true);
-            (((machine).self).permissions).Add(TwoMachines_Events.Success);
-            (((machine).self).permissions).Add(TwoMachines_Events.boolPayloadEvent);
-            (((machine).self).permissions).Add(TwoMachines_Events.Ping);
-            (((machine).self).permissions).Add(TwoMachines_Events.intPayloadEvent);
-            ((machine).sends).Add(TwoMachines_Events.Success);
-            ((machine).sends).Add(TwoMachines_Events.boolPayloadEvent);
-            ((machine).sends).Add(TwoMachines_Events.intPayloadEvent);
-            ((machine).sends).Add(TwoMachines_Events.Ping);
+            (((machine).self).permissions).Add(Events_769040646.Success);
+            (((machine).self).permissions).Add(Events_769040646.boolPayloadEvent);
+            (((machine).self).permissions).Add(Events_769040646.Ping);
+            (((machine).self).permissions).Add(Events_769040646.intPayloadEvent);
+            ((machine).sends).Add(Events_769040646.Success);
+            ((machine).sends).Add(Events_769040646.boolPayloadEvent);
+            ((machine).sends).Add(Events_769040646.intPayloadEvent);
+            ((machine).sends).Add(Events_769040646.Ping);
             (machine).currentPayload = payload;
             return machine;
         }
@@ -76,14 +75,14 @@ namespace P.Program
         public static PrtImplMachine CreateMachine_Main(StateImpl application, PrtValue payload)
         {
             var machine = new Main(application, PrtImplMachine.DefaultMaxBufferSize, false);
-            (((machine).self).permissions).Add(TwoMachines_Events.Success);
-            (((machine).self).permissions).Add(TwoMachines_Events.boolPayloadEvent);
-            (((machine).self).permissions).Add(TwoMachines_Events.intPayloadEvent);
-            (((machine).self).permissions).Add(TwoMachines_Events.Ping);
-            ((machine).sends).Add(TwoMachines_Events.Success);
-            ((machine).sends).Add(TwoMachines_Events.boolPayloadEvent);
-            ((machine).sends).Add(TwoMachines_Events.intPayloadEvent);
-            ((machine).sends).Add(TwoMachines_Events.Ping);
+            (((machine).self).permissions).Add(Events_769040646.Success);
+            (((machine).self).permissions).Add(Events_769040646.boolPayloadEvent);
+            (((machine).self).permissions).Add(Events_769040646.intPayloadEvent);
+            (((machine).self).permissions).Add(Events_769040646.Ping);
+            ((machine).sends).Add(Events_769040646.Success);
+            ((machine).sends).Add(Events_769040646.boolPayloadEvent);
+            ((machine).sends).Add(Events_769040646.intPayloadEvent);
+            ((machine).sends).Add(Events_769040646.Ping);
             (machine).currentPayload = payload;
             return machine;
         }
@@ -692,9 +691,9 @@ namespace P.Program
 
             public Main(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
             {
-                (fields).Add(PrtValue.PrtMkDefaultValue(TwoMachines_Types.typeBool));
-                (fields).Add(PrtValue.PrtMkDefaultValue(TwoMachines_Types.typeInt));
-                (fields).Add(PrtValue.PrtMkDefaultValue(TwoMachines_Types.typeMachine));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_769040646.typeBool));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_769040646.typeInt));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_769040646.typeMachine));
             }
 
             public class ignore_Class : PrtFun
@@ -803,27 +802,27 @@ namespace P.Program
                             goto AnonFun0_3;
                     }
 
-                    (((PrtMachineValue)(parent.self)).mach).PrtEnqueueEvent((PrtEventValue)(TwoMachines_Events.boolPayloadEvent), new PrtBoolValue(true), parent, (PrtMachineValue)(parent.self));
+                    (((PrtMachineValue)(parent.self)).mach).PrtEnqueueEvent((PrtEventValue)(Events_769040646.boolPayloadEvent), new PrtBoolValue(true), parent, (PrtMachineValue)(parent.self));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun0_1:
                         ;
                     (parent).varBool = (new PrtBoolValue(false)).Clone();
-                    (((PrtMachineValue)(parent.self)).mach).PrtEnqueueEvent((PrtEventValue)(TwoMachines_Events.boolPayloadEvent), (parent).varBool, parent, (PrtMachineValue)(parent.self));
+                    (((PrtMachineValue)(parent.self)).mach).PrtEnqueueEvent((PrtEventValue)(Events_769040646.boolPayloadEvent), (parent).varBool, parent, (PrtMachineValue)(parent.self));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun0_2:
                         ;
-                    (parent).pongId = (application).CreateInterfaceOrMachine((parent).renamedName, "PONG", TwoMachines_Events.@null);
+                    (parent).pongId = (application).CreateInterfaceOrMachine((parent).renamedName, "PONG", Events_769040646.@null);
                     (parent).PrtFunContNewMachine(this, (currFun).locals, 3);
                     return;
                     AnonFun0_3:
                         ;
-                    if (!!(TwoMachines_Events.Success).Equals(TwoMachines_Events.@null))
-                        throw new PrtAssertFailureException("C:\\\\Users\\\\qadeer\\\\Work\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\TwoMachines\\\\TwoMachines.p (59, 10): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine Main-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(TwoMachines_Events.Success)).evt).name);
-                    (parent).currentTrigger = TwoMachines_Events.Success;
-                    (parent).currentPayload = TwoMachines_Events.@null;
+                    if (!!(Events_769040646.Success).Equals(Events_769040646.@null))
+                        throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\TwoMachines\\\\TwoMachines.p (59, 10): Raised event must be non-null");
+                    Console.Write("<RaiseLog> Machine Main-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_769040646.Success)).evt).name);
+                    (parent).currentTrigger = Events_769040646.Success;
+                    (parent).currentPayload = Events_769040646.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);

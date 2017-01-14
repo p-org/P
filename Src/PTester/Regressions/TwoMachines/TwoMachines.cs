@@ -1,9 +1,10 @@
 #pragma warning disable CS0162, CS0164, CS0168
-using P.Runtime;
-using System;
-using System.Collections.Generic;
 namespace P.Program
 {
+    using P.Runtime;
+    using System;
+    using System.Collections.Generic;
+
     public partial class Application : StateImpl
     {
         private class Events_769040646

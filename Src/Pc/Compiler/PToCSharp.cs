@@ -3424,7 +3424,13 @@ namespace Microsoft.Pc
             //int index = this.csharpFileName.LastIndexOf(".");
             //string namespaceName = this.csharpFileName.Substring(0, index);
             //namespace is "P.Program" for all P programs:
-            var programNameSpaceDeclaration = generator.NamespaceDeclaration("P.Program", applicationcClassDeclaration);
+            var programNameSpaceDeclaration = generator.NamespaceDeclaration(
+                IdentifierName("P.Program"), 
+                UsingDirective(IdentifierName("P.Runtime")), 
+                UsingDirective(IdentifierName("System")),
+                UsingDirective(IdentifierName("System.Collections.Generic")),
+                applicationcClassDeclaration);
+                
 
             // Get a CompilationUnit (code file) for the generated code
             result = generator.CompilationUnit(programNameSpaceDeclaration).NormalizeWhitespace();
@@ -3852,7 +3858,12 @@ namespace Microsoft.Pc
                   accessibility: Accessibility.Public,
                   baseType: generator.IdentifierName("StateImpl"),
                   members: members);
-                var programNameSpaceDeclaration = generator.NamespaceDeclaration("P.Program", applicationcClassDeclaration);
+                var programNameSpaceDeclaration = generator.NamespaceDeclaration(
+                    IdentifierName("P.Program"),
+                    UsingDirective(IdentifierName("P.Runtime")),
+                    UsingDirective(IdentifierName("System")),
+                    UsingDirective(IdentifierName("System.Collections.Generic")), 
+                    applicationcClassDeclaration);
 
                 // Get a CompilationUnit (code file) for the generated code
                 finalOutput = generator.CompilationUnit(

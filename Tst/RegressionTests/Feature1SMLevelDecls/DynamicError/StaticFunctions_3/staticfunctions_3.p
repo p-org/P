@@ -2,16 +2,16 @@ event a;
 event b;
 event c: int;
 
-fun F1() 
+fun F1(m: machine) 
 {
 	var mInt : map[int, int];
 	mInt[0] = 10;
-	send this, c, mInt[0];
+	send m, c, mInt[0];
 }
 
-fun F2() {
-	send this, a;
-	send this, b;
+fun F2(m: machine) {
+	send m, a;
+	send m, b;
 }
 
 machine Main {
@@ -19,16 +19,20 @@ machine Main {
 		entry {
 			raise a;
 		}
-		on a goto S1 with F2;
+		on a goto S1 with F2_wrap;
 	}
 	
 	state S1 {
-		entry F2;
-	on a do {
-		receive {
-			case b: { assert(false);}
+		entry F2_wrap;
+		on a do {
+			receive {
+				case b: { assert(false);}
+			}
 		}
 	}
-	}
 	
+	fun F2_wrap()
+	{
+		F2(this);
+	}
 }

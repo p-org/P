@@ -10,7 +10,7 @@ machine Main {
     start state S {
 		entry {
 			local = new N();
-			Dummy(local);
+			Dummy(local, this);
 			
 			receive {
 				case e1: { assert false; }

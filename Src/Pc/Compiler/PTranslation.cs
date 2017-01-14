@@ -353,8 +353,12 @@ namespace Microsoft.Pc
         }
 
         public Compiler compiler;
+        public Dictionary<string, LinkedList<AST<FuncTerm>>> factBins;
+        public Dictionary<AST<Node>, FuncTerm> aliasToTerm;
+        public Dictionary<AST<FuncTerm>, Node> termToAlias;
         public Dictionary<AST<Node>, string> funToFileName;
         public Dictionary<string, EventInfo> allEvents;
+        public Dictionary<string, List<string>> allInterfaces;
         public Dictionary<string, Dictionary<string, int>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, string> linkMap;
@@ -366,16 +370,34 @@ namespace Microsoft.Pc
         {
             this.compiler = compiler;
             this.idToSourceInfo = idToSourceInfo;
+            this.factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+            this.aliasToTerm = new Dictionary<AST<Node>, FuncTerm>();
+            this.termToAlias = new Dictionary<AST<FuncTerm>, Node>();
+            model.FindAll(
+                new NodePred[]
+                {
+                        NodePredFactory.Instance.Star,
+                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                },
+                (path, n) =>
+                {
+                    var mf = (ModelFact)n;
+                    Id binding = mf.Binding;
+                    FuncTerm match = (FuncTerm)mf.Match;
+                    string matchName = ((Id)match.Function).Name;
+                    var matchAst = (AST<FuncTerm>)Factory.Instance.ToAST(match);
+                    if (binding != null)
+                    {
+                        var bindingAst = Factory.Instance.ToAST(binding);
+                        aliasToTerm[bindingAst] = match;
+                        termToAlias[matchAst] = binding;
+                    }
+                    GetBin(factBins, matchName).AddLast(matchAst);
+                });
             GenerateProgramData(model);
         }
 
-        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, FuncTerm ft)
-        {
-            var fun = (Id)ft.Function;
-            return GetBin(factBins, fun.Name);
-        }
-
-        public LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, string name)
+        public static LinkedList<AST<FuncTerm>> GetBin(Dictionary<string, LinkedList<AST<FuncTerm>>> factBins, string name)
         {
             Contract.Requires(!string.IsNullOrEmpty(name));
             LinkedList<AST<FuncTerm>> bin;
@@ -387,7 +409,7 @@ namespace Microsoft.Pc
             return bin;
         }
 
-        public string GetMachineName(FuncTerm ft, int index)
+        public static string GetMachineName(FuncTerm ft, int index)
         {
             FuncTerm machineDecl = (FuncTerm)GetArgByIndex(ft, index);
             var machineName = GetName(machineDecl, 0);
@@ -407,22 +429,9 @@ namespace Microsoft.Pc
 
         private void GenerateProgramData(AST<Model> model)
         {
-            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-            model.FindAll(
-                new NodePred[]
-                {
-                        NodePredFactory.Instance.Star,
-                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                },
-                (path, n) =>
-                {
-                    var mf = (ModelFact)n;
-                    FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
-                });
-
             funToFileName = new Dictionary<AST<Node>, string>();
             allEvents = new Dictionary<string, EventInfo>();
+            allInterfaces = new Dictionary<string, List<string>>();
             allEnums = new Dictionary<string, Dictionary<string, int>>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
@@ -475,6 +484,34 @@ namespace Microsoft.Pc
                         var maxInstances = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
                         var maxInstancesAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
                         allEvents[name] = new EventInfo(maxInstances, maxInstancesAssumed, payloadType);
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "InterfaceTypeDeclList");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var interfaceType = it.Current as FuncTerm;
+
+                    while (interfaceType != null)
+                    {
+                        var eventTerm = GetArgByIndex(interfaceType, 0);
+                        string evName = eventTerm is Cnst ? ((Cnst)eventTerm).GetStringValue(): HaltEvent;
+                        if(allInterfaces.ContainsKey(name))
+                        {
+                            allInterfaces[name].Add(evName);
+                        }
+                        else
+                        {
+                            allInterfaces.Add(name, new List<string>());
+                            allInterfaces[name].Add(evName);
+                        }
+                        interfaceType = GetArgByIndex(interfaceType, 1) as FuncTerm;
                     }
                 }
             }
@@ -619,6 +656,7 @@ namespace Microsoft.Pc
             terms = GetBin(factBins, "FunDecl");
             foreach (var term in terms)
             {
+                var termAlias = Factory.Instance.ToAST(termToAlias[term]);
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
@@ -634,7 +672,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
-                    var body = translatedBody[term];
+                    var body = translatedBody[termAlias];
                     var funInfo = new FunInfo(false, parameters, returnTypeName, locals, body);
                     if (owner is FuncTerm)
                     {
@@ -660,7 +698,7 @@ namespace Microsoft.Pc
             terms = GetBin(factBins, "AnonFunDecl");
             foreach (var term in terms)
             {
-                if (anonFunToName.ContainsKey(term)) continue;
+                var termAlias = Factory.Instance.ToAST(termToAlias[term]);
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
@@ -670,14 +708,14 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
-                    var body = translatedBody[term];
+                    var body = translatedBody[termAlias];
                     it.MoveNext();
                     var envVars = it.Current as FuncTerm;
                     if (machineDecl == null)
                     {
                         var funName = "AnonFunStatic" + anonFunCounterStatic;
                         allStaticFuns[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
-                        anonFunToName[term] = funName;
+                        anonFunToName[termAlias] = funName;
                         anonFunCounterStatic++;
                     }
                     else
@@ -686,7 +724,7 @@ namespace Microsoft.Pc
                         var machineInfo = allMachines[machineName];
                         var funName = "AnonFun" + anonFunCounter[machineName];
                         machineInfo.funNameToFunInfo[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
-                        anonFunToName[term] = funName;
+                        anonFunToName[termAlias] = funName;
                         anonFunCounter[machineName]++;
                     }
                 }
@@ -761,15 +799,18 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var targetStateName = GetNameFromQualifiedName(stateOwnerMachineName, (FuncTerm)it.Current);
                     it.MoveNext();
-                    if (it.Current.NodeKind == NodeKind.Id)
+                    if (it.Current.NodeKind == NodeKind.Cnst)
+                    {
+                        var exitFunName = ((Cnst)it.Current).GetStringValue();
+                        stateTable.transitions[eventName] = new TransitionInfo(targetStateName, exitFunName);
+                    }
+                    else if (it.Current.NodeKind == NodeKind.Id && (it.Current as Id).Name == "PUSH")
                     {
                         stateTable.transitions[eventName] = new TransitionInfo(targetStateName);
                     }
                     else
                     {
-                        var exitFunName = it.Current.NodeKind == NodeKind.Cnst
-                                            ? ((Cnst)it.Current).GetStringValue()
-                                            : anonFunToName[Factory.Instance.ToAST(it.Current)];
+                        var exitFunName = anonFunToName[Factory.Instance.ToAST(it.Current)];
                         stateTable.transitions[eventName] = new TransitionInfo(targetStateName, exitFunName);
                     }
                 }
@@ -811,18 +852,14 @@ namespace Microsoft.Pc
                     {
                         stateTable.dos[eventName] = ((Cnst)action).GetStringValue();
                     }
-                    else if (action.NodeKind == NodeKind.Id)
+                    else if (action.NodeKind == NodeKind.Id && (action as Id).Name == "DEFER")
                     {
-                        if (((Id)action).Name == "DEFER")
-                        {
-                            stateTable.deferredEvents.Add(eventName);
-                        }
-                        else
-                        {
-                            // ((Id)action).Name == "IGNORE"
-                            stateTable.ignoredEvents.Add(eventName);
-                            stateTable.dos[eventName] = "ignore";
-                        }
+                        stateTable.deferredEvents.Add(eventName);
+                    }
+                    else if (action.NodeKind == NodeKind.Id && (action as Id).Name == "IGNORE")
+                    {
+                        stateTable.ignoredEvents.Add(eventName);
+                        stateTable.dos[eventName] = "ignore";
                     }
                     else
                     {
@@ -837,7 +874,10 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    FuncTerm annotationContext = (FuncTerm)it.Current;
+                    FuncTerm annotationContext = 
+                        it.Current.NodeKind == NodeKind.Id 
+                        ? aliasToTerm[Factory.Instance.ToAST(it.Current)] 
+                        : (FuncTerm)it.Current;
                     string annotationContextKind = ((Id)annotationContext.Function).Name;
                     if (annotationContextKind != "FunDecl") continue;
                     string ownerName = GetOwnerName(annotationContext, 1, 0);
@@ -881,6 +921,61 @@ namespace Microsoft.Pc
                         else
                         {
                             allMachines[ownerName].funNameToFunInfo[funName].invokePluginFuns.Add(it.Current);
+                        }
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "LinkMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var createdIorM = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var createdM = ((Cnst)it.Current).GetStringValue();
+                    linkMap.Add(createdIorM, createdM);
+                }
+            }
+
+            terms = GetBin(factBins, "MaxNumLocals");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var typingContextAlias = Factory.Instance.ToAST(it.Current);
+                    FuncTerm typingContext = aliasToTerm[typingContextAlias];
+                    string typingContextKind = ((Id)typingContext.Function).Name;
+                    it.MoveNext();
+                    var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
+
+                    if (typingContextKind == "FunDecl")
+                    {
+                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string funName = GetName(typingContext, 0);
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
+                        }
+                    }
+                    else
+                    {
+                        // typingContextKind == "AnonFunDecl"
+                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        string funName = anonFunToName[typingContextAlias];
+                        if (ownerName == null)
+                        {
+                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                        }
+                        else
+                        {
+                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
                         }
                     }
                 }

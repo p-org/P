@@ -1,5 +1,5 @@
-fun Dummy(m : machine) {
-	send m, getres, this;
+fun Dummy(m : machine, n: machine) {
+	send m, getres, n;
 	receive {
 		case res: (payload: int) { send m, getres, m; }
 	}

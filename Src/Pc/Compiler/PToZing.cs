@@ -2820,33 +2820,18 @@ namespace Microsoft.Pc
 
         void GenerateTypeInfo(AST<Model> model)
         {
-            var factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-            model.FindAll(
-                new NodePred[]
-                {
-                    NodePredFactory.Instance.Star,
-                    NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                },
-
-                (path, n) =>
-                {
-                    var mf = (ModelFact)n;
-                    FuncTerm ft = (FuncTerm)mf.Match;
-                    GetBin(factBins, ft).AddLast((AST<FuncTerm>)Factory.Instance.ToAST(ft));
-                });
-
             var terms = GetBin(factBins, "TypeOf");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    FuncTerm typingContext = (FuncTerm)it.Current;
+                    var typingContextAlias = Factory.Instance.ToAST(it.Current);
+                    FuncTerm typingContext = aliasToTerm[typingContextAlias];
                     it.MoveNext();
                     var expr = Factory.Instance.ToAST(it.Current);
                     it.MoveNext();
                     var type = it.Current as FuncTerm;
-                    if (type == null) continue;
 
                     string typingContextKind = ((Id)typingContext.Function).Name;
                     if (typingContextKind == "FunDecl")
@@ -2866,7 +2851,7 @@ namespace Microsoft.Pc
                     {
                         // typingContextKind == "AnonFunDecl"
                         string ownerName = GetOwnerName(typingContext, 0, 0);
-                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
+                        string funName = anonFunToName[typingContextAlias];
                         if (ownerName == null)
                         {
                             allStaticFuns[funName].typeInfo[expr] = type;
@@ -2900,61 +2885,6 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var eType = (FuncTerm)it.Current;
                     typeContext.AddOriginalType(type, eType);
-                }
-            }
-
-            terms = GetBin(factBins, "LinkMap");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var createdIorM = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var createdM = ((Cnst)it.Current).GetStringValue();
-                    linkMap.Add(createdIorM, createdM);
-                }
-            }
-
-            terms = GetBin(factBins, "MaxNumLocals");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    FuncTerm typingContext = (FuncTerm)it.Current;
-                    string typingContextKind = ((Id)typingContext.Function).Name;
-                    if (!(typingContextKind == "FunDecl" || typingContextKind == "AnonFunDecl")) continue;
-                    it.MoveNext();
-                    var maxNumLocals = (int)((Cnst)it.Current).GetNumericValue().Numerator;
-
-                    if (typingContextKind == "FunDecl")
-                    {
-                        string ownerName = GetOwnerName(typingContext, 1, 0);
-                        string funName = GetName(typingContext, 0);
-                        if (ownerName == null)
-                        {
-                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
-                        }
-                        else
-                        {
-                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
-                        }
-                    }
-                    else
-                    {
-                        // typingContextKind == "AnonFunDecl"
-                        string ownerName = GetOwnerName(typingContext, 0, 0);
-                        string funName = anonFunToName[Factory.Instance.ToAST(typingContext)];
-                        if (ownerName == null)
-                        {
-                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
-                        }
-                        else
-                        {
-                            allMachines[ownerName].funNameToFunInfo[funName].maxNumLocals = maxNumLocals;
-                        }
-                    }
                 }
             }
         }

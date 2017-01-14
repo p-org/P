@@ -802,14 +802,15 @@
 
                 //// Extract the link model
                 var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
-                var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, null);
+                string aliasPrefix = null;
+                var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, aliasPrefix);
                 linkExtractTask.Wait();
                 var linkModel = linkExtractTask.Result.FindAny(
                                     new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
                 Contract.Assert(linkModel != null);
 
                 string outputFileName = Path.ChangeExtension(fileName, ".4ml");
-                Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
+                //Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
                 linkModel.Print(wr);
                 wr.Close();
@@ -1021,6 +1022,16 @@
             }
         }
 
+        private static string AliasFunc(Symbol s)
+        {
+            if (s.PrintableName.EndsWith("FunDecl"))
+                return "FunDecl";
+            else if (s.PrintableName.EndsWith("AnonFunDecl"))
+                return "AnonFunDecl";
+            else
+                return null;
+        }
+
         private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel, out ProgramName RootProgramNameWithTypes, out AST<Model> RootModelWithTypes)
         {
             LoadManifestProgram("Pc.Domains.PWithInferredTypes.4ml");
@@ -1034,10 +1045,11 @@
             CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
             RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_WithTypes.4ml"));
+            Func<Symbol, string> aliasPrefixFunc = (x => AliasFunc(x));
             var extractTask = apply.Result.GetOutputModel(
                 RootModuleWithTypes,
                 RootProgramNameWithTypes,
-                null);
+                aliasPrefixFunc);
             extractTask.Wait();
             RootModelWithTypes = (AST<Model>)extractTask.Result.FindAny(
                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
@@ -1329,7 +1341,8 @@
  
             //// Extract the link model
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
-            var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, null);
+            string linkerAliasPrefix = null;
+            var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, linkerAliasPrefix);
             linkExtractTask.Wait();
             var linkModel = linkExtractTask.Result.FindAny(
                                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
@@ -1597,7 +1610,8 @@
             Task<AST<Program>> extractTask;
 
             var errorProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "ErrorModel.4ml"));
-            extractTask = apply.Result.GetOutputModel("ErrorModel", errorProgName, null);
+            string errorAliasPrefix = null;
+            extractTask = apply.Result.GetOutputModel("ErrorModel", errorProgName, errorAliasPrefix);
             extractTask.Wait();
             var errorProgram = extractTask.Result;
             Contract.Assert(errorProgram != null);
@@ -1618,19 +1632,17 @@
                 return false;
             }
 
-            var linker = new PToCSharpLinker(errorProgram);
+            var linker = new PToCSharpLinker(Log, errorProgram, Options.FormulaFiles.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
             linker.GenerateCSharpLinkerOutput(outputDirName);
 
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
-            extractTask = apply.Result.GetOutputModel("CLinkModel", progName, null);
+            string linkerAliasPrefix = null;
+            extractTask = apply.Result.GetOutputModel("CLinkModel", progName, linkerAliasPrefix);
             extractTask.Wait();
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
             success = Render(cProgram, "CLinkModel", progName);
-
-            #region Generate C# Linker code
-
-            #endregion
+            
 
             UninstallProgram(linkProgramName);
             return success;

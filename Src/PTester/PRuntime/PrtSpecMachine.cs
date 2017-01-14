@@ -30,7 +30,7 @@ namespace P.Runtime
             //Execute the entry function
             PrtEnqueueEvent(PrtValue.@null, PrtValue.@null, null);
         }
-        public object Clone()
+        public PrtSpecMachine Clone()
         {
             var clonedMonitor = MakeSkeleton();
             foreach (var fd in fields)

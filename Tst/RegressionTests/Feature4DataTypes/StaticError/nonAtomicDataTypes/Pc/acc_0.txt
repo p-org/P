@@ -6,11 +6,13 @@ OUT: nonAtomicDataTypes.p (13, 25): same name appears more than once in name tup
 OUT: nonAtomicDataTypes.p (58, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p (62, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p (66, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonAtomicDataTypes.p (72, 5): insert must be applied to a sequence
+OUT: nonAtomicDataTypes.p (74, 5): insert must be applied to a sequence
 OUT: nonAtomicDataTypes.p (79, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (80, 5): insert must be applied to a sequence or a map
+OUT: nonAtomicDataTypes.p (80, 5): insert must be applied to a sequence
 OUT: nonAtomicDataTypes.p (81, 5): remove must be applied to a sequence or map
 OUT: nonAtomicDataTypes.p (87, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (88, 5): insert must be applied to a sequence or a map
+OUT: nonAtomicDataTypes.p (88, 5): insert must be applied to a sequence
 OUT: nonAtomicDataTypes.p (89, 5): remove must be applied to a sequence or map
 OUT: nonAtomicDataTypes.p (92, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p (92, 8): Bad field name
@@ -34,34 +36,29 @@ OUT: nonAtomicDataTypes.p (165, 5): "assert" expects a boolean value
 OUT: nonAtomicDataTypes.p (165, 26): Values cannot be compared because their types are incompatible
 OUT: nonAtomicDataTypes.p (167, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p (167, 7): Index may not be in the domain of the map
-OUT: nonAtomicDataTypes.p (169, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonAtomicDataTypes.p (170, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonAtomicDataTypes.p (171, 5): insert must be applied to a sequence or a map
 OUT: nonAtomicDataTypes.p (173, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p (173, 7): Index may not be in the domain of the map
 OUT: nonAtomicDataTypes.p (178, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (193, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonAtomicDataTypes.p (194, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonAtomicDataTypes.p (195, 5): for insert right syntax is seq += (index value) or map += (key value)
-OUT: nonAtomicDataTypes.p (196, 5): insert must be applied to a sequence or a map
+OUT: nonAtomicDataTypes.p (193, 5): for insert right syntax is seq += (index value)
+OUT: nonAtomicDataTypes.p (194, 5): for insert right syntax is seq += (index value)
+OUT: nonAtomicDataTypes.p (195, 5): for insert right syntax is seq += (index value)
+OUT: nonAtomicDataTypes.p (196, 5): insert must be applied to a sequence
 OUT: nonAtomicDataTypes.p (224, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p (227, 5): "assert" expects a boolean value
 OUT: nonAtomicDataTypes.p (227, 21): Indexer must be applied to a sequence or map
 OUT: nonAtomicDataTypes.p (227, 25): Values cannot be compared because their types are incompatible
 OUT: nonAtomicDataTypes.p (255, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p (256, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (273, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (273, 7): Index may not be in the domain of the map
-OUT: nonAtomicDataTypes.p (278, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: nonAtomicDataTypes.p (281, 5): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: nonAtomicDataTypes.p (260, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonAtomicDataTypes.p (260, 7): Index may not be in the domain of the map
+OUT: nonAtomicDataTypes.p (265, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: nonAtomicDataTypes.p (268, 5): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: nonAtomicDataTypes.p (274, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonAtomicDataTypes.p (275, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonAtomicDataTypes.p (276, 5): invalid assignment. right hand side is not a subtype of left hand side
+OUT: nonAtomicDataTypes.p (277, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p (287, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (288, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (289, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (290, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (291, 5): value not in the codomain of the map
-OUT: nonAtomicDataTypes.p (292, 5): key not in the domain of the map
-OUT: nonAtomicDataTypes.p (304, 5): invalid assignment. right hand side is not a subtype of left hand side
-OUT: nonAtomicDataTypes.p (304, 8): Indexer must be applied to a sequence or map
-OUT: nonAtomicDataTypes.p (306, 5): "while (...)" expects a boolean value
+OUT: nonAtomicDataTypes.p (287, 8): Indexer must be applied to a sequence or map
+OUT: nonAtomicDataTypes.p (289, 5): "while (...)" expects a boolean value
 OUT: Compilation failed
 EXIT: -1

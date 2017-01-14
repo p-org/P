@@ -23,8 +23,8 @@ OUT: CastInExprs.p (133, 5): invalid assignment. right hand side is not a subtyp
 OUT: CastInExprs.p (133, 12): Cast can never succeed
 OUT: CastInExprs.p (137, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: CastInExprs.p (137, 6): Indexer must be applied to a sequence or map
-OUT: CastInExprs.p (138, 5): insert must be applied to a sequence or a map
-OUT: CastInExprs.p (151, 5): insert must be applied to a sequence or a map
+OUT: CastInExprs.p (138, 5): insert must be applied to a sequence
+OUT: CastInExprs.p (151, 5): insert must be applied to a sequence
 OUT: CastInExprs.p (158, 5): invalid assignment. right hand side is not a subtype of left hand side
 OUT: CastInExprs.p (158, 7): Operator expected a (named) tuple value
 OUT: CastInExprs.p (165, 5): invalid assignment. right hand side is not a subtype of left hand side

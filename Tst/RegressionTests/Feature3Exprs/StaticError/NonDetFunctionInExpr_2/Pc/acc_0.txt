@@ -6,6 +6,6 @@ OUT: nonDetFunctionInExpr_2.p (39, 7): this function must be pure. Impure functi
 OUT: nonDetFunctionInExpr_2.p (40, 19): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: nonDetFunctionInExpr_2.p (42, 7): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: nonDetFunctionInExpr_2.p (58, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: nonDetFunctionInExpr_2.p (100, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: nonDetFunctionInExpr_2.p (94, 6): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: Compilation failed
 EXIT: -1

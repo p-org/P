@@ -17,11 +17,11 @@ Trace-Log 0:
 <StateLog> Machine Main-0 entering State S
 <RaiseLog> Machine Main-0 raised Event ____a
 <StateLog> Machine Main-0 exiting State S
-<FunctionLog> Machine Main-0 executing Function F2
+<FunctionLog> Machine Main-0 executing Function F2_wrap
 <EnqueueLog> Enqueued Event < ____a, null > in Machine ____Main-0 by ____Main-0
 <EnqueueLog> Enqueued Event < ____b, null > in Machine ____Main-0 by ____Main-0
 <StateLog> Machine Main-0 entering State S1
-<FunctionLog> Machine Main-0 executing Function F2
+<FunctionLog> Machine Main-0 executing Function F2_wrap
 <EnqueueLog> Enqueued Event < ____a, null > in Machine ____Main-0 by ____Main-0
 <EnqueueLog> Enqueued Event < ____b, null > in Machine ____Main-0 by ____Main-0
 <DequeueLog> Dequeued Event < ____a, null > at Machine ____Main-0
@@ -32,5 +32,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_10.bl,)
+Expression: assert(tmp_8.bl,)
 Comment: StaticFunctions_4.p (25, 15): Assert failed

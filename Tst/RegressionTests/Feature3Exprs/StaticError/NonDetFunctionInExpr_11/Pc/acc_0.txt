@@ -1,6 +1,8 @@
 =================================
          Console output          
 =================================
+OUT: nonDetFunctionInExpr_11.p (41, 4): insert must be applied to a sequence
+OUT: nonDetFunctionInExpr_11.p (42, 4): insert must be applied to a sequence
 OUT: nonDetFunctionInExpr_11.p (44, 18): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
 OUT: Compilation failed
 EXIT: -1

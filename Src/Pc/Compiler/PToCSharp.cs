@@ -3872,7 +3872,7 @@ namespace Microsoft.Pc
                             generator.NamespaceImportDeclaration("System.Collections.Generic"),
                             programNameSpaceDeclaration).
                                 NormalizeWhitespace();
-                var outputFile = outputDir + "\\" + testCase.Key + ".cs";
+                var outputFile = Path.Combine(outputDir, testCase.Key + ".cs");
                 EmitLinkerCS(finalOutput, outputFile);
                 //Log.WriteMessage(string.Format("Writing {0}.cs ...", testCase.Key), SeverityKind.Info);
                 EmitCSDll(outputDir, testCase.Key);
@@ -3883,8 +3883,8 @@ namespace Microsoft.Pc
         {
             List<string> allCSFiles = new List<string>();
 
-            allCSFiles.Add(outputDir + "\\" + testCaseName + ".cs");
-            allCSFiles.AddRange(inputFiles.Select(fileName => outputDir + "\\" + fileName + ".cs").ToList());
+            allCSFiles.Add(Path.Combine(outputDir, testCaseName + ".cs"));
+            allCSFiles.AddRange(inputFiles.Select(fileName => Path.Combine(outputDir, fileName + ".cs")).ToList());
             
             string cs_code = "";
             foreach(var file in allCSFiles)
@@ -3920,14 +3920,14 @@ namespace Microsoft.Pc
             new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary));
 
 
-            var outputDll = outputDir + "\\" + testCaseName + ".dll";
+            var outputDll = Path.Combine(outputDir, testCaseName + ".dll");
             var emitResult = compilation.Emit(outputDll);
 
             //If our compilation failed, we can discover exactly why.
             if (!emitResult.Success)
             {
                 Log.WriteMessage(string.Format("C# file corresponding to dll generated : {0}_dllerror.cs", testCaseName), SeverityKind.Error);
-                using (var sw = new StreamWriter(outputDir + "\\" + testCaseName + "._dllerror.cs"))
+                using (var sw = new StreamWriter(Path.Combine(outputDir, testCaseName + "_dllerror.cs")))
                 {
                     sw.WriteLine(tree);
                 }

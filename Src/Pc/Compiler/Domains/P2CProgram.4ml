@@ -224,15 +224,19 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(m.name, "_COUNT"))), size = count({d | d is StateDecl, d.owner = m}) }).  
 
 	//// Prototypes for model functions
+	MakeParams ::= (in.FunDecl, in.NmdTupType + { NIL }, PrmTypes + { NIL }, Params + { NIL }).
+	MakeParams(f, type, NIL, NIL) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params).
+	MakeParams(f, tl, prmTypes', params') :- MakeParams(f, in.NmdTupType(NmdTupTypeField(name, _), tl), prmTypes, params), prmTypes' = PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), prmTypes), params' = Params(Param(NIL, name), params).
+
 	HOut(0, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
-	                params = Params(Param(NIL, "context"), NIL),
+					MakeParams(f, NIL, prmTypes, params),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), prmTypes),
 	                def = FunDef(
 					  NIL,
 					  funType,
-					  strJoin(name, "_IMPL"),
-					  params,
+					  strJoin(name, "_FOREIGN"),
+					  Params(Param(NIL, "context"), params),
 					  UNKNOWN).
 				
 
@@ -819,6 +823,30 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 					  strJoin(name, "_IMPL"),
 					  params,
 					  UNKNOWN).
+
+	MakeArgs ::= (in.FunDecl, in.NmdTupType + { NIL }, Args + { NIL }, Natural).
+	MakeArgs(f, type, NIL, 0) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params).
+	MakeArgs(f, tl, args', n') :- MakeArgs(f, in.NmdTupType(_, tl), args, n), args' = Args(BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n, DEC, U)), args), n' = n + 1.
+
+	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+					machinePtrType = PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")),
+					localVars = Defs(VarDef(NIL, machinePtrType, "p_tmp_mach_priv", Cast(machinePtrType, Ident("context"))),
+								Defs(VarDef(NIL, NmdType(NIL, "PRT_FUNSTACK_INFO"), "p_tmp_frame", NIL), 
+								Defs(VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "retVal", NIL), NIL))),
+					MakeArgs(f, NIL, args, _),
+					body = out.Seq(FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
+							   Seq(BinApp(ASN, Ident("retVal"), FunApp(Ident(strJoin(name, "_FOREIGN")), Args(Ident("context"), args))), 
+							   Seq(FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))), 
+						       Seq(Return(Ident("retVal")), NIL)))),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  Block(localVars, body)).
 
 	PatchReturn ::= (f: in.FunDecl + in.AnonFunDecl, e: out.Stmt).
 	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f: in.AnonFunDecl, cs = out.Return(Ident("p_tmp_ret")).

@@ -25,44 +25,31 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 }
 
 
-PRT_VALUE *P_FUN_StartTimer_IMPL(PRT_MACHINEINST *context)
+PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timerMachineId, PRT_VALUE *timeout)
 {
-	PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
 	LARGE_INTEGER liDueTime;
 	PRT_VALUE *p_tmp_ret = NULL;
 	BOOL success;
-	PRT_FUNSTACK_INFO p_tmp_frame;
 
-	// pop frame
-	PrtPopFrame(p_tmp_mach_priv, &p_tmp_frame);
-
-	PRT_VALUE* timerMachineId = p_tmp_frame.locals[0];
 	PRT_MACHINEINST* timerMachine = PrtGetMachine(context->process, timerMachineId);
 	TimerContext *timerContext = (TimerContext *)timerMachine->extContext;
 
-	int timeout_value = p_tmp_frame.locals[1]->valueUnion.nt;
+	int timeout_value = timeout->valueUnion.nt;
 	liDueTime.QuadPart = -10000 * timeout_value;
 	success = SetWaitableTimer(timerContext->timer, &liDueTime, 0, Callback, timerMachine, FALSE);
 	timerContext->started = success;
 	PrtAssert(success, "SetWaitableTimer failed");
 
-	// free the frame
-	PrtFreeLocals(p_tmp_mach_priv, &p_tmp_frame);
 	return NULL;
 }
 
-PRT_VALUE *P_FUN_CancelTimer_IMPL(PRT_MACHINEINST *context)
+PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timerMachineId)
 {
-	PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
 	LARGE_INTEGER liDueTime;
 	PRT_VALUE *p_tmp_ret = NULL;
 	BOOL success;
 	PRT_VALUE *ev;
-	PRT_FUNSTACK_INFO p_tmp_frame;
-	//remm to pop frame
-	PrtPopFrame(p_tmp_mach_priv, &p_tmp_frame);
 
-	PRT_VALUE* timerMachineId = p_tmp_frame.locals[0];
 	PRT_MACHINEINST* timerMachine = PrtGetMachine(context->process, timerMachineId);
 	TimerContext *timerContext = (TimerContext *)timerMachine->extContext;
 
@@ -77,9 +64,6 @@ PRT_VALUE *P_FUN_CancelTimer_IMPL(PRT_MACHINEINST *context)
 		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, 1, PRT_FUN_PARAM_CLONE, timerMachine->id);
 	}
 	PrtFreeValue(ev);
-
-	// free the frame
-	PrtFreeLocals(p_tmp_mach_priv, &p_tmp_frame);
 
 	return NULL;
 }

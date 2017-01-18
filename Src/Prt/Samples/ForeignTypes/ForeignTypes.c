@@ -36,15 +36,7 @@ PRT_UINT64 PRT_FORGN_CLONE_StringType_IMPL(PRT_UINT64 frgnVal)
 	return (PRT_UINT64)str;
 }
 
-PRT_VALUE *P_FUN_TestMachine_GetPassword_IMPL(PRT_MACHINEINST *context)
+PRT_VALUE *P_FUN_TestMachine_GetPassword_FOREIGN(PRT_MACHINEINST *context)
 {
-	PRT_MACHINEINST_PRIV *p_tmp_mach_priv = (PRT_MACHINEINST_PRIV *)context;
-	PRT_VALUE *p_tmp_ret = NULL;
-	PRT_FUNSTACK_INFO p_tmp_frame;
-	//remm to pop frame
-	PrtPopFrame(p_tmp_mach_priv, &p_tmp_frame);
-	//remm to free the frame
-	PrtFreeLocals(p_tmp_mach_priv, &p_tmp_frame);
-
 	return PrtMkDefaultValue(P_GEND_TYPE_StringType);
 }

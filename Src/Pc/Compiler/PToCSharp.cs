@@ -1730,25 +1730,16 @@ namespace Microsoft.Pc
                 ExpressionSyntax eventExpr = CSharpHelper.MkCSharpCastExpression("PrtEventValue", args[1]);
                 args.RemoveRange(0, 2);
                 ExpressionSyntax payloadExpr = MkPayload(args);
-                var invocationArgs = new ExpressionSyntax[]
-                {
-                    eventExpr, payloadExpr, IdentifierName("parent"), targetExpr
-                };
                 StatementSyntax enqueueEventStmt = ExpressionStatement(
                     CSharpHelper.MkCSharpInvocationExpression(
                         CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpDot(targetExpr, "mach"), "PrtEnqueueEvent"),
-                        invocationArgs));
-
-                invocationArgs = new ExpressionSyntax[]
-                {
-                    ThisExpression(),
-                    CSharpHelper.MkCSharpDot("currFun", "locals"),
-                    CSharpHelper.MkCSharpDot("currFun", "returnToLocation")
-                };
+                        eventExpr, payloadExpr, IdentifierName("parent"), targetExpr));
+                var afterLabelId = GetFreshLabelId();
+                var afterLabel = GetLabelFromLabelId(afterLabelId);
                 StatementSyntax contStmt = ExpressionStatement(
-                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtFunContSend"), invocationArgs));
-
-                var afterLabel = GetLabelFromLabelId(GetFreshLabelId());
+                    CSharpHelper.MkCSharpInvocationExpression(
+                        CSharpHelper.MkCSharpDot("parent", "PrtFunContSend"), 
+                        ThisExpression(), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(afterLabelId)));
                 StatementSyntax afterStmt = CSharpHelper.MkCSharpEmptyLabeledStatement(afterLabel);
                 return Block(enqueueEventStmt, contStmt, ReturnStatement(), afterStmt);
             }

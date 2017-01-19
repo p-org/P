@@ -933,7 +933,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	CaseDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, cases: in.Cases + { NIL }, arr: out.Args + { NIL }).
 	CaseDeclConcat(0, decl, NIL, NIL) :- decl is AnonOrNamedFun.
-	CaseDeclConcat(c, decl, cases, arr) :- SubSE(decl, cases), cases = in.Cases(trig, act, cases'), CaseDeclConcat(c', decl, cases', arr'),
+	CaseDeclConcat(c, decl, cases, arr) :- SubSE(decl, cases), cases = in.Cases(trig, act, cases', _), CaseDeclConcat(c', decl, cases', arr'),
 										   CaseEvent(trig, eventName), AnonOrNamedFunName(act, funName),
 										   def = out.Init(Args(Ident(eventName), Args(Ident(funName), NIL))),
 										   arr = out.Args(def, arr'), c = c' + 1.

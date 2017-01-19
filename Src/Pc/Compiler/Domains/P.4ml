@@ -62,7 +62,7 @@ domain PData
     While    ::= new (cond: any Expr, body: any Stmt, id: any Id).
     Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt, id: any Id).
     Seq      ::= new (s1: any Stmt, s2: any Stmt, id: any Id).
-	Cases	 ::= new (trig: String + { NULL, HALT }, action: any AnonFunDecl, cases: any Cases + { NIL }).
+	Cases	 ::= new (trig: String + { NULL, HALT }, action: any AnonFunDecl, cases: any Cases + { NIL }, id: any Id).
 	Receive  ::= new (cases: any Cases, label: Natural, id: any Id).
 	Assert   ::= new (cond: any Expr, msg: String + { NIL }, id: any Id). 
 	Segments ::= new (formatArg: Natural, str: String, tl: any Segments + { NIL }).
@@ -398,7 +398,7 @@ domain PStaticTyping extends PData
 	SubSE0(c, e), SubSE0(c, s1), SubSE0(c, s2) :- SubSE0(c, Ite(e, s1, s2, _)).
 	SubSE0(c, s1), SubSE0(c, s2) :- SubSE0(c, Seq(s1, s2, _)).
 	SubSE0(c, cases) :- SubSE0(c, Receive(cases, _, _)).
-	SubSE0(c, cases) :- SubSE0(c, Cases(_, _, cases)), cases: Cases.
+	SubSE0(c, cases) :- SubSE0(c, Cases(_, _, cases, _)), cases: Cases.
 	SubSE0(c, e) :- SubSE0(c, Return(e, _)), e: Expr.
 	SubSE0(c, e1), SubSE0(c, e2) :- SubSE0(c, BinStmt(_, e1, _, e2, _)).
 	SubSE0(c, e) :- SubSE0(c, Assert(e, _, _)).
@@ -724,8 +724,8 @@ domain PStaticTyping extends PData
 								   SubSE(c, s), s = Ite(_, _, s', _), UnavailableAfter(c, s', n).
 
 	UnavailableBefore(c, cases, n)  :- ReceiveCases(c, s, cases), UnavailableBefore(c, s, n).
-	UnavailableBefore(c', s, n)     :- UnavailableBefore(c, cases, n), cases = Cases(_, c', _), TranslatedBody(c', s).
-	UnavailableAfter(c, s, n)       :- ReceiveCases(c, s, cases), cases = Cases(_, c', _), 
+	UnavailableBefore(c', s, n)     :- UnavailableBefore(c, cases, n), cases = Cases(_, c', _, _), TranslatedBody(c', s).
+	UnavailableAfter(c, s, n)       :- ReceiveCases(c, s, cases), cases = Cases(_, c', _, _), 
 	                                   TranslatedBody(c', bodyTrans), UnavailableAfter(c', bodyTrans, n), EnvVars(c', n, _).
 
 	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: NewStmt, UnavailableBefore(c, s, n), s.aout = NIL.
@@ -995,7 +995,7 @@ domain PStaticTyping extends PData
 	//// (6) Receive statement
 	ReceiveCases ::= (c: TypingContext, receive: Receive, cases: Cases).
 	ReceiveCases(c, receive, cases) :- SubSE(c, receive), receive = Receive(cases, _, _).
-	ReceiveCases(c, receive, cases) :- ReceiveCases(c, receive, Cases(_, _, cases)), cases : Cases.
+	ReceiveCases(c, receive, cases) :- ReceiveCases(c, receive, Cases(_, _, cases, _)), cases : Cases.
 
 	[ rule_Classes = '"error, msg: two cases with the same event not allowed"']
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(c, e, case1), ReceiveCases(c, e, case2), case1 != case2, case1.trig = case2.trig.
@@ -1008,9 +1008,9 @@ domain PStaticTyping extends PData
 	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _, _).
 
 	[ rule_Classes = '"error, msg: event not defined"']
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _), trig: String, no EventDecl(trig, _, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _, _), trig: String, no EventDecl(trig, _, _, _).
 	
-	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, _, _), ValidCaseEvent(trig).
+	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, _, _, _), ValidCaseEvent(trig).
 
     /*************************************************************/
     /*                     Types of arguments                    */
@@ -1124,9 +1124,9 @@ domain PStaticTyping extends PData
     MaxNumLocals(e, n) :- SubSE(c, e), e = Seq(e1, e2, _), 
 	                      MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
 	MaxNumLocals(e, n) :- SubSE(c, receive), receive: Receive, 
-						  ReceiveCases(c, receive, e), e = Cases(_, a, NIL), MaxNumLocals(a, n).
+						  ReceiveCases(c, receive, e), e = Cases(_, a, NIL, _), MaxNumLocals(a, n).
 	MaxNumLocals(e, n) :- SubSE(c, receive), receive: Receive, 
-						  ReceiveCases(c, receive, e), e = Cases(_, a, e'), e': Cases, 
+						  ReceiveCases(c, receive, e), e = Cases(_, a, e', _), e': Cases, 
 						  MaxNumLocals(a, n1), MaxNumLocals(e', n2), n =  max(n1, n2).
 	MaxNumLocals(e, n) :- SubSE(c, e), e = Receive(cases, _, _), MaxNumLocals(cases, n). 
 	MaxNumLocals(a, n) :- a is AnonFunDecl, TranslatedBody(a, bodyTrans), MaxNumLocals(bodyTrans, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2 + 1.
@@ -1235,7 +1235,7 @@ domain PStaticTyping extends PData
 	ControlImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).
 	ControlImpure(c) :- SubSE(c, e), e = FunApp(n, _, _, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
     ControlImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
-	ControlImpure(c) :- SubSE(c, e), e : Receive, ReceiveCases(c, e, cases), cases = Cases(_, act, _), ControlImpure(act).
+	ControlImpure(c) :- SubSE(c, e), e : Receive, ReceiveCases(c, e, cases), cases = Cases(_, act, _, _), ControlImpure(act).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
     PurityError(c, n) :- 

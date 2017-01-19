@@ -1,13 +1,13 @@
 #pragma warning disable CS0162, CS0164, CS0168
-using P.Runtime;
-using System;
-using System.Collections.Generic;
-
 namespace P.Program
 {
+    using P.Runtime;
+    using System;
+    using System.Collections.Generic;
+
     public partial class Application : StateImpl
     {
-        private class OSRDriver_Events
+        private class Events_1528880540
         {
             public static PrtEventValue halt;
             public static PrtEventValue @null;
@@ -30,33 +30,33 @@ namespace P.Program
             public static PrtEventValue eTimerFired;
             public static PrtEventValue eD0Exit;
             public static PrtEventValue eD0Entry;
-            static OSRDriver_Events()
+            static Events_1528880540()
             {
-                halt = new PrtEventValue(new PrtEvent("halt", OSRDriver_Types.typeNull, 1, false));
-                @null = new PrtEventValue(new PrtEvent("null", OSRDriver_Types.typeNull, 1, false));
-                eUnit = new PrtEventValue(new PrtEvent("eUnit", OSRDriver_Types.typeNull, 1, false));
-                eNo = new PrtEventValue(new PrtEvent("eNo", OSRDriver_Types.typeNull, 1, false));
-                eYes = new PrtEventValue(new PrtEvent("eYes", OSRDriver_Types.typeNull, 1, false));
-                eTimerStopped = new PrtEventValue(new PrtEvent("eTimerStopped", OSRDriver_Types.typeNull, 1, false));
-                eOperationFailure = new PrtEventValue(new PrtEvent("eOperationFailure", OSRDriver_Types.typeNull, 1, false));
-                eOperationSuccess = new PrtEventValue(new PrtEvent("eOperationSuccess", OSRDriver_Types.typeNull, 1, false));
-                eStoppingFailure = new PrtEventValue(new PrtEvent("eStoppingFailure", OSRDriver_Types.typeNull, 1, false));
-                eStoppingSuccess = new PrtEventValue(new PrtEvent("eStoppingSuccess", OSRDriver_Types.typeNull, 1, false));
-                eSetLedStateToStableUsingControlTransfer = new PrtEventValue(new PrtEvent("eSetLedStateToStableUsingControlTransfer", OSRDriver_Types.typeNull, 1, true));
-                eStartDebounceTimer = new PrtEventValue(new PrtEvent("eStartDebounceTimer", OSRDriver_Types.typeNull, 1, true));
-                eSetLedStateToUnstableUsingControlTransfer = new PrtEventValue(new PrtEvent("eSetLedStateToUnstableUsingControlTransfer", OSRDriver_Types.typeNull, 1, true));
-                eUpdateBarGraphStateUsingControlTransfer = new PrtEventValue(new PrtEvent("eUpdateBarGraphStateUsingControlTransfer", OSRDriver_Types.typeNull, 1, true));
-                eStopTimer = new PrtEventValue(new PrtEvent("eStopTimer", OSRDriver_Types.typeNull, 1, true));
-                eTransferFailure = new PrtEventValue(new PrtEvent("eTransferFailure", OSRDriver_Types.typeNull, 1, true));
-                eTransferSuccess = new PrtEventValue(new PrtEvent("eTransferSuccess", OSRDriver_Types.typeNull, 1, true));
-                eSwitchStatusChange = new PrtEventValue(new PrtEvent("eSwitchStatusChange", OSRDriver_Types.typeNull, 1, true));
-                eTimerFired = new PrtEventValue(new PrtEvent("eTimerFired", OSRDriver_Types.typeNull, 1, false));
-                eD0Exit = new PrtEventValue(new PrtEvent("eD0Exit", OSRDriver_Types.typeNull, 1, true));
-                eD0Entry = new PrtEventValue(new PrtEvent("eD0Entry", OSRDriver_Types.typeNull, 1, true));
+                halt = new PrtEventValue(new PrtEvent("halt", Types_1528880540.typeNull, 1, false));
+                @null = new PrtEventValue(new PrtEvent("null", Types_1528880540.typeNull, 1, false));
+                eUnit = new PrtEventValue(new PrtEvent("eUnit", Types_1528880540.typeNull, 1, false));
+                eNo = new PrtEventValue(new PrtEvent("eNo", Types_1528880540.typeNull, 1, false));
+                eYes = new PrtEventValue(new PrtEvent("eYes", Types_1528880540.typeNull, 1, false));
+                eTimerStopped = new PrtEventValue(new PrtEvent("eTimerStopped", Types_1528880540.typeNull, 1, false));
+                eOperationFailure = new PrtEventValue(new PrtEvent("eOperationFailure", Types_1528880540.typeNull, 1, false));
+                eOperationSuccess = new PrtEventValue(new PrtEvent("eOperationSuccess", Types_1528880540.typeNull, 1, false));
+                eStoppingFailure = new PrtEventValue(new PrtEvent("eStoppingFailure", Types_1528880540.typeNull, 1, false));
+                eStoppingSuccess = new PrtEventValue(new PrtEvent("eStoppingSuccess", Types_1528880540.typeNull, 1, false));
+                eSetLedStateToStableUsingControlTransfer = new PrtEventValue(new PrtEvent("eSetLedStateToStableUsingControlTransfer", Types_1528880540.typeNull, 1, true));
+                eStartDebounceTimer = new PrtEventValue(new PrtEvent("eStartDebounceTimer", Types_1528880540.typeNull, 1, true));
+                eSetLedStateToUnstableUsingControlTransfer = new PrtEventValue(new PrtEvent("eSetLedStateToUnstableUsingControlTransfer", Types_1528880540.typeNull, 1, true));
+                eUpdateBarGraphStateUsingControlTransfer = new PrtEventValue(new PrtEvent("eUpdateBarGraphStateUsingControlTransfer", Types_1528880540.typeNull, 1, true));
+                eStopTimer = new PrtEventValue(new PrtEvent("eStopTimer", Types_1528880540.typeNull, 1, true));
+                eTransferFailure = new PrtEventValue(new PrtEvent("eTransferFailure", Types_1528880540.typeNull, 1, true));
+                eTransferSuccess = new PrtEventValue(new PrtEvent("eTransferSuccess", Types_1528880540.typeNull, 1, true));
+                eSwitchStatusChange = new PrtEventValue(new PrtEvent("eSwitchStatusChange", Types_1528880540.typeNull, 1, true));
+                eTimerFired = new PrtEventValue(new PrtEvent("eTimerFired", Types_1528880540.typeNull, 1, false));
+                eD0Exit = new PrtEventValue(new PrtEvent("eD0Exit", Types_1528880540.typeNull, 1, true));
+                eD0Entry = new PrtEventValue(new PrtEvent("eD0Entry", Types_1528880540.typeNull, 1, true));
             }
         }
 
-        private class OSRDriver_Types
+        private class Types_1528880540
         {
             public static PrtType typeNull;
             public static PrtNamedTupleType typeNmdTupType_1;
@@ -80,60 +80,60 @@ namespace P.Program
             public static PrtType typeEvent;
             public static PrtType typeMachine;
             public static PrtType typeAny;
-            static OSRDriver_Types()
+            static Types_1528880540()
             {
-                OSRDriver_Types.typeNull = new PrtNullType();
-                OSRDriver_Types.typeNmdTupType_1 = new PrtNamedTupleType(new object[]{"_payload_13", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_2 = new PrtNamedTupleType(new object[]{"_payload_11", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_3 = new PrtNamedTupleType(new object[]{"_payload_10", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_4 = new PrtNamedTupleType(new object[]{"_payload_9", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_5 = new PrtNamedTupleType(new object[]{"_payload_8", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_6 = new PrtNamedTupleType(new object[]{"_payload_7", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_7 = new PrtNamedTupleType(new object[]{"_payload_6", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_8 = new PrtNamedTupleType(new object[]{"_payload_5", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_9 = new PrtNamedTupleType(new object[]{"_payload_4", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_10 = new PrtNamedTupleType(new object[]{"_payload_3", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_11 = new PrtNamedTupleType(new object[]{"_payload_2", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_12 = new PrtNamedTupleType(new object[]{"_payload_1", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_13 = new PrtNamedTupleType(new object[]{"_payload_12", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_14 = new PrtNamedTupleType(new object[]{"_payload_0", OSRDriver_Types.typeNull});
-                OSRDriver_Types.typeNmdTupType_15 = new PrtNamedTupleType(new object[]{"_payload_skip", OSRDriver_Types.typeNull});
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eD0Entry);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eD0Exit);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eOperationSuccess);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eStoppingFailure);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eStoppingSuccess);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eSwitchStatusChange);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eTimerFired);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eTimerStopped);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eTransferFailure);
-                ((typeInterfaceType_16).permissions).Add(OSRDriver_Events.eTransferSuccess);
-                OSRDriver_Types.typeBool = new PrtBoolType();
-                OSRDriver_Types.typeInt = new PrtIntType();
-                OSRDriver_Types.typeEvent = new PrtEventType();
-                OSRDriver_Types.typeMachine = new PrtMachineType();
-                OSRDriver_Types.typeAny = new PrtAnyType();
+                Types_1528880540.typeNull = new PrtNullType();
+                Types_1528880540.typeNmdTupType_1 = new PrtNamedTupleType(new object[]{"_payload_6", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_2 = new PrtNamedTupleType(new object[]{"_payload_5", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_3 = new PrtNamedTupleType(new object[]{"_payload_4", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_4 = new PrtNamedTupleType(new object[]{"_payload_2", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_5 = new PrtNamedTupleType(new object[]{"_payload_1", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_6 = new PrtNamedTupleType(new object[]{"_payload_0", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_7 = new PrtNamedTupleType(new object[]{"_payload_11", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_8 = new PrtNamedTupleType(new object[]{"_payload_13", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_9 = new PrtNamedTupleType(new object[]{"_payload_9", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_10 = new PrtNamedTupleType(new object[]{"_payload_10", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_11 = new PrtNamedTupleType(new object[]{"_payload_3", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_12 = new PrtNamedTupleType(new object[]{"_payload_8", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_13 = new PrtNamedTupleType(new object[]{"_payload_12", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_14 = new PrtNamedTupleType(new object[]{"_payload_7", Types_1528880540.typeNull});
+                Types_1528880540.typeNmdTupType_15 = new PrtNamedTupleType(new object[]{"_payload_skip", Types_1528880540.typeNull});
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eD0Entry);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eD0Exit);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eOperationSuccess);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eStoppingFailure);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eStoppingSuccess);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eSwitchStatusChange);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eTimerFired);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eTimerStopped);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eTransferFailure);
+                ((typeInterfaceType_16).permissions).Add(Events_1528880540.eTransferSuccess);
+                Types_1528880540.typeBool = new PrtBoolType();
+                Types_1528880540.typeInt = new PrtIntType();
+                Types_1528880540.typeEvent = new PrtEventType();
+                Types_1528880540.typeMachine = new PrtMachineType();
+                Types_1528880540.typeAny = new PrtAnyType();
             }
         }
 
         public static PrtImplMachine CreateMachine_OSRDriverMachine(StateImpl application, PrtValue payload)
         {
             var machine = new OSRDriverMachine(application, PrtImplMachine.DefaultMaxBufferSize, false);
-            (((machine).self).permissions).Add(OSRDriver_Events.eSwitchStatusChange);
-            (((machine).self).permissions).Add(OSRDriver_Events.eD0Exit);
-            (((machine).self).permissions).Add(OSRDriver_Events.eD0Entry);
-            (((machine).self).permissions).Add(OSRDriver_Events.eOperationSuccess);
-            (((machine).self).permissions).Add(OSRDriver_Events.eTransferSuccess);
-            (((machine).self).permissions).Add(OSRDriver_Events.eTransferFailure);
-            (((machine).self).permissions).Add(OSRDriver_Events.eTimerFired);
-            (((machine).self).permissions).Add(OSRDriver_Events.eTimerStopped);
-            (((machine).self).permissions).Add(OSRDriver_Events.eStoppingSuccess);
-            (((machine).self).permissions).Add(OSRDriver_Events.eStoppingFailure);
-            ((machine).sends).Add(OSRDriver_Events.eStopTimer);
-            ((machine).sends).Add(OSRDriver_Events.eStartDebounceTimer);
-            ((machine).sends).Add(OSRDriver_Events.eSetLedStateToUnstableUsingControlTransfer);
-            ((machine).sends).Add(OSRDriver_Events.eSetLedStateToStableUsingControlTransfer);
-            ((machine).sends).Add(OSRDriver_Events.eUpdateBarGraphStateUsingControlTransfer);
+            (((machine).self).permissions).Add(Events_1528880540.eSwitchStatusChange);
+            (((machine).self).permissions).Add(Events_1528880540.eD0Exit);
+            (((machine).self).permissions).Add(Events_1528880540.eD0Entry);
+            (((machine).self).permissions).Add(Events_1528880540.eOperationSuccess);
+            (((machine).self).permissions).Add(Events_1528880540.eTransferSuccess);
+            (((machine).self).permissions).Add(Events_1528880540.eTransferFailure);
+            (((machine).self).permissions).Add(Events_1528880540.eTimerFired);
+            (((machine).self).permissions).Add(Events_1528880540.eTimerStopped);
+            (((machine).self).permissions).Add(Events_1528880540.eStoppingSuccess);
+            (((machine).self).permissions).Add(Events_1528880540.eStoppingFailure);
+            ((machine).sends).Add(Events_1528880540.eStopTimer);
+            ((machine).sends).Add(Events_1528880540.eStartDebounceTimer);
+            ((machine).sends).Add(Events_1528880540.eSetLedStateToUnstableUsingControlTransfer);
+            ((machine).sends).Add(Events_1528880540.eSetLedStateToStableUsingControlTransfer);
+            ((machine).sends).Add(Events_1528880540.eUpdateBarGraphStateUsingControlTransfer);
             (machine).currentPayload = payload;
             return machine;
         }
@@ -224,10 +224,10 @@ namespace P.Program
 
             public OSRDriverMachine(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
             {
-                (fields).Add(PrtValue.PrtMkDefaultValue(OSRDriver_Types.typeBool));
-                (fields).Add(PrtValue.PrtMkDefaultValue(OSRDriver_Types.typeMachine));
-                (fields).Add(PrtValue.PrtMkDefaultValue(OSRDriver_Types.typeMachine));
-                (fields).Add(PrtValue.PrtMkDefaultValue(OSRDriver_Types.typeMachine));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_1528880540.typeBool));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_1528880540.typeMachine));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_1528880540.typeMachine));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_1528880540.typeMachine));
             }
 
             public class ignore_Class : PrtFun
@@ -319,7 +319,7 @@ namespace P.Program
                             goto SetLedStateToStableUsingControlTransfer_1;
                     }
 
-                    (((PrtMachineValue)((parent).LEDV)).mach).PrtEnqueueEvent((PrtEventValue)(OSRDriver_Events.eSetLedStateToStableUsingControlTransfer), OSRDriver_Events.@null, parent, (PrtMachineValue)((parent).LEDV));
+                    (((PrtMachineValue)((parent).LEDV)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1528880540.eSetLedStateToStableUsingControlTransfer), Events_1528880540.@null, parent, (PrtMachineValue)((parent).LEDV));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     SetLedStateToStableUsingControlTransfer_1:
@@ -382,7 +382,7 @@ namespace P.Program
                             goto UpdateBarGraphStateUsingControlTransfer_1;
                     }
 
-                    (((PrtMachineValue)((parent).LEDV)).mach).PrtEnqueueEvent((PrtEventValue)(OSRDriver_Events.eUpdateBarGraphStateUsingControlTransfer), OSRDriver_Events.@null, parent, (PrtMachineValue)((parent).LEDV));
+                    (((PrtMachineValue)((parent).LEDV)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1528880540.eUpdateBarGraphStateUsingControlTransfer), Events_1528880540.@null, parent, (PrtMachineValue)((parent).LEDV));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     UpdateBarGraphStateUsingControlTransfer_1:
@@ -622,7 +622,7 @@ namespace P.Program
                             goto StartDebounceTimer_1;
                     }
 
-                    (((PrtMachineValue)((parent).TimerV)).mach).PrtEnqueueEvent((PrtEventValue)(OSRDriver_Events.eStartDebounceTimer), OSRDriver_Events.@null, parent, (PrtMachineValue)((parent).TimerV));
+                    (((PrtMachineValue)((parent).TimerV)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1528880540.eStartDebounceTimer), Events_1528880540.@null, parent, (PrtMachineValue)((parent).TimerV));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     StartDebounceTimer_1:
@@ -685,7 +685,7 @@ namespace P.Program
                             goto SetLedStateToUnstableUsingControlTransfer_1;
                     }
 
-                    (((PrtMachineValue)((parent).LEDV)).mach).PrtEnqueueEvent((PrtEventValue)(OSRDriver_Events.eSetLedStateToUnstableUsingControlTransfer), OSRDriver_Events.@null, parent, (PrtMachineValue)((parent).LEDV));
+                    (((PrtMachineValue)((parent).LEDV)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1528880540.eSetLedStateToUnstableUsingControlTransfer), Events_1528880540.@null, parent, (PrtMachineValue)((parent).LEDV));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     SetLedStateToUnstableUsingControlTransfer_1:
@@ -956,7 +956,7 @@ namespace P.Program
                             goto AnonFun3_1;
                     }
 
-                    (((PrtMachineValue)((parent).TimerV)).mach).PrtEnqueueEvent((PrtEventValue)(OSRDriver_Events.eStopTimer), OSRDriver_Events.@null, parent, (PrtMachineValue)((parent).TimerV));
+                    (((PrtMachineValue)((parent).TimerV)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1528880540.eStopTimer), Events_1528880540.@null, parent, (PrtMachineValue)((parent).TimerV));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun3_1:
@@ -1286,11 +1286,11 @@ namespace P.Program
                     OSRDriverMachine parent = (OSRDriverMachine)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     PrtValue swap;
-                    if (!!(OSRDriver_Events.eUnit).Equals(OSRDriver_Events.@null))
+                    if (!!(Events_1528880540.eUnit).Equals(Events_1528880540.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OSRDriver.p (165, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OSRDriver_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OSRDriver_Events.eUnit;
-                    (parent).currentPayload = OSRDriver_Events.@null;
+                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1528880540.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1528880540.eUnit;
+                    (parent).currentPayload = Events_1528880540.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -1488,11 +1488,11 @@ namespace P.Program
                     OSRDriverMachine parent = (OSRDriverMachine)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     PrtValue swap;
-                    if (!!(OSRDriver_Events.eUnit).Equals(OSRDriver_Events.@null))
+                    if (!!(Events_1528880540.eUnit).Equals(Events_1528880540.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OSRDriver.p (154, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OSRDriver_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OSRDriver_Events.eUnit;
-                    (parent).currentPayload = OSRDriver_Events.@null;
+                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1528880540.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1528880540.eUnit;
+                    (parent).currentPayload = Events_1528880540.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -2778,21 +2778,21 @@ namespace P.Program
 
                     if (!((PrtBoolValue)((parent).check)).bl)
                         goto AnonFun29_if_0_else;
-                    if (!!(OSRDriver_Events.eYes).Equals(OSRDriver_Events.@null))
+                    if (!!(Events_1528880540.eYes).Equals(Events_1528880540.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OSRDriver.p (94, 5): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OSRDriver_Events.eYes)).evt).name);
-                    (parent).currentTrigger = OSRDriver_Events.eYes;
-                    (parent).currentPayload = OSRDriver_Events.@null;
+                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1528880540.eYes)).evt).name);
+                    (parent).currentTrigger = Events_1528880540.eYes;
+                    (parent).currentPayload = Events_1528880540.@null;
                     (parent).PrtFunContRaise();
                     return;
                     goto AnonFun29_if_0_end;
                     AnonFun29_if_0_else:
                         ;
-                    if (!!(OSRDriver_Events.eNo).Equals(OSRDriver_Events.@null))
+                    if (!!(Events_1528880540.eNo).Equals(Events_1528880540.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OSRDriver.p (96, 5): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OSRDriver_Events.eNo)).evt).name);
-                    (parent).currentTrigger = OSRDriver_Events.eNo;
-                    (parent).currentPayload = OSRDriver_Events.@null;
+                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1528880540.eNo)).evt).name);
+                    (parent).currentTrigger = Events_1528880540.eNo;
+                    (parent).currentPayload = Events_1528880540.@null;
                     (parent).PrtFunContRaise();
                     return;
                     AnonFun29_if_0_end:
@@ -3076,11 +3076,11 @@ namespace P.Program
                         return;
                     }
 
-                    if (!!(OSRDriver_Events.eOperationSuccess).Equals(OSRDriver_Events.@null))
+                    if (!!(Events_1528880540.eOperationSuccess).Equals(Events_1528880540.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OSRDriver.p (57, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OSRDriver_Events.eOperationSuccess)).evt).name);
-                    (parent).currentTrigger = OSRDriver_Events.eOperationSuccess;
-                    (parent).currentPayload = OSRDriver_Events.@null;
+                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1528880540.eOperationSuccess)).evt).name);
+                    (parent).currentTrigger = Events_1528880540.eOperationSuccess;
+                    (parent).currentPayload = Events_1528880540.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -3557,11 +3557,11 @@ namespace P.Program
                         return;
                     }
 
-                    if (!!(OSRDriver_Events.eOperationSuccess).Equals(OSRDriver_Events.@null))
+                    if (!!(Events_1528880540.eOperationSuccess).Equals(Events_1528880540.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OSRDriver.p (37, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OSRDriver_Events.eOperationSuccess)).evt).name);
-                    (parent).currentTrigger = OSRDriver_Events.eOperationSuccess;
-                    (parent).currentPayload = OSRDriver_Events.@null;
+                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1528880540.eOperationSuccess)).evt).name);
+                    (parent).currentTrigger = Events_1528880540.eOperationSuccess;
+                    (parent).currentPayload = Events_1528880540.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -3979,11 +3979,11 @@ namespace P.Program
                     return;
                     AnonFun46_3:
                         ;
-                    if (!!(OSRDriver_Events.eUnit).Equals(OSRDriver_Events.@null))
+                    if (!!(Events_1528880540.eUnit).Equals(Events_1528880540.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OSRDriver.p (20, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OSRDriver_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OSRDriver_Events.eUnit;
-                    (parent).currentPayload = OSRDriver_Events.@null;
+                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1528880540.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1528880540.eUnit;
+                    (parent).currentPayload = Events_1528880540.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -4181,11 +4181,11 @@ namespace P.Program
                     OSRDriverMachine parent = (OSRDriverMachine)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     PrtValue swap;
-                    if (!!(OSRDriver_Events.eTimerStopped).Equals(OSRDriver_Events.@null))
+                    if (!!(Events_1528880540.eTimerStopped).Equals(Events_1528880540.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OSRDriver.p (198, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OSRDriver_Events.eTimerStopped)).evt).name);
-                    (parent).currentTrigger = OSRDriver_Events.eTimerStopped;
-                    (parent).currentPayload = OSRDriver_Events.@null;
+                    Console.Write("<RaiseLog> Machine OSRDriverMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1528880540.eTimerStopped)).evt).name);
+                    (parent).currentTrigger = Events_1528880540.eTimerStopped;
+                    (parent).currentPayload = Events_1528880540.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -5394,91 +5394,91 @@ namespace P.Program
                 OSRDriverMachine_sDxDriver = new OSRDriverMachine_sDxDriver_Class("OSRDriverMachine_sDxDriver", AnonFun43, AnonFun44, false, StateTemperature.Warm);
                 OSRDriverMachine_Driver_Init = new OSRDriverMachine_Driver_Init_Class("OSRDriverMachine_Driver_Init", AnonFun46, AnonFun47, false, StateTemperature.Warm);
                 OSRDriverMachine_sReturningTimerStoppedDriver = new OSRDriverMachine_sReturningTimerStoppedDriver_Class("OSRDriverMachine_sReturningTimerStoppedDriver", AnonFun49, AnonFun50, false, StateTemperature.Warm);
-                OSRDriverMachine_sWaitingForTimerToFlushDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sWaitingForTimerToFlushDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sWaitingForTimerToFlushDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
-                OSRDriverMachine_sWaitingForTimerToFlushDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
+                OSRDriverMachine_sWaitingForTimerToFlushDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sWaitingForTimerToFlushDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sWaitingForTimerToFlushDriver.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
+                OSRDriverMachine_sWaitingForTimerToFlushDriver.deferredSet.Add(Events_1528880540.eD0Exit);
                 PrtTransition transition_1 = new PrtTransition(AnonFun2, OSRDriverMachine_sReturningTimerStoppedDriver, false);
-                OSRDriverMachine_sWaitingForTimerToFlushDriver.transitions.Add(OSRDriver_Events.eTimerFired, transition_1);
-                OSRDriverMachine_sStoppingTimerDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sStoppingTimerDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sWaitingForTimerToFlushDriver.transitions.Add(Events_1528880540.eTimerFired, transition_1);
+                OSRDriverMachine_sStoppingTimerDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sStoppingTimerDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
                 PrtTransition transition_2 = new PrtTransition(AnonFun5, OSRDriverMachine_sReturningTimerStoppedDriver, false);
-                OSRDriverMachine_sStoppingTimerDriver.transitions.Add(OSRDriver_Events.eTimerFired, transition_2);
+                OSRDriverMachine_sStoppingTimerDriver.transitions.Add(Events_1528880540.eTimerFired, transition_2);
                 PrtTransition transition_3 = new PrtTransition(AnonFun6, OSRDriverMachine_sWaitingForTimerToFlushDriver, false);
-                OSRDriverMachine_sStoppingTimerDriver.transitions.Add(OSRDriver_Events.eStoppingFailure, transition_3);
+                OSRDriverMachine_sStoppingTimerDriver.transitions.Add(Events_1528880540.eStoppingFailure, transition_3);
                 PrtTransition transition_4 = new PrtTransition(AnonFun7, OSRDriverMachine_sReturningTimerStoppedDriver, false);
-                OSRDriverMachine_sStoppingTimerDriver.transitions.Add(OSRDriver_Events.eStoppingSuccess, transition_4);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
+                OSRDriverMachine_sStoppingTimerDriver.transitions.Add(Events_1528880540.eStoppingSuccess, transition_4);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.deferredSet.Add(Events_1528880540.eD0Exit);
                 PrtTransition transition_5 = new PrtTransition(PrtFun.IgnoreFun, OSRDriverMachine_sStoppingTimerDriver, true);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.transitions.Add(OSRDriver_Events.eUnit, transition_5);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.transitions.Add(Events_1528880540.eUnit, transition_5);
                 PrtTransition transition_6 = new PrtTransition(AnonFun10, OSRDriverMachine_sCompletingD0ExitDriver, false);
-                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.transitions.Add(OSRDriver_Events.eTimerStopped, transition_6);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
+                OSRDriverMachine_sStoppingTimerOnD0ExitDriver.transitions.Add(Events_1528880540.eTimerStopped, transition_6);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.deferredSet.Add(Events_1528880540.eD0Exit);
                 PrtTransition transition_7 = new PrtTransition(AnonFun13, OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver, false);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.transitions.Add(OSRDriver_Events.eTimerStopped, transition_7);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.transitions.Add(Events_1528880540.eTimerStopped, transition_7);
                 PrtTransition transition_8 = new PrtTransition(PrtFun.IgnoreFun, OSRDriverMachine_sStoppingTimerDriver, true);
-                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.transitions.Add(OSRDriver_Events.eUnit, transition_8);
-                OSRDriverMachine_sUpdatingLedStateToStableDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sUpdatingLedStateToStableDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sUpdatingLedStateToStableDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
-                OSRDriverMachine_sUpdatingLedStateToStableDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
+                OSRDriverMachine_sStoppingTimerOnStatusChangeDriver.transitions.Add(Events_1528880540.eUnit, transition_8);
+                OSRDriverMachine_sUpdatingLedStateToStableDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sUpdatingLedStateToStableDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sUpdatingLedStateToStableDriver.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
+                OSRDriverMachine_sUpdatingLedStateToStableDriver.deferredSet.Add(Events_1528880540.eD0Exit);
                 PrtTransition transition_9 = new PrtTransition(AnonFun16, OSRDriverMachine_sWaitingForSwitchStatusChangeDriver, false);
-                OSRDriverMachine_sUpdatingLedStateToStableDriver.transitions.Add(OSRDriver_Events.eTransferSuccess, transition_9);
-                OSRDriverMachine_sWaitingForTimerDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sWaitingForTimerDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sUpdatingLedStateToStableDriver.transitions.Add(Events_1528880540.eTransferSuccess, transition_9);
+                OSRDriverMachine_sWaitingForTimerDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sWaitingForTimerDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
                 PrtTransition transition_10 = new PrtTransition(AnonFun19, OSRDriverMachine_sStoppingTimerOnD0ExitDriver, false);
-                OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(OSRDriver_Events.eD0Exit, transition_10);
+                OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(Events_1528880540.eD0Exit, transition_10);
                 PrtTransition transition_11 = new PrtTransition(AnonFun20, OSRDriverMachine_sStoppingTimerOnStatusChangeDriver, false);
-                OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(OSRDriver_Events.eSwitchStatusChange, transition_11);
+                OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(Events_1528880540.eSwitchStatusChange, transition_11);
                 PrtTransition transition_12 = new PrtTransition(AnonFun21, OSRDriverMachine_sUpdatingLedStateToStableDriver, false);
-                OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(OSRDriver_Events.eTimerFired, transition_12);
-                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
-                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
+                OSRDriverMachine_sWaitingForTimerDriver.transitions.Add(Events_1528880540.eTimerFired, transition_12);
+                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
+                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.deferredSet.Add(Events_1528880540.eD0Exit);
                 PrtTransition transition_13 = new PrtTransition(AnonFun24, OSRDriverMachine_sWaitingForTimerDriver, false);
-                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.transitions.Add(OSRDriver_Events.eTransferSuccess, transition_13);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.deferredSet.Add(OSRDriver_Events.eD0Exit);
+                OSRDriverMachine_sUpdatingLedStateToUnstableDriver.transitions.Add(Events_1528880540.eTransferSuccess, transition_13);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.deferredSet.Add(Events_1528880540.eD0Exit);
                 PrtTransition transition_14 = new PrtTransition(AnonFun27, OSRDriverMachine_sUpdatingLedStateToUnstableDriver, false);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.transitions.Add(OSRDriver_Events.eTransferFailure, transition_14);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.transitions.Add(Events_1528880540.eTransferFailure, transition_14);
                 PrtTransition transition_15 = new PrtTransition(AnonFun28, OSRDriverMachine_sUpdatingLedStateToUnstableDriver, false);
-                OSRDriverMachine_sUpdatingBarGraphStateDriver.transitions.Add(OSRDriver_Events.eTransferSuccess, transition_15);
-                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sUpdatingBarGraphStateDriver.transitions.Add(Events_1528880540.eTransferSuccess, transition_15);
+                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
                 PrtTransition transition_16 = new PrtTransition(AnonFun31, OSRDriverMachine_sWaitingForTimerDriver, false);
-                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.transitions.Add(OSRDriver_Events.eNo, transition_16);
+                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.transitions.Add(Events_1528880540.eNo, transition_16);
                 PrtTransition transition_17 = new PrtTransition(AnonFun32, OSRDriverMachine_sUpdatingBarGraphStateDriver, false);
-                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.transitions.Add(OSRDriver_Events.eYes, transition_17);
+                OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver.transitions.Add(Events_1528880540.eYes, transition_17);
                 PrtTransition transition_18 = new PrtTransition(AnonFun35, OSRDriverMachine_sDxDriver, false);
-                OSRDriverMachine_sCompletingD0ExitDriver.transitions.Add(OSRDriver_Events.eOperationSuccess, transition_18);
-                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_sCompletingD0ExitDriver.transitions.Add(Events_1528880540.eOperationSuccess, transition_18);
+                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
                 PrtTransition transition_19 = new PrtTransition(AnonFun38, OSRDriverMachine_sStoringSwitchAndCheckingIfStateChangedDriver, false);
-                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.transitions.Add(OSRDriver_Events.eSwitchStatusChange, transition_19);
+                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.transitions.Add(Events_1528880540.eSwitchStatusChange, transition_19);
                 PrtTransition transition_20 = new PrtTransition(AnonFun39, OSRDriverMachine_sCompletingD0ExitDriver, false);
-                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.transitions.Add(OSRDriver_Events.eD0Exit, transition_20);
-                OSRDriverMachine_sCompleteD0EntryDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sWaitingForSwitchStatusChangeDriver.transitions.Add(Events_1528880540.eD0Exit, transition_20);
+                OSRDriverMachine_sCompleteD0EntryDriver.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
                 PrtTransition transition_21 = new PrtTransition(AnonFun42, OSRDriverMachine_sWaitingForSwitchStatusChangeDriver, false);
-                OSRDriverMachine_sCompleteD0EntryDriver.transitions.Add(OSRDriver_Events.eOperationSuccess, transition_21);
-                OSRDriverMachine_sDxDriver.dos.Add(OSRDriver_Events.eD0Exit, ignore);
-                OSRDriverMachine_sDxDriver.dos.Add(OSRDriver_Events.eD0Exit, PrtFun.IgnoreFun);
-                OSRDriverMachine_sDxDriver.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sCompleteD0EntryDriver.transitions.Add(Events_1528880540.eOperationSuccess, transition_21);
+                OSRDriverMachine_sDxDriver.dos.Add(Events_1528880540.eD0Exit, ignore);
+                OSRDriverMachine_sDxDriver.dos.Add(Events_1528880540.eD0Exit, PrtFun.IgnoreFun);
+                OSRDriverMachine_sDxDriver.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
                 PrtTransition transition_22 = new PrtTransition(AnonFun45, OSRDriverMachine_sCompleteD0EntryDriver, false);
-                OSRDriverMachine_sDxDriver.transitions.Add(OSRDriver_Events.eD0Entry, transition_22);
-                OSRDriverMachine_Driver_Init.deferredSet.Add(OSRDriver_Events.eSwitchStatusChange);
+                OSRDriverMachine_sDxDriver.transitions.Add(Events_1528880540.eD0Entry, transition_22);
+                OSRDriverMachine_Driver_Init.deferredSet.Add(Events_1528880540.eSwitchStatusChange);
                 PrtTransition transition_23 = new PrtTransition(AnonFun48, OSRDriverMachine_sDxDriver, false);
-                OSRDriverMachine_Driver_Init.transitions.Add(OSRDriver_Events.eUnit, transition_23);
-                OSRDriverMachine_sReturningTimerStoppedDriver.dos.Add(OSRDriver_Events.eD0Entry, ignore);
-                OSRDriverMachine_sReturningTimerStoppedDriver.dos.Add(OSRDriver_Events.eD0Entry, PrtFun.IgnoreFun);
+                OSRDriverMachine_Driver_Init.transitions.Add(Events_1528880540.eUnit, transition_23);
+                OSRDriverMachine_sReturningTimerStoppedDriver.dos.Add(Events_1528880540.eD0Entry, ignore);
+                OSRDriverMachine_sReturningTimerStoppedDriver.dos.Add(Events_1528880540.eD0Entry, PrtFun.IgnoreFun);
             }
         }
     }

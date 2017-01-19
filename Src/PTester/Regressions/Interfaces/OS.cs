@@ -1,13 +1,13 @@
 #pragma warning disable CS0162, CS0164, CS0168
-using P.Runtime;
-using System;
-using System.Collections.Generic;
-
 namespace P.Program
 {
+    using P.Runtime;
+    using System;
+    using System.Collections.Generic;
+
     public partial class Application : StateImpl
     {
-        private class OS_Events
+        private class Events_1685131768
         {
             public static PrtEventValue halt;
             public static PrtEventValue @null;
@@ -30,33 +30,33 @@ namespace P.Program
             public static PrtEventValue eTimerFired;
             public static PrtEventValue eD0Exit;
             public static PrtEventValue eD0Entry;
-            static OS_Events()
+            static Events_1685131768()
             {
-                halt = new PrtEventValue(new PrtEvent("halt", OS_Types.typeNull, 1, false));
-                @null = new PrtEventValue(new PrtEvent("null", OS_Types.typeNull, 1, false));
-                eNo = new PrtEventValue(new PrtEvent("eNo", OS_Types.typeNull, 1, false));
-                eYes = new PrtEventValue(new PrtEvent("eYes", OS_Types.typeNull, 1, false));
-                eTimerStopped = new PrtEventValue(new PrtEvent("eTimerStopped", OS_Types.typeNull, 1, false));
-                eOperationFailure = new PrtEventValue(new PrtEvent("eOperationFailure", OS_Types.typeNull, 1, false));
-                eOperationSuccess = new PrtEventValue(new PrtEvent("eOperationSuccess", OS_Types.typeNull, 1, false));
-                eStoppingFailure = new PrtEventValue(new PrtEvent("eStoppingFailure", OS_Types.typeNull, 1, false));
-                eStoppingSuccess = new PrtEventValue(new PrtEvent("eStoppingSuccess", OS_Types.typeNull, 1, false));
-                eSetLedStateToStableUsingControlTransfer = new PrtEventValue(new PrtEvent("eSetLedStateToStableUsingControlTransfer", OS_Types.typeNull, 1, true));
-                eStartDebounceTimer = new PrtEventValue(new PrtEvent("eStartDebounceTimer", OS_Types.typeNull, 1, true));
-                eSetLedStateToUnstableUsingControlTransfer = new PrtEventValue(new PrtEvent("eSetLedStateToUnstableUsingControlTransfer", OS_Types.typeNull, 1, true));
-                eUnit = new PrtEventValue(new PrtEvent("eUnit", OS_Types.typeNull, 1, false));
-                eUpdateBarGraphStateUsingControlTransfer = new PrtEventValue(new PrtEvent("eUpdateBarGraphStateUsingControlTransfer", OS_Types.typeNull, 1, true));
-                eStopTimer = new PrtEventValue(new PrtEvent("eStopTimer", OS_Types.typeNull, 1, true));
-                eTransferFailure = new PrtEventValue(new PrtEvent("eTransferFailure", OS_Types.typeNull, 1, true));
-                eTransferSuccess = new PrtEventValue(new PrtEvent("eTransferSuccess", OS_Types.typeNull, 1, true));
-                eSwitchStatusChange = new PrtEventValue(new PrtEvent("eSwitchStatusChange", OS_Types.typeNull, 1, true));
-                eTimerFired = new PrtEventValue(new PrtEvent("eTimerFired", OS_Types.typeNull, 1, false));
-                eD0Exit = new PrtEventValue(new PrtEvent("eD0Exit", OS_Types.typeNull, 1, true));
-                eD0Entry = new PrtEventValue(new PrtEvent("eD0Entry", OS_Types.typeNull, 1, true));
+                halt = new PrtEventValue(new PrtEvent("halt", Types_1685131768.typeNull, 1, false));
+                @null = new PrtEventValue(new PrtEvent("null", Types_1685131768.typeNull, 1, false));
+                eNo = new PrtEventValue(new PrtEvent("eNo", Types_1685131768.typeNull, 1, false));
+                eYes = new PrtEventValue(new PrtEvent("eYes", Types_1685131768.typeNull, 1, false));
+                eTimerStopped = new PrtEventValue(new PrtEvent("eTimerStopped", Types_1685131768.typeNull, 1, false));
+                eOperationFailure = new PrtEventValue(new PrtEvent("eOperationFailure", Types_1685131768.typeNull, 1, false));
+                eOperationSuccess = new PrtEventValue(new PrtEvent("eOperationSuccess", Types_1685131768.typeNull, 1, false));
+                eStoppingFailure = new PrtEventValue(new PrtEvent("eStoppingFailure", Types_1685131768.typeNull, 1, false));
+                eStoppingSuccess = new PrtEventValue(new PrtEvent("eStoppingSuccess", Types_1685131768.typeNull, 1, false));
+                eSetLedStateToStableUsingControlTransfer = new PrtEventValue(new PrtEvent("eSetLedStateToStableUsingControlTransfer", Types_1685131768.typeNull, 1, true));
+                eStartDebounceTimer = new PrtEventValue(new PrtEvent("eStartDebounceTimer", Types_1685131768.typeNull, 1, true));
+                eSetLedStateToUnstableUsingControlTransfer = new PrtEventValue(new PrtEvent("eSetLedStateToUnstableUsingControlTransfer", Types_1685131768.typeNull, 1, true));
+                eUnit = new PrtEventValue(new PrtEvent("eUnit", Types_1685131768.typeNull, 1, false));
+                eUpdateBarGraphStateUsingControlTransfer = new PrtEventValue(new PrtEvent("eUpdateBarGraphStateUsingControlTransfer", Types_1685131768.typeNull, 1, true));
+                eStopTimer = new PrtEventValue(new PrtEvent("eStopTimer", Types_1685131768.typeNull, 1, true));
+                eTransferFailure = new PrtEventValue(new PrtEvent("eTransferFailure", Types_1685131768.typeNull, 1, true));
+                eTransferSuccess = new PrtEventValue(new PrtEvent("eTransferSuccess", Types_1685131768.typeNull, 1, true));
+                eSwitchStatusChange = new PrtEventValue(new PrtEvent("eSwitchStatusChange", Types_1685131768.typeNull, 1, true));
+                eTimerFired = new PrtEventValue(new PrtEvent("eTimerFired", Types_1685131768.typeNull, 1, false));
+                eD0Exit = new PrtEventValue(new PrtEvent("eD0Exit", Types_1685131768.typeNull, 1, true));
+                eD0Entry = new PrtEventValue(new PrtEvent("eD0Entry", Types_1685131768.typeNull, 1, true));
             }
         }
 
-        private class OS_Types
+        private class Types_1685131768
         {
             public static PrtType typeNull;
             public static PrtNamedTupleType typeNmdTupType_1;
@@ -79,49 +79,49 @@ namespace P.Program
             public static PrtType typeInt;
             public static PrtType typeEvent;
             public static PrtType typeAny;
-            static OS_Types()
+            static Types_1685131768()
             {
-                OS_Types.typeNull = new PrtNullType();
-                OS_Types.typeNmdTupType_1 = new PrtNamedTupleType(new object[]{"_payload_1", OS_Types.typeNull});
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eD0Entry);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eD0Exit);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eOperationSuccess);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eStoppingFailure);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eStoppingSuccess);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eSwitchStatusChange);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eTimerFired);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eTimerStopped);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eTransferFailure);
-                ((typeInterfaceType_2).permissions).Add(OS_Events.eTransferSuccess);
-                OS_Types.typeNmdTupType_3 = new PrtNamedTupleType(new object[]{"_payload_0", OS_Types.typeNull});
-                OS_Types.typeNmdTupType_4 = new PrtNamedTupleType(new object[]{"_payload_2", OS_Types.typeNull});
-                OS_Types.typeNmdTupType_5 = new PrtNamedTupleType(new object[]{"_payload_3", OS_Types.typeNull});
-                OS_Types.typeNmdTupType_6 = new PrtNamedTupleType(new object[]{"_payload_skip", OS_Types.typeNull});
-                OS_Types.typeMachine = new PrtMachineType();
-                OS_Types.typeNmdTupType_8 = new PrtNamedTupleType(new object[]{"payload", OS_Types.typeMachine});
-                OS_Types.typeNmdTupType_9 = new PrtNamedTupleType(new object[]{"_payload_8", OS_Types.typeNull});
-                OS_Types.typeNmdTupType_10 = new PrtNamedTupleType(new object[]{"_payload_7", OS_Types.typeNull});
-                OS_Types.typeNmdTupType_11 = new PrtNamedTupleType(new object[]{"_payload_6", OS_Types.typeNull});
-                OS_Types.typeNmdTupType_12 = new PrtNamedTupleType(new object[]{"_payload_5", OS_Types.typeNull});
-                OS_Types.typeNmdTupType_13 = new PrtNamedTupleType(new object[]{"_payload_4", OS_Types.typeNull});
-                ((typeInterfaceType_14).permissions).Add(OS_Events.eSetLedStateToStableUsingControlTransfer);
-                ((typeInterfaceType_14).permissions).Add(OS_Events.eSetLedStateToUnstableUsingControlTransfer);
-                ((typeInterfaceType_14).permissions).Add(OS_Events.eUpdateBarGraphStateUsingControlTransfer);
-                ((typeInterfaceType_15).permissions).Add(OS_Events.eYes);
-                ((typeInterfaceType_16).permissions).Add(OS_Events.eStartDebounceTimer);
-                ((typeInterfaceType_16).permissions).Add(OS_Events.eStopTimer);
-                OS_Types.typeBool = new PrtBoolType();
-                OS_Types.typeInt = new PrtIntType();
-                OS_Types.typeEvent = new PrtEventType();
-                OS_Types.typeAny = new PrtAnyType();
+                Types_1685131768.typeNull = new PrtNullType();
+                Types_1685131768.typeNmdTupType_1 = new PrtNamedTupleType(new object[]{"_payload_1", Types_1685131768.typeNull});
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eD0Entry);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eD0Exit);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eOperationSuccess);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eStoppingFailure);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eStoppingSuccess);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eSwitchStatusChange);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eTimerFired);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eTimerStopped);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eTransferFailure);
+                ((typeInterfaceType_2).permissions).Add(Events_1685131768.eTransferSuccess);
+                Types_1685131768.typeNmdTupType_3 = new PrtNamedTupleType(new object[]{"_payload_0", Types_1685131768.typeNull});
+                Types_1685131768.typeNmdTupType_4 = new PrtNamedTupleType(new object[]{"_payload_2", Types_1685131768.typeNull});
+                Types_1685131768.typeNmdTupType_5 = new PrtNamedTupleType(new object[]{"_payload_3", Types_1685131768.typeNull});
+                Types_1685131768.typeNmdTupType_6 = new PrtNamedTupleType(new object[]{"_payload_skip", Types_1685131768.typeNull});
+                Types_1685131768.typeMachine = new PrtMachineType();
+                Types_1685131768.typeNmdTupType_8 = new PrtNamedTupleType(new object[]{"payload", Types_1685131768.typeMachine});
+                Types_1685131768.typeNmdTupType_9 = new PrtNamedTupleType(new object[]{"_payload_8", Types_1685131768.typeNull});
+                Types_1685131768.typeNmdTupType_10 = new PrtNamedTupleType(new object[]{"_payload_7", Types_1685131768.typeNull});
+                Types_1685131768.typeNmdTupType_11 = new PrtNamedTupleType(new object[]{"_payload_6", Types_1685131768.typeNull});
+                Types_1685131768.typeNmdTupType_12 = new PrtNamedTupleType(new object[]{"_payload_5", Types_1685131768.typeNull});
+                Types_1685131768.typeNmdTupType_13 = new PrtNamedTupleType(new object[]{"_payload_4", Types_1685131768.typeNull});
+                ((typeInterfaceType_14).permissions).Add(Events_1685131768.eSetLedStateToStableUsingControlTransfer);
+                ((typeInterfaceType_14).permissions).Add(Events_1685131768.eSetLedStateToUnstableUsingControlTransfer);
+                ((typeInterfaceType_14).permissions).Add(Events_1685131768.eUpdateBarGraphStateUsingControlTransfer);
+                ((typeInterfaceType_15).permissions).Add(Events_1685131768.eStartDebounceTimer);
+                ((typeInterfaceType_15).permissions).Add(Events_1685131768.eStopTimer);
+                ((typeInterfaceType_16).permissions).Add(Events_1685131768.eYes);
+                Types_1685131768.typeBool = new PrtBoolType();
+                Types_1685131768.typeInt = new PrtIntType();
+                Types_1685131768.typeEvent = new PrtEventType();
+                Types_1685131768.typeAny = new PrtAnyType();
             }
         }
 
         public static PrtImplMachine CreateMachine_SwitchMachine(StateImpl application, PrtValue payload)
         {
             var machine = new SwitchMachine(application, PrtImplMachine.DefaultMaxBufferSize, false);
-            (((machine).self).permissions).Add(OS_Events.eYes);
-            ((machine).sends).Add(OS_Events.eSwitchStatusChange);
+            (((machine).self).permissions).Add(Events_1685131768.eYes);
+            ((machine).sends).Add(Events_1685131768.eSwitchStatusChange);
             (machine).currentPayload = payload;
             return machine;
         }
@@ -129,11 +129,11 @@ namespace P.Program
         public static PrtImplMachine CreateMachine_TimerMachine(StateImpl application, PrtValue payload)
         {
             var machine = new TimerMachine(application, PrtImplMachine.DefaultMaxBufferSize, false);
-            (((machine).self).permissions).Add(OS_Events.eStartDebounceTimer);
-            (((machine).self).permissions).Add(OS_Events.eStopTimer);
-            ((machine).sends).Add(OS_Events.eStoppingSuccess);
-            ((machine).sends).Add(OS_Events.eStoppingFailure);
-            ((machine).sends).Add(OS_Events.eTimerFired);
+            (((machine).self).permissions).Add(Events_1685131768.eStartDebounceTimer);
+            (((machine).self).permissions).Add(Events_1685131768.eStopTimer);
+            ((machine).sends).Add(Events_1685131768.eStoppingSuccess);
+            ((machine).sends).Add(Events_1685131768.eStoppingFailure);
+            ((machine).sends).Add(Events_1685131768.eTimerFired);
             (machine).currentPayload = payload;
             return machine;
         }
@@ -141,11 +141,11 @@ namespace P.Program
         public static PrtImplMachine CreateMachine_LEDMachine(StateImpl application, PrtValue payload)
         {
             var machine = new LEDMachine(application, PrtImplMachine.DefaultMaxBufferSize, false);
-            (((machine).self).permissions).Add(OS_Events.eUpdateBarGraphStateUsingControlTransfer);
-            (((machine).self).permissions).Add(OS_Events.eSetLedStateToUnstableUsingControlTransfer);
-            (((machine).self).permissions).Add(OS_Events.eSetLedStateToStableUsingControlTransfer);
-            ((machine).sends).Add(OS_Events.eTransferFailure);
-            ((machine).sends).Add(OS_Events.eTransferSuccess);
+            (((machine).self).permissions).Add(Events_1685131768.eUpdateBarGraphStateUsingControlTransfer);
+            (((machine).self).permissions).Add(Events_1685131768.eSetLedStateToUnstableUsingControlTransfer);
+            (((machine).self).permissions).Add(Events_1685131768.eSetLedStateToStableUsingControlTransfer);
+            ((machine).sends).Add(Events_1685131768.eTransferFailure);
+            ((machine).sends).Add(Events_1685131768.eTransferSuccess);
             (machine).currentPayload = payload;
             return machine;
         }
@@ -197,7 +197,7 @@ namespace P.Program
 
             public SwitchMachine(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
             {
-                (fields).Add(PrtValue.PrtMkDefaultValue(OS_Types.typeInterfaceType_2));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_1685131768.typeInterfaceType_2));
             }
 
             public class ignore_Class : PrtFun
@@ -361,12 +361,12 @@ namespace P.Program
                     SwitchMachine parent = (SwitchMachine)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     PrtValue swap;
-                    (parent).Driver = (PrtValue.PrtCastValue((currFun).locals[0], OS_Types.typeInterfaceType_2)).Clone();
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    (parent).Driver = (PrtValue.PrtCastValue((currFun).locals[0], Types_1685131768.typeInterfaceType_2)).Clone();
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (9, 71): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine SwitchMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine SwitchMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -765,16 +765,16 @@ namespace P.Program
                             goto AnonFun7_1;
                     }
 
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eSwitchStatusChange), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eSwitchStatusChange), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun7_1:
                         ;
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (23, 7): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine SwitchMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine SwitchMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -972,11 +972,11 @@ namespace P.Program
                     SwitchMachine parent = (SwitchMachine)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     PrtValue swap;
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (14, 15): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine SwitchMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine SwitchMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -1108,11 +1108,11 @@ namespace P.Program
                 SwitchMachine_ChangeSwitchStatus = new SwitchMachine_ChangeSwitchStatus_Class("SwitchMachine_ChangeSwitchStatus", AnonFun7, AnonFun8, false, StateTemperature.Warm);
                 SwitchMachine_Switch_Init = new SwitchMachine_Switch_Init_Class("SwitchMachine_Switch_Init", AnonFun10, AnonFun11, false, StateTemperature.Warm);
                 PrtTransition transition_1 = new PrtTransition(AnonFun3, SwitchMachine_Switch_Init, false);
-                SwitchMachine__Init.transitions.Add(OS_Events.eUnit, transition_1);
+                SwitchMachine__Init.transitions.Add(Events_1685131768.eUnit, transition_1);
                 PrtTransition transition_2 = new PrtTransition(AnonFun9, SwitchMachine_ChangeSwitchStatus, false);
-                SwitchMachine_ChangeSwitchStatus.transitions.Add(OS_Events.eUnit, transition_2);
+                SwitchMachine_ChangeSwitchStatus.transitions.Add(Events_1685131768.eUnit, transition_2);
                 PrtTransition transition_3 = new PrtTransition(AnonFun0, SwitchMachine_ChangeSwitchStatus, false);
-                SwitchMachine_Switch_Init.transitions.Add(OS_Events.eUnit, transition_3);
+                SwitchMachine_Switch_Init.transitions.Add(Events_1685131768.eUnit, transition_3);
             }
         }
 
@@ -1163,7 +1163,7 @@ namespace P.Program
 
             public TimerMachine(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
             {
-                (fields).Add(PrtValue.PrtMkDefaultValue(OS_Types.typeInterfaceType_2));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_1685131768.typeInterfaceType_2));
             }
 
             public class ignore_Class : PrtFun
@@ -1280,12 +1280,12 @@ namespace P.Program
                         ;
                     if (!((PrtBoolValue)(new PrtBoolValue(((parent).continuation).ReturnAndResetNondet()))).bl)
                         goto AnonFun0_if_0_else;
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eStoppingFailure), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eStoppingFailure), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun0_1:
                         ;
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eTimerFired), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eTimerFired), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun0_2:
@@ -1293,18 +1293,18 @@ namespace P.Program
                     goto AnonFun0_if_0_end;
                     AnonFun0_if_0_else:
                         ;
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eStoppingSuccess), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eStoppingSuccess), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun0_3:
                         ;
                     AnonFun0_if_0_end:
                         ;
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (130, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine TimerMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine TimerMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -1443,16 +1443,16 @@ namespace P.Program
                             goto AnonFun2_1;
                     }
 
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eTimerFired), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eTimerFired), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun2_1:
                         ;
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (112, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine TimerMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine TimerMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -1597,11 +1597,11 @@ namespace P.Program
                         ;
                     if (!((PrtBoolValue)(new PrtBoolValue(((parent).continuation).ReturnAndResetNondet()))).bl)
                         goto AnonFun4_if_0_else;
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (101, 5): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine TimerMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine TimerMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     goto AnonFun4_if_0_end;
@@ -1869,12 +1869,12 @@ namespace P.Program
                     TimerMachine parent = (TimerMachine)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     PrtValue swap;
-                    (parent).Driver = (PrtValue.PrtCastValue((currFun).locals[0], OS_Types.typeInterfaceType_2)).Clone();
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    (parent).Driver = (PrtValue.PrtCastValue((currFun).locals[0], Types_1685131768.typeInterfaceType_2)).Clone();
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (86, 70): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine TimerMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine TimerMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -2747,23 +2747,23 @@ namespace P.Program
                 TimerMachine_TimerStarted = new TimerMachine_TimerStarted_Class("TimerMachine_TimerStarted", AnonFun4, AnonFun5, false, StateTemperature.Warm);
                 TimerMachine_Timer_Init = new TimerMachine_Timer_Init_Class("TimerMachine_Timer_Init", AnonFun6, AnonFun7, false, StateTemperature.Warm);
                 TimerMachine__Init = new TimerMachine__Init_Class("TimerMachine__Init", AnonFun8, AnonFun9, false, StateTemperature.Warm);
-                TimerMachine_ConsmachineeringStoppingTimer.deferredSet.Add(OS_Events.eStartDebounceTimer);
+                TimerMachine_ConsmachineeringStoppingTimer.deferredSet.Add(Events_1685131768.eStartDebounceTimer);
                 PrtTransition transition_1 = new PrtTransition(AnonFun10, TimerMachine_Timer_Init, false);
-                TimerMachine_ConsmachineeringStoppingTimer.transitions.Add(OS_Events.eUnit, transition_1);
-                TimerMachine_SendTimerFired.deferredSet.Add(OS_Events.eStartDebounceTimer);
+                TimerMachine_ConsmachineeringStoppingTimer.transitions.Add(Events_1685131768.eUnit, transition_1);
+                TimerMachine_SendTimerFired.deferredSet.Add(Events_1685131768.eStartDebounceTimer);
                 PrtTransition transition_2 = new PrtTransition(AnonFun11, TimerMachine_Timer_Init, false);
-                TimerMachine_SendTimerFired.transitions.Add(OS_Events.eUnit, transition_2);
-                TimerMachine_TimerStarted.deferredSet.Add(OS_Events.eStartDebounceTimer);
+                TimerMachine_SendTimerFired.transitions.Add(Events_1685131768.eUnit, transition_2);
+                TimerMachine_TimerStarted.deferredSet.Add(Events_1685131768.eStartDebounceTimer);
                 PrtTransition transition_3 = new PrtTransition(AnonFun12, TimerMachine_ConsmachineeringStoppingTimer, false);
-                TimerMachine_TimerStarted.transitions.Add(OS_Events.eStopTimer, transition_3);
+                TimerMachine_TimerStarted.transitions.Add(Events_1685131768.eStopTimer, transition_3);
                 PrtTransition transition_4 = new PrtTransition(AnonFun13, TimerMachine_SendTimerFired, false);
-                TimerMachine_TimerStarted.transitions.Add(OS_Events.eUnit, transition_4);
-                TimerMachine_Timer_Init.dos.Add(OS_Events.eStopTimer, ignore);
-                TimerMachine_Timer_Init.dos.Add(OS_Events.eStopTimer, PrtFun.IgnoreFun);
+                TimerMachine_TimerStarted.transitions.Add(Events_1685131768.eUnit, transition_4);
+                TimerMachine_Timer_Init.dos.Add(Events_1685131768.eStopTimer, ignore);
+                TimerMachine_Timer_Init.dos.Add(Events_1685131768.eStopTimer, PrtFun.IgnoreFun);
                 PrtTransition transition_5 = new PrtTransition(AnonFun14, TimerMachine_TimerStarted, false);
-                TimerMachine_Timer_Init.transitions.Add(OS_Events.eStartDebounceTimer, transition_5);
+                TimerMachine_Timer_Init.transitions.Add(Events_1685131768.eStartDebounceTimer, transition_5);
                 PrtTransition transition_6 = new PrtTransition(AnonFun15, TimerMachine_Timer_Init, false);
-                TimerMachine__Init.transitions.Add(OS_Events.eUnit, transition_6);
+                TimerMachine__Init.transitions.Add(Events_1685131768.eUnit, transition_6);
             }
         }
 
@@ -2814,7 +2814,7 @@ namespace P.Program
 
             public LEDMachine(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
             {
-                (fields).Add(PrtValue.PrtMkDefaultValue(OS_Types.typeInterfaceType_2));
+                (fields).Add(PrtValue.PrtMkDefaultValue(Types_1685131768.typeInterfaceType_2));
             }
 
             public class ignore_Class : PrtFun
@@ -3179,16 +3179,16 @@ namespace P.Program
                             goto AnonFun4_1;
                     }
 
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eTransferSuccess), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eTransferSuccess), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun4_1:
                         ;
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (72, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine LEDMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine LEDMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -3392,7 +3392,7 @@ namespace P.Program
                             goto AnonFun7_1;
                     }
 
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eTransferSuccess), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eTransferSuccess), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun7_1:
@@ -3673,7 +3673,7 @@ namespace P.Program
                         ;
                     if (!((PrtBoolValue)(new PrtBoolValue(((parent).continuation).ReturnAndResetNondet()))).bl)
                         goto AnonFun11_if_0_else;
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eTransferSuccess), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eTransferSuccess), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun11_1:
@@ -3681,18 +3681,18 @@ namespace P.Program
                     goto AnonFun11_if_0_end;
                     AnonFun11_if_0_else:
                         ;
-                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(OS_Events.eTransferFailure), OS_Events.@null, parent, (PrtMachineValue)((parent).Driver));
+                    (((PrtMachineValue)((parent).Driver)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1685131768.eTransferFailure), Events_1685131768.@null, parent, (PrtMachineValue)((parent).Driver));
                     (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
                     return;
                     AnonFun11_2:
                         ;
                     AnonFun11_if_0_end:
                         ;
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (53, 4): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine LEDMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine LEDMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -4215,12 +4215,12 @@ namespace P.Program
                     LEDMachine parent = (LEDMachine)(_parent);
                     PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
                     PrtValue swap;
-                    (parent).Driver = (PrtValue.PrtCastValue((currFun).locals[0], OS_Types.typeInterfaceType_2)).Clone();
-                    if (!!(OS_Events.eUnit).Equals(OS_Events.@null))
+                    (parent).Driver = (PrtValue.PrtCastValue((currFun).locals[0], Types_1685131768.typeInterfaceType_2)).Clone();
+                    if (!!(Events_1685131768.eUnit).Equals(Events_1685131768.@null))
                         throw new PrtAssertFailureException("C:\\\\Workspace\\\\P\\\\Src\\\\PTester\\\\Regressions\\\\Interfaces\\\\OS.p (35, 70): Raised event must be non-null");
-                    Console.Write("<RaiseLog> Machine LEDMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(OS_Events.eUnit)).evt).name);
-                    (parent).currentTrigger = OS_Events.eUnit;
-                    (parent).currentPayload = OS_Events.@null;
+                    Console.Write("<RaiseLog> Machine LEDMachine-{0} raised Event {1}\\n", (parent).instanceNumber, (((PrtEventValue)(Events_1685131768.eUnit)).evt).name);
+                    (parent).currentTrigger = Events_1685131768.eUnit;
+                    (parent).currentPayload = Events_1685131768.@null;
                     (parent).PrtFunContRaise();
                     return;
                     parent.PrtFunContReturn(null);
@@ -4445,21 +4445,21 @@ namespace P.Program
                 LEDMachine_LED_Init = new LEDMachine_LED_Init_Class("LEDMachine_LED_Init", AnonFun14, AnonFun15, false, StateTemperature.Warm);
                 LEDMachine__Init = new LEDMachine__Init_Class("LEDMachine__Init", AnonFun19, AnonFun20, false, StateTemperature.Warm);
                 PrtTransition transition_1 = new PrtTransition(AnonFun6, LEDMachine_LED_Init, false);
-                LEDMachine_StableLED.transitions.Add(OS_Events.eUnit, transition_1);
+                LEDMachine_StableLED.transitions.Add(Events_1685131768.eUnit, transition_1);
                 PrtTransition transition_2 = new PrtTransition(AnonFun9, LEDMachine_ProcessUpdateLED, false);
-                LEDMachine_UnstableLED.transitions.Add(OS_Events.eUpdateBarGraphStateUsingControlTransfer, transition_2);
+                LEDMachine_UnstableLED.transitions.Add(Events_1685131768.eUpdateBarGraphStateUsingControlTransfer, transition_2);
                 PrtTransition transition_3 = new PrtTransition(AnonFun10, LEDMachine_LED_Init, false);
-                LEDMachine_UnstableLED.transitions.Add(OS_Events.eSetLedStateToStableUsingControlTransfer, transition_3);
+                LEDMachine_UnstableLED.transitions.Add(Events_1685131768.eSetLedStateToStableUsingControlTransfer, transition_3);
                 PrtTransition transition_4 = new PrtTransition(AnonFun13, LEDMachine_LED_Init, false);
-                LEDMachine_ProcessUpdateLED.transitions.Add(OS_Events.eUnit, transition_4);
+                LEDMachine_ProcessUpdateLED.transitions.Add(Events_1685131768.eUnit, transition_4);
                 PrtTransition transition_5 = new PrtTransition(AnonFun16, LEDMachine_StableLED, false);
-                LEDMachine_LED_Init.transitions.Add(OS_Events.eSetLedStateToStableUsingControlTransfer, transition_5);
+                LEDMachine_LED_Init.transitions.Add(Events_1685131768.eSetLedStateToStableUsingControlTransfer, transition_5);
                 PrtTransition transition_6 = new PrtTransition(AnonFun17, LEDMachine_UnstableLED, false);
-                LEDMachine_LED_Init.transitions.Add(OS_Events.eSetLedStateToUnstableUsingControlTransfer, transition_6);
+                LEDMachine_LED_Init.transitions.Add(Events_1685131768.eSetLedStateToUnstableUsingControlTransfer, transition_6);
                 PrtTransition transition_7 = new PrtTransition(AnonFun18, LEDMachine_ProcessUpdateLED, false);
-                LEDMachine_LED_Init.transitions.Add(OS_Events.eUpdateBarGraphStateUsingControlTransfer, transition_7);
+                LEDMachine_LED_Init.transitions.Add(Events_1685131768.eUpdateBarGraphStateUsingControlTransfer, transition_7);
                 PrtTransition transition_8 = new PrtTransition(AnonFun21, LEDMachine_LED_Init, false);
-                LEDMachine__Init.transitions.Add(OS_Events.eUnit, transition_8);
+                LEDMachine__Init.transitions.Add(Events_1685131768.eUnit, transition_8);
             }
         }
     }

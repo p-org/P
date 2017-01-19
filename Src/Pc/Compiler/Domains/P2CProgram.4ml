@@ -825,8 +825,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 					  UNKNOWN).
 
 	MakeArgs ::= (in.FunDecl, in.NmdTupType + { NIL }, Args + { NIL }, Natural).
-	MakeArgs(f, type, NIL, 0) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params).
-	MakeArgs(f, tl, args', n') :- MakeArgs(f, in.NmdTupType(_, tl), args, n), args' = Args(BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n, DEC, U)), args), n' = n + 1.
+	MakeArgs(f, type, NIL, n) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params), n = lstLength(in.#NmdTupType, f.params).
+	MakeArgs(f, tl, args', n') :- MakeArgs(f, in.NmdTupType(_, tl), args, n), n' = n - 1, n':  Natural, 
+	                              args' = Args(BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n', DEC, U)), args).
 
 	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
 	                params = Params(Param(NIL, "context"), NIL),

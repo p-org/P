@@ -3430,7 +3430,7 @@ namespace Microsoft.Pc
         {
             var outputDir = compiler.Options.outputDir == null ? Environment.CurrentDirectory : compiler.Options.outputDir;
             System.IO.StreamWriter file = new System.IO.StreamWriter(Path.Combine(outputDir, cSharpFileName));
-            file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168");
+            file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168, C0649");
             file.WriteLine(result);
             file.Close();
         }

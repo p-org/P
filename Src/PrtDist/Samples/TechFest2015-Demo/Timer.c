@@ -1,67 +1,114 @@
 #include "Driver.h"
 
+static PRT_UINT32 numTimerInstances = 0;
 typedef struct TimerContext {
-	PRT_VALUE *client;
+	PRT_UINT32 refCount;
+	PRT_UINT32 timerInstance;
+	PRT_MACHINEINST *clientContext;
 	HANDLE timer;
 	BOOL started;
 } TimerContext;
 
-char* GetMachineName(PRT_MACHINEINST *context)
+void PRT_FORGN_FREE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 {
-	char* name = context->process->program->machines[context->instanceOf]->name;
-	return name;
+	if (frgnVal == 0) return;
+	TimerContext *timerContext = (TimerContext *)frgnVal;
+	timerContext->refCount--;
+	if (timerContext->refCount == 0)
+	{
+		CloseHandle(timerContext->timer);
+		PrtFree(timerContext);
+	}
+}
+
+PRT_BOOLEAN PRT_FORGN_ISEQUAL_TimerPtr_IMPL(PRT_UINT64 frgnVal1, PRT_UINT64 frgnVal2)
+{
+	return frgnVal1 == frgnVal2;
+}
+
+PRT_STRING PRT_FORGN_TOSTRING_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+{
+	if (frgnVal == 0) return "";
+	TimerContext *timerContext = (TimerContext *)frgnVal;
+	PRT_STRING str = PrtMalloc(sizeof(PRT_CHAR) * 100);
+	sprintf_s(str, 100, "Timer : %d", timerContext->timerInstance);
+	return str;
+}
+
+PRT_UINT32 PRT_FORGN_GETHASHCODE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+{
+	return (PRT_UINT32)frgnVal;
+}
+
+PRT_UINT64 PRT_FORGN_MKDEF_TimerPtr_IMPL(void)
+{
+	return 0;
+}
+
+PRT_UINT64 PRT_FORGN_CLONE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+{
+	if (frgnVal == 0) return 0;
+	TimerContext *timerContext = (TimerContext *)frgnVal;
+	timerContext->refCount++;
+	return frgnVal;
 }
 
 VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
 {
 	//printf("Entering Timer Callback\n");	
-	PRT_MACHINEINST *context = (PRT_MACHINEINST *)arg;
-	TimerContext *timerContext = (TimerContext *)context->extContext;
-
+	TimerContext *timerContext = (TimerContext *)arg;
+	PRT_MACHINEINST *context = timerContext->clientContext;
 	PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
-	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, timerContext->client);
-	PrtSend(context, clientMachine, ev, 1, PRT_FUN_PARAM_CLONE, context->id);
+	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, context->id);
+	PRT_VALUE *timerId = PrtMkForeignValue((PRT_UINT64)timerContext, P_GEND_TYPE_TimerPtr);
+	PrtSend(NULL, clientMachine, ev, 1, PRT_FUN_PARAM_MOVE, timerId);
 	PrtFreeValue(ev);
 }
 
+PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *owner)
+{
+	TimerContext *timerContext = (TimerContext *)PrtMalloc(sizeof(TimerContext));
+	timerContext->refCount = 1;
+	timerContext->clientContext = PrtGetMachine(context->process, owner);
+	timerContext->started = FALSE;
+	timerContext->timer = CreateWaitableTimer(NULL, TRUE, NULL);
+	timerContext->timerInstance = numTimerInstances;
+	numTimerInstances++;
 
-PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timerMachineId, PRT_VALUE *timeout)
+	PrtAssert(timerContext->timer != NULL, "CreateWaitableTimer failed");
+	return PrtMkForeignValue((PRT_UINT64)timerContext, P_GEND_TYPE_TimerPtr);
+}
+
+PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer, PRT_VALUE *time)
 {
 	LARGE_INTEGER liDueTime;
-	PRT_VALUE *p_tmp_ret = NULL;
 	BOOL success;
 	
-	PRT_MACHINEINST* timerMachine = PrtGetMachine(context->process, timerMachineId);
-	TimerContext *timerContext = (TimerContext *)timerMachine->extContext;
-
-	int timeout_value = timeout->valueUnion.nt;
+	TimerContext *timerContext = (TimerContext *)PrtGetForeignValue(timer);
+	int timeout_value = time->valueUnion.nt;
 	liDueTime.QuadPart = -10000 * timeout_value;
-	success = SetWaitableTimer(timerContext->timer, &liDueTime, 0, Callback, timerMachine, FALSE);
+	success = SetWaitableTimer(timerContext->timer, &liDueTime, 0, Callback, timerContext, FALSE);
 	timerContext->started = success;
 	PrtAssert(success, "SetWaitableTimer failed");
 
 	return NULL;
 }
 
-PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timerMachineId)
+PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer)
 {
-	LARGE_INTEGER liDueTime;
-	PRT_VALUE *p_tmp_ret = NULL;
 	BOOL success;
 	PRT_VALUE *ev;
 
-	PRT_MACHINEINST* timerMachine = PrtGetMachine(context->process, timerMachineId);
-	TimerContext *timerContext = (TimerContext *)timerMachine->extContext;
-
+	TimerContext *timerContext = (TimerContext *)PrtGetForeignValue(timer);
 	timerContext->started = FALSE;
 	success = CancelWaitableTimer(timerContext->timer);
 	if (success) {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);
-		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, 1, PRT_FUN_PARAM_CLONE, timerMachine->id);
+		PrtSend(NULL, timerContext->clientContext, ev, 1, PRT_FUN_PARAM_CLONE, timer);
 	}
 	else {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_FAILURE);
-		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, 1, PRT_FUN_PARAM_CLONE, timerMachine->id);
+		PrtSend(NULL, timerContext->clientContext, ev, 1, PRT_FUN_PARAM_CLONE, timer);
 	}
 	PrtFreeValue(ev);
 
@@ -70,21 +117,8 @@ PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timerM
 
 void P_DTOR_Timer_IMPL(PRT_MACHINEINST *context)
 {
-	TimerContext *timerContext;
-	timerContext = (TimerContext *)context->extContext;
-
-	PrtFreeValue(timerContext->client);
-	CloseHandle(timerContext->timer);
-	PrtFree(timerContext);
 }
 
 void P_CTOR_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
 {
-	TimerContext *timerContext = (TimerContext *)PrtMalloc(sizeof(TimerContext));
-	timerContext->client = PrtCloneValue(value);
-	timerContext->started = FALSE;
-	timerContext->timer = CreateWaitableTimer(NULL, TRUE, NULL);
-
-	PrtAssert(timerContext->timer != NULL, "CreateWaitableTimer failed");
-	context->extContext = timerContext;
 }

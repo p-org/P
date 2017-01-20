@@ -72,6 +72,9 @@
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
         private bool isFunProtoDecl = false;
+        public bool isC0 = false;
+        
+
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.FunProtoDecl crntFunProtoDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
@@ -260,9 +263,10 @@
             get { return typeExprStack.Peek(); }
         }
 
-        public PParser()
+        public PParser(bool isC0)
             : base(new Scanner())
         {
+            this.isC0 = isC0;
             localVarStack = new LocalVarStack(this);
         }
 
@@ -1133,6 +1137,19 @@
         }
 
         #endregion
+
+        public void SetProgramIgnore()
+        {
+            if(isC0)
+            {
+                parseProgram.IgnoreDecl = true;
+            }
+        }
+
+        public void ResetProgramIgnore()
+        {
+            parseProgram.IgnoreDecl = false;
+        }
 
         #region Node setters
         private void SetEventCard(string cardStr, bool isAssert, Span span)
@@ -2066,7 +2083,7 @@
                 {
                     var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineSends__1)ev);
                     send.Span = ev.Span;
-                    parseProgram.MachineSends.Add(send);
+                    parseProgram.Add(send);
                 }
                 crntEventList.Clear();
             }
@@ -2074,7 +2091,7 @@
             {
                 var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.NIL, span));
                 send.Span = span;
-                parseProgram.MachineSends.Add(send);
+                parseProgram.Add(send);
             }
         }
 
@@ -2087,7 +2104,9 @@
                 {
                     var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
                     creates.Span = id.Span;
-                    parseProgram.MachineCreates.Add(creates);
+                    parseProgram.Add(creates);
+                    
+                    
                 }
                 crntStringIdList.Clear();
             }
@@ -2095,7 +2114,7 @@
             {
                 var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.NIL, span));
                 creates.Span = span;
-                parseProgram.MachineCreates.Add(creates);
+                parseProgram.Add(creates);
             }
             
         }

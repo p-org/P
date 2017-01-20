@@ -167,7 +167,7 @@ CreatesList
 	;
 	
 SpecMachineDecl
-	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); } 
+	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); ResetProgramIgnore();} 
 	;
 
 ImplMachineNameDecl
@@ -175,7 +175,7 @@ ImplMachineNameDecl
 	;
 
 SpecMachineNameDecl
-	: SPEC ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $2.str, ToSpan(@2), ToSpan(@1)); }
+	: SPEC { SetProgramIgnore(); } ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $3.str, ToSpan(@3), ToSpan(@1));}
 	;
 	
 ObservesList

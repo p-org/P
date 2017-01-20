@@ -1725,7 +1725,6 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> args)
             {
-                //check if the send is legal and event is in the permissions.
                 var targetExpr = CSharpHelper.MkCSharpCastExpression("PrtMachineValue", args[0]);
                 ExpressionSyntax eventExpr = CSharpHelper.MkCSharpCastExpression("PrtEventValue", args[1]);
                 args.RemoveRange(0, 2);

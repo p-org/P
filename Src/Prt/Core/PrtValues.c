@@ -200,8 +200,10 @@ PRT_VALUE * PRT_CALL_CONV PrtMkMachineValue(_In_ PRT_MACHINEID value)
 
 PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 	_In_ PRT_UINT64 value,
-	_In_ PRT_UINT16 typeTag)
+	_In_ PRT_TYPE *type)
 {
+	PrtAssert(type->typeKind == PRT_KIND_FORGN, "Bad type");
+	PRT_UINT16 typeTag = type->typeUnion.typeTag;
 	PrtAssert(typeTag < prtNumForeignTypeDecls && prtForeignTypeDecls[typeTag].declIndex == typeTag, "Bad type tag");
 
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
@@ -213,10 +215,10 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 	return retVal;
 }
 
-PRT_FORGNVALUE * PRT_CALL_CONV PrtGetForeignValue(PRT_VALUE* v)
+PRT_UINT64 PRT_CALL_CONV PrtGetForeignValue(PRT_VALUE* v)
 {
 	PrtAssert(v->discriminator == PRT_VALUE_KIND_FORGN, "Input value is not a foreign value");
-	return v->valueUnion.frgn;
+	return v->valueUnion.frgn->value;
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)

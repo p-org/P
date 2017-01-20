@@ -137,7 +137,7 @@ namespace P.Runtime
 
         public void CreateMainMachine()
         {
-            if(renameMap.ContainsKey("Main"))
+            if(!renameMap.ContainsKey("Main"))
             {
                 throw new PrtInternalException("No Main Machine");
             }

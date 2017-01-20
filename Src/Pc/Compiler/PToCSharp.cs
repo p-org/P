@@ -3921,7 +3921,8 @@ namespace Microsoft.Pc
 
 
             var outputDll = Path.Combine(outputDir, testCaseName + ".dll");
-            var emitResult = compilation.Emit(outputDll);
+            var outputPdb = Path.Combine(outputDir, testCaseName + ".pdb");
+            var emitResult = compilation.Emit(outputDll, outputPdb);
 
             //If our compilation failed, we can discover exactly why.
             if (!emitResult.Success)

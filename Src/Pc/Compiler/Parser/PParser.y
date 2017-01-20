@@ -172,7 +172,7 @@ SpecMachineDecl
 
 ImplMachineNameDecl
 	: MACHINE ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); }
-	| MODEL { SetProgramIgnore(); } ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| MODEL { SetProgramIgnore(); } ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); }
 	;
 
 SpecMachineNameDecl

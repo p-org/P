@@ -147,16 +147,16 @@
 
         public void Add(object item)
         {
-            if(IgnoreDecl)
+            if (IgnoreDecl)
             {
                 return;
             }
 
-            if(item is P_Root.MachineCreates)
+            if (item is P_Root.MachineCreates)
             {
                 MachineCreates.Add(item as P_Root.MachineCreates);
             }
-            else if(item is P_Root.MachineSends)
+            else if (item is P_Root.MachineSends)
             {
                 MachineSends.Add(item as P_Root.MachineSends);
             }
@@ -245,6 +245,7 @@
                 throw new Exception("Cannot add into the Program");
             }
         }
+
         public IEnumerable<ICSharpTerm> Terms
         {
             get

@@ -130,7 +130,7 @@ ConstTypeOrNone
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone ReceivesOrExports Sends Creates LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); }
+	: ImplMachineNameDecl MachAnnotOrNone ReceivesOrExports Sends Creates LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); ResetProgramIgnore(); }
 	;
 
 ImplMachineProtoDecl
@@ -167,15 +167,16 @@ CreatesList
 	;
 	
 SpecMachineDecl
-	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); ResetProgramIgnore();} 
+	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); ResetProgramIgnore(); } 
 	;
 
 ImplMachineNameDecl
 	: MACHINE ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); }
+	| MODEL { SetProgramIgnore(); } ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 SpecMachineNameDecl
-	: SPEC { SetProgramIgnore(); } ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $3.str, ToSpan(@3), ToSpan(@1));}
+	: SPEC { SetProgramIgnore(); } ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $3.str, ToSpan(@3), ToSpan(@1)); }
 	;
 	
 ObservesList

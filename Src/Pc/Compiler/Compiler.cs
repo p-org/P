@@ -608,7 +608,7 @@
                     List<Flag> parserFlags;
                     string currFileName = parserWorkQueue.Dequeue();
                     Debug.WriteLine("Loading " + currFileName);
-                    var parser = new Parser.PParser(Options.compilerOutput == CompilerOutput.C0);
+                    var parser = new Parser.PParser();
                     var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags, out includedFileNames);
                     foreach (Flag f in parserFlags)
                     {

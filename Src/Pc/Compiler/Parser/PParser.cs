@@ -210,7 +210,7 @@
 
             public void AddCase(P_Root.IArgType_Cases__0 e, P_Root.IArgType_Cases__1 a, Span caseSpan)
             {
-                casesList = P_Root.MkCases(e, a, casesList);
+                casesList = P_Root.MkCases(e, a, casesList, (P_Root.IArgType_Cases__3)parser.MkUniqueId(caseSpan));
                 casesList.Span = caseSpan;
             }
 

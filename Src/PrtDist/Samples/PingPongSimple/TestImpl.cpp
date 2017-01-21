@@ -70,31 +70,45 @@ std::wstring ConvertToUnicode(const char* str)
 	return std::wstring(temp.begin(), temp.end());
 }
 
-static void LogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
+static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
     // This LogHandler shows how to use the dgmlMonitor to create a DGML graph of the state machine transitions that
 	// were recorded by this LogHandler.  The DGML identifiers computed below are designed to ensure the correct DGML graph is built.
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
+
 	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf]->name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
+	char number[20]; // longest 32 bit integer in base 10 is 10 digits, plus room for null terminator.
+	_itoa(machineId, number, 16);
+	std::wstring machineInstance = ConvertToUnicode(number);
 	std::wstring stateName;
 	stateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(c)->name);
 	
 	std::wstring eventName;
-	std::wstring stateId = machineName + L"." + stateName;
+	std::wstring stateId = machineName + L"(0x" + machineInstance + L")." + stateName;
 	std::wstring stateLabel = machineName + L"\n" + stateName;
-	std::wstring senderMachineName;
-	std::wstring senderStateName;
-	std::wstring senderStateId;
-	std::wstring senderStateLabel;
-	if (sender != NULL && event != NULL)
+
+	// optional sender information.
+	std::wstring senderMachineName	;
+	std::wstring senderStateName	;
+	std::wstring senderStateId		;
+	std::wstring senderStateLabel	;
+
+	if (state != NULL)
 	{
-		PRT_MACHINEINST_PRIV * s = (PRT_MACHINEINST_PRIV *)sender;
-		eventName = ConvertToUnicode((const char*)s->process->program->events[PrtPrimGetEvent(event)].name);
-		senderMachineName = ConvertToUnicode((const char*)s->process->program->machines[s->instanceOf]->name);
-		senderStateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(s)->name);
-		senderStateId = senderMachineName + L"." + senderStateName;
+		_itoa(state->machineId, number, 16);
+		std::wstring senderMachineInstance = ConvertToUnicode(number);
+		senderMachineName = ConvertToUnicode((const char*)state->machineName);
+		senderStateName = ConvertToUnicode((const char*)state->stateName);
+		senderStateId = senderMachineName + L"(0x" + senderMachineInstance + L")." + senderStateName;
 		senderStateLabel = senderMachineName + L"\n" + senderStateName;
+	}
+
+	if (event != NULL)
+	{
+		//find out what state the sender machine is in so we can also log that information.
+		PRT_MACHINEINST_PRIV * s = (PRT_MACHINEINST_PRIV *)receiver;
+		eventName = ConvertToUnicode((const char*)s->process->program->events[PrtPrimGetEvent(event)].name);
 	}
 
 	switch (step)
@@ -165,7 +179,7 @@ int main(int argc, char *argv[])
 
 		// Attempt to connect to Visual Studio running on some machine.  This instance of VS 2015 needs to have the DgmlTestMonitor VSIX extension
 		// installed, and the DgmlTestMonitor window needs to be open.  Then you will see the state machine building & animating in real time.
-		// dgmlMonitor.Connect("10.137.62.126");
+		dgmlMonitor.Connect("10.137.62.126");
 
 		// Either way you need to also start a new graph file on disk. If you have not connected to VS then this file will be written
 		// at the time you call dgmlMonitor.Close(), otherwise VS will maintain the graph inside VS.

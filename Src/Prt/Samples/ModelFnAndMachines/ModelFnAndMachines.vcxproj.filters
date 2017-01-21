@@ -7,7 +7,7 @@
     <ClCompile Include="modelFunctions.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="timer.c">
+    <ClCompile Include="TimerImpl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

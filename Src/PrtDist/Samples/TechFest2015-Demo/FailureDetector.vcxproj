@@ -171,7 +171,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
-    <ClCompile Include="Timer.c" />
+    <ClCompile Include="TimerImpl.c" />
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="Driver.p" />

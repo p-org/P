@@ -1,16 +1,14 @@
 #include "test.h"
 
+static int NextTimerId = 0;
+
 typedef struct TimerContext {
 	PRT_VALUE *client;
 	HANDLE timer;
 	BOOL started;
+	int id;
 } TimerContext;
 
-char* GetMachineName(PRT_MACHINEINST *context)
-{
-	char* name = context->process->program->machines[context->instanceOf]->name;
-	return name;
-}
 
 VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue)
 {
@@ -20,7 +18,12 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 
 	PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
 	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, timerContext->client);
-	PrtSend(context, clientMachine, ev, 1, PRT_FUN_PARAM_CLONE, context->id);
+	PRT_MACHINESTATE state;
+	state.machineId = timerContext->id;
+	state.machineName = "Timer";
+	state.stateId = 1;
+	state.stateName = "Tick";
+	PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_CLONE, context->id);
 	PrtFreeValue(ev);
 }
 
@@ -50,22 +53,29 @@ PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timerM
 	BOOL success;
 	PRT_VALUE *ev;
 
+	PRT_MACHINESTATE state;
+	state.machineId = 1;
+	state.machineName = "Timer";
+	state.stateId = 1;
+	state.stateName = "Cancel";
+
 	PRT_MACHINEINST* timerMachine = PrtGetMachine(context->process, timerMachineId);
 	TimerContext *timerContext = (TimerContext *)timerMachine->extContext;
 
 	timerContext->started = FALSE;
 	success = CancelWaitableTimer(timerContext->timer);
+	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, timerContext->client);
 	if (success) {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);
-		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, 1, PRT_FUN_PARAM_CLONE, timerMachine->id);
+		PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_CLONE, timerMachine->id);
 	}
 	else {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_FAILURE);
-		PrtSend(context, PrtGetMachine(context->process, timerContext->client), ev, 1, PRT_FUN_PARAM_CLONE, timerMachine->id);
+		PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_CLONE, timerMachine->id);
 	}
 	PrtFreeValue(ev);
 
-	return NULL;
+	return NULL; 
 }
 
 void P_DTOR_Timer_IMPL(PRT_MACHINEINST *context)
@@ -84,7 +94,7 @@ void P_CTOR_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
 	timerContext->client = PrtCloneValue(value);
 	timerContext->started = FALSE;
 	timerContext->timer = CreateWaitableTimer(NULL, TRUE, NULL);
-
+	timerContext->id = NextTimerId++;  // make sure timer is uniquely identified.
 	PrtAssert(timerContext->timer != NULL, "CreateWaitableTimer failed");
 	context->extContext = timerContext;
 }

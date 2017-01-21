@@ -274,7 +274,7 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 	}
 }
 
-static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINEINST *sender, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload,
+static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload,
 							_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
@@ -336,7 +336,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINEINST *sender, _In_ P
 		break;
 	case PRT_STEP_GOTO:
 	{
-		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV *)sender;
+		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV *)receiver;
 		PRT_STRING destStateName = c->process->program->machines[context->instanceOf]->states[context->destStateIndex].name;
 		PrtUserPrintString("<GotoLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
@@ -448,6 +448,18 @@ PRT_STRING PRT_CALL_CONV PrtToStringValue(_In_ PRT_VALUE *value)
 	return buffer;
 }
 
+PRT_STRING PRT_CALL_CONV PrtCopyString(_In_ const PRT_STRING value)
+{
+	if (value == NULL)
+	{
+		return NULL;
+	}
+	size_t bufferSize = strlen(value) + 1;
+	PRT_STRING buffer = (PRT_STRING)PrtCalloc(bufferSize, sizeof(char));
+	strcpy_s(buffer, bufferSize, (const char*)value);
+	return buffer;
+}
+
 void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE *type)
 {
 	char *buffer = NULL;
@@ -471,25 +483,25 @@ PRT_STRING PRT_CALL_CONV PrtToStringType(_In_ PRT_TYPE *type)
 	return buffer;
 }
 
-void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *sender, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
+void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
 {
 	char *buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
-	PrtUserPrintStep(step, sender, receiver, event, payload, &buffer, &bufferSize, &nChars);
+	PrtUserPrintStep(step, senderState, receiver, event, payload, &buffer, &bufferSize, &nChars);
 	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
 	PrtPrintf(buffer);
 	PrtFree(buffer);
 }
 
-PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINEINST *sender, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
+PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
 {
 	char *buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
-	PrtUserPrintStep(step, sender, receiver, event, payload, &buffer, &bufferSize, &nChars);
+	PrtUserPrintStep(step, senderState, receiver, event, payload, &buffer, &bufferSize, &nChars);
 	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
 	return buffer;
 }

@@ -174,7 +174,7 @@
   <ItemGroup>
     <ClCompile Include="Main.c" />
     <ClCompile Include="modelFunctions.c" />
-    <ClCompile Include="timer.c" />
+    <ClCompile Include="TimerImpl.c" />
     <PCompile Include="ServerClient.p" />
   </ItemGroup>
   <ItemGroup>

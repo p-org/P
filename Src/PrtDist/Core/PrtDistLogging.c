@@ -121,7 +121,7 @@ PrtDistSMExceptionHandler(
 
 }
 
-void PrtDistSMLogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST* receiver, PRT_VALUE* event, PRT_VALUE* payload)
+void PrtDistSMLogHandler(PRT_STEP step, PRT_MACHINESTATE *senderState, PRT_MACHINEINST* receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
 	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)receiver;
 	PrtLockMutex(((PRT_PROCESS_PRIV*)ContainerProcess)->processLock);
@@ -142,7 +142,7 @@ void PrtDistSMLogHandler(PRT_STEP step, PRT_MACHINEINST *sender, PRT_MACHINEINST
         }
         else
         {
-            log = buffer = PrtToStringStep(step, receiver, NULL, NULL, NULL);
+			log = buffer = PrtToStringStep(step, senderState, receiver, event, payload);
         }
         fputs(log, logfile);
         if (log[strlen(log) - 1] != '\n') {

@@ -4,7 +4,7 @@
     <ClCompile Include="..\..\ClientFiles\MainFunction.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Timer.c">
+    <ClCompile Include="TimerImpl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

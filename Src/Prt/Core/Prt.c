@@ -319,7 +319,10 @@ PrtMkMachine(
 		}
 		PrtFree(args);
 	}
-	return (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, renamedMachine, instanceOf, payload);
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, renamedMachine, instanceOf, payload);
+
+	// free the payload since we cloned it here, and PrtMkMachinePrivate also clones it.
+	PrtFreeValue(payload);
 }
 
 PRT_MACHINEINST *
@@ -339,9 +342,18 @@ PrtGetMachine(
     return privateProcess->machines[machineId->machineId - 1];
 }
 
+void PRT_CALL_CONV PrtGetMachineState(_In_ PRT_MACHINEINST *context, _Inout_ PRT_MACHINESTATE* state)
+{
+	PRT_MACHINEINST_PRIV *priv = (PRT_MACHINEINST_PRIV*)context;
+	state->machineId = context->id->valueUnion.mid->machineId;
+	state->machineName = (PRT_STRING)context->process->program->machines[context->instanceOf]->name;
+	state->stateId = priv->currentState;
+	state->stateName = PrtGetCurrentStateDecl(priv)->name;
+}
+
 void
 PrtSend(
-	_Inout_ PRT_MACHINEINST			*sender,
+	_Inout_ PRT_MACHINESTATE 		*senderState,
     _Inout_ PRT_MACHINEINST			*receiver,
     _In_ PRT_VALUE					*event,
 	_In_ PRT_UINT32					numArgs,
@@ -392,5 +404,66 @@ PrtSend(
 		}
 		PrtFree(args);
 	}
-    PrtSendPrivate((PRT_MACHINEINST_PRIV *)sender, (PRT_MACHINEINST_PRIV *)receiver, event, payload);
+    PrtSendPrivate(senderState, (PRT_MACHINEINST_PRIV *)receiver, event, payload);
+}
+
+
+void 
+PRT_CALL_CONV PrtSendInternal(
+	_Inout_ PRT_MACHINEINST *sender,
+	_Inout_ PRT_MACHINEINST *receiver,
+	_In_ PRT_VALUE *event,
+	_In_ PRT_UINT32	numArgs,
+	...
+)
+{
+	PRT_MACHINESTATE senderState;
+	PrtGetMachineState(sender, &senderState);
+
+	PRT_VALUE *payload = NULL;
+	if (numArgs == 0)
+	{
+		payload = PrtMkNullValue();
+	}
+	else
+	{
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				break;
+			case PRT_FUN_PARAM_MOVE:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+		if (numArgs > 1)
+		{
+			PRT_TYPE *payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
+	}
+
+	PrtSendPrivate(&senderState, (PRT_MACHINEINST_PRIV *)receiver, event, payload);
 }

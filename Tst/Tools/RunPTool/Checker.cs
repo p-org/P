@@ -285,7 +285,7 @@ namespace CheckP
                     compileArgs.compilerOutput = CompilerOutput.C;
                     compileArgs.shortFileNames = true;
                     compileArgs.outputDir = workDirectory;
-                    compileArgs.shortFileNames = true;                    
+                    compileArgs.shortFileNames = true;
                     compileArgs.reBuild = true;
                     var compilerOutput = new CompilerTestOutputStream(tmpWriter);
 

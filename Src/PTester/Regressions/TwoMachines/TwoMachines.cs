@@ -804,13 +804,13 @@ namespace P.Program
                     }
 
                     (((PrtMachineValue)(parent.self)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1528637394.boolPayloadEvent), new PrtBoolValue(true), parent, (PrtMachineValue)(parent.self));
-                    (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
+                    (parent).PrtFunContSend(this, (currFun).locals, 1);
                     return;
                     AnonFun0_1:
                         ;
                     (parent).varBool = (new PrtBoolValue(false)).Clone();
                     (((PrtMachineValue)(parent.self)).mach).PrtEnqueueEvent((PrtEventValue)(Events_1528637394.boolPayloadEvent), (parent).varBool, parent, (PrtMachineValue)(parent.self));
-                    (parent).PrtFunContSend(this, (currFun).locals, (currFun).returnToLocation);
+                    (parent).PrtFunContSend(this, (currFun).locals, 2);
                     return;
                     AnonFun0_2:
                         ;

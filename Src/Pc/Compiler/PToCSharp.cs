@@ -1725,30 +1725,20 @@ namespace Microsoft.Pc
 
             SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> args)
             {
-                //check if the send is legal and event is in the permissions.
                 var targetExpr = CSharpHelper.MkCSharpCastExpression("PrtMachineValue", args[0]);
                 ExpressionSyntax eventExpr = CSharpHelper.MkCSharpCastExpression("PrtEventValue", args[1]);
                 args.RemoveRange(0, 2);
                 ExpressionSyntax payloadExpr = MkPayload(args);
-                var invocationArgs = new ExpressionSyntax[]
-                {
-                    eventExpr, payloadExpr, IdentifierName("parent"), targetExpr
-                };
                 StatementSyntax enqueueEventStmt = ExpressionStatement(
                     CSharpHelper.MkCSharpInvocationExpression(
                         CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpDot(targetExpr, "mach"), "PrtEnqueueEvent"),
-                        invocationArgs));
-
-                invocationArgs = new ExpressionSyntax[]
-                {
-                    ThisExpression(),
-                    CSharpHelper.MkCSharpDot("currFun", "locals"),
-                    CSharpHelper.MkCSharpDot("currFun", "returnToLocation")
-                };
+                        eventExpr, payloadExpr, IdentifierName("parent"), targetExpr));
+                var afterLabelId = GetFreshLabelId();
+                var afterLabel = GetLabelFromLabelId(afterLabelId);
                 StatementSyntax contStmt = ExpressionStatement(
-                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtFunContSend"), invocationArgs));
-
-                var afterLabel = GetLabelFromLabelId(GetFreshLabelId());
+                    CSharpHelper.MkCSharpInvocationExpression(
+                        CSharpHelper.MkCSharpDot("parent", "PrtFunContSend"), 
+                        ThisExpression(), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(afterLabelId)));
                 StatementSyntax afterStmt = CSharpHelper.MkCSharpEmptyLabeledStatement(afterLabel);
                 return Block(enqueueEventStmt, contStmt, ReturnStatement(), afterStmt);
             }
@@ -3440,7 +3430,7 @@ namespace Microsoft.Pc
         {
             var outputDir = compiler.Options.outputDir == null ? Environment.CurrentDirectory : compiler.Options.outputDir;
             System.IO.StreamWriter file = new System.IO.StreamWriter(Path.Combine(outputDir, cSharpFileName));
-            file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168");
+            file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168, C0649");
             file.WriteLine(result);
             file.Close();
         }
@@ -3921,7 +3911,8 @@ namespace Microsoft.Pc
 
 
             var outputDll = Path.Combine(outputDir, testCaseName + ".dll");
-            var emitResult = compilation.Emit(outputDll);
+            var outputPdb = Path.Combine(outputDir, testCaseName + ".pdb");
+            var emitResult = compilation.Emit(outputDll, outputPdb);
 
             //If our compilation failed, we can discover exactly why.
             if (!emitResult.Success)

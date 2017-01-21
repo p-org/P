@@ -143,6 +143,109 @@
             private set;
         }
 
+        public bool IgnoreDecl;
+
+        public void Add(object item)
+        {
+            if (IgnoreDecl)
+            {
+                return;
+            }
+
+            if (item is P_Root.MachineCreates)
+            {
+                MachineCreates.Add(item as P_Root.MachineCreates);
+            }
+            else if (item is P_Root.MachineSends)
+            {
+                MachineSends.Add(item as P_Root.MachineSends);
+            }
+            else if (item is P_Root.MachineReceives)
+            {
+                MachineReceives.Add(item as P_Root.MachineReceives);
+            }
+            else if (item is P_Root.MachineProtoDecl)
+            {
+                MachineProtoDecls.Add(item as P_Root.MachineProtoDecl);
+            }
+            else if (item is P_Root.FunProtoDecl)
+            {
+                FunProtoDecls.Add(item as P_Root.FunProtoDecl);
+            }
+            else if (item is P_Root.MachineExports)
+            {
+                MachineExports.Add(item as P_Root.MachineExports);
+            }
+            else if (item is P_Root.EventSetContains)
+            {
+                EventSetContains.Add(item as P_Root.EventSetContains);
+            }
+            else if (item is P_Root.EventSetDecl)
+            {
+                EventSetDecl.Add(item as P_Root.EventSetDecl);
+            }
+            else if (item is P_Root.InterfaceTypeDecl)
+            {
+                InterfaceTypeDecl.Add(item as P_Root.InterfaceTypeDecl);
+            }
+            else if (item is P_Root.ObservesDecl)
+            {
+                Observes.Add(item as P_Root.ObservesDecl);
+            }
+            else if (item is P_Root.Annotation)
+            {
+                Annotations.Add(item as P_Root.Annotation);
+            }
+            else if (item is P_Root.DoDecl)
+            {
+                Dos.Add(item as P_Root.DoDecl);
+            }
+            else if (item is P_Root.AnonFunDecl)
+            {
+                AnonFunctions.Add(item as P_Root.AnonFunDecl);
+            }
+            else if (item is P_Root.FunDecl)
+            {
+                Functions.Add(item as P_Root.FunDecl);
+            }
+            else if (item is P_Root.TransDecl)
+            {
+                Transitions.Add(item as P_Root.TransDecl);
+            }
+            else if (item is P_Root.VarDecl)
+            {
+                Variables.Add(item as P_Root.VarDecl);
+            }
+            else if (item is P_Root.StateDecl)
+            {
+                States.Add(item as P_Root.StateDecl);
+            }
+            else if (item is P_Root.MachineDecl)
+            {
+                Machines.Add(item as P_Root.MachineDecl);
+            }
+            else if (item is P_Root.EventDecl)
+            {
+                Events.Add(item as P_Root.EventDecl);
+            }
+            else if (item is P_Root.ModelType)
+            {
+                ModelTypes.Add(item as P_Root.ModelType);
+            }
+            else if (item is P_Root.EnumTypeDef)
+            {
+                EnumTypeDefs.Add(item as P_Root.EnumTypeDef);
+            }
+            else if (item is P_Root.TypeDef)
+            {
+                TypeDefs.Add(item as P_Root.TypeDef);
+            }
+            else
+            {
+                throw new Exception("Cannot add into the Program");
+            }
+        }
+
         public IEnumerable<ICSharpTerm> Terms
         {
             get
@@ -284,6 +387,7 @@
             MachineSends = new List<P_Root.MachineSends>();
             MachineReceives = new List<P_Root.MachineReceives>();
             MachineCreates = new List<P_Root.MachineCreates>();
+            IgnoreDecl = false;
         }
     }
 }

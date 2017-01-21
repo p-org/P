@@ -180,17 +180,17 @@ extern "C"{
 
 	/** Makes a foreign value.
 	* @param[in] value A pointer to foreign data (will be cloned).
-	* @param[in] typeTag The tag of this foreign type.
+	* @param[in] type The foreign type.
 	* @returns A proper foreign value. Caller is responsible for freeing.
 	* @see PrtFreeValue
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_UINT64 value, _In_ PRT_UINT16 typeTag);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(_In_ PRT_UINT64 value, _In_ PRT_TYPE *type);
 
 	/** Gets foreign data inside a value.
 	* @param[in] v A pointer to a value.
 	* @returns The (uncloned) foreign data inside v.
 	*/
-	PRT_API PRT_FORGNVALUE * PrtGetForeignValue(_In_ PRT_VALUE* v);
+	PRT_API PRT_UINT64 PrtGetForeignValue(_In_ PRT_VALUE* v);
 
 	/** Sets the value of a boolean.
 	* @param[in,out] prmVal A primitive boolean value to mutate.

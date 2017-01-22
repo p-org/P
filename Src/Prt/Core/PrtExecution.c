@@ -1560,11 +1560,6 @@ PrtFreeLocals(
 		return;
 	}
 
-	if (!frame->freeLocals)
-	{
-		return;
-	}
-
 	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, frame->funIndex);
 	PRT_UINT32 numParameters = funDecl->numParameters;
 	if (frame->refArgs != NULL)
@@ -1586,14 +1581,17 @@ PrtFreeLocals(
 			frame->locals[i] = NULL;
 		}
 	}
-	for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
+	if (frame->freeLocals)
 	{
-		if (frame->locals[i] != NULL)
+		for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
 		{
-			PrtFreeValue(frame->locals[i]);
+			if (frame->locals[i] != NULL)
+			{
+				PrtFreeValue(frame->locals[i]);
+			}
 		}
+		PrtFree(frame->locals);
 	}
-	PrtFree(frame->locals);
 }
 
 PRT_SM_FUN

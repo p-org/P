@@ -33,7 +33,7 @@ namespace RunPTool
         bool reset;
         bool cooperative; // for testing cooperative multitasking.
         bool listTests;
-        int batchSize;
+        int parallelism = 0;
 
         //set according to the name of the parent directory for "testconfig.txt":
         string testFilePath;
@@ -95,18 +95,10 @@ namespace RunPTool
                         case "list":
                             listTests = true;
                             break;
-                        case "batch":
-                            if (int.TryParse(option, out batchSize))
+                        case "parallel":
+                            if (!int.TryParse(option, out parallelism))
                             {
-                                if (batchSize < 5)
-                                {
-                                    WriteError("### /batch:size, is invalid, should be greater than 5 otherwise you'll probably run out of memory");
-                                    return false;
-                                }
-                            }
-                            else
-                            {
-                                WriteError("### /batch:size, missing size option, for example: /batch:10");
+                                WriteError("### /parallel:num, is missing numeric option, or numeric is invalid, for example: /parallel:10");
                                 return false;
                             }
                             break;
@@ -150,6 +142,7 @@ namespace RunPTool
             Console.WriteLine("    /runZing - run zinger on the compiled output");
             Console.WriteLine("    /runAll (default)");
             Console.WriteLine("    /list - print the list of discovered test directories");
+            Console.WriteLine("    /parallel:number - generate a run.cmd script that will run the given number of tests runs in parallel to complete the job more quickly by fully utilizing multicore CPU");
         }
 
         static void Main(string[] args)
@@ -260,27 +253,28 @@ namespace RunPTool
                 visited.Add(testOutput); // don't drill into this folder.
                 EnumerateDirs(activeDirs, allTestDirs, visited);
 
-                if (batchSize > 0)
+                if (parallelism > 0)
                 {
-                    Console.WriteLine("Creating 'run.cmd' to batch testp.bat with batchsize of " + batchSize);
+                    Console.WriteLine("Creating 'run.cmd' to run testp.bat with " + parallelism + " parallel test runs");                
 
-                    var batch = 0;
+                    var batchSize = allTestDirs.Count / parallelism;
                     var currentBatchSize = 0;
+                    int batchNumber = 0;
                     StreamWriter master = new StreamWriter(Path.Combine(testRoot, "run.cmd"));
                     StreamWriter file = null;
                     foreach (var dir in allTestDirs)
                     {
                         if (file == null)
                         {
-                            var testList = Path.Combine(testRoot, "TestList" + batch + ".txt");
+                            var testList = Path.Combine(testRoot, "TestList" + batchNumber + ".txt");
                             file = new StreamWriter(testList);
-                            string cmd = "start testp nobuild nosync noclean " + platform + " " + configuration + " " + testList + " /output:TestResult" + batch;
+                            string cmd = "start testp nobuild nosync noclean " + platform + " " + configuration + " " + testList + " /output:TestResult" + batchNumber;
                             master.WriteLine(cmd);
-                            batch++;
+                            batchNumber++;
                         }
                         currentBatchSize++;
                         file.WriteLine(dir.FullName);
-                        if (currentBatchSize == batchSize)
+                        if (currentBatchSize == batchSize && batchNumber < parallelism)
                         {
                             file.Close();
                             file = null;

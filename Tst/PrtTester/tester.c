@@ -230,6 +230,7 @@ int main(int argc, char *argv[])
 		PrtStopProcess(process);
 	}
 #ifdef REPORT_MEMORY_LEAK
+    }
 	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
 	_CrtDumpMemoryLeaks();
 #else

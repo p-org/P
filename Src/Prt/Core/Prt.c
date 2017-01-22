@@ -259,7 +259,10 @@ PrtMkInterfaceOrMachine(
 		}
 		PrtFree(args);
 	}
-    return (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, renamedName, instanceOf, payload);
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, renamedName, instanceOf, payload);
+	// must now free this payload because PrtMkMachinePrivate clones it.
+	PrtFreeValue(payload);
+	return result;
 }
 
 PRT_MACHINEINST *

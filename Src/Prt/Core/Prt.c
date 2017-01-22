@@ -323,9 +323,9 @@ PrtMkMachine(
 		PrtFree(args);
 	}
 	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, renamedMachine, instanceOf, payload);
-
 	// free the payload since we cloned it here, and PrtMkMachinePrivate also clones it.
 	PrtFreeValue(payload);
+	return result;
 }
 
 PRT_MACHINEINST *

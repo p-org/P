@@ -319,6 +319,8 @@ _In_ PRT_VALUE					*payload
 	{
 		// drop the event silently
 		PrtUnlockMutex(context->stateMachineLock);
+		// which means we must free the payload now, since we are not storing it in the queue.
+		PrtFreeValue(payload);
 		return;
 	}
 

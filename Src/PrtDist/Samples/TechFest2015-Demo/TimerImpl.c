@@ -109,6 +109,8 @@ PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer)
 	state.machineName = "Timer";
 	state.stateId = 1;
 	state.stateName = "Cancel";
+	
+	PrtAssert(timerContext->started, "Trying to cancel a timer without starting it");
 
 	timerContext->started = FALSE;
 	success = CancelWaitableTimer(timerContext->timer);
@@ -125,10 +127,3 @@ PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer)
 	return NULL;
 }
 
-void P_DTOR_Timer_IMPL(PRT_MACHINEINST *context)
-{
-}
-
-void P_CTOR_Timer_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
-{
-}

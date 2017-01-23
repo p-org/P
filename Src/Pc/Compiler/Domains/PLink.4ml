@@ -35,7 +35,7 @@ domain PLink
 	AnonFunDecl		    ::= new (ownerFun: String, anonFunIndex: Natural).
 	FunDecl				::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
-	Impure				::= new (decl: FunDecl + FunProtoDecl).
+	Pure				::= new (name: String, isPure: { TRUE, FALSE }).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
 	InterfaceTypeDecl	::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
     MachineDecl			::= fun (name: String -> constType: any TypeExpr, id: any Id).
@@ -137,6 +137,8 @@ domain PLinkError
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 {
 	//// General Linker Errors
+	err.OneNameError(NIL, name, "impure function used as pure") :- Pure(name, TRUE), Pure(name, FALSE).
+
 	err.OneNameError(NIL, name, "multiple machines with same name") :- m is MachineDecl, m' is MachineDecl, m != m', m.name = m'.name, name = m.name.
 
 	err.OneNameError(NIL, name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.

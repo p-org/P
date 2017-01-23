@@ -59,32 +59,28 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	                                             eventset is EventSetDecl(esname, _), 
 	                                             list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }), list : EventNameList.
 
-	RelatedFunDecls ::= (in.FunDecl, link.FunDecl).
-	RelatedFunProtoDecls ::= (in.FunProtoDecl, link.FunProtoDecl).
-
-	RelatedFunDecls(c, link.FunDecl(name, eparams, ereturn, id)), link.FunDecl(name, eparams, ereturn, id) :- 
+	link.FunDecl(name, eparams, ereturn, id) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
-	RelatedFunDecls(c, link.FunDecl(name, NIL, ereturn, id) ), link.FunDecl(name, NIL, ereturn, id) :- 
+	link.FunDecl(name, NIL, ereturn, id) :- 
 		c is in.FunDecl(name, NIL, _, NIL, return, _, _, id), return != NIL, TypeExpansion(return, ereturn).
-	RelatedFunDecls(c, link.FunDecl(name, eparams, NIL, id)), link.FunDecl(name, eparams, NIL, id) :- 
+	link.FunDecl(name, eparams, NIL, id) :- 
 		c is in.FunDecl(name, NIL, _, params, NIL, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType.
-	RelatedFunDecls(c, link.FunDecl(name, NIL, NIL, id)), link.FunDecl(name, NIL, NIL, id) :- 
+	link.FunDecl(name, NIL, NIL, id) :- 
 		c is in.FunDecl(name, NIL, _, NIL, NIL, _, _, id).
-	RelatedFunProtoDecls(c, link.FunProtoDecl(name, eparams, ereturn)), link.FunProtoDecl(name, eparams, ereturn) :- 
+	link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunProtoDecl(name, params, return), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
-	RelatedFunProtoDecls(c, link.FunProtoDecl(name, NIL, ereturn)), link.FunProtoDecl(name, NIL, ereturn) :- 
+	link.FunProtoDecl(name, NIL, ereturn) :- 
 		c is in.FunProtoDecl(name, NIL, return), return != NIL, TypeExpansion(return, ereturn).
-	RelatedFunProtoDecls(c, link.FunProtoDecl(name, eparams, NIL)), link.FunProtoDecl(name, eparams, NIL) :- 
+	link.FunProtoDecl(name, eparams, NIL) :- 
 		c is in.FunProtoDecl(name, params, NIL), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType.
-	RelatedFunProtoDecls(c, link.FunProtoDecl(name, NIL, NIL)), link.FunProtoDecl(name, NIL, NIL) :- 
+	link.FunProtoDecl(name, NIL, NIL) :- 
 		c is in.FunProtoDecl(name, NIL, NIL).
-	link.Impure(c') :- in.Impure(c), RelatedFunDecls(c, c').
-	link.Impure(c') :- in.Impure(c), RelatedFunProtoDecls(c, c').
-	link.Impure(c') :- in.ControlImpure(c), RelatedFunDecls(c, c').
-	link.Impure(c') :- in.ControlImpure(c), RelatedFunProtoDecls(c, c').
-	link.Impure(c') :- in.SpecImpure(c), RelatedFunDecls(c, c').
-	link.Impure(c') :- in.SpecImpure(c), RelatedFunProtoDecls(c, c').
 
+	link.Pure(name, TRUE)  :- c is in.FunProtoDecl, name = c.name, Annotation(c, "pure", _, _).
+	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.Impure(c).
+	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.ControlImpure(c).
+	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.SpecImpure(c).
+	
 	NamedEventNameList ::= (EventNameList + { NIL }, EventNameList + { NIL }, String).
 	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })).
 	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })).

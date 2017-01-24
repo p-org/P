@@ -192,12 +192,14 @@ namespace P.Runtime
 
         public void SetPendingChoicesAsBoolean(PrtImplMachine process)
         {
-            throw new NotImplementedException();
+            //TODO: NOT IMPLEMENT YET
+            //throw new NotImplementedException();
         }
 
         public object GetSelectedChoiceValue(PrtImplMachine process)
         {
-            throw new NotImplementedException();
+            //throw new NotImplementedException();
+            return (new Random(1)).Next(1);
         }
     }
 

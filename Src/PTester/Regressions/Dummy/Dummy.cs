@@ -1,4 +1,4 @@
-#pragma warning disable CS0162, CS0164, CS0168
+#pragma warning disable CS0162, CS0164, CS0168, CS0649
 namespace P.Program
 {
     using P.Runtime;
@@ -64,7 +64,7 @@ namespace P.Program
             {
                 get
                 {
-                    return Main_Init;
+                    return Main__Init;
                 }
             }
 
@@ -276,20 +276,20 @@ namespace P.Program
             }
 
             public static AnonFun1_Class AnonFun1;
-            public class Main_Init_Class : PrtState
+            public class Main__Init_Class : PrtState
             {
-                public Main_Init_Class(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature): base (name, entryFun, exitFun, hasNullTransition, temperature)
+                public Main__Init_Class(string name, PrtFun entryFun, PrtFun exitFun, bool hasNullTransition, StateTemperature temperature): base (name, entryFun, exitFun, hasNullTransition, temperature)
                 {
                 }
             }
 
-            public static Main_Init_Class Main_Init;
+            public static Main__Init_Class Main__Init;
             static Main()
             {
                 ignore = new ignore_Class();
                 AnonFun0 = new AnonFun0_Class();
                 AnonFun1 = new AnonFun1_Class();
-                Main_Init = new Main_Init_Class("Main_Init", AnonFun1, AnonFun0, false, StateTemperature.Warm);
+                Main__Init = new Main__Init_Class("Main__Init", AnonFun1, AnonFun0, false, StateTemperature.Warm);
             }
         }
     }

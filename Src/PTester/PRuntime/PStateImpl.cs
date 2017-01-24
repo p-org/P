@@ -34,7 +34,7 @@ namespace P.Runtime
         }
 
         /// <summary>
-        /// List of monitors
+        /// List of spec machines
         /// </summary>
         private Dictionary<string, PrtSpecMachine> specMachinesMap;
 
@@ -48,7 +48,7 @@ namespace P.Runtime
         public static Dictionary<string, Dictionary<string, string>> linkMap = new Dictionary<string, Dictionary<string, string>>();
         public static Dictionary<string, string> renameMap = new Dictionary<string, string>();
         public static Dictionary<string, bool> isSafeMap = new Dictionary<string, bool>();
-        public static Dictionary<string, List<string>> monitorMap = new Dictionary<string, List<string>>();
+        public static Dictionary<string, List<string>> specMachineMap = new Dictionary<string, List<string>>();
         public static Dictionary<string, CreateMachineDelegate> createMachineMap = new Dictionary<string, CreateMachineDelegate>();
         public static Dictionary<string, CreateSpecDelegate> createSpecMap = new Dictionary<string, CreateSpecDelegate>();
         public static Dictionary<string, List<PrtEventValue>> interfaceMap = new Dictionary<string, List<PrtEventValue>>();
@@ -98,9 +98,9 @@ namespace P.Runtime
             }
 
             clonedState.specMachinesMap = new Dictionary<string, PrtSpecMachine>();
-            foreach (var monitor in specMachinesMap)
+            foreach (var specMachine in specMachinesMap)
             {
-                clonedState.specMachinesMap.Add(monitor.Key, (monitor.Value).Clone());
+                clonedState.specMachinesMap.Add(specMachine.Key, (specMachine.Value).Clone());
             }
 
             clonedState.exception = this.exception;
@@ -110,12 +110,12 @@ namespace P.Runtime
         }
         #endregion
 
-        private List<PrtSpecMachine> GetMonitors(string currMachine)
+        private List<PrtSpecMachine> GetSpecMachines(string currMachine)
         {
-            var allMonitors = monitorMap.Where(mon => mon.Value.Contains(currMachine))
+            var allSpecMachines = specMachineMap.Where(mon => mon.Value.Contains(currMachine))
                                         .Select(item => item.Key)
                                         .Select(monName => specMachinesMap[monName]).ToList();
-            return allMonitors;
+            return allSpecMachines;
         }
         public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
         {
@@ -163,11 +163,12 @@ namespace P.Runtime
 
         public void Announce(PrtEventValue ev, PrtValue payload, PrtMachine parent)
         {
-            var allMonitors = GetMonitors(parent.renamedName);
-            foreach(var mon in allMonitors)
+            var allSpecMachines = GetSpecMachines(parent.renamedName);
+            foreach (var mon in allSpecMachines)
             {
-                if(mon.observes.Contains(ev))
+                if (mon.observes.Contains(ev))
                 {
+                    Trace("<AnnounceLog> Enqueued Event <{0}, {1}> to Spec Machine {2}", ev, payload, mon.Name);
                     mon.PrtEnqueueEvent(ev, payload, parent);
                 }
             }

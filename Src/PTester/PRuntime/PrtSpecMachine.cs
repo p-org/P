@@ -32,16 +32,16 @@ namespace P.Runtime
         }
         public PrtSpecMachine Clone()
         {
-            var clonedMonitor = MakeSkeleton();
+            var clonedSpecMachine = MakeSkeleton();
             foreach (var fd in fields)
             {
-                clonedMonitor.fields.Add(fd.Clone());
+                clonedSpecMachine.fields.Add(fd.Clone());
             }
-            clonedMonitor.stateStack = this.stateStack.Clone();
-            clonedMonitor.nextSMOperation = this.nextSMOperation;
-            clonedMonitor.stateExitReason = this.stateExitReason;
-            clonedMonitor.stateImpl = this.stateImpl;
-            return clonedMonitor;
+            clonedSpecMachine.stateStack = this.stateStack.Clone();
+            clonedSpecMachine.nextSMOperation = this.nextSMOperation;
+            clonedSpecMachine.stateExitReason = this.stateExitReason;
+            clonedSpecMachine.stateImpl = this.stateImpl;
+            return clonedSpecMachine;
         }
 
         public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source, PrtMachineValue target = null)
@@ -204,7 +204,7 @@ namespace P.Runtime
                 {
                     if (numOfStepsTaken > 100000)
                     {
-                        throw new PrtInfiniteRaiseLoop("Infinite loop in monitor");
+                        throw new PrtInfiniteRaiseLoop("Infinite loop in spec machine");
                     }
                     else
                     {

@@ -179,7 +179,7 @@ namespace P.Runtime
                 }
             }
 
-            //Announce it to all the monitors
+            //Announce it to all the spec machines
             stateImpl.Announce(e as PrtEventValue, arg, source);
         }
 
@@ -193,7 +193,7 @@ namespace P.Runtime
                 }
 
                 stateImpl.Trace(
-                    "<DequeueLog> Dequeued Event < {0}, {1} > at Machine {2}-{3}\n",
+                    "<DequeueLog> Dequeued Event <{0}, {1}> at Machine {2}-{3}",
                     (currentTrigger as PrtEventValue).evt.name, currentPayload.ToString(), Name, instanceNumber);
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.SUCCESS;
@@ -302,7 +302,7 @@ namespace P.Runtime
             */
             if(invertedFunStack.TopOfStack == null)
             {
-                //Trace: entered state
+                stateImpl.Trace("<StateLog> Machine {0}-{1} entering State {2}", this.Name, this.instanceNumber, CurrentState.name);
                 if(CurrentState.entryFun.IsAnonFun)
                     PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
                 else
@@ -316,14 +316,14 @@ namespace P.Runtime
             currAction = PrtFindActionHandler(eventValue);
             if(currAction == PrtFun.IgnoreFun)
             {
-                //Trace: Performed ignore action for the event
+                stateImpl.Trace("<ActionLog> Machine {0}-{1} ignoring Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                 PrtResetTriggerAndPayload();
             }
             else
             {
                 if(invertedFunStack.TopOfStack == null)
                 {
-                    //Trace: executed the action handler for event
+                    stateImpl.Trace("<ActionLog> Machine {0}-{1} executing action for Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                     PrtPushFunStackFrame(currAction, currAction.CreateLocals(currentPayload));
                 }
                 //invoke the action handler

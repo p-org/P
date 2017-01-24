@@ -104,7 +104,7 @@ namespace P.Runtime
                 {
                     throw new PrtInvalidPopStatement();
                 }
-                //TODO : Handle the monitor machine case separately for the halt event
+                //TODO : Handle the spec machine case separately for the halt event
                 else if (eventValue.Equals(PrtValue.halt))
                 {
                     throw new PrtUnhandledEventException();
@@ -133,6 +133,10 @@ namespace P.Runtime
 
         public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local)
         {
+            if (!fun.IsAnonFun)
+            {
+                stateImpl.Trace("<FunctionLog> Machine {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
+            }
             invertedFunStack.PushFun(fun, local);
         }
 
@@ -143,6 +147,7 @@ namespace P.Runtime
 
         public void PrtExecuteExitFunction()
         {
+            stateImpl.Trace("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
             PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
             invertedFunStack.TopOfStack.fun.Execute(stateImpl, this);
         }

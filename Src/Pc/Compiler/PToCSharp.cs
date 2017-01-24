@@ -259,6 +259,12 @@ namespace Microsoft.Pc
                                             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Console"), IdentifierName("Write")),
                                             allPars.ToArray()));
         }
+        public static StatementSyntax MkCSharpTrace(string msg, params ExpressionSyntax[] pars)
+        {
+            var allPars = new List<ExpressionSyntax>(pars);
+            allPars.Insert(0, CSharpHelper.MkCSharpStringLiteralExpression(msg));
+            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("application", "Trace"), allPars.ToArray()));
+        }
         public static InvocationExpressionSyntax MkCSharpInvocationExpression(SyntaxNode first, params ExpressionSyntax[] pars)
         {
             var args = CSharpHelper.MkCSharpArgumentList(pars);
@@ -1701,7 +1707,7 @@ namespace Microsoft.Pc
                                         ? pToCSharp.allStaticFuns[stateEntryActionName]
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(children);
-                var traceStmt = CSharpHelper.MkCSharpPrint(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}\n", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(stateExpr, "name"));
+                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(stateExpr, "name"));
                 var assignStmt1 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar("@null"));
                 var assignStmt2 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var assignStmt3 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "destOfGoto"), stateExpr);
@@ -1716,7 +1722,7 @@ namespace Microsoft.Pc
                 var payloadVar = MkPayload(children);
                 var equalsExpr = CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(eventExpr, "Equals"), pToCSharp.GetEventVar("@null"));
                 var assertStmt = CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
-                var traceStmt = CSharpHelper.MkCSharpPrint(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}\n", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
+                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
                 var assignStmt1 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), eventExpr);
                 var assignStmt2 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var returnStmt = ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtFunContRaise")));
@@ -2621,7 +2627,8 @@ namespace Microsoft.Pc
         private void MkCreateRealMachineMethod(string machineName)
         {
             List<SyntaxNode> fields = new List<SyntaxNode>();
-            //stmt1: var machine = new Machine(this, machineMaxQueueSize, true);
+
+            //create machine
             MachineInfo machineInfo = allMachines[machineName];
             //There are three cases:
             //- default (no constraint on queue size): maxQueueSizeAssumed == false; maxQueueSize = default (10?) 
@@ -2644,6 +2651,14 @@ namespace Microsoft.Pc
                                    generator.LiteralExpression(machineInfo.maxQueueSizeAssumed) })));
             }
 
+            
+
+            // log
+            fields.Add(
+                CSharpHelper.MkCSharpTrace(
+                    string.Format("<CreateLog> Created Machine {0}-{{0}}", machineName),
+                    CSharpHelper.MkCSharpDot("machine", "instanceNumber")));
+
             //initialize the permission set for self
             foreach (var ev in allMachines[machineName].receiveSet)
             {
@@ -2660,15 +2675,14 @@ namespace Microsoft.Pc
                     );
             }
 
-            //stmt2: machine.currentPayload = payload;
+            //machine.currentPayload = payload;
             fields.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
                 CSharpHelper.MkCSharpDot("machine", "currentPayload"),
                 IdentifierName("payload")));
 
-            //stmt4: return machine;
+            //return machine;
             fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
 
-            //public PrtImplMachine CreateMainMachine() {stmt1; stmt2; stmt3; stmt4; };
             var methodPars = new SyntaxNode[] {
                     generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")),
                     generator.ParameterDeclaration("payload", generator.IdentifierName("PrtValue")) };
@@ -2682,24 +2696,26 @@ namespace Microsoft.Pc
         private void MkCreateSpecMachineMethod(string machineName)
         {
             List<SyntaxNode> fields = new List<SyntaxNode>();
-            //stmt1: var machine = new Machine(this);
+            
+            //create machine
             fields.Add(generator.LocalDeclarationStatement(generator.IdentifierName("var"), "machine",
                            generator.ObjectCreationExpression(generator.IdentifierName(machineName),
                            new List<SyntaxNode>() { generator.IdentifierName("application") })));
 
+            //log
+            fields.Add(CSharpHelper.MkCSharpTrace(string.Format("<CreateLog> Created spec Machine {0}", machineName)));
 
             foreach (var x in allMachines[machineName].observesEvents)
             {
                 fields.Add(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), GetEventVar(x)));
             }
 
-            //stmt4: return machine;
+            //return machine;
             fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
 
-            //public void CreateMainMachine() {stmt1; stmt2; };
             var methodPars = new SyntaxNode[] {
                     generator.ParameterDeclaration("application", generator.IdentifierName("StateImpl")) };
-            var makeCreateSpecDecl = generator.MethodDeclaration(string.Format("CreateSpec_{0}", machineName), methodPars,
+            var makeCreateSpecDecl = generator.MethodDeclaration(string.Format("CreateSpecMachine_{0}", machineName), methodPars,
               null, IdentifierName("PrtSpecMachine"),    
               Accessibility.Public, DeclarationModifiers.Static,
               statements: fields);
@@ -3206,6 +3222,14 @@ namespace Microsoft.Pc
                     //Add DoDecls to the StateInfo:
                     foreach (var doFun in pair.Value.dos)
                     {
+                        ExpressionSyntax doFunExpr = IdentifierName(doFun.Value);
+                        if (doFun.Value == "ignore")
+                        {
+                            doFunExpr = MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            IdentifierName("PrtFun"),
+                                            IdentifierName("IgnoreFun"));
+                        }
                         mainConstructorFields.Add(
                             ExpressionStatement(
                                 InvocationExpression(
@@ -3223,8 +3247,7 @@ namespace Microsoft.Pc
                                                 Argument(
                                                     translator.GetEventVar(EventName(doFun.Key))),
                                                 Token(SyntaxKind.CommaToken),
-                                                Argument(
-                                                    IdentifierName(doFun.Value))}))))
+                                                Argument(doFunExpr)}))))
                             .NormalizeWhitespace()
                             );
                     }
@@ -3419,13 +3442,13 @@ namespace Microsoft.Pc
             public Dictionary<string, Dictionary<string, string>> linkMap;
             public Dictionary<string, string> renameMap;
             public Dictionary<string, bool> isSafeMap;
-            public Dictionary<string, List<string>> monitorMap;
+            public Dictionary<string, List<string>> specMachineMap;
             public TestCaseInfo()
             {
                 linkMap = new Dictionary<string, Dictionary<string, string>>();
                 renameMap = new Dictionary<string, string>();
                 isSafeMap = new Dictionary<string, bool>();
-                monitorMap = new Dictionary<string, List<string>>();
+                specMachineMap = new Dictionary<string, List<string>>();
             }
         }
 
@@ -3574,7 +3597,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var name = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    var newMonitorName = ((Cnst)it.Current).GetStringValue();
+                    var newSpecMachineName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
                     var impMachine = ((Cnst)it.Current).GetStringValue();
 
@@ -3582,21 +3605,21 @@ namespace Microsoft.Pc
                     var testInfo = new TestCaseInfo();
                     if (allTests.ContainsKey(name))
                     {
-                        if (allTests[name].monitorMap.ContainsKey(newMonitorName))
+                        if (allTests[name].specMachineMap.ContainsKey(newSpecMachineName))
                         {
-                            allTests[name].monitorMap[newMonitorName].Add(impMachine);
+                            allTests[name].specMachineMap[newSpecMachineName].Add(impMachine);
                         }
                         else
                         {
-                            allTests[name].monitorMap[newMonitorName] = new List<string>();
-                            allTests[name].monitorMap[newMonitorName].Add(impMachine);
+                            allTests[name].specMachineMap[newSpecMachineName] = new List<string>();
+                            allTests[name].specMachineMap[newSpecMachineName].Add(impMachine);
                         }
                     }
                     else
                     {
                         allTests[name] = new TestCaseInfo();
-                        allTests[name].monitorMap[newMonitorName] = new List<string>();
-                        allTests[name].monitorMap[newMonitorName].Add(impMachine);
+                        allTests[name].specMachineMap[newSpecMachineName] = new List<string>();
+                        allTests[name].specMachineMap[newSpecMachineName].Add(impMachine);
                     }
                 }
             }
@@ -3634,7 +3657,7 @@ namespace Microsoft.Pc
             List<SyntaxNode> stmtList = new List<SyntaxNode>();
 
 
-            foreach (var monName in allTests[testName].monitorMap.Keys)
+            foreach (var monName in allTests[testName].specMachineMap.Keys)
             {
                 stmtList.Add(ExpressionStatement(
                                 CSharpHelper.MkCSharpInvocationExpression(IdentifierName("CreateSpecMachine"), CSharpHelper.MkCSharpStringLiteralExpression(monName))));
@@ -3693,14 +3716,12 @@ namespace Microsoft.Pc
             //create map
             foreach (var renameItem in allTests[testName].renameMap)
             {
-                if(allTests[testName].monitorMap.ContainsKey(renameItem.Key))
+                if (allTests[testName].specMachineMap.ContainsKey(renameItem.Key))
                 {
-                    //its a monitor
                     var createadd = CSharpHelper.MkCSharpInvocationExpression(
                     CSharpHelper.MkCSharpDot("createSpecMap", "Add"),
                     CSharpHelper.MkCSharpStringLiteralExpression(renameItem.Value),
-                    IdentifierName(string.Format("CreateSpec_{0}", renameItem.Value))
-                    );
+                    IdentifierName(string.Format("CreateSpecMachine_{0}", renameItem.Value)));
                     stmtList.Add(ExpressionStatement(createadd));
                 }
                 else
@@ -3716,16 +3737,16 @@ namespace Microsoft.Pc
                 
             }
 
-            //monitor map
-            foreach(var monitor in allTests[testName].monitorMap)
+            //spec machine map
+            foreach(var specMachine in allTests[testName].specMachineMap)
             {
                 SeparatedSyntaxList<ExpressionSyntax> machines = new SeparatedSyntaxList<ExpressionSyntax>();
-                machines = machines.AddRange(monitor.Value.Select(x => CSharpHelper.MkCSharpStringLiteralExpression(x)));
+                machines = machines.AddRange(specMachine.Value.Select(x => CSharpHelper.MkCSharpStringLiteralExpression(x)));
 
                 var addstmt =
                     CSharpHelper.MkCSharpInvocationExpression(
-                        CSharpHelper.MkCSharpDot("monitorMap", "Add"),
-                        CSharpHelper.MkCSharpStringLiteralExpression(monitor.Key),
+                        CSharpHelper.MkCSharpDot("specMachineMap", "Add"),
+                        CSharpHelper.MkCSharpStringLiteralExpression(specMachine.Key),
                         ObjectCreationExpression(
                             CSharpHelper.MkCSharpGenericListType(IdentifierName("string")),
                             ArgumentList(),

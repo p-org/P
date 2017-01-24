@@ -37,7 +37,7 @@ namespace P.Program
             (createSpecMap).Add("Blah", CreateSpec_Blah);
             (createMachineMap).Add("Main", CreateMachine_Main);
             (createMachineMap).Add("PONG", CreateMachine_PONG);
-            (monitorMap).Add("Blah", new List<string>()
+            (specMachineMap).Add("Blah", new List<string>()
             {"PONG", "Blah", "Main"});
             Dictionary<string, string> _temp;
             _temp = new Dictionary<string, string>();

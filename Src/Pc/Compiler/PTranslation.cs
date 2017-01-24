@@ -42,7 +42,6 @@ namespace Microsoft.Pc
         public Dictionary<string, TransitionInfo> transitions;
         public Dictionary<string, string> dos;
         public List<string> deferredEvents;
-        public List<string> ignoredEvents;
         public StateTemperature temperature;
         public string printedName;
 
@@ -70,7 +69,6 @@ namespace Microsoft.Pc
             this.transitions = new Dictionary<string, TransitionInfo>();
             this.dos = new Dictionary<string, string>();
             this.deferredEvents = new List<string>();
-            this.ignoredEvents = new List<string>();
             this.temperature = temperature;
             this.printedName = printedName;
         }
@@ -858,7 +856,6 @@ namespace Microsoft.Pc
                     }
                     else if (action.NodeKind == NodeKind.Id && (action as Id).Name == "IGNORE")
                     {
-                        stateTable.ignoredEvents.Add(eventName);
                         stateTable.dos[eventName] = "ignore";
                     }
                     else

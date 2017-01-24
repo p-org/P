@@ -196,10 +196,10 @@ namespace P.Runtime
             //throw new NotImplementedException();
         }
 
-        public object GetSelectedChoiceValue(PrtImplMachine process)
+        public Boolean GetSelectedChoiceValue(PrtImplMachine process)
         {
             //throw new NotImplementedException();
-            return (new Random(1)).Next(1);
+            return (new Random(1)).Next(1) == 0;
         }
     }
 

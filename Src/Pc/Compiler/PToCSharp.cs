@@ -3228,35 +3228,6 @@ namespace Microsoft.Pc
                             .NormalizeWhitespace()
                             );
                     }
-
-                    //Add ignored events
-                    foreach (var ignoredEvent in pair.Value.ignoredEvents)
-                    {
-                        mainConstructorFields.Add(
-                            ExpressionStatement(
-                                InvocationExpression(
-                                    MemberAccessExpression(
-                                        SyntaxKind.SimpleMemberAccessExpression,
-                                        MemberAccessExpression(
-                                            SyntaxKind.SimpleMemberAccessExpression,
-                                            IdentifierName(stateName),
-                                            IdentifierName("dos")),
-                                        IdentifierName("Add")))
-                                .WithArgumentList(
-                                    ArgumentList(
-                                        SeparatedList<ArgumentSyntax>(
-                                            new SyntaxNodeOrToken[]{
-                                                Argument(
-                                                    translator.GetEventVar(ignoredEvent)),
-                                                Token(SyntaxKind.CommaToken),
-                                                Argument(
-                                                    MemberAccessExpression(
-                                                                        SyntaxKind.SimpleMemberAccessExpression,
-                                                                        IdentifierName("PrtFun"),
-                                                                        IdentifierName("IgnoreFun")))}))))
-                            .NormalizeWhitespace()
-                            );
-                    }
                     
                     //Add deferred events (if any) to the state:
                     foreach (var deferredEvent in pair.Value.deferredEvents)

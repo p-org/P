@@ -22,25 +22,25 @@ domain PLink
 
 	StringList		::= new (hd: String, tl: any StringList + { NIL }).
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
-	EnumTypeDef	    ::= fun (name: String -> elems: any StringList, values: any IntegerList + { NIL }).
-	TypeDef         ::= fun (name: String -> type: any TypeExpr).
+	EnumTypeDef	    ::= new (name: String, elems: any StringList, values: any IntegerList + { NIL }, id: any Id).
+	TypeDef         ::= new (name: String, type: any TypeExpr, id: any Id).
 	ModelType       ::= new (name: String).
 
     AssumeMaxInstances	::= new (bound: Natural).
     AssertMaxInstances	::= new (bound: Natural).
     QueueConstraint		::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
-    EventDecl			::= fun (name: String -> card: any QueueConstraint, type: any TypeExpr + { NIL }).
+    EventDecl			::= new (name: String, card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).
 	PermEmbeddedInEvent ::= fun (name: NonNullEventName -> perm: NonNullEventName).
 	PermEmbeddedInConstType ::= fun (machName: String -> perm: NonNullEventName).
 	AnonFunDecl		    ::= new (ownerFun: String, anonFunIndex: Natural).
-	FunDecl				::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
+	FunDecl				::= new (name: String, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
 	Pure				::= new (name: String, isPure: { TRUE, FALSE }).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
-	InterfaceTypeDecl	::= fun (name: String -> list: EventNameList, argType: any TypeExpr).
-    MachineDecl			::= fun (name: String -> constType: any TypeExpr, id: any Id).
-	MonitorDecl			::= fun (name: String -> obsList: EventNameList, id: any Id).
-	MachineProtoDecl	::= new (name: String, constType: any TypeExpr).
+	InterfaceTypeDecl	::= new (name: String, list: InterfaceType, argType: any TypeExpr, id: any Id).
+    MachineDecl			::= new (name: String, constType: any TypeExpr, id: any Id).
+	MonitorDecl			::= new (name: String, obsList: InterfaceType, id: any Id).
+	MachineProtoDecl	::= fun (name: String -> constType: any TypeExpr).
 	
 
 	AvailableParameterDemand   ::= new (fname: String, pname: String).
@@ -66,7 +66,7 @@ domain PLink
 
 	/// Module Constructions
 	ModuleDef ::= fun (name: String -> mod: any ModuleExpr).
-	HideExpr ::= new (evtNames: any EventNameList, mod: any ModuleExpr, id: any Id). 
+	HideExpr ::= new (evtNames: any InterfaceType, mod: any ModuleExpr, id: any Id). 
 	RenameExpr ::= new (mNames: String, mNames': String, mod: any ModuleExpr, id: any Id).
 	ExportExpr ::= new (mName: String, iName: String, mod: any ModuleExpr, id: any Id).
 	AssumeExpr ::= new (monNames: any MonitorNameList, mod: any ModuleExpr, id: any Id).
@@ -98,7 +98,7 @@ domain PLink
 	// MonitorNamesList
 	MonitorNameList ::= new (str: String, tl: any MonitorNameList + { NIL }).
 	MemberOfMonitorNameList ::= sub (MonitorNameList, String).
-	MemberOfEventNameList ::= sub (EventNameList, EventName).
+	MemberOfInterfaceType ::= sub (InterfaceType, NonNullEventName).
 
 }
 
@@ -110,8 +110,6 @@ domain PLinkError
     */
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
-	EventName         ::= String + { NULL, HALT }.
-	EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
 
 	//// General linker errors
 	OneNameError ::= new (errorId: any Id, name: String, msg: String).
@@ -141,6 +139,16 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	err.OneNameError(NIL, name, "multiple machines with same name") :- m is MachineDecl, m' is MachineDecl, m != m', m.name = m'.name, name = m.name.
 
+	err.OneNameError(NIL, name, "multiple monitors with same name") :- m is MonitorDecl, m' is MonitorDecl, m != m', m.name = m'.name, name = m.name.
+
+	err.OneNameError(NIL, name, "multiple types with same name") :- m is TypeDef, m' is TypeDef, m != m', m.name = m'.name, name = m.name.
+
+	err.OneNameError(NIL, name, "multiple enum types with same name") :- m is EnumTypeDef, m' is EnumTypeDef, m != m', m.name = m'.name, name = m.name.
+
+	err.OneNameError(NIL, name, "multiple interface types with same name") :- m is InterfaceTypeDecl, m' is InterfaceTypeDecl, m != m', m.name = m'.name, name = m.name.
+
+	err.OneNameError(NIL, name, "multiple events with same name") :- m is EventDecl, m' is EventDecl, m != m', m.name = m'.name, name = m.name.
+
 	err.OneNameError(NIL, name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.
 
 	err.OneNameError(NIL, mp.name, "machine prototype not implemented") :- mp is MachineProtoDecl, no MachineDecl(mp.name, _, _).
@@ -152,22 +160,22 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	err.OneNameError(NIL, fp.name, "function prototype not implemented") :- fp is FunProtoDecl, no FunDecl(fp.name, _, _, _).
 
-	err.OneNameError(NIL, iname, "machine cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineDecl(iname, _, _).
-	err.OneNameError(NIL, iname, "machine prototype cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _), MachineProtoDecl(iname, _).
+	err.OneNameError(NIL, iname, "machine cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _, _), MachineDecl(iname, _, _).
+	err.OneNameError(NIL, iname, "machine prototype cannot have the same name as interface") :- i is InterfaceTypeDecl(iname, _, _, _), MachineProtoDecl(iname, _).
 
 	err.TwoNameError(NIL, fname, pname, "function parameter must be available at return") :- AvailableParameterDemand(fname, pname), UnavailableParameterSupply(fname, pname).
 
 	// The following checks are performed when there is no implementation, test decl.
 	err.OneNameError(NIL, inName, "constructor arguments of the exported interface does not match constructor argument of creator interface") 
-	:- MachineExports(_, inName), MachineCreatesInt(_, ic), InterfaceTypeDecl(iName, evL, t), InterfaceTypeDecl(ic, evL, t'), t != t', 
+	:- MachineExports(_, inName), MachineCreatesInt(_, ic), InterfaceTypeDecl(iName, evL, t, _), InterfaceTypeDecl(ic, evL, t', _), t != t', 
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
 	err.OneNameError(NIL, ic, "created interface is not exported by any machine") 
-	:- MachineDecl(mach, _, _), no MachineExports(_, inName), MachineCreatesInt(mach, ic), InterfaceTypeDecl(iName, evL, t), InterfaceTypeDecl(ic, evL, t'), 
+	:- MachineDecl(mach, _, _), no MachineExports(_, inName), MachineCreatesInt(mach, ic), InterfaceTypeDecl(iName, evL, t, _), InterfaceTypeDecl(ic, evL, t', _), 
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
 	err.TwoNameError(NIL, mach1, mach2, "two machines cannot export the same interface") 
-	:- MachineExports(mach1, ix1), MachineExports(mach2, ix2), mach1 != mach2, InterfaceTypeDecl(ix2, evL, _), InterfaceTypeDecl(ix1, evL, _),
+	:- MachineExports(mach1, ix1), MachineExports(mach2, ix2), mach1 != mach2, InterfaceTypeDecl(ix2, evL, _, _), InterfaceTypeDecl(ix1, evL, _, _),
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
 	/******************************************/
@@ -233,7 +241,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, NIL), ModuleContains(ModuleDecl(modExpr.name, _), mach), MachineReceives(mach, ev).
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModulePrivate(modExpr.mod, ev).
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModulePrivate(modExpr.mod, ev), ev: in.NonNullEventName;
-								  AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfEventNameList(modExpr.evtNames, ev), ev: in.NonNullEventName.
+								  AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfInterfaceType(modExpr.evtNames, ev), ev: in.NonNullEventName.
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.left, ev);
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.right, ev).
 									 
@@ -242,7 +250,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModuleSends(modExpr.mod, ev).
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.left, ev);
 								AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.right, ev).
-	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MachineSends(_, ev), ModuleSends(modExpr.mod, ev), no MemberOfEventNameList(modExpr.evtNames, ev).
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MachineSends(_, ev), ModuleSends(modExpr.mod, ev), no MemberOfInterfaceType(modExpr.evtNames, ev).
 	
 	//// exports list
 	AllExportedInterfaces ::= (ix: String).
@@ -254,7 +262,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ix = modExpr.iName.
 	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleExports(modExpr.left, ix);
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleExports(modExpr.right, ix).									 
-	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllExportedInterfaces(ix), ModuleExports(modExpr.mod, ix), InterfaceTypeDecl(ix, es, _), count({ev | MemberOfEventNameList(es, ev), MemberOfEventNameList(modExpr.evtNames, ev)}) = 0.
+	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllExportedInterfaces(ix), ModuleExports(modExpr.mod, ix), InterfaceTypeDecl(ix, es, _, _), count({ev | MemberOfInterfaceType(es, ev), MemberOfInterfaceType(modExpr.evtNames, ev)}) = 0.
 
 	//// creates list
 	AllCreatedInterfaces ::= (ic: String).
@@ -264,10 +272,10 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 										 toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl.
 	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleCreates(modExpr.left, ic);
 									     AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleCreates(modExpr.right, ic).									 
-	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllCreatedInterfaces(ic), ModuleCreates(modExpr.mod, ic), InterfaceTypeDecl(ic, es, _), count({ev | MemberOfEventNameList(es, ev), MemberOfEventNameList(modExpr.evtNames, ev)}) = 0.
+	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllCreatedInterfaces(ic), ModuleCreates(modExpr.mod, ic), InterfaceTypeDecl(ic, es, _, _), count({ev | MemberOfInterfaceType(es, ev), MemberOfInterfaceType(modExpr.evtNames, ev)}) = 0.
 
 	//// receives list
-	ModuleReceives(modExpr, er) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr, ix), InterfaceTypeDecl(ix, es, _), MemberOfEventNameList(es, er), er : in.NonNullEventName.
+	ModuleReceives(modExpr, er) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr, ix), InterfaceTypeDecl(ix, es, _, _), MemberOfInterfaceType(es, er), er : in.NonNullEventName.
 
 	/**************************************************************************/
 	/**				Check that the module contruction is legal			  	  */
@@ -279,33 +287,33 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// Export Operation 2 (\alpha not empty and is defined)
 	ModuleConstructionIllegal(id, ix, "exported interface not declared") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, _, id), no InterfaceTypeDecl(ix, _, _).
+	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, _, id), no InterfaceTypeDecl(ix, _, _, _).
 
 	//// Export Operation 3 (\alpha = MR(m)\EP)
 	ModuleConstructionIllegal(id, ix, "interface exported is not equal to the interface implemented by machine") 
 	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleRenameMap(mod, m, mach), 
-	impInterface = toList(#InterfaceType, NIL, {ev | MachineReceives(mach, ev), no ModulePrivate(mod, ev)}), InterfaceTypeDecl(ix, exInterface, _), exInterface != impInterface.
+	impInterface = toList(#InterfaceType, NIL, {ev | MachineReceives(mach, ev), no ModulePrivate(mod, ev)}), InterfaceTypeDecl(ix, exInterface, _, _), exInterface != impInterface.
 
 	//// Export Operation 4 (constructor type match)
 	ModuleConstructionIllegal(id, ix, "exported interface constructor type is not equal to the contructor type of implemented machine") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleRenameMap(mod, m, mach), InterfaceTypeDecl(ix, _, iargt), MachineDecl(mach, ct, _), iargt != ct.
+	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleRenameMap(mod, m, mach), InterfaceTypeDecl(ix, _, iargt, _), MachineDecl(mach, ct, _), iargt != ct.
 
 	//// Export Operation 5 (\alpha is disjoint to all dom(IX))
 	ModuleConstructionIllegal(id, ix, "interface being exported is not disjoint from the interfaces already exported by the module expression") 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleExports(mod, ix'), 
-		InterfaceTypeDecl(ix, eIx, _), InterfaceTypeDecl(ix', eIx', _), eIx = eIx';
+		InterfaceTypeDecl(ix, eIx, _, _), InterfaceTypeDecl(ix', eIx', _, _), eIx = eIx';
 		AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleExports(mod, ix'), 
-		InterfaceTypeDecl(ix, el, _), InterfaceTypeDecl(ix', el', _), MemberOfEventNameList(el, ev), MemberOfEventNameList(el', ev).
+		InterfaceTypeDecl(ix, el, _, _), InterfaceTypeDecl(ix', el', _, _), MemberOfInterfaceType(el, ev), MemberOfInterfaceType(el', ev).
 
 	/// Export Operation 6 (\alpha is disjoint or equal to all IC)
 	ModuleConstructionIllegal(id, ix, "interface being exported is not disjoint or equal to the interfaces created by the module expression") 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleCreates(mod, ic), 
-		InterfaceTypeDecl(ix, eIx, _), InterfaceTypeDecl(ic, eIc, _), eIx != eIc, 
-		InterfaceTypeDecl(ix, el, _), InterfaceTypeDecl(ic, el', _), MemberOfEventNameList(el, ev), MemberOfEventNameList(el', ev).
+		InterfaceTypeDecl(ix, eIx, _, _), InterfaceTypeDecl(ic, eIc, _, _), eIx != eIc, 
+		InterfaceTypeDecl(ix, el, _, _), InterfaceTypeDecl(ic, el', _, _), MemberOfInterfaceType(el, ev), MemberOfInterfaceType(el', ev).
 									
 	/// Export Operation 7 (permissions in mod-expression is disjoint from \alpha )
 	ModuleConstructionIllegal(id, ix, "after hidding the public events in receives or sends have private permission in them") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), InterfaceTypeDecl(ix, el, _), MemberOfEventNameList(el, ev), PermEmbeddedInEvent(pt, perm), ModulePrivate(modExpr, perm).
+	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), InterfaceTypeDecl(ix, el, _, _), MemberOfInterfaceType(el, ev), PermEmbeddedInEvent(pt, perm), ModulePrivate(modExpr, perm).
 
 
 	////Rename Operation
@@ -325,28 +333,28 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	
 	//Events observed by monitor must be in ES or EP
 	ModuleConstructionIllegal(id, mon, "monitors observes list contains an event that is not sends or private events of the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, mod, id), MemberOfMonitorNameList(monNames, mon), MonitorDecl(mon, obsList, _), MemberOfEventNameList(obsList, ev),
+	:- AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, mod, id), MemberOfMonitorNameList(monNames, mon), MonitorDecl(mon, obsList, _), MemberOfInterfaceType(obsList, ev),
 		no ModuleSends(mod, ev), no ModulePrivate(mod, ev);
-		AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, mod, id), MemberOfMonitorNameList(monNames, mon), MonitorDecl(mon, obsList, _), MemberOfEventNameList(obsList, ev),
+		AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, mod, id), MemberOfMonitorNameList(monNames, mon), MonitorDecl(mon, obsList, _), MemberOfInterfaceType(obsList, ev),
 		no ModuleSends(mod, ev), no ModulePrivate(mod, ev).
 
 
 	//Hide Operation
 	//make sure that the events is declared
 	ModuleConstructionIllegal(id, ev, "undeclared event in hide operation") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfEventNameList(evtList, ev), no EventDecl(ev, _, _), ev: String.
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), no EventDecl(ev, _, _, _), ev: String.
 
 	//alpha is disjoint from EP
 	ModuleConstructionIllegal(id, ev, "trying to hide private event of the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModulePrivate(mod, ev), MemberOfEventNameList(evtList, ev).
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModulePrivate(mod, ev), MemberOfInterfaceType(evtList, ev).
 
 	//for each interface in dom(IX) and IC it is either disjoint from alpha or included in it.
 	ModuleConstructionIllegal(id, ix1, "trying to partially hide an exported interface of the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleExports(mod, ix1), InterfaceTypeDecl(ix1, el, _), MemberOfEventNameList(el, ev1), MemberOfEventNameList(evtList, ev1), MemberOfEventNameList(el, ev2), no MemberOfEventNameList(evtList, ev2).
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleExports(mod, ix1), InterfaceTypeDecl(ix1, el, _, _), MemberOfInterfaceType(el, ev1), MemberOfInterfaceType(evtList, ev1), MemberOfInterfaceType(el, ev2), no MemberOfInterfaceType(evtList, ev2).
 
 	ModuleConstructionIllegal(id, ic, "trying to partially hide an interface created by the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleCreates(mod, ic), InterfaceTypeDecl(ic, el, _), MemberOfEventNameList(el, ev1), 
-		MemberOfEventNameList(evtList, ev1), MemberOfEventNameList(el, ev2), no MemberOfEventNameList(evtList, ev2).
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleCreates(mod, ic), InterfaceTypeDecl(ic, el, _, _), MemberOfInterfaceType(el, ev1), 
+		MemberOfInterfaceType(evtList, ev1), MemberOfInterfaceType(el, ev2), no MemberOfInterfaceType(evtList, ev2).
 
 	/// (permissions in ER + ES is disjoint from EP )
 	ModuleConstructionIllegal(id, ev, "after hidding the event has private permission in them") 
@@ -355,8 +363,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// trying to hide an interface in IC that is not in IX
 	ModuleConstructionIllegal(id, ev, "illegal hiding of a created interface that is not exported by the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleCreates(mod, ic), InterfaceTypeDecl(ic, el, _), MemberOfEventNameList(el, ev), ev: in.NonNullEventName,
-	 MemberOfEventNameList(evtList, ev), no ModuleExports(mod, ix),  InterfaceTypeDecl(ix, el, _).
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleCreates(mod, ic), InterfaceTypeDecl(ic, el, _, _), MemberOfInterfaceType(el, ev), ev: in.NonNullEventName,
+	 MemberOfInterfaceType(evtList, ev), no ModuleExports(mod, ix),  InterfaceTypeDecl(ix, el, _, _).
 
 
 	//// LEGAL COMPOSITION !
@@ -371,12 +379,12 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// dom(IXp) and dom(IXq) are disjoint
 	ModuleConstructionIllegal(modL.id, ixL, "compatibility error> exported interfaces are not disjoint") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleExports(emodL, ixL), ModuleExports(emodR, ixR), 
-	InterfaceTypeDecl(ixL, esL, _), MemberOfEventNameList(esL, ev), InterfaceTypeDecl(ixR, esR, _), MemberOfEventNameList(esR, ev).									
+	InterfaceTypeDecl(ixL, esL, _, _), MemberOfInterfaceType(esL, ev), InterfaceTypeDecl(ixR, esR, _, _), MemberOfInterfaceType(esR, ev).									
 
 	//// ICp and ICq are disjoint
 	ModuleConstructionIllegal(modL.id, icL, "compatibility error> created interfaces are not disjoint") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleCreates(emodL, icL), ModuleCreates(emodR, icR), 
-		InterfaceTypeDecl(icL, esL, _), MemberOfEventNameList(esL, ev), InterfaceTypeDecl(icR, esR, _), MemberOfEventNameList(esR, ev).
+		InterfaceTypeDecl(icL, esL, _, _), MemberOfInterfaceType(esL, ev), InterfaceTypeDecl(icR, esR, _, _), MemberOfInterfaceType(esR, ev).
 
 	//// ESp and ESq are disjoint
 	ModuleConstructionIllegal(modL.id, ev, "compatibility error> sends are not disjoint") 
@@ -397,24 +405,24 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// IX of the composed module is disjoint from EP of the composed module
 	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the exported interfaces are not disjoint from the private events") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleExports(composedMod, ix),
-	InterfaceTypeDecl(ix, es, _), MemberOfEventNameList(es, ev), ModulePrivate(composedMod, ev).
+	InterfaceTypeDecl(ix, es, _, _), MemberOfInterfaceType(es, ev), ModulePrivate(composedMod, ev).
 
 	//// IC of the composed module is disjoint from EP of the composed module
 	ModuleConstructionIllegal(modL.id, ic, "compatibility error> after composition the created interfaces are not disjoint from the private events") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
-	InterfaceTypeDecl(ic, es, _), MemberOfEventNameList(es, ev), ModulePrivate(composedMod, ev).	
+	InterfaceTypeDecl(ic, es, _, _), MemberOfInterfaceType(es, ev), ModulePrivate(composedMod, ev).	
 
 	//// IC is either disjoint or equal to the IX
 	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the created interfaces are not disjoint or equal to the exported interfaces") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
-	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _), InterfaceTypeDecl(ix, ixL, _), icL != ixL,
-	InterfaceTypeDecl(ic, esc, _), MemberOfEventNameList(esc, ev), InterfaceTypeDecl(ix, esx, _), MemberOfEventNameList(esx, ev).
+	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _, _), InterfaceTypeDecl(ix, ixL, _, _), icL != ixL,
+	InterfaceTypeDecl(ic, esc, _, _), MemberOfInterfaceType(esc, ev), InterfaceTypeDecl(ix, esx, _, _), MemberOfInterfaceType(esx, ev).
 
 	//// for the match IC and IX, constructor(IC) subtype of constructor(IX).
 	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the constructor type of created interfaces is not a subtype of constructor type of exported interfaces") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
-	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _), InterfaceTypeDecl(ix, ixL, _), icL = ixL,
-	InterfaceTypeDecl(ic, _, ct), InterfaceTypeDecl(ix, _, xt), ct != xt.
+	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _, _), InterfaceTypeDecl(ix, ixL, _, _), icL = ixL,
+	InterfaceTypeDecl(ic, _, ct, _), InterfaceTypeDecl(ix, _, xt, _), ct != xt.
 	
 	//// make sure that the constructor arguments do not have private permissions in them.
 	ModuleConstructionIllegal(modL.id, ic, "compatibility error> after composition the constructor type of created interface has private permissions") 
@@ -431,7 +439,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// events mentioned in the module declaration are legal
 	WellFormednessError(mod.id, ev, "wellformedness error> event not defined")
-	:- mod is ModuleDecl, ModulePrivateEvents(mod, ev), ev: NonNullEventName, no EventDecl(ev, _, _).
+	:- mod is ModuleDecl, ModulePrivateEvents(mod, ev), ev: NonNullEventName, no EventDecl(ev, _, _, _).
 
 	//// make sure that new M in the module are for private machines.
 	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M, but not all its events are private")
@@ -439,21 +447,21 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// ix is not disjoint from EP
 	WellFormednessError(mod.id, ix, "wellformedness error> the exported interfaces are not disjoint from private events") 
-	:- mod is ModuleDecl, ModuleExports(mod, ix), ModulePrivate(mod, ev), InterfaceTypeDecl(ix, es, _), MemberOfEventNameList(es, ev).
+	:- mod is ModuleDecl, ModuleExports(mod, ix), ModulePrivate(mod, ev), InterfaceTypeDecl(ix, es, _, _), MemberOfInterfaceType(es, ev).
 
 	//// ic is not disjoint from EP
 	WellFormednessError(mod.id, ic, "wellformedness error> the created interfaces are not disjoint from private events") 
-	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModulePrivate(mod, ev), InterfaceTypeDecl(ic, es, _), MemberOfEventNameList(es, ev).
+	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModulePrivate(mod, ev), InterfaceTypeDecl(ic, es, _, _), MemberOfInterfaceType(es, ev).
 
 	//// IC is either disjoint or equal to the IX
 	WellFormednessError(mod.id, ix, "wellformedness error> the created interfaces are not disjoint or equal to the exported interface") 
-	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModuleExports(mod, ix), InterfaceTypeDecl(ic, icL, _), InterfaceTypeDecl(ix, ixL, _), 									
-	icL != ixL, InterfaceTypeDecl(ic, esc, _), MemberOfEventNameList(esc, ev), InterfaceTypeDecl(ix, esx, _), MemberOfEventNameList(esx, ev).
+	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModuleExports(mod, ix), InterfaceTypeDecl(ic, icL, _, _), InterfaceTypeDecl(ix, ixL, _, _), 									
+	icL != ixL, InterfaceTypeDecl(ic, esc, _, _), MemberOfInterfaceType(esc, ev), InterfaceTypeDecl(ix, esx, _, _), MemberOfInterfaceType(esx, ev).
 
 	//// for the match IC and IX, constructor(IC) subtype of constructor(IX).
 	WellFormednessError(mod.id, ix, "wellformedness error> type of created interfaces is not a subtype of constructor type of exported interface") 
 	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModuleExports(mod, ix), 
-	InterfaceTypeDecl(ic, icL, ct), InterfaceTypeDecl(ix, ixL, xt), icL = ixL, ct != xt.
+	InterfaceTypeDecl(ic, icL, ct, _), InterfaceTypeDecl(ix, ixL, xt, _), icL = ixL, ct != xt.
 
 	//// e \in ER + ES, all a in A(e) is disjoint from EP
 	WellFormednessError(mod.id, ev, "wellformedness error> the public events in receives or sends has private permissions in them") 
@@ -463,7 +471,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// no two machines export the same interface
 	WellFormednessError(mod.id, ix, "wellformedness error> multiple machines export the same interface") 
 	:- mod is ModuleDecl, ModuleContains(mod, mach), ModuleContains(mod, mach'), MachineExports(mach, ix), MachineExports(mach', ix'),
-	InterfaceTypeDecl(ix, ixL, _), InterfaceTypeDecl(ix', ixL, _), mach != mach'.
+	InterfaceTypeDecl(ix, ixL, _, _), InterfaceTypeDecl(ix', ixL, _, _), mach != mach'.
 
 	//// private machines created by a module are part of the module.
 	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M is not included in the module")
@@ -475,10 +483,10 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	////Implementation and test module expr must be closed with respect to creates
 	TestOrImplDeclError(modExpr.id, ic, "top level module expressions must be closed with respect to created interfaces (all created interfaces must be exported)") 
-	:- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix),InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _);
-	TestDecl(_, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _);
-	RefinementDecl(_, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _);
-	RefinementDecl(_, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _), InterfaceTypeDecl(ix, x, _).
+	:- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix),InterfaceTypeDecl(ic, x, _, _), InterfaceTypeDecl(ix, x, _, _);
+	TestDecl(_, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _, _), InterfaceTypeDecl(ix, x, _, _);
+	RefinementDecl(_, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _, _), InterfaceTypeDecl(ix, x, _, _);
+	RefinementDecl(_, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleExports(emodExpr, ix), InterfaceTypeDecl(ic, x, _, _), InterfaceTypeDecl(ix, x, _, _).
 
 	//// There is only one implementation modExpr
 	TestOrImplDeclError(modExpr.id, "Error", "Multiple implementation declarations")
@@ -490,11 +498,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	// IC_q subset of IC_p
 	RefinementDeclError(modp.id, icq, "interfaces created by RHS must be a subset of interfaces created by LHS") :-
-	AllRefinementTests(modp, modq), ModuleCreates(modq, icq), InterfaceTypeDecl(icq, icL, _), no ModuleCreates(modp, icp), InterfaceTypeDecl(icp, icL, _).
+	AllRefinementTests(modp, modq), ModuleCreates(modq, icq), InterfaceTypeDecl(icq, icL, _, _), no ModuleCreates(modp, icp), InterfaceTypeDecl(icp, icL, _, _).
 	
 	// IXq subset of iXp U ICp
 	RefinementDeclError(modp.id, ixq, "interfaces implemented by RHS must be a subset of interfaces implemented + created by LHS") :-
-	AllRefinementTests(modp, modq), ModuleExports(modq, ixq), InterfaceTypeDecl(ixq, ixL, _), no ModuleCreates(modp, icp), InterfaceTypeDecl(icp, ixL, _), no ModuleExports(modp, ixp), InterfaceTypeDecl(ixp, ixL, _).
+	AllRefinementTests(modp, modq), ModuleExports(modq, ixq), InterfaceTypeDecl(ixq, ixL, _, _), no ModuleCreates(modp, icp), InterfaceTypeDecl(icp, ixL, _, _), no ModuleExports(modp, ixp), InterfaceTypeDecl(ixp, ixL, _, _).
 
 	// ESq subset of ESp
 	RefinementDeclError(modp.id, ev, "events sent by RHS must be subset of events sents by LHS") :-
@@ -586,7 +594,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	CLinkMap ::= (creatorM: String, IorM: String, impM: String).
 	// make sure that the IorM matches the name of interface created by the machine (new I).
 	// impM is the name of the real machine and not the renamed name.
-	CLinkMap(creatorM, IorM, impM) :-	ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cM, impM), no InterfaceTypeDecl(IorM, _, _), cM = IorM, cM : String, impM : String; //machine creation
+	CLinkMap(creatorM, IorM, impM) :-	ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cM, impM), no InterfaceTypeDecl(IorM, _, _, _), cM = IorM, cM : String, impM : String; //machine creation
 										ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, IorM, impM), IorM : String, impM : String.
 	
 	CRenameMap ::= (nName: String, iName: String).
@@ -662,18 +670,18 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	
 	//// Field names for named tuple types that have a type synonym
 	IndexOf ::= (t: NmdTupType, name: String, offset: Natural, tail: NmdTupType + {NIL}).
-	IndexOf(t, name, 0, tail)  :- TypeDef(_, t), t = NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(t, name, 0, tail)  :- TypeDef(_, t, _), t = NmdTupType(NmdTupTypeField(name, _), tail).
 	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   d is TypeDef(name, type), type: NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
+	   d is TypeDef(name, type, _), type: NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
 									   IndexOf(type, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(#NmdTupType, type) }).  
 	
 	//// Enum declarations for all enum types
 	EnumTypeElem ::= (EnumTypeDef, StringList, IntegerList + { NIL }).
-	EnumTypeElem(d, list1, list2) :- d is EnumTypeDef(_, list1, list2).
+	EnumTypeElem(d, list1, list2) :- d is EnumTypeDef(_, list1, list2, _).
 	EnumTypeElem(d, list1, NIL) :- EnumTypeElem(d, StringList(_, list1), NIL), list1: StringList.
 	EnumTypeElem(d, list1, list2) :- EnumTypeElem(d, StringList(_, list1), IntegerList(_, list2)), list1: StringList.
 
@@ -685,7 +693,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 												  list1 = StringList(str, _), list2 = IntegerList(i, _).
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :-
-		d is EnumTypeDef(enumName, elems, _), size = lstLength(#StringList, elems),
+		d is EnumTypeDef(enumName, elems, _, _), size = lstLength(#StringList, elems),
 		list = toList(#Elements, NIL, { enumMember | 
 										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
@@ -700,10 +708,10 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 									   DeclId(d, id, cn), d : EventDeclExt, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventDecl}) }).  
 			
-	//// MemberOfEventNameLists
+	//// MemberOfInterfaceTypes
 	HOut(0, out.EnmDef(NIL, "P_EVENTSET", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
-									   EventSet(evsetName, eventNameList), id = toOrdinal(eventNameList, 0, { x | EventSet(_, x) }), enumMember = Element(IntLit(id, DEC, NIL), evsetName); 
+									   EventSet(evsetName, itype), id = toOrdinal(itype, 0, { x | EventSet(_, x) }), enumMember = Element(IntLit(id, DEC, NIL), evsetName); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTSETS_COUNT"), size = count({ x | x is EventSet }) }).  
 	
 	//// (Anon)FunDecls
@@ -755,7 +763,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_IORM_COUNT"), size = count({n | CLinkMap(_, n, _)}) }). 
 
 	//// Extern declarations for defined types
-	HOut(0, def) :- TypeDef(name, _), 
+	HOut(0, def) :- TypeDef(name, _, _), 
 					typeName = strJoin("P_GEND_TYPE_", name),
 					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
 
@@ -853,9 +861,9 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	TranslatedTypeExpr ::= (TypeExpr).
 	TranslatedTypeExpr(t) :- t = in.BaseType(NULL); t = in.BaseType(BOOL); t = in.BaseType(INT); t = in.BaseType(EVENT); t = in.BaseType(MACHINE); t = in.BaseType(ANY).
 	TranslatedTypeExpr(t) :- ModelType(name), t = NameType(name).
-	TranslatedTypeExpr(t) :- EventDecl(_, _, t), t : TypeExpr.
-	TranslatedTypeExpr(t) :- InterfaceTypeDecl(_, _, t).
-	TranslatedTypeExpr(t) :- TypeDef(_, t).
+	TranslatedTypeExpr(t) :- EventDecl(_, _, t, _), t : TypeExpr.
+	TranslatedTypeExpr(t) :- InterfaceTypeDecl(_, _, t, _).
+	TranslatedTypeExpr(t) :- TypeDef(_, t, _).
 	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = SeqType(t).
 	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = MapType(t, _).
 	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = MapType(_, t).
@@ -895,7 +903,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 
 	//// Enum types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = NameType(name), EnumTypeDef(name, _, _),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = NameType(name), EnumTypeDef(name, _, _, _),
 								defs = out.Section(before, def),
 								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeName = strJoin("P_GEND_TYPE_", toString(m)),
@@ -1038,7 +1046,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	TypeToExpr ::= (TypeExpr, Expr).
 	TypeToExpr(type, expr) :- TypeId(typeIndex, type), expr = out.UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeIndex)))).
 
-	COut(1, def) :- TypeDef(name, type),
+	COut(1, def) :- TypeDef(name, type, _),
 	                typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(type, expr),
 					def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr).
 	COut(1, def) :- ModelType(name), type = NameType(name),
@@ -1053,15 +1061,15 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	EvDecl2PayloadType ::= (EventDecl, out.Expr).
 	//// An EventDecl without a payload type has a null payload type.
-	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, NIL), TypeToExpr(in.BaseType(NULL), expr).
+	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, NIL, _), TypeToExpr(in.BaseType(NULL), expr).
 	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, type), type : TypeExpr, TypeToExpr(type, expr).
+	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, type, _), type : TypeExpr, TypeToExpr(type, expr).
 
 	EvDecl2EvCard      ::= (EventDecl, out.Expr).
 	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
-	EvDecl2EvCard(d, e) :- d is EventDecl(_, NIL, _), e = IntLit(4294967295, DEC, U).
+	EvDecl2EvCard(d, e) :- d is EventDecl(_, NIL, _, _), e = IntLit(4294967295, DEC, U).
 	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2EvCard(d, e) :- d is EventDecl(_, card, _), e = IntLit(card.bound, DEC, U).
+	EvDecl2EvCard(d, e) :- d is EventDecl(_, card, _, _), e = IntLit(card.bound, DEC, U).
 
 	//// Base case
 	EvDeclConcat(c, NIL) :- c = count({d | d is EventDecl}) + 2.

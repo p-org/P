@@ -17,7 +17,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
 	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
 									   decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
-	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(#EventNameList, NIL, {ev | ObservesDecl(decl, ev) }), list : EventNameList.
+	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(in.#InterfaceType, NIL, {ev | ObservesDecl(decl, ev) }), list : in.InterfaceType.
 
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), TypeExpansion(ctype, ectype).
 	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev), ev : in.NonNullEventName.
@@ -27,8 +27,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											in.MachineCreates(m, mcname), in.MachineProtoDecl(mcname, _).
 
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
-	link.EventDecl(name, card, NIL) :- in.EventDecl(name, card, NIL, _).
-	link.EventDecl(name, card, etype) :- in.EventDecl(name, card, type, _), TypeExpansion(type, etype).
+	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id).
+	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id), TypeExpansion(type, etype).
 
 	//// Compute the permission set associated with each high level type
 	//// A(e)
@@ -37,7 +37,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	EmbeddedPermissionsInType(in.BaseType(MACHINE), ev),
 	EmbeddedPermissionsInType(in.BaseType(ANY), ev)   :- in.EventDecl(ev, _, _, _).
 
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : in.InterfaceType, InterfaceTypeDeclList(i, type), in.InterfaceTypeDecl(i, es, _, _), EventSetDecl(es, ev), ev: in.NonNullEventName.	
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : in.InterfaceType, in.InterfaceTypeDecl(i, etype, ctype, _), in.InterfaceTypeDef(i, es, _, _), EventSetDecl(es, ev), ev: in.NonNullEventName.	
 	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, NIL), EmbeddedPermissionsInType(hd, ev).
 	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
 											AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
@@ -51,13 +51,11 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), EmbeddedPermissionsInType(pt, perm).
 
 	link.ModelType(name) :- in.ModelType(name).
-	link.TypeDef(name, etype) :- in.TypeDef(name, type, id), no in.ModelType(name), TypeExpansion(type, etype).
-	link.EnumTypeDef(name, elems, values) :- in.EnumTypeDef(name, elems, values, _).
+	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), no in.ModelType(name), TypeExpansion(type, etype).
+	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
 	link.EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
 	                               list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }).
-	link.InterfaceTypeDecl(name, list, etype) :- in.InterfaceTypeDecl(name, esname, type, _), TypeExpansion(type, etype),
-	                                             eventset is EventSetDecl(esname, _), 
-	                                             list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }), list : EventNameList.
+	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id), TypeExpansion(type, etype).
 
 	link.FunDecl(name, eparams, ereturn, id) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).

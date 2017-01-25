@@ -40,7 +40,7 @@
         private bool parseFailed = false;
         private PLink_Root.ModuleDecl crntModuleDecl = null;
         private LProgramTopDeclNames LinkTopDeclNames;
-        private List<PLink_Root.EventName> crntEventList = new List<PLink_Root.EventName>();
+        private List<PLink_Root.NonNullEventName> crntEventList = new List<PLink_Root.NonNullEventName>();
         private List<PLink_Root.String> crntStringList = new List<PLink_Root.String>();
         private Stack<PLink_Root.ModuleExpr> moduleExprStack = new Stack<PLink_Root.ModuleExpr>();
         private Stack<PLink_Root.MonitorNameList> monitorNameListStack = new Stack<PLink_Root.MonitorNameList>();
@@ -132,22 +132,22 @@
             moduleExprStack.Push(safeExpr);
         }
 
-        private PLink_Root.EventNameList ConvertToEventNameList(List<PLink_Root.EventName> events)
+        private PLink_Root.InterfaceType ConvertToInterfaceType(List<PLink_Root.NonNullEventName> events)
         {
-            var eventNameList = new Stack<PLink_Root.EventNameList>();
-            var eventList = PLink_Root.MkEventNameList();
-            eventList.hd = (PLink_Root.IArgType_EventNameList__0)events[0];
-            eventList.tl = MkUserCnst(PLink_Root.UserCnstKind.NIL, events[0].Span);
-            eventNameList.Push(eventList);
+            var interfaceTypeList = new Stack<PLink_Root.InterfaceType>();
+            var interfaceType = PLink_Root.MkInterfaceType();
+            interfaceType.ev = (PLink_Root.IArgType_InterfaceType__0)events[0];
+            interfaceType.tail = MkUserCnst(PLink_Root.UserCnstKind.NIL, events[0].Span);
+            interfaceTypeList.Push(interfaceType);
             crntEventList.RemoveAt(0);
             foreach (var str in events)
             {
-                eventList = PLink_Root.MkEventNameList();
-                eventList.hd = (PLink_Root.IArgType_EventNameList__0)str;
-                eventList.tl = (PLink_Root.IArgType_EventNameList__1)eventNameList.Pop();
-                eventNameList.Push(eventList);
+                interfaceType = PLink_Root.MkInterfaceType();
+                interfaceType.ev = (PLink_Root.IArgType_InterfaceType__0)str;
+                interfaceType.tail = (PLink_Root.IArgType_InterfaceType__1)interfaceTypeList.Pop();
+                interfaceTypeList.Push(interfaceType);
             }
-            return eventNameList.Pop();
+            return interfaceTypeList.Pop();
         }
 
         private void PushHideExpr(Span span)
@@ -158,7 +158,7 @@
             hideExpr.mod = (PLink_Root.IArgType_HideExpr__1)moduleExprStack.Pop(); ;
             Contract.Assert(crntEventList.Count >= 1);
             //convert the string list to EventNameList
-            hideExpr.evtNames = ConvertToEventNameList(crntEventList);
+            hideExpr.evtNames = ConvertToInterfaceType(crntEventList);
             hideExpr.id = (PLink_Root.IArgType_HideExpr__2)MkIntegerId(span);
             moduleExprStack.Push(hideExpr);
             //clear eventList

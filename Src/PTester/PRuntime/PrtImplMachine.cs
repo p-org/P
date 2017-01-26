@@ -75,7 +75,7 @@ namespace P.Runtime
             }
             clonedMachine.maxBufferSize = this.maxBufferSize;
             clonedMachine.doAssume = this.doAssume;
-            clonedMachine.self = new PrtInterfaceValue(this, this.self.permissions);
+            clonedMachine.self = new PrtInterfaceValue(clonedMachine, this.self.permissions);
 
             
             return clonedMachine;

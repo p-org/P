@@ -439,7 +439,7 @@ namespace P.Runtime
                 }
                 else
                 {
-                    continue;
+                    iter++;
                 }
             }
 

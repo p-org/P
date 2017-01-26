@@ -500,6 +500,7 @@ namespace P.Runtime
 
             if(PrtIsPushTransitionPresent(currEventValue))
             {
+                eventValue = currEventValue;
                 PrtPushState(CurrentState.transitions[currEventValue].gotoState);
                 goto DoExecuteFunction;
             }

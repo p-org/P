@@ -246,8 +246,6 @@ namespace P.Runtime
                 PrtPushFunStackFrame(currFun, currFun.CreateLocals(currentPayload));
             else
                 PrtPushFunStackFrame(currFun, currFun.CreateLocals());
-
-            currFun.Execute(stateImpl, this);
         }
 
         public bool PrtIsPushTransitionPresent(PrtValue ev)

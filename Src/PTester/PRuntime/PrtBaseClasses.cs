@@ -105,12 +105,13 @@ namespace P.Runtime
                     throw new PrtInvalidPopStatement();
                 }
                 //TODO : Handle the spec machine case separately for the halt event
-                else if (eventValue.Equals(PrtValue.halt))
+                else if (!eventValue.Equals(PrtValue.halt))
                 {
                     throw new PrtUnhandledEventException();
                 }
                 else
                 {
+                    stateImpl.Trace("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
                     currentStatus = PrtMachineStatus.Halted;
                 }
             }
@@ -149,7 +150,6 @@ namespace P.Runtime
         {
             stateImpl.Trace("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
             PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
-            invertedFunStack.TopOfStack.fun.Execute(stateImpl, this);
         }
 
         public bool PrtIsTransitionPresent(PrtValue ev)

@@ -232,11 +232,11 @@ domain PStructuralTyping extends PData
 
 	//events in sends
 	[rule_Classes = '"error, msg: event in sends list is not declared"']
-	OneDeclError(ms) :- ms is MachineSends(_, name), no EventDecl(name, _, _, _), name != NIL.
+	OneDeclError(ms) :- ms is MachineSends(_, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//events in receives
 	[rule_Classes = '"error, msg: event in receives list is not declared"']
-	OneDeclError(mr) :- mr is MachineReceives(_, name), no EventDecl(name, _, _, _), name != NIL.
+	OneDeclError(mr) :- mr is MachineReceives(_, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 
 }
@@ -274,8 +274,11 @@ domain PStaticTyping extends PData
 	                                   it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev) }), it : InterfaceType.
 	
 	//populate the sends, receives and creates for machines with missing annotations
-	MachineSends(m, ev.name) :- MachineSends(m, NIL), ev is EventDecl.
+	MachineSends(m, evName) :- MachineSends(m, NIL), ev is EventDecl, ev.name = evName;
+							   MachineSends(m, NIL), evName = HALT.
+								
 	MachineReceives(m, evName) :- MachineReceives(m, NIL), ev is EventDecl, ev.name = evName;
+								  MachineReceives(m, NIL), evName = HALT;
 								  MachineExports(m, i), InterfaceTypeDecl(i, evSet.name, _, _), evSet is EventSetDecl, EventSetContains(evSet, evName).
 
 	MachineCreates(m, iorm.name) :- MachineCreates(m, NIL), iorm is MachineDecl;

@@ -13,7 +13,7 @@ namespace P.Runtime
     };
     public enum PrtNextStatemachineOperation
     {
-        EntryOperation,
+        ExecuteFunctionOperation,
         DequeueOperation,
         HandleEventOperation,
         ReceiveOperation
@@ -238,7 +238,7 @@ namespace P.Runtime
             }
         }
 
-        public void PrtExecuteReceiveCase(PrtValue ev)
+        public void PrtPushReceiveCase(PrtValue ev)
         {
             var currRecIndex = continuation.receiveIndex;
             var currFun = invertedFunStack.TopOfStack.fun.receiveCases[currRecIndex][ev];
@@ -296,8 +296,8 @@ namespace P.Runtime
 
             switch(nextSMOperation)
             {
-                case PrtNextStatemachineOperation.EntryOperation:
-                    goto DoEntry;
+                case PrtNextStatemachineOperation.ExecuteFunctionOperation:
+                    goto DoExecuteFunction;
                 case PrtNextStatemachineOperation.DequeueOperation:
                     goto DoDequeue;
                 case PrtNextStatemachineOperation.HandleEventOperation:
@@ -306,7 +306,7 @@ namespace P.Runtime
                     goto DoReceive;
             }
 
-            DoEntry:
+            DoExecuteFunction:
             /*
              * Note that we have made an assumption that when a state is pushed on state stack or a transition is taken (update to a state)
              * the action set and deferred set is updated appropriately
@@ -343,26 +343,19 @@ namespace P.Runtime
             goto CheckFunLastOperation;
 
             CheckFunLastOperation:
-            if(receiveSet.Count != 0)
-            {
-                // We are at a blocking "receive"; so do receive operation
-                nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
-                goto Finish;
-
-            }
 
             switch(continuation.reason)
             {
                 case PrtContinuationReason.Pop:
                     {
                         stateExitReason = PrtStateExitReason.OnPopStatement;
-                        PrtExecuteExitFunction();
+                        PrtPushExitFunction();
                         goto CheckFunLastOperation;
                     }
                 case PrtContinuationReason.Goto:
                     {
                         stateExitReason = PrtStateExitReason.OnGotoStatement;
-                        PrtExecuteExitFunction();
+                        PrtPushExitFunction();
                         goto CheckFunLastOperation;
                     }
                 case PrtContinuationReason.Raise:
@@ -404,9 +397,18 @@ namespace P.Runtime
                         {
                             case PrtStateExitReason.NotExit:
                                 {
-                                    nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
-                                    hasMoreWork = true;
-                                    goto Finish;
+                                    if (invertedFunStack.TopOfStack != null)
+                                    {
+                                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
+                                        hasMoreWork = true;
+                                        goto Finish;
+                                    }
+                                    else
+                                    {
+                                        nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
+                                        hasMoreWork = true;
+                                        goto Finish;
+                                    }
                                 }
                             case PrtStateExitReason.OnPopStatement:
                                 {
@@ -418,7 +420,7 @@ namespace P.Runtime
                             case PrtStateExitReason.OnGotoStatement:
                                 {
                                     PrtChangeState(destOfGoto);
-                                    nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+                                    nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                     stateExitReason = PrtStateExitReason.NotExit;
                                     hasMoreWork = true;
                                     goto Finish;
@@ -433,14 +435,15 @@ namespace P.Runtime
                             case PrtStateExitReason.OnTransition:
                                 {
                                     stateExitReason = PrtStateExitReason.OnTransitionAfterExit;
-                                    PrtExecuteTransitionFun(eventValue);
-                                    goto CheckFunLastOperation;
+                                    nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
+                                    PrtPushTransitionFun(eventValue);
+                                    goto DoExecuteFunction;
                                 }
                             case PrtStateExitReason.OnTransitionAfterExit:
                                 {
                                     PrtChangeState(CurrentState.transitions[eventValue].gotoState);
                                     stateExitReason = PrtStateExitReason.NotExit;
-                                    nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+                                    nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                     hasMoreWork = true;
                                     goto Finish;
                                 }
@@ -498,13 +501,14 @@ namespace P.Runtime
             if(PrtIsPushTransitionPresent(currEventValue))
             {
                 PrtPushState(CurrentState.transitions[currEventValue].gotoState);
-                goto DoEntry;
+                goto DoExecuteFunction;
             }
             else if(PrtIsTransitionPresent(currEventValue))
             {
                 stateExitReason = PrtStateExitReason.OnTransition;
+                nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                 eventValue = currEventValue;
-                PrtExecuteExitFunction();
+                PrtPushExitFunction();
                 goto CheckFunLastOperation;
             }
             else if(PrtIsActionInstalled(currEventValue))
@@ -515,18 +519,19 @@ namespace P.Runtime
             else
             {
                 stateExitReason = PrtStateExitReason.OnUnhandledEvent;
+                nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                 eventValue = currEventValue;
-                PrtExecuteExitFunction();
+                PrtPushExitFunction();
                 goto CheckFunLastOperation;
             }
 
             DoReceive:
-            Debug.Assert(receiveSet.Count == 0 && PrtHasNullReceiveCase(), "Receive set empty and at receive !!");
             if(receiveSet.Count == 0)
             {
                 stateExitReason = PrtStateExitReason.NotExit;
-                PrtExecuteReceiveCase(PrtValue.@null);
-                goto CheckFunLastOperation;
+                nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
+                PrtPushReceiveCase(PrtValue.@null);
+                goto DoExecuteFunction;
             }
             dequeueStatus = PrtDequeueEvent(false);
             if (dequeueStatus == PrtDequeueReturnStatus.BLOCKED)
@@ -539,8 +544,9 @@ namespace P.Runtime
             else if (dequeueStatus == PrtDequeueReturnStatus.SUCCESS)
             {
                 stateExitReason = PrtStateExitReason.NotExit;
-                PrtExecuteReceiveCase(currentTrigger);
-                goto CheckFunLastOperation;
+                nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
+                PrtPushReceiveCase(currentTrigger);
+                goto DoExecuteFunction;
             }
             else // NULL case
             {

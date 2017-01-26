@@ -41,7 +41,7 @@ namespace P.Runtime
             this.currentTrigger = PrtValue.@null;
             this.currentPayload = PrtValue.@null;
             this.currentStatus = PrtMachineStatus.Enabled;
-            this.nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+            this.nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
             this.stateExitReason = PrtStateExitReason.NotExit;
             this.sends = new List<PrtEventValue>();
             this.stateImpl = null;
@@ -145,7 +145,7 @@ namespace P.Runtime
             invertedFunStack.PushFun(fun, local, retTo);
         }
 
-        public void PrtExecuteExitFunction()
+        public void PrtPushExitFunction()
         {
             stateImpl.Trace("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
             PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
@@ -162,11 +162,10 @@ namespace P.Runtime
             return CurrentState.dos.ContainsKey(ev);
         }
 
-        public void PrtExecuteTransitionFun(PrtValue ev)
+        public void PrtPushTransitionFun(PrtValue ev)
         {
             // Shaz: Figure out how to handle the transfer stuff for payload !!!
             PrtPushFunStackFrame(CurrentState.transitions[ev].transitionFun, CurrentState.transitions[ev].transitionFun.CreateLocals(currentPayload));
-            invertedFunStack.TopOfStack.fun.Execute(stateImpl, this);
         }
 
         public void PrtFunContReturn(List<PrtValue> retLocals)

@@ -665,7 +665,7 @@ namespace P.Runtime
         public PrtContinuation()
         {
             reason = PrtContinuationReason.Return;
-            retVal = null;
+            retVal = PrtValue.@null;
             nondet = false;
             retLocals = new List<PrtValue>();
             receiveIndex = -1;

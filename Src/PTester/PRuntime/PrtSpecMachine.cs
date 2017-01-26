@@ -30,18 +30,35 @@ namespace P.Runtime
             //Execute the entry function
             PrtEnqueueEvent(PrtValue.@null, PrtValue.@null, null);
         }
-        public PrtSpecMachine Clone()
+        public PrtSpecMachine Clone(StateImpl app)
         {
-            var clonedSpecMachine = MakeSkeleton();
+            var clonedMachine = MakeSkeleton();
+            //base class fields
+            clonedMachine.instanceNumber = this.instanceNumber;
             foreach (var fd in fields)
             {
-                clonedSpecMachine.fields.Add(fd.Clone());
+                clonedMachine.fields.Add(fd.Clone());
             }
-            clonedSpecMachine.stateStack = this.stateStack.Clone();
-            clonedSpecMachine.nextSMOperation = this.nextSMOperation;
-            clonedSpecMachine.stateExitReason = this.stateExitReason;
-            clonedSpecMachine.stateImpl = this.stateImpl;
-            return clonedSpecMachine;
+            clonedMachine.eventValue = this.eventValue;
+            clonedMachine.stateStack = this.stateStack.Clone();
+            clonedMachine.invertedFunStack = this.invertedFunStack.Clone();
+            clonedMachine.continuation = this.continuation.Clone();
+            clonedMachine.currentTrigger = this.currentTrigger;
+            clonedMachine.currentPayload = this.currentPayload.Clone();
+
+            clonedMachine.currentStatus = this.currentStatus;
+            clonedMachine.nextSMOperation = this.nextSMOperation;
+            clonedMachine.stateExitReason = this.stateExitReason;
+            clonedMachine.sends = this.sends;
+            clonedMachine.renamedName = this.renamedName;
+            clonedMachine.isSafe = this.isSafe;
+            clonedMachine.stateImpl = app;
+
+            //spec class fields
+            clonedMachine.observes = this.observes.ToList();
+            clonedMachine.IsHot = this.IsHot;
+
+            return clonedMachine;
         }
 
         public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source, PrtMachineValue target = null)

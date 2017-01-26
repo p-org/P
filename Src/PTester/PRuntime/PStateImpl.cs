@@ -33,6 +33,13 @@ namespace P.Runtime
             }
         }
 
+        public List<PrtImplMachine> EnabledMachines
+        {
+            get
+            {
+                return implMachines.Where(m => m.currentStatus == PrtMachineStatus.Enabled).ToList();
+            }
+        }
         /// <summary>
         /// List of spec machines
         /// </summary>
@@ -94,13 +101,13 @@ namespace P.Runtime
             clonedState.implMachines = new List<PrtImplMachine>();
             foreach (var machine in implMachines)
             {
-                clonedState.implMachines.Add(machine.Clone());
+                clonedState.implMachines.Add(machine.Clone(clonedState));
             }
 
             clonedState.specMachinesMap = new Dictionary<string, PrtSpecMachine>();
             foreach (var specMachine in specMachinesMap)
             {
-                clonedState.specMachinesMap.Add(specMachine.Key, (specMachine.Value).Clone());
+                clonedState.specMachinesMap.Add(specMachine.Key, (specMachine.Value).Clone(clonedState));
             }
 
             clonedState.exception = this.exception;

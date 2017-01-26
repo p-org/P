@@ -42,11 +42,13 @@ namespace P.Runtime
         #endregion
 
         #region Clone and Undo
-        public PrtImplMachine Clone()
+        public PrtImplMachine Clone(StateImpl app)
         {
             var clonedMachine = MakeSkeleton();
+
+            //base class fields
             clonedMachine.instanceNumber = this.instanceNumber;
-            foreach(var fd in fields)
+            foreach (var fd in fields)
             {
                 clonedMachine.fields.Add(fd.Clone());
             }
@@ -56,17 +58,26 @@ namespace P.Runtime
             clonedMachine.continuation = this.continuation.Clone();
             clonedMachine.currentTrigger = this.currentTrigger;
             clonedMachine.currentPayload = this.currentPayload.Clone();
-            clonedMachine.eventQueue = this.eventQueue.Clone();
-            foreach(var ev in this.receiveSet)
-            {
-                clonedMachine.receiveSet.Add(ev);
-            }
+
             clonedMachine.currentStatus = this.currentStatus;
             clonedMachine.nextSMOperation = this.nextSMOperation;
             clonedMachine.stateExitReason = this.stateExitReason;
+            clonedMachine.sends = this.sends;
+            clonedMachine.renamedName = this.renamedName;
+            clonedMachine.isSafe = this.isSafe;
+            clonedMachine.stateImpl = app;
+
+            //impl class fields
+            clonedMachine.eventQueue = this.eventQueue.Clone();
+            foreach (var ev in this.receiveSet)
+            {
+                clonedMachine.receiveSet.Add(ev);
+            }
             clonedMachine.maxBufferSize = this.maxBufferSize;
             clonedMachine.doAssume = this.doAssume;
-            clonedMachine.stateImpl = this.stateImpl;
+            clonedMachine.self = new PrtInterfaceValue(this, this.self.permissions);
+
+            
             return clonedMachine;
         }
         #endregion

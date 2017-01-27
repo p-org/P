@@ -1237,9 +1237,19 @@ namespace Microsoft.Pc
                     var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(funName) ? pToCSharp.allStaticFuns[funName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[funName];
                     Debug.Assert(calleeInfo.isAnonymous);
                     List<StatementSyntax> ifStmts = new List<StatementSyntax>();
+                    ifStmts.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                        CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)), 
+                        CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "currentPayload", "Clone"))));
+                    foreach (var calleeLocal in calleeInfo.localNames)
+                    {
+                        var calleeLocalInfo = calleeInfo.localNameToInfo[calleeLocal];
+                        ifStmts.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                            CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(calleeLocalInfo.index)), 
+                            CSharpHelper.MkCSharpInvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("PrtMkDefaultValue")), pToCSharp.typeContext.PTypeToCSharpExpr(calleeLocalInfo.type))));
+                    }
                     ifStmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
                         CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"),
-                        IdentifierName(funName), CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(funName, "CreateLocals"), CSharpHelper.MkCSharpDot("parent", "currentPayload")))));
+                        IdentifierName(funName), CSharpHelper.MkCSharpDot("currFun", "locals"))));
                     ifStmts.Add(CSharpHelper.MkCSharpGoto(beforeLabel));
                     eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(eventName)), Block(ifStmts)));
                     funStmts.Add(CSharpHelper.MkCSharpEmptyLabeledStatement(beforeLabel));

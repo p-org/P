@@ -2357,7 +2357,7 @@ namespace Microsoft.Pc
             public SyntaxNode MkCreateLocalsMethod()
             {
                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
-
+                
                 //var locals = new List<PrtValue>();
                 stmtList.Add(
                     LocalDeclarationStatement(
@@ -2412,6 +2412,11 @@ namespace Microsoft.Pc
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("PrtMkDefaultValue")),
                         pToCSharp.typeContext.PTypeToCSharpExpr(varInfo.type));
                     stmtList.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("locals", "Add"), defaultValue)));
+                }
+
+                for (int i = funInfo.parameterNames.Count + funInfo.localNames.Count; i < funInfo.maxNumLocals; i++)
+                {
+                    stmtList.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("locals", "Add"), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("@null")))));
                 }
 
                 //return locals;

@@ -149,7 +149,7 @@ namespace P.Runtime
         public void PrtPushExitFunction()
         {
             stateImpl.Trace("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
-            PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals());
+            PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals(currentPayload));
         }
 
         public bool PrtIsTransitionPresent(PrtValue ev)

@@ -238,16 +238,6 @@ namespace P.Runtime
             }
         }
 
-        public void PrtPushReceiveCase(PrtValue ev)
-        {
-            var currRecIndex = continuation.receiveIndex;
-            var currFun = invertedFunStack.TopOfStack.fun.receiveCases[currRecIndex][ev];
-            if(currFun.IsAnonFun)
-                PrtPushFunStackFrame(currFun, currFun.CreateLocals(currentPayload));
-            else
-                PrtPushFunStackFrame(currFun, currFun.CreateLocals());
-        }
-
         public bool PrtIsPushTransitionPresent(PrtValue ev)
         {
             if (CurrentState.transitions.ContainsKey(ev))
@@ -347,14 +337,16 @@ namespace P.Runtime
                 case PrtContinuationReason.Pop:
                     {
                         stateExitReason = PrtStateExitReason.OnPopStatement;
+                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                         PrtPushExitFunction();
-                        goto CheckFunLastOperation;
+                        goto DoExecuteFunction;
                     }
                 case PrtContinuationReason.Goto:
                     {
                         stateExitReason = PrtStateExitReason.OnGotoStatement;
+                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                         PrtPushExitFunction();
-                        goto CheckFunLastOperation;
+                        goto DoExecuteFunction;
                     }
                 case PrtContinuationReason.Raise:
                     {
@@ -364,13 +356,11 @@ namespace P.Runtime
                     }
                 case PrtContinuationReason.NewMachine:
                     {
-                        stateExitReason = PrtStateExitReason.NotExit;
                         hasMoreWork = false;
                         goto Finish;
                     }
                 case PrtContinuationReason.Nondet:
                     {
-                        stateExitReason = PrtStateExitReason.NotExit;
                         stateImpl.SetPendingChoicesAsBoolean(this);
                         continuation.nondet = ((Boolean)stateImpl.GetSelectedChoiceValue(this));
                         hasMoreWork = false;
@@ -378,14 +368,12 @@ namespace P.Runtime
                     }
                 case PrtContinuationReason.Receive:
                     { 
-                        stateExitReason = PrtStateExitReason.NotExit;
                         nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
                         hasMoreWork = true;
                         goto Finish;
                     }
                 case PrtContinuationReason.Send:
                     {
-                        stateExitReason = PrtStateExitReason.NotExit;
                         hasMoreWork = false;
                         goto Finish;
                     }
@@ -508,7 +496,7 @@ namespace P.Runtime
                 nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                 eventValue = currEventValue;
                 PrtPushExitFunction();
-                goto CheckFunLastOperation;
+                goto DoExecuteFunction;
             }
             else if(PrtIsActionInstalled(currEventValue))
             {
@@ -521,7 +509,7 @@ namespace P.Runtime
                 nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                 eventValue = currEventValue;
                 PrtPushExitFunction();
-                goto CheckFunLastOperation;
+                goto DoExecuteFunction;
             }
 
             DoReceive:
@@ -529,7 +517,6 @@ namespace P.Runtime
             {
                 stateExitReason = PrtStateExitReason.NotExit;
                 nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
-                PrtPushReceiveCase(PrtValue.@null);
                 goto DoExecuteFunction;
             }
             dequeueStatus = PrtDequeueEvent(false);
@@ -544,7 +531,6 @@ namespace P.Runtime
             {
                 stateExitReason = PrtStateExitReason.NotExit;
                 nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
-                PrtPushReceiveCase(currentTrigger);
                 goto DoExecuteFunction;
             }
             else // NULL case

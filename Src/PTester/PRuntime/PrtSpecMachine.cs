@@ -78,13 +78,13 @@ namespace P.Runtime
                 switch (nextSMOperation)
                 {
                     case PrtNextStatemachineOperation.ExecuteFunctionOperation:
-                        goto DoEntry;
+                        goto DoExecuteFunction;
                     case PrtNextStatemachineOperation.HandleEventOperation:
                         goto DoHandleEvent;
                     
                 }
 
-                DoEntry:
+                DoExecuteFunction:
                 if (invertedFunStack.TopOfStack == null)
                 {
                     //Trace: entered state
@@ -123,8 +123,9 @@ namespace P.Runtime
                     case PrtContinuationReason.Goto:
                         {
                             stateExitReason = PrtStateExitReason.OnGotoStatement;
+                            nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                             PrtPushExitFunction();
-                            goto CheckFunLastOperation;
+                            goto DoExecuteFunction;
                         }
                     case PrtContinuationReason.Raise:
                         {
@@ -160,8 +161,9 @@ namespace P.Runtime
                                 case PrtStateExitReason.OnTransition:
                                     {
                                         stateExitReason = PrtStateExitReason.OnTransitionAfterExit;
+                                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                         PrtPushTransitionFun(eventValue);
-                                        goto CheckFunLastOperation;
+                                        goto DoExecuteFunction;
                                     }
                                 case PrtStateExitReason.OnTransitionAfterExit:
                                     {
@@ -200,9 +202,10 @@ namespace P.Runtime
                 if (PrtIsTransitionPresent(currEventValue))
                 {
                     stateExitReason = PrtStateExitReason.OnTransition;
+                    nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                     eventValue = currEventValue;
                     PrtPushExitFunction();
-                    goto CheckFunLastOperation;
+                    goto DoExecuteFunction;
                 }
                 else if (PrtIsActionInstalled(currEventValue))
                 {
@@ -211,9 +214,10 @@ namespace P.Runtime
                 else
                 {
                     stateExitReason = PrtStateExitReason.OnUnhandledEvent;
+                    nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                     eventValue = currEventValue;
                     PrtPushExitFunction();
-                    goto CheckFunLastOperation;
+                    goto DoExecuteFunction;
                 }
 
                 Finish:

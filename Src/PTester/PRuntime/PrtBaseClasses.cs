@@ -653,7 +653,6 @@ namespace P.Runtime
     public class PrtContinuation
     {
         public PrtContinuationReason reason;
-        public int receiveIndex;
         public PrtValue retVal;
         public List<PrtValue> retLocals;
         // The nondet field is different from the fields above because it is used 
@@ -667,14 +666,12 @@ namespace P.Runtime
             retVal = PrtValue.@null;
             nondet = false;
             retLocals = new List<PrtValue>();
-            receiveIndex = -1;
         }
 
         public PrtContinuation Clone()
         {
             var clonedVal = new PrtContinuation();
             clonedVal.reason = this.reason;
-            clonedVal.receiveIndex = this.receiveIndex;
             clonedVal.retVal = this.retVal.Clone();
             foreach(var loc in retLocals)
             {

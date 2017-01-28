@@ -317,6 +317,9 @@ namespace P.Runtime
             {
                 stateImpl.Trace("<ActionLog> Machine {0}-{1} ignoring Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                 PrtResetTriggerAndPayload();
+                nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
+                hasMoreWork = true;
+                goto Finish;
             }
             else
             {
@@ -383,18 +386,9 @@ namespace P.Runtime
                         {
                             case PrtStateExitReason.NotExit:
                                 {
-                                    if (invertedFunStack.TopOfStack != null)
-                                    {
-                                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
-                                        hasMoreWork = true;
-                                        goto Finish;
-                                    }
-                                    else
-                                    {
-                                        nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
-                                        hasMoreWork = true;
-                                        goto Finish;
-                                    }
+                                    nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
+                                    hasMoreWork = true;
+                                    goto Finish;
                                 }
                             case PrtStateExitReason.OnPopStatement:
                                 {

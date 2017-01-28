@@ -1254,7 +1254,7 @@ namespace Microsoft.Pc
                     eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(eventName)), Block(ifStmts)));
                     funStmts.Add(CSharpHelper.MkCSharpEmptyLabeledStatement(beforeLabel));
                     funStmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
-                    var elseStmt = Block(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(funName), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
+                    var elseStmt = Block(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), CSharpHelper.MkCSharpDot("currFun", "fun"), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
                                          ReturnStatement());
                     funStmts.Add(IfStatement(
                                          CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "continuation", "reason"), IdentifierName("PrtContinuationReason.Return")),
@@ -1843,7 +1843,7 @@ namespace Microsoft.Pc
                 stmtList.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(calleeName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
                 var elseStmt = Block(ExpressionStatement(
                     CSharpHelper.MkCSharpInvocationExpression(
-                        CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(calleeName), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
+                        CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), CSharpHelper.MkCSharpDot("currFun", "fun"), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
                                      ReturnStatement());
                 stmtList.Add(IfStatement(
                                      CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "continuation", "reason"), IdentifierName("PrtContinuationReason.Return")),

@@ -42,7 +42,6 @@ domain PLink
 	MonitorDecl			::= new (name: String, obsList: InterfaceType, id: any Id).
 	MachineProtoDecl	::= fun (name: String -> constType: any TypeExpr).
 	
-
 	AvailableParameterDemand   ::= new (fname: String, pname: String).
 	UnavailableParameterSupply ::= new (fname: String, pname: String).
 

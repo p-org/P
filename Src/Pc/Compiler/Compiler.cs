@@ -567,6 +567,14 @@
             return true;
         }
 
+        public bool ParsePProgram2(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out List<string> importedFiles)
+        {
+            parsedProgram = null;
+            RootProgramName = null;
+            importedFiles = null;
+            return true;
+        }
+
         public bool ParsePProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out bool fileOrDependChanged)
         {
             fileOrDependChanged = false;
@@ -707,6 +715,95 @@
             InstallResult uninstallResult;
             var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { programName }, out uninstallResult);
             Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
+        }
+
+        void WrapperInternalCompile2(List<string> inputFileNames)
+        {
+            Stack<string> importChainOfPFiles = new Stack<string>();
+            HashSet<string> visitedPFiles = new HashSet<string>();
+            HashSet<string> wasRecentlyCompiled = new HashSet<string>();
+            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            if (!Directory.Exists(outputDirName))
+            {
+                Directory.CreateDirectory(outputDirName);
+            }
+            foreach (var f in inputFileNames)
+            {
+                if (!InternalCompile2(outputDirName, f, importChainOfPFiles, visitedPFiles, wasRecentlyCompiled))
+                {
+                    return;
+                }
+            }
+        }
+
+        bool InternalCompile2(string outputDirName, string inputFileName, Stack<string> importChainOfPFiles, HashSet<string> visitedPFiles, HashSet<string> wasRecentlyCompiled)
+        {
+            if (importChainOfPFiles.Contains(inputFileName))
+            {
+                Console.WriteLine("Circular dependency");
+                return false;
+            }
+            importChainOfPFiles.Push(inputFileName);
+            PProgram parsedProgram;
+            ProgramName RootProgramName;
+            List<string> importedPFiles;
+            if (!ParsePProgram2(inputFileName, out parsedProgram, out RootProgramName, out importedPFiles))
+            {
+                return false;
+            }
+
+            var RootFileName = RootProgramName.ToString();
+            var root4mlFilePath = Path.Combine(outputDirName, Path.ChangeExtension(Path.GetFileName(RootFileName), ".4ml"));
+            var lastCompileTime = File.Exists(root4mlFilePath) ? File.GetLastWriteTime(root4mlFilePath) : DateTime.MinValue;
+            bool compileInputFile = CheckIfPFileShouldBeCompiled(inputFileName, lastCompileTime);
+            foreach (var f in importedPFiles)
+            {
+                if (!visitedPFiles.Contains(f))
+                {
+                    if (!InternalCompile2(outputDirName, f, importChainOfPFiles, visitedPFiles, wasRecentlyCompiled))
+                    {
+                        return false;
+                    }
+                }
+                compileInputFile = compileInputFile | wasRecentlyCompiled.Contains(f);
+            }
+
+            if (compileInputFile || Options.reBuild)
+            {
+                GenerateCode(inputFileName, parsedProgram, RootProgramName);
+                wasRecentlyCompiled.Add(inputFileName);
+            }
+            else
+            {
+                Log.WriteMessage(string.Format("ignoring file {0} ...", inputFileName), SeverityKind.Info);
+            }
+            visitedPFiles.Add(inputFileName);
+            importChainOfPFiles.Pop();
+            return true;
+        }
+
+        bool GenerateCode(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName)
+        {
+            AST<Model> RootModel;
+            InstallProgram(inputFileName, parsedProgram, RootProgramName, out RootModel);
+
+            if (!Check(RootProgramName, RootModel.Node.Name))
+            {
+                UninstallProgram(RootProgramName);
+                return false;
+            }
+
+            if (Options.compilerOutput == CompilerOutput.None)
+            {
+                UninstallProgram(RootProgramName);
+                return true;
+            }
+
+            bool rc = ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C) ? GenerateC(RootProgramName, RootModel) : true) &&
+                      (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel, errorReporter.idToSourceInfo) : true) &&
+                      (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel, errorReporter.idToSourceInfo) : true);
+            UninstallProgram(RootProgramName);
+            return rc;
         }
 
         bool InternalCompile(string inputFileName)

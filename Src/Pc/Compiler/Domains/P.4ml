@@ -75,7 +75,8 @@ domain PData
 	/***********	Module system declarations	*******************/
 	/**************************************************************/
 	EventSetDecl ::= fun (name : String -> id: any Id).
-	EventSetContains ::= new (evset: EventSetDecl, ev: NonNullEventName).
+	EventSetContains ::= new (evset: EventSetDecl, ev: EventName).
+	EventSet ::= fun (name: String -> list: any EventNameList + { NIL }).
 	InterfaceTypeDef ::= fun (name: String -> evsetName: String, argType: any TypeExpr, id: any Id).
 	InterfaceTypeDecl ::= fun (name: String -> evList: InterfaceType, argType: any TypeExpr, id: any Id).
 	MachineExports ::= fun (mach: any MachineDecl -> iname: String).
@@ -116,6 +117,7 @@ domain PData
     QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
     QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
     EventName         ::= String + { NULL, HALT }.
+	EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
 	NonNullEventName  ::= String + { HALT }.
 
 
@@ -217,11 +219,14 @@ domain PStructuralTyping extends PData
 
 	//event in eventset not declared
 	[rule_Classes = '"error, msg: unknown event in eventset"']
-	OneDeclError(eventset) :- EventSetContains(eventset, ev), ev != HALT, no EventDecl(ev, _, _, _).
+	OneDeclError(eventset) :- EventSetContains(eventset, ev), ev != HALT, ev != NULL, no EventDecl(ev, _, _, _).
 
 	//eventset in interface type def
 	[rule_Classes = '"error, msg: unknown eventset in interface declaration"']
 	OneDeclError(inter) :- inter is InterfaceTypeDef(_, es, _, _), no EventSetDecl(es, _).
+
+	[rule_Classes = '"error, msg: null event cannot be a member of an interface"']
+	OneDeclError(inter) :- inter is InterfaceTypeDef(_, esName, _, _), es is EventSetDecl(esName, _), EventSetContains(es, NULL).
 
 	//interface declared in the exports
 	[rule_Classes = '"error, msg: interface in exports is not declared"']
@@ -273,7 +278,7 @@ domain PStaticTyping extends PData
 
 	//// List representation of interfacetypedecl
 	InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
-	                                   it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev) }), it : InterfaceType.
+	                                   it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
 	
 	//populate the sends, receives and creates for machines with missing annotations
 	MachineSends(m, ev.name) :- MachineSends(m, NIL), ev is EventDecl.

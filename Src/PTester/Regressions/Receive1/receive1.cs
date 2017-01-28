@@ -325,19 +325,22 @@ namespace P.Program
                         ;
                     if ((parent).currentTrigger == Events_1235668830.G)
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun3, (AnonFun3).CreateLocals((parent).currentPayload));
+                        (currFun).locals[2] = ((parent).currentPayload).Clone();
+                        (parent).PrtPushFunStackFrame(AnonFun3, (currFun).locals);
                         goto foo_5;
                     }
 
                     if ((parent).currentTrigger == Events_1235668830.F)
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun4, (AnonFun4).CreateLocals((parent).currentPayload));
+                        (currFun).locals[2] = ((parent).currentPayload).Clone();
+                        (parent).PrtPushFunStackFrame(AnonFun4, (currFun).locals);
                         goto foo_6;
                     }
 
                     if ((parent).currentTrigger == Events_1235668830.E)
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun5, (AnonFun5).CreateLocals((parent).currentPayload));
+                        (currFun).locals[2] = ((parent).currentPayload).Clone();
+                        (parent).PrtPushFunStackFrame(AnonFun5, (currFun).locals);
                         goto foo_7;
                     }
 
@@ -350,7 +353,7 @@ namespace P.Program
                         goto foo_4;
                     else
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun3, (currFun).locals, 5);
+                        (parent).PrtPushFunStackFrame((currFun).fun, (currFun).locals, 5);
                         return;
                     }
 
@@ -361,7 +364,7 @@ namespace P.Program
                         goto foo_4;
                     else
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun4, (currFun).locals, 6);
+                        (parent).PrtPushFunStackFrame((currFun).fun, (currFun).locals, 6);
                         return;
                     }
 
@@ -372,7 +375,7 @@ namespace P.Program
                         goto foo_4;
                     else
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun5, (currFun).locals, 7);
+                        (parent).PrtPushFunStackFrame((currFun).fun, (currFun).locals, 7);
                         return;
                     }
 
@@ -389,6 +392,7 @@ namespace P.Program
                         locals.Add(item.Clone());
                     }
 
+                    (locals).Add(PrtValue.@null);
                     return locals;
                 }
 
@@ -546,7 +550,7 @@ namespace P.Program
                     }
                     else
                     {
-                        (parent).PrtPushFunStackFrame(foo, (currFun).locals, 2);
+                        (parent).PrtPushFunStackFrame((currFun).fun, (currFun).locals, 2);
                         return;
                     }
 
@@ -1316,7 +1320,12 @@ namespace P.Program
                         ;
                     if ((parent).currentTrigger == Events_1235668830.G)
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun0, (AnonFun0).CreateLocals((parent).currentPayload));
+                        (currFun).locals[4] = ((parent).currentPayload).Clone();
+                        (currFun).locals[5] = PrtValue.PrtMkDefaultValue(Types_1235668830.typeInt);
+                        (currFun).locals[6] = PrtValue.PrtMkDefaultValue(Types_1235668830.typeInt);
+                        (currFun).locals[7] = PrtValue.PrtMkDefaultValue(Types_1235668830.typeInt);
+                        (currFun).locals[8] = PrtValue.PrtMkDefaultValue(Types_1235668830.typeEvent);
+                        (parent).PrtPushFunStackFrame(AnonFun0, (currFun).locals);
                         goto AnonFun1_3;
                     }
 
@@ -1329,7 +1338,7 @@ namespace P.Program
                         goto AnonFun1_2;
                     else
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun0, (currFun).locals, 3);
+                        (parent).PrtPushFunStackFrame((currFun).fun, (currFun).locals, 3);
                         return;
                     }
 
@@ -1348,6 +1357,8 @@ namespace P.Program
                         locals.Add(item.Clone());
                     }
 
+                    (locals).Add(PrtValue.@null);
+                    (locals).Add(PrtValue.@null);
                     return locals;
                 }
 
@@ -1447,7 +1458,8 @@ namespace P.Program
                         ;
                     if ((parent).currentTrigger == Events_1235668830.E)
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun1, (AnonFun1).CreateLocals((parent).currentPayload));
+                        (currFun).locals[3] = ((parent).currentPayload).Clone();
+                        (parent).PrtPushFunStackFrame(AnonFun1, (currFun).locals);
                         goto AnonFun2_3;
                     }
 
@@ -1460,7 +1472,7 @@ namespace P.Program
                         goto AnonFun2_2;
                     else
                     {
-                        (parent).PrtPushFunStackFrame(AnonFun1, (currFun).locals, 3);
+                        (parent).PrtPushFunStackFrame((currFun).fun, (currFun).locals, 3);
                         return;
                     }
 
@@ -1481,6 +1493,12 @@ namespace P.Program
 
                     (locals).Add(PrtValue.PrtMkDefaultValue(Types_1235668830.typeMachine));
                     (locals).Add(PrtValue.PrtMkDefaultValue(Types_1235668830.typeInt));
+                    (locals).Add(PrtValue.@null);
+                    (locals).Add(PrtValue.@null);
+                    (locals).Add(PrtValue.@null);
+                    (locals).Add(PrtValue.@null);
+                    (locals).Add(PrtValue.@null);
+                    (locals).Add(PrtValue.@null);
                     return locals;
                 }
 

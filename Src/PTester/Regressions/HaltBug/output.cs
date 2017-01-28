@@ -28,12 +28,20 @@ namespace P.Program
         static Application()
         {
             (isSafeMap).Add("Main", false);
+            (isSafeMap).Add("PONG", false);
             (renameMap).Add("Main", "Main");
+            (renameMap).Add("PONG", "PONG");
             (createMachineMap).Add("Main", CreateMachine_Main);
+            (createMachineMap).Add("PONG", CreateMachine_PONG);
             Dictionary<string, string> _temp;
             _temp = new Dictionary<string, string>();
+            (_temp).Add("PONG", "PONG");
             (_temp).Add("Main", "Main");
             (linkMap).Add("Main", _temp);
+            _temp = new Dictionary<string, string>();
+            (_temp).Add("PONG", "PONG");
+            (_temp).Add("Main", "Main");
+            (linkMap).Add("PONG", _temp);
         }
     }
 }

@@ -111,7 +111,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + MachineExports + MachineSends + MachineReceives + MachineCreates.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + MachineExports + MachineSends + MachineReceives + MachineCreates + TypeDef + EnumTypeDef.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -245,7 +245,22 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: event in receives list is not declared"']
 	OneDeclError(mr) :- mr is MachineReceives(_, name), no EventDecl(name, _, _, _), name != NIL.
 
+	/* Rules for separate compilation checks */
+	//multiple declarations of the same event
+	[rule_Classes = '"error, msg: multiple declarations of the same event"']
+	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
+	//multiple declarations of the same typedef
+	[rule_Classes = '"error, msg: multiple declarations of the same type def"']
+	OneDeclError(td) :- td is TypeDef, td' is TypeDef, td.name = td'.name, td.id != td'.id.
+
+	//multiple declarations of the same enum def
+	[rule_Classes = '"error, msg: multiple declarations of the same enum type"']
+	OneDeclError(td) :- td is EnumTypeDef, td' is EnumTypeDef, td.name = td'.name, td.id != td'.id.
+
+	//declarations of the enum def and type def with same name
+	[rule_Classes = '"error, msg: declarations of the enum type and type def with same name"']
+	OneDeclError(td) :- td is TypeDef, td' is EnumTypeDef, td.name = td'.name.
 }
 
 domain PStaticTyping extends PData
@@ -281,6 +296,10 @@ domain PStaticTyping extends PData
 	InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
 	                                   it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
 	
+	//// List representation of EventSet
+	EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
+							  list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), list : EventNameList.
+
 	//populate the sends, receives and creates for machines with missing annotations
 	MachineSends(m, ev.name) :- MachineSends(m, NIL), ev is EventDecl.
 	MachineReceives(m, evName) :- MachineReceives(m, NIL), ev is EventDecl, ev.name = evName;

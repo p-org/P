@@ -418,13 +418,12 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
 	BaseType2Kind(MACHINE, "PRT_KIND_MACHINE").
 	BaseType2Kind(ANY, "PRT_KIND_ANY").
-	
 	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t = in.BaseType(base), BaseType2Kind(base, kind),
 								defs = out.Section(before, def),
 								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
-	//interface type
+	//// Interface types
 	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t : in.InterfaceType, BaseType2Kind(MACHINE, kind),
 								defs = out.Section(before, def),
 								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
@@ -446,28 +445,29 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t = in.SeqType(tinner), TypeToString(tinner, tinnerName),
-								              defs = out.Section(Section(before, defSeq), def),
-                              defSeq = out.VarDef(
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), 
+								t = in.SeqType(tinner), TypeToString(tinner, tinnerName),
+								defs = out.Section(Section(before, defSeq), def),
+								defSeq = out.VarDef(
                                      STATIC, 
                                      NmdType(NIL, "PRT_SEQTYPE"), 
                                      typeNameSeq, 
                                      Init(Args(UnApp(ADDR, Ident(tinnerName)), NIL))),								 
-                              def = out.VarDef(
+								def = out.VarDef(
                                      STATIC, 
                                      NmdType(NIL, "PRT_TYPE"), 
                                      typeName, 
                                      typeStruct),
-								              typeStruct = out.Init(
-										              Args(Ident("PRT_KIND_SEQ"), 
-											            Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), NIL)), 
-											            NIL))),
-									            typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
+								typeStruct = out.Init(
+									 Args(Ident("PRT_KIND_SEQ"), 
+									 Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), NIL)), 
+									 NIL))),
+								typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
 
 	//// Complex type Map 
 	TypeConstant(t, m, defs) :- 
-	                       TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t = in.MapType(tdom, tcod), 
-	                       TypeToString(tdom, domName), TypeToString(tcod, codName),
+	                       TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), 
+						   t = in.MapType(tdom, tcod), TypeToString(tdom, domName), TypeToString(tcod, codName),
 								         defs = out.Section(Section(before, defMap), def),
 										     defMap = out.VarDef(
 										          STATIC, 

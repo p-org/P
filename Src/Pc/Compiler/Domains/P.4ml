@@ -407,6 +407,14 @@ domain PStaticTyping extends PData
 	NotImportedType ::= (type: TypeExpr).
 	NotImportedType(type) :- OldTranslatedTypeExpr(type), no ImportedType(_, type).
 	
+	TranslatedTupType ::= (tupType: TupType).
+	TranslatedTupType(t) :- TranslatedTypeExpr(t), NotImportedType(t), t: TupType. 
+	TranslatedTupType(t) :- TranslatedTupType(TupType(_, t)), t: TupType.
+
+	TranslatedNmdTupType ::= (tupType: NmdTupType).
+	TranslatedNmdTupType(t) :- TranslatedTypeExpr(t), NotImportedType(t), t: NmdTupType.
+	TranslatedNmdTupType(t) :- TranslatedNmdTupType(NmdTupType(_, t)), t: NmdTupType.
+
 	TranslatedTypeExpr ::= (type: TypeExpr).
 	TranslatedTypeExpr(eType) :- ExportedType(_, eType).
 	TranslatedTypeExpr(eType) :- EventDecl(_, _, type, id), PFile(fileName), id.val = fileName, TypeExpansion(type, eType).
@@ -417,10 +425,8 @@ domain PStaticTyping extends PData
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = NamedTuple(_, _), t : TypeExpr.
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Default(_, _), t: TypeExpr.
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Cast(_, _, _), t: TypeExpr.
-	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), NotImportedType(t), t = TupType(h, _). 
-	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), NotImportedType(t), t = TupType(_, t'), t' : TypeExpr. 
-	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), NotImportedType(t), t = NmdTupType(NmdTupTypeField(_, h), _). 
-	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), NotImportedType(t), t = NmdTupType(_, t'), t' : TypeExpr.
+	TranslatedTypeExpr(t) :- TranslatedTupType(TupType(t, _)).
+	TranslatedTypeExpr(t) :- TranslatedNmdTupType(NmdTupType(NmdTupTypeField(_, t), _)). 
 	TranslatedTypeExpr(k), TranslatedTypeExpr(v) :- TranslatedTypeExpr(t), NotImportedType(t), t = MapType(k, v). 
 	TranslatedTypeExpr(x) :- TranslatedTypeExpr(t), NotImportedType(t), t = SeqType(x).
 

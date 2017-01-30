@@ -5,6 +5,7 @@
 
 domain PData
 {   
+	PFile ::= new (name: String).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 
@@ -367,14 +368,42 @@ domain PStaticTyping extends PData
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
 
+	OldTranslatedTypeExpr ::= (type: TypeExpr).
+	OldTranslatedTypeExpr(eType) :- TypeExpansion(_, eType).
+	OldTranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Tuple(_, _), t : TypeExpr.
+	OldTranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = NamedTuple(_, _), t : TypeExpr.
+	OldTranslatedTypeExpr(h)  :- OldTranslatedTypeExpr(t), t = TupType(h, _). 
+	OldTranslatedTypeExpr(t') :- OldTranslatedTypeExpr(t), t = TupType(_, t'), t' : TypeExpr. 
+	OldTranslatedTypeExpr(h)  :- OldTranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(_, h), _). 
+	OldTranslatedTypeExpr(t') :- OldTranslatedTypeExpr(t), t = NmdTupType(_, t'), t' : TypeExpr. 
+
+	ExportedType ::= (String, TypeExpr).
+	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.val = fileName, TypeExpansion(type, eType).
+	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.val = fileName, eType = NameType(name).
+
+	ImportedType ::= (String, TypeExpr).
+	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
+	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.val != fileName, eType = NameType(name), no ExportedType(_, eType).
+
+	NotImportedType ::= (type: TypeExpr).
+	NotImportedType(type) :- OldTranslatedTypeExpr(type), no ImportedType(_, type).
+	
 	TranslatedTypeExpr ::= (type: TypeExpr).
-	TranslatedTypeExpr(eType) :- TypeExpansion(_, eType).
+	TranslatedTypeExpr(eType) :- ExportedType(_, eType).
+	TranslatedTypeExpr(eType) :- EventDecl(_, _, type, id), PFile(fileName), id.val = fileName, TypeExpansion(type, eType).
+	TranslatedTypeExpr(eType) :- VarDecl(_, _, type, _), TypeExpansion(type, eType).
+	TranslatedTypeExpr(eType) :- decl is TypingContext, TypeExpansion(decl.locals, eType).
+	TranslatedTypeExpr(eType) :- decl is AnonFunDecl, r = lstReverse(#NmdTupType, decl.envVars), TypeExpansion(r.hd.type, eType).
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Tuple(_, _), t : TypeExpr.
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = NamedTuple(_, _), t : TypeExpr.
-	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = TupType(h, _). 
-	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = TupType(_, t'), t' : TypeExpr. 
-	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(_, h), _). 
-	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), t = NmdTupType(_, t'), t' : TypeExpr. 
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Default(_, _), t: TypeExpr.
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Cast(_, _, _), t: TypeExpr.
+	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), NotImportedType(t), t = TupType(h, _). 
+	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), NotImportedType(t), t = TupType(_, t'), t' : TypeExpr. 
+	TranslatedTypeExpr(h)  :- TranslatedTypeExpr(t), NotImportedType(t), t = NmdTupType(NmdTupTypeField(_, h), _). 
+	TranslatedTypeExpr(t') :- TranslatedTypeExpr(t), NotImportedType(t), t = NmdTupType(_, t'), t' : TypeExpr.
+	TranslatedTypeExpr(k), TranslatedTypeExpr(v) :- TranslatedTypeExpr(t), NotImportedType(t), t = MapType(k, v). 
+	TranslatedTypeExpr(x) :- TranslatedTypeExpr(t), NotImportedType(t), t = SeqType(x).
 
 	FunAvailable ::= (f: FunDecl + FunProtoDecl, m: MachineDecl + { NIL }).
     FunAvailable(f, m) :- f is FunDecl, m is MachineDecl, f.owner = NIL;

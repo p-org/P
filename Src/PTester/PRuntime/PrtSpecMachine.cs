@@ -30,18 +30,35 @@ namespace P.Runtime
             //Execute the entry function
             PrtEnqueueEvent(PrtValue.@null, PrtValue.@null, null);
         }
-        public PrtSpecMachine Clone()
+        public PrtSpecMachine Clone(StateImpl app)
         {
-            var clonedSpecMachine = MakeSkeleton();
+            var clonedMachine = MakeSkeleton();
+            //base class fields
+            clonedMachine.instanceNumber = this.instanceNumber;
             foreach (var fd in fields)
             {
-                clonedSpecMachine.fields.Add(fd.Clone());
+                clonedMachine.fields.Add(fd.Clone());
             }
-            clonedSpecMachine.stateStack = this.stateStack.Clone();
-            clonedSpecMachine.nextSMOperation = this.nextSMOperation;
-            clonedSpecMachine.stateExitReason = this.stateExitReason;
-            clonedSpecMachine.stateImpl = this.stateImpl;
-            return clonedSpecMachine;
+            clonedMachine.eventValue = this.eventValue;
+            clonedMachine.stateStack = this.stateStack.Clone();
+            clonedMachine.invertedFunStack = this.invertedFunStack.Clone();
+            clonedMachine.continuation = this.continuation.Clone();
+            clonedMachine.currentTrigger = this.currentTrigger;
+            clonedMachine.currentPayload = this.currentPayload.Clone();
+
+            clonedMachine.currentStatus = this.currentStatus;
+            clonedMachine.nextSMOperation = this.nextSMOperation;
+            clonedMachine.stateExitReason = this.stateExitReason;
+            clonedMachine.sends = this.sends;
+            clonedMachine.renamedName = this.renamedName;
+            clonedMachine.isSafe = this.isSafe;
+            clonedMachine.stateImpl = app;
+
+            //spec class fields
+            clonedMachine.observes = this.observes.ToList();
+            clonedMachine.IsHot = this.IsHot;
+
+            return clonedMachine;
         }
 
         public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source, PrtMachineValue target = null)
@@ -60,14 +77,14 @@ namespace P.Runtime
                 Start:
                 switch (nextSMOperation)
                 {
-                    case PrtNextStatemachineOperation.EntryOperation:
-                        goto DoEntry;
+                    case PrtNextStatemachineOperation.ExecuteFunctionOperation:
+                        goto DoExecuteFunction;
                     case PrtNextStatemachineOperation.HandleEventOperation:
                         goto DoHandleEvent;
                     
                 }
 
-                DoEntry:
+                DoExecuteFunction:
                 if (invertedFunStack.TopOfStack == null)
                 {
                     //Trace: entered state
@@ -106,8 +123,9 @@ namespace P.Runtime
                     case PrtContinuationReason.Goto:
                         {
                             stateExitReason = PrtStateExitReason.OnGotoStatement;
-                            PrtExecuteExitFunction();
-                            goto CheckFunLastOperation;
+                            nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
+                            PrtPushExitFunction();
+                            goto DoExecuteFunction;
                         }
                     case PrtContinuationReason.Raise:
                         {
@@ -128,7 +146,7 @@ namespace P.Runtime
                                 case PrtStateExitReason.OnGotoStatement:
                                     {
                                         PrtChangeState(destOfGoto);
-                                        nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+                                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                         stateExitReason = PrtStateExitReason.NotExit;
                                         hasMoreWork = true;
                                         goto Finish;
@@ -143,14 +161,15 @@ namespace P.Runtime
                                 case PrtStateExitReason.OnTransition:
                                     {
                                         stateExitReason = PrtStateExitReason.OnTransitionAfterExit;
-                                        PrtExecuteTransitionFun(eventValue);
-                                        goto CheckFunLastOperation;
+                                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
+                                        PrtPushTransitionFun(eventValue);
+                                        goto DoExecuteFunction;
                                     }
                                 case PrtStateExitReason.OnTransitionAfterExit:
                                     {
                                         PrtChangeState(CurrentState.transitions[eventValue].gotoState);
                                         hasMoreWork = true;
-                                        nextSMOperation = PrtNextStatemachineOperation.EntryOperation;
+                                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                         stateExitReason = PrtStateExitReason.NotExit;
                                         goto Finish;
                                     }
@@ -183,9 +202,10 @@ namespace P.Runtime
                 if (PrtIsTransitionPresent(currEventValue))
                 {
                     stateExitReason = PrtStateExitReason.OnTransition;
+                    nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                     eventValue = currEventValue;
-                    PrtExecuteExitFunction();
-                    goto CheckFunLastOperation;
+                    PrtPushExitFunction();
+                    goto DoExecuteFunction;
                 }
                 else if (PrtIsActionInstalled(currEventValue))
                 {
@@ -194,9 +214,10 @@ namespace P.Runtime
                 else
                 {
                     stateExitReason = PrtStateExitReason.OnUnhandledEvent;
+                    nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                     eventValue = currEventValue;
-                    PrtExecuteExitFunction();
-                    goto CheckFunLastOperation;
+                    PrtPushExitFunction();
+                    goto DoExecuteFunction;
                 }
 
                 Finish:

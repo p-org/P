@@ -1237,14 +1237,24 @@ namespace Microsoft.Pc
                     var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(funName) ? pToCSharp.allStaticFuns[funName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[funName];
                     Debug.Assert(calleeInfo.isAnonymous);
                     List<StatementSyntax> ifStmts = new List<StatementSyntax>();
+                    ifStmts.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                        CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)), 
+                        CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "currentPayload", "Clone"))));
+                    foreach (var calleeLocal in calleeInfo.localNames)
+                    {
+                        var calleeLocalInfo = calleeInfo.localNameToInfo[calleeLocal];
+                        ifStmts.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                            CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(calleeLocalInfo.index)), 
+                            CSharpHelper.MkCSharpInvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("PrtMkDefaultValue")), pToCSharp.typeContext.PTypeToCSharpExpr(calleeLocalInfo.type))));
+                    }
                     ifStmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
                         CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"),
-                        IdentifierName(funName), CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(funName, "CreateLocals"), CSharpHelper.MkCSharpDot("parent", "currentPayload")))));
+                        IdentifierName(funName), CSharpHelper.MkCSharpDot("currFun", "locals"))));
                     ifStmts.Add(CSharpHelper.MkCSharpGoto(beforeLabel));
                     eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(eventName)), Block(ifStmts)));
                     funStmts.Add(CSharpHelper.MkCSharpEmptyLabeledStatement(beforeLabel));
                     funStmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
-                    var elseStmt = Block(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(funName), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
+                    var elseStmt = Block(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), CSharpHelper.MkCSharpDot("currFun", "fun"), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
                                          ReturnStatement());
                     funStmts.Add(IfStatement(
                                          CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "continuation", "reason"), IdentifierName("PrtContinuationReason.Return")),
@@ -1833,7 +1843,7 @@ namespace Microsoft.Pc
                 stmtList.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(calleeName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
                 var elseStmt = Block(ExpressionStatement(
                     CSharpHelper.MkCSharpInvocationExpression(
-                        CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), IdentifierName(calleeName), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
+                        CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), CSharpHelper.MkCSharpDot("currFun", "fun"), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
                                      ReturnStatement());
                 stmtList.Add(IfStatement(
                                      CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "continuation", "reason"), IdentifierName("PrtContinuationReason.Return")),
@@ -2347,7 +2357,7 @@ namespace Microsoft.Pc
             public SyntaxNode MkCreateLocalsMethod()
             {
                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
-
+                
                 //var locals = new List<PrtValue>();
                 stmtList.Add(
                     LocalDeclarationStatement(
@@ -2402,6 +2412,11 @@ namespace Microsoft.Pc
                         MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("PrtMkDefaultValue")),
                         pToCSharp.typeContext.PTypeToCSharpExpr(varInfo.type));
                     stmtList.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("locals", "Add"), defaultValue)));
+                }
+
+                for (int i = funInfo.parameterNames.Count + funInfo.localNames.Count; i < funInfo.maxNumLocals; i++)
+                {
+                    stmtList.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("locals", "Add"), MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("@null")))));
                 }
 
                 //return locals;

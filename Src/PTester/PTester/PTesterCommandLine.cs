@@ -171,19 +171,41 @@ namespace P.Tester
                                                         new object[] { });
             if (s == null)
                 throw new ArgumentException("Invalid assembly");
-            bool doWork = true;
-            while (doWork)
+            int numOfSchedules = 0;
+            int numOfSteps = 0;
+            var randomScheduler = new Random(1);
+            while (numOfSchedules < 100)
             {
-                doWork = false;
-                var impls =  new List<PrtImplMachine>(s.ImplMachines);
-                foreach (var impl in impls)
+                var currImpl = (StateImpl)s.Clone();
+                Console.WriteLine("-----------------------------------------------------");
+                Console.WriteLine("New Schedule:");
+                Console.WriteLine("-----------------------------------------------------");
+                numOfSteps = 0;
+                while (numOfSteps < 1000)
                 {
-                    if (impl.currentStatus == PrtMachineStatus.Enabled)
+                    if (currImpl.EnabledMachines.Count == 0)
                     {
-                        impl.PrtRunStateMachine();
-                        doWork = true;
+                        break;
                     }
+
+                    var num = currImpl.EnabledMachines.Count;
+                    var choosenext = randomScheduler.Next(0, num);
+                    currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
+                    if (currImpl.Exception != null)
+                    {
+                        if (currImpl.Exception is PrtAssumeFailureException)
+                        {
+                            break;
+                        }
+                        else
+                        {
+                            Console.WriteLine("Exception hit during execution: {0}", currImpl.Exception.ToString());
+                            Environment.Exit(-1);
+                        }
+                    }
+                    numOfSteps++;
                 }
+                numOfSchedules++;
             }
         }
     }

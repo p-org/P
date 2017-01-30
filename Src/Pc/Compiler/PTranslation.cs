@@ -597,10 +597,23 @@ namespace Microsoft.Pc
                     var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     it.MoveNext();
-                    if(it.Current is Cnst)
+                    string eventName;
+                    if (it.Current.NodeKind == NodeKind.Id)
                     {
-                        allMachines[machineName].receiveSet.Add(((Cnst)it.Current).GetStringValue());
+                        var name = ((Id)it.Current).Name;
+                        if (name != "NIL")
+                        {
+                            eventName = HaltEvent;
+                            allMachines[machineName].receiveSet.Add(eventName);
+                        }
                     }
+                    else
+                    {
+                        eventName = ((Cnst)it.Current).GetStringValue();
+                        allMachines[machineName].receiveSet.Add(eventName);
+                    }
+                    
+                    
                 }
             }
 
@@ -613,9 +626,20 @@ namespace Microsoft.Pc
                     var machineDecl = (FuncTerm)it.Current;
                     var machineName = GetName(machineDecl, 0);
                     it.MoveNext();
-                    if (it.Current is Cnst)
+                    string eventName;
+                    if (it.Current.NodeKind == NodeKind.Id)
                     {
-                        allMachines[machineName].sendsSet.Add(((Cnst)it.Current).GetStringValue());
+                        var name = ((Id)it.Current).Name;
+                        if (name != "NIL")
+                        {
+                            eventName = HaltEvent;
+                            allMachines[machineName].sendsSet.Add(eventName);
+                        }
+                    }
+                    else
+                    {
+                        eventName = ((Cnst)it.Current).GetStringValue();
+                        allMachines[machineName].sendsSet.Add(eventName);
                     }
                 }
             }

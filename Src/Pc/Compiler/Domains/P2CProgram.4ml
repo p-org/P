@@ -55,6 +55,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
 	link.EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
 	                               list = toList(link.#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }).
+
 	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id), TypeExpansion(type, etype).
 
 	link.FunDecl(name, eparams, ereturn, id) :- 

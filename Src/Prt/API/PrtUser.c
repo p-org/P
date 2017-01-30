@@ -295,7 +295,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_ENQUEUE:
-		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
+		eventName = c->process->program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<EnqueueLog> Enqueued event ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
@@ -307,7 +307,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString(")\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_DEQUEUE:
-		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
+		eventName = c->process->program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<DequeueLog> Dequeued event ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
@@ -350,7 +350,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		break; 
 	}
 	case PRT_STEP_RAISE:
-		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
+		eventName = c->process->program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<RaiseLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
@@ -378,7 +378,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString(") pushed\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_UNHANDLED:
-		eventName = c->process->program->events[c->eventValue].name;
+		eventName = c->process->program->events[c->eventValue]->name;
 		PrtUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
@@ -408,7 +408,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_IGNORE:
-		eventName = c->process->program->events[PrtPrimGetEvent(event)].name;
+		eventName = c->process->program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<ActionLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);

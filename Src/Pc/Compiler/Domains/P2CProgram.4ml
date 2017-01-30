@@ -603,6 +603,38 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
     COut(4, defs) :- Constant(_, c, defs), defs : out.Section, c = count({ x | x is ConstId}) - 1.
 
+	/*************************************************************/
+    /******            Generate event decls                 ******/
+    /*************************************************************/	
+	EvDecl2PayloadType ::= (in.EventDecl, out.Expr).
+	//// An EventDecl without a payload type has a null payload type.
+	EvDecl2PayloadType(d, expr) :- d is in.EventDecl(_, _, NIL, _), TypeToExpr(in.BaseType(NULL), expr).
+	//// An EventDecl with a payload type refers to one of the statically generated types.
+	EvDecl2PayloadType(d, expr) :- d is in.EventDecl(_, _, type, _), type : in.TypeExpr, TypeToExpr(type, expr).
+
+	EvDecl2EvCard      ::= (in.EventDecl, out.Expr).
+	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
+	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, NIL, _, _), e = IntLit(4294967295, DEC, U).
+	//// An EventDecl with a payload type refers to one of the statically generated types.
+	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, card, _, _), e = IntLit(card.bound, DEC, U).
+
+	COut(4, def) :- d is in.EventDecl(name, _, _, id), PFile(fileName), id.val = fileName, 
+					EvDecl2PayloadType(d, expr), EvDecl2EvCard(d, card), cn = strJoin("P_EVENT_", name),
+					eventStructName = strJoin(cn, "_STRUCT"),
+					def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_EVENTDECL"), 
+								  eventStructName, 
+								  init),
+	                        init = Init(
+							   Args(Ident(cn),
+							   Args(StringLit(name, NIL),
+							   Args(card,
+							   Args(expr,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
+
     /*************************************************************/
     /******            Generate Variable Decl Arrays        ******/
     /*************************************************************/	

@@ -325,7 +325,7 @@ _In_ PRT_VALUE					*payload
 	}
 
 	eventIndex = PrtPrimGetEvent(event);
-	eventMaxInstances = context->process->program->events[eventIndex].eventMaxInstances;
+	eventMaxInstances = context->process->program->events[eventIndex]->eventMaxInstances;
 	maxQueueSize = context->process->program->machines[context->instanceOf]->maxQueueSize;
 
 	queue = &context->eventQueue;
@@ -1513,7 +1513,7 @@ _In_ PRT_MACHINEINST_PRIV *context,
 _In_ PRT_VALUE	  *event
 )
 {
-	return context->process->program->events[PrtPrimGetEvent(event)].type;
+	return context->process->program->events[PrtPrimGetEvent(event)]->type;
 }
 
 FORCEINLINE

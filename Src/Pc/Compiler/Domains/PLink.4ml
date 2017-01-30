@@ -659,7 +659,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
     /*************************************************************/
 	
 	EventDeclExt ::= EventDecl + { NULL, HALT }.
-	DeclId ::= (decl: MachineDecl + EventDecl + FunDecl + AnonFunDecl + { NULL, HALT }, id: Natural, cname: String).
+	DeclId ::= (decl: MachineDecl + FunDecl + AnonFunDecl + { NULL, HALT }, id: Natural, cname: String).
 	
 	//// Foreign types
 	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
@@ -698,14 +698,15 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
 	
 	//// EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
-	DeclId(NULL, 0, "_P_EVENT_NULL").
-	DeclId(HALT, 1, "_P_EVENT_HALT").
-	DeclId(d, id, cn) :- d is EventDecl, id = 2 + toOrdinal(d, 0, { d' | d' is EventDecl }), cn = strJoin("P_EVENT_", d.name).
+	EventId ::= (trig: String + { NULL, HALT }, id: Natural, name: String).
+	EventId(NULL, 0, "_P_EVENT_NULL").
+	EventId(HALT, 1, "_P_EVENT_HALT").
+	EventId(name, id, cn) :- EventDecl(name, _, _, _), id = 2 + toOrdinal(name, 0, { name' | EventDecl(name', _, _, _) }), cn = strJoin("P_EVENT_", name).
 	
 	HOut(0, out.EnmDef(NIL, "P_EVENTS", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : EventDeclExt, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventDecl}) }).  
+									   EventId(_, id, cn), enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventId}) }).  
 			
 	//// MemberOfInterfaceTypes
 	HOut(0, out.EnmDef(NIL, "P_EVENTSET", list)) :- 
@@ -852,268 +853,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
     /**********   Generate contents of code file     ***********/
     /*************************************************************/
 
-	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
-	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
-	TypeId      ::= (id: Natural, type: TypeExpr).
-	TypeDepNum  ::= (id: Natural, type: TypeExpr).
-
-	TranslatedTypeExpr ::= (TypeExpr).
-	TranslatedTypeExpr(t) :- t = in.BaseType(NULL); t = in.BaseType(BOOL); t = in.BaseType(INT); t = in.BaseType(EVENT); t = in.BaseType(MACHINE); t = in.BaseType(ANY).
-	TranslatedTypeExpr(t) :- ModelType(name), t = NameType(name).
-	TranslatedTypeExpr(t) :- EventDecl(_, _, t, _), t : TypeExpr.
-	TranslatedTypeExpr(t) :- InterfaceTypeDecl(_, _, t, _).
-	TranslatedTypeExpr(t) :- TypeDef(_, t, _).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = SeqType(t).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = MapType(t, _).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = MapType(_, t).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = TupType(t, _).  
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = TupType(_, t), t: TypeExpr.  
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = NmdTupType(NmdTupTypeField(_, t), _).
-	TranslatedTypeExpr(t) :- TranslatedTypeExpr(t'), t' = NmdTupType(_, t), t: TypeExpr.  
-
-	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
-	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType. 
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.TupType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), TypeDepNum(k, t''), i = j + k + 1.  
-	TypeId(id, t) :- td is TypeDepNum(_, t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum }).
-
-	//// Build type initializers in linearization order.
-	//// defs is the definitions that precede the encoding of this type constant.
-	TypeConstant ::= (type: TypeExpr + { NIL }, typeExprId: Integer, defs: out.Section + { NIL }).
-	TypeConstant(NIL, -1, NIL).
-
-	//// Base types
-	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }, String).
-	BaseType2Kind(NULL, "PRT_KIND_NULL").
-	BaseType2Kind(BOOL, "PRT_KIND_BOOL").
-	BaseType2Kind(INT, "PRT_KIND_INT").
-	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
-	BaseType2Kind(MACHINE, "PRT_KIND_MACHINE").
-	BaseType2Kind(ANY, "PRT_KIND_ANY").
-	
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.BaseType(base), BaseType2Kind(base, kind),
-								defs = out.Section(before, def),
-								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                                typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
-
-	//// Enum types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = NameType(name), EnumTypeDef(name, _, _, _),
-								defs = out.Section(before, def),
-								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                                typeStruct = out.Init(Args(Ident("PRT_KIND_INT"), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
-	
-	//// Foreign types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = NameType(name), ModelType(name),
-								defs = out.Section(before, def),
-								def = out.VarDef(NIL, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								typeName = strJoin("P_GEND_TYPE_", toString(m)),
-								indexName = strJoin("P_FORGN_TYPE_", name),
-                                typeStruct = out.Init(Args(Ident("PRT_KIND_FORGN"), 
-								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL)), NIL))).						              
-	
-	//// Complex type Seq 
-	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = SeqType(tinner), TypeConstant(tinner, tinnerid, _),
-								              defs = out.Section(Section(before, defSeq), def),
-                              defSeq = out.VarDef(
-                                     NIL, 
-                                     NmdType(NIL, "PRT_SEQTYPE"), 
-                                     typeNameSeq, 
-                                     Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(tinnerid)))), NIL))),										 
-                              def = out.VarDef(
-                                     NIL, 
-                                     NmdType(NIL, "PRT_TYPE"), 
-                                     strJoin("P_GEND_TYPE_", toString(m)), 
-                                     typeStruct),
-								              typeStruct = out.Init(
-										              Args(Ident("PRT_KIND_SEQ"), 
-											            Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), NIL)), 
-											            NIL))),
-									            typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
-
-	//// Complex type Map 
-	TypeConstant(t, m, defs) :- 
-	                       TypeId(m, t), TypeConstant(_, m - 1, before), t = MapType(tdom, tcod), 
-	                       TypeConstant(tdom, domid, _), TypeConstant(tcod, codid, _),
-								         defs = out.Section(Section(before, defMap), def),
-										     defMap = out.VarDef(
-										          NIL, 
-														  NmdType(NIL, "PRT_MAPTYPE"), 
-														  typeNameMap, 
-														  Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(domid)))), 
-														       Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(codid)))), 
-														       NIL)))),
-										      def = out.VarDef(
-										          NIL, 
-														  NmdType(NIL, "PRT_TYPE"), 
-														  strJoin("P_GEND_TYPE_", toString(m)), 
-														  typeStruct),
-							            typeStruct = out.Init(
-										            Args(Ident("PRT_KIND_MAP"), 
-											          Args(Init(Args(UnApp(ADDR, Ident(typeNameMap)), NIL)), 
-											          NIL))),														  
-										      typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
-	//// Complex type Tuple 
-	Tup2ArrayInit ::= (type: TupType, arr: out.Expr). 
-	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = TupType(t', NIL), TypeConstant(t', id', _), init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)). 
-	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = TupType(t', t''), TypeConstant(t', id', _), Tup2ArrayInit(t'', Init(ts'')), 
-	                          init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')). 
-
-	TypeConstant(t, m, defs) :- 
-	                       TypeId(m, t), TypeConstant(_, m - 1, before), Tup2ArrayInit(t, arrInit), t : TupType, 
-								         defs = out.Section(Section(before, Section(defTupArr, defTup)), def),
-										     defTupArr = out.VarDef(
-										           NIL, 
-															 ArrType(PtrType(NmdType(NIL, "PRT_TYPE")), NIL), 
-															 typeNameTupArr, 
-															 arrInit),
-										     defTup = out.VarDef(
-										          NIL, 
-														  NmdType(NIL, "PRT_TUPTYPE"), 
-														  typeNameTup, 
-														  Init(
-														    Args(IntLit(lstLength(#TupType, t), DEC, NIL), 
-															  Args(Ident(typeNameTupArr), 
-															  NIL)))),
-										     def = out.VarDef(
-										         NIL, 
-													   NmdType(NIL, "PRT_TYPE"), 
-													   strJoin("P_GEND_TYPE_", toString(m)), 
-													   typeStruct),
-										    typeStruct = out.Init(
-													  Args(Ident("PRT_KIND_TUPLE"), 
-													  Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), NIL)),
-													  NIL))),
-										     typeNameTupArr = strJoin("P_GEND_TYPE_TUP_ARR_", toString(m)),
-										     typeNameTup = strJoin("P_GEND_TYPE_TUP_", toString(m)).
-
-	//// Complex type NmdTuple 
-	NmdTup2ArrayInit ::= (type: NmdTupType, narr: out.Expr, tarr: out.Expr). 
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(n', t'), NIL), TypeConstant(t', id', _), 
-	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)), 
-	                                   narr = Init(Args(StringLit(n', NIL), NIL)).
-									    
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(n', t'), t''), TypeConstant(t', id', _), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
-	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')),
-	                                   narr = Init(Args(StringLit(n', NIL), n'')).
-
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), NmdTup2ArrayInit(t, narr, tarr), t : NmdTupType, 
-								     defs = out.Section(before, Section(defNmdTupNArr, Section(defNmdTupTArr, Section(defNmdTup, def)))),
-										 defNmdTupNArr = out.VarDef(
-										              NIL, 
-															    ArrType(NmdType(NIL, "PRT_STRING"), NIL), 
-															    typeNameNmdTupNArr, 
-															    narr),
-										 defNmdTupTArr = out.VarDef(
-										              NIL, 
-															    ArrType(PtrType(NmdType(NIL, "PRT_TYPE")), NIL), 
-															    typeNameNmdTupTArr, 
-															    tarr),
-										 defNmdTup = out.VarDef(
-										          NIL, 
-														  NmdType(NIL, "PRT_NMDTUPTYPE"), 
-														  typeNameNmdTup, 
-														  Init(
-														  Args(IntLit(lstLength(#NmdTupType, t), DEC, NIL), 
-															Args(Ident(typeNameNmdTupNArr), 
-															Args(Ident(typeNameNmdTupTArr), 
-															NIL))))),
-										 def = out.VarDef(
-										         NIL, 
-													   NmdType(NIL, "PRT_TYPE"), 
-													   strJoin("P_GEND_TYPE_", toString(m)), 
-													   typeStatic),
-							       typeStatic = out.Init(
-										      Args(Ident("PRT_KIND_NMDTUP"), 
-											    Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), NIL)),
-											    NIL))),
-										 typeNameNmdTupTArr = strJoin("P_GEND_TYPE_NMDTUP_TARR_", toString(m)),
-										 typeNameNmdTupNArr = strJoin("P_GEND_TYPE_NMDTUP_NARR_", toString(m)),
-										 typeNameNmdTup = strJoin("P_GEND_TYPE_NMDTUP_", toString(m)).
-
-    COut(0, defs) :- TypeConstant(_, c, defs), defs : out.Section, c = count({ td | td is TypeId}) - 1.
-    
-	/*************************************************************/
-    /******   Generate C statics for typedefs in program   ******/
-    /*************************************************************/
-	TypeToExpr ::= (TypeExpr, Expr).
-	TypeToExpr(type, expr) :- TypeId(typeIndex, type), expr = out.UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeIndex)))).
-
-	COut(1, def) :- TypeDef(name, type, _),
-	                typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(type, expr),
-					def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr).
-	COut(1, def) :- ModelType(name), type = NameType(name),
-	                typeName = strJoin("P_GEND_TYPE_", name), TypeToExpr(type, expr),
-					def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, expr).
-
-
-	/*************************************************************/
-    /******            Generate event decls                 ******/
-    /*************************************************************/	
-	EvDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
-
-	EvDecl2PayloadType ::= (EventDecl, out.Expr).
-	//// An EventDecl without a payload type has a null payload type.
-	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, NIL, _), TypeToExpr(in.BaseType(NULL), expr).
-	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2PayloadType(d, expr) :- d is EventDecl(_, _, type, _), type : TypeExpr, TypeToExpr(type, expr).
-
-	EvDecl2EvCard      ::= (EventDecl, out.Expr).
-	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
-	EvDecl2EvCard(d, e) :- d is EventDecl(_, NIL, _, _), e = IntLit(4294967295, DEC, U).
-	//// An EventDecl with a payload type refers to one of the statically generated types.
-	EvDecl2EvCard(d, e) :- d is EventDecl(_, card, _, _), e = IntLit(card.bound, DEC, U).
-
-	//// Base case
-	EvDeclConcat(c, NIL) :- c = count({d | d is EventDecl}) + 2.
-
-    //// Build event array in reverse order
-	EvDeclConcat(m, arr) :- DeclId(d, m, cn), EvDeclConcat(m + 1, after), arr = out.Args(def, after), EvDecl2PayloadType(d, expr), EvDecl2EvCard(d, card), 
-	                        def = Init(
-							   Args(Ident(cn),
-							   Args(StringLit(d.name, NIL),
-							   Args(card,
-							   Args(expr,
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL))))))).
-
-	//// Define the halt event
-	EvDeclConcat(1, arr) :- EvDeclConcat(2, after), arr = out.Args(def, after), TypeConstant(in.BaseType(ANY), typeId, _),
-	                        def = Init(
-							   Args(Ident("_P_EVENT_HALT"),
-							   Args(StringLit("halt", NIL),
-							   Args(IntLit(4294967295, DEC, U),
-							   Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeId)))),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL))))))).
-
-	//// Define the default event
-	EvDeclConcat(0, arr) :- EvDeclConcat(1, after), arr = out.Args(def, after), TypeConstant(in.BaseType(NULL), typeId, _),
-	                        def = Init(
-							   Args(Ident("_P_EVENT_NULL"),
-							   Args(StringLit("null", NIL),
-							   Args(IntLit(0, DEC, U),
-							   Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(typeId)))),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL))))))).
-
-    //// Emit the event decl array.
-	COut(2, def) :- EvDeclConcat(0, arr), 
-	                def = out.VarDef(
-							      NIL, 
-								  ArrType(NmdType(NIL, "PRT_EVENTDECL"), NIL), 
-								  "P_GEND_EVENTS", 
-								  Init(arr)).
-
     /*************************************************************/
     /******         Generate EventSet Decl Arrays           ******/
     /*************************************************************/	
@@ -1121,14 +860,9 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	EventPackData ::= (arrIndex: Natural, events: Natural). 
 	EventPacking  ::= (list: in.EventNameList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
 
-	EventId ::= (trig: String + { NULL, HALT }, id: Natural).
-	EventId(trig, id) :- trig : String, ev is EventDecl, ev.name = trig, DeclId(ev, id, _).
-	EventId(NULL, id) :- DeclId(NULL, id, _).
-	EventId(HALT, id) :- DeclId(HALT, id, _).
-
 	EventSetId ::= (EventSet, in.EventNameList + { NIL }, in.EventName, Natural).
-	EventSetId(eventset, list, ev, id) :- eventset is EventSet(_, in.EventNameList(ev, list)), EventId(ev, id).
-	EventSetId(eventset, list, ev, id) :- EventSetId(eventset, in.EventNameList(ev, list), _, _), EventId(ev, id).
+	EventSetId(eventset, list, ev, id) :- eventset is EventSet(_, in.EventNameList(ev, list)), EventId(ev, id, _).
+	EventSetId(eventset, list, ev, id) :- EventSetId(eventset, in.EventNameList(ev, list), _, _), EventId(ev, id, _).
 
 	EventPacking(eventset.list, rlist, size, NIL) :- 
 		 eventset is EventSet,
@@ -1221,6 +955,25 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							      NIL, 
 								  ArrType(PtrType(NmdType(NIL, "PRT_FUNDECL")), NIL), 
 								  "P_GEND_FUNS", 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******          Generate Event Decl Arrays           ******/
+    /*************************************************************/	
+	EventDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+	EventDeclConcat(c, NIL) :- c = count({m | m is EventId}).
+	EventDeclConcat(m, arr) :- 
+							EventId(_, m, eventName),
+							eventStructName = strJoin(eventName, "_STRUCT"),
+							EventDeclConcat(m + 1, after),  
+							arr = out.Args(def, after),
+							def = UnApp(ADDR, Ident(eventStructName)).
+
+	COut(5, def) :- EventDeclConcat(0, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(PtrType(NmdType(NIL, "PRT_EVENTDECL")), NIL), 
+								  "P_GEND_EVENTS", 
 								  Init(arr)).
 
     /*************************************************************/

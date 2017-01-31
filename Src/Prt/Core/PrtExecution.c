@@ -1,6 +1,12 @@
 #include "PrtExecution.h"
 #include "PrtUser.h"
 
+PRT_EVENTDECL _P_EVENT_NULL_STRUCT = 
+{
+
+
+};
+
 /* Initialize the function to default assert function */
 PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 

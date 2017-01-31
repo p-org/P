@@ -666,37 +666,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	   list = toList(#Elements, NIL, { enumMember | 
 									   ModelType(name), id = toOrdinal(name, 0, { n | ModelType(n) }), cn = strJoin("P_FORGN_TYPE_", name), enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({n | ModelType(n)}) }).  
-	
-	//// Field names for named tuple types that have a type synonym
-	IndexOf ::= (t: NmdTupType, name: String, offset: Natural, tail: NmdTupType + {NIL}).
-	IndexOf(t, name, 0, tail)  :- TypeDef(_, t, _), t = NmdTupType(NmdTupTypeField(name, _), tail).
-	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
-
-	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   d is TypeDef(name, type, _), type: NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
-	   list = toList(#Elements, NIL, { enumMember | 
-									   IndexOf(type, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(#NmdTupType, type) }).  
-	
-	//// Enum declarations for all enum types
-	EnumTypeElem ::= (EnumTypeDef, StringList, IntegerList + { NIL }).
-	EnumTypeElem(d, list1, list2) :- d is EnumTypeDef(_, list1, list2, _).
-	EnumTypeElem(d, list1, NIL) :- EnumTypeElem(d, StringList(_, list1), NIL), list1: StringList.
-	EnumTypeElem(d, list1, list2) :- EnumTypeElem(d, StringList(_, list1), IntegerList(_, list2)), list1: StringList.
-
-	EnumTypeElemIndex ::= (EnumTypeDef, StringList, IntegerList + { NIL }, String, Integer).
-	EnumTypeElemIndex(d, list, NIL, str, i) :- EnumTypeElem(d, list, NIL), list = StringList(str, NIL), i = lstLength(#StringList, d.elems) - 1.
-	EnumTypeElemIndex(d, list, NIL, str, i) :- EnumTypeElem(d, list, NIL), list = StringList(str, list'), 
-											   EnumTypeElemIndex(d, list', NIL, _, j), i = j - 1.
-  	EnumTypeElemIndex(d, list1, list2, str, i) :- EnumTypeElem(d, list1, list2), 
-												  list1 = StringList(str, _), list2 = IntegerList(i, _).
-
-	HOut(0, out.EnmDef(NIL, enumName, list)) :-
-		d is EnumTypeDef(enumName, elems, _, _), size = lstLength(#StringList, elems),
-		list = toList(#Elements, NIL, { enumMember | 
-										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
-										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
-	
+		
 	//// EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
 	EventId ::= (trig: String + { NULL, HALT }, id: Natural, name: String).
 	EventId(NULL, 0, "_P_EVENT_NULL").
@@ -707,7 +677,14 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	   list = toList(#Elements, NIL, { enumMember | 
 									   EventId(_, id, cn), enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventId}) }).  
-			
+	
+	HOut(0, def) :- EventId(_, _, cn), eventStructName = strJoin(cn, "_STRUCT"),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_EVENTDECL"), 
+								  eventStructName, 
+								  NIL).
+		
 	//// MemberOfInterfaceTypes
 	HOut(0, out.EnmDef(NIL, "P_EVENTSET", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
@@ -761,15 +738,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	   list = toList(#Elements, NIL, { enumMember | 
 									   CLinkMap(_, iOrM, _), id = toOrdinal(iOrM, 0, {n | CLinkMap(_, n, _)}), enumMember = Element(IntLit(id, DEC, NIL), strJoin("P_IORM_", iOrM)); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_IORM_COUNT"), size = count({n | CLinkMap(_, n, _)}) }). 
-
-	//// Extern declarations for defined types
-	HOut(0, def) :- TypeDef(name, _, _), 
-					typeName = strJoin("P_GEND_TYPE_", name),
-					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
-
-	HOut(0, def) :- ModelType(name), 
-					typeName = strJoin("P_GEND_TYPE_", name),
-					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
 	
 	//// Extern declarations for foreign type functions
 	HOut(0, def) :- ModelType(name),
@@ -958,7 +926,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  Init(arr)).
 
     /*************************************************************/
-    /******          Generate Event Decl Arrays           ******/
+    /******          Generate Event Decl Array              ******/
     /*************************************************************/	
 	EventDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 	EventDeclConcat(c, NIL) :- c = count({m | m is EventId}).

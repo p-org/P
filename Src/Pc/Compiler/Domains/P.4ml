@@ -111,7 +111,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + MachineCreates  + TypeDef + EnumTypeDef.            
+    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + MachineCreates  + TypeDef + EnumTypeDef + ModelType.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -243,25 +243,17 @@ domain PStructuralTyping extends PData
 	OneDeclError(mr) :- mr is MachineReceives(_, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	/* Rules for separate compilation checks */
+	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl + ModelType, name: String, id: Id).
+	NamedTypes(t, t.name, t.id) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
+
 	//multiple declarations of the same event
 	[rule_Classes = '"error, msg: multiple declarations of the same event"']
 	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
-	//multiple declarations of the same typedef
-	[rule_Classes = '"error, msg: multiple declarations of the same type def"']
-	OneDeclError(td) :- td is TypeDef, td' is TypeDef, td.name = td'.name, td.id != td'.id.
+	//multiple declarations of the same type
+	[rule_Classes = '"error, msg: multiple declarations of named types have same name"']
+	OneDeclError(td) :- NamedTypes(td, name, _), NamedTypes(td', name, _), td != td'.
 
-	//multiple declarations of the same enum def
-	[rule_Classes = '"error, msg: multiple declarations of the same enum type"']
-	OneDeclError(td) :- td is EnumTypeDef, td' is EnumTypeDef, td.name = td'.name, td.id != td'.id.
-
-	//declarations of the enum def and type def with same name
-	[rule_Classes = '"error, msg: declarations of the enum type and type def with same name"']
-	OneDeclError(td) :- td is TypeDef, td' is EnumTypeDef, td.name = td'.name.
-
-	//declarations of interface types with same name
-	[rule_Classes = '"error, msg: declarations of the enum type and type def with same name"']
-	OneDeclError(td) :- td is InterfaceTypeDecl, td' is InterfaceTypeDecl, td.name = td'.name, td.id != td'.id.
 }
 
 domain PStaticTyping extends PData

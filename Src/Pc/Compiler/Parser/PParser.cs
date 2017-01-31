@@ -1440,7 +1440,9 @@
         {
             AddTypeDef(name, nameSpan, typeDefSpan);
             if (Options.eraseModel) return;
-            var modelType = P_Root.MkModelType(MkString(name, nameSpan));
+            var modelType = P_Root.MkModelType();
+            modelType.name = MkString(name, nameSpan);
+            modelType.id = (P_Root.IArgType_ModelType__1)MkUniqueId(nameSpan);
             parseProgram.Add(modelType);
         }
 

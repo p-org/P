@@ -402,10 +402,12 @@ domain PStaticTyping extends PData
 
 	ExportedType ::= (String, TypeExpr).
 	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.val = fileName, TypeExpansion(type, eType).
+	ExportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.val = fileName, eType = NameType(name).
 
 	ImportedType ::= (String, TypeExpr).
 	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
+	ImportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 
 	NotImportedType ::= (type: TypeExpr).

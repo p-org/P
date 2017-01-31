@@ -18,7 +18,7 @@ domain PData
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
 	EnumTypeDef		::= new (name: String, elems: any StringList, values: any IntegerList + { NIL }, id: any Id).
 	TypeDef         ::= new (name: String, type: any TypeExpr, id: any Id).
-	ModelType       ::= new (name: String).
+	ModelType       ::= new (name: String, id: any Id).
 
 	NameType        ::= new (name: String).
     BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }).
@@ -379,9 +379,9 @@ domain PStaticTyping extends PData
 	TypeExpansion(BaseType(ANY), BaseType(ANY)).
 
 	TypeExpansion(type, type)  :- AllTypeExprs(type), type : InterfaceType.
-	TypeExpansion(type, type)  :- TypeDef(typeName, _, _), ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName).
+	TypeExpansion(type, type)  :- TypeDef(typeName, _, _), ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
-	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr, _), no ModelType(typeName), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
+	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr, _), no ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).	
 	TypeExpansion(type, eType) :- MachineExports(m, name), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
@@ -1525,8 +1525,8 @@ domain PStaticTyping extends PData
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
 	
 	// Each model type has empty intersection with all types except itself and ANY
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name), t != s, t != BaseType(ANY).
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name), t != s, t != BaseType(ANY). 
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, t != BaseType(ANY).
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, t != BaseType(ANY). 
 	
 	// Each enum type has empty intersection with all types except itself and ANY and INT
 	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, t != BaseType(ANY), t != BaseType(INT).

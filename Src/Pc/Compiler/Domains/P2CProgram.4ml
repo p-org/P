@@ -50,8 +50,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), EmbeddedPermissionsInType(pt, perm).
 	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), EmbeddedPermissionsInType(pt, perm).
 
-	link.ModelType(name) :- in.ModelType(name).
-	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), no in.ModelType(name), TypeExpansion(type, etype).
+	link.ModelType(name, id) :- in.ModelType(name, id).
+	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), no in.ModelType(name, _), TypeExpansion(type, etype).
 	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
 	link.EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
 	                               list = toList(link.#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }).
@@ -265,7 +265,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 					typeName = strJoin("P_GEND_TYPE_", name),
 					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
 
-	HOut(0, def) :- in.ModelType(name), 
+	HOut(0, def) :- in.ModelType(name, _), 
 					typeName = strJoin("P_GEND_TYPE_", name),
 					def = out.VarDef(EXTERN, PtrType(NmdType(NIL, "PRT_TYPE")), typeName, NIL).
 
@@ -466,7 +466,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t = in.NameType(name), in.ModelType(name),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t = in.NameType(name), in.ModelType(name, _),
 								TypeStorageClass(t, sc),
 								defs = out.Section(before, def),
 								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),

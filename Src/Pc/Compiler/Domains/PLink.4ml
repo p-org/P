@@ -24,7 +24,7 @@ domain PLink
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
 	EnumTypeDef	    ::= new (name: String, elems: any StringList, values: any IntegerList + { NIL }, id: any Id).
 	TypeDef         ::= new (name: String, type: any TypeExpr, id: any Id).
-	ModelType       ::= new (name: String).
+	ModelType       ::= new (name: String, id: any Id).
 
     AssumeMaxInstances	::= new (bound: Natural).
     AssertMaxInstances	::= new (bound: Natural).
@@ -664,8 +664,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// Foreign types
 	HOut(0, out.EnmDef(NIL, "P_FORGN_TYPES", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
-									   ModelType(name), id = toOrdinal(name, 0, { n | ModelType(n) }), cn = strJoin("P_FORGN_TYPE_", name), enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({n | ModelType(n)}) }).  
+									   ModelType(name, _), id = toOrdinal(name, 0, { n | ModelType(n, _) }), cn = strJoin("P_FORGN_TYPE_", name), enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FORGN_TYPES_COUNT"), size = count({n | ModelType(n, _)}) }).  
 		
 	//// EventDecls - Id 0, 1 are reserved for null, halt event, which can appear in transition tables.
 	EventId ::= (trig: String + { NULL, HALT }, id: Natural, name: String).
@@ -740,7 +740,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_IORM_COUNT"), size = count({n | CLinkMap(_, n, _)}) }). 
 	
 	//// Extern declarations for foreign type functions
-	HOut(0, def) :- ModelType(name),
+	HOut(0, def) :- ModelType(name, _),
 	                params = NIL,
 				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
 					argTypes = PrmTypes(BaseType(VOID), NIL),					  
@@ -751,7 +751,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- ModelType(name),
+	HOut(0, def) :- ModelType(name, _),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -762,7 +762,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- ModelType(name),
+	HOut(0, def) :- ModelType(name, _),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -773,7 +773,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- ModelType(name),
+	HOut(0, def) :- ModelType(name, _),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -784,7 +784,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- ModelType(name),
+	HOut(0, def) :- ModelType(name, _),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -795,7 +795,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- ModelType(name),
+	HOut(0, def) :- ModelType(name, _),
 	                params = Params(Param(NIL, "frgnVal1"),
 					         Params(Param(NIL, "frgnVal2"), 
 							 NIL)),
@@ -969,10 +969,10 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	ForeignTypeDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
 	//// Base case
-	ForeignTypeDeclConcat(c, NIL) :- c = count({name | ModelType(name)}).
+	ForeignTypeDeclConcat(c, NIL) :- c = count({name | ModelType(name, _)}).
 
 	ForeignTypeDeclConcat(m, arr) :- 
-							ModelType(name), m = toOrdinal(name, 0, { n | ModelType(n) }),
+							ModelType(name, _), m = toOrdinal(name, 0, { n | ModelType(n, _) }),
 							ForeignTypeDeclConcat(m + 1, after),  
 							arr = out.Args(def, after), 
 	                        def = Init(
@@ -1066,8 +1066,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	ProgGlobalFunArray(size, arr) :- size = 1 + count({ m | m is AnonOrNamedFun }), arr = out.Ident("P_GEND_FUNS").
 
 	ProgForeignTypesArray ::= (size: Natural, arr: out.Ident).
-	ProgForeignTypesArray(size, arr) :- size = count({ n | ModelType(n) }), size = 0, arr = out.Ident("NULL").
-	ProgForeignTypesArray(size, arr) :- size = count({ n | ModelType(n) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
+	ProgForeignTypesArray(size, arr) :- size = count({ n | ModelType(n, _) }), size = 0, arr = out.Ident("NULL").
+	ProgForeignTypesArray(size, arr) :- size = count({ n | ModelType(n, _) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
 
 	LinkMapArray ::= (arr: out.Ident).
 	LinkMapArray(arr) :- size = count({n | LinkMapDeclInnerConcat(n, _, _)}), size = 0, arr = out.Ident("NULL").

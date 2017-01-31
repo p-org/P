@@ -7,6 +7,9 @@
 extern "C"{
 #endif
 
+	extern PRT_EVENTDECL _P_EVENT_NULL_STRUCT;
+	extern PRT_EVENTDECL _P_EVENT_HALT_STRUCT;
+
 	//
 	// Max call stack size of each machine
 	//

@@ -554,25 +554,94 @@
             this.Log = log;
             this.Options = options;
             this.errorReporter = new ErrorReporter();
-            foreach (var inputFileName in options.inputFileNames)
+            return CompileAllFiles();
+        }
+
+        private bool CompileAllFiles()
+        {
+            if (Options.compilerOutput == CompilerOutput.Zing)
             {
-                var result = InternalCompile(inputFileName);
-                errorReporter.PrintErrors(Log, Options);
-                if (!result)
+                foreach (var inputFileName in Options.inputFileNames)
                 {
-                    Log.WriteMessage("Compilation failed", SeverityKind.Error);
-                    return false;
+                    var result = InternalCompile(inputFileName);
+                    errorReporter.PrintErrors(Log, Options);
+                    if (!result)
+                    {
+                        Log.WriteMessage("Compilation failed", SeverityKind.Error);
+                        return false;
+                    }
+                }
+            }
+            else
+            {
+                Stack<string> importChainOfPFiles = new Stack<string>();
+                HashSet<string> visitedPFiles = new HashSet<string>();
+                HashSet<string> wasRecentlyCompiled = new HashSet<string>();
+                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                if (!Directory.Exists(outputDirName))
+                {
+                    Directory.CreateDirectory(outputDirName);
+                }
+                foreach (var fileName in Options.inputFileNames)
+                {
+                    var inputFileName = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, fileName));
+                    if (visitedPFiles.Contains(inputFileName)) continue;
+                    var result = InternalCompile2(outputDirName, inputFileName, importChainOfPFiles, visitedPFiles, wasRecentlyCompiled);
+                    errorReporter.PrintErrors(Log, Options);
+                    if (!result)
+                    {
+                        Log.WriteMessage("Compilation failed", SeverityKind.Error);
+                        return false;
+                    }
                 }
             }
             return true;
         }
 
-        public bool ParsePProgram2(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out List<string> importedFiles)
+        public bool ParsePProgram2(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out List<string> importedPFiles)
         {
-            parsedProgram = null;
+            parsedProgram = new PProgram();
             RootProgramName = null;
-            importedFiles = null;
-            return true;
+            importedPFiles = null;
+            using (this.Profiler.Start("Compiler parsing ", Path.GetFileName(inputFileName)))
+            {
+                try
+                {
+                    RootProgramName = new ProgramName(inputFileName);
+                }
+                catch (Exception e)
+                {
+                    errorReporter.AddFlag(
+                        new Flag(
+                            SeverityKind.Error,
+                            default(Span),
+                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                            Constants.BadFile.Code));
+                    return false;
+                }
+                PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
+                List<Flag> parserFlags;
+                var parser = new Parser.PParser();
+                List<string> includedFiles;
+                var result = parser.ParseFile(RootProgramName, Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags, out includedFiles);
+                foreach (Flag f in parserFlags)
+                {
+                    errorReporter.AddFlag(f);
+                }
+                if (!result)
+                {
+                    RootProgramName = null;
+                    return false;
+                }
+                importedPFiles = new List<string>();
+                string inputDirectoryName = Path.GetDirectoryName(Path.GetFullPath(inputFileName));
+                foreach (var fileName in includedFiles)
+                {
+                    string fullFileName = Path.GetFullPath(Path.Combine(inputDirectoryName, fileName));
+                    importedPFiles.Add(fullFileName);
+                }
+                return true;
+            }
         }
 
         public bool ParsePProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out bool fileOrDependChanged)
@@ -717,30 +786,11 @@
             Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
         }
 
-        void WrapperInternalCompile2(List<string> inputFileNames)
-        {
-            Stack<string> importChainOfPFiles = new Stack<string>();
-            HashSet<string> visitedPFiles = new HashSet<string>();
-            HashSet<string> wasRecentlyCompiled = new HashSet<string>();
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-            if (!Directory.Exists(outputDirName))
-            {
-                Directory.CreateDirectory(outputDirName);
-            }
-            foreach (var f in inputFileNames)
-            {
-                if (!InternalCompile2(outputDirName, f, importChainOfPFiles, visitedPFiles, wasRecentlyCompiled))
-                {
-                    return;
-                }
-            }
-        }
-
         bool InternalCompile2(string outputDirName, string inputFileName, Stack<string> importChainOfPFiles, HashSet<string> visitedPFiles, HashSet<string> wasRecentlyCompiled)
         {
             if (importChainOfPFiles.Contains(inputFileName))
             {
-                Console.WriteLine("Circular dependency");
+                Log.WriteMessage("Circular dependency", SeverityKind.Error);
                 return false;
             }
             importChainOfPFiles.Push(inputFileName);
@@ -751,7 +801,6 @@
             {
                 return false;
             }
-
             var RootFileName = RootProgramName.ToString();
             var root4mlFilePath = Path.Combine(outputDirName, Path.ChangeExtension(Path.GetFileName(RootFileName), ".4ml"));
             var lastCompileTime = File.Exists(root4mlFilePath) ? File.GetLastWriteTime(root4mlFilePath) : DateTime.MinValue;
@@ -768,14 +817,14 @@
                 compileInputFile = compileInputFile | wasRecentlyCompiled.Contains(f);
             }
 
-            if (compileInputFile || Options.reBuild)
+            if (compileInputFile || Options.rebuild)
             {
                 GenerateCode(inputFileName, parsedProgram, RootProgramName);
                 wasRecentlyCompiled.Add(inputFileName);
             }
             else
             {
-                Log.WriteMessage(string.Format("ignoring file {0} ...", inputFileName), SeverityKind.Info);
+                Log.WriteMessage(string.Format("Ignoring file {0} ...", inputFileName), SeverityKind.Info);
             }
             visitedPFiles.Add(inputFileName);
             importChainOfPFiles.Pop();
@@ -800,7 +849,6 @@
             }
 
             bool rc = ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C) ? GenerateC(RootProgramName, RootModel) : true) &&
-                      (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel, errorReporter.idToSourceInfo) : true) &&
                       (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel, errorReporter.idToSourceInfo) : true);
             UninstallProgram(RootProgramName);
             return rc;
@@ -818,7 +866,7 @@
             }
 
             //If file has not changed and no rebuild required.
-            if(!(doCompileFile || Options.reBuild))
+            if(!(doCompileFile || Options.rebuild))
             {
                 Log.WriteMessage(string.Format("ignoring file {0} ...", inputFileName), SeverityKind.Info);
                 return true;

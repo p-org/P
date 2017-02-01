@@ -819,7 +819,12 @@
 
             if (compileInputFile || Options.rebuild)
             {
-                GenerateCode(inputFileName, parsedProgram, RootProgramName);
+                List<string> imported4mlFiles = new List<string>();
+                foreach (var f in importedPFiles)
+                {
+                    imported4mlFiles.Add(Path.Combine(outputDirName, Path.ChangeExtension(Path.GetFileName(f), ".4ml")));
+                }
+                GenerateCode(inputFileName, parsedProgram, RootProgramName, imported4mlFiles);
                 wasRecentlyCompiled.Add(inputFileName);
             }
             else
@@ -831,10 +836,40 @@
             return true;
         }
 
-        bool GenerateCode(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName)
+        bool GenerateCode(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, List<string> imported4mlFiles)
         {
             AST<Model> RootModel;
             InstallProgram(inputFileName, parsedProgram, RootProgramName, out RootModel);
+            var PFileTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PFile"));
+            PFileTerm = Factory.Instance.AddArg(PFileTerm, Factory.Instance.MkCnst(inputFileName));
+            RootModel = Factory.Instance.AddFact(RootModel, Factory.Instance.MkModelFact(null, PFileTerm));
+            foreach (var fileName in imported4mlFiles)
+            {
+                var program = ParseFormulaFile(fileName);
+                program.FindAll(
+                    new NodePred[]
+                    {
+                            NodePredFactory.Instance.Star,
+                            NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                    },
+                    (path, n) =>
+                    {
+                        ModelFact mf = (ModelFact)n;
+                        FuncTerm ft = mf.Match as FuncTerm;
+                        string ftName = (ft.Function as Id).Name;
+                        if (ftName == "EventDecl" ||
+                            ftName == "EventSet" ||
+                            ftName == "TypeDef" ||
+                            ftName == "EnumTypeDef" ||
+                            ftName == "ModelType" ||
+                            ftName == "InterfaceTypeDecl" ||
+                            ftName == "FunProtoDecl" ||
+                            ftName == "MachineProtoDecl")
+                        {
+                            RootModel = Factory.Instance.AddFact(RootModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
+                        }
+                    });
+            }
 
             if (!Check(RootProgramName, RootModel.Node.Name))
             {

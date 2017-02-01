@@ -242,17 +242,17 @@ domain PStructuralTyping extends PData
 	[rule_Classes = '"error, msg: event in receives list is not declared"']
 	OneDeclError(mr) :- mr is MachineReceives(_, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
-	/* Rules for separate compilation checks */
-	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl + ModelType, name: String, id: Id).
-	NamedTypes(t, t.name, t.id) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
-
 	//multiple declarations of the same event
 	[rule_Classes = '"error, msg: multiple declarations of the same event"']
 	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
+	/* Rules for separate compilation checks */
+	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl + ModelType).
+	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
+
 	//multiple declarations of the same type
 	[rule_Classes = '"error, msg: multiple declarations of named types have same name"']
-	OneDeclError(td) :- NamedTypes(td, name, _), NamedTypes(td', name, _), td != td'.
+	OneDeclError(td) :- NamedTypes(td), NamedTypes(td'), td != td', td.name = td'.name.
 
 }
 

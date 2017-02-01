@@ -178,11 +178,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
 	/* Rules for separate compilation checks */
-	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl + ModelType, name: String, id: in.Id).
-	NamedTypes(t, t.name, t.id) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
+	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl + ModelType).
+	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
 
 	//multiple declarations of the same type
-	err.OneNameError(NIL, name, "multiple declarations of named types have same name") :- NamedTypes(td, name, _), NamedTypes(td', name, _), td != td'.
+	err.OneNameError(NIL, td.name, "multiple declarations of named types have same name") :- NamedTypes(td), NamedTypes(td'), td != td', td.name = td'.name.
 
 	/******************************************/
 	/*   Module System related Linker Errors */

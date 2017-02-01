@@ -916,7 +916,7 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC,
 									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), 
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), no MachineDecl(n, _, _, _, _),
 									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']

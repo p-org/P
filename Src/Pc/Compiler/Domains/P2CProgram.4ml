@@ -15,8 +15,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
     /**********         Create PLink output            ***********/
     /*************************************************************/
-	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
-									   decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
+	link.MachineDecl(name, eft, id), link.MachineProtoDecl(name, eft) :- 
+				decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
+				decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
 	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(in.#InterfaceType, NIL, {ev | ObservesDecl(decl, ev) }), list : in.InterfaceType.
 
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), TypeExpansion(ctype, ectype).
@@ -58,13 +59,13 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id), TypeExpansion(type, etype).
 
-	link.FunDecl(name, eparams, ereturn, id) :- 
+	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
-	link.FunDecl(name, NIL, ereturn, id) :- 
+	link.FunDecl(name, NIL, ereturn, id), link.FunProtoDecl(name, NIL, ereturn) :- 
 		c is in.FunDecl(name, NIL, _, NIL, return, _, _, id), return != NIL, TypeExpansion(return, ereturn).
-	link.FunDecl(name, eparams, NIL, id) :- 
+	link.FunDecl(name, eparams, NIL, id), link.FunProtoDecl(name, eparams, NIL) :- 
 		c is in.FunDecl(name, NIL, _, params, NIL, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType.
-	link.FunDecl(name, NIL, NIL, id) :- 
+	link.FunDecl(name, NIL, NIL, id), link.FunProtoDecl(name, NIL, NIL) :- 
 		c is in.FunDecl(name, NIL, _, NIL, NIL, _, _, id).
 	link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunProtoDecl(name, params, return), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).

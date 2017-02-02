@@ -1,8 +1,5 @@
 //Functions for interacting with the timer machine
-extern fun CreateTimer(owner : machine): machine;
-extern fun StartTimer(timer : machine, time: int);
-extern fun CancelTimer(timer : machine);
-event TIMEOUT: machine;
+include "timer.p"
 
 // PingPong.p 
 event PING assert 1: machine; 

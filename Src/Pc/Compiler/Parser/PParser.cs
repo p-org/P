@@ -1438,14 +1438,18 @@
         #region Adders
         private void AddModelTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
-            AddTypeDef(name, nameSpan, typeDefSpan);
-            if (Options.eraseModel) return;
-            var modelType = P_Root.MkModelType();
-            modelType.name = MkString(name, nameSpan);
-            modelType.id = (P_Root.IArgType_ModelType__1)MkUniqueId(nameSpan);
-            parseProgram.Add(modelType);
+            if (Options.eraseModel)
+            {
+                AddTypeDef(name, nameSpan, typeDefSpan);
+            }
+            else
+            {
+                var modelType = P_Root.MkModelType();
+                modelType.name = MkString(name, nameSpan);
+                modelType.id = (P_Root.IArgType_ModelType__1)MkUniqueId(nameSpan);
+                parseProgram.Add(modelType);
+            }
         }
-
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
             if (IsValidName(PProgramTopDecl.TypeDef, name, nameSpan))

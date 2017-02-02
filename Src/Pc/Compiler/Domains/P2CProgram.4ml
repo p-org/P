@@ -279,7 +279,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	
 	//// Exported enum types
 	HOut(0, out.EnmDef(NIL, enumName, list)) :-
-		d is in.EnumTypeDef(enumName, elems, _, id), PFile(fileName), id.val = fileName, size = lstLength(in.#StringList, elems),
+		d is in.EnumTypeDef(enumName, elems, _, id), PFile(fileName), id.tl.val = fileName, size = lstLength(in.#StringList, elems),
 		list = toList(#Elements, NIL, { enumMember | 
 										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
@@ -650,7 +650,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	//// An EventDecl with a payload type refers to one of the statically generated types.
 	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, card, _, _), e = IntLit(card.bound, DEC, U).
 
-	COut(4, def) :- d is in.EventDecl(name, _, _, id), PFile(fileName), id.val = fileName, 
+	COut(4, def) :- d is in.EventDecl(name, _, _, id), PFile(fileName), id.tl.val = fileName, 
 					EvDecl2PayloadType(d, expr), EvDecl2EvCard(d, card), cn = strJoin("P_EVENT_", name),
 					eventStructName = strJoin(cn, "_STRUCT"),
 					def = out.VarDef(

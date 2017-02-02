@@ -326,7 +326,7 @@ domain PStaticTyping extends PData
 	TypeDefError ::= (name: String).
 
 	[rule_Classes = '"error, msg: undefined type"']
-	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _).
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no ModelType(name, _), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _).
 	
 	[rule_Classes = '"error, msg: multiple type definitions for a type name"']
 	TypeDefError(name) :- TypeDef(name, type1, _), TypeDef(name, type2, _), type1 != type2;
@@ -371,9 +371,9 @@ domain PStaticTyping extends PData
 	TypeExpansion(BaseType(ANY), BaseType(ANY)).
 
 	TypeExpansion(type, type)  :- AllTypeExprs(type), type : InterfaceType.
-	TypeExpansion(type, type)  :- TypeDef(typeName, _, _), ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName).
+	TypeExpansion(type, type)  :- ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
-	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr, _), no ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
+	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).	
 	TypeExpansion(type, eType) :- MachineExports(m, name), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
@@ -393,14 +393,14 @@ domain PStaticTyping extends PData
 	OldTranslatedTypeExpr(t') :- OldTranslatedTypeExpr(t), t = NmdTupType(_, t'), t' : TypeExpr. 
 
 	ExportedType ::= (String, TypeExpr).
-	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.val = fileName, TypeExpansion(type, eType).
-	ExportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.val = fileName, eType = NameType(name).
-	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.val = fileName, eType = NameType(name).
+	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
+	ExportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
+	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 
 	ImportedType ::= (String, TypeExpr).
-	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
-	ImportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.val != fileName, eType = NameType(name), no ExportedType(_, eType).
-	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.val != fileName, eType = NameType(name), no ExportedType(_, eType).
+	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
+	ImportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
+	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 
 	NotImportedType ::= (type: TypeExpr).
 	NotImportedType(type) :- OldTranslatedTypeExpr(type), no ImportedType(_, type).
@@ -415,7 +415,7 @@ domain PStaticTyping extends PData
 
 	TranslatedTypeExpr ::= (type: TypeExpr).
 	TranslatedTypeExpr(eType) :- ExportedType(_, eType).
-	TranslatedTypeExpr(eType) :- EventDecl(_, _, type, id), PFile(fileName), id.val = fileName, TypeExpansion(type, eType).
+	TranslatedTypeExpr(eType) :- EventDecl(_, _, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
 	TranslatedTypeExpr(eType) :- VarDecl(_, _, type, _), TypeExpansion(type, eType).
 	TranslatedTypeExpr(eType) :- decl is TypingContext, TypeExpansion(decl.locals, eType).
 	TranslatedTypeExpr(eType) :- decl is AnonFunDecl, r = lstReverse(#NmdTupType, decl.envVars), TypeExpansion(r.hd.type, eType).

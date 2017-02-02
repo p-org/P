@@ -425,6 +425,7 @@ domain PStaticTyping extends PData
 	TranslatedTypeExpr(eType) :- VarDecl(_, _, type, _), TypeExpansion(type, eType).
 	TranslatedTypeExpr(eType) :- decl is TypingContext, TypeExpansion(decl.locals, eType).
 	TranslatedTypeExpr(eType) :- decl is AnonFunDecl, r = lstReverse(#NmdTupType, decl.envVars), TypeExpansion(r.hd.type, eType).
+	TranslatedTypeExpr(eType) :- decl is FunDecl, TypeExpansion(decl.return, eType).
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Tuple(_, _), t : TypeExpr.
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = NamedTuple(_, _), t : TypeExpr.
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Default(_, _), t: TypeExpr.

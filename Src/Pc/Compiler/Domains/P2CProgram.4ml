@@ -914,7 +914,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	PatchReturn ::= (f: in.FunDecl + in.AnonFunDecl, e: out.Stmt).
 	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f: in.AnonFunDecl, cs = out.Return(Ident("p_tmp_ret")).
 	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, _, NIL, _, _, _), cs = out.Return(Ident("p_tmp_ret")).
-	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, _, type, _, _, _), type : in.TypeExpr, ParamsType(f, expr),  
+	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, _, type, _, _, _), type : in.TypeExpr, TypeToExpr(type, expr),  
 						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
 									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL))),
 									   Return(Ident("p_tmp_ret"))).
@@ -981,10 +981,6 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	TypeToExpr ::= (type: in.TypeExpr, expr: out.Expr).
 	TypeToExpr(type, expr) :- TypeToString(type, typeName), expr = out.UnApp(ADDR, Ident(typeName)).
 	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeToExpr(etype, expr).
-
-	ParamsType ::= (decl: in.FunDecl, expr: out.Expr).
-	ParamsType(d, expr) :- d is in.FunDecl, d.params = NIL, expr = out.Ident("NULL").
-	ParamsType(d, expr) :- d is in.FunDecl, TypeToExpr(d.params, expr).
 
 	LocalsType ::= (decl: AnonOrNamedFun, expr: out.Expr).
 	LocalsType(d, expr) :- d is AnonOrNamedFun, d.locals = NIL, expr = out.Ident("NULL").

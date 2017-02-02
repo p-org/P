@@ -414,6 +414,12 @@ domain PStaticTyping extends PData
 	TranslatedNmdTupType(t) :- TranslatedNmdTupType(NmdTupType(_, t)), t: NmdTupType.
 
 	TranslatedTypeExpr ::= (type: TypeExpr).
+	TranslatedTypeExpr(BaseType(NULL)).
+	TranslatedTypeExpr(BaseType(BOOL)).
+	TranslatedTypeExpr(BaseType(INT)).
+	TranslatedTypeExpr(BaseType(EVENT)).
+	TranslatedTypeExpr(BaseType(MACHINE)).
+	TranslatedTypeExpr(BaseType(ANY)).
 	TranslatedTypeExpr(eType) :- ExportedType(_, eType).
 	TranslatedTypeExpr(eType) :- EventDecl(_, _, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
 	TranslatedTypeExpr(eType) :- VarDecl(_, _, type, _), TypeExpansion(type, eType).

@@ -742,7 +742,7 @@
             }
         }
 
-        void InstallProgram(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, out AST<Model> RootModel)
+        void InstallProgram(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, List<string> imported4mlFiles, out AST<Model> RootModel)
         {
             using (this.Profiler.Start("Compiler installing ", Path.GetFileName(inputFileName)))
             {
@@ -760,11 +760,40 @@
                     MkReservedModuleLocation(PDomain),
                     ComposeKind.None);
                 Contract.Assert(mkModelResult);
-                RootModel = rootModel;
+
+                var PFileTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PFile"));
+                PFileTerm = Factory.Instance.AddArg(PFileTerm, Factory.Instance.MkCnst(RootProgramName.Uri.LocalPath));
+                rootModel = Factory.Instance.AddFact(rootModel, Factory.Instance.MkModelFact(null, PFileTerm));
+                foreach (var fileName in imported4mlFiles)
+                {
+                    var program = ParseFormulaFile(fileName);
+                    program.FindAll(
+                        new NodePred[]
+                        {
+                            NodePredFactory.Instance.Star,
+                            NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                        },
+                        (path, n) =>
+                        {
+                            ModelFact mf = (ModelFact)n;
+                            FuncTerm ft = mf.Match as FuncTerm;
+                            string ftName = (ft.Function as Id).Name;
+                            if (ftName == "EventDecl" ||
+                                ftName == "EventSet" ||
+                                ftName == "TypeDef" ||
+                                ftName == "EnumTypeDef" ||
+                                ftName == "ModelType" ||
+                                ftName == "InterfaceTypeDecl" ||
+                                ftName == "FunProtoDecl" ||
+                                ftName == "MachineProtoDecl")
+                            {
+                                rootModel = Factory.Instance.AddFact(rootModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
+                            }
+                        });
+                }
 
                 InstallResult instResult;
                 AST<Program> modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
-
                 // CompilerEnv only expects one call to Install at a time.
                 bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, rootModel), out instResult);
                 Contract.Assert(progressed && instResult.Succeeded, GetFirstMessage(from t in instResult.Flags select t.Item2));
@@ -772,10 +801,12 @@
                 if (Options.outputFormula)
                 {
                     string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-                    StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
+                    StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.GetFileName(inputFileName) + ".4ml")));
                     rootModel.Print(wr);
                     wr.Close();
                 }
+
+                RootModel = rootModel;
             }
         }
 
@@ -824,8 +855,36 @@
                 {
                     imported4mlFiles.Add(Path.Combine(outputDirName, Path.ChangeExtension(Path.GetFileName(f), ".4ml")));
                 }
-                GenerateCode(inputFileName, parsedProgram, RootProgramName, imported4mlFiles);
-                wasRecentlyCompiled.Add(inputFileName);
+                AST<Model> RootModel;
+                InstallProgram(inputFileName, parsedProgram, RootProgramName, imported4mlFiles, out RootModel);
+                if (!Check(RootProgramName, RootModel.Node.Name))
+                {
+                    UninstallProgram(RootProgramName);
+                    return false;
+                }
+                if (Options.compilerOutput == CompilerOutput.None)
+                {
+                    UninstallProgram(RootProgramName);
+                }
+                else
+                {
+                    bool rc;
+                    if ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C))
+                    {
+                        rc = GenerateC(RootProgramName, RootModel);
+                    }
+                    else
+                    {
+                        Debug.Assert(Options.compilerOutput == CompilerOutput.CSharp);
+                        rc = GenerateCSharp(RootProgramName, RootModel, errorReporter.idToSourceInfo);
+                    }
+                    UninstallProgram(RootProgramName);
+                    if (!rc)
+                    {
+                        return false;
+                    }
+                    wasRecentlyCompiled.Add(inputFileName);
+                }
             }
             else
             {
@@ -834,59 +893,6 @@
             visitedPFiles.Add(inputFileName);
             importChainOfPFiles.Pop();
             return true;
-        }
-
-        bool GenerateCode(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, List<string> imported4mlFiles)
-        {
-            AST<Model> RootModel;
-            InstallProgram(inputFileName, parsedProgram, RootProgramName, out RootModel);
-            var PFileTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PFile"));
-            PFileTerm = Factory.Instance.AddArg(PFileTerm, Factory.Instance.MkCnst(RootProgramName.Uri.LocalPath));
-            RootModel = Factory.Instance.AddFact(RootModel, Factory.Instance.MkModelFact(null, PFileTerm));
-            foreach (var fileName in imported4mlFiles)
-            {
-                var program = ParseFormulaFile(fileName);
-                program.FindAll(
-                    new NodePred[]
-                    {
-                            NodePredFactory.Instance.Star,
-                            NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
-                    },
-                    (path, n) =>
-                    {
-                        ModelFact mf = (ModelFact)n;
-                        FuncTerm ft = mf.Match as FuncTerm;
-                        string ftName = (ft.Function as Id).Name;
-                        if (ftName == "EventDecl" ||
-                            ftName == "EventSet" ||
-                            ftName == "TypeDef" ||
-                            ftName == "EnumTypeDef" ||
-                            ftName == "ModelType" ||
-                            ftName == "InterfaceTypeDecl" ||
-                            ftName == "FunProtoDecl" ||
-                            ftName == "MachineProtoDecl")
-                        {
-                            RootModel = Factory.Instance.AddFact(RootModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
-                        }
-                    });
-            }
-
-            if (!Check(RootProgramName, RootModel.Node.Name))
-            {
-                UninstallProgram(RootProgramName);
-                return false;
-            }
-
-            if (Options.compilerOutput == CompilerOutput.None)
-            {
-                UninstallProgram(RootProgramName);
-                return true;
-            }
-
-            bool rc = ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C) ? GenerateC(RootProgramName, RootModel) : true) &&
-                      (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel, errorReporter.idToSourceInfo) : true);
-            UninstallProgram(RootProgramName);
-            return rc;
         }
 
         bool InternalCompile(string inputFileName)
@@ -907,7 +913,7 @@
                 return true;
             }
 
-            InstallProgram(inputFileName, parsedProgram, RootProgramName, out RootModel);
+            InstallProgram(inputFileName, parsedProgram, RootProgramName, new List<string>(), out RootModel);
             
             if (!Check(RootProgramName, RootModel.Node.Name))
             {

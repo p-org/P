@@ -416,17 +416,22 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
 	TypeId      ::= (id: Natural, type: in.TypeExpr).
 	TypeDepNum  ::= (id: Natural, type: in.TypeExpr).
+	TupTypeDepNum ::= (id: Natural, type: in.TupType).
+	NmdTupTypeDepNum ::= (id: Natural, type: in.NmdTupType).
+
+	TupTypeDepNum(i, t) :- TranslatedTupType(t), t = in.TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
+	TupTypeDepNum(i, t) :- TranslatedTupType(t), t = in.TupType(t', t''), TypeDepNum(j, t'), TupTypeDepNum(k, t''),  i = j + k + 1.  
+	NmdTupTypeDepNum(i, t) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
+	NmdTupTypeDepNum(i, t) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), NmdTupTypeDepNum(k, t''), i = j + k + 1.  
 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.InterfaceType.
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType. 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), ImportedType(_, t).
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.TupType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), TypeDepNum(k, t''), i = j + k + 1.  
+	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1. 
+	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t: in.TupType, TupTypeDepNum(i, t). 
+	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t: in.NmdTupType, NmdTupTypeDepNum(i, t). 
 	TypeId(id, t) :- td is TypeDepNum(_, t), NotImportedType(t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum(_, t'), NotImportedType(t') }).
 	
 	TypeStorageClass ::= (in.TypeExpr, {NIL, STATIC}).
@@ -521,8 +526,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	//// Complex type Tuple 
 	Tup2ArrayInit ::= (type: in.TupType, arr: out.Expr). 
-	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = in.TupType(t', NIL), TypeToString(t', name), init = Init(Args(UnApp(ADDR, Ident(name)), NIL)). 
-	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = in.TupType(t', t''), TypeToString(t', name), Tup2ArrayInit(t'', Init(ts'')), 
+	Tup2ArrayInit(t, init) :- TranslatedTupType(t), t = in.TupType(t', NIL), TypeToString(t', name), init = Init(Args(UnApp(ADDR, Ident(name)), NIL)). 
+	Tup2ArrayInit(t, init) :- TranslatedTupType(t), t = in.TupType(t', t''), TypeToString(t', name), Tup2ArrayInit(t'', Init(ts'')), 
 	                          init = Init(Args(UnApp(ADDR, Ident(name)), ts'')). 
 
 	TypeConstant(t, m, defs) :- 
@@ -555,11 +560,11 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	//// Complex type NmdTuple 
 	NmdTup2ArrayInit ::= (type: in.NmdTupType, narr: out.Expr, tarr: out.Expr). 
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(n', t'), NIL), TypeToString(t', name), 
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(n', t'), NIL), TypeToString(t', name), 
 	                                   tarr = Init(Args(UnApp(ADDR, Ident(name)), NIL)), 
 	                                   narr = Init(Args(StringLit(n', NIL), NIL)).
 									    
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(n', t'), t''), TypeToString(t', name), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(n', t'), t''), TypeToString(t', name), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
 	                                   tarr = Init(Args(UnApp(ADDR, Ident(name)), ts'')),
 	                                   narr = Init(Args(StringLit(n', NIL), n'')).
 

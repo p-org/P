@@ -841,7 +841,7 @@
             AST<Model> RootModel;
             InstallProgram(inputFileName, parsedProgram, RootProgramName, out RootModel);
             var PFileTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PFile"));
-            PFileTerm = Factory.Instance.AddArg(PFileTerm, Factory.Instance.MkCnst(inputFileName));
+            PFileTerm = Factory.Instance.AddArg(PFileTerm, Factory.Instance.MkCnst(RootProgramName.Uri.LocalPath));
             RootModel = Factory.Instance.AddFact(RootModel, Factory.Instance.MkModelFact(null, PFileTerm));
             foreach (var fileName in imported4mlFiles)
             {

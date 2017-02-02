@@ -275,7 +275,7 @@
         {
             var nextId = idToSourceInfo.Count;
             idToSourceInfo[nextId] = new SourceInfo(entrySpan, exitSpan);
-            var fileInfo = P_Root.MkIdList(MkString(entrySpan.Program.Uri.AbsoluteUri, entrySpan), (P_Root.IArgType_IdList__1)MkId(entrySpan));
+            var fileInfo = P_Root.MkIdList(MkString(entrySpan.Program.Uri.LocalPath, entrySpan), (P_Root.IArgType_IdList__1)MkId(entrySpan));
             var uniqueId = P_Root.MkIdList(MkNumeric(nextId, new Span()), fileInfo);
             return uniqueId;
         }
@@ -284,7 +284,7 @@
         {
             var nextId = idToSourceInfo.Count;
             idToSourceInfo[nextId] = new SourceInfo(span, new Span());
-            var fileInfo = P_Root.MkIdList(MkString(span.Program.Uri.AbsoluteUri, span), (P_Root.IArgType_IdList__1)MkId(span));
+            var fileInfo = P_Root.MkIdList(MkString(span.Program.Uri.LocalPath, span), (P_Root.IArgType_IdList__1)MkId(span));
             var uniqueId = P_Root.MkIdList(MkNumeric(nextId, new Span()), fileInfo);
             return uniqueId;
         }

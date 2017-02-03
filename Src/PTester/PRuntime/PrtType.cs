@@ -75,7 +75,7 @@ namespace P.Runtime
     public class PrtInterfaceType: PrtType
     {
         public List<PrtEventValue> permissions;
-        public PrtInterfaceType(string name)
+        public PrtInterfaceType()
         {
             permissions = new List<PrtEventValue>();
         }

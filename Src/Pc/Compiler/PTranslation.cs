@@ -356,7 +356,6 @@ namespace Microsoft.Pc
         public Dictionary<AST<FuncTerm>, Node> termToAlias;
         public Dictionary<AST<Node>, string> funToFileName;
         public Dictionary<string, EventInfo> allEvents;
-        public Dictionary<string, List<string>> allInterfaces;
         public Dictionary<string, Dictionary<string, int>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, string> linkMap;
@@ -431,7 +430,6 @@ namespace Microsoft.Pc
             funToFileName = new Dictionary<AST<Node>, string>();
             allEvents = new Dictionary<string, EventInfo>();
             exportedEvents = new HashSet<string>();
-            allInterfaces = new Dictionary<string, List<string>>();
             allEnums = new Dictionary<string, Dictionary<string, int>>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
@@ -484,34 +482,6 @@ namespace Microsoft.Pc
                         var maxInstances = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
                         var maxInstancesAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
                         allEvents[name] = new EventInfo(maxInstances, maxInstancesAssumed, payloadType);
-                    }
-                }
-            }
-
-            terms = GetBin(factBins, "InterfaceTypeDeclList");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var name = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var interfaceType = it.Current as FuncTerm;
-
-                    while (interfaceType != null)
-                    {
-                        var eventTerm = GetArgByIndex(interfaceType, 0);
-                        string evName = eventTerm is Cnst ? ((Cnst)eventTerm).GetStringValue(): HaltEvent;
-                        if(allInterfaces.ContainsKey(name))
-                        {
-                            allInterfaces[name].Add(evName);
-                        }
-                        else
-                        {
-                            allInterfaces.Add(name, new List<string>());
-                            allInterfaces[name].Add(evName);
-                        }
-                        interfaceType = GetArgByIndex(interfaceType, 1) as FuncTerm;
                     }
                 }
             }

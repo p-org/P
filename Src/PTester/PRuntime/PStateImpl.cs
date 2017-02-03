@@ -7,6 +7,7 @@ namespace P.Runtime
 {
     public abstract class StateImpl : ICloneable
     {
+
         #region Constructors
         /// <summary>
         /// This function is called when the stateimp is loaded first time.

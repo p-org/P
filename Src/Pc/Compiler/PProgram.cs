@@ -89,7 +89,7 @@
             private set;
         }
 
-        public List<P_Root.InterfaceTypeDecl> InterfaceTypeDecl
+        public List<P_Root.InterfaceTypeDef> InterfaceTypeDef
         {
             get;
             private set;
@@ -184,9 +184,9 @@
             {
                 EventSetDecl.Add(item as P_Root.EventSetDecl);
             }
-            else if (item is P_Root.InterfaceTypeDecl)
+            else if (item is P_Root.InterfaceTypeDef)
             {
-                InterfaceTypeDecl.Add(item as P_Root.InterfaceTypeDecl);
+                InterfaceTypeDef.Add(item as P_Root.InterfaceTypeDef);
             }
             else if (item is P_Root.ObservesDecl)
             {
@@ -242,7 +242,7 @@
             }
             else
             {
-                throw new Exception("Cannot add into the Program");
+                throw new Exception("Cannot add into the Program : " + item.ToString());
             }
         }
 
@@ -325,7 +325,7 @@
                     yield return ev;
                 }
 
-                foreach (var inter in InterfaceTypeDecl)
+                foreach (var inter in InterfaceTypeDef)
                 {
                     yield return inter;
                 }
@@ -379,7 +379,7 @@
             Annotations = new List<P_Root.Annotation>();
             Observes = new List<P_Root.ObservesDecl>();
             MachineExports = new List<P_Root.MachineExports>();
-            InterfaceTypeDecl = new List<P_Root.InterfaceTypeDecl>();
+            InterfaceTypeDef = new List<P_Root.InterfaceTypeDef>();
             EventSetDecl = new List<P_Root.EventSetDecl>();
             EventSetContains = new List<P_Root.EventSetContains>();
             FunProtoDecls = new List<P_Root.FunProtoDecl>();

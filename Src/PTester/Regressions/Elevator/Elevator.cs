@@ -38,7 +38,7 @@ namespace P.Program
             public static PrtType type_3_1178678920 = new PrtIntType();
             public static PrtType type_4_1178678920 = new PrtBoolType();
             public static PrtType type_5_1178678920 = new PrtNullType();
-        }
+            public static PrtType type_1 = new PrtInterfaceType()
 
         public static PrtImplMachine CreateMachine_Timer(StateImpl application, PrtValue payload)
         {

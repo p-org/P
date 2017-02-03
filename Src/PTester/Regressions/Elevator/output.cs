@@ -70,6 +70,7 @@ namespace P.Program
             (_temp).Add("Door", "Door");
             (_temp).Add("Elevator", "Elevator");
             (linkMap).Add("Main", _temp);
+            
         }
     }
 }

@@ -75,9 +75,13 @@ namespace P.Runtime
     public class PrtInterfaceType: PrtType
     {
         public List<PrtEventValue> permissions;
-        public PrtInterfaceType()
+        public PrtInterfaceType(List<string> events)
         {
             permissions = new List<PrtEventValue>();
+            foreach(var ev in events)
+            {
+                permissions.Add(new PrtEventValue(new PrtEvent(ev, new PrtNullType(), 1, false)));
+            }
         }
 
         public override string ToString()

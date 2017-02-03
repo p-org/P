@@ -666,7 +666,7 @@ namespace Microsoft.Pc
                         {
                             var eventTerm = GetArgByIndex(type, 0);
                             string evName = eventTerm is Cnst ? ((Cnst)eventTerm).GetStringValue() : HaltEvent;
-                            eventValues.Add(pToCSharp.GetEventVar(evName));
+                            eventValues.Add(CSharpHelper.MkCSharpStringLiteralExpression(evName));
                             type = GetArgByIndex(type, 1) as FuncTerm;
                         }
 
@@ -675,7 +675,7 @@ namespace Microsoft.Pc
                             IdentifierName("PrtInterfaceType"),
                             ObjectCreationExpression(GenericName("List").WithTypeArgumentList(TypeArgumentList(
                                                     SingletonSeparatedList<TypeSyntax>(
-                                                        IdentifierName("PrtValue"))))).WithInitializer(InitializerExpression(SyntaxKind.CollectionInitializerExpression, eventValues)));
+                                                        IdentifierName("string"))))).WithInitializer(InitializerExpression(SyntaxKind.CollectionInitializerExpression, eventValues)));
                         AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtInterfaceType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword), initializer));
                         
                     }
@@ -3611,6 +3611,41 @@ namespace Microsoft.Pc
                         allTests[name] = new TestCaseInfo();
                         allTests[name].specMachineMap[newSpecMachineName] = new List<string>();
                         allTests[name].specMachineMap[newSpecMachineName].Add(impMachine);
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "CSharpInterfaceMap");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var iname = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var evname = it.Current is Cnst ? ((Cnst)it.Current).GetStringValue() : "halt";
+
+
+                    var testInfo = new TestCaseInfo();
+                    if (allTests.ContainsKey(name))
+                    {
+                        if (allTests[name].interfaceMap.ContainsKey(iname))
+                        {
+                            allTests[name].interfaceMap[iname].Add(evname);
+                        }
+                        else
+                        {
+                            allTests[name].interfaceMap[iname] = new List<string>();
+                            allTests[name].interfaceMap[iname].Add(evname);
+                        }
+                    }
+                    else
+                    {
+                        allTests[name] = new TestCaseInfo();
+                        allTests[name].interfaceMap[iname] = new List<string>();
+                        allTests[name].interfaceMap[iname].Add(evname);
                     }
                 }
             }

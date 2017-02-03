@@ -360,6 +360,7 @@ namespace Microsoft.Pc
         public Dictionary<string, Dictionary<string, int>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, string> linkMap;
+        public HashSet<string> exportedEvents;
         public Dictionary<string, FunInfo> allStaticFuns;
         public Dictionary<AST<Node>, string> anonFunToName;
         public Dictionary<int, SourceInfo> idToSourceInfo;
@@ -429,6 +430,7 @@ namespace Microsoft.Pc
         {
             funToFileName = new Dictionary<AST<Node>, string>();
             allEvents = new Dictionary<string, EventInfo>();
+            exportedEvents = new HashSet<string>();
             allInterfaces = new Dictionary<string, List<string>>();
             allEnums = new Dictionary<string, Dictionary<string, int>>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
@@ -957,6 +959,17 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var createdM = ((Cnst)it.Current).GetStringValue();
                     linkMap.Add(createdIorM, createdM);
+                }
+            }
+
+            terms = GetBin(factBins, "ExportedEvents");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var eventName = ((Cnst)it.Current).GetStringValue();
+                    exportedEvents.Add(eventName);
                 }
             }
 

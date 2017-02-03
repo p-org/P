@@ -29,9 +29,9 @@ domain PWithInferredTypes extends PData
 	//// Link map : map from interface or machine name to created machine
 	LinkMap ::= new (createdIorM: String, createdM: String).
 
-	ExportedType ::= (String, TypeExpr).
-
-	ImportedType ::= (String, TypeExpr).
+	ExportedType ::= new (String, TypeExpr).
+	ImportedType ::= new (String, TypeExpr).
+	ExportedEvents ::= new (String).
 }
 
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
@@ -45,4 +45,6 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 	out.LinkMap(m,n) :- in.LinkMap(m,n).
 	out.ExportedType(n, t) :- in.ExportedType(n, t).
 	out.ImportedType(n, t) :- in.ImportedType(n, t).
+	out.ExportedEvents(n) :- in.ExportedEvents(n).
+
 }

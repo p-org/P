@@ -228,7 +228,7 @@ domain PStructuralTyping extends PData
 
 	//interface declared in the exports
 	[rule_Classes = '"error, msg: interface in exports is not declared"']
-	OneDeclError(me) :- me is MachineExports(_, i), no InterfaceTypeDecl(i, _, _, _).
+	OneDeclError(me) :- me is MachineExports(_, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
 
 	//interfaces or machine names in the creates
 	[rule_Classes = '"error, msg: interface or machine in creates is not declared"']
@@ -396,11 +396,13 @@ domain PStaticTyping extends PData
 	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
 	ExportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
+	ExportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val = fileName.
 
 	ImportedType ::= (String, TypeExpr).
 	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
 	ImportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
+	ImportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
 
 	NotImportedType ::= (type: TypeExpr).
 	NotImportedType(type) :- OldTranslatedTypeExpr(type), no ImportedType(_, type).

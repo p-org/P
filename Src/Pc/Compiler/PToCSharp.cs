@@ -448,7 +448,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            /*terms = GetBin(factBins, "TypeExpansion");
+            terms = GetBin(factBins, "TypeExpansion");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())
@@ -459,7 +459,7 @@ namespace Microsoft.Pc
                     var eType = (FuncTerm)it.Current;
                     typeContext.AddOriginalType(type, eType);
                 }
-            }*/
+            }
         }
 
         TypeTranslationContext typeContext;
@@ -521,9 +521,7 @@ namespace Microsoft.Pc
                 var eTypeAST = Factory.Instance.ToAST(eType);
                 if (!pTypeToCSharpExpr.ContainsKey(typeAST))
                 {
-                    Console.WriteLine(typeAST.ToString());
-                    Console.WriteLine(eTypeAST.ToString());
-                    //pTypeToCSharpExpr[typeAST] = pTypeToCSharpExpr[eTypeAST];
+                    pTypeToCSharpExpr[typeAST] = pTypeToCSharpExpr[eTypeAST];
                 }
             }
 

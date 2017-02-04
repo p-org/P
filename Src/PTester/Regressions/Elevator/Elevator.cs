@@ -9,36 +9,67 @@ namespace P.Program
     {
         private partial class Events
         {
-            public static PrtEventValue eOpenDoor = new PrtEventValue(new PrtEvent("eOpenDoor", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eCloseDoor = new PrtEventValue(new PrtEvent("eCloseDoor", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eResetDoor = new PrtEventValue(new PrtEvent("eResetDoor", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eDoorOpened = new PrtEventValue(new PrtEvent("eDoorOpened", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eDoorClosed = new PrtEventValue(new PrtEvent("eDoorClosed", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eDoorStopped = new PrtEventValue(new PrtEvent("eDoorStopped", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eObjectDetected = new PrtEventValue(new PrtEvent("eObjectDetected", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eTimerFired = new PrtEventValue(new PrtEvent("eTimerFired", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eOperationSuccess = new PrtEventValue(new PrtEvent("eOperationSuccess", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eOperationFailure = new PrtEventValue(new PrtEvent("eOperationFailure", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eSendCommandToOpenDoor = new PrtEventValue(new PrtEvent("eSendCommandToOpenDoor", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eSendCommandToCloseDoor = new PrtEventValue(new PrtEvent("eSendCommandToCloseDoor", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eSendCommandToStopDoor = new PrtEventValue(new PrtEvent("eSendCommandToStopDoor", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eSendCommandToResetDoor = new PrtEventValue(new PrtEvent("eSendCommandToResetDoor", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eStartDoorCloseTimer = new PrtEventValue(new PrtEvent("eStartDoorCloseTimer", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eStopDoorCloseTimer = new PrtEventValue(new PrtEvent("eStopDoorCloseTimer", Types.type_5_1178678920, 1, true));
-            public static PrtEventValue eUnit = new PrtEventValue(new PrtEvent("eUnit", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eStopTimerReturned = new PrtEventValue(new PrtEvent("eStopTimerReturned", Types.type_5_1178678920, 1, false));
-            public static PrtEventValue eObjectEncountered = new PrtEventValue(new PrtEvent("eObjectEncountered", Types.type_5_1178678920, 1, false));
+            public static PrtEventValue eOpenDoor;
+            public static PrtEventValue eCloseDoor;
+            public static PrtEventValue eResetDoor;
+            public static PrtEventValue eDoorOpened;
+            public static PrtEventValue eDoorClosed;
+            public static PrtEventValue eDoorStopped;
+            public static PrtEventValue eObjectDetected;
+            public static PrtEventValue eTimerFired;
+            public static PrtEventValue eOperationSuccess;
+            public static PrtEventValue eOperationFailure;
+            public static PrtEventValue eSendCommandToOpenDoor;
+            public static PrtEventValue eSendCommandToCloseDoor;
+            public static PrtEventValue eSendCommandToStopDoor;
+            public static PrtEventValue eSendCommandToResetDoor;
+            public static PrtEventValue eStartDoorCloseTimer;
+            public static PrtEventValue eStopDoorCloseTimer;
+            public static PrtEventValue eUnit;
+            public static PrtEventValue eStopTimerReturned;
+            public static PrtEventValue eObjectEncountered;
+            static public void Events_Elevator()
+            {
+                eOpenDoor = new PrtEventValue(new PrtEvent("eOpenDoor", Types.type_5_1178678920, 1, true));
+                eCloseDoor = new PrtEventValue(new PrtEvent("eCloseDoor", Types.type_5_1178678920, 1, true));
+                eResetDoor = new PrtEventValue(new PrtEvent("eResetDoor", Types.type_5_1178678920, 1, false));
+                eDoorOpened = new PrtEventValue(new PrtEvent("eDoorOpened", Types.type_5_1178678920, 1, false));
+                eDoorClosed = new PrtEventValue(new PrtEvent("eDoorClosed", Types.type_5_1178678920, 1, false));
+                eDoorStopped = new PrtEventValue(new PrtEvent("eDoorStopped", Types.type_5_1178678920, 1, false));
+                eObjectDetected = new PrtEventValue(new PrtEvent("eObjectDetected", Types.type_5_1178678920, 1, false));
+                eTimerFired = new PrtEventValue(new PrtEvent("eTimerFired", Types.type_5_1178678920, 1, true));
+                eOperationSuccess = new PrtEventValue(new PrtEvent("eOperationSuccess", Types.type_5_1178678920, 1, false));
+                eOperationFailure = new PrtEventValue(new PrtEvent("eOperationFailure", Types.type_5_1178678920, 1, false));
+                eSendCommandToOpenDoor = new PrtEventValue(new PrtEvent("eSendCommandToOpenDoor", Types.type_5_1178678920, 1, true));
+                eSendCommandToCloseDoor = new PrtEventValue(new PrtEvent("eSendCommandToCloseDoor", Types.type_5_1178678920, 1, true));
+                eSendCommandToStopDoor = new PrtEventValue(new PrtEvent("eSendCommandToStopDoor", Types.type_5_1178678920, 1, true));
+                eSendCommandToResetDoor = new PrtEventValue(new PrtEvent("eSendCommandToResetDoor", Types.type_5_1178678920, 1, true));
+                eStartDoorCloseTimer = new PrtEventValue(new PrtEvent("eStartDoorCloseTimer", Types.type_5_1178678920, 1, true));
+                eStopDoorCloseTimer = new PrtEventValue(new PrtEvent("eStopDoorCloseTimer", Types.type_5_1178678920, 1, true));
+                eUnit = new PrtEventValue(new PrtEvent("eUnit", Types.type_5_1178678920, 1, false));
+                eStopTimerReturned = new PrtEventValue(new PrtEvent("eStopTimerReturned", Types.type_5_1178678920, 1, false));
+                eObjectEncountered = new PrtEventValue(new PrtEvent("eObjectEncountered", Types.type_5_1178678920, 1, false));
+            }
         }
 
         private partial class Types
         {
-            public static PrtType type_0_1178678920 = new PrtAnyType();
-            public static PrtType type_1_1178678920 = new PrtMachineType();
-            public static PrtType type_2_1178678920 = new PrtEventType();
-            public static PrtType type_3_1178678920 = new PrtIntType();
-            public static PrtType type_4_1178678920 = new PrtBoolType();
-            public static PrtType type_5_1178678920 = new PrtNullType();
-            public static PrtType type_1 = new PrtInterfaceType()
+            public static PrtType type_0_1178678920;
+            public static PrtType type_1_1178678920;
+            public static PrtType type_2_1178678920;
+            public static PrtType type_3_1178678920;
+            public static PrtType type_4_1178678920;
+            public static PrtType type_5_1178678920;
+            static public void Types_Elevator()
+            {
+                Types.type_0_1178678920 = new PrtAnyType();
+                Types.type_1_1178678920 = new PrtMachineType();
+                Types.type_2_1178678920 = new PrtEventType();
+                Types.type_3_1178678920 = new PrtIntType();
+                Types.type_4_1178678920 = new PrtBoolType();
+                Types.type_5_1178678920 = new PrtNullType();
+            }
+        }
 
         public static PrtImplMachine CreateMachine_Timer(StateImpl application, PrtValue payload)
         {

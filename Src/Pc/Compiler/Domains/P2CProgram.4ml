@@ -15,6 +15,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
     /**********         Create PLink output            ***********/
     /*************************************************************/
+	link.DependsOn(n, d) :- PFile(n), in.DependsOn(d); PFile(n), PFile(d).
+
 	link.MachineDecl(name, eft, id), link.MachineProtoDecl(name, eft) :- 
 				decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
 				decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).

@@ -6,6 +6,7 @@
 domain PData
 {   
 	PFile ::= new (name: String).
+	DependsOn ::= new (d: String).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 

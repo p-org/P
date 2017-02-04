@@ -17,6 +17,11 @@
             private set;
         }
 
+        public List<P_Root.DependsOn> DependsOn
+        {
+            get;
+            private set;
+        }
         public List<P_Root.EnumTypeDef> EnumTypeDefs
         {
             get;
@@ -240,6 +245,10 @@
             {
                 TypeDefs.Add(item as P_Root.TypeDef);
             }
+            else if(item is P_Root.DependsOn)
+            {
+                DependsOn.Add(item as P_Root.DependsOn);
+            }
             else
             {
                 throw new Exception("Cannot add into the Program : " + item.ToString());
@@ -360,6 +369,11 @@
                 {
                     yield return mc;
                 }
+
+                foreach (var d in DependsOn)
+                {
+                    yield return d;
+                }
             }
         }
 
@@ -387,6 +401,7 @@
             MachineSends = new List<P_Root.MachineSends>();
             MachineReceives = new List<P_Root.MachineReceives>();
             MachineCreates = new List<P_Root.MachineCreates>();
+            DependsOn = new List<P_Root.DependsOn>();
             IgnoreDecl = false;
         }
     }

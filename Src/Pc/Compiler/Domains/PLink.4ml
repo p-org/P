@@ -4,6 +4,7 @@
 
 domain PLink
 {
+	DependsOn ::= new (o: String, d: String).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 	NonNullEventName  ::= String + { HALT }.
@@ -128,11 +129,15 @@ domain PLinkError
 	CSharpSafeMap ::= new (testName: String, newName: String, isSafe: Boolean).
 	CSharpMonitorMap ::= new (testName: String, newMonitorName: String, impMachine: String).
 	CSharpInterfaceMap ::= new (testName: String, iName: String, evName: String + { HALT }).
+	CSharpDependsOn ::= new (o: String, d: String).
 	TestError ::= new (modId: String, arg: any String).
 }
 
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 {
+	//// Populate the depends on
+	CSharpDependsOn(n, d) :- DependsOn(n, d).
+
 	//// General Linker Errors
 	err.OneNameError(NIL, name, "impure function used as pure") :- Pure(name, TRUE), Pure(name, FALSE).
 

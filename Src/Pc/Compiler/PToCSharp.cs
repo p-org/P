@@ -468,6 +468,7 @@ namespace Microsoft.Pc
         {
             private int typeCount;
             //This field is for emitting types; order is important
+            public List<StatementSyntax> typeInitialization;
             public List<FieldDeclarationSyntax> typeDeclaration;
             private Dictionary<AST<Node>, ExpressionSyntax> pTypeToCSharpExpr;
             public Dictionary<AST<Node>, string> exportedTypes;
@@ -480,6 +481,7 @@ namespace Microsoft.Pc
                 this.pToCSharp = pToCSharp;
                 typeCount = 0;
                 typeDeclaration = new List<FieldDeclarationSyntax>();
+                typeInitialization = new List<StatementSyntax>();
                 pTypeToCSharpExpr = new Dictionary<AST<Node>, ExpressionSyntax>();
                 exportedTypes = new Dictionary<AST<Node>, string>();
                 importedTypes = new Dictionary<AST<Node>, string>();
@@ -499,9 +501,15 @@ namespace Microsoft.Pc
                 return typeName;
             }
 
-            private void AddTypeDeclaration(SyntaxNode n)
+            private void AddTypeDeclaration(string typeName)
             {
-                typeDeclaration.Add((FieldDeclarationSyntax)n);
+                typeDeclaration.Add((FieldDeclarationSyntax)
+                    CSharpHelper.MkCSharpFieldDeclaration(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
+            }
+
+            private void AddTypeInitialization(SyntaxNode lhs, SyntaxNode rhs)
+            {
+                typeInitialization.Add((StatementSyntax)(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(lhs, rhs)));
             }
 
             public ExpressionSyntax PTypeToCSharpExpr(FuncTerm pType)
@@ -519,7 +527,7 @@ namespace Microsoft.Pc
             {
                 var typeAST = Factory.Instance.ToAST(type);
                 var eTypeAST = Factory.Instance.ToAST(eType);
-                if (!pTypeToCSharpExpr.ContainsKey(typeAST))
+                if (pTypeToCSharpExpr.ContainsKey(eTypeAST) && !pTypeToCSharpExpr.ContainsKey(typeAST))
                 {
                     pTypeToCSharpExpr[typeAST] = pTypeToCSharpExpr[eTypeAST];
                 }
@@ -553,34 +561,34 @@ namespace Microsoft.Pc
                         var primitiveType = ((Id)GetArgByIndex(type, 0)).Name;
                         if (primitiveType == "NULL")
                         {
-                            AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                        Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtNullType"))));
+                            AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtNullType")));
+                            AddTypeDeclaration(typeName);
                         }
                         else if (primitiveType == "BOOL")
                         {
-                            AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtBoolType"))));
+                            AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtBoolType")));
+                            AddTypeDeclaration(typeName);
                         }
                         else if (primitiveType == "INT")
                         {
-                            AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtIntType"))));
+                            AddTypeDeclaration(typeName);
+                            AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtIntType")));
                         }
                         else if (primitiveType == "EVENT")
                         {
-                            AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtEventType"))));
+                            AddTypeDeclaration(typeName);
+                            AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtEventType")));
                         }
                         else if (primitiveType == "MACHINE")
                         {
-                            AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtMachineType"))));
+                            AddTypeDeclaration(typeName);
+                            AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtMachineType")));
                         }
                         else
                         {
                             Debug.Assert(primitiveType == "ANY", "Illegal BaseType");
-                            AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtAnyType"))));
+                            AddTypeDeclaration(typeName);
+                            AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtAnyType")));
                         }
                     }
                     else if (typeKind == "NameType")
@@ -593,8 +601,8 @@ namespace Microsoft.Pc
                             args.Add(CSharpHelper.MkCSharpStringLiteralExpression(x.Key));
                             args.Add(CSharpHelper.MkCSharpNumericLiteralExpression(x.Value));
                         }
-                        AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtEnumType"), args.ToArray())));
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtEnumType"), args.ToArray()));
                     }
                     else if (typeKind == "TupType")
                     {
@@ -612,9 +620,8 @@ namespace Microsoft.Pc
                             initializer.Add(Token(SyntaxKind.CommaToken));
                         }
                         initializer.RemoveAt(initializer.Count() - 1);
-                        AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword),
-                                                                       CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtTupleType"), CSharpHelper.MkCSharpArrayCreationExpression("PrtType", initializer.ToArray()))));
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtTupleType"), CSharpHelper.MkCSharpArrayCreationExpression("PrtType", initializer.ToArray())));
 
                     }
                     else if (typeKind == "NmdTupType")
@@ -641,21 +648,22 @@ namespace Microsoft.Pc
                             initializer.Add(Token(SyntaxKind.CommaToken));
                         }
                         initializer.RemoveAt(initializer.Count() - 1);
-                        AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtNamedTupleType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtNamedTupleType"),
-                            CSharpHelper.MkCSharpArrayCreationExpression("object", initializer.ToArray()))));
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtNamedTupleType"),
+                            CSharpHelper.MkCSharpArrayCreationExpression("object", initializer.ToArray())));
                     }
                     else if (typeKind == "SeqType")
                     {
                         SyntaxNode innerType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0));
-                        AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtSeqType"), typeName, Token(SyntaxKind.PublicKeyword),
-                                                                       Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtSeqType"), innerType)));
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtSeqType"), innerType));
                     }
                     else if (typeKind == "MapType")
                     {
                         SyntaxNode keyType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 0));
                         SyntaxNode valType = PTypeToCSharpExpr((FuncTerm)GetArgByIndex(type, 1));
-                        AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtMapType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword), CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtMapType"), keyType, valType)));
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtMapType"), keyType, valType));
                     }
                     else
                     {
@@ -674,7 +682,8 @@ namespace Microsoft.Pc
                             ObjectCreationExpression(GenericName("List").WithTypeArgumentList(TypeArgumentList(
                                                     SingletonSeparatedList<TypeSyntax>(
                                                         IdentifierName("string"))))).WithInitializer(InitializerExpression(SyntaxKind.CollectionInitializerExpression, eventValues)));
-                        AddTypeDeclaration(CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtInterfaceType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword), initializer));
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(typeExpr, initializer);
                         
                     }
                 }
@@ -730,23 +739,30 @@ namespace Microsoft.Pc
             string eventsClassName = "Events";
             foreach (var evName in exportedEvents)
             {
-                
+                //add declaration
+                evDeclarations.Add(
+                CSharpHelper.MkCSharpFieldDeclaration(IdentifierName("PrtEventValue"),
+                    EventName(evName),
+                    Token(SyntaxKind.PublicKeyword),
+                    Token(SyntaxKind.StaticKeyword)
+                    )
+                );
 
                 //add initialization
-                SyntaxNode payloadType = typeContext.PTypeToCSharpExpr((allEvents[evName]).payloadType);
+                SyntaxNode payloadType = typeContext.PTypeToCSharpExpr(allEvents[evName].payloadType);
                 SyntaxNode maxInstances;
-                if ((allEvents[evName]).maxInstances == -1)
+                if (allEvents[evName].maxInstances == -1)
                 {
                     String s = "PrtEvent.DefaultMaxInstances";
                     maxInstances = IdentifierName(s);
                 }
                 else
                 {
-                    maxInstances = CSharpHelper.MkCSharpNumericLiteralExpression((allEvents[evName]).maxInstances);
+                    maxInstances = CSharpHelper.MkCSharpNumericLiteralExpression(allEvents[evName].maxInstances);
                 }
 
                 SyntaxNode doAssume;
-                if ((allEvents[evName]).maxInstancesAssumed)
+                if (allEvents[evName].maxInstancesAssumed)
                 {
                     doAssume = CSharpHelper.MkCSharpTrueLiteralExpression();
                 }
@@ -754,8 +770,9 @@ namespace Microsoft.Pc
                 {
                     doAssume = CSharpHelper.MkCSharpFalseLiteralExpression();
                 }
-                
-                ExpressionSyntax init = CSharpHelper.MkCSharpObjectCreationExpression(
+
+                SyntaxNode lhs = IdentifierName(EventName(evName));
+                SyntaxNode rhs = CSharpHelper.MkCSharpObjectCreationExpression(
                     IdentifierName("PrtEventValue"),
                     CSharpHelper.MkCSharpObjectCreationExpression(
                         IdentifierName("PrtEvent"),
@@ -764,16 +781,23 @@ namespace Microsoft.Pc
                         maxInstances,
                         doAssume
                     ));
-                //add declaration
-                evDeclarations.Add(
-                CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtEventValue"),
-                    EventName(evName),
-                    Token(SyntaxKind.PublicKeyword),
-                    Token(SyntaxKind.StaticKeyword),
-                    init
-                    )
-                );
+                eventInitializationStmts.Add((StatementSyntax)CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(lhs, rhs));
             }
+
+            var staticMethodName = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName);
+            var staticInitializer =
+                    MethodDeclaration(
+                        PredefinedType(
+                            Token(SyntaxKind.VoidKeyword)),
+                        Identifier(staticMethodName))
+                            .WithModifiers(
+                                TokenList(new[] { Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PublicKeyword) }))
+                            .WithBody(
+                                Block(eventInitializationStmts
+                                    ))
+                    .NormalizeWhitespace();
+
+            evDeclarations.Add(staticInitializer);
 
             var eventsClass = generator.ClassDeclaration(
               eventsClassName, typeParameters: null,
@@ -790,6 +814,22 @@ namespace Microsoft.Pc
             string typesClassName = "Types";
             List<SyntaxNode> typeDeclarations = new List<SyntaxNode>();
             typeDeclarations.AddRange(typeContext.typeDeclaration);
+
+            var staticMethodName = "Types_" + Path.GetFileNameWithoutExtension(cSharpFileName);
+            var staticInitializer =
+                    MethodDeclaration(
+                        PredefinedType(
+                            Token(SyntaxKind.VoidKeyword)),
+                        Identifier(staticMethodName))
+                            .WithModifiers(
+                                TokenList(new[] { Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PublicKeyword) }))
+                            .WithBody(
+                                Block(
+                                    typeContext.typeInitialization
+                                    ))
+                    .NormalizeWhitespace();
+
+            typeDeclarations.Add(staticInitializer);
 
             var typesClass = generator.ClassDeclaration(
               typesClassName, typeParameters: null,
@@ -3442,12 +3482,13 @@ namespace Microsoft.Pc
         }
 
         private Dictionary<string, TestCaseInfo> allTests;
-
+        private Dictionary<string, List<string>> dependsOn;
         public PToCSharpLinker(ICompilerOutput log, AST<Program> linkerModel, List<string> inputFilesNames)
         {
             this.inputFiles = inputFilesNames.ToList();
             Log = log;
             allTests = new Dictionary<string, TestCaseInfo>();
+            dependsOn = new Dictionary<string, List<string>>();
             GenerateLinkerInfo(linkerModel);
         }
 
@@ -3540,6 +3581,30 @@ namespace Microsoft.Pc
                     {
                         allTests[name] = new TestCaseInfo();
                         allTests[name].renameMap.Add(renamedMachineName, impName);
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "CSharpDependsOn");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var currFileName = ((Cnst)it.Current).GetStringValue();
+                    currFileName = Path.GetFileNameWithoutExtension(currFileName);
+                    it.MoveNext();
+                    var dOn = ((Cnst)it.Current).GetStringValue();
+                    dOn = Path.GetFileNameWithoutExtension(dOn);
+                    
+                    if (dependsOn.ContainsKey(currFileName))
+                    {
+                        dependsOn[currFileName].Add(dOn);
+                    }
+                    else
+                    {
+                        dependsOn[currFileName] = new List<string>();
+                        dependsOn[currFileName].Add(dOn);
                     }
                 }
             }
@@ -3894,6 +3959,38 @@ namespace Microsoft.Pc
                 stmtList.Add(addLinkItem);
             }
 
+            var nodes = dependsOn.Keys.ToList();
+            var edges = new List<Tuple<string, string>>();
+            foreach(var file in dependsOn)
+            {
+                foreach(var dep in file.Value)
+                {
+                    if(file.Key != dep)
+                    {
+                        edges.Add(new Tuple<string, string>(file.Key, dep));
+                    }
+                }
+            }
+
+            List<string> topoOrder = TopologicalSortFiles<string>(nodes, edges);
+            //make invocations to the initialization of all types
+            foreach (var fName in topoOrder)
+            {
+                stmtList.Add(
+                    ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression( 
+                        CSharpHelper.MkCSharpDot(IdentifierName("Types"), "Types_" +fName)) 
+                    ));
+            }
+
+            //make invocation to the initialization of all events
+            foreach (var fName in topoOrder)
+            {
+                stmtList.Add(
+                    ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
+                        CSharpHelper.MkCSharpDot(IdentifierName("Events"), "Events_" + fName))
+                    ));
+            }
+
             var staticConstrutor = ConstructorDeclaration(
                                         Identifier("Application"))
                                     .WithModifiers(
@@ -3903,6 +4000,65 @@ namespace Microsoft.Pc
                                     .NormalizeWhitespace();
             return staticConstrutor;
         }
+
+        #region Topological Sorting Dependencies
+        /// <summary>
+        /// Topological Sorting (Kahn's algorithm) 
+        /// </summary>
+        /// <remarks>https://en.wikipedia.org/wiki/Topological_sorting</remarks>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="nodes">All nodes of directed acyclic graph.</param>
+        /// <param name="edges">All edges of directed acyclic graph.</param>
+        /// <returns>Sorted node in topological order.</returns>
+        static List<T> TopologicalSortFiles<T>(List<T> nodes, List<Tuple<T, T>> edges) where T : IEquatable<T>
+        {
+            // Empty list that will contain the sorted elements
+            var L = new List<T>();
+
+            // Set of all nodes with no incoming edges
+            var S = new HashSet<T>(nodes.Where(n => edges.All(e => e.Item2.Equals(n) == false)));
+
+            // while S is non-empty do
+            while (S.Any())
+            {
+
+                //  remove a node n from S
+                var n = S.First();
+                S.Remove(n);
+
+                // add n to tail of L
+                L.Add(n);
+
+                // for each node m with an edge e from n to m do
+                foreach (var e in edges.Where(e => e.Item1.Equals(n)).ToList())
+                {
+                    var m = e.Item2;
+
+                    // remove edge e from the graph
+                    edges.Remove(e);
+
+                    // if m has no other incoming edges then
+                    if (edges.All(me => me.Item2.Equals(m) == false))
+                    {
+                        // insert m into S
+                        S.Add(m);
+                    }
+                }
+            }
+
+            // if graph has edges then
+            if (edges.Any())
+            {
+                // return error (graph has at least one cycle)
+                return null;
+            }
+            else
+            {
+                // return L (a topologically sorted order)
+                return L;
+            }
+        }
+        #endregion
 
         public void GenerateCSharpLinkerOutput(string outputDir)
         {

@@ -1450,6 +1450,14 @@
                 parseProgram.Add(modelType);
             }
         }
+
+        private void AddDependency(string fileName)
+        {
+            var depends = P_Root.MkDependsOn();
+            depends.d = MkString(fileName, Span.Unknown);
+            parseProgram.Add(depends);
+        }
+
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
             if (IsValidName(PProgramTopDecl.TypeDef, name, nameSpan))

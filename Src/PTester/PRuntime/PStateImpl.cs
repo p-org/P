@@ -5,6 +5,7 @@ using System.Linq;
 
 namespace P.Runtime
 {
+
     public abstract class StateImpl : ICloneable
     {
         #region Constructors
@@ -20,6 +21,10 @@ namespace P.Runtime
         #endregion
 
         #region Fields
+
+        public static Action<PrtImplMachine> CreateMachineCallBack;
+        public static Action<PrtImplMachine, PrtImplMachine> EnqueueCallBack;
+
         /// <summary>
         /// Map from the statemachine id to the instance of the statemachine.
         /// </summary>
@@ -132,7 +137,13 @@ namespace P.Runtime
             machine.isSafe = isSafeMap[renamedImpMachine];
             machine.renamedName = renamedImpMachine;
             AddImplMachineToStateImpl(machine);
-            if(interfaceMap.ContainsKey(interfaceOrMachineName))
+
+            if(CreateMachineCallBack != null)
+            {
+                CreateMachineCallBack(machine);
+            }
+
+            if (interfaceMap.ContainsKey(interfaceOrMachineName))
             {
                 return new PrtInterfaceValue(machine, interfaceMap[interfaceOrMachineName]);
             }

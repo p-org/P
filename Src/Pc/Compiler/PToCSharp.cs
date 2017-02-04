@@ -3978,8 +3978,8 @@ namespace Microsoft.Pc
             {
                 stmtList.Add(
                     ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression( 
-                        CSharpHelper.MkCSharpDot(IdentifierName("Types"), "Types_" +fName)) 
-                    ));
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Types"), IdentifierName("Types_" +fName)) 
+                    )));
             }
 
             //make invocation to the initialization of all events
@@ -3987,8 +3987,8 @@ namespace Microsoft.Pc
             {
                 stmtList.Add(
                     ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
-                        CSharpHelper.MkCSharpDot(IdentifierName("Events"), "Events_" + fName))
-                    ));
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName("Events_" + fName))
+                    )));
             }
 
             var staticConstrutor = ConstructorDeclaration(

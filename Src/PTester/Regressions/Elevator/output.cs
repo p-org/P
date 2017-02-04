@@ -47,10 +47,16 @@ namespace P.Program
             (createMachineMap).Add("Door", CreateMachine_Door);
             Dictionary<string, string> _temp;
             _temp = new Dictionary<string, string>();
+            (_temp).Add("Main", "Main");
             (_temp).Add("Timer", "Timer");
             (_temp).Add("Door", "Door");
+            (_temp).Add("Elevator", "Elevator");
+            (linkMap).Add("Timer", _temp);
+            _temp = new Dictionary<string, string>();
+            (_temp).Add("Timer", "Timer");
             (_temp).Add("Main", "Main");
             (_temp).Add("Elevator", "Elevator");
+            (_temp).Add("Door", "Door");
             (linkMap).Add("Door", _temp);
             _temp = new Dictionary<string, string>();
             (_temp).Add("Timer", "Timer");
@@ -59,17 +65,13 @@ namespace P.Program
             (_temp).Add("Main", "Main");
             (linkMap).Add("Main", _temp);
             _temp = new Dictionary<string, string>();
-            (_temp).Add("Door", "Door");
-            (_temp).Add("Main", "Main");
             (_temp).Add("Timer", "Timer");
-            (_temp).Add("Elevator", "Elevator");
-            (linkMap).Add("Timer", _temp);
-            _temp = new Dictionary<string, string>();
             (_temp).Add("Door", "Door");
-            (_temp).Add("Main", "Main");
-            (_temp).Add("Timer", "Timer");
             (_temp).Add("Elevator", "Elevator");
+            (_temp).Add("Main", "Main");
             (linkMap).Add("Elevator", _temp);
+            Types.Types_Elevator();
+            Events.Events_Elevator();
         }
     }
 }

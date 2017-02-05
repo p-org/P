@@ -1,10 +1,5 @@
 include "temp.p"
 
-event res: int;
-event getres: machine;
-event e1;
-event e2;
-event e3;
 machine Main {
 	var local: machine;
     start state S {

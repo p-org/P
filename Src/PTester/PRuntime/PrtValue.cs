@@ -362,8 +362,9 @@ namespace P.Runtime
             fieldValues = new List<PrtValue>();
         }
 
-        public PrtTupleValue(PrtTupleType tupType)
+        public PrtTupleValue(PrtType type)
         {
+            var tupType = type as PrtTupleType;
             fieldValues = new List<PrtValue>(tupType.fieldTypes.Count);
             foreach (var ft in tupType.fieldTypes)
             {
@@ -436,8 +437,9 @@ namespace P.Runtime
             fieldNames = new List<string>();
         }
 
-        public PrtNamedTupleValue(PrtNamedTupleType tupType) : base (tupType)
+        public PrtNamedTupleValue(PrtType type) : base (type)
         {
+            var tupType = type as PrtNamedTupleType;
             fieldNames = new List<string>(tupType.fieldTypes.Count);
             foreach (var fn in tupType.fieldNames)
             {
@@ -445,8 +447,9 @@ namespace P.Runtime
             }
         }
 
-        public PrtNamedTupleValue(PrtNamedTupleType tupType, params PrtValue[] elems) : base (elems)
+        public PrtNamedTupleValue(PrtType type, params PrtValue[] elems) : base (elems)
         {
+            var tupType = type as PrtNamedTupleType;
             fieldNames = new List<string>(tupType.fieldTypes.Count);
             foreach (var fn in tupType.fieldNames)
             {

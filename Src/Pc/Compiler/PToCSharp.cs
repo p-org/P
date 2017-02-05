@@ -494,9 +494,12 @@ namespace Microsoft.Pc
                 return retVal;
             }
 
-            private string GetNextTypeName()
+            private string GetNextTypeName(string typeName = null)
             {
-                string typeName = String.Format("type_{0}_{1}", typeCount, Math.Abs(Path.GetFileNameWithoutExtension(pToCSharp.cSharpFileName).GetHashCode()).ToString());
+                
+                typeName = typeName == null ?
+                    String.Format("type_{0}_{1}", typeCount, Math.Abs(Path.GetFileNameWithoutExtension(pToCSharp.cSharpFileName).GetHashCode()).ToString())
+                    : String.Format("type_{0}", typeName);
                 typeCount++;
                 return typeName;
             }
@@ -540,14 +543,15 @@ namespace Microsoft.Pc
                 string typeName;
                 if (importedTypes.ContainsKey(Factory.Instance.ToAST(type)))
                 {
-                    return GetTypeExpr(importedTypes[Factory.Instance.ToAST(type)]);
+                    typeName = GetNextTypeName(importedTypes[Factory.Instance.ToAST(type)]);
+                    return GetTypeExpr(typeName);
                 }
                 else
                 {
                     if (exportedTypes.ContainsKey(Factory.Instance.ToAST(type)))
                     {
-                        typeName = exportedTypes[Factory.Instance.ToAST(type)];
-                        typeExpr = GetTypeExpr(exportedTypes[Factory.Instance.ToAST(type)]);
+                        typeName = GetNextTypeName(exportedTypes[Factory.Instance.ToAST(type)]);
+                        typeExpr = GetTypeExpr(typeName);
                     }
                     else
                     {
@@ -791,7 +795,7 @@ namespace Microsoft.Pc
                             Token(SyntaxKind.VoidKeyword)),
                         Identifier(staticMethodName))
                             .WithModifiers(
-                                TokenList(new[] { Token(SyntaxKind.StaticKeyword), Token(SyntaxKind.PublicKeyword) }))
+                                TokenList(new[] { Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)}))
                             .WithBody(
                                 Block(eventInitializationStmts
                                     ))
@@ -801,7 +805,7 @@ namespace Microsoft.Pc
 
             var eventsClass = generator.ClassDeclaration(
               eventsClassName, typeParameters: null,
-              accessibility: Accessibility.Private,
+              accessibility: Accessibility.Public,
               modifiers: DeclarationModifiers.Partial,
               members: evDeclarations);
 
@@ -833,7 +837,7 @@ namespace Microsoft.Pc
 
             var typesClass = generator.ClassDeclaration(
               typesClassName, typeParameters: null,
-              accessibility: Accessibility.Private,
+              accessibility: Accessibility.Public,
               modifiers: DeclarationModifiers.Partial,
               members: typeDeclarations);
 
@@ -3769,7 +3773,7 @@ namespace Microsoft.Pc
 
             var eventsClass = generator.ClassDeclaration(
               eventsClassName, typeParameters: null,
-              accessibility: Accessibility.Private,
+              accessibility: Accessibility.Public,
               modifiers: DeclarationModifiers.Partial,
               members: evDeclarations);
 

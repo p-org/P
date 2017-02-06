@@ -182,7 +182,7 @@ typedef struct PRT_PROGRAMDECL
 	PRT_UINT32      nGlobalFuns;    /**< The number of global functions   */
 	PRT_UINT16      nForeignTypes;  /**< The number of foreign types */
 
-	PRT_EVENTDECL       *events;          /**< The array of events                 */
+	PRT_EVENTDECL       **events;          /**< The array of events                 */
 	PRT_EVENTSETDECL    *eventSets;       /**< The array of event set declarations */
 	PRT_MACHINEDECL     **machines;       /**< The array of machines               */
 	PRT_FUNDECL			**globalFuns;     /**< The array of global functions */

@@ -78,7 +78,7 @@
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
         private P_Root.MachineProtoDecl crntMachProtoDecl = null;
-        private P_Root.InterfaceTypeDecl crntInterfaceDecl = null;
+        private P_Root.InterfaceTypeDef crntInterfaceDef = null;
         private P_Root.QualifiedName crntStateTargetName = null;
         private P_Root.QualifiedName crntGotoTargetName = null;
         private P_Root.StateDecl crntState = null;
@@ -275,7 +275,7 @@
         {
             var nextId = idToSourceInfo.Count;
             idToSourceInfo[nextId] = new SourceInfo(entrySpan, exitSpan);
-            var fileInfo = P_Root.MkIdList(MkString(entrySpan.Program.Uri.AbsoluteUri, entrySpan), (P_Root.IArgType_IdList__1)MkId(entrySpan));
+            var fileInfo = P_Root.MkIdList(MkString(entrySpan.Program.Uri.LocalPath, entrySpan), (P_Root.IArgType_IdList__1)MkId(entrySpan));
             var uniqueId = P_Root.MkIdList(MkNumeric(nextId, new Span()), fileInfo);
             return uniqueId;
         }
@@ -284,7 +284,7 @@
         {
             var nextId = idToSourceInfo.Count;
             idToSourceInfo[nextId] = new SourceInfo(span, new Span());
-            var fileInfo = P_Root.MkIdList(MkString(span.Program.Uri.AbsoluteUri, span), (P_Root.IArgType_IdList__1)MkId(span));
+            var fileInfo = P_Root.MkIdList(MkString(span.Program.Uri.LocalPath, span), (P_Root.IArgType_IdList__1)MkId(span));
             var uniqueId = P_Root.MkIdList(MkNumeric(nextId, new Span()), fileInfo);
             return uniqueId;
         }
@@ -1345,9 +1345,9 @@
 
         private void SetInterfaceConstType(Span span)
         {
-            var inDecl = GetCurrentInterfaceTypeDecl(span);
+            var inDecl = GetCurrentInterfaceTypeDef(span);
             Contract.Assert(typeExprStack.Count > 0);
-            inDecl.argType = (P_Root.IArgType_InterfaceTypeDecl__2)typeExprStack.Pop();
+            inDecl.argType = (P_Root.IArgType_InterfaceTypeDef__2)typeExprStack.Pop();
         }
 
         private void SetMachineProtoConstType(Span span)
@@ -1438,10 +1438,24 @@
         #region Adders
         private void AddModelTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
-            AddTypeDef(name, nameSpan, typeDefSpan);
-            if (Options.eraseModel) return;
-            var modelType = P_Root.MkModelType(MkString(name, nameSpan));
-            parseProgram.Add(modelType);
+            if (Options.eraseModel)
+            {
+                AddTypeDef(name, nameSpan, typeDefSpan);
+            }
+            else
+            {
+                var modelType = P_Root.MkModelType();
+                modelType.name = MkString(name, nameSpan);
+                modelType.id = (P_Root.IArgType_ModelType__1)MkUniqueId(nameSpan);
+                parseProgram.Add(modelType);
+            }
+        }
+
+        private void AddDependency(string fileName)
+        {
+            var depends = P_Root.MkDependsOn();
+            depends.d = MkString(fileName, Span.Unknown);
+            parseProgram.Add(depends);
         }
 
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)
@@ -1529,10 +1543,10 @@
 
         private void AddInterfaceType(string iname, string esname, Span inameSpan, Span iesnameSpan, Span span)
         {
-            var inDecl = GetCurrentInterfaceTypeDecl(span);
+            var inDecl = GetCurrentInterfaceTypeDef(span);
             inDecl.Span = span;
             inDecl.name = MkString(iname, inameSpan);
-            inDecl.id = (P_Root.IArgType_InterfaceTypeDecl__3)MkUniqueId(inameSpan);
+            inDecl.id = (P_Root.IArgType_InterfaceTypeDef__3)MkUniqueId(inameSpan);
             if(esname == null)
             {
                 //declaration contains set of events
@@ -1565,7 +1579,7 @@
             {
                 PPTopDeclNames.interfaceNames.Add(iname);
             }
-            crntInterfaceDecl = null;
+            crntInterfaceDef = null;
         }
 
         private void AddVarDecl(string name, Span span)
@@ -2243,17 +2257,17 @@
             return crntEventDecl;
         }
 
-        private P_Root.InterfaceTypeDecl GetCurrentInterfaceTypeDecl(Span span)
+        private P_Root.InterfaceTypeDef GetCurrentInterfaceTypeDef(Span span)
         {
-            if (crntInterfaceDecl != null)
+            if (crntInterfaceDef != null)
             {
-                return crntInterfaceDecl;
+                return crntInterfaceDef;
             }
 
-            crntInterfaceDecl = P_Root.MkInterfaceTypeDecl();
-            crntInterfaceDecl.Span = span;
-            crntInterfaceDecl.argType = (P_Root.IArgType_InterfaceTypeDecl__2)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown);
-            return crntInterfaceDecl;
+            crntInterfaceDef = P_Root.MkInterfaceTypeDef();
+            crntInterfaceDef.Span = span;
+            crntInterfaceDef.argType = (P_Root.IArgType_InterfaceTypeDef__2)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown);
+            return crntInterfaceDef;
         }
 
         private P_Root.FunDecl GetCurrentFunDecl(Span span)
@@ -2512,7 +2526,7 @@
             crntState = null;
             crntEventDecl = null;
             crntMachDecl = null;
-            crntInterfaceDecl = null;
+            crntInterfaceDef = null;
             crntStateTargetName = null;
             crntGotoTargetName = null;
             nextPayloadVarLabel = 0;

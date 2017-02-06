@@ -1,6 +1,38 @@
 #include "PrtExecution.h"
 #include "PrtUser.h"
 
+PRT_TYPE NullType =
+{
+	PRT_KIND_NULL,
+	(struct PRT_MAPTYPE *)NULL
+};
+
+PRT_TYPE AnyType = 
+{
+	PRT_KIND_ANY,
+	(struct PRT_MAPTYPE *)NULL
+};
+
+PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
+{
+	PRT_SPECIAL_EVENT_NULL,
+	"null",
+	0,
+	&NullType,
+	0,
+	NULL
+};
+
+PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
+{
+	PRT_SPECIAL_EVENT_HALT,
+	"halt",
+	4294967295U,
+	&AnyType,
+	0,
+	NULL
+};
+
 /* Initialize the function to default assert function */
 PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 
@@ -325,7 +357,7 @@ _In_ PRT_VALUE					*payload
 	}
 
 	eventIndex = PrtPrimGetEvent(event);
-	eventMaxInstances = context->process->program->events[eventIndex].eventMaxInstances;
+	eventMaxInstances = context->process->program->events[eventIndex]->eventMaxInstances;
 	maxQueueSize = context->process->program->machines[context->instanceOf]->maxQueueSize;
 
 	queue = &context->eventQueue;
@@ -1513,7 +1545,7 @@ _In_ PRT_MACHINEINST_PRIV *context,
 _In_ PRT_VALUE	  *event
 )
 {
-	return context->process->program->events[PrtPrimGetEvent(event)].type;
+	return context->process->program->events[PrtPrimGetEvent(event)]->type;
 }
 
 FORCEINLINE

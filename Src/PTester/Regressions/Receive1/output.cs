@@ -11,6 +11,12 @@ namespace P.Program
 
     public partial class Application : StateImpl
     {
+        private partial class Events
+        {
+            public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", new PrtNullType(), 1, false));
+            public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", new PrtNullType(), 1, false));
+        }
+
         public Application(): base ()
         {
         }
@@ -29,19 +35,21 @@ namespace P.Program
         {
             (isSafeMap).Add("Main", false);
             (isSafeMap).Add("B", false);
-            (renameMap).Add("Main", "Main");
             (renameMap).Add("B", "B");
-            (createMachineMap).Add("Main", CreateMachine_Main);
+            (renameMap).Add("Main", "Main");
             (createMachineMap).Add("B", CreateMachine_B);
+            (createMachineMap).Add("Main", CreateMachine_Main);
             Dictionary<string, string> _temp;
             _temp = new Dictionary<string, string>();
-            (_temp).Add("Main", "Main");
             (_temp).Add("B", "B");
-            (linkMap).Add("Main", _temp);
-            _temp = new Dictionary<string, string>();
             (_temp).Add("Main", "Main");
-            (_temp).Add("B", "B");
             (linkMap).Add("B", _temp);
+            _temp = new Dictionary<string, string>();
+            (_temp).Add("B", "B");
+            (_temp).Add("Main", "Main");
+            (linkMap).Add("Main", _temp);
+            Types.Types_receive1();
+            Events.Events_receive1();
         }
     }
 }

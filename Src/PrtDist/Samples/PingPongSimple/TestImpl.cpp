@@ -108,7 +108,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	{
 		//find out what state the sender machine is in so we can also log that information.
 		PRT_MACHINEINST_PRIV * s = (PRT_MACHINEINST_PRIV *)receiver;
-		eventName = ConvertToUnicode((const char*)s->process->program->events[PrtPrimGetEvent(event)].name);
+		eventName = ConvertToUnicode((const char*)s->process->program->events[PrtPrimGetEvent(event)]->name);
 	}
 
 	switch (step)

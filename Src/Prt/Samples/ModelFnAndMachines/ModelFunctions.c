@@ -33,7 +33,7 @@ PRT_VALUE *P_FUN_Server_GetRandomVal_FOREIGN(PRT_MACHINEINST *context)
 {
 	PRT_VALUE *p_tmp_ret;
 	//create a tuple value
-	p_tmp_ret = PrtMkDefaultValue(P_GEND_TYPE_TUP);
+	p_tmp_ret = PrtMkDefaultValue(&P_GEND_TYPE_TUP);
 	PrtTupleSet(p_tmp_ret, 0, PrtMkIntValue(rand() % 1000));
 	PrtTupleSet(p_tmp_ret, 1, PrtMkIntValue(rand() % 1000));
 	return p_tmp_ret;

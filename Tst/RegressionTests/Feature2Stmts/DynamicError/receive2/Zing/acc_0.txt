@@ -23,5 +23,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_4.bl,)
+Expression: assert(tmpVar_10.bl,)
 Comment: receive2.p (15, 4): Assert failed

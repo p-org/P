@@ -15,9 +15,12 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
     /**********         Create PLink output            ***********/
     /*************************************************************/
-	link.MachineDecl(name, eft, id) :- decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
-									   decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
-	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(#EventNameList, NIL, {ev | ObservesDecl(decl, ev) }), list : EventNameList.
+	link.DependsOn(n, d) :- PFile(n), in.DependsOn(d); PFile(n), PFile(d).
+
+	link.MachineDecl(name, eft, id), link.MachineProtoDecl(name, eft) :- 
+				decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), TypeExpansion(ft, eft);
+				decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
+	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(in.#InterfaceType, NIL, {ev | ObservesDecl(decl, ev) }), list : in.InterfaceType.
 
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), TypeExpansion(ctype, ectype).
 	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev), ev : in.NonNullEventName.
@@ -27,8 +30,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 											in.MachineCreates(m, mcname), in.MachineProtoDecl(mcname, _).
 
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
-	link.EventDecl(name, card, NIL) :- in.EventDecl(name, card, NIL, _).
-	link.EventDecl(name, card, etype) :- in.EventDecl(name, card, type, _), TypeExpansion(type, etype).
+	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id).
+	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id), TypeExpansion(type, etype).
 
 	//// Compute the permission set associated with each high level type
 	//// A(e)
@@ -37,7 +40,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	EmbeddedPermissionsInType(in.BaseType(MACHINE), ev),
 	EmbeddedPermissionsInType(in.BaseType(ANY), ev)   :- in.EventDecl(ev, _, _, _).
 
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : in.InterfaceType, InterfaceTypeDeclList(i, type), in.InterfaceTypeDecl(i, es, _, _), EventSetDecl(es, ev), ev: in.NonNullEventName.	
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : in.InterfaceType, in.InterfaceTypeDecl(i, etype, ctype, _), in.InterfaceTypeDef(i, es, _, _), EventSetDecl(es, ev), ev: in.NonNullEventName.	
 	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, NIL), EmbeddedPermissionsInType(hd, ev).
 	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
 											AllTypeExprs(type), TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
@@ -50,22 +53,21 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), EmbeddedPermissionsInType(pt, perm).
 	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), EmbeddedPermissionsInType(pt, perm).
 
-	link.ModelType(name) :- in.ModelType(name).
-	link.TypeDef(name, etype) :- in.TypeDef(name, type, id), no in.ModelType(name), TypeExpansion(type, etype).
-	link.EnumTypeDef(name, elems, values) :- in.EnumTypeDef(name, elems, values, _).
+	link.ModelType(name, id) :- in.ModelType(name, id).
+	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), no in.ModelType(name, _), TypeExpansion(type, etype).
+	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
 	link.EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
-	                               list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }).
-	link.InterfaceTypeDecl(name, list, etype) :- in.InterfaceTypeDecl(name, esname, type, _), TypeExpansion(type, etype),
-	                                             eventset is EventSetDecl(esname, _), 
-	                                             list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }), list : EventNameList.
+	                               list = toList(link.#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }).
 
-	link.FunDecl(name, eparams, ereturn, id) :- 
+	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id), TypeExpansion(type, etype).
+
+	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
-	link.FunDecl(name, NIL, ereturn, id) :- 
+	link.FunDecl(name, NIL, ereturn, id), link.FunProtoDecl(name, NIL, ereturn) :- 
 		c is in.FunDecl(name, NIL, _, NIL, return, _, _, id), return != NIL, TypeExpansion(return, ereturn).
-	link.FunDecl(name, eparams, NIL, id) :- 
+	link.FunDecl(name, eparams, NIL, id), link.FunProtoDecl(name, eparams, NIL) :- 
 		c is in.FunDecl(name, NIL, _, params, NIL, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType.
-	link.FunDecl(name, NIL, NIL, id) :- 
+	link.FunDecl(name, NIL, NIL, id), link.FunProtoDecl(name, NIL, NIL) :- 
 		c is in.FunDecl(name, NIL, _, NIL, NIL, _, _, id).
 	link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunProtoDecl(name, params, return), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
@@ -81,17 +83,17 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.ControlImpure(c).
 	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.SpecImpure(c).
 	
-	NamedEventNameList ::= (EventNameList + { NIL }, EventNameList + { NIL }, String).
-	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })).
-	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })).
-	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
-	NamedEventNameList(list, NIL, "") :- SubSE(c, s), s: Receive, list = lstReverse(#EventNameList, toList(#EventNameList, NIL, { ev | ReceiveCases(c, s, x), ev = x.trig })).
-	NamedEventNameList(list, EventNameList(NULL, list'), name') :- NamedEventNameList(EventNameList(NULL, list), list', name), name' = strJoin(name, strJoin("_", "null")).
-	NamedEventNameList(list, EventNameList(HALT, list'), name') :- NamedEventNameList(EventNameList(HALT, list), list', name), name' = strJoin(name, strJoin("_", "halt")).
-	NamedEventNameList(list, EventNameList(ev, list'), name') :- NamedEventNameList(EventNameList(ev, list), list', name), ev: String, name' = strJoin(name, strJoin("_", ev)).
+	NamedEventNameList ::= (link.EventNameList + { NIL }, link.EventNameList + { NIL }, String).
+	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(link.#EventNameList, toList(link.#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })).
+	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(link.#EventNameList, toList(link.#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })).
+	NamedEventNameList(list, NIL, "") :- s is StateDecl, list = lstReverse(link.#EventNameList, toList(link.#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
+	NamedEventNameList(list, NIL, "") :- SubSE(c, s), s: Receive, list = lstReverse(link.#EventNameList, toList(link.#EventNameList, NIL, { ev | ReceiveCases(c, s, x), ev = x.trig })).
+	NamedEventNameList(list, link.EventNameList(NULL, list'), name') :- NamedEventNameList(link.EventNameList(NULL, list), list', name), name' = strJoin(name, strJoin("_", "null")).
+	NamedEventNameList(list, link.EventNameList(HALT, list'), name') :- NamedEventNameList(link.EventNameList(HALT, list), list', name), name' = strJoin(name, strJoin("_", "halt")).
+	NamedEventNameList(list, link.EventNameList(ev, list'), name') :- NamedEventNameList(link.EventNameList(ev, list), list', name), ev: String, name' = strJoin(name, strJoin("_", ev)).
 	link.EventSet(evsetName, list) :- NamedEventNameList(NIL, list, name), evsetName = strJoin("P_GEND_EVENTSET", name).
 
-	UniqueEventSetName ::= (String, EventNameList + { NIL }).
+	UniqueEventSetName ::= (String, link.EventNameList + { NIL }).
 	UniqueEventSetName(esName, list) :- link.EventSet(_, list), esNames = toList(in.#StringList, NIL, {x | link.EventSet(x, list)}), esName = esNames.hd.
 
 	link.AvailableParameterDemand(e.name, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
@@ -261,6 +263,29 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 					  params,
 					  UNKNOWN).
 
+	//// Extern declarations for defined types
+	HOut(0, def) :- in.TypeDef(name, _, _), 
+					typeName = strJoin("P_GEND_TYPE_", name),
+					def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+
+	HOut(0, def) :- in.ModelType(name, _), 
+					typeName = strJoin("P_GEND_TYPE_", name),
+					def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+
+	//// Field names for exported named tuple types
+	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
+	   ExportedType(name, type), type: in.NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   IndexOf(type, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(in.#NmdTupType, type) }).  
+	
+	//// Exported enum types
+	HOut(0, out.EnmDef(NIL, enumName, list)) :-
+		d is in.EnumTypeDef(enumName, elems, _, id), PFile(fileName), id.tl.val = fileName, size = lstLength(in.#StringList, elems),
+		list = toList(#Elements, NIL, { enumMember | 
+										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
+										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
+
     /*************************************************************/
     /******       Generate contents of code file            ******/
     /*************************************************************/	
@@ -393,17 +418,27 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
 	TypeId      ::= (id: Natural, type: in.TypeExpr).
 	TypeDepNum  ::= (id: Natural, type: in.TypeExpr).
+	TupTypeDepNum ::= (id: Natural, type: in.TupType).
+	NmdTupTypeDepNum ::= (id: Natural, type: in.NmdTupType).
+
+	TupTypeDepNum(i, t) :- TranslatedTupType(t), t = in.TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
+	TupTypeDepNum(i, t) :- TranslatedTupType(t), t = in.TupType(t', t''), TypeDepNum(j, t'), TupTypeDepNum(k, t''),  i = j + k + 1.  
+	NmdTupTypeDepNum(i, t) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
+	NmdTupTypeDepNum(i, t) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), NmdTupTypeDepNum(k, t''), i = j + k + 1.  
 
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.BaseType.
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.InterfaceType.
 	TypeDepNum(0, t) :- TranslatedTypeExpr(t), t : in.NameType. 
+	TypeDepNum(0, t) :- TranslatedTypeExpr(t), ImportedType(_, t).
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.TupType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
-	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), TypeDepNum(k, t''), i = j + k + 1.  
-	TypeId(id, t) :- td is TypeDepNum(_, t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum }).
+	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t = in.MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1. 
+	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t: in.TupType, TupTypeDepNum(i, t). 
+	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t: in.NmdTupType, NmdTupTypeDepNum(i, t). 
+	TypeId(id, t) :- td is TypeDepNum(_, t), NotImportedType(t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum(_, t'), NotImportedType(t') }).
+	
+	TypeStorageClass ::= (in.TypeExpr, {NIL, STATIC}).
+	TypeStorageClass(t, NIL) :- TypeId(_, t), ExportedType(_, t).
+	TypeStorageClass(t, STATIC) :- TypeId(_, t), no ExportedType(_, t).
 
 	//// Build type initializers in linearization order.
 	//// defs is the definitions that precede the encoding of this type constant.
@@ -418,86 +453,87 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
 	BaseType2Kind(MACHINE, "PRT_KIND_MACHINE").
 	BaseType2Kind(ANY, "PRT_KIND_ANY").
-	
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.BaseType(base), BaseType2Kind(base, kind),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t = in.BaseType(base), 
+								BaseType2Kind(base, kind), TypeStorageClass(t, sc),
 								defs = out.Section(before, def),
-								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								typeName = strJoin("P_GEND_TYPE_", toString(m)),
+								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
-	//interface type
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t : in.InterfaceType, BaseType2Kind(MACHINE, kind),
-								              defs = out.Section(before, def),
-										      def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								              typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                              typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).
+	//// Interface types
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t : in.InterfaceType, 
+								BaseType2Kind(MACHINE, kind), TypeStorageClass(t, sc),
+								defs = out.Section(before, def),
+								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).
 
 	//// Enum types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), in.EnumTypeDef(name, _, _, _),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t = in.NameType(name), in.EnumTypeDef(name, _, _, _),
+								BaseType2Kind(INT, kind), TypeStorageClass(t, sc),
 								defs = out.Section(before, def),
-								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								typeName = strJoin("P_GEND_TYPE_", toString(m)),
-                                typeStruct = out.Init(Args(Ident("PRT_KIND_INT"), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
+								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+                                typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.NameType(name), in.ModelType(name),
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), t = in.NameType(name), in.ModelType(name, _),
+								TypeStorageClass(t, sc),
 								defs = out.Section(before, def),
-								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								typeName = strJoin("P_GEND_TYPE_", toString(m)),
+								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								indexName = strJoin("P_FORGN_TYPE_", name),
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_FORGN"), 
 								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL)), NIL))).						              
 	
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), t = in.SeqType(tinner), TypeConstant(tinner, tinnerid, _),
-								              defs = out.Section(Section(before, defSeq), def),
-                              defSeq = out.VarDef(
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), 
+								t = in.SeqType(tinner), TypeToString(tinner, tinnerName), TypeStorageClass(t, sc),
+								defs = out.Section(Section(before, defSeq), def),
+								defSeq = out.VarDef(
                                      STATIC, 
                                      NmdType(NIL, "PRT_SEQTYPE"), 
                                      typeNameSeq, 
-                                     Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(tinnerid)))), NIL))),										 
-                              def = out.VarDef(
-                                     STATIC, 
+                                     Init(Args(UnApp(ADDR, Ident(tinnerName)), NIL))),								 
+								def = out.VarDef(
+                                     sc, 
                                      NmdType(NIL, "PRT_TYPE"), 
-                                     strJoin("P_GEND_TYPE_", toString(m)), 
+                                     typeName, 
                                      typeStruct),
-								              typeStruct = out.Init(
-										              Args(Ident("PRT_KIND_SEQ"), 
-											            Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), NIL)), 
-											            NIL))),
-									            typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
+								typeStruct = out.Init(
+									 Args(Ident("PRT_KIND_SEQ"), 
+									 Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), NIL)), 
+									 NIL))),
+								typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
 
 	//// Complex type Map 
 	TypeConstant(t, m, defs) :- 
-	                       TypeId(m, t), TypeConstant(_, m - 1, before), t = in.MapType(tdom, tcod), 
-	                       TypeConstant(tdom, domid, _), TypeConstant(tcod, codid, _),
+	                       TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before), 
+						   t = in.MapType(tdom, tcod), TypeToString(tdom, domName), TypeToString(tcod, codName), TypeStorageClass(t, sc),
 								         defs = out.Section(Section(before, defMap), def),
 										     defMap = out.VarDef(
-										          STATIC, 
+														  STATIC, 
 														  NmdType(NIL, "PRT_MAPTYPE"), 
 														  typeNameMap, 
-														  Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(domid)))), 
-														       Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(codid)))), 
+														  Init(Args(UnApp(ADDR, Ident(domName)), 
+														       Args(UnApp(ADDR, Ident(codName)), 
 														       NIL)))),
 										      def = out.VarDef(
-										          STATIC, 
+														  sc, 
 														  NmdType(NIL, "PRT_TYPE"), 
-														  strJoin("P_GEND_TYPE_", toString(m)), 
+														  typeName, 
 														  typeStruct),
 							            typeStruct = out.Init(
 										            Args(Ident("PRT_KIND_MAP"), 
 											          Args(Init(Args(UnApp(ADDR, Ident(typeNameMap)), NIL)), 
 											          NIL))),														  
 										      typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
+
 	//// Complex type Tuple 
 	Tup2ArrayInit ::= (type: in.TupType, arr: out.Expr). 
-	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = in.TupType(t', NIL), TypeConstant(t', id', _), init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)). 
-	Tup2ArrayInit(t, init) :- TranslatedTypeExpr(t), t = in.TupType(t', t''), TypeConstant(t', id', _), Tup2ArrayInit(t'', Init(ts'')), 
-	                          init = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')). 
+	Tup2ArrayInit(t, init) :- TranslatedTupType(t), t = in.TupType(t', NIL), TypeToString(t', name), init = Init(Args(UnApp(ADDR, Ident(name)), NIL)). 
+	Tup2ArrayInit(t, init) :- TranslatedTupType(t), t = in.TupType(t', t''), TypeToString(t', name), Tup2ArrayInit(t'', Init(ts'')), 
+	                          init = Init(Args(UnApp(ADDR, Ident(name)), ts'')). 
 
 	TypeConstant(t, m, defs) :- 
-	                       TypeId(m, t), TypeConstant(_, m - 1, before), Tup2ArrayInit(t, arrInit), t : in.TupType, 
+	                       TypeId(m, t), TypeToString(t, typeName), TypeStorageClass(t, sc), TypeConstant(_, m - 1, before), Tup2ArrayInit(t, arrInit), t : in.TupType, 
 								         defs = out.Section(Section(before, Section(defTupArr, defTup)), def),
 										     defTupArr = out.VarDef(
 										           STATIC, 
@@ -513,9 +549,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 															  Args(Ident(typeNameTupArr), 
 															  NIL)))),
 										     def = out.VarDef(
-										         STATIC, 
+										         sc, 
 													   NmdType(NIL, "PRT_TYPE"), 
-													   strJoin("P_GEND_TYPE_", toString(m)), 
+													   typeName, 
 													   typeStruct),
 										    typeStruct = out.Init(
 													  Args(Ident("PRT_KIND_TUPLE"), 
@@ -526,15 +562,15 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	//// Complex type NmdTuple 
 	NmdTup2ArrayInit ::= (type: in.NmdTupType, narr: out.Expr, tarr: out.Expr). 
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(n', t'), NIL), TypeConstant(t', id', _), 
-	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), NIL)), 
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(n', t'), NIL), TypeToString(t', name), 
+	                                   tarr = Init(Args(UnApp(ADDR, Ident(name)), NIL)), 
 	                                   narr = Init(Args(StringLit(n', NIL), NIL)).
 									    
-	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedTypeExpr(t), t = in.NmdTupType(NmdTupTypeField(n', t'), t''), TypeConstant(t', id', _), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
-	                                   tarr = Init(Args(UnApp(ADDR, Ident(strJoin("P_GEND_TYPE_", toString(id')))), ts'')),
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(n', t'), t''), TypeToString(t', name), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
+	                                   tarr = Init(Args(UnApp(ADDR, Ident(name)), ts'')),
 	                                   narr = Init(Args(StringLit(n', NIL), n'')).
 
-	TypeConstant(t, m, defs) :- TypeId(m, t), TypeConstant(_, m - 1, before), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
+	TypeConstant(t, m, defs) :- TypeId(m, t), TypeToString(t, typeName), TypeStorageClass(t, sc), TypeConstant(_, m - 1, before), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
 								     defs = out.Section(before, Section(defNmdTupNArr, Section(defNmdTupTArr, Section(defNmdTup, def)))),
 										 defNmdTupNArr = out.VarDef(
 										              STATIC, 
@@ -556,9 +592,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 															Args(Ident(typeNameNmdTupTArr), 
 															NIL))))),
 										 def = out.VarDef(
-										         STATIC, 
+										         sc, 
 													   NmdType(NIL, "PRT_TYPE"), 
-													   strJoin("P_GEND_TYPE_", toString(m)), 
+													   typeName, 
 													   typeStatic),
 							       typeStatic = out.Init(
 										      Args(Ident("PRT_KIND_NMDTUP"), 
@@ -605,6 +641,38 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 							constName = strJoin("P_GEND_VALUE_", toString(m)), constStruct = out.Init(Args(Ident(kind), Args(Init(Args(value, NIL)), NIL))).						              
 
     COut(4, defs) :- Constant(_, c, defs), defs : out.Section, c = count({ x | x is ConstId}) - 1.
+
+	/*************************************************************/
+    /******            Generate event decls                 ******/
+    /*************************************************************/	
+	EvDecl2PayloadType ::= (in.EventDecl, out.Expr).
+	//// An EventDecl without a payload type has a null payload type.
+	EvDecl2PayloadType(d, expr) :- d is in.EventDecl(_, _, NIL, _), TypeToExpr(in.BaseType(NULL), expr).
+	//// An EventDecl with a payload type refers to one of the statically generated types.
+	EvDecl2PayloadType(d, expr) :- d is in.EventDecl(_, _, type, _), type : in.TypeExpr, TypeToExpr(type, expr).
+
+	EvDecl2EvCard      ::= (in.EventDecl, out.Expr).
+	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
+	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, NIL, _, _), e = IntLit(4294967295, DEC, U).
+	//// An EventDecl with a payload type refers to one of the statically generated types.
+	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, card, _, _), e = IntLit(card.bound, DEC, U).
+
+	COut(4, def) :- d is in.EventDecl(name, _, _, id), PFile(fileName), id.tl.val = fileName, 
+					EvDecl2PayloadType(d, expr), EvDecl2EvCard(d, card), cn = strJoin("P_EVENT_", name),
+					eventStructName = strJoin(cn, "_STRUCT"),
+					def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_EVENTDECL"), 
+								  eventStructName, 
+								  init),
+	                        init = Init(
+							   Args(Ident(cn),
+							   Args(StringLit(name, NIL),
+							   Args(card,
+							   Args(expr,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
 
     /*************************************************************/
     /******            Generate Variable Decl Arrays        ******/
@@ -848,7 +916,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	PatchReturn ::= (f: in.FunDecl + in.AnonFunDecl, e: out.Stmt).
 	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f: in.AnonFunDecl, cs = out.Return(Ident("p_tmp_ret")).
 	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, _, NIL, _, _, _), cs = out.Return(Ident("p_tmp_ret")).
-	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, _, type, _, _, _), type : in.TypeExpr, ParamsType(f, expr),  
+	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, _, type, _, _, _), type : in.TypeExpr, TypeToExpr(type, expr),  
 						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
 									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL))),
 									   Return(Ident("p_tmp_ret"))).
@@ -907,16 +975,14 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
     /******      Generate (Anon)FunDecls             ******/
     /*************************************************************/	
+	TypeToString ::= (type: in.TypeExpr, name: String).
+	TypeToString(type, typeName) :- ExportedType(name, type), typeName = strJoin("P_GEND_TYPE_", name).
+	TypeToString(type, typeName) :- ImportedType(name, type), typeName = strJoin("P_GEND_TYPE_", name).
+	TypeToString(type, typeName) :- TypeId(typeIndex, type), no ExportedType(_, type), no ImportedType(_, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)).
+							  
 	TypeToExpr ::= (type: in.TypeExpr, expr: out.Expr).
-	
-	TypeToExpr(type, expr) :- TypeId(typeIndex, type), 
-	                          typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)), 
-							  expr = out.UnApp(ADDR, Ident(typeName)).
+	TypeToExpr(type, expr) :- TypeToString(type, typeName), expr = out.UnApp(ADDR, Ident(typeName)).
 	TypeToExpr(type, expr) :- TypeExpansion(type, etype), TypeToExpr(etype, expr).
-
-	ParamsType ::= (decl: in.FunDecl, expr: out.Expr).
-	ParamsType(d, expr) :- d is in.FunDecl, d.params = NIL, expr = out.Ident("NULL").
-	ParamsType(d, expr) :- d is in.FunDecl, TypeToExpr(d.params, expr).
 
 	LocalsType ::= (decl: AnonOrNamedFun, expr: out.Expr).
 	LocalsType(d, expr) :- d is AnonOrNamedFun, d.locals = NIL, expr = out.Ident("NULL").
@@ -948,7 +1014,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 									   c = toOrdinal(receive, 0, {r | r: Receive, SubSE(decl, r)}), 
 									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
 									   CaseDeclConcat(nCases, decl, cases, casesInit), AnonOrNamedFunName(decl, declName),
-									   UniqueEventSetName(index, toList(#EventNameList, NIL, { ev | ReceiveCases(decl, receive, x), ev = x.trig })),
+									   UniqueEventSetName(index, toList(link.#EventNameList, NIL, { ev | ReceiveCases(decl, receive, x), ev = x.trig })),
 									   def = out.Init(
 												Args(IntLit(label, DEC, U),
 												Args(Ident(index),
@@ -1096,9 +1162,9 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	StateEventSetIndices ::= (state: StateDecl, transIndex: String, doIndex: String, deferIndex: String).
 	StateEventSetIndices(s, ti, doi, dfi) :- 
 	                     s is StateDecl,
-						 UniqueEventSetName(ti, toList(#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })),
-						 UniqueEventSetName(doi, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })),
-						 UniqueEventSetName(dfi, toList(#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
+						 UniqueEventSetName(ti, toList(link.#EventNameList, NIL, { ev | t is TransDecl, t.src = s, ev = t.trig })),
+						 UniqueEventSetName(doi, toList(link.#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action != DEFER, ev = t.trig })),
+						 UniqueEventSetName(dfi, toList(link.#EventNameList, NIL, { ev | t is DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
 
     StateEntryAction  ::= (decl: StateDecl, funName: String).
 	StateEntryAction(s, funname) :- s is StateDecl, act = s.entryAction, act : in.AnonFunDecl, AnonOrNamedFunName(act, funname). 

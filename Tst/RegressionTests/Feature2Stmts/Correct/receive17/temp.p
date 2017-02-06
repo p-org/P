@@ -1,3 +1,9 @@
+event res: int;
+event getres: machine;
+event e1;
+event e2;
+event e3;
+
 fun Dummy(m : machine, n: machine) {
 	send m, getres, n;
 	receive {

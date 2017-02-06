@@ -21,5 +21,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_0.bl,)
+Expression: assert(tmp_2.bl,)
 Comment: BugReproIdenticalTerms_workaround.p (18, 11): Assert failed

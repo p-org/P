@@ -11,6 +11,12 @@ namespace P.Program
 
     public partial class Application : StateImpl
     {
+        private partial class Events
+        {
+            public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", new PrtNullType(), 1, false));
+            public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", new PrtNullType(), 1, false));
+        }
+
         public Application(): base ()
         {
         }
@@ -27,43 +33,45 @@ namespace P.Program
 
         static Application()
         {
-            (isSafeMap).Add("Door", false);
-            (isSafeMap).Add("Timer", false);
             (isSafeMap).Add("Main", false);
             (isSafeMap).Add("Elevator", false);
-            (renameMap).Add("Door", "Door");
-            (renameMap).Add("Timer", "Timer");
+            (isSafeMap).Add("Timer", false);
+            (isSafeMap).Add("Door", false);
             (renameMap).Add("Main", "Main");
             (renameMap).Add("Elevator", "Elevator");
-            (createMachineMap).Add("Door", CreateMachine_Door);
-            (createMachineMap).Add("Timer", CreateMachine_Timer);
+            (renameMap).Add("Timer", "Timer");
+            (renameMap).Add("Door", "Door");
             (createMachineMap).Add("Main", CreateMachine_Main);
             (createMachineMap).Add("Elevator", CreateMachine_Elevator);
+            (createMachineMap).Add("Timer", CreateMachine_Timer);
+            (createMachineMap).Add("Door", CreateMachine_Door);
             Dictionary<string, string> _temp;
             _temp = new Dictionary<string, string>();
-            (_temp).Add("Elevator", "Elevator");
             (_temp).Add("Main", "Main");
-            (_temp).Add("Door", "Door");
-            (_temp).Add("Timer", "Timer");
-            (linkMap).Add("Elevator", _temp);
-            _temp = new Dictionary<string, string>();
-            (_temp).Add("Main", "Main");
-            (_temp).Add("Door", "Door");
-            (_temp).Add("Elevator", "Elevator");
-            (_temp).Add("Timer", "Timer");
-            (linkMap).Add("Main", _temp);
-            _temp = new Dictionary<string, string>();
-            (_temp).Add("Elevator", "Elevator");
             (_temp).Add("Timer", "Timer");
             (_temp).Add("Door", "Door");
-            (_temp).Add("Main", "Main");
+            (_temp).Add("Elevator", "Elevator");
             (linkMap).Add("Timer", _temp);
             _temp = new Dictionary<string, string>();
-            (_temp).Add("Door", "Door");
+            (_temp).Add("Timer", "Timer");
             (_temp).Add("Main", "Main");
             (_temp).Add("Elevator", "Elevator");
-            (_temp).Add("Timer", "Timer");
+            (_temp).Add("Door", "Door");
             (linkMap).Add("Door", _temp);
+            _temp = new Dictionary<string, string>();
+            (_temp).Add("Timer", "Timer");
+            (_temp).Add("Door", "Door");
+            (_temp).Add("Elevator", "Elevator");
+            (_temp).Add("Main", "Main");
+            (linkMap).Add("Main", _temp);
+            _temp = new Dictionary<string, string>();
+            (_temp).Add("Timer", "Timer");
+            (_temp).Add("Door", "Door");
+            (_temp).Add("Elevator", "Elevator");
+            (_temp).Add("Main", "Main");
+            (linkMap).Add("Elevator", _temp);
+            Types.Types_Elevator();
+            Events.Events_Elevator();
         }
     }
 }

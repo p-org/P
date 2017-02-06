@@ -2973,7 +2973,7 @@ namespace Microsoft.Pc
             {
                 var typeAST = Factory.Instance.ToAST(type);
                 var eTypeAST = Factory.Instance.ToAST(eType);
-                if (!pTypeToZingExpr.ContainsKey(typeAST))
+                if (pTypeToZingExpr.ContainsKey(eTypeAST) && !pTypeToZingExpr.ContainsKey(typeAST))
                 {
                     pTypeToZingExpr[typeAST] = pTypeToZingExpr[eTypeAST];
                 }

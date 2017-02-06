@@ -28,7 +28,7 @@
         public string compilerId { get; set; } // for internal use only.
         //linker phase
         public bool isLinkerPhase { get; set; }
-        public bool reBuild { get; set; }
+        public bool rebuild { get; set; }
         //get p file
         public List<string> PFiles {
             get
@@ -58,7 +58,7 @@
             inputFileNames = new List<string>();
             compilerService = false;
             isLinkerPhase = false;
-            reBuild = false;
+            rebuild = false;
         }
 
         public bool ParseArguments(IEnumerable<string> args)
@@ -101,7 +101,7 @@
                             isLinkerPhase = true;
                             break;
                         case "rebuild":
-                            reBuild = true;
+                            rebuild = true;
                             break;
                         case "generate":
                             if (colonArg == null)

@@ -246,3 +246,4 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /Src/Pc/Compiler/Parser/PParser.report.html
 /Src/Pc/Compiler/Parser/LParser.report.html
 /Src/Pc/Compiler/TokensTokens.dat
+/Src/Tools/CompilerProfileToCsv/CompilerProfileToCsv.VC.db

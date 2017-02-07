@@ -603,7 +603,7 @@
             parsedProgram = new PProgram();
             RootProgramName = null;
             importedPFiles = null;
-            using (this.Profiler.Start("Compiler parsing ", Path.GetFileName(inputFileName)))
+            using (this.Profiler.Start("Compiler parsing", Path.GetFileName(inputFileName)))
             {
                 try
                 {
@@ -648,7 +648,7 @@
         {
             fileOrDependChanged = false;
             parsedProgram = new PProgram();
-            using (this.Profiler.Start("Compiler parsing ", Path.GetFileName(inputFileName)))
+            using (this.Profiler.Start("Compiler parsing", Path.GetFileName(inputFileName)))
             {
                 try
                 {
@@ -684,7 +684,6 @@
                     List<string> includedFileNames;
                     List<Flag> parserFlags;
                     string currFileName = parserWorkQueue.Dequeue();
-                    Debug.WriteLine("Loading " + currFileName);
                     var parser = new Parser.PParser();
                     var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags, out includedFileNames);
                     foreach (Flag f in parserFlags)
@@ -744,7 +743,7 @@
 
         void InstallProgram(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, List<string> imported4mlFiles, out AST<Model> RootModel)
         {
-            using (this.Profiler.Start("Compiler installing ", Path.GetFileName(inputFileName)))
+            using (this.Profiler.Start("Compiler installing", Path.GetFileName(inputFileName)))
             {
                 //// Step 0. Load P.4ml.
                 LoadManifestProgram("Pc.Domains.P.4ml");
@@ -948,7 +947,7 @@
         {
             ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
-            using (this.Profiler.Start("Compiler generating model with types ", Path.GetFileName(RootModel.Node.Name)))
+            using (this.Profiler.Start("Compiler generating model with types", Path.GetFileName(RootModel.Node.Name)))
             {
                 if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootProgramNameWithTypes, out RootModelWithTypes))
                 {
@@ -1495,7 +1494,6 @@
 
         bool InternalGenerateC(ProgramName RootProgramName, AST<Model> RootModel)
         {
-
             string RootFileName = RootProgramName.ToString();
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             
@@ -1628,44 +1626,40 @@
 
             return parseTask.Result.Program;
         }
-        
+
         public bool ParseLinkProgram(string inputFileName, out LProgram parsedProgram, out ProgramName RootProgramName)
         {
             parsedProgram = new LProgram();
-            using (this.Profiler.Start("P Link parsing ", Path.GetFileName(inputFileName)))
+            try
             {
-                try
-                {
-                    RootProgramName = new ProgramName(Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, inputFileName)));
-                }
-                catch (Exception e)
-                {
-                    errorReporter.AddFlag(
-                        new Flag(
-                            SeverityKind.Error,
-                            default(Span),
-                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
-                            Constants.BadFile.Code));
-                    RootProgramName = null;
-                    return false;
-                }
-
-                LProgramTopDeclNames topDeclNames = new LProgramTopDeclNames();
-                List<Flag> parserFlags;
-                Debug.WriteLine("Loading " + inputFileName);
-                var parser = new LParser();
-                var result = parser.ParseFile(RootProgramName, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags);
-                foreach (Flag f in parserFlags)
-                {
-                    errorReporter.AddFlag(f);
-                }
-                if (!result)
-                {
-                    RootProgramName = null;
-                    return false;
-                }
+                RootProgramName = new ProgramName(Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, inputFileName)));
             }
-            
+            catch (Exception e)
+            {
+                errorReporter.AddFlag(
+                    new Flag(
+                        SeverityKind.Error,
+                        default(Span),
+                        Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                        Constants.BadFile.Code));
+                RootProgramName = null;
+                return false;
+            }
+
+            LProgramTopDeclNames topDeclNames = new LProgramTopDeclNames();
+            List<Flag> parserFlags;
+            var parser = new LParser();
+            var result = parser.ParseFile(RootProgramName, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags);
+            foreach (Flag f in parserFlags)
+            {
+                errorReporter.AddFlag(f);
+            }
+            if (!result)
+            {
+                RootProgramName = null;
+                return false;
+            }
+
             return true;
         }
         
@@ -1686,10 +1680,10 @@
 
             try
             {
-                // compile the p file into formula file 
+                // compile the P file into formula file 
                 var plinkFile = options.PFiles.Count == 1 ? options.PFiles.First(): "";
 
-                using (this.Profiler.Start("Parsing linker input.. ", Path.GetFileName(plinkFile)))
+                using (this.Profiler.Start("Linker parsing", Path.GetFileName(plinkFile)))
                 {
                     LProgram linkProgram;
                     ProgramName RootProgramName;
@@ -1761,13 +1755,10 @@
             }
 
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "LinkModel.4ml"));
-            using (this.Profiler.Start("Compiler linking", linkProgName.ToString()))
+            using (this.Profiler.Start("Linker analyzing", linkProgName.ToString()))
             {
-                //LoadManifestProgram("Pc.Domains.C.4ml");
-                //LoadManifestProgram("Pc.Domains.PLink.4ml");
                 return InternalLink(linkProgName, linkModel);
             }
-           
         }
 
         private bool InternalLink(ProgramName linkProgramName, AST<Model> linkModel)
@@ -1829,7 +1820,6 @@
             Contract.Assert(cProgram != null);
             success = Render(cProgram, "CLinkModel", progName);
             
-
             UninstallProgram(linkProgramName);
             return success;
         }

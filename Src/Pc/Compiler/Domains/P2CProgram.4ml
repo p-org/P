@@ -260,13 +260,10 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 					  UNKNOWN).
 
 	//// Extern declarations for defined types
-	HOut(0, def) :- in.TypeDef(name, _, _), 
-					typeName = strJoin("P_GEND_TYPE_", name),
-					def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
-
-	HOut(0, def) :- in.ModelType(name, _), 
-					typeName = strJoin("P_GEND_TYPE_", name),
-					def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+	HOut(0, def) :- in.TypeDef(name, _, _),	typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+	HOut(0, def) :- in.EnumTypeDef(name, _, _, _),	typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+	HOut(0, def) :- in.ModelType(name, _), typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+	HOut(0, def) :- in.InterfaceTypeDecl(name, _, _, _), typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
 
 	//// Field names for exported named tuple types
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 

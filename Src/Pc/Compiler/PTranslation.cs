@@ -932,7 +932,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            terms = GetBin(factBins, "ExportedEvents");
+            terms = GetBin(factBins, "ExportedEvent");
             foreach (var term in terms)
             {
                 using (var it = term.Node.Args.GetEnumerator())

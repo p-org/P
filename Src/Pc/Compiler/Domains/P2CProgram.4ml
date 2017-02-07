@@ -28,10 +28,15 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.MachineCreatesInt(m.name, i) :- in.MachineCreates(m, i), no in.MachineDecl(i, _, _, _, _), no in.MachineProtoDecl(mcname, _), in.InterfaceTypeDecl(i, _, _, _).
 	link.MachineCreatesM(m.name, mcname) :- in.MachineCreates(m, mcname), in.MachineDecl(mcname, _, _, _, _);
 											in.MachineCreates(m, mcname), in.MachineProtoDecl(mcname, _).
-
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
-	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id).
-	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id), TypeExpansion(type, etype).
+
+	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id)/*, ExportedEvent(name)*/.
+	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id)/*, ExportedEvent(name)*/, TypeExpansion(type, etype).
+
+	link.ModelType(name, id) :- in.ModelType(name, id)/*, ExportedType(name, _)*/.
+	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id)/*, ExportedType(name, _)*/, TypeExpansion(type, etype).
+	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id)/*, ExportedType(name, _)*/.
+	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id)/*, ExportedType(name, _)*/, TypeExpansion(type, etype).
 
 	//// Compute the permission set associated with each high level type
 	//// A(e)
@@ -52,14 +57,6 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
 	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), EmbeddedPermissionsInType(pt, perm).
 	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), EmbeddedPermissionsInType(pt, perm).
-
-	link.ModelType(name, id) :- in.ModelType(name, id).
-	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), no in.ModelType(name, _), TypeExpansion(type, etype).
-	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
-	link.EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
-	                               list = toList(link.#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }).
-
-	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id), TypeExpansion(type, etype).
 
 	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, TypeExpansion(return, ereturn).
@@ -92,9 +89,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	NamedEventNameList(list, link.EventNameList(HALT, list'), name') :- NamedEventNameList(link.EventNameList(HALT, list), list', name), name' = strJoin(name, strJoin("_", "halt")).
 	NamedEventNameList(list, link.EventNameList(ev, list'), name') :- NamedEventNameList(link.EventNameList(ev, list), list', name), ev: String, name' = strJoin(name, strJoin("_", ev)).
 	link.EventSet(evsetName, list) :- NamedEventNameList(NIL, list, name), evsetName = strJoin("P_GEND_EVENTSET", name).
-
-	UniqueEventSetName ::= (String, link.EventNameList + { NIL }).
-	UniqueEventSetName(esName, list) :- link.EventSet(_, list), esNames = toList(in.#StringList, NIL, {x | link.EventSet(x, list)}), esName = esNames.hd.
+	link.EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
+	                               list = toList(link.#EventNameList, NIL, {ev | EventSetContains(eventset, ev) }).
 
 	link.AvailableParameterDemand(e.name, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
 												FunAvailable(decl, c.owner), decl: in.FunProtoDecl, decl.name = e.name.
@@ -289,6 +285,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
     /******       Generate contents of code file            ******/
     /*************************************************************/	
+
 	//// Args lists of the form (xn, ..., x0)
 	MacroArgList ::= (args: out.Args, len: Natural, aux: Natural).
 	MacroArgList(args, 0, m) :- m = max(
@@ -826,6 +823,8 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
     /*************************************************************/
     /******            Generate Fun Implementations         ******/
     /*************************************************************/	
+	UniqueEventSetName ::= (String, link.EventNameList + { NIL }).
+	UniqueEventSetName(esName, list) :- link.EventSet(_, list), esNames = toList(in.#StringList, NIL, {x | link.EventSet(x, list)}), esName = esNames.hd.
 
 	ContextTransStmtExpr ::= (TypingContext, out.Stmt + out.Cases + out.Case + out.Args + { NIL }).
 	ContextTransStmtExpr(c, body) :- BodyTrans(c, body).

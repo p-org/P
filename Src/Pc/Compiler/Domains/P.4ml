@@ -318,8 +318,8 @@ domain PStaticTyping extends PData
 	[rule_Classes = '"error, msg: the constructor argument type is not a subtype of the exported interface argument type"']
 	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeRel(iargt, ct, k), ct != iargt, k != SUB. 						 
     
-	ExportedEvents ::= (String).
-	ExportedEvents(e.name) :- e is EventDecl, PFile(fileName), e.id.tl.val = fileName.
+	ExportedEvent ::= (String).
+	ExportedEvent(e.name) :- e is EventDecl, PFile(fileName), e.id.tl.val = fileName.
 
 	//// Check that TypeDef's are used properly
 

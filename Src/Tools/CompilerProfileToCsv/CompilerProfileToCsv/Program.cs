@@ -10,6 +10,8 @@ namespace CompilerProfileToCsv
     class Program
     {
         string filename;
+        string outfile;
+        TextWriter outStream;
 
         static int Main(string[] args)
         {
@@ -47,6 +49,10 @@ namespace CompilerProfileToCsv
                     {
                         filename = arg;
                     }
+                    else if (outfile == null)
+                    {
+                        outfile = arg;
+                    }
                     else
                     {
                         Console.WriteLine("### error: too many arguments");
@@ -63,6 +69,14 @@ namespace CompilerProfileToCsv
             {
                 Console.WriteLine("### error: file not found '{0}'", filename);
                 return false;
+            }
+            if (outfile != null)
+            {
+                outStream = new StreamWriter(outfile);
+            }
+            else
+            {
+                outStream = Console.Out;
             }
             return true;
         }
@@ -107,21 +121,29 @@ namespace CompilerProfileToCsv
 
             foreach (string key in keys)
             {
-                Console.Write("," + key.Substring(9));
+                outStream.Write("," + key.Substring(9));
             }
-            Console.WriteLine();
+            outStream.WriteLine();
 
             List<string> files = new List<string>(rows.Keys);
             files.Sort();
             foreach (string file in files)
             {
                 List<PerfInfo> list = rows[file];
-                Console.Write(file);
+                outStream.Write(file);
                 foreach (var item in list)
                 {
-                    Console.Write("," + item.duration);
+                    outStream.Write("," + item.duration);
                 }
-                Console.WriteLine();
+                outStream.WriteLine();
+            }
+
+            if (outfile != null)
+            {
+                using (outStream)
+                {
+                    outStream.Close();
+                }
             }
         }
 

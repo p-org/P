@@ -33,10 +33,10 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id)/*, ExportedEvent(name)*/.
 	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id)/*, ExportedEvent(name)*/, TypeExpansion(type, etype).
 
-	link.ModelType(name, id) :- in.ModelType(name, id)/*, ExportedType(name, _)*/.
-	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id)/*, ExportedType(name, _)*/, TypeExpansion(type, etype).
-	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id)/*, ExportedType(name, _)*/.
-	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id)/*, ExportedType(name, _)*/, TypeExpansion(type, etype).
+	link.ModelType(name, id) :- in.ModelType(name, id).
+	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), ExportedType(name, _), TypeExpansion(type, etype).
+	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
+	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id), TypeExpansion(type, etype).
 
 	//// Compute the permission set associated with each high level type
 	//// A(e)

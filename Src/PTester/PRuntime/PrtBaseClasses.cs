@@ -97,7 +97,6 @@ namespace P.Runtime
             Debug.Assert(stateStack.TopOfStack != null);
             //pop stack
             stateStack.PopStackFrame();
-
             if (stateStack.TopOfStack == null)
             {
                 if (isPopStatement)

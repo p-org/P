@@ -849,9 +849,11 @@
 
             if (compileInputFile || Options.rebuild)
             {
+                List<string> importedFiles = new List<string>();
                 List<string> imported4mlFiles = new List<string>();
                 foreach (var f in importedPFiles)
                 {
+                    importedFiles.Add(Path.GetFileNameWithoutExtension(f));
                     imported4mlFiles.Add(Path.Combine(outputDirName, Path.ChangeExtension(Path.GetFileName(f), ".4ml")));
                 }
                 AST<Model> RootModel;
@@ -870,12 +872,12 @@
                     bool rc;
                     if ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C))
                     {
-                        rc = GenerateC(RootProgramName, RootModel);
+                        rc = GenerateC(RootProgramName, RootModel, importedFiles);
                     }
                     else
                     {
                         Debug.Assert(Options.compilerOutput == CompilerOutput.CSharp);
-                        rc = GenerateCSharp(RootProgramName, RootModel, errorReporter.idToSourceInfo);
+                        rc = GenerateCSharp(RootProgramName, RootModel, importedFiles, errorReporter.idToSourceInfo);
                     }
                     UninstallProgram(RootProgramName);
                     if (!rc)
@@ -926,9 +928,7 @@
                 return true;
             }
 
-            bool rc = ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C) ? GenerateC(RootProgramName, RootModel) : true) && 
-                      (Options.compilerOutput == CompilerOutput.Zing ? GenerateZing(RootProgramName, RootModel, errorReporter.idToSourceInfo) : true) && 
-                      (Options.compilerOutput == CompilerOutput.CSharp ? GenerateCSharp(RootProgramName, RootModel, errorReporter.idToSourceInfo) : true);
+            bool rc = GenerateZing(RootProgramName, RootModel, errorReporter.idToSourceInfo);
             UninstallProgram(RootProgramName);
             return rc;
         }
@@ -943,7 +943,7 @@
             return "";
         }
 
-        public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<int, SourceInfo> idToSourceInfo)
+        public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel, List<string> importedFiles, Dictionary<int, SourceInfo> idToSourceInfo)
         {
             ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
@@ -971,6 +971,7 @@
                 var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
                 transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
                 transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
+                transApply = Factory.Instance.AddArg(transApply, GenerateImportFileNames(importedFiles));
                 transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.eraseModel ? "TRUE" : "FALSE"));
                 var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModel.Node.Name + "_CModel"));
                 transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModel.Node.Name + "_LinkModel"));
@@ -1481,26 +1482,38 @@
             }
         }
         
-        public bool GenerateC(ProgramName RootProgramName, AST<Model> RootModel)
+        public bool GenerateC(ProgramName RootProgramName, AST<Model> RootModel, List<string> importedFiles)
         {
             using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
             {
                 LoadManifestProgram("Pc.Domains.C.4ml");
                 LoadManifestProgram("Pc.Domains.PLink.4ml");
                 LoadManifestProgram("Pc.Domains.P2CProgram.4ml");
-                return InternalGenerateC(RootProgramName, RootModel);
+                return InternalGenerateC(RootProgramName, RootModel, importedFiles);
             }
         }
 
-        bool InternalGenerateC(ProgramName RootProgramName, AST<Model> RootModel)
+        private AST<Node> GenerateImportFileNames(List<string> importedFiles)
+        {
+            AST<Node> ret = Factory.Instance.MkId("NIL");
+            foreach (var f in importedFiles)
+            {
+                var ft = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("in.StringList"));
+                ret = Factory.Instance.AddArg(Factory.Instance.AddArg(ft, Factory.Instance.MkCnst(f)), ret);
+            }
+            return ret;
+        }
+
+        bool InternalGenerateC(ProgramName RootProgramName, AST<Model> RootModel, List<string> importedFiles)
         {
             string RootFileName = RootProgramName.ToString();
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
-            
+
             //// Apply the P2C transform.
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
+            transApply = Factory.Instance.AddArg(transApply, GenerateImportFileNames(importedFiles));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.eraseModel ? "TRUE" : "FALSE"));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModel.Node.Name + "_CModel"));
             transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModel.Node.Name + "_LinkModel"));

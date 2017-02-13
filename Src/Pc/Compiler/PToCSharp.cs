@@ -387,7 +387,7 @@ namespace Microsoft.Pc
                         string funName = GetName(typingContext, 0);
                         if (ownerName == null)
                         {
-                            allStaticFuns[funName].typeInfo[expr] = type;
+                            allGlobalFuns[funName].typeInfo[expr] = type;
                         }
                         else
                         {
@@ -401,7 +401,7 @@ namespace Microsoft.Pc
                         string funName = anonFunToName[typingContextAlias];
                         if (ownerName == null)
                         {
-                            allStaticFuns[funName].typeInfo[expr] = type;
+                            allGlobalFuns[funName].typeInfo[expr] = type;
                         }
                         else
                         {
@@ -1250,7 +1250,7 @@ namespace Microsoft.Pc
                     var beforeLabel = GetLabelFromLabelId(beforeLabelId);
                     var eventName = eventNames[i];
                     var funName = funNames[i];
-                    var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(funName) ? pToCSharp.allStaticFuns[funName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[funName];
+                    var calleeInfo = pToCSharp.allGlobalFuns.ContainsKey(funName) ? pToCSharp.allGlobalFuns[funName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[funName];
                     Debug.Assert(calleeInfo.isAnonymous);
                     List<StatementSyntax> ifStmts = new List<StatementSyntax>();
                     ifStmts.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
@@ -1729,8 +1729,8 @@ namespace Microsoft.Pc
                 var stateExpr = IdentifierName(stateName);
                 MachineInfo machineInfo = pToCSharp.allMachines[owner.machineName];
                 string stateEntryActionName = machineInfo.stateNameToStateInfo[stateName].entryActionName;
-                FunInfo entryFunInfo = pToCSharp.allStaticFuns.ContainsKey(stateEntryActionName)
-                                        ? pToCSharp.allStaticFuns[stateEntryActionName]
+                FunInfo entryFunInfo = pToCSharp.allGlobalFuns.ContainsKey(stateEntryActionName)
+                                        ? pToCSharp.allGlobalFuns[stateEntryActionName]
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(children);
                 var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(stateExpr, "name"));
@@ -1820,7 +1820,7 @@ namespace Microsoft.Pc
                 }
 
                 var calleeName = GetName(ft, 0);
-                var calleeInfo = pToCSharp.allStaticFuns.ContainsKey(calleeName) ? pToCSharp.allStaticFuns[calleeName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[calleeName];
+                var calleeInfo = pToCSharp.allGlobalFuns.ContainsKey(calleeName) ? pToCSharp.allGlobalFuns[calleeName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[calleeName];
 
                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
                 List<ExpressionSyntax> paramList = new List<ExpressionSyntax>();
@@ -2578,6 +2578,7 @@ namespace Microsoft.Pc
                     whereToAdd = (this.owner == null) ? pToCSharp.members : owner.machineMembers;
 
                     whereToAdd.Add(MkFuncClass());
+
                     //Variable declaration:
                     whereToAdd.Add(
                         FieldDeclaration(
@@ -2586,43 +2587,13 @@ namespace Microsoft.Pc
                             .WithVariables(
                                 SingletonSeparatedList<VariableDeclaratorSyntax>(
                                     VariableDeclarator(
-                                        Identifier(funName)))))
+                                        Identifier(funName)).WithInitializer(EqualsValueClause(CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName(funClassName)))))))
                         .WithModifiers(
                             TokenList(
                                 new[]{
                                         Token(SyntaxKind.PublicKeyword),
                                         Token(SyntaxKind.StaticKeyword)}))
                         .NormalizeWhitespace());
-
-                    //Add function variable instantiation to:
-                    //PToCsharp class for global static functions;
-                    //Main constructor for other functions
-                    if (this.owner == null)
-                    {
-                        pToCSharp.members.Add(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(funName),
-                                    ObjectCreationExpression(
-                                        IdentifierName(funClassName))
-                                    .WithArgumentList(
-                                        ArgumentList())))
-                            .NormalizeWhitespace());
-                    }
-                    else
-                    {
-                        owner.mainConstructorFields.Add(
-                            ExpressionStatement(
-                                AssignmentExpression(
-                                    SyntaxKind.SimpleAssignmentExpression,
-                                    IdentifierName(funName),
-                                    ObjectCreationExpression(
-                                        IdentifierName(funClassName))
-                                    .WithArgumentList(
-                                        ArgumentList())))
-                            .NormalizeWhitespace());
-                    }
 
                     if (!(owner == null))
                     {
@@ -2633,10 +2604,14 @@ namespace Microsoft.Pc
         }
         private void MkStaticFunctions()
         {
-            foreach (var pair in allStaticFuns)
+            foreach (var pair in allGlobalFuns)
             {
-                MkFunctionDecl funDecl = new MkFunctionDecl(pair.Key, pair.Value, null, this);
-                funDecl.AddFunClass();
+                if(!pair.Value.isFunProto)
+                {
+                    MkFunctionDecl funDecl = new MkFunctionDecl(pair.Key, pair.Value, null, this);
+                    funDecl.AddFunClass();
+                }
+                
             }
         }
 
@@ -2985,9 +2960,9 @@ namespace Microsoft.Pc
             }
             public FunInfo GetFunInfo(string funName)
             {
-                if (translator.allStaticFuns.ContainsKey(funName))
+                if (translator.allGlobalFuns.ContainsKey(funName))
                 {
-                    return translator.allStaticFuns[funName];
+                    return translator.allGlobalFuns[funName];
                 }
                 else
                 {

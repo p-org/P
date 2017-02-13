@@ -131,9 +131,17 @@ namespace CompilerProfileToCsv
             {
                 List<PerfInfo> list = rows[file];
                 outStream.Write(file);
-                foreach (var item in list)
+
+                foreach (string key in keys)
                 {
-                    outStream.Write("," + item.duration);
+                    foreach (var item in list)
+                    {
+                        if (item.step == key)
+                        {
+                            outStream.Write("," + item.duration);
+                            break;
+                        }
+                    }
                 }
                 outStream.WriteLine();
             }

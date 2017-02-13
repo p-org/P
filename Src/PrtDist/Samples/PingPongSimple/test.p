@@ -1,5 +1,6 @@
 //Functions for interacting with the timer machine
-include "timer.p"
+#include "timer.p"
+#include "events.p" 
 
 // PingPong.p 
 event PING assert 1: machine; 
@@ -7,8 +8,8 @@ event PONG assert 1;
 event SUCCESS;
  
 machine Client {
-  var server: machine; 
-  start state Init { 
+  var server: machine;  
+  start state Init {  
     entry { 	
 	  print "Client created\n";
       server = new Server(); 

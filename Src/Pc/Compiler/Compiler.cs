@@ -28,7 +28,7 @@
 
     public enum LivenessOption { None, Standard, Sampling };
 
-   
+
     public class SourceInfo
     {
         public Span entrySpan;
@@ -68,7 +68,7 @@
             return new ConsoleProfileWatcher(Log, operation, message);
         }
 
-        class ConsoleProfileWatcher: IDisposable
+        class ConsoleProfileWatcher : IDisposable
         {
             Stopwatch watch = new Stopwatch();
             string operation;
@@ -92,7 +92,7 @@
 
     }
 
-    public  class XmlProfiler : IProfiler
+    public class XmlProfiler : IProfiler
     {
         XDocument data;
         XElement current;
@@ -102,7 +102,7 @@
             data = new XDocument(new XElement("data"));
         }
 
-        public XDocument Data {  get { return this.data; } }
+        public XDocument Data { get { return this.data; } }
 
         public IDisposable Start(string operation, string message)
         {
@@ -575,7 +575,7 @@
             else
             {
                 Stack<string> importChainOfPFiles = new Stack<string>();
-                HashSet<string> visitedPFiles = new HashSet<string>();
+                HashSet<string> visitedPFiles = CreateFileSystemHashSet();
                 HashSet<string> wasRecentlyCompiled = new HashSet<string>();
                 string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
                 if (!Directory.Exists(outputDirName))
@@ -596,6 +596,31 @@
                 }
             }
             return true;
+        }
+
+        private HashSet<string> CreateFileSystemHashSet()
+        {
+            return new HashSet<string>(IsFileSystemCaseInensitive() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        }
+
+        static bool? _isFileSystemCaseInsensitive;
+
+        public bool IsFileSystemCaseInensitive()
+        {
+            if (!_isFileSystemCaseInsensitive.HasValue)
+            {
+                string fileUpperCase = Path.GetTempPath() + "TEST 4481D0EF-9458-4CA0-802B-DD706A811E3B";
+                string fileLowerCase = Path.GetTempPath() + "test 4481d0ef-9458-4ca0-802b-dd706a811e3b";
+
+                if (File.Exists(fileUpperCase))
+                {
+                    File.Delete(fileUpperCase);
+                }
+                File.CreateText(fileLowerCase).Close();
+                _isFileSystemCaseInsensitive = File.Exists(fileUpperCase);
+                File.Delete(fileLowerCase);
+            }
+            return _isFileSystemCaseInsensitive.Value;
         }
 
         public bool ParsePProgram2(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out List<string> importedPFiles)
@@ -731,7 +756,7 @@
         bool CheckIfPFileShouldBeCompiled(string fullPFilePath, DateTime lastCompileTime)
         {
             var lastWriteTimePFile = File.GetLastWriteTime(fullPFilePath);
-            if(DateTime.Compare(lastWriteTimePFile, lastCompileTime) < 0)
+            if (DateTime.Compare(lastWriteTimePFile, lastCompileTime) < 0)
             {
                 return false;
             }
@@ -908,20 +933,20 @@
             }
 
             //If file has not changed and no rebuild required.
-            if(!(doCompileFile || Options.rebuild))
+            if (!(doCompileFile || Options.rebuild))
             {
                 Log.WriteMessage(string.Format("ignoring file {0} ...", inputFileName), SeverityKind.Info);
                 return true;
             }
 
             InstallProgram(inputFileName, parsedProgram, RootProgramName, new List<string>(), out RootModel);
-            
+
             if (!Check(RootProgramName, RootModel.Node.Name))
             {
                 UninstallProgram(RootProgramName);
                 return false;
             }
-                        
+
             if (Options.compilerOutput == CompilerOutput.None)
             {
                 UninstallProgram(RootProgramName);
@@ -1481,7 +1506,7 @@
                 return "unknown";
             }
         }
-        
+
         public bool GenerateC(ProgramName RootProgramName, AST<Model> RootModel, List<string> importedFiles)
         {
             using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
@@ -1535,7 +1560,7 @@
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
             var success = Render(cProgram, RootModel.Node.Name + "_CModel", progName);
- 
+
             //// Extract the link model
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
             string linkerAliasPrefix = null;
@@ -1675,7 +1700,7 @@
 
             return true;
         }
-        
+
         public bool Link(ICompilerOutput log, CommandLineOptions options)
         {
             if (options.profile)
@@ -1694,7 +1719,7 @@
             try
             {
                 // compile the P file into formula file 
-                var plinkFile = options.PFiles.Count == 1 ? options.PFiles.First(): "";
+                var plinkFile = options.PFiles.Count == 1 ? options.PFiles.First() : "";
 
                 using (this.Profiler.Start("Linker parsing", Path.GetFileName(plinkFile)))
                 {
@@ -1753,7 +1778,7 @@
                     }
 
                     // Dump out the formula file corresponding to linker
-                    if(options.outputFormula)
+                    if (options.outputFormula)
                     {
                         string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
                         StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
@@ -1813,7 +1838,7 @@
                 wr.Close();
             }
             success = AddLinkerErrorFlags(errorProgram);
-            
+
             errorReporter.PrintErrors(Log, Options);
             if (!success)
             {
@@ -1832,7 +1857,7 @@
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
             success = Render(cProgram, "CLinkModel", progName);
-            
+
             UninstallProgram(linkProgramName);
             return success;
         }
@@ -1843,7 +1868,7 @@
             (1) The last arg of the error term is always the error message. 
             (2) The first arg if of type Id is the span info otherwise the span info is default.
             */
-            if((ft.Function as Id).Name.ToString().StartsWith("CSharp"))
+            if ((ft.Function as Id).Name.ToString().StartsWith("CSharp"))
             {
                 //Console.WriteLine("Ignored");
                 return;

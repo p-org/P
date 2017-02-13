@@ -430,10 +430,6 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	TypeDepNum(i, t) :- TranslatedTypeExpr(t), t: in.NmdTupType, NmdTupTypeDepNum(i, t). 
 	TypeId(id, t) :- td is TypeDepNum(_, t), NotImportedType(t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum(_, t'), NotImportedType(t') }).
 	
-	TypeStorageClass ::= (in.TypeExpr, {NIL, STATIC}).
-	TypeStorageClass(t, NIL) :- TypeId(_, t), ExportedType(_, t).
-	TypeStorageClass(t, STATIC) :- TypeId(_, t), no ExportedType(_, t).
-
 	//// Build type initializers in linearization order.
 	//// defs is the definitions that precede the encoding of this type constant.
 	TypeConstant ::= (type: in.TypeExpr + { NIL }, typeExprId: Integer, defs: out.Section + { NIL }, def: out.VarDef + { NIL }).
@@ -449,33 +445,32 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	BaseType2Kind(ANY, "PRT_KIND_ANY").
 	TypeConstant(t, m, defs, def) :- 
 								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.BaseType(base), 
-								BaseType2Kind(base, kind), TypeStorageClass(t, sc),
+								BaseType2Kind(base, kind),
 								defs = out.Section(before, def),
-								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Interface types
 	TypeConstant(t, m, defs, def) :- 
 								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t : in.InterfaceType, 
-								BaseType2Kind(MACHINE, kind), TypeStorageClass(t, sc),
+								BaseType2Kind(MACHINE, kind),
 								defs = out.Section(before, def),
-								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).
 
 	//// Enum types
 	TypeConstant(t, m, defs, def) :- 
 								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.NameType(name), in.EnumTypeDef(name, _, _, _),
-								BaseType2Kind(INT, kind), TypeStorageClass(t, sc),
+								BaseType2Kind(INT, kind),
 								defs = out.Section(before, def),
-								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
 	
 	//// Foreign types
 	TypeConstant(t, m, defs, def) :- 
 								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.NameType(name), in.ModelType(name, _),
-								TypeStorageClass(t, sc),
 								defs = out.Section(before, def),
-								def = out.VarDef(sc, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								indexName = strJoin("P_FORGN_TYPE_", name),
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_FORGN"), 
 								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL)), NIL))).						              
@@ -484,7 +479,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
 	TypeConstant(t, m, defs, def) :- 
 								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), 
-								t = in.SeqType(tinner), TypeToString(tinner, tinnerName), TypeStorageClass(t, sc),
+								t = in.SeqType(tinner), TypeToString(tinner, tinnerName),
 								defs = out.Section(Section(before, defSeq), def),
 								defSeq = out.VarDef(
                                      STATIC, 
@@ -492,7 +487,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
                                      typeNameSeq, 
                                      Init(Args(UnApp(ADDR, Ident(tinnerName)), NIL))),								 
 								def = out.VarDef(
-                                     sc, 
+                                     STATIC, 
                                      NmdType(NIL, "PRT_TYPE"), 
                                      typeName, 
                                      typeStruct),
@@ -505,7 +500,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	//// Complex type Map 
 	TypeConstant(t, m, defs, def) :- 
 	                       TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), 
-						   t = in.MapType(tdom, tcod), TypeToString(tdom, domName), TypeToString(tcod, codName), TypeStorageClass(t, sc),
+						   t = in.MapType(tdom, tcod), TypeToString(tdom, domName), TypeToString(tcod, codName),
 								         defs = out.Section(Section(before, defMap), def),
 										     defMap = out.VarDef(
 														  STATIC, 
@@ -515,14 +510,14 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 														       Args(UnApp(ADDR, Ident(codName)), 
 														       NIL)))),
 										      def = out.VarDef(
-														  sc, 
+														  STATIC, 
 														  NmdType(NIL, "PRT_TYPE"), 
 														  typeName, 
 														  typeStruct),
 							            typeStruct = out.Init(
-										            Args(Ident("PRT_KIND_MAP"), 
-											          Args(Init(Args(UnApp(ADDR, Ident(typeNameMap)), NIL)), 
-											          NIL))),														  
+														Args(Ident("PRT_KIND_MAP"), 
+														Args(Init(Args(UnApp(ADDR, Ident(typeNameMap)), NIL)), 
+														NIL))),														  
 										      typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
 
 	//// Complex type Tuple 
@@ -532,15 +527,15 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	                          init = Init(Args(UnApp(ADDR, Ident(name)), ts'')). 
 
 	TypeConstant(t, m, defs, def) :- 
-	                       TypeId(m, t), TypeToString(t, typeName), TypeStorageClass(t, sc), TypeConstant(_, m - 1, before, _), Tup2ArrayInit(t, arrInit), t : in.TupType, 
+	                       TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), Tup2ArrayInit(t, arrInit), t : in.TupType, 
 								         defs = out.Section(Section(before, Section(defTupArr, defTup)), def),
 										     defTupArr = out.VarDef(
-										           STATIC, 
+															 STATIC, 
 															 ArrType(PtrType(NmdType(NIL, "PRT_TYPE")), NIL), 
 															 typeNameTupArr, 
 															 arrInit),
 										     defTup = out.VarDef(
-										          STATIC, 
+														  STATIC, 
 														  NmdType(NIL, "PRT_TUPTYPE"), 
 														  typeNameTup, 
 														  Init(
@@ -548,7 +543,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 															  Args(Ident(typeNameTupArr), 
 															  NIL)))),
 										     def = out.VarDef(
-										         sc, 
+													   STATIC, 
 													   NmdType(NIL, "PRT_TYPE"), 
 													   typeName, 
 													   typeStruct),
@@ -570,20 +565,20 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	                                   narr = Init(Args(StringLit(n', NIL), n'')).
 
 	TypeConstant(t, m, defs, def) :- 
-									TypeId(m, t), TypeToString(t, typeName), TypeStorageClass(t, sc), TypeConstant(_, m - 1, before, _), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
+									TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
 								     defs = out.Section(before, Section(defNmdTupNArr, Section(defNmdTupTArr, Section(defNmdTup, def)))),
 										 defNmdTupNArr = out.VarDef(
-										              STATIC, 
+																STATIC, 
 															    ArrType(NmdType(NIL, "PRT_STRING"), NIL), 
 															    typeNameNmdTupNArr, 
 															    narr),
 										 defNmdTupTArr = out.VarDef(
-										              STATIC, 
+																STATIC, 
 															    ArrType(PtrType(NmdType(NIL, "PRT_TYPE")), NIL), 
 															    typeNameNmdTupTArr, 
 															    tarr),
 										 defNmdTup = out.VarDef(
-										          STATIC, 
+														  STATIC, 
 														  NmdType(NIL, "PRT_NMDTUPTYPE"), 
 														  typeNameNmdTup, 
 														  Init(
@@ -592,12 +587,12 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 															Args(Ident(typeNameNmdTupTArr), 
 															NIL))))),
 										 def = out.VarDef(
-										         sc, 
+													   STATIC, 
 													   NmdType(NIL, "PRT_TYPE"), 
 													   typeName, 
 													   typeStatic),
 							       typeStatic = out.Init(
-										      Args(Ident("PRT_KIND_NMDTUP"), 
+												Args(Ident("PRT_KIND_NMDTUP"), 
 											    Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), NIL)),
 											    NIL))),
 										 typeNameNmdTupTArr = strJoin("P_GEND_TYPE_NMDTUP_TARR_", toString(m)),
@@ -606,7 +601,7 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 
     COut(3, defs) :- TypeConstant(_, c, defs, _), defs : out.Section, c = count({ td | td is TypeId}) - 1.
 
-	COut(4, def) :- ExportedType(name, type), TypeConstant(type, _, _, out.VarDef(sc, t, _, initExpr)), def = out.VarDef(sc, t, strJoin("P_GEND_TYPE_", name), initExpr).
+	COut(4, def) :- ExportedType(name, type), TypeConstant(type, _, _, out.VarDef(_, t, _, initExpr)), def = out.VarDef(NIL, t, strJoin("P_GEND_TYPE_", name), initExpr).
     
     /*************************************************************/
     /******   Generate C statics for constants in program   ******/

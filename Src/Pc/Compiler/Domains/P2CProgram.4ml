@@ -4,7 +4,7 @@
    modules.C = '"C at C.4ml"'
 ]
 
-transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (out:: C, link:: PLink)
+transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.StringList + { NIL }, test: Boolean) returns (out:: C, link:: PLink)
 /*
 [
     compiler_ProductivityCheck = "TypeConstant[0], ExprDepNum[1]"
@@ -108,20 +108,22 @@ transform P2CProgram (in:: P, outputFileName: String, test: Boolean) returns (ou
 	HConcatOut ::= (pos: Integer, cmp: out.Cmp).	
 	HConcatOut(-1, NIL).
 	HConcatOut(m', cmp) :- HConcatOut(m, before), HOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
-		
+	
+	Includes ::= (in.StringList + {NIL}, out.Cmp).
+	Includes(%importFileNames, PpInclude("linker.h", FALSE)).
+	Includes(tl, inc') :- Includes(in.StringList(name, tl), inc), inc' = out.Section(PpInclude(strJoin(name, ".h"), FALSE), inc).
+
 	out.File(headerFileName, body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
 								      headerFileName = strJoin(%outputFileName, ".h"),
 									  headerLockId = strJoin("P_", strJoin(strUpper(strReplace(headerFileName, ".", "_")), "_")),
 									  ifdefBegin = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("extern \"C\"{")), NIL),
 									  ifdefEnd = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("}")), NIL),
+									  Includes(NIL, inc),
 									  body = PpITE(
 									   IFNDEF,
 									   Ident(headerLockId),
 									   Section(
-										   Section(
-											  PpDefine(Ident(headerLockId), NIL),
-											  PpInclude("linker.h", FALSE)
-											  ),
+										   Section(PpDefine(Ident(headerLockId), NIL), inc),
 										   Section(ifdefBegin, Section(cmp, ifdefEnd))),
 									   NIL).
 

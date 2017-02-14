@@ -51,20 +51,45 @@
 
         }
 
-        Dictionary<int, SourceInfo> idToSourceInfo;
+        Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo;
 
-        PLink_Root.Id MkIntegerId(Span entrySpan, Span exitSpan)
+        PLink_Root.Id MkUniqueId(Span entrySpan, Span exitSpan)
         {
-            var nextId = idToSourceInfo.Count;
-            idToSourceInfo[nextId] = new SourceInfo(entrySpan, exitSpan);
-            return MkNumeric(nextId, new Span());
+            var filePath = entrySpan.Program.Uri.LocalPath;
+            int nextId = 0;
+            if (idToSourceInfo.ContainsKey(filePath))
+            {
+                nextId = idToSourceInfo[filePath].Count;
+                idToSourceInfo[filePath][nextId] = new SourceInfo(entrySpan, exitSpan);
+            }
+            else
+            {
+                idToSourceInfo[filePath] = new Dictionary<int, SourceInfo>();
+                idToSourceInfo[filePath][nextId] = new SourceInfo(entrySpan, exitSpan);
+            }
+
+            var fileInfo = PLink_Root.MkIdList(MkString(filePath, entrySpan), (PLink_Root.IArgType_IdList__1)MkId(entrySpan));
+            var uniqueId = PLink_Root.MkIdList(MkNumeric(nextId, new Span()), fileInfo);
+            return uniqueId;
         }
 
-        PLink_Root.Id MkIntegerId(Span span)
+        PLink_Root.Id MkUniqueId(Span span)
         {
-            var nextId = idToSourceInfo.Count;
-            idToSourceInfo[nextId] = new SourceInfo(span, new Span());
-            return MkNumeric(nextId, new Span());
+            var filePath = span.Program.Uri.LocalPath;
+            int nextId = 0;
+            if (idToSourceInfo.ContainsKey(filePath))
+            {
+                nextId = idToSourceInfo[filePath].Count;
+                idToSourceInfo[filePath][nextId] = new SourceInfo(span, new Span());
+            }
+            else
+            {
+                idToSourceInfo[filePath] = new Dictionary<int, SourceInfo>();
+                idToSourceInfo[filePath][nextId] = new SourceInfo(span, new Span());
+            }
+            var fileInfo = PLink_Root.MkIdList(MkString(span.Program.Uri.LocalPath, span), (PLink_Root.IArgType_IdList__1)MkId(span));
+            var uniqueId = PLink_Root.MkIdList(MkNumeric(nextId, new Span()), fileInfo);
+            return uniqueId;
         }
 
         PLink_Root.Id MkId(Span span)
@@ -105,7 +130,7 @@
             var moduleName = new PLink_Root.ModuleName();
             moduleName.name = (PLink_Root.IArgType_ModuleName__0)MkString(name, nameSpan);
             moduleName.Span = nameSpan;
-            moduleName.id = (PLink_Root.IArgType_ModuleName__1)MkIntegerId(nameSpan);
+            moduleName.id = (PLink_Root.IArgType_ModuleName__1)MkUniqueId(nameSpan);
             moduleExprStack.Push(moduleName);
         }
 
@@ -118,7 +143,7 @@
             var mod2 = moduleExprStack.Pop();
             composeExpr.left = (PLink_Root.IArgType_ComposeExpr__0)mod1;
             composeExpr.right = (PLink_Root.IArgType_ComposeExpr__1)mod2;
-            composeExpr.id = (PLink_Root.IArgType_ComposeExpr__2)MkIntegerId(span);
+            composeExpr.id = (PLink_Root.IArgType_ComposeExpr__2)MkUniqueId(span);
             moduleExprStack.Push(composeExpr);
         }
 
@@ -128,7 +153,7 @@
             safeExpr.Span = span;
             Contract.Assert(moduleExprStack.Count >= 1);
             safeExpr.mod = (PLink_Root.IArgType_SafeExpr__0)moduleExprStack.Pop(); ;
-            safeExpr.id = (PLink_Root.IArgType_SafeExpr__1)MkIntegerId(span);
+            safeExpr.id = (PLink_Root.IArgType_SafeExpr__1)MkUniqueId(span);
             moduleExprStack.Push(safeExpr);
         }
 
@@ -159,7 +184,7 @@
             Contract.Assert(crntEventList.Count >= 1);
             //convert the string list to EventNameList
             hideExpr.evtNames = ConvertToInterfaceType(crntEventList);
-            hideExpr.id = (PLink_Root.IArgType_HideExpr__2)MkIntegerId(span);
+            hideExpr.id = (PLink_Root.IArgType_HideExpr__2)MkUniqueId(span);
             moduleExprStack.Push(hideExpr);
             //clear eventList
             crntEventList.Clear();
@@ -173,7 +198,7 @@
             assumeExpr.mod = (PLink_Root.IArgType_AssumeExpr__1)moduleExprStack.Pop(); ;
             Contract.Assert(monitorNameListStack.Count >= 1);
             assumeExpr.monNames = monitorNameListStack.Pop();
-            assumeExpr.id = (PLink_Root.IArgType_AssumeExpr__2)MkIntegerId(span);
+            assumeExpr.id = (PLink_Root.IArgType_AssumeExpr__2)MkUniqueId(span);
             moduleExprStack.Push(assumeExpr);
         }
 
@@ -185,7 +210,7 @@
             assertExpr.mod = (PLink_Root.IArgType_AssertExpr__1)moduleExprStack.Pop(); ;
             Contract.Assert(monitorNameListStack.Count >= 1);
             assertExpr.monNames = monitorNameListStack.Pop();
-            assertExpr.id = (PLink_Root.IArgType_AssertExpr__2)MkIntegerId(span);
+            assertExpr.id = (PLink_Root.IArgType_AssertExpr__2)MkUniqueId(span);
             moduleExprStack.Push(assertExpr);
         }
 
@@ -197,7 +222,7 @@
             renameExpr.mod = (PLink_Root.IArgType_RenameExpr__2)moduleExprStack.Pop(); ;
             renameExpr.mNames_PRIME1 = MkString(newName, newNameSpan);
             renameExpr.mNames = MkString(oldName, oldNameSpan);
-            renameExpr.id = (PLink_Root.IArgType_RenameExpr__3)MkIntegerId(span);
+            renameExpr.id = (PLink_Root.IArgType_RenameExpr__3)MkUniqueId(span);
             moduleExprStack.Push(renameExpr);
         }
 
@@ -209,7 +234,7 @@
             exportExpr.mod = (PLink_Root.IArgType_ExportExpr__2)moduleExprStack.Pop(); ;
             exportExpr.mName = MkString(mName, mSpan);
             exportExpr.iName = MkString(iName, iSpan);
-            exportExpr.id = (PLink_Root.IArgType_ExportExpr__3)MkIntegerId(span);
+            exportExpr.id = (PLink_Root.IArgType_ExportExpr__3)MkUniqueId(span);
             moduleExprStack.Push(exportExpr);
         }
 
@@ -294,7 +319,7 @@
             var impsDecl = PLink_Root.MkImplementationDecl();
             impsDecl.Span = span;
             impsDecl.mod = (PLink_Root.IArgType_ImplementationDecl__0)moduleExprStack.Pop();
-            impsDecl.id = (PLink_Root.IArgType_ImplementationDecl__1)MkIntegerId(span);
+            impsDecl.id = (PLink_Root.IArgType_ImplementationDecl__1)MkUniqueId(span);
             parseLinker.ImplementationDecl.Add(impsDecl);
         }
 
@@ -368,7 +393,7 @@
             var moduleDecl = GetCurrentModuleDecl(span);
             moduleDecl.Span = span;
             moduleDecl.name = MkString(name, nameSpan);
-            moduleDecl.id = (PLink_Root.IArgType_ModuleDecl__1)MkIntegerId(span);
+            moduleDecl.id = (PLink_Root.IArgType_ModuleDecl__1)MkUniqueId(span);
             //add the module decl
             if (IsValidName(LProgramTopDecl.Module, name, nameSpan))
             {
@@ -413,7 +438,7 @@
             ProgramName file,
             LProgramTopDeclNames topDeclNames,
             LProgram program,
-            Dictionary<int, SourceInfo> idToSourceInfo,
+            Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo,
             out List<Flag> flags)
         {
             flags = parseFlags = new List<Flag>();

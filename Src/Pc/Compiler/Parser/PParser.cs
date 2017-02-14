@@ -269,21 +269,42 @@
 
         CommandLineOptions Options;
 
-        Dictionary<int, SourceInfo> idToSourceInfo;
+        Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo;
 
         P_Root.Id MkUniqueId(Span entrySpan, Span exitSpan)
         {
-            var nextId = idToSourceInfo.Count;
-            idToSourceInfo[nextId] = new SourceInfo(entrySpan, exitSpan);
-            var fileInfo = P_Root.MkIdList(MkString(entrySpan.Program.Uri.LocalPath, entrySpan), (P_Root.IArgType_IdList__1)MkId(entrySpan));
+            var filePath = entrySpan.Program.Uri.LocalPath;
+            int nextId = 0;
+            if(idToSourceInfo.ContainsKey(filePath))
+            {
+                nextId = idToSourceInfo[filePath].Count;
+                idToSourceInfo[filePath][nextId] = new SourceInfo(entrySpan, exitSpan);
+            }
+            else
+            {
+                idToSourceInfo[filePath] = new Dictionary<int, SourceInfo>();
+                idToSourceInfo[filePath][nextId] = new SourceInfo(entrySpan, exitSpan);
+            }
+            
+            var fileInfo = P_Root.MkIdList(MkString(filePath, entrySpan), (P_Root.IArgType_IdList__1)MkId(entrySpan));
             var uniqueId = P_Root.MkIdList(MkNumeric(nextId, new Span()), fileInfo);
             return uniqueId;
         }
 
         P_Root.Id MkUniqueId(Span span)
         {
-            var nextId = idToSourceInfo.Count;
-            idToSourceInfo[nextId] = new SourceInfo(span, new Span());
+            var filePath = span.Program.Uri.LocalPath;
+            int nextId = 0;
+            if (idToSourceInfo.ContainsKey(filePath))
+            {
+                nextId = idToSourceInfo[filePath].Count;
+                idToSourceInfo[filePath][nextId] = new SourceInfo(span, new Span());
+            }
+            else
+            {
+                idToSourceInfo[filePath] = new Dictionary<int, SourceInfo>();
+                idToSourceInfo[filePath][nextId] = new SourceInfo(span, new Span());
+            }
             var fileInfo = P_Root.MkIdList(MkString(span.Program.Uri.LocalPath, span), (P_Root.IArgType_IdList__1)MkId(span));
             var uniqueId = P_Root.MkIdList(MkNumeric(nextId, new Span()), fileInfo);
             return uniqueId;
@@ -304,7 +325,7 @@
             CommandLineOptions options,
             PProgramTopDeclNames topDeclNames,
             PProgram program,
-            Dictionary<int, SourceInfo> idToSourceInfo,
+            Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo,
             out List<Flag> flags,
             out List<string> includedFileNames)
         {

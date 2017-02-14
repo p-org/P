@@ -289,8 +289,10 @@ namespace Microsoft.Pc
         {
             string name = ((Id)ft.Function).Name;
             var id = ft.Args.Last();
-            int integerId = (int)((id as FuncTerm).Args.First() as Cnst).GetNumericValue().Numerator;
-            return idToSourceInfo[integerId].entrySpan;
+            int integerId;
+            string file;
+            ErrorReporter.FindIdFromFuncTerm(id as FuncTerm, out file, out integerId);
+            return idToSourceInfo[file][integerId].entrySpan;
         }
 
         public string GetOwnerName(FuncTerm ft, int ownerIndex, int ownerNameIndex)
@@ -390,9 +392,9 @@ namespace Microsoft.Pc
         public HashSet<string> exportedEvents;
         public Dictionary<string, FunInfo> allGlobalFuns;
         public Dictionary<AST<Node>, string> anonFunToName;
-        public Dictionary<int, SourceInfo> idToSourceInfo;
+        public Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo;
 
-        public PTranslation(Compiler compiler, AST<Model> model, Dictionary<int, SourceInfo> idToSourceInfo)
+        public PTranslation(Compiler compiler, AST<Model> model, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             this.compiler = compiler;
             this.idToSourceInfo = idToSourceInfo;

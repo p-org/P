@@ -348,7 +348,7 @@ namespace Microsoft.Pc
     }
     class PToCSharpCompiler : PTranslation
     {
-        public PToCSharpCompiler(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo, string csharpFileName)
+        public PToCSharpCompiler(Compiler compiler, AST<Model> modelWithTypes, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo, string csharpFileName)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
             this.cSharpFileName = csharpFileName;

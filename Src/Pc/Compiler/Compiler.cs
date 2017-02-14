@@ -201,11 +201,11 @@
         private const string ErrorClassName = "error";
 
         public SortedSet<Flag> errors;
-        public Dictionary<int, SourceInfo> idToSourceInfo;
+        public Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo;
 
         public ErrorReporter()
         {
-            this.idToSourceInfo = new Dictionary<int, SourceInfo>();
+            this.idToSourceInfo = new Dictionary<string, Dictionary<int, SourceInfo>>();
             this.errors = new SortedSet<Flag>(default(FlagSorter));
         }
 
@@ -275,15 +275,37 @@
             }
         }
 
-        private static bool FindIdFromTerm(Term term, out int id)
+        public static bool FindIdFromTerm(Term term, out string fileName, out int id)
         {
             id = 0;
+            fileName = "";
             if (term.Args.Count() == 0) return false;
             var idTerm = term.Args.Last();
             var symbol = idTerm.Args[0].Symbol as BaseCnstSymb;
             if (symbol == null) return false;
             if (symbol.CnstKind != CnstKind.Numeric) return false;
             id = (int)((Rational)symbol.Raw).Numerator;
+
+            symbol = idTerm.Args[1].Symbol as BaseCnstSymb;
+            if (symbol == null) return false;
+            if (symbol.CnstKind != CnstKind.String) return false;
+            fileName = (string)((Cnst)(symbol).Raw).GetStringValue();
+            return true;
+        }
+
+        public static bool FindIdFromFuncTerm(FuncTerm idTerm, out string fileName, out int id)
+        {
+            id = 0;
+            fileName = "";
+            var symbol = idTerm.Args.First() as Cnst;
+            if (symbol == null) return false;
+            if (symbol.CnstKind != CnstKind.Numeric) return false;
+            id = (int)(symbol.GetNumericValue()).Numerator;
+
+            symbol = idTerm.Args.Last() as Cnst;
+            if (symbol == null) return false;
+            if (symbol.CnstKind != CnstKind.String) return false;
+            fileName = (string)(symbol).GetStringValue();
             return true;
         }
 
@@ -305,9 +327,10 @@
                 if (locationIndex >= 0)
                 {
                     int id;
-                    if (FindIdFromTerm(p.Conclusion.Args[locationIndex], out id) && idToSourceInfo.ContainsKey(id))
+                    string file;
+                    if (FindIdFromTerm(p.Conclusion.Args[locationIndex], out file, out id) && idToSourceInfo.ContainsKey(file))
                     {
-                        SourceInfo sourceInfo = idToSourceInfo[id];
+                        SourceInfo sourceInfo = idToSourceInfo[file][id];
                         Span span = sourceInfo.entrySpan;
                         AddFlag(new Flag(
                             SeverityKind.Error,
@@ -553,7 +576,7 @@
             options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             this.Log = log;
             this.Options = options;
-            this.errorReporter = new ErrorReporter();
+            //this.errorReporter = new ErrorReporter();
             return CompileAllFiles();
         }
 
@@ -563,6 +586,7 @@
             {
                 foreach (var inputFileName in Options.inputFileNames)
                 {
+                    errorReporter = new ErrorReporter();
                     var result = InternalCompile(inputFileName);
                     errorReporter.PrintErrors(Log, Options);
                     if (!result)
@@ -586,6 +610,7 @@
                 {
                     var inputFileName = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, fileName));
                     if (visitedPFiles.Contains(inputFileName)) continue;
+                    errorReporter = new ErrorReporter();
                     var result = InternalCompile2(outputDirName, inputFileName, importChainOfPFiles, visitedPFiles, wasRecentlyCompiled);
                     errorReporter.PrintErrors(Log, Options);
                     if (!result)
@@ -943,7 +968,7 @@
             return "";
         }
 
-        public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<int, SourceInfo> idToSourceInfo)
+        public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
@@ -1009,7 +1034,7 @@
             }
         }
 
-        public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<int, SourceInfo> idToSourceInfo)
+        public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             ProgramName RootProgramNameWithTypes;
             AST<Model> RootModelWithTypes;
@@ -1839,13 +1864,12 @@
             Span errorSpan = default(Span);
             //check if the first argument is Id.
             var firstArg = ft.Args.First();
-            if (firstArg is Cnst)
+            int id;
+            string file;
+            if (ErrorReporter.FindIdFromFuncTerm((firstArg as FuncTerm), out file, out id) && errorReporter.idToSourceInfo.ContainsKey(file))
             {
-                if ((firstArg as Cnst).CnstKind == CnstKind.Numeric)
-                {
-                    int id = (int)(((firstArg as Cnst).GetNumericValue()).Numerator);
-                    errorSpan = errorReporter.idToSourceInfo[id].entrySpan;
-                }
+                SourceInfo sourceInfo = errorReporter.idToSourceInfo[file][id];
+                errorSpan = sourceInfo.entrySpan;
             }
 
             string errorMessage;

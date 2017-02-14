@@ -297,6 +297,7 @@
         {
             id = 0;
             fileName = "";
+            if (idTerm.Args.Count() == 0) return false;
             var symbol = idTerm.Args.ElementAt(0) as Cnst;
             if (symbol == null) return false;
             if (symbol.CnstKind != CnstKind.Numeric) return false;
@@ -1904,7 +1905,7 @@
             var firstArg = ft.Args.First();
             int id;
             string file;
-            if (ErrorReporter.FindIdFromFuncTerm((firstArg as FuncTerm), out file, out id) && errorReporter.idToSourceInfo.ContainsKey(file))
+            if (firstArg is FuncTerm && ErrorReporter.FindIdFromFuncTerm((firstArg as FuncTerm), out file, out id) && errorReporter.idToSourceInfo.ContainsKey(file))
             {
                 SourceInfo sourceInfo = errorReporter.idToSourceInfo[file][id];
                 errorSpan = sourceInfo.entrySpan;

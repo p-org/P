@@ -138,7 +138,7 @@ namespace P.Runtime
             {
                 if(!(target as PrtInterfaceValue).permissions.Contains(e as PrtEventValue))
                 {
-                    throw new PrtIllegalEnqueueException(String.Format("Event {1} is not in the permission set of the target", e.ToString()));
+                    throw new PrtIllegalEnqueueException(String.Format("Event {0} is not in the permission set of the target", e.ToString()));
                 }
             }
 

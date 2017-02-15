@@ -541,8 +541,10 @@ namespace Microsoft.Pc
                 string typeKind = ((Id)type.Function).Name;
                 ExpressionSyntax typeExpr;
                 string typeName;
+                string originalName = "Interface";
                 if (importedTypes.ContainsKey(Factory.Instance.ToAST(type)))
                 {
+                    originalName = importedTypes[Factory.Instance.ToAST(type)];
                     typeName = GetNextTypeName(importedTypes[Factory.Instance.ToAST(type)]);
                     return GetTypeExpr(typeName);
                 }
@@ -550,6 +552,7 @@ namespace Microsoft.Pc
                 {
                     if (exportedTypes.ContainsKey(Factory.Instance.ToAST(type)))
                     {
+                        originalName = exportedTypes[Factory.Instance.ToAST(type)];
                         typeName = GetNextTypeName(exportedTypes[Factory.Instance.ToAST(type)]);
                         typeExpr = GetTypeExpr(typeName);
                     }
@@ -671,21 +674,9 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        SeparatedSyntaxList<ExpressionSyntax> eventValues = new SeparatedSyntaxList<ExpressionSyntax>();
-                        while (type != null)
-                        {
-                            var eventTerm = GetArgByIndex(type, 0);
-                            string evName = eventTerm is Cnst ? ((Cnst)eventTerm).GetStringValue() : HaltEvent;
-                            eventValues.Add(CSharpHelper.MkCSharpStringLiteralExpression(evName));
-                            type = GetArgByIndex(type, 1) as FuncTerm;
-                        }
-
                         // typekind == "InterfaceType"
                         var initializer = CSharpHelper.MkCSharpObjectCreationExpression(
-                            IdentifierName("PrtInterfaceType"),
-                            ObjectCreationExpression(GenericName("List").WithTypeArgumentList(TypeArgumentList(
-                                                    SingletonSeparatedList<TypeSyntax>(
-                                                        IdentifierName("string"))))).WithInitializer(InitializerExpression(SyntaxKind.CollectionInitializerExpression, eventValues)));
+                            IdentifierName("PrtInterfaceType"), CSharpHelper.MkCSharpStringLiteralExpression(originalName));
                         AddTypeDeclaration(typeName);
                         AddTypeInitialization(typeExpr, initializer);
                         
@@ -3800,11 +3791,46 @@ namespace Microsoft.Pc
 
         private SyntaxNode MkStaticAppConstructor(string testName)
         {
-            //Initialize all the maps
+
+            
             var stmtList = new List<StatementSyntax>();
 
+            //Initialize types and events
+            var nodes = dependsOn.Keys.ToList();
+            var edges = new List<Tuple<string, string>>();
+            foreach (var file in dependsOn)
+            {
+                foreach (var dep in file.Value)
+                {
+                    if (file.Key != dep)
+                    {
+                        edges.Add(new Tuple<string, string>(file.Key, dep));
+                    }
+                }
+            }
+            List<string> topoOrder = TopologicalSortFiles<string>(nodes, edges);
+            //make invocations to the initialization of all types
+            foreach (var fName in topoOrder)
+            {
+                stmtList.Add(
+                    ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Types"), IdentifierName("Types_" + fName))
+                    )));
+            }
+
+            //make invocation to the initialization of all events
+            foreach (var fName in topoOrder)
+            {
+                stmtList.Add(
+                    ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
+                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName("Events_" + fName))
+                    )));
+            }
+
+            //Initialize all the maps
+
             //safe map
-            foreach(var sm in allTests[testName].isSafeMap)
+            foreach (var sm in allTests[testName].isSafeMap)
             {
                 var safeadd = CSharpHelper.MkCSharpInvocationExpression(
                     CSharpHelper.MkCSharpDot("isSafeMap", "Add"),
@@ -3853,7 +3879,7 @@ namespace Microsoft.Pc
                 var eventsParams = new SeparatedSyntaxList<ExpressionSyntax>();
                 foreach (var ev in it.Value)
                 {
-                    eventsParams = eventsParams.Add(CSharpHelper.MkCSharpDot(IdentifierName("Events"), ev));
+                    eventsParams = eventsParams.Add(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName(ev)));
                 }
                 var initStmt = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
                     ElementAccessExpression(
@@ -3864,6 +3890,22 @@ namespace Microsoft.Pc
                         GenericName(Identifier("List"), TypeArgumentList(SingletonSeparatedList<TypeSyntax>(IdentifierName("PrtEventValue")))),
                         ArgumentList(),
                         InitializerExpression(SyntaxKind.CollectionInitializerExpression, eventsParams))
+                );
+                stmtList.Add(initStmt);
+            }
+
+            //initialize the interface types
+            foreach (var it in allTests[testName].interfaceMap)
+            {
+                var initStmt = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, ParenthesizedExpression(
+                    CSharpHelper.MkCSharpCastExpression("PrtInterfaceType",
+                    MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Types"), IdentifierName(String.Format("type_{0}", it.Key))))),
+                    IdentifierName("permissions")),
+                    ElementAccessExpression(
+                        IdentifierName("interfaceMap"),
+                        BracketedArgumentList(SingletonSeparatedList<ArgumentSyntax>(Argument(CSharpHelper.MkCSharpStringLiteralExpression(it.Key))))
+                    )
                 );
                 stmtList.Add(initStmt);
             }
@@ -3938,37 +3980,9 @@ namespace Microsoft.Pc
                 stmtList.Add(addLinkItem);
             }
 
-            var nodes = dependsOn.Keys.ToList();
-            var edges = new List<Tuple<string, string>>();
-            foreach(var file in dependsOn)
-            {
-                foreach(var dep in file.Value)
-                {
-                    if(file.Key != dep)
-                    {
-                        edges.Add(new Tuple<string, string>(file.Key, dep));
-                    }
-                }
-            }
 
-            List<string> topoOrder = TopologicalSortFiles<string>(nodes, edges);
-            //make invocations to the initialization of all types
-            foreach (var fName in topoOrder)
-            {
-                stmtList.Add(
-                    ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression( 
-                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Types"), IdentifierName("Types_" +fName)) 
-                    )));
-            }
 
-            //make invocation to the initialization of all events
-            foreach (var fName in topoOrder)
-            {
-                stmtList.Add(
-                    ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
-                        MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName("Events_" + fName))
-                    )));
-            }
+            
 
             var staticConstrutor = ConstructorDeclaration(
                                         Identifier("Application"))

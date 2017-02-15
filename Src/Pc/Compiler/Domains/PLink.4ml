@@ -117,7 +117,7 @@ domain PLinkError
 
 	//// Module system related linker errors
 	ModuleDefError ::= new (errorId: any Id, name: String, msg: String).
-	NoMainMachineInModExpr ::= new (modExprId: any Id, msg: String).
+	NoMainMachineInModExpr ::= new (modExprId: any Id, name: String, msg: String).
 	ModuleConstructionIllegal ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	WellFormednessError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	TestOrImplDeclError ::= new (modExprId: any Id, arg: String, msg: String).
@@ -235,10 +235,10 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	/**************************************************************************/
 	/*	Check that there is main machine in each moduleExpr in the test decl  */
 	/**************************************************************************/
-	NoMainMachineInModExpr(id, "no Main machine in the module expression in test decl") :-
-			TestDecl(_, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _);
-			RefinementDecl(_, modExpr, _, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _);
-			RefinementDecl(_, _, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _).
+	NoMainMachineInModExpr(id, name, "no Main machine in the module expression in test decl") :-
+			TestDecl(name, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _);
+			RefinementDecl(name, modExpr, _, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _);
+			RefinementDecl(name, _, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _).
 
 	/************************************************************************************/
 	/*	Generate sends, receives, exports, private and creates for Module Expressions   */

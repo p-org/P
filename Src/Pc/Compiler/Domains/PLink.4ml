@@ -587,11 +587,16 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM);
 														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), IorM = NIL, ImpMachine = NIL.
 	
-	CSharpLinkMap(testName, MachineName, interfaceOrMachine, ImpMachine) :- TestDecl(testName, modExpr, _), ModuleLinkMap(modExpr, MachineName, interfaceOrMachine, ImpMachine), interfaceOrMachine: String, ImpMachine: String.
-	CSharpRenameMap(testName, newName, impName) :- TestDecl(testName, modExpr, _), ModuleRenameMap(modExpr, newName, impName).
-	CSharpSafeMap(testName, mname, isSafe):- TestDecl(testName, modExpr, _), ModuleSafeMap(modExpr, mname, isSafe).
-	CSharpMonitorMap(testName, monName, impMachine) :- TestDecl(testName, modExpr, _), ModuleMonitorMap(modExpr, monName, impMachine).
-	CSharpInterfaceMap(testName, iName, evName) :- TestDecl(testName, _, _), InterfaceTypeDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
+	CSharpLinkMap(testName, MachineName, interfaceOrMachine, ImpMachine) :- 
+							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, interfaceOrMachine, ImpMachine), interfaceOrMachine: String, ImpMachine: String.
+	CSharpRenameMap(testName, newName, impName) :- 
+							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, impName).
+	CSharpSafeMap(testName, mname, isSafe):- 
+							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe).
+	CSharpMonitorMap(testName, monName, impMachine) :- 
+							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMonitorMap(emodExpr, monName, impMachine).
+	CSharpInterfaceMap(testName, iName, evName) :- 
+							TestDecl(testName, _, _), InterfaceTypeDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
 
 	//If there is no testdecl then generate linkmap corresponding to CLinkMap
 	CSharpRenameMap("output", newName, impName) :- no TestDecl(_, _, _), CRenameMap (newName, impName).

@@ -54,7 +54,7 @@
             outputFormula = false;
             shortFileNames = false;
             printTypeInference = false;
-            compilerOutput = CompilerOutput.None;
+            compilerOutput = CompilerOutput.C0;
             inputFileNames = new List<string>();
             compilerService = false;
             isLinkerPhase = false;

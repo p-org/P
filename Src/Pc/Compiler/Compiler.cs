@@ -24,7 +24,7 @@
     using System.Windows.Forms;
     using System.Xml.Linq;
 
-    public enum CompilerOutput { None, C0, C, Zing, CSharp, Link };
+    public enum CompilerOutput { C0, C, Zing, CSharp, Link };
 
     public enum LivenessOption { None, Standard, Sampling };
 
@@ -914,33 +914,27 @@
                     UninstallProgram(RootProgramName);
                     return false;
                 }
-                if (Options.compilerOutput == CompilerOutput.None)
+
+                bool rc;
+                if ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C))
                 {
-                    UninstallProgram(RootProgramName);
+                    rc = GenerateC(RootProgramName, RootModel, importedFiles);
                 }
                 else
                 {
-                    bool rc;
-                    if ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C))
-                    {
-                        rc = GenerateC(RootProgramName, RootModel, importedFiles);
-                    }
-                    else
-                    {
-                        Debug.Assert(Options.compilerOutput == CompilerOutput.CSharp);
-                        rc = GenerateCSharp(RootProgramName, RootModel, importedFiles, errorReporter.idToSourceInfo);
-                    }
-                    UninstallProgram(RootProgramName);
-                    if (!rc)
-                    {
-                        return false;
-                    }
-                    wasRecentlyCompiled.Add(inputFileName);
+                    Debug.Assert(Options.compilerOutput == CompilerOutput.CSharp);
+                    rc = GenerateCSharp(RootProgramName, RootModel, importedFiles, errorReporter.idToSourceInfo);
                 }
+                UninstallProgram(RootProgramName);
+                if (!rc)
+                {
+                    return false;
+                }
+                wasRecentlyCompiled.Add(inputFileName);
             }
             else
             {
-                Log.WriteMessage(string.Format("Ignoring file {0} ...", inputFileName), SeverityKind.Info);
+                Log.WriteMessage(string.Format("Reusing summary for file {0} ...", inputFileName), SeverityKind.Info);
             }
             visitedPFiles.Add(inputFileName);
             importChainOfPFiles.Pop();
@@ -971,12 +965,6 @@
             {
                 UninstallProgram(RootProgramName);
                 return false;
-            }
-
-            if (Options.compilerOutput == CompilerOutput.None)
-            {
-                UninstallProgram(RootProgramName);
-                return true;
             }
 
             bool rc = GenerateZing(RootProgramName, RootModel, errorReporter.idToSourceInfo);

@@ -3707,35 +3707,25 @@ namespace Microsoft.Pc
             List<StatementSyntax> eventInitializationStmts = new List<StatementSyntax>();
             string eventsClassName = "Events";
 
-            foreach (var evName in new List<string>() { "halt", "null"})
-            {
+            //add halt event
+            evDeclarations.Add(
+            CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtEventValue"),
+                "halt",
+                Token(SyntaxKind.PublicKeyword),
+                Token(SyntaxKind.StaticKeyword),
+                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("halt"))
+                )
+            );
 
-
-                //add initialization
-                SyntaxNode payloadType = CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtNullType"));
-                SyntaxNode maxInstances = CSharpHelper.MkCSharpNumericLiteralExpression(1);
-                
-                SyntaxNode doAssume = CSharpHelper.MkCSharpFalseLiteralExpression();
-                
-                ExpressionSyntax init = CSharpHelper.MkCSharpObjectCreationExpression(
-                    IdentifierName("PrtEventValue"),
-                    CSharpHelper.MkCSharpObjectCreationExpression(
-                        IdentifierName("PrtEvent"),
-                        CSharpHelper.MkCSharpStringLiteralExpression(evName),
-                        payloadType,
-                        maxInstances,
-                        doAssume
-                    ));
-                //add declaration
-                evDeclarations.Add(
-                CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtEventValue"),
-                    evName == "null" ? "@null": evName,
-                    Token(SyntaxKind.PublicKeyword),
-                    Token(SyntaxKind.StaticKeyword),
-                    init
-                    )
-                );
-            }
+            //add null event
+            evDeclarations.Add(
+            CSharpHelper.MkCSharpFieldDeclarationWithInit(IdentifierName("PrtEventValue"),
+                "@null",
+                Token(SyntaxKind.PublicKeyword),
+                Token(SyntaxKind.StaticKeyword),
+                MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("@null"))
+                )
+            );
 
             var eventsClass = generator.ClassDeclaration(
               eventsClassName, typeParameters: null,

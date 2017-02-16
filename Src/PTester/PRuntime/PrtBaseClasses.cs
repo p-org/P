@@ -70,6 +70,22 @@ namespace P.Runtime
             }
         }
 
+        public HashSet<PrtValue> CurrentActionSet
+        {
+            get
+            {
+                return stateStack.TopOfStack.actionSet;
+            }
+        }
+
+        public HashSet<PrtValue> CurrentDefferedSet
+        {
+            get
+            {
+                return stateStack.TopOfStack.deferredSet;
+            }
+        }
+
         #region Prt Helper functions
         public PrtFun PrtFindActionHandler(PrtValue ev)
         {
@@ -158,7 +174,7 @@ namespace P.Runtime
 
         public bool PrtIsActionInstalled(PrtValue ev)
         {
-            return CurrentState.dos.ContainsKey(ev);
+            return CurrentActionSet.Contains(ev);
         }
 
         public void PrtPushTransitionFun(PrtValue ev)
@@ -169,8 +185,12 @@ namespace P.Runtime
 
         public void PrtFunContReturn(List<PrtValue> retLocals)
         {
+            if(retLocals == null)
+            {
+                retLocals = new List<PrtValue>();
+            }
             continuation.reason = PrtContinuationReason.Return;
-            continuation.retVal = null;
+            continuation.retVal = PrtValue.@null;
             continuation.retLocals = retLocals;
         }
 
@@ -419,10 +439,10 @@ namespace P.Runtime
 
         public bool DequeueEvent(PrtImplMachine owner)
         {
-            HashSet<PrtEventValue> deferredSet;
+            HashSet<PrtValue> deferredSet;
             HashSet<PrtValue> receiveSet;
 
-            deferredSet = owner.CurrentState.deferredSet;
+            deferredSet = owner.CurrentDefferedSet;
             receiveSet = owner.receiveSet;
 
             int iter = 0;

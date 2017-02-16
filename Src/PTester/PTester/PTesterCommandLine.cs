@@ -174,7 +174,7 @@ namespace P.Tester
             int numOfSchedules = 0;
             int numOfSteps = 0;
             var randomScheduler = new Random(1);
-            while (numOfSchedules < 100)
+            while (numOfSchedules < 1000)
             {
                 var currImpl = (StateImpl)s.Clone();
                 Console.WriteLine("-----------------------------------------------------");

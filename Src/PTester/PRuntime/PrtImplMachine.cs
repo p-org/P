@@ -462,6 +462,7 @@ namespace P.Runtime
             {
                 nextSMOperation = PrtNextStatemachineOperation.HandleEventOperation;
                 hasMoreWork = false;
+                eventValue = PrtValue.@null;
                 goto Finish;
             }
 

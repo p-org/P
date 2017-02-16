@@ -624,7 +624,7 @@ namespace P.Runtime
         {
             var mapKey = obj as PrtMapKey;
             if (mapKey == null) return false;
-            return key.Equals(mapKey);
+            return key.Equals(mapKey.key);
         }
 
         public override int GetHashCode()
@@ -668,7 +668,7 @@ namespace P.Runtime
             {
                 throw new PrtAssertFailureException("Illegal key in Lookup");
             }
-            return keyToValueMap[new PrtMapKey(key, 0)];
+            return keyToValueMap.Where(x => x.Key.key.Equals(key)).Select(y => y.Value).First();
         }
 
         public PrtSeqValue Keys()
@@ -693,7 +693,7 @@ namespace P.Runtime
 
         public bool Contains(PrtValue key)
         {
-            return keyToValueMap.ContainsKey(new PrtMapKey(key, 0));
+            return keyToValueMap.Select(k => k.Key.key).Where(x => x.Equals(key)).Count() > 0;
         }
 
         public void Remove(PrtValue key)

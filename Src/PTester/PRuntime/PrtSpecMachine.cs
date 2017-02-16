@@ -209,6 +209,7 @@ namespace P.Runtime
                 }
                 else if (PrtIsActionInstalled(currEventValue))
                 {
+                    eventValue = currEventValue;
                     goto DoAction;
                 }
                 else

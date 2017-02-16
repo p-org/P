@@ -5,7 +5,7 @@ using System.Linq;
 
 namespace P.Runtime
 {
-    public abstract class PrtValue : IEquatable<PrtValue>
+    public abstract class PrtValue
     {
         public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
         public static PrtEventValue halt = new PrtEventValue(new PrtEvent("halt", new PrtAnyType(), PrtEvent.DefaultMaxInstances, false));
@@ -63,7 +63,7 @@ namespace P.Runtime
             throw new NotImplementedException("Size method is not overridden in the derived class");
         }
 
-        public abstract bool Equals(PrtValue val);
+        //public abstract bool Equals(PrtValue val);
 
         public static bool PrtInhabitsType(PrtValue value, PrtType type)
         {
@@ -208,13 +208,17 @@ namespace P.Runtime
             return new PrtIntValue(this.nt);
         }
 
-        public override bool Equals(PrtValue val)
+        public override bool Equals(object val)
         {
             var intVal = val as PrtIntValue;
             if (intVal == null) return false;
             return this.nt == intVal.nt;
         }
 
+        public override int GetHashCode()
+        {
+            return nt.GetHashCode();
+        }
         public override string ToString()
         {
             return nt.ToString();
@@ -240,13 +244,17 @@ namespace P.Runtime
             return new PrtBoolValue(this.bl);
         }
 
-        public override bool Equals(PrtValue val)
+        public override bool Equals(object val)
         {
             var boolVal = val as PrtBoolValue;
             if (boolVal == null) return false;
             return this.bl == boolVal.bl;
         }
 
+        public override int GetHashCode()
+        {
+            return bl.GetHashCode();
+        }
         public override string ToString()
         {
             return bl.ToString();
@@ -267,11 +275,16 @@ namespace P.Runtime
             return new PrtEventValue(this.evt);
         }
 
-        public override bool Equals(PrtValue val)
+        public override bool Equals(object val)
         {
             var eventVal = val as PrtEventValue;
             if (eventVal == null) return false;
             return this.evt.name == eventVal.evt.name;
+        }
+
+        public override int GetHashCode()
+        {
+            return evt.GetHashCode();
         }
 
         public override string ToString()
@@ -318,12 +331,6 @@ namespace P.Runtime
             return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
         }
 
-        public override bool Equals(PrtValue val)
-        {
-            var machineVal = val as PrtMachineValue;
-            if (machineVal == null) return false;
-            return this.mach == machineVal.mach;
-        }
     }
 
     public class PrtMachineValue : PrtValue
@@ -340,11 +347,16 @@ namespace P.Runtime
             return new PrtMachineValue(this.mach);
         }
 
-        public override bool Equals(PrtValue val)
+        public override bool Equals(object val)
         {
             var machineVal = val as PrtMachineValue;
             if (machineVal == null) return false;
             return this.mach == machineVal.mach;
+        }
+
+        public override int GetHashCode()
+        {
+            return mach.GetHashCode();
         }
 
         public override string ToString()
@@ -403,7 +415,7 @@ namespace P.Runtime
             return clone;
         }
 
-        public override bool Equals(PrtValue val)
+        public override bool Equals(object val)
         {
             if (val is PrtNamedTupleValue) return false;
             var tupValue = (val as PrtTupleValue);
@@ -414,6 +426,11 @@ namespace P.Runtime
                 if (!this.fieldValues[i].Equals(tupValue.fieldValues[i])) return false;
             }
             return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return fieldValues.GetHashCode();
         }
 
         public override string ToString()
@@ -471,7 +488,7 @@ namespace P.Runtime
             return clone;
         }
 
-        public override bool Equals(PrtValue val)
+        public override bool Equals(object val)
         {
             var tup = val as PrtNamedTupleValue;
             if (tup == null) return false;
@@ -482,6 +499,11 @@ namespace P.Runtime
                 if (!this.fieldValues[i].Equals(tup.fieldValues[i])) return false;
             }
             return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return fieldValues.GetHashCode();
         }
 
         public override string ToString()
@@ -587,7 +609,7 @@ namespace P.Runtime
             return elements.Count();
         }
 
-        public override bool Equals(PrtValue val)
+        public override bool Equals(object val)
         {
             var seqVal = val as PrtSeqValue;
             if (seqVal == null) return false;
@@ -597,6 +619,11 @@ namespace P.Runtime
                 if (!this.elements[i].Equals(seqVal.elements[i])) return false;
             }
             return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return elements.GetHashCode();
         }
 
         public override string ToString()
@@ -718,7 +745,7 @@ namespace P.Runtime
             return oldVal;
         }
 
-        public override bool Equals(PrtValue val)
+        public override bool Equals(object val)
         {
             var mapVal = val as PrtMapValue;
             if (mapVal == null) return false;
@@ -728,6 +755,11 @@ namespace P.Runtime
                 if (!mapVal.Contains(k.key)) return false;
             }
             return true;
+        }
+
+        public override int GetHashCode()
+        {
+            return keyToValueMap.GetHashCode();
         }
 
         public override string ToString()

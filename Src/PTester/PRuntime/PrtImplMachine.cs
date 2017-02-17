@@ -122,7 +122,7 @@ namespace P.Runtime
         {
             
             PrtEventValue ev = e as PrtEventValue;
-            if (ev.evt.name == "null")
+            if (ev.Equals(PrtValue.@null))
             {
                 throw new PrtIllegalEnqueueException("Enqueued event must not be null");
             }
@@ -157,7 +157,6 @@ namespace P.Runtime
                 throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.ToString(), prtType.ToString(), ev.evt.name));
             }
 
-            //check if the event sent is in the permissions
 
             if (currentStatus == PrtMachineStatus.Halted)
             {

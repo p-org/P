@@ -171,6 +171,25 @@ namespace P.Runtime
 
         public void Announce(PrtEventValue ev, PrtValue payload, PrtMachine parent)
         {
+            if (ev.Equals(PrtValue.@null))
+            {
+                throw new PrtIllegalEnqueueException("Enqueued event must not be null");
+            }
+
+            PrtType prtType = ev.evt.payloadType;
+            //assertion to check if argument passed inhabits the payload type.
+            if (prtType is PrtNullType)
+            {
+                if (!payload.Equals(PrtValue.@null))
+                {
+                    throw new PrtIllegalEnqueueException("Did not expect a payload value");
+                }
+            }
+            else if (!PrtValue.PrtInhabitsType(payload, prtType))
+            {
+                throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", payload.ToString(), prtType.ToString(), ev.evt.name));
+            }
+
             var allSpecMachines = GetSpecMachines(parent.renamedName);
             foreach (var mon in allSpecMachines)
             {

@@ -195,6 +195,7 @@ namespace P.Runtime
             while (index < fieldTypes.Count)
             {
                 retStr += fieldNames[index] + ":" + fieldTypes[index].ToString() + ", ";
+                index++;
             }
             retStr += ">";
             return retStr;

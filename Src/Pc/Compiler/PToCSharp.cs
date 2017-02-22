@@ -419,8 +419,13 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var typeName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    typeContext.importedTypes.Add(Factory.Instance.ToAST(it.Current), typeName);
-                    typeContext.PTypeToCSharpExpr((FuncTerm)it.Current);
+                    //ignore the duplicate imported types
+                    if(!typeContext.importedTypes.ContainsKey(Factory.Instance.ToAST(it.Current)))
+                    {
+                        typeContext.importedTypes.Add(Factory.Instance.ToAST(it.Current), typeName);
+                        typeContext.PTypeToCSharpExpr((FuncTerm)it.Current);
+                    }
+                    
                 }
             }
 
@@ -432,8 +437,17 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var typeName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    typeContext.exportedTypes.Add(Factory.Instance.ToAST(it.Current), typeName);
-                    typeContext.PTypeToCSharpExpr((FuncTerm)it.Current);
+                    //if duplicate exported type then add it to duplicate and declare it separately in MkType()
+                    if(typeContext.exportedTypes.ContainsKey(Factory.Instance.ToAST(it.Current)))
+                    {
+                        typeContext.duplicateExportedTypes.Add(typeName, it.Current as FuncTerm);
+                    }
+                    else
+                    {
+                        typeContext.exportedTypes.Add(Factory.Instance.ToAST(it.Current), typeName);
+                        typeContext.PTypeToCSharpExpr((FuncTerm)it.Current);
+                    }
+                    
                 }
             }
 
@@ -472,6 +486,7 @@ namespace Microsoft.Pc
             public List<FieldDeclarationSyntax> typeDeclaration;
             private Dictionary<AST<Node>, ExpressionSyntax> pTypeToCSharpExpr;
             public Dictionary<AST<Node>, string> exportedTypes;
+            public Dictionary<string, FuncTerm> duplicateExportedTypes;
             public Dictionary<AST<Node>, string> importedTypes;
 
             private PToCSharpCompiler pToCSharp;
@@ -485,16 +500,17 @@ namespace Microsoft.Pc
                 pTypeToCSharpExpr = new Dictionary<AST<Node>, ExpressionSyntax>();
                 exportedTypes = new Dictionary<AST<Node>, string>();
                 importedTypes = new Dictionary<AST<Node>, string>();
+                duplicateExportedTypes = new Dictionary<string, FuncTerm>();
             }
 
-            private ExpressionSyntax GetTypeExpr(string typeName)
+            public ExpressionSyntax GetTypeExpr(string typeName)
             {
                 var typeClass = "Types";
                 var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(typeClass), IdentifierName(typeName));
                 return retVal;
             }
 
-            private string GetNextTypeName(string typeName = null)
+            public string GetNextTypeName(string typeName = null)
             {
                 
                 typeName = typeName == null ?
@@ -504,13 +520,13 @@ namespace Microsoft.Pc
                 return typeName;
             }
 
-            private void AddTypeDeclaration(string typeName)
+            public void AddTypeDeclaration(string typeName)
             {
                 typeDeclaration.Add((FieldDeclarationSyntax)
                     CSharpHelper.MkCSharpFieldDeclaration(IdentifierName("PrtType"), typeName, Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword)));
             }
 
-            private void AddTypeInitialization(SyntaxNode lhs, SyntaxNode rhs)
+            public void AddTypeInitialization(SyntaxNode lhs, SyntaxNode rhs)
             {
                 typeInitialization.Add((StatementSyntax)(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(lhs, rhs)));
             }
@@ -806,9 +822,20 @@ namespace Microsoft.Pc
 
         private void MkTypes()
         {
+            //add type declaration and initialization for duplicate exported types
+            foreach(var dt in typeContext.duplicateExportedTypes)
+            {
+                var typeName = typeContext.GetNextTypeName(dt.Key);
+                var typeExpr = typeContext.GetTypeExpr(typeName);
+                var declaredTypeExpr = typeContext.PTypeToCSharpExpr(dt.Value);
+                typeContext.AddTypeDeclaration(typeName);
+                typeContext.AddTypeInitialization(typeExpr, declaredTypeExpr);
+            }
+
             string typesClassName = "Types";
             List<SyntaxNode> typeDeclarations = new List<SyntaxNode>();
             typeDeclarations.AddRange(typeContext.typeDeclaration);
+
 
             var staticMethodName = "Types_" + Path.GetFileNameWithoutExtension(cSharpFileName);
             var staticInitializer =

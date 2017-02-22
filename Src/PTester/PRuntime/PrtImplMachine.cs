@@ -338,6 +338,8 @@ namespace P.Runtime
             {
                 case PrtContinuationReason.Pop:
                     {
+                        //clear the fun stack on pop
+                        invertedFunStack.Clear();
                         stateExitReason = PrtStateExitReason.OnPopStatement;
                         nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                         PrtPushExitFunction();
@@ -345,6 +347,8 @@ namespace P.Runtime
                     }
                 case PrtContinuationReason.Goto:
                     {
+                        //clear fun stack on goto
+                        invertedFunStack.Clear();
                         stateExitReason = PrtStateExitReason.OnGotoStatement;
                         nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                         PrtPushExitFunction();
@@ -352,6 +356,8 @@ namespace P.Runtime
                     }
                 case PrtContinuationReason.Raise:
                     {
+                        //clear fun stack on raise
+                        invertedFunStack.Clear();
                         nextSMOperation = PrtNextStatemachineOperation.HandleEventOperation;
                         hasMoreWork = true;
                         goto Finish;
@@ -359,6 +365,7 @@ namespace P.Runtime
                 case PrtContinuationReason.NewMachine:
                     {
                         hasMoreWork = false;
+                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                         goto Finish;
                     }
                 case PrtContinuationReason.Nondet:
@@ -377,6 +384,7 @@ namespace P.Runtime
                 case PrtContinuationReason.Send:
                     {
                         hasMoreWork = false;
+                        nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                         goto Finish;
                     }
                 case PrtContinuationReason.Return:

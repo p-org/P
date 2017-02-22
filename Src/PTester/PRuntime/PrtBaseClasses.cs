@@ -642,6 +642,11 @@ namespace P.Runtime
             return clonedStack;
         }
 
+        public void Clear()
+        {
+            funStack.Clear();
+        }
+
         public PrtFunStackFrame TopOfStack
         {
             get

@@ -132,7 +132,6 @@ namespace P.Runtime
             }
 
             return currentStatus == PrtMachineStatus.Halted;
-
         }
 
         public void PrtChangeState(PrtState s)

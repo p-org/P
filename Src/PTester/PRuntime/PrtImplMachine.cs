@@ -38,7 +38,7 @@ namespace P.Runtime
         public int maxBufferSize;
         public bool doAssume;
         public PrtInterfaceValue self;
-        
+
         #endregion
 
         #region Clone and Undo
@@ -77,7 +77,7 @@ namespace P.Runtime
             clonedMachine.doAssume = this.doAssume;
             clonedMachine.self = new PrtInterfaceValue(clonedMachine, this.self.permissions);
 
-            
+
             return clonedMachine;
         }
         #endregion
@@ -120,7 +120,6 @@ namespace P.Runtime
 
         public override void PrtEnqueueEvent(PrtValue e, PrtValue arg, PrtMachine source, PrtMachineValue target = null)
         {
-            
             PrtEventValue ev = e as PrtEventValue;
             if (ev.Equals(PrtValue.@null))
             {
@@ -128,15 +127,15 @@ namespace P.Runtime
             }
 
             //check if the sent event is in source send set
-            if(!source.sends.Contains(e as PrtEventValue))
+            if (!source.sends.Contains(e as PrtEventValue))
             {
                 throw new PrtIllegalEnqueueException(String.Format("Machine {0} cannot send event {1}", source.Name, e.ToString()));
             }
 
             //check if the sent event is in target permissions
-            if(target is PrtInterfaceValue)
+            if (target is PrtInterfaceValue)
             {
-                if(!(target as PrtInterfaceValue).permissions.Contains(e as PrtEventValue))
+                if (!(target as PrtInterfaceValue).permissions.Contains(e as PrtEventValue))
                 {
                     throw new PrtIllegalEnqueueException(String.Format("Event {0} is not in the permission set of the target", e.ToString()));
                 }
@@ -156,7 +155,6 @@ namespace P.Runtime
             {
                 throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.ToString(), prtType.ToString(), ev.evt.name));
             }
-
 
             if (currentStatus == PrtMachineStatus.Halted)
             {
@@ -264,24 +262,23 @@ namespace P.Runtime
                     if (numOfStepsTaken > 100000)
                     {
                         throw new PrtInfiniteRaiseLoop();
-                    }                   
+                    }
                     numOfStepsTaken++;
                 }
             }
-            catch(PrtException ex)
+            catch (PrtException ex)
             {
                 stateImpl.Exception = ex;
             }
-            
         }
-        
+
         public bool PrtStepStateMachine()
         {
             PrtValue currEventValue;
             PrtFun currAction;
             bool hasMoreWork = false;
 
-            switch(nextSMOperation)
+            switch (nextSMOperation)
             {
                 case PrtNextStatemachineOperation.ExecuteFunctionOperation:
                     goto DoExecuteFunction;
@@ -297,11 +294,11 @@ namespace P.Runtime
             /*
              * Note that we have made an assumption that when a state is pushed on state stack or a transition is taken (update to a state)
              * the action set and deferred set is updated appropriately
-            */
-            if(invertedFunStack.TopOfStack == null)
+             */
+            if (invertedFunStack.TopOfStack == null)
             {
                 stateImpl.Trace("<StateLog> Machine {0}-{1} entering State {2}", this.Name, this.instanceNumber, CurrentState.name);
-                if(CurrentState.entryFun.IsAnonFun)
+                if (CurrentState.entryFun.IsAnonFun)
                     PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
                 else
                     PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals());
@@ -312,7 +309,7 @@ namespace P.Runtime
 
             DoAction:
             currAction = PrtFindActionHandler(eventValue);
-            if(currAction == PrtFun.IgnoreFun)
+            if (currAction == PrtFun.IgnoreFun)
             {
                 stateImpl.Trace("<ActionLog> Machine {0}-{1} ignoring Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                 PrtResetTriggerAndPayload();
@@ -322,7 +319,7 @@ namespace P.Runtime
             }
             else
             {
-                if(invertedFunStack.TopOfStack == null)
+                if (invertedFunStack.TopOfStack == null)
                 {
                     stateImpl.Trace("<ActionLog> Machine {0}-{1} executing action for Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                     if (currAction.IsAnonFun)
@@ -341,7 +338,7 @@ namespace P.Runtime
 
             CheckFunLastOperation:
 
-            switch(continuation.reason)
+            switch (continuation.reason)
             {
                 case PrtContinuationReason.Pop:
                     {
@@ -383,7 +380,7 @@ namespace P.Runtime
                         goto Finish;
                     }
                 case PrtContinuationReason.Receive:
-                    { 
+                    {
                         nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
                         hasMoreWork = true;
                         goto Finish;
@@ -456,7 +453,7 @@ namespace P.Runtime
                                     goto Finish;
                                 }
                         }
-                        
+
                     }
                 default:
                     {
@@ -468,7 +465,7 @@ namespace P.Runtime
             DoDequeue:
             Debug.Assert(receiveSet.Count == 0, "Machine cannot be blocked at receive when here");
             var dequeueStatus = PrtDequeueEvent(CurrentState.hasNullTransition);
-            if(dequeueStatus == PrtDequeueReturnStatus.BLOCKED)
+            if (dequeueStatus == PrtDequeueReturnStatus.BLOCKED)
             {
                 nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
                 hasMoreWork = false;
@@ -489,10 +486,9 @@ namespace P.Runtime
                 goto Finish;
             }
 
-
             DoHandleEvent:
             Debug.Assert(receiveSet.Count == 0, "The machine must not be blocked on a receive");
-            if(!currentTrigger.Equals(PrtValue.@null))
+            if (!currentTrigger.Equals(PrtValue.@null))
             {
                 currEventValue = currentTrigger;
                 currentTrigger = PrtValue.@null;
@@ -502,13 +498,13 @@ namespace P.Runtime
                 currEventValue = eventValue;
             }
 
-            if(PrtIsPushTransitionPresent(currEventValue))
+            if (PrtIsPushTransitionPresent(currEventValue))
             {
                 eventValue = currEventValue;
                 PrtPushState(CurrentState.transitions[currEventValue].gotoState);
                 goto DoExecuteFunction;
             }
-            else if(PrtIsTransitionPresent(currEventValue))
+            else if (PrtIsTransitionPresent(currEventValue))
             {
                 stateExitReason = PrtStateExitReason.OnTransition;
                 nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
@@ -516,7 +512,7 @@ namespace P.Runtime
                 PrtPushExitFunction();
                 goto DoExecuteFunction;
             }
-            else if(PrtIsActionInstalled(currEventValue))
+            else if (PrtIsActionInstalled(currEventValue))
             {
                 eventValue = currEventValue;
                 goto DoAction;
@@ -531,7 +527,7 @@ namespace P.Runtime
             }
 
             DoReceive:
-            if(receiveSet.Count == 0)
+            if (receiveSet.Count == 0)
             {
                 stateExitReason = PrtStateExitReason.NotExit;
                 nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
@@ -543,7 +539,6 @@ namespace P.Runtime
                 nextSMOperation = PrtNextStatemachineOperation.ReceiveOperation;
                 hasMoreWork = false;
                 goto Finish;
-
             }
             else if (dequeueStatus == PrtDequeueReturnStatus.SUCCESS)
             {
@@ -561,8 +556,6 @@ namespace P.Runtime
             Finish:
             Debug.Assert(!hasMoreWork || currentStatus == PrtMachineStatus.Enabled, "hasMoreWork is true but the statemachine is blocked");
             return hasMoreWork;
-
-            }
-
+        }
     }
 }

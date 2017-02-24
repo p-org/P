@@ -185,10 +185,6 @@ namespace P.Runtime
 
         public void PrtFunContReturn(List<PrtValue> retLocals)
         {
-            if(retLocals == null)
-            {
-                retLocals = new List<PrtValue>();
-            }
             continuation.reason = PrtContinuationReason.Return;
             continuation.retVal = PrtValue.@null;
             continuation.retLocals = retLocals;

@@ -163,7 +163,15 @@ namespace P.Runtime
         public void PrtPushExitFunction()
         {
             stateImpl.Trace("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
-            PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals(currentPayload));
+            PrtFun exitFun = CurrentState.exitFun;
+            if (exitFun.IsAnonFun)
+            {
+                PrtPushFunStackFrame(exitFun, exitFun.CreateLocals(currentPayload));
+            }
+            else
+            {
+                PrtPushFunStackFrame(exitFun, exitFun.CreateLocals());
+            }
         }
 
         public bool PrtIsTransitionPresent(PrtValue ev)
@@ -178,8 +186,15 @@ namespace P.Runtime
 
         public void PrtPushTransitionFun(PrtValue ev)
         {
-            // Shaz: Figure out how to handle the transfer stuff for payload !!!
-            PrtPushFunStackFrame(CurrentState.transitions[ev].transitionFun, CurrentState.transitions[ev].transitionFun.CreateLocals(currentPayload));
+            PrtFun transitionFun = CurrentState.transitions[ev].transitionFun;
+            if (transitionFun.IsAnonFun)
+            {
+                PrtPushFunStackFrame(transitionFun, transitionFun.CreateLocals(currentPayload));
+            }
+            else
+            {
+                PrtPushFunStackFrame(transitionFun, transitionFun.CreateLocals());
+            }
         }
 
         public void PrtFunContReturn(List<PrtValue> retLocals)

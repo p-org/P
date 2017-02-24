@@ -325,7 +325,14 @@ namespace P.Runtime
                 if(invertedFunStack.TopOfStack == null)
                 {
                     stateImpl.Trace("<ActionLog> Machine {0}-{1} executing action for Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
-                    PrtPushFunStackFrame(currAction, currAction.CreateLocals(currentPayload));
+                    if (currAction.IsAnonFun)
+                    {
+                        PrtPushFunStackFrame(currAction, currAction.CreateLocals(currentPayload));
+                    }
+                    else
+                    {
+                        PrtPushFunStackFrame(currAction, currAction.CreateLocals());
+                    }
                 }
                 //invoke the action handler
                 invertedFunStack.TopOfStack.fun.Execute(stateImpl, this);
@@ -428,7 +435,16 @@ namespace P.Runtime
                                 }
                             case PrtStateExitReason.OnTransitionAfterExit:
                                 {
-                                    PrtChangeState(CurrentState.transitions[eventValue].gotoState);
+                                    // The parameter to an anonymous transition function is always passed as swap.
+                                    // Update currentPayload to the latest value of the parameter so that the correct
+                                    // value gets passed to the entry function of the target state.
+                                    PrtTransition transition = CurrentState.transitions[eventValue];
+                                    PrtFun transitionFun = transition.transitionFun;
+                                    if (transitionFun.IsAnonFun)
+                                    {
+                                        currentPayload = continuation.retLocals[0];
+                                    }
+                                    PrtChangeState(transition.gotoState);
                                     stateExitReason = PrtStateExitReason.NotExit;
                                     nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                     hasMoreWork = true;

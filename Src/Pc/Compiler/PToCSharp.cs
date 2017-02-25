@@ -707,9 +707,17 @@ namespace Microsoft.Pc
         public static string EventName(string rawName)
         {
             if (rawName == NullEvent)
+            {
                 return "@null";
-            else
+            }
+            else if (rawName == HaltEvent)
+            {
                 return rawName;
+            }
+            else
+            {
+                return String.Format("event_{0}", rawName);
+            }
         }
 
         public ExpressionSyntax GetEventVar(string eventName)
@@ -1459,12 +1467,12 @@ namespace Microsoft.Pc
                 }
                 else if (op == PData.Cnst_Null.Node.Name)
                 {
-                    return pToCSharp.GetEventVar("@null");
+                    return pToCSharp.GetEventVar(NullEvent);
                 }
                 else
                 {
                     //op == PData.Cnst_Halt.Node.Name
-                    return pToCSharp.GetEventVar("halt");
+                    return pToCSharp.GetEventVar(HaltEvent);
                 }
             }
 
@@ -1728,7 +1736,7 @@ namespace Microsoft.Pc
             {
                 if (args.Count == 0)
                 {
-                    return pToCSharp.GetEventVar("@null");
+                    return pToCSharp.GetEventVar(NullEvent);
                 }
                 else if (args.Count == 1)
                 {
@@ -1752,7 +1760,7 @@ namespace Microsoft.Pc
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(children);
                 var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(stateExpr, "name"));
-                var assignStmt1 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar("@null"));
+                var assignStmt1 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(NullEvent));
                 var assignStmt2 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var assignStmt3 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "destOfGoto"), stateExpr);
                 var createRetCtxt = ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtFunContGoto")));
@@ -1764,7 +1772,7 @@ namespace Microsoft.Pc
                 var eventExpr = (ExpressionSyntax)children[0];
                 children.RemoveAt(0);
                 var payloadVar = MkPayload(children);
-                var equalsExpr = CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(eventExpr, "Equals"), pToCSharp.GetEventVar("@null"));
+                var equalsExpr = CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(eventExpr, "Equals"), pToCSharp.GetEventVar(NullEvent));
                 var assertStmt = CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
                 var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
                 var assignStmt1 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), eventExpr);
@@ -1892,8 +1900,8 @@ namespace Microsoft.Pc
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 if (op == PData.Cnst_Pop.Node.Name)
                 {
-                    stmtList.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar("@null")));
-                    stmtList.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentPayload"), pToCSharp.GetEventVar("@null")));
+                    stmtList.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(NullEvent)));
+                    stmtList.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentPayload"), pToCSharp.GetEventVar(NullEvent)));
                     stmtList.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtFunContPop"))));
                     stmtList.Add(ReturnStatement());
                 }
@@ -3269,7 +3277,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                 Argument(
-                                                    translator.GetEventVar(EventName(doFun.Key))),
+                                                    translator.GetEventVar(doFun.Key)),
                                                 Token(SyntaxKind.CommaToken),
                                                 Argument(doFunExpr)}))))
                             .NormalizeWhitespace()
@@ -3384,7 +3392,7 @@ namespace Microsoft.Pc
                                         SeparatedList<ArgumentSyntax>(
                                             new SyntaxNodeOrToken[]{
                                                     Argument(
-                                                        translator.GetEventVar(EventName(trigger))),
+                                                        translator.GetEventVar(trigger)),
                                                     Token(SyntaxKind.CommaToken),
                                                     Argument(
                                                         IdentifierName(transition_name))}))))

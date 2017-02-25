@@ -227,7 +227,7 @@ namespace P.Runtime
         public Boolean GetSelectedChoiceValue(PrtImplMachine process)
         {
             //throw new NotImplementedException();
-            return (new Random(1)).Next(1) == 0;
+            return (new Random(DateTime.Now.Millisecond)).Next(1) == 0;
         }
     }
 

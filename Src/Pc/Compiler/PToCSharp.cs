@@ -2362,8 +2362,7 @@ namespace Microsoft.Pc
                                 ArgumentList(
                                     SingletonSeparatedList<ArgumentSyntax>(
                                         Argument(
-                                            LiteralExpression(
-                                                SyntaxKind.NullLiteralExpression))))))
+                                            CSharpHelper.MkCSharpDot("currFun", "locals"))))))
                     .NormalizeWhitespace());
 
                 var executeMethodDecl =

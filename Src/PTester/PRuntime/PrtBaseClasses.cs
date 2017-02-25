@@ -146,18 +146,18 @@ namespace P.Runtime
             return invertedFunStack.PopFun();
         }
 
-        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local)
+        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> locals)
         {
             if (!fun.IsAnonFun)
             {
                 stateImpl.Trace("<FunctionLog> Machine {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
             }
-            invertedFunStack.PushFun(fun, local);
+            invertedFunStack.PushFun(fun, locals);
         }
 
-        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local, int retTo)
+        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> locals, int retTo)
         {
-            invertedFunStack.PushFun(fun, local, retTo);
+            invertedFunStack.PushFun(fun, locals, retTo);
         }
 
         public void PrtPushExitFunction()
@@ -608,25 +608,17 @@ namespace P.Runtime
         public List<PrtValue> locals;
         
         public PrtFun fun;
-        public PrtFunStackFrame(PrtFun fun,  List<PrtValue> locs)
+        public PrtFunStackFrame(PrtFun fun,  List<PrtValue> locals)
         {
             this.fun = fun;
-            this.locals = new List<PrtValue>();
-            foreach(var l in locs)
-            {
-                locals.Add(l.Clone());
-            }
+            this.locals = locals;
             returnToLocation = 0;
         }
 
-        public PrtFunStackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+        public PrtFunStackFrame(PrtFun fun, List<PrtValue> locals, int retLocation)
         {
             this.fun = fun;
-            this.locals = new List<PrtValue>();
-            foreach (var l in locs)
-            {
-                locals.Add(l.Clone());
-            }
+            this.locals = locals;
             returnToLocation = retLocation;
         }
 

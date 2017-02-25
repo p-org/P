@@ -206,14 +206,14 @@ namespace P.Runtime
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.SUCCESS;
             }
-            else if (hasNullTransition || receiveSet.Contains(currentTrigger))
+            else if (hasNullTransition || receiveSet.Contains(PrtValue.@null))
             {
                 if (currentStatus == PrtMachineStatus.Blocked)
                 {
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
                 }
                 stateImpl.Trace(
-                    "<NullTransLog> Null transition taken by Machine {0}-{1}\n",
+                    "<NullTransLog> Null transition taken by Machine {0}-{1}",
                     Name, instanceNumber);
                 currentPayload = PrtValue.@null;
                 currentTrigger = PrtValue.@null;

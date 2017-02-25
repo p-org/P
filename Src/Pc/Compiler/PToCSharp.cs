@@ -720,9 +720,18 @@ namespace Microsoft.Pc
             }
         }
 
+        public static string StackFrameClassName(string rawName)
+        {
+            return String.Format("{0}_StackFrame", rawName);
+        }
+
+        public static string VarName(string rawName)
+        {
+            return String.Format("var_{0}", rawName);
+        }
+
         public ExpressionSyntax GetEventVar(string eventName)
         {
-            
             var eventClass = "Events";
             var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(EventName(eventName)));
             return retVal;
@@ -1280,13 +1289,13 @@ namespace Microsoft.Pc
                     Debug.Assert(calleeInfo.isAnonymous);
                     List<StatementSyntax> ifStmts = new List<StatementSyntax>();
                     ifStmts.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
-                        CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)), 
+                        CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)),
                         CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "currentPayload", "Clone"))));
                     foreach (var calleeLocal in calleeInfo.localNames)
                     {
                         var calleeLocalInfo = calleeInfo.localNameToInfo[calleeLocal];
                         ifStmts.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
-                            CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(calleeLocalInfo.index)), 
+                            CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(calleeLocalInfo.index)),
                             CSharpHelper.MkCSharpInvocationExpression(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("PrtValue"), IdentifierName("PrtMkDefaultValue")), pToCSharp.typeContext.PTypeToCSharpExpr(calleeLocalInfo.type))));
                     }
                     ifStmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(
@@ -1364,11 +1373,11 @@ namespace Microsoft.Pc
                 if (funInfo != null && funInfo.localNameToInfo.ContainsKey(name))
                 {
                     //local var of a function:
-                    return CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot("currFun", "locals"), funInfo.localNameToInfo[name].index);
+                    return CSharpHelper.MkCSharpDot("currFun", VarName(name));
                 }
                 else if (owner != null && pToCSharp.allMachines[owner.machineName].localVariableToVarInfo.ContainsKey(name))
                 {
-                    return CSharpHelper.MkCSharpDot("parent", name);
+                    return CSharpHelper.MkCSharpDot("parent", VarName(name));
                 }
                 else
                 {
@@ -2200,8 +2209,8 @@ namespace Microsoft.Pc
             public SyntaxNode MkFunStackFrameClass()
             {
                 SyntaxList<MemberDeclarationSyntax> members = new SyntaxList<MemberDeclarationSyntax>();
-                string frameClassName = funName + "_StackFrame";
-                //public F1_Class_StackFrame(PrtFun fun, List<PrtValue> locs) : base(fun, locs) {}
+                string frameClassName = StackFrameClassName(funName);
+                //public F1_Class_StackFrame(PrtFun fun, List<PrtValue> _locals) : base(fun, _locals) {}
                 var pars = new List<SyntaxNode> { CSharpHelper.MkCSharpParameter(Identifier("locals"), CSharpHelper.MkCSharpGenericListType(IdentifierName("PrtValue"))),
                                                   CSharpHelper.MkCSharpParameter(Identifier("retLoc"), PredefinedType(Token(SyntaxKind.IntKeyword))) };
                 SyntaxTokenList modifiers = new SyntaxTokenList();
@@ -2210,20 +2219,20 @@ namespace Microsoft.Pc
                                                           modifiers,
                                                           new List<SyntaxNode>() {
                                                               CSharpHelper.MkCSharpParameter(Identifier("fun"), (TypeSyntax) IdentifierName("PrtFun")),
-                                                              CSharpHelper.MkCSharpParameter(Identifier("locs"), CSharpHelper.MkCSharpGenericListType(IdentifierName("PrtValue"))) },
+                                                              CSharpHelper.MkCSharpParameter(Identifier("_locals"), CSharpHelper.MkCSharpGenericListType(IdentifierName("PrtValue"))) },
                                                           CSharpHelper.MkCSharpConstructorInitializer(SyntaxKind.BaseConstructorInitializer,
-                                                              CSharpHelper.MkCSharpArgumentList(IdentifierName("fun"), IdentifierName("locs"))),
+                                                              CSharpHelper.MkCSharpArgumentList(IdentifierName("fun"), IdentifierName("_locals"))),
                                                           new List<StatementSyntax>()));
 
-                //public F2_Class_StackFrame(PrtFun fun, List<PrtValue> locs, int retLocation): base(fun, locs, retLocation) {}
+                //public F2_Class_StackFrame(PrtFun fun, List<PrtValue> _locals, int retLocation): base(fun, _locals, retLocation) {}
                 members = members.Add(CSharpHelper.MkCSharpConstructor(Identifier(frameClassName),
                                                          modifiers,
                                                          new List<SyntaxNode>() {
                                                               CSharpHelper.MkCSharpParameter(Identifier("fun"), (TypeSyntax) IdentifierName("PrtFun")),
-                                                              CSharpHelper.MkCSharpParameter(Identifier("locs"), CSharpHelper.MkCSharpGenericListType(IdentifierName("PrtValue"))),
+                                                              CSharpHelper.MkCSharpParameter(Identifier("_locals"), CSharpHelper.MkCSharpGenericListType(IdentifierName("PrtValue"))),
                                                               CSharpHelper.MkCSharpParameter(Identifier("retLocation"), PredefinedType(Token(SyntaxKind.IntKeyword))) },
                                                          CSharpHelper.MkCSharpConstructorInitializer(SyntaxKind.BaseConstructorInitializer,
-                                                             CSharpHelper.MkCSharpArgumentList(IdentifierName("fun"), IdentifierName("locs"), IdentifierName("retLocation"))),
+                                                             CSharpHelper.MkCSharpArgumentList(IdentifierName("fun"), IdentifierName("_locals"), IdentifierName("retLocation"))),
                                                          new List<StatementSyntax>()));
 
                 //public override PrtFunStackFrame Clone() {return this.Clone();}
@@ -2244,7 +2253,7 @@ namespace Microsoft.Pc
                 //Getters/setters for locals variables of the function: parameters and locals
                 foreach (var pair in funInfo.localNameToInfo)
                 {
-                    string varName = pair.Key;
+                    string varName = VarName(pair.Key);
                     //Debug:
                     //Console.WriteLine("Next local of function {0} is {1}", funName, varName);
 
@@ -2313,21 +2322,25 @@ namespace Microsoft.Pc
                                                 CSharpHelper.MkCSharpCastExpression(owner.machineName, IdentifierName("_parent")))))))
                         .NormalizeWhitespace());
                 }
+                string stackFrameClassName = StackFrameClassName(funName);
+                
                 funStmts.Add(
                     LocalDeclarationStatement(
                         VariableDeclaration(
-                            IdentifierName("PrtFunStackFrame"))
+                            IdentifierName(stackFrameClassName))
                         .WithVariables(
                             SingletonSeparatedList<VariableDeclaratorSyntax>(
                                 VariableDeclarator(
                                     Identifier("currFun"))
                                 .WithInitializer(
                                     EqualsValueClause(
-                                        InvocationExpression(
-                                            MemberAccessExpression(
-                                                SyntaxKind.SimpleMemberAccessExpression,
-                                                IdentifierName("parent"),
-                                                IdentifierName("PrtPopFunStackFrame"))))))))
+                                        CSharpHelper.MkCSharpCastExpression(
+                                            stackFrameClassName, 
+                                            InvocationExpression(
+                                                MemberAccessExpression(
+                                                    SyntaxKind.SimpleMemberAccessExpression,
+                                                    IdentifierName("parent"),
+                                                    IdentifierName("PrtPopFunStackFrame")))))))))
                     .NormalizeWhitespace());
 
                 funStmts.Add(
@@ -2502,11 +2515,20 @@ namespace Microsoft.Pc
 
                 return createLocalsMethodDecl;
             }
+            public SyntaxNode MkFunToStringMethod()
+            {
+                var body = SingletonList<StatementSyntax>(ReturnStatement(CSharpHelper.MkCSharpStringLiteralExpression(funName)));
+                var pars = new List<SyntaxNode> { };
+                return CSharpHelper.MkCSharpMethodDeclaration(IdentifierName("string"), Identifier("ToString"),
+                    new[] { Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.OverrideKeyword) },
+                    body,
+                    pars);
+            }
             public SyntaxNode MkCreateFunStackFrameMethod()
             {
                 var body = SingletonList<StatementSyntax>(
                             ReturnStatement((ExpressionSyntax)CSharpHelper.MkCSharpObjectCreationExpression(
-                                IdentifierName(funName + "_StackFrame"),
+                                IdentifierName(StackFrameClassName(funName)),
                                 new SyntaxNode[] { ThisExpression(), IdentifierName("locals"), IdentifierName("retLoc") })));
                 var pars = new List<SyntaxNode> { CSharpHelper.MkCSharpParameter(Identifier("locals"), CSharpHelper.MkCSharpGenericListType(IdentifierName("PrtValue"))),
                                                   CSharpHelper.MkCSharpParameter(Identifier("retLoc"), PredefinedType(Token(SyntaxKind.IntKeyword))) };
@@ -2574,7 +2596,7 @@ namespace Microsoft.Pc
                 funMembers = funMembers.Add((MemberDeclarationSyntax)MkExecuteMethod());
                 funMembers = funMembers.Add((MemberDeclarationSyntax)MkCreateLocalsMethod());
                 funMembers = funMembers.Add((MemberDeclarationSyntax)MkCreateFunStackFrameMethod());
-
+                funMembers = funMembers.Add((MemberDeclarationSyntax)MkFunToStringMethod());
                 var funClassDecl =
                     ClassDeclaration(funClassName)
                     .WithModifiers(
@@ -3035,7 +3057,7 @@ namespace Microsoft.Pc
                             IdentifierName("value")));
                     AccessorDeclarationSyntax[] accessorList = new AccessorDeclarationSyntax[]
                             { CSharpHelper.MkCSharpAccessor("get", getBody), CSharpHelper.MkCSharpAccessor("set", setBody)};
-                    machineMembers.Add(CSharpHelper.MkCSharpPropertyDecl("PrtValue", pair.Key, modifiers, accessorList));
+                    machineMembers.Add(CSharpHelper.MkCSharpPropertyDecl("PrtValue", VarName(pair.Key), modifiers, accessorList));
                     ind += 1;
                 }
 

@@ -545,11 +545,10 @@ namespace P.Runtime
         public PrtStateStack Clone()
         {
             var clone = new PrtStateStack();
-            foreach(var s in stateStack)
+            foreach(var s in stateStack.Reverse())
             {
                 clone.stateStack.Push(s.Clone());
             }
-            clone.stateStack.Reverse();
             return clone;
         }
 

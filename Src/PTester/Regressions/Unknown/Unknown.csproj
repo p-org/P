@@ -40,7 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NonConstantEventExprMonitor1.cs" />
+    <Compile Include="NullHandlerInLoop.cs" />
     <Compile Include="output.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

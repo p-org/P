@@ -220,6 +220,20 @@ namespace P.Runtime
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.NULL;
             }
+            else if(CurrentActionSet.Contains(PrtValue.@null))
+            {
+                if (currentStatus == PrtMachineStatus.Blocked)
+                {
+                    throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
+                }
+                stateImpl.Trace(
+                    "<NullActionLog> Null action taken by Machine {0}-{1}",
+                    Name, instanceNumber);
+                currentPayload = PrtValue.@null;
+                currentTrigger = PrtValue.@null;
+                receiveSet = new HashSet<PrtValue>();
+                return PrtDequeueReturnStatus.NULL;
+            }
             else
             {
                 if (currentStatus == PrtMachineStatus.Blocked)

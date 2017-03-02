@@ -181,7 +181,7 @@ namespace P.Tester
                 Console.WriteLine("New Schedule:");
                 Console.WriteLine("-----------------------------------------------------");
                 numOfSteps = 0;
-                while (numOfSteps < 1000)
+                while (numOfSteps < 10000)
                 {
                     if (currImpl.EnabledMachines.Count == 0)
                     {

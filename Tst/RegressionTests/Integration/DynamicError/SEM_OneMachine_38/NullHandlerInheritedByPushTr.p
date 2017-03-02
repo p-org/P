@@ -11,7 +11,7 @@ machine Main {
 
 		exit { assert (false); }  //unreachable
 		on E push Call;
-		on null do {assert(false);;;}  //inherited by Call; reachable
+		on null do {assert(false);}  //inherited by Call; reachable
 	}
 
 	state Call {
@@ -27,6 +27,6 @@ machine Main {
 			ignore E;   
 			//at this point, inherited "do" on "null" is executed
 			
-			exit { assert (false); ;}  //unreachable, since the state is not popped
+			exit { assert (false);}  //unreachable, since the state is not popped
 	}
 }

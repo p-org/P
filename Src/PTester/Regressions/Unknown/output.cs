@@ -23,6 +23,7 @@ namespace P.Program
 
         public Application(bool initialize): base ()
         {
+            CreateSpecMachine("Spinlock");
             CreateMainMachine();
         }
 
@@ -33,14 +34,24 @@ namespace P.Program
 
         static Application()
         {
-            Types.Types_NullHandlerInLoop();
-            Events.Events_NullHandlerInLoop();
+            Types.Types_SpinlockWithTypestate();
+            Events.Events_SpinlockWithTypestate();
             (isSafeMap).Add("Main", false);
+            (isSafeMap).Add("Spinlock", false);
+            (renameMap).Add("Spinlock", "Spinlock");
             (renameMap).Add("Main", "Main");
+            (createSpecMap).Add("Spinlock", CreateSpecMachine_Spinlock);
             (createMachineMap).Add("Main", CreateMachine_Main);
+            (specMachineMap).Add("Spinlock", new List<string>()
+            {"Spinlock", "Main"});
             Dictionary<string, string> _temp;
             _temp = new Dictionary<string, string>();
+            (_temp).Add("Spinlock", "Spinlock");
             (_temp).Add("Main", "Main");
+            (linkMap).Add("Spinlock", _temp);
+            _temp = new Dictionary<string, string>();
+            (_temp).Add("Main", "Main");
+            (_temp).Add("Spinlock", "Spinlock");
             (linkMap).Add("Main", _temp);
         }
     }

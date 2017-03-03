@@ -173,7 +173,7 @@ namespace P.Tester
                 throw new ArgumentException("Invalid assembly");
             int numOfSchedules = 0;
             int numOfSteps = 0;
-            var randomScheduler = new Random(1);
+            var randomScheduler = new Random(DateTime.Now.Millisecond);
             while (numOfSchedules < 1000)
             {
                 var currImpl = (StateImpl)s.Clone();

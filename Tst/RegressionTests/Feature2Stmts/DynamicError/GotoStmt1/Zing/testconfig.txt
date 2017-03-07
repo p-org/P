@@ -1,0 +1,4 @@
+arg: -et:gotoStmt1.trace
+inc: gotoStmt1.trace
+del: gotoStmt1.trace
+dsc: zinger.exe, goto statement

@@ -7,7 +7,6 @@ sends eResponse, eProcessReq;
 creates HelperInterface;
 {
   start state Init {
-
     on eRequest do (payload: requestType){
       send payload.source, eResponse, (id = payload.id, success = $);
     }
@@ -16,7 +15,7 @@ creates HelperInterface;
 
 
 /***************************************************************************
-If the response is success then the value should always be greater than zero
+Request Ids must be monotonically Increasing
 ***************************************************************************/
 spec ReqIdsAreMonotonicallyIncreasing observes eRequest {
   var previousId : int;

@@ -183,9 +183,17 @@ namespace P.Runtime
 
         public static PrtValue PrtCastValue(PrtValue value, PrtType type)
         {
-            if (!PrtInhabitsType(value, type))
-                throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), type.ToString()));
-            return value.Clone();
+            //cast for interface types is implemented as reduce.
+            if (type is PrtInterfaceType)
+            {
+                return (type as PrtInterfaceType).PrtReduceValue(value);   
+            }
+            else
+            {
+                if (!PrtInhabitsType(value, type))
+                    throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), type.ToString()));
+                return value.Clone();
+            }
         }
     }
 

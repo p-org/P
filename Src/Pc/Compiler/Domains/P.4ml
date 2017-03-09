@@ -653,10 +653,19 @@ domain PStaticTyping extends PData
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), toSymbol(t1) != #MapType, toSymbol(t1) != #SeqType. 
     
     //// (3) The types of binary expressions
-    TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k != EMPTY.
+    TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k != EMPTY.
+	//if the type is interface type then it acts as reduce, hence subset relation
+	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k != EMPTY.
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k = EMPTY.
 	
+	SubsetInterfaces ::= (i1: InterfaceType, i2: InterfaceType).
+	SubsetInterfaces(i1, i2) :- I1 is InterfaceTypeDecl, I2 is InterfaceTypeDecl, i1 = I1.evList, i2 = I2.evList, count({ ev | MemberOfInterfaceType(i2, ev), no MemberOfInterfaceType(i1, ev) }) = 0.
+	[ rule_Classes = '"error, msg: Cast can never succeed"']
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
+									  TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, SubsetInterfaces(t1, t2').
+									  
+
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Field, t2 = ERROR.

@@ -85,6 +85,35 @@ namespace P.Runtime
         {
             return name;
         }
+
+        public PrtValue PrtReduceValue(PrtValue value)
+        {
+            if(value == PrtValue.@null)
+            {
+                return value.Clone();
+            }
+            else if(value is PrtMachineValue)
+            {
+                return new PrtInterfaceValue(((PrtMachineValue)value).mach, permissions);
+            }
+            else if(value is PrtInterfaceValue)
+            {
+                var iVal = value as PrtInterfaceValue;
+                //type_permissions is subset of value_permissions
+                if(permissions.Where(ev => !iVal.permissions.Contains(ev)).Count() > 0)
+                {
+                    throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), this.ToString()));
+                }
+                else
+                {
+                    return new PrtInterfaceValue(iVal.mach, permissions);
+                }
+            }
+            else
+            {
+                throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), this.ToString()));
+            }
+        }
     }
 
     public class PrtBoolType : PrtType

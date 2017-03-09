@@ -661,7 +661,7 @@ domain PStaticTyping extends PData
 	
 	SubsetInterfaces ::= (i1: InterfaceType, i2: InterfaceType).
 	SubsetInterfaces(i1, i2) :- I1 is InterfaceTypeDecl, I2 is InterfaceTypeDecl, i1 = I1.evList, i2 = I2.evList, count({ ev | MemberOfInterfaceType(i2, ev), no MemberOfInterfaceType(i1, ev) }) = 0.
-	[ rule_Classes = '"error, msg: Cast can never succeed"']
+	[ rule_Classes = '"error, msg: reduce can never succeed"']
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
 									  TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, SubsetInterfaces(t1, t2').
 									  

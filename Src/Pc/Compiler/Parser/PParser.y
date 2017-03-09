@@ -130,7 +130,7 @@ ConstTypeOrNone
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone ReceivesOrExports Sends Creates LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); ResetProgramIgnore(); }
+	: ImplMachineNameDecl MachAnnotOrNone Exports Receives Sends Creates LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); ResetProgramIgnore(); }
 	;
 
 ImplMachineProtoDecl
@@ -142,9 +142,13 @@ MachineConstTypeOrNone
 	|
 	;
 
-ReceivesOrExports
+Exports
 	: COLON ID										{ AddExportsInterface($2.str, ToSpan(@2), ToSpan(@1)); }
-	| RECEIVES SEMICOLON							
+	|
+	;
+
+Receives
+	: RECEIVES SEMICOLON							
 	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(true, ToSpan(@1)); }
 	|												{ AddReceivesList(false); }
 	;

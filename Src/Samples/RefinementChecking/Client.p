@@ -1,7 +1,7 @@
 include Header.p
 
 /********************************************
-CliegntMachine Declaration:
+ClientMachine Declaration:
 * ClientMachine sends multiple eRequest events to the server and waits for response.
 * ClientMachine makes an assumption that the responses are always 
   in the order as the requests being sent.

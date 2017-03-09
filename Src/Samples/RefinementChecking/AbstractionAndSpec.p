@@ -18,7 +18,7 @@ creates HelperInterface;
 /***************************************************************************
 If the response is success then the value should always be greater than zero
 ***************************************************************************/
-spec ReqIdsAreMonotonicallyIncreasing observes eResponse {
+spec ReqIdsAreMonotonicallyIncreasing observes eRequest {
   var previousId : int;
   start state Init {
     on eRequest do (payload: requestType){

@@ -12,7 +12,6 @@ include "Header.p"
 type ServerHelperInterface() = { eReqSuccessful, eReqFailed };
 type HelperInterface(ServerHelperInterface) = { eProcessReq };
 
-
 event eProcessReq: int;
 event eReqSuccessful;
 event eReqFailed;

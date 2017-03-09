@@ -102,7 +102,7 @@ namespace P.Runtime
                 //type_permissions is subset of value_permissions
                 if(permissions.Where(ev => !iVal.permissions.Contains(ev)).Count() > 0)
                 {
-                    throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), this.ToString()));
+                    throw new PrtInhabitsTypeException(String.Format("value {0} cannot be reduced to value of type {1}", value.ToString(), this.ToString()));
                 }
                 else
                 {
@@ -111,7 +111,7 @@ namespace P.Runtime
             }
             else
             {
-                throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), this.ToString()));
+                throw new PrtInhabitsTypeException(String.Format("value {0} cannot be reduced to value of type {1}", value.ToString(), this.ToString()));
             }
         }
     }

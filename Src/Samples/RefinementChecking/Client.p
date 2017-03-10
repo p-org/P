@@ -1,4 +1,4 @@
-include Header.p
+include "Header.p"
 
 /********************************************
 ClientMachine Declaration:
@@ -8,6 +8,7 @@ ClientMachine Declaration:
 ********************************************/
 
 machine ClientMachine : ClientInterface
+receives eResponse;
 sends eRequest;
 creates;
 {
@@ -39,7 +40,7 @@ creates;
 
     on eResponse do (payload: responseType){
         assert(payload.id > lastRecvSuccessfulReqId);
-        lastRecvSuccessfulReqId = id;
+        lastRecvSuccessfulReqId = payload.id;
     }
   }
 

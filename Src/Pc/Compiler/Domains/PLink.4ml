@@ -576,7 +576,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine'), ImpMachine' = oldname, creatorM' = oldname, creatorM = newname, ImpMachine = newname.
 
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), MachineCreatesM(creatorM, ImpMachine), IorM =  ImpMachine;
-														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM);
+														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), 
+														  ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM), ModuleContains(ModuleDecl(modExpr.name, _), ImpMachine);
 														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), IorM = NIL, ImpMachine = NIL.
 	
 	CSharpLinkMap(testName, MachineName, interfaceOrMachine, ImpMachine) :- 

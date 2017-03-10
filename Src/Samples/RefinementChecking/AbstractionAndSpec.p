@@ -2,7 +2,7 @@ include "Header.p"
 
 
 machine ServerAbstraction: ServerClientInterface
-receives eReqSuccessful, eReqFailed, eRequest;
+receives eRequest;
 sends eResponse, eProcessReq;
 creates;
 {

@@ -333,8 +333,8 @@
             var refinesDecl = PLink_Root.MkRefinementDecl();
             refinesDecl.name = (PLink_Root.IArgType_RefinementDecl__0)MkString(name, nameSpan);
             refinesDecl.Span = span;
-            refinesDecl.lhs = (PLink_Root.IArgType_RefinementDecl__1)moduleExprStack.Pop();
             refinesDecl.rhs = (PLink_Root.IArgType_RefinementDecl__2)moduleExprStack.Pop();
+            refinesDecl.lhs = (PLink_Root.IArgType_RefinementDecl__1)moduleExprStack.Pop();
             parseLinker.RefinementDecl.Add(refinesDecl);
         }
 

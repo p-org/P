@@ -25,7 +25,7 @@ sends eRequest;
 creates ServerClientInterface;
 {
   var nextReqId : int;
-  //var server: ServerClientInterface;
+  var server: ServerClientInterface;
   start state Init {
     entry {
       //create server

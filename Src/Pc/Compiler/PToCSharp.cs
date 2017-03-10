@@ -3925,7 +3925,7 @@ namespace Microsoft.Pc
                 var eventsParams = new SeparatedSyntaxList<ExpressionSyntax>();
                 foreach (var ev in it.Value)
                 {
-                    eventsParams = eventsParams.Add(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName(ev)));
+                    eventsParams = eventsParams.Add(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName(String.Format("event_{0}", ev))));
                 }
                 var initStmt = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
                     ElementAccessExpression(

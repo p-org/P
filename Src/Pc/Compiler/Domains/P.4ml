@@ -228,20 +228,20 @@ domain PStructuralTyping extends PData
 	OneDeclError(inter) :- inter is InterfaceTypeDef(_, es, _, _), no EventSetDecl(es, _).
 
 	//interface declared in the exports
-	[rule_Classes = '"error, msg: interface in exports is not declared"']
-	OneDeclError(me) :- me is MachineExports(_, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
+	[rule_Classes = '"error, msg: interface exported by the machine is not declared"']
+	OneDeclError(m) :- MachineExports(m, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
 
 	//interfaces or machine names in the creates
-	[rule_Classes = '"error, msg: interface or machine in creates is not declared"']
-	OneDeclError(mc) :- mc is MachineCreates(_, name), name != NIL, no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
+	[rule_Classes = '"error, msg: interface or machine-name in creates list of the machine is not declared"']
+	OneDeclError(m) :- MachineCreates(m, name), name != NIL, no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
 
 	//events in sends
-	[rule_Classes = '"error, msg: event in sends list is not declared"']
-	OneDeclError(ms) :- ms is MachineSends(_, name), name: String, no EventDecl(name, _, _, _), name != NIL.
+	[rule_Classes = '"error, msg: event in sends list of the machine is not declared"']
+	OneDeclError(m) :- MachineSends(m, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//events in receives
-	[rule_Classes = '"error, msg: event in receives list is not declared"']
-	OneDeclError(mr) :- mr is MachineReceives(_, name), name: String, no EventDecl(name, _, _, _), name != NIL.
+	[rule_Classes = '"error, msg: event in receives list of the machine is not declared"']
+	OneDeclError(m) :- MachineReceives(m, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//multiple declarations of the same event
 	[rule_Classes = '"error, msg: multiple declarations of the same event"']

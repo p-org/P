@@ -11,6 +11,11 @@ Demos
 ==========================================================
 See [fun demo video](https://www.youtube.com/watch?v=R8ztpfMPs5c) using P to control a quadrocopter and make sense of the MavLink stream, all visualized in a live DGML diagram.
 
+Application to Robotics
+=========================================================
+We built DRONA, a software framework for distributed mobile robotics systems. DRONA uses P language for implementing and model-checking the distributed robotics software stack. The C code generated from P compiler can be easily deployed on  Robot Operating System (ROS).
+More details about the DRONA framework and simulation videos are available here:
+**[https://drona-org.github.io/Drona/](https://drona-org.github.io/Drona/)**
 
 Publications
 ==========================================================

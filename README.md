@@ -17,6 +17,9 @@ We built DRONA, a software framework for distributed mobile robotics systems. DR
 More details about the DRONA framework and simulation videos are available here:
 **[https://drona-org.github.io/Drona/](https://drona-org.github.io/Drona/)**
 
+We are working on using the DRONA framework for building real-world drone applications using **[PX4](https://github.com/PX4/Firmware)** and extending DRONA with runtime monitoring capabilities for reliability guarantees.
+Details about these extensions will be posted soon.
+
 Publications
 ==========================================================
 - **[P: Safe asynchronous event-driven programming](http://research.microsoft.com/pubs/191069/pldi212_desai.pdf)**.
@@ -27,6 +30,9 @@ In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Impl
 Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
 
+- **[DRONA: A Framework for Safe Distributed Mobile Robotics](https://people.eecs.berkeley.edu/~ankush/Papers/drona.pdf)**
+Ankush Desai, Indranil Saha, Jianqiao Yang, Shaz Qadeer, and Sanjit A. Seshia.
+In Proceedings of the 8th ACM/IEEE International Conference on Cyber-Physical Systems (ICCPS), 2017.
 
 News
 ============================================================

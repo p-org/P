@@ -1417,19 +1417,23 @@ domain PStaticTyping extends PData
 	ControlImpure(c) :- SubSE(c, e), e : Receive, ReceiveCases(c, e, cases), cases = Cases(_, act, _, _), ControlImpure(act).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
+	OneIdError(c.id, "exit function may cause a change in current state"),
     PurityError(c, n) :- 
 	       c is StateDecl(_, owner, _, n, _, _), called.name = n, FunAvailable(called, owner), ControlImpure(called).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
-    PurityError(c, called) :- 
+    OneIdError(c.id, "exit function may cause a change in current state"),
+	PurityError(c, called) :- 
 	       c is StateDecl(_, owner, _, called, _, _), called = AnonFunDecl(_, _, _, _, _, _), ControlImpure(called).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
-    PurityError(c, n) :- 
+    OneIdError(c.id, "transition function may cause a change in current state"),
+	PurityError(c, n) :- 
 	       c is TransDecl(src, _, _, n, _), called.name = n, FunAvailable(called, src.owner), ControlImpure(called).
 
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
-    PurityError(c, called) :- 
+    OneIdError(c.id, "transition function may cause a change in current state"),
+	PurityError(c, called) :- 
 	       c is TransDecl(src, _, _, called, _), called = AnonFunDecl(_, _, _, _, _, _), ControlImpure(called).
 
 
@@ -1453,28 +1457,34 @@ domain PStaticTyping extends PData
 	SpecError ::= (cntxt: StateDecl + TransDecl + DoDecl, expr: String + AnonFunDecl).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+	OneIdError(c.id, "spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"),
     SpecError(c, n) :- 
 	       c is StateDecl(_, owner, n, _, _, _), owner.kind = SPEC, called.name = n, FunAvailable(called, owner), SpecImpure(called);
 		   c is StateDecl(_, owner, _, n, _, _), owner.kind = SPEC, called.name = n, FunAvailable(called, owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    SpecError(c, called) :- 
+    OneIdError(c.id, "spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"),
+	SpecError(c, called) :- 
 	       c is StateDecl(_, owner, called, _, _, _), owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called);
 		   c is StateDecl(_, owner, _, called, _, _), owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    SpecError(c, n) :- 
+    OneIdError(c.id, "spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"),
+	SpecError(c, n) :- 
 	       c is TransDecl(src, _, _, n, _), src.owner.kind = SPEC, called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    SpecError(c, called) :- 
+    OneIdError(c.id, "spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"),
+	SpecError(c, called) :- 
 	       c is TransDecl(src, _, _, called, _), src.owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+	OneIdError(c.id, "spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"),
 	SpecError(c, n) :-	
 		   c is DoDecl(src, _, n, _), src.owner.kind = SPEC, called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
+	OneIdError(c.id, "spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"),
 	SpecError(c, called) :- 
 		   c is DoDecl(src, _, called, _), src.owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 
@@ -1526,6 +1536,7 @@ domain PStaticTyping extends PData
 	Impure(c) :- SubSE0(c, e), e: FunStmt, c : FunDecl, called.name = e.name, FunAvailable(called, c.owner), Impure(called).
 
     [ rule_Classes = '"error, msg: this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" "']
+	OneIdError(e'.id, "this function must be pure. Impure functions can only be called like foo(...); or x = foo(...)"),
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         ImpureFunApp(c, e');
        SubSE0(c, e), e = BinApp(_, e', _, _),     ImpureFunApp(c, e');
@@ -1539,12 +1550,13 @@ domain PStaticTyping extends PData
        SubSE0(c, e), e = Send(_, e', _, _),       ImpureFunApp(c, e');
        SubSE0(c, e), e = Announce(e', _, _),      ImpureFunApp(c, e');
        SubSE0(c, e), e = Assert(e', _, _),        ImpureFunApp(c, e');
-       SubSE0(c, e), e = BinStmt(_, e', _, e'', _),  ImpureFunApp(c, e''), toSymbol(e') != #Name;
+       SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  ImpureFunApp(c, e'), toSymbol(e'') != #Name;
 	   SubSE0(c, e), e = While(e', _, _),         ImpureFunApp(c, e');
 	   SubSE0(c, e), e = Ite(e', _, _, _),        ImpureFunApp(c, e');
 	   SubSE0(c, e), e = Return(e', _),           ImpureFunApp(c, e').
 
     [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" "']
+	OneIdError(e'.id, "new M(...) can only be called like new M(...); or x = new M(...)"),
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         e' : New;
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' : New;
@@ -1558,10 +1570,11 @@ domain PStaticTyping extends PData
        SubSE0(c, e), e = Send(_, e', _, _),       e' : New;
        SubSE0(c, e), e = Announce(e', _, _),      e' : New;
        SubSE0(c, e), e = Assert(e', _, _),        e' : New;
-       SubSE0(c, e), e = BinStmt(_, e', _, e'', _),  e'' : New, toSymbol(e') != #Name;
+       SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' : New, toSymbol(e'') != #Name;
 	   SubSE0(c, e), e = Return(e', _),           e' : New.
 
     [ rule_Classes = '"error, msg: $ can only be used like "x = $" or "if ($)" or "while ($)" or "return $;" "']
+	OneIdError(e'.id, "$ can only be used like x = $ or if ($) or while ($) or return $"),
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         e' = NulApp(NONDET, _);
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(NONDET, _);
@@ -1575,9 +1588,10 @@ domain PStaticTyping extends PData
        SubSE0(c, e), e = Send(_, e', _, _),       e' = NulApp(NONDET, _);
        SubSE0(c, e), e = Announce(e', _, _),      e' = NulApp(NONDET, _);
        SubSE0(c, e), e = Assert(e', _, _),        e' = NulApp(NONDET, _);
-       SubSE0(c, e), e = BinStmt(_, e', _, e'', _),  e'' = NulApp(NONDET, _), toSymbol(e') != #Name.
+       SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' = NulApp(NONDET, _), toSymbol(e'') != #Name.
 
     [ rule_Classes = '"error, msg: $$ can only be used like "x = $$" or "if ($$)" or "while ($$)" or "return $$;" "']
+	OneIdError(e'.id, "$$ can only be used like x = $$ or if ($$) or while ($$) or return $$"),
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(FAIRNONDET, _);
@@ -1591,7 +1605,7 @@ domain PStaticTyping extends PData
        SubSE0(c, e), e = Send(_, e', _, _),       e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Announce(e', _, _),      e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Assert(e', _, _),        e' = NulApp(FAIRNONDET, _);
-       SubSE0(c, e), e = BinStmt(_, e', _, e'', _),  e'' = NulApp(FAIRNONDET, _), toSymbol(e') != #Name.
+       SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' = NulApp(FAIRNONDET, _), toSymbol(e'') != #Name.
 	                                       
     /*************************************************************/
     /*                      Type Comparability                   */

@@ -3,6 +3,13 @@
 
 }
 
+domain PError extends PData
+{
+	ZeroIdError ::= (String).
+	OneIdError  ::= (Id, String).
+	TwoIdError  ::= (Id, Id, String).
+}
+
 domain PData
 {   
 	PFile ::= new (name: String).
@@ -130,14 +137,9 @@ domain PData
     Annotation  ::= new (ant: Annotatable, key: String, value: any AnnotValue, id: any Id).
     Annotatable ::= EventDecl + MachineDecl + VarDecl + FunDecl + FunProtoDecl + StateDecl + TransDecl + DoDecl + { NIL }.
     AnnotValue  ::= Integer + String + Boolean + { NULL }.
-
-	// Errors
-	ZeroIdError ::= (String).
-	OneIdError ::= (Id, String).
-	TwoIdError ::= (Id, Id, String).
 }
 
-domain PStructuralTyping extends PData
+domain PStructuralTyping extends PData, PError
 {
     /*************************************************************/
 	conforms no OneDeclError(_).
@@ -290,7 +292,7 @@ domain PStructuralTyping extends PData
 	OneDeclError(td) :- NamedTypes(td), NamedTypes(td'), td != td', td.name = td'.name.
 }
 
-domain PStaticTyping extends PData
+domain PStaticTyping extends PData, PError
 /*
 [
     compiler_ProductivityCheck = "TypeOf[1]"

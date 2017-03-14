@@ -737,7 +737,7 @@ namespace Microsoft.Pc
             return retVal;
         }
 
-        public bool GenerateCSharp()
+        public void GenerateCSharp()
         {
             var workspace = new AdhocWorkspace();
 
@@ -756,7 +756,6 @@ namespace Microsoft.Pc
             MkMachineClasses();
             MkCSharpOutput();
             EmitCSharpOutput();
-            return true;
         }
 
 

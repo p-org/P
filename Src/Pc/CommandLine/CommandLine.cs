@@ -66,12 +66,11 @@ namespace Microsoft.Pc
                 Console.WriteLine("/dumpFormulaModel       -- write the entire formula model to a file named 'output.4ml'");
                 Console.WriteLine("/profile                -- print detailed timing information");
                 Console.WriteLine("/rebuild                -- rebuild all the P files");
-                Console.WriteLine("/generate:[C0,C,Zing,C#]");
+                Console.WriteLine("/generate:[C0,C#,Zing]");
                 Console.WriteLine("    C0  : generate C without model functions");
-                Console.WriteLine("    C   : generate C with model functions");
+                Console.WriteLine("    C#  : generate C# (and C) with model functions");
                 Console.WriteLine("    Zing: generate Zing");
-                Console.WriteLine("    C#  : generate C# code");
-                Console.WriteLine("/shared                 -- use the compiler service)"   );
+                Console.WriteLine("/shared                 -- use the compiler service)");
                 Console.WriteLine(" ------------ Linker Phase ------------");
                 Console.WriteLine("USAGE: Pc.exe /link file1.4ml [file2.4ml ...] linkfile.p [options]");
                 Console.WriteLine("Takes the *.4ml output from pc.exe and generates the combined linker.c linker.h output from them");

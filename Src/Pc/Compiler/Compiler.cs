@@ -24,7 +24,7 @@
     using System.Windows.Forms;
     using System.Xml.Linq;
 
-    public enum CompilerOutput { C0, C, Zing, CSharp, Link };
+    public enum CompilerOutput { C0, CSharp, Zing, Link };
 
     public enum LivenessOption { None, Standard, Sampling };
 
@@ -909,22 +909,7 @@
                 }
                 AST<Model> RootModel;
                 InstallProgram(inputFileName, parsedProgram, RootProgramName, imported4mlFiles, out RootModel);
-                if (!Check(RootProgramName, RootModel.Node.Name))
-                {
-                    UninstallProgram(RootProgramName);
-                    return false;
-                }
-
-                bool rc;
-                if ((Options.compilerOutput == CompilerOutput.C0 || Options.compilerOutput == CompilerOutput.C))
-                {
-                    rc = GenerateC(RootProgramName, RootModel, importedFiles);
-                }
-                else
-                {
-                    Debug.Assert(Options.compilerOutput == CompilerOutput.CSharp);
-                    rc = GenerateCSharp(RootProgramName, RootModel, importedFiles, errorReporter.idToSourceInfo);
-                }
+                bool rc = GenerateCode(RootProgramName, RootModel, importedFiles, errorReporter.idToSourceInfo);
                 UninstallProgram(RootProgramName);
                 if (!rc)
                 {
@@ -960,13 +945,6 @@
             }
 
             InstallProgram(inputFileName, parsedProgram, RootProgramName, new List<string>(), out RootModel);
-
-            if (!Check(RootProgramName, RootModel.Node.Name))
-            {
-                UninstallProgram(RootProgramName);
-                return false;
-            }
-
             bool rc = GenerateZing(RootProgramName, RootModel, errorReporter.idToSourceInfo);
             UninstallProgram(RootProgramName);
             return rc;
@@ -980,73 +958,6 @@
                 return first.Message;
             }
             return "";
-        }
-
-        public bool GenerateCSharp(ProgramName RootProgramName, AST<Model> RootModel, List<string> importedFiles, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
-        {
-            ProgramName RootProgramNameWithTypes;
-            AST<Model> RootModelWithTypes;
-            using (this.Profiler.Start("Compiler generating model with types", Path.GetFileName(RootModel.Node.Name)))
-            {
-                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootProgramNameWithTypes, out RootModelWithTypes))
-                {
-                    return false;
-                }
-            }
-
-            string RootFileName = RootProgramName.ToString();
-            string fileName = Path.GetFileNameWithoutExtension(RootFileName);
-            string csharpFileName = fileName + ".cs";
-            string dllFileName = fileName + ".dll";
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-
-            using (this.Profiler.Start("Generating 4ml output", Path.GetFileName(RootProgramName.ToString())))
-            {
-                LoadManifestProgram("Pc.Domains.C.4ml");
-                LoadManifestProgram("Pc.Domains.PLink.4ml");
-                LoadManifestProgram("Pc.Domains.P2CProgram.4ml");
-
-                //// Apply the P2C transform.
-                var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2CTransform, null, MkReservedModuleLocation(P2CTransform)));
-                transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
-                transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
-                transApply = Factory.Instance.AddArg(transApply, GenerateImportFileNames(importedFiles));
-                transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.eraseModel ? "TRUE" : "FALSE"));
-                var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModel.Node.Name + "_CModel"));
-                transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModel.Node.Name + "_LinkModel"));
-
-                List<Flag> appFlags;
-                Task<ApplyResult> apply;
-                Formula.Common.Rules.ExecuterStatistics stats;
-                CompilerEnv.Apply(transStep, false, false, out appFlags, out apply, out stats);
-                apply.RunSynchronously();
-                foreach (Flag f in appFlags)
-                {
-                    errorReporter.AddFlag(f);
-                }
-
-                //// Extract the link model
-                var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
-                string aliasPrefix = null;
-                var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, aliasPrefix);
-                linkExtractTask.Wait();
-                var linkModel = linkExtractTask.Result.FindAny(
-                                    new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
-                Contract.Assert(linkModel != null);
-
-                string outputFileName = Path.ChangeExtension(fileName, ".4ml");
-                //Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
-                StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
-                linkModel.Print(wr);
-                wr.Close();
-            }
-            using (this.Profiler.Start("Generating CSharp Code", csharpFileName))
-            {
-                var pToCSharp = new PToCSharpCompiler(this, RootModelWithTypes, idToSourceInfo, csharpFileName);
-                var success = pToCSharp.GenerateCSharp();
-                UninstallProgram(RootProgramNameWithTypes);
-                return success;
-            }
         }
 
         public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
@@ -1074,7 +985,6 @@
                 zingModel = MkZingOutputModel();
                 var pToZing = new PToZing(this, RootModelWithTypes, idToSourceInfo);
                 bool success = pToZing.GenerateZing(zingFileName, ref zingModel);
-                UninstallProgram(RootProgramNameWithTypes);
                 if (!success)
                 {
                     return false;
@@ -1084,7 +994,7 @@
             if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
                 return false;
 
-            System.Diagnostics.Process zcProcess = null;
+            Process zcProcess = null;
 
             using (this.Profiler.Start("Compiling Zing", zingFileName))
             {
@@ -1279,11 +1189,7 @@
             RootModelWithTypes = (AST<Model>)extractTask.Result.FindAny(
                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
             Contract.Assert(RootModelWithTypes != null);
-            InstallResult instResult;
-            AST<Program> modelProgram = MkProgWithSettings(RootProgramNameWithTypes, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
-            bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, RootModelWithTypes), out instResult);
-            Contract.Assert(progressed && instResult.Succeeded, GetFirstMessage(from t in instResult.Flags select t.Item2));
-            return true;
+            return AddCompilerErrorFlags(extractTask.Result);
         }
 
         /// <summary>
@@ -1521,14 +1427,18 @@
             }
         }
 
-        public bool GenerateC(ProgramName RootProgramName, AST<Model> RootModel, List<string> importedFiles)
+        public bool GenerateCode(
+            ProgramName RootProgramName, 
+            AST<Model> RootModel, 
+            List<string> importedFiles, 
+            Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
             {
                 LoadManifestProgram("Pc.Domains.C.4ml");
                 LoadManifestProgram("Pc.Domains.PLink.4ml");
                 LoadManifestProgram("Pc.Domains.P2CProgram.4ml");
-                return InternalGenerateC(RootProgramName, RootModel, importedFiles);
+                return InternalGenerateCode(RootProgramName, RootModel, importedFiles, idToSourceInfo);
             }
         }
 
@@ -1543,7 +1453,11 @@
             return ret;
         }
 
-        bool InternalGenerateC(ProgramName RootProgramName, AST<Model> RootModel, List<string> importedFiles)
+        bool InternalGenerateCode(
+            ProgramName RootProgramName, 
+            AST<Model> RootModel, 
+            List<string> importedFiles,
+            Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             string RootFileName = RootProgramName.ToString();
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
@@ -1554,7 +1468,8 @@
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkCnst(fileName));
             transApply = Factory.Instance.AddArg(transApply, GenerateImportFileNames(importedFiles));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkId(Options.eraseModel ? "TRUE" : "FALSE"));
-            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModel.Node.Name + "_CModel"));
+            var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId(RootModel.Node.Name + "_InfModel"));
+            transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModel.Node.Name + "_CModel"));
             transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId(RootModel.Node.Name + "_LinkModel"));
 
             List<Flag> appFlags;
@@ -1567,30 +1482,58 @@
                 errorReporter.AddFlag(f);
             }
 
-            //// Extract the result
-            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_CModel.4ml"));
-            var extractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_CModel", progName, AliasPrefix);
-            extractTask.Wait();
-            var cProgram = extractTask.Result;
-            Contract.Assert(cProgram != null);
-            var success = Render(cProgram, RootModel.Node.Name + "_CModel", progName);
+            {
+                //// Extract the inferred types model
+                var iprogName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_InfModel.4ml"));
+                Func<Symbol, string> aliasPrefixFunc = (x => AliasFunc(x));
+                var extractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_InfModel", iprogName, aliasPrefixFunc);
+                extractTask.Wait();
+                var iProgram = extractTask.Result;
+                Contract.Assert(iProgram != null);
+                if (!AddCompilerErrorFlags(iProgram))
+                    return false;
+                if (Options.compilerOutput == CompilerOutput.CSharp)
+                {
+                    var iModel = (AST<Model>)iProgram.FindAny(
+                                            new NodePred[] {
+                                            NodePredFactory.Instance.MkPredicate(NodeKind.Program),
+                                            NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
+                    Contract.Assert(iModel != null);
+                    string csharpFileName = fileName + ".cs";
+                    var pToCSharp = new PToCSharpCompiler(this, iModel, idToSourceInfo, csharpFileName);
+                    pToCSharp.GenerateCSharp();
+                }
+            }
 
-            //// Extract the link model
-            var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
-            string linkerAliasPrefix = null;
-            var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, linkerAliasPrefix);
-            linkExtractTask.Wait();
-            var linkModel = linkExtractTask.Result.FindAny(
-                                new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
-            Contract.Assert(linkModel != null);
+            {
+                //// Extract the C model
+                var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_CModel.4ml"));
+                var extractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_CModel", progName, AliasPrefix);
+                extractTask.Wait();
+                var cProgram = extractTask.Result;
+                Contract.Assert(cProgram != null);
+                var success = Render(cProgram, RootModel.Node.Name + "_CModel", progName);
+                Contract.Assert(success);
+            }
 
-            string outputFileName = Path.ChangeExtension(fileName, ".4ml");
-            Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-            StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
-            linkModel.Print(wr);
-            wr.Close();
-            return success;
+            {
+                //// Extract the link model
+                var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
+                string linkerAliasPrefix = null;
+                var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, linkerAliasPrefix);
+                linkExtractTask.Wait();
+                var linkModel = linkExtractTask.Result.FindAny(
+                                    new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
+                Contract.Assert(linkModel != null);
+                string outputFileName = Path.ChangeExtension(fileName, ".4ml");
+                Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
+                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
+                linkModel.Print(wr);
+                wr.Close();
+            }
+
+            return true;
         }
 
         private bool Render(AST<Program> cProgram, string moduleName, ProgramName progName)
@@ -1874,6 +1817,64 @@
 
             UninstallProgram(linkProgramName);
             return success;
+        }
+
+        void AddCompilerErrorFlag(FuncTerm ft, ref int compileErrorCount)
+        {
+            string ftName = (ft.Function as Id).Name;
+            if (!(ftName == "ZeroIdError" || ftName == "OneIdError" || ftName == "TwoIdError")) return;
+            string errorMsg = (ft.Args.Last() as Cnst).GetStringValue();
+            Span errorSpan1 = default(Span);
+            Span errorSpan2 = default(Span);
+            if (ftName == "ZeroIdError")
+            {
+                errorReporter.AddFlag(new Flag(SeverityKind.Error, errorSpan1, errorMsg, 1, errorSpan1.Program));
+            }
+            else if (ftName == "OneIdError")
+            {
+                int id;
+                string file;
+                if (!ErrorReporter.FindIdFromFuncTerm(ft.Args.First() as FuncTerm, out file, out id))
+                {
+                    Debug.Assert(false, "Did not find id");
+                }
+                errorSpan1 = errorReporter.idToSourceInfo[file][id].entrySpan;
+                errorReporter.AddFlag(new Flag(SeverityKind.Error, errorSpan1, errorMsg, 1, errorSpan1.Program));
+            }
+            else // (ftName == "TwoIdError")
+            {
+                int id;
+                string file;
+                if (!ErrorReporter.FindIdFromFuncTerm(PTranslation.GetArgByIndex(ft, 0) as FuncTerm, out file, out id))
+                {
+                    Debug.Assert(false, "Did not find id");
+                }
+                errorSpan1 = errorReporter.idToSourceInfo[file][id].entrySpan;
+                if (!ErrorReporter.FindIdFromFuncTerm(PTranslation.GetArgByIndex(ft, 1) as FuncTerm, out file, out id))
+                {
+                    Debug.Assert(false, "Did not find id");
+                }
+                errorSpan2 = errorReporter.idToSourceInfo[file][id].entrySpan;
+                errorReporter.AddFlag(new Flag(SeverityKind.Error, errorSpan1, errorMsg, 1, errorSpan1.Program));
+            }
+            compileErrorCount++;
+        }
+
+        bool AddCompilerErrorFlags(AST<Program> program)
+        {
+            int compileErrorCount = 0;
+            program.FindAll(
+                        new NodePred[]
+                        {
+                        NodePredFactory.Instance.Star,
+                        NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                        },
+                        (path, n) =>
+                        {
+                            ModelFact mf = (ModelFact)n;
+                            AddCompilerErrorFlag((FuncTerm)mf.Match, ref compileErrorCount);
+                        });
+            return compileErrorCount == 0;
         }
 
         void AddLinkerErrorFlag(FuncTerm ft, ref int linkErrorCount)

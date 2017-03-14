@@ -282,7 +282,7 @@ namespace CheckP
                     var compileArgs = new CommandLineOptions();
                     compileArgs.inputFileNames = new List<string>();
                     compileArgs.inputFileNames.Add(inputFileName);
-                    compileArgs.compilerOutput = CompilerOutput.C;
+                    compileArgs.compilerOutput = CompilerOutput.CSharp;
                     compileArgs.shortFileNames = true;
                     compileArgs.outputDir = workDirectory;
                     compileArgs.shortFileNames = true;

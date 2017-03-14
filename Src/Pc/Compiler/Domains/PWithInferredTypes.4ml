@@ -1,6 +1,6 @@
 [
-   modules.P     = '"P     at P.4ml"',
-   modules.PData = '"PData at P.4ml"'
+   modules.P      = '"P      at P.4ml"',
+   modules.PData  = '"PData  at P.4ml"'
 ]
 
 domain PWithInferredTypes extends PData
@@ -32,6 +32,10 @@ domain PWithInferredTypes extends PData
 	ExportedType ::= new (String, TypeExpr).
 	ImportedType ::= new (String, TypeExpr).
 	ExportedEvent ::= new (String).
+
+	ZeroIdError ::= new (String).
+	OneIdError  ::= new (Id, String).
+	TwoIdError  ::= new (Id, Id, String).
 }
 
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
@@ -46,4 +50,8 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 	out.ExportedType(n, t) :- in.ExportedType(n, t).
 	out.ImportedType(n, t) :- in.ImportedType(n, t).
 	out.ExportedEvent(n) :- in.ExportedEvent(n).
+
+	out.ZeroIdError(s) :- in.ZeroIdError(s).
+	out.OneIdError(s, id) :- in.OneIdError(s, id).
+	out.TwoIdError(s, id, id') :- in.TwoIdError(s, id, id').
 }

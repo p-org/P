@@ -46,5 +46,4 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 	out.ExportedType(n, t) :- in.ExportedType(n, t).
 	out.ImportedType(n, t) :- in.ImportedType(n, t).
 	out.ExportedEvent(n) :- in.ExportedEvent(n).
-
 }

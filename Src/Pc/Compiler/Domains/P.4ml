@@ -132,8 +132,9 @@ domain PData
     AnnotValue  ::= Integer + String + Boolean + { NULL }.
 
 	// Errors
-	TwoIdError ::= (Id, Id, String).
+	ZeroIdError ::= (String).
 	OneIdError ::= (Id, String).
+	TwoIdError ::= (Id, Id, String).
 }
 
 domain PStructuralTyping extends PData
@@ -360,7 +361,9 @@ domain PStaticTyping extends PData
 	TypeDefError ::= (name: String).
 
 	[rule_Classes = '"error, msg: undefined type"']
-	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no ModelType(name, _), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _).
+	ZeroIdError(errorMsg),
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no ModelType(name, _), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
+						  errorMsg = strJoin("Undefined type: ", name).
 	
 	[rule_Classes = '"error, msg: multiple type definitions for a type name"']
 	TwoIdError(td1.id, td2.id, "Multiple type definitions for a type name"),
@@ -1394,7 +1397,9 @@ domain PStaticTyping extends PData
 	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NamedExprs(name, _, tl). 
 
     [ rule_Classes = '"error, msg: same name appears more than once in name tuple or named tuple type"']
-	DupNmdSubE(list, name, tl, tl') :- NmdSubNames(list, name, tl), NmdSubNames(list, name, tl'), tl != tl'.
+	ZeroIdError(errorMsg),
+	DupNmdSubE(list, name, tl, tl') :- NmdSubNames(list, name, tl), NmdSubNames(list, name, tl'), tl != tl',
+									   errorMsg = strJoin("Name appears more than once in name tuple or named tuple type: ", name).
 
     /*************************************************************/
     /*                          L-values                         */

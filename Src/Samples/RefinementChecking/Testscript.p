@@ -33,10 +33,10 @@ private;
 test testcase0: (rename TestDriver_Refinement to Main in TestDriver2) || Server refines (rename TestDriver_Refinement to Main in TestDriver2) || ServerAbs;
 
 //test case 1: check that the client || serverAbs is safe (no local assertion failures).
-test testcase1: (rename TestDriver_1Client1Server to Main in TestDriver1) || Client || ServerAbs;
+//test testcase1: (rename TestDriver_1Client1Server to Main in TestDriver1) || Client || ServerAbs;
 
 //test case 2: check that the client satisfies the spec of ReqIdsAreMonotonicallyIncreasing
-test testcase2: (rename TestDriver_1Client1Server to Main in TestDriver1) || (assert ReqIdsAreMonotonicallyIncreasing in Client) || ServerAbs;
+//test testcase2: (rename TestDriver_1Client1Server to Main in TestDriver1) || (assert ReqIdsAreMonotonicallyIncreasing in Client) || ServerAbs;
 
 
 

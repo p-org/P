@@ -32,7 +32,7 @@ machine Client {
 }
 
 machine Server { 
-  var timer: machine;
+  var timer: TimerPtr;
   var client: machine;
 
   start state Init {  
@@ -57,7 +57,7 @@ machine Server {
   }
 
   state SendPong { 
-    entry (payload: machine) { 
+    entry (payload: TimerPtr) { 
 	  print "Server sending PONG\n";
       announce M_PONG, client;
       send client, PONG; 

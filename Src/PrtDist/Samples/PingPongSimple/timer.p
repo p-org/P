@@ -1,24 +1,25 @@
 #include "Events.p"
 
 //Functions for interacting with the timer machine
-fun CreateTimer(owner : machine): machine {
+model fun CreateTimer(owner : machine): TimerPtr {
 	var m: machine;
 	m = new Timer(owner);
 	return m;
-} 
- 
-model fun StartTimer(timer : machine, time: int) {
+}
+
+model fun StartTimer(timer: TimerPtr, time: int) {
 	send timer, START, 100;
 }
 
-model fun CancelTimer(timer : machine) {
+model fun CancelTimer(timer: TimerPtr) {
 	send timer, CANCEL;
 }
-  
+
+
 // local event for control transfer within timer
 event UNIT; 
 
-machine Timer {
+model Timer {
   var client: machine;
 
   start state Init {

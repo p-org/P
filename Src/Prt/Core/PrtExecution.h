@@ -127,7 +127,6 @@ extern "C"{
 		PRT_PROCESS		    *process;
 		PRT_UINT32			instanceOf;
 		PRT_VALUE			*id;
-		void				*extContext;
 		PRT_VALUE           *recvMap;
 		PRT_VALUE			**varValues;
 		PRT_RECURSIVE_MUTEX stateMachineLock;

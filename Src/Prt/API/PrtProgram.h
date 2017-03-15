@@ -166,8 +166,6 @@ typedef struct PRT_MACHINEDECL
 	PRT_VARDECL      *vars;             /**< The array of variable declarations  */
 	PRT_STATEDECL    *states;           /**< The array of state declarations     */
 	PRT_FUNDECL      *funs;             /**< The array of fun declarations       */
-	PRT_SM_EXTCTOR   extCtorFun;        /**< external blob constructor           */
-	PRT_SM_EXTDTOR   extDtorFun;        /**< external blob destructor            */
 
 	PRT_UINT32      nAnnotations;   /**< Number of annotations                              */
 	void            **annotations;  /**< An array of annotations                            */

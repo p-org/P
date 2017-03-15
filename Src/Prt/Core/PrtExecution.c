@@ -212,7 +212,6 @@ _In_  PRT_VALUE					*payload
 	id.machineId = process->numMachines; // index begins with 1 since 0 is reserved
 	id.processId = process->guid;
 	context->id = PrtMkMachineValue(id);
-	context->extContext = NULL;
 
 	//
 	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
@@ -296,11 +295,6 @@ _In_  PRT_VALUE					*payload
 	//Log
 	//
 	PrtLog(PRT_STEP_CREATE, NULL, context, NULL, NULL);
-
-	//
-	// Allocate external context Structure
-	//
-	process->program->machines[context->instanceOf]->extCtorFun((PRT_MACHINEINST *)context, payload);
 
 	PrtUnlockMutex(process->processLock);
 
@@ -2164,8 +2158,6 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 		PrtFree(context->varValues);
 	}
 
-	if (context->extContext != NULL)
-		context->process->program->machines[context->instanceOf]->extDtorFun((PRT_MACHINEINST *)context);
 	PrtFreeValue(context->id);
 
 	PrtFreeTriggerPayload(context);

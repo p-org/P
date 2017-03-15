@@ -28,42 +28,6 @@ typedef struct ServerContext {
     PRT_VALUE *client;
 } ServerContext;
 
-void P_CTOR_Client_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
-{
-    printf("Entering P_CTOR_Client_IMPL\n");
-    ClientContext *clientContext = (ClientContext *)PrtMalloc(sizeof(ClientContext));
-    clientContext->client = PrtCloneValue(value);
-    context->extContext = clientContext;
-}
-
-void P_DTOR_Client_IMPL(PRT_MACHINEINST *context)
-{
-    printf("Entering P_DTOR_Client_IMPL\n");
-    ClientContext *clientContext = (ClientContext *)context->extContext;
-    PrtFreeValue(clientContext->client);
-    PrtFree(clientContext);
-}
-
-void P_CTOR_Server_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value)
-{
-    printf("Entering P_CTOR_Server_IMPL\n");
-    ServerContext *serverContext = (ServerContext *)PrtMalloc(sizeof(ServerContext));
-    serverContext->client = PrtCloneValue(value);
-    context->extContext = serverContext;
-}
-
-void P_DTOR_Server_IMPL(PRT_MACHINEINST *context)
-{
-    printf("Entering P_DTOR_Server_IMPL\n");
-    ServerContext *serverContext = (ServerContext *)context->extContext;
-    PrtFreeValue(serverContext->client);
-    PrtFree(serverContext);
-}
-
-void P_CTOR_Safety_IMPL(PRT_MACHINEINST *context, PRT_VALUE *value) {}
-
-void P_DTOR_Safety_IMPL(PRT_MACHINEINST *context) {}
-
 std::wstring ConvertToUnicode(const char* str)
 {
 	std::string temp(str == NULL ? "" : str);

@@ -5,7 +5,7 @@
    modules.C      = '"C at C.4ml"'
 ]
 
-transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.StringList + { NIL }, test: Boolean) 
+transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.StringList + { NIL }) 
 		     returns (inf:: PWithInferredTypes, out:: C, link:: PLink)
 /*
 [
@@ -251,32 +251,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  funType,
 					  strJoin(name, "_FOREIGN"),
 					  Params(Param(NIL, "context"), params),
-					  UNKNOWN).
-				
-
-	//// Prototypes for constructor and destructor functions
-	HOut(0, def) :- m is in.MachineDecl,
-	                params = Params(Param(NIL, "context"), 
-							 Params(Param(NIL, "value"), NIL)),
-				    funType = FunType(BaseType(VOID), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL)),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("P_CTOR_", strJoin(m.name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(0, def) :- m is in.MachineDecl,
-	                params = Params(Param(NIL, "context"), NIL),
-				    funType = FunType(BaseType(VOID), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("P_DTOR_", strJoin(m.name, "_IMPL")),
-					  params,
 					  UNKNOWN).
 
 	//// Extern declarations for defined types
@@ -1308,42 +1282,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							   Args(varArrName,
 							   Args(stateArrName,
 							   Args(funArrName,
-							   Args(UnApp(ADDR, Ident(strJoin("P_CTOR_", strJoin(d.name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("P_DTOR_", strJoin(d.name, "_IMPL")))),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))))))),
+							   NIL))))))))))))),
 	                        def = out.VarDef(
 							      NIL, 
 								  NmdType(NIL, "PRT_MACHINEDECL"), 
 								  machineStructName, 
 								  init).
-
-	//// Empty constructor and destructor functions when options.test true
-	COut(14, def) :- %test = TRUE, m is in.MachineDecl,
-	                params = Params(Param(NIL, "context"), 
-							 Params(Param(NIL, "value"), NIL)),
-				    funType = FunType(BaseType(VOID), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")),
-							   PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), NIL)),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("P_CTOR_", strJoin(m.name, "_IMPL")),
-					  params,
-					  NIL).
-
-	COut(14, def) :- %test = TRUE, m is in.MachineDecl,
-	                params = Params(Param(NIL, "context"), NIL),
-				    funType = FunType(BaseType(VOID), argTypes),
-					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("P_DTOR_", strJoin(m.name, "_IMPL")),
-					  params,
-					  NIL).
-
 
     /*************************************************************/
     /******                RHS Translation                  ******/

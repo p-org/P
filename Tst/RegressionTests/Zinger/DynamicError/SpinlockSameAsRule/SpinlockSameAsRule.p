@@ -7,7 +7,7 @@
 //event START assume 1;
 event ACQ assume 2: int;
 event REL assume 2: int;
-event FIN assume 1;
+event FIN assume 1: int;
 event Error1 assume 1;
 event Error2 assume 1;
 event Error3 assume 1;

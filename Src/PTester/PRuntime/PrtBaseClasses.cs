@@ -70,6 +70,22 @@ namespace P.Runtime
             }
         }
 
+        public HashSet<PrtValue> CurrentActionSet
+        {
+            get
+            {
+                return stateStack.TopOfStack.actionSet;
+            }
+        }
+
+        public HashSet<PrtValue> CurrentDefferedSet
+        {
+            get
+            {
+                return stateStack.TopOfStack.deferredSet;
+            }
+        }
+
         #region Prt Helper functions
         public PrtFun PrtFindActionHandler(PrtValue ev)
         {
@@ -97,7 +113,6 @@ namespace P.Runtime
             Debug.Assert(stateStack.TopOfStack != null);
             //pop stack
             stateStack.PopStackFrame();
-
             if (stateStack.TopOfStack == null)
             {
                 if (isPopStatement)
@@ -117,7 +132,6 @@ namespace P.Runtime
             }
 
             return currentStatus == PrtMachineStatus.Halted;
-
         }
 
         public void PrtChangeState(PrtState s)
@@ -132,24 +146,32 @@ namespace P.Runtime
             return invertedFunStack.PopFun();
         }
 
-        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local)
+        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> locals)
         {
             if (!fun.IsAnonFun)
             {
                 stateImpl.Trace("<FunctionLog> Machine {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
             }
-            invertedFunStack.PushFun(fun, local);
+            invertedFunStack.PushFun(fun, locals);
         }
 
-        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> local, int retTo)
+        public void PrtPushFunStackFrame(PrtFun fun, List<PrtValue> locals, int retTo)
         {
-            invertedFunStack.PushFun(fun, local, retTo);
+            invertedFunStack.PushFun(fun, locals, retTo);
         }
 
         public void PrtPushExitFunction()
         {
             stateImpl.Trace("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
-            PrtPushFunStackFrame(CurrentState.exitFun, CurrentState.exitFun.CreateLocals(currentPayload));
+            PrtFun exitFun = CurrentState.exitFun;
+            if (exitFun.IsAnonFun)
+            {
+                PrtPushFunStackFrame(exitFun, exitFun.CreateLocals(currentPayload));
+            }
+            else
+            {
+                PrtPushFunStackFrame(exitFun, exitFun.CreateLocals());
+            }
         }
 
         public bool PrtIsTransitionPresent(PrtValue ev)
@@ -159,19 +181,26 @@ namespace P.Runtime
 
         public bool PrtIsActionInstalled(PrtValue ev)
         {
-            return CurrentState.dos.ContainsKey(ev);
+            return CurrentActionSet.Contains(ev);
         }
 
         public void PrtPushTransitionFun(PrtValue ev)
         {
-            // Shaz: Figure out how to handle the transfer stuff for payload !!!
-            PrtPushFunStackFrame(CurrentState.transitions[ev].transitionFun, CurrentState.transitions[ev].transitionFun.CreateLocals(currentPayload));
+            PrtFun transitionFun = CurrentState.transitions[ev].transitionFun;
+            if (transitionFun.IsAnonFun)
+            {
+                PrtPushFunStackFrame(transitionFun, transitionFun.CreateLocals(currentPayload));
+            }
+            else
+            {
+                PrtPushFunStackFrame(transitionFun, transitionFun.CreateLocals());
+            }
         }
 
         public void PrtFunContReturn(List<PrtValue> retLocals)
         {
             continuation.reason = PrtContinuationReason.Return;
-            continuation.retVal = null;
+            continuation.retVal = PrtValue.@null;
             continuation.retLocals = retLocals;
         }
 
@@ -420,10 +449,10 @@ namespace P.Runtime
 
         public bool DequeueEvent(PrtImplMachine owner)
         {
-            HashSet<PrtEventValue> deferredSet;
+            HashSet<PrtValue> deferredSet;
             HashSet<PrtValue> receiveSet;
 
-            deferredSet = owner.CurrentState.deferredSet;
+            deferredSet = owner.CurrentDefferedSet;
             receiveSet = owner.receiveSet;
 
             int iter = 0;
@@ -516,11 +545,10 @@ namespace P.Runtime
         public PrtStateStack Clone()
         {
             var clone = new PrtStateStack();
-            foreach(var s in stateStack)
+            foreach(var s in stateStack.Reverse())
             {
                 clone.stateStack.Push(s.Clone());
             }
-            clone.stateStack.Reverse();
             return clone;
         }
 
@@ -579,25 +607,17 @@ namespace P.Runtime
         public List<PrtValue> locals;
         
         public PrtFun fun;
-        public PrtFunStackFrame(PrtFun fun,  List<PrtValue> locs)
+        public PrtFunStackFrame(PrtFun fun,  List<PrtValue> locals)
         {
             this.fun = fun;
-            this.locals = new List<PrtValue>();
-            foreach(var l in locs)
-            {
-                locals.Add(l.Clone());
-            }
+            this.locals = locals;
             returnToLocation = 0;
         }
 
-        public PrtFunStackFrame(PrtFun fun, List<PrtValue> locs, int retLocation)
+        public PrtFunStackFrame(PrtFun fun, List<PrtValue> locals, int retLocation)
         {
             this.fun = fun;
-            this.locals = new List<PrtValue>();
-            foreach (var l in locs)
-            {
-                locals.Add(l.Clone());
-            }
+            this.locals = locals;
             returnToLocation = retLocation;
         }
 
@@ -621,6 +641,11 @@ namespace P.Runtime
             }
             clonedStack.funStack.Reverse();
             return clonedStack;
+        }
+
+        public void Clear()
+        {
+            funStack.Clear();
         }
 
         public PrtFunStackFrame TopOfStack

@@ -75,14 +75,44 @@ namespace P.Runtime
     public class PrtInterfaceType: PrtType
     {
         public List<PrtEventValue> permissions;
+        public string name;
         public PrtInterfaceType(string name)
         {
-            permissions = new List<PrtEventValue>();
+            this.name = name;
         }
 
         public override string ToString()
         {
-            return "INTERFACE";
+            return name;
+        }
+
+        public PrtValue PrtReduceValue(PrtValue value)
+        {
+            if(value == PrtValue.@null)
+            {
+                return value.Clone();
+            }
+            else if(value is PrtMachineValue)
+            {
+                return new PrtInterfaceValue(((PrtMachineValue)value).mach, permissions);
+            }
+            else if(value is PrtInterfaceValue)
+            {
+                var iVal = value as PrtInterfaceValue;
+                //type_permissions is subset of value_permissions
+                if(permissions.Where(ev => !iVal.permissions.Contains(ev)).Count() > 0)
+                {
+                    throw new PrtInhabitsTypeException(String.Format("value {0} cannot be reduced to value of type {1}", value.ToString(), this.ToString()));
+                }
+                else
+                {
+                    return new PrtInterfaceValue(iVal.mach, permissions);
+                }
+            }
+            else
+            {
+                throw new PrtInhabitsTypeException(String.Format("value {0} cannot be reduced to value of type {1}", value.ToString(), this.ToString()));
+            }
         }
     }
 
@@ -194,6 +224,7 @@ namespace P.Runtime
             while (index < fieldTypes.Count)
             {
                 retStr += fieldNames[index] + ":" + fieldTypes[index].ToString() + ", ";
+                index++;
             }
             retStr += ">";
             return retStr;

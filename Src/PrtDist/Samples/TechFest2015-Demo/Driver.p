@@ -1,5 +1,4 @@
 include "FailureDetector.p"
-include "PrtDistHelp.p"
 
 fun CreateNode(container: machine) : machine
 [container = container]
@@ -39,8 +38,6 @@ machine Driver {
 	}
 }
 
-event M_PING: machine;
-event M_PONG: machine;
 spec Safety observes M_PING, M_PONG {
 	var pending: map[machine, int];
     start state Init {

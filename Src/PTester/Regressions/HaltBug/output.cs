@@ -20,11 +20,6 @@ namespace P.Program
             CreateMainMachine();
         }
 
-        public override StateImpl MakeSkeleton()
-        {
-            return new Application();
-        }
-
         static Application()
         {
             (isSafeMap).Add("Main", false);

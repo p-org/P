@@ -86,7 +86,7 @@ NumberedEnumElemList
 
 /******************* Include Declarations *******************/ 
 IncludeDecl
-	: INCLUDE STR { parseIncludedFileNames.Add($2.str.Substring(1,$2.str.Length-2)); }
+	: INCLUDE STR { AddDependency($2.str.Substring(1,$2.str.Length-2)); parseIncludedFileNames.Add($2.str.Substring(1,$2.str.Length-2)); }
 	;
 
 /******************* Event Declarations *******************/ 

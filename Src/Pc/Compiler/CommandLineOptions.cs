@@ -28,7 +28,7 @@
         public string compilerId { get; set; } // for internal use only.
         //linker phase
         public bool isLinkerPhase { get; set; }
-        public bool reBuild { get; set; }
+        public bool rebuild { get; set; }
         //get p file
         public List<string> PFiles {
             get
@@ -54,11 +54,11 @@
             outputFormula = false;
             shortFileNames = false;
             printTypeInference = false;
-            compilerOutput = CompilerOutput.None;
+            compilerOutput = CompilerOutput.C0;
             inputFileNames = new List<string>();
             compilerService = false;
             isLinkerPhase = false;
-            reBuild = false;
+            rebuild = false;
         }
 
         public bool ParseArguments(IEnumerable<string> args)
@@ -101,21 +101,17 @@
                             isLinkerPhase = true;
                             break;
                         case "rebuild":
-                            reBuild = true;
+                            rebuild = true;
                             break;
                         case "generate":
                             if (colonArg == null)
                             {
-                                Console.WriteLine("Missing generation argument, expecting one of generate:C, C0, Zing, or C#");
+                                Console.WriteLine("Missing generation argument, expecting one of generate:C0, C#, or Zing");
                                 return false;
                             }
                             else if (colonArg == "C0")
                             {
                                 compilerOutput = CompilerOutput.C0;
-                            }
-                            else if (colonArg == "C")
-                            {
-                                compilerOutput = CompilerOutput.C;
                             }
                             else if (colonArg == "Zing")
                             {
@@ -127,7 +123,7 @@
                             }
                             else
                             {
-                                Console.WriteLine("Unrecognized generate option '{0}', expecing C, C0, Zing, or C#", colonArg);
+                                Console.WriteLine("Unrecognized generate option '{0}', expecing C0, C#, or Zing", colonArg);
                                 return false;
                             }
                             break;

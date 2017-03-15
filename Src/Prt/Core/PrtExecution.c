@@ -1,6 +1,38 @@
 #include "PrtExecution.h"
 #include "PrtUser.h"
 
+PRT_TYPE NullType =
+{
+	PRT_KIND_NULL,
+	(struct PRT_MAPTYPE *)NULL
+};
+
+PRT_TYPE AnyType = 
+{
+	PRT_KIND_ANY,
+	(struct PRT_MAPTYPE *)NULL
+};
+
+PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
+{
+	PRT_SPECIAL_EVENT_NULL,
+	"null",
+	0,
+	&NullType,
+	0,
+	NULL
+};
+
+PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
+{
+	PRT_SPECIAL_EVENT_HALT,
+	"halt",
+	4294967295U,
+	&AnyType,
+	0,
+	NULL
+};
+
 /* Initialize the function to default assert function */
 PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 
@@ -180,7 +212,6 @@ _In_  PRT_VALUE					*payload
 	id.machineId = process->numMachines; // index begins with 1 since 0 is reserved
 	id.processId = process->guid;
 	context->id = PrtMkMachineValue(id);
-	context->extContext = NULL;
 
 	//
 	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
@@ -265,11 +296,6 @@ _In_  PRT_VALUE					*payload
 	//
 	PrtLog(PRT_STEP_CREATE, NULL, context, NULL, NULL);
 
-	//
-	// Allocate external context Structure
-	//
-	process->program->machines[context->instanceOf]->extCtorFun((PRT_MACHINEINST *)context, payload);
-
 	PrtUnlockMutex(process->processLock);
 
 	//
@@ -325,7 +351,7 @@ _In_ PRT_VALUE					*payload
 	}
 
 	eventIndex = PrtPrimGetEvent(event);
-	eventMaxInstances = context->process->program->events[eventIndex].eventMaxInstances;
+	eventMaxInstances = context->process->program->events[eventIndex]->eventMaxInstances;
 	maxQueueSize = context->process->program->machines[context->instanceOf]->maxQueueSize;
 
 	queue = &context->eventQueue;
@@ -1513,7 +1539,7 @@ _In_ PRT_MACHINEINST_PRIV *context,
 _In_ PRT_VALUE	  *event
 )
 {
-	return context->process->program->events[PrtPrimGetEvent(event)].type;
+	return context->process->program->events[PrtPrimGetEvent(event)]->type;
 }
 
 FORCEINLINE
@@ -2132,8 +2158,6 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 		PrtFree(context->varValues);
 	}
 
-	if (context->extContext != NULL)
-		context->process->program->machines[context->instanceOf]->extDtorFun((PRT_MACHINEINST *)context);
 	PrtFreeValue(context->id);
 
 	PrtFreeTriggerPayload(context);

@@ -97,6 +97,7 @@ namespace Microsoft.Pc
     internal class FunInfo
     {
         public bool isAnonymous;
+        public bool isFunProto;
         public List<string> parameterNames;
         // if isAnonymous is true, 
         //    parameterNames is the list of environment variables
@@ -112,6 +113,33 @@ namespace Microsoft.Pc
         public HashSet<Node> invokePluginFuns;
         public HashSet<string> printArgs;
 
+        //for fun proto
+        public FunInfo(FuncTerm parameters, AST<FuncTerm> returnType)
+        {
+            this.isFunProto = true;
+            this.returnType = returnType;
+            this.parameterNames = new List<string>();
+            this.localNameToInfo = new Dictionary<string, LocalVariableInfo>();
+            this.localNames = new List<string>();
+
+            int paramIndex = 0;
+            while (parameters != null)
+            {
+                var ft = (FuncTerm)PTranslation.GetArgByIndex(parameters, 0);
+                using (var enumerator = ft.Args.GetEnumerator())
+                {
+                    enumerator.MoveNext();
+                    var varName = ((Cnst)enumerator.Current).GetStringValue();
+                    enumerator.MoveNext();
+                    var varType = (FuncTerm)enumerator.Current;
+                    localNameToInfo[varName] = new LocalVariableInfo(varType, paramIndex);
+                    parameterNames.Add(varName);
+                }
+                parameters = PTranslation.GetArgByIndex(parameters, 1) as FuncTerm;
+                paramIndex++;
+            }
+
+        }
         // if isAnonymous is true, parameters is actually envVars
         public FunInfo(bool isAnonymous, FuncTerm parameters, AST<FuncTerm> returnType, FuncTerm locals, Node body)
         {
@@ -261,8 +289,10 @@ namespace Microsoft.Pc
         {
             string name = ((Id)ft.Function).Name;
             var id = ft.Args.Last();
-            int integerId = (int)((id as FuncTerm).Args.First() as Cnst).GetNumericValue().Numerator;
-            return idToSourceInfo[integerId].entrySpan;
+            int integerId;
+            string file;
+            ErrorReporter.FindIdFromFuncTerm(id as FuncTerm, out file, out integerId);
+            return idToSourceInfo[file][integerId].entrySpan;
         }
 
         public string GetOwnerName(FuncTerm ft, int ownerIndex, int ownerNameIndex)
@@ -356,15 +386,15 @@ namespace Microsoft.Pc
         public Dictionary<AST<FuncTerm>, Node> termToAlias;
         public Dictionary<AST<Node>, string> funToFileName;
         public Dictionary<string, EventInfo> allEvents;
-        public Dictionary<string, List<string>> allInterfaces;
         public Dictionary<string, Dictionary<string, int>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
         public Dictionary<string, string> linkMap;
-        public Dictionary<string, FunInfo> allStaticFuns;
+        public HashSet<string> exportedEvents;
+        public Dictionary<string, FunInfo> allGlobalFuns;
         public Dictionary<AST<Node>, string> anonFunToName;
-        public Dictionary<int, SourceInfo> idToSourceInfo;
+        public Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo;
 
-        public PTranslation(Compiler compiler, AST<Model> model, Dictionary<int, SourceInfo> idToSourceInfo)
+        public PTranslation(Compiler compiler, AST<Model> model, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             this.compiler = compiler;
             this.idToSourceInfo = idToSourceInfo;
@@ -429,12 +459,12 @@ namespace Microsoft.Pc
         {
             funToFileName = new Dictionary<AST<Node>, string>();
             allEvents = new Dictionary<string, EventInfo>();
-            allInterfaces = new Dictionary<string, List<string>>();
+            exportedEvents = new HashSet<string>();
             allEnums = new Dictionary<string, Dictionary<string, int>>();
             allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
-            allStaticFuns = new Dictionary<string, FunInfo>();
+            allGlobalFuns = new Dictionary<string, FunInfo>();
             linkMap = new Dictionary<string, string>();
 
             LinkedList<AST<FuncTerm>> terms;
@@ -482,34 +512,6 @@ namespace Microsoft.Pc
                         var maxInstances = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
                         var maxInstancesAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
                         allEvents[name] = new EventInfo(maxInstances, maxInstancesAssumed, payloadType);
-                    }
-                }
-            }
-
-            terms = GetBin(factBins, "InterfaceTypeDeclList");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var name = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var interfaceType = it.Current as FuncTerm;
-
-                    while (interfaceType != null)
-                    {
-                        var eventTerm = GetArgByIndex(interfaceType, 0);
-                        string evName = eventTerm is Cnst ? ((Cnst)eventTerm).GetStringValue(): HaltEvent;
-                        if(allInterfaces.ContainsKey(name))
-                        {
-                            allInterfaces[name].Add(evName);
-                        }
-                        else
-                        {
-                            allInterfaces.Add(name, new List<string>());
-                            allInterfaces[name].Add(evName);
-                        }
-                        interfaceType = GetArgByIndex(interfaceType, 1) as FuncTerm;
                     }
                 }
             }
@@ -705,7 +707,25 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        allStaticFuns[funName] = funInfo;
+                        allGlobalFuns[funName] = funInfo;
+                    }
+                }
+            }
+
+            terms = GetBin(factBins, "FunProtoDecl");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    string funName = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var parameters = it.Current as FuncTerm;
+                    it.MoveNext();
+                    var returnTypeName = it.Current is Id ? PTypeNull : (AST<FuncTerm>)Factory.Instance.ToAST(it.Current);
+                    if (!allGlobalFuns.ContainsKey(funName))
+                    {
+                        allGlobalFuns.Add(funName, new FunInfo(parameters, returnTypeName));
                     }
                 }
             }
@@ -736,7 +756,7 @@ namespace Microsoft.Pc
                     if (machineDecl == null)
                     {
                         var funName = "AnonFunStatic" + anonFunCounterStatic;
-                        allStaticFuns[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
+                        allGlobalFuns[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
                         anonFunToName[termAlias] = funName;
                         anonFunCounterStatic++;
                     }
@@ -910,7 +930,7 @@ namespace Microsoft.Pc
                     {
                         if (ownerName == null)
                         {
-                            allStaticFuns[funName].invokeSchedulerFuns.Add(it.Current);
+                            allGlobalFuns[funName].invokeSchedulerFuns.Add(it.Current);
                         }
                         else
                         {
@@ -925,7 +945,7 @@ namespace Microsoft.Pc
                             string arg = indexCnst.GetStringValue();
                             if (ownerName == null)
                             {
-                                allStaticFuns[funName].printArgs.Add(arg);
+                                allGlobalFuns[funName].printArgs.Add(arg);
                             }
                             else
                             {
@@ -937,7 +957,7 @@ namespace Microsoft.Pc
                     {
                         if (ownerName == null)
                         {
-                            allStaticFuns[funName].invokePluginFuns.Add(it.Current);
+                            allGlobalFuns[funName].invokePluginFuns.Add(it.Current);
                         }
                         else
                         {
@@ -960,6 +980,17 @@ namespace Microsoft.Pc
                 }
             }
 
+            terms = GetBin(factBins, "ExportedEvent");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var eventName = ((Cnst)it.Current).GetStringValue();
+                    exportedEvents.Add(eventName);
+                }
+            }
+
             terms = GetBin(factBins, "MaxNumLocals");
             foreach (var term in terms)
             {
@@ -978,7 +1009,7 @@ namespace Microsoft.Pc
                         string funName = GetName(typingContext, 0);
                         if (ownerName == null)
                         {
-                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                            allGlobalFuns[funName].maxNumLocals = maxNumLocals;
                         }
                         else
                         {
@@ -992,7 +1023,7 @@ namespace Microsoft.Pc
                         string funName = anonFunToName[typingContextAlias];
                         if (ownerName == null)
                         {
-                            allStaticFuns[funName].maxNumLocals = maxNumLocals;
+                            allGlobalFuns[funName].maxNumLocals = maxNumLocals;
                         }
                         else
                         {

@@ -1,0 +1,5 @@
+arg: ..\gotoStmt1.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe, goto statement

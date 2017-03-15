@@ -15,8 +15,13 @@
   </PropertyGroup>
 
   <!-- Invoke pc.exe - pc.exe will do the right thing based on which p files (or include files) have actually changed. -->
+  <!-- The 'no_build_optimize' hack is a trick to force msbuild to pass all files to pc.exe even if the output files are up to date.
+       We need to do this because pc.exe is smarter about tracking the entire include graph which msbuild doesn't know about.
+       This is ok because pc.exe is smart about only compiling things that need to based on what has changed.
+       The downside is that pc.exe now gets invoked always, so we have to pay that #include graph parsing when have changed
+       nothing.  Hopefully the P parser is quick then.  -->  
   <Target Name="CompileP" Inputs="@(PCompile);"
-          Outputs="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml');@(PCompile->'$(PGeneratedDir)\%(FileName).c');@(PCompile->'$(PGeneratedDir)\%(FileName).h')"
+          Outputs="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml');@(PCompile->'$(PGeneratedDir)\%(FileName).c');@(PCompile->'$(PGeneratedDir)\%(FileName).h;no_build_optimize')"
           BeforeTargets="BeforeBuildGenerateSources" >
 
     <ItemGroup>

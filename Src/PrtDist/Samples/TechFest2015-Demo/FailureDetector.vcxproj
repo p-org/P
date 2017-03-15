@@ -177,9 +177,14 @@
     <PCompile Include="Driver.p" />
   </ItemGroup>
   <ItemGroup>
-    <PFile Include="FailureDetector.p" />
-    <PFile Include="PrtDistHelp.p" />
-    <PFile Include="Timer.p" />
+    <PCompile Include="FailureDetector.p" />
+    <PCompile Include="PrtDistHelp.p" />
+    <PCompile Include="Timer.p" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="FailureDetector.p" />
+    <None Include="PrtDistHelp.p" />
+    <None Include="Timer.p" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

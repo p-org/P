@@ -11,6 +11,14 @@ Demos
 ==========================================================
 See [fun demo video](https://www.youtube.com/watch?v=R8ztpfMPs5c) using P to control a quadrocopter and make sense of the MavLink stream, all visualized in a live DGML diagram.
 
+Application to Robotics
+=========================================================
+We built DRONA, a software framework for distributed mobile robotics systems. DRONA uses P language for implementing and model-checking the distributed robotics software stack (**[wiki](https://github.com/Drona-Org/Drona/wiki/Drona-Software-Stack)**). The C code generated from P compiler can be easily deployed on  Robot Operating System (ROS).
+More details about the DRONA framework and simulation videos are available here:
+**[https://drona-org.github.io/Drona/](https://drona-org.github.io/Drona/)**
+
+We are working on using the DRONA framework for building real-world drone applications using **[PX4](https://github.com/PX4/Firmware)** and extending DRONA with runtime monitoring capabilities for reliability.
+Details about these extensions will be posted soon.
 
 Publications
 ==========================================================
@@ -22,6 +30,9 @@ In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Impl
 Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
 
+- **[DRONA: A Framework for Safe Distributed Mobile Robotics](https://people.eecs.berkeley.edu/~ankush/Papers/drona.pdf)**.
+Ankush Desai, Indranil Saha, Jianqiao Yang, Shaz Qadeer, and Sanjit A. Seshia.
+In Proceedings of the 8th ACM/IEEE International Conference on Cyber-Physical Systems (ICCPS), 2017.
 
 News
 ============================================================

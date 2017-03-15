@@ -60,6 +60,9 @@ namespace P.Tester
         public string inputFileName;
         public bool printStats;
         public int timeout;
+        public bool isRefinement;
+        public string LHSModel;
+        public string RHSModel;
     }
 
     public class PTesterCommandLine
@@ -108,7 +111,30 @@ namespace P.Tester
                                 options.timeout = int.Parse(param);
                             }
                             break;
-
+                        case "lhs":
+                            if (param.Length != 0)
+                            {
+                                options.LHSModel = param;
+                                options.isRefinement = true;
+                            }
+                            else
+                            {
+                                PrintHelp(arg, "missing file name");
+                                return null;
+                            }
+                            break;
+                        case "rhs":
+                            if (param.Length != 0)
+                            {
+                                options.RHSModel = param;
+                                options.isRefinement = true;
+                            }
+                            else
+                            {
+                                PrintHelp(arg, "missing file name");
+                                return null;
+                            }
+                            break;
                         default:
                             PrintHelp(arg, "Invalid option");
                             return null;
@@ -132,7 +158,7 @@ namespace P.Tester
                 }
             }
 
-            if (options.inputFileName == null)
+            if (!options.isRefinement && options.inputFileName == null)
             {
                 PrintHelp(null, "No input file specified");
                 return null;
@@ -159,6 +185,13 @@ namespace P.Tester
             if (options == null)
             {
                 Environment.Exit((int)TestResult.InvalidParameters);
+            }
+
+            if(options.isRefinement)
+            {
+                var refinementCheck = new RefinementChecking(options.LHSModel, options.RHSModel);
+                refinementCheck.RunChecker();
+                return;
             }
 
             var asm = Assembly.LoadFrom(options.inputFileName);

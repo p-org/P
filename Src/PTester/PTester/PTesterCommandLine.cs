@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using P.Runtime;
+using Microsoft.PSharp;
+using Microsoft.PSharp.Utilities;
 
 namespace P.Tester
 {
@@ -60,6 +62,7 @@ namespace P.Tester
         public string inputFileName;
         public bool printStats;
         public int timeout;
+        public bool UsePSharp = false;
     }
 
     public class PTesterCommandLine
@@ -108,6 +111,9 @@ namespace P.Tester
                                 options.timeout = int.Parse(param);
                             }
                             break;
+                        case "psharp":
+                            options.UsePSharp = true;
+                            break;
 
                         default:
                             PrintHelp(arg, "Invalid option");
@@ -139,7 +145,7 @@ namespace P.Tester
             }
             return options;
         }
-        
+
         public static void PrintHelp(string arg, string errorMessage)
         {
             if (errorMessage != null)
@@ -162,15 +168,22 @@ namespace P.Tester
             }
 
             var asm = Assembly.LoadFrom(options.inputFileName);
-            StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application", 
+            StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application",
                                                         false,
-                                                        BindingFlags.CreateInstance, 
+                                                        BindingFlags.CreateInstance,
                                                         null,
                                                         new object[] { true },
-                                                        null, 
+                                                        null,
                                                         new object[] { });
             if (s == null)
                 throw new ArgumentException("Invalid assembly");
+
+            if (options.UsePSharp)
+            {
+                RunPSharpTester(s);
+                return;
+            }
+
             int numOfSchedules = 0;
             int numOfSteps = 0;
             var randomScheduler = new Random(DateTime.Now.Millisecond);
@@ -208,5 +221,87 @@ namespace P.Tester
                 numOfSchedules++;
             }
         }
+
+        public static StateImpl main_s;
+
+        public static void RunPSharpTester(StateImpl s)
+        {
+            main_s = s;
+
+            var configuration = Configuration.Create()
+                .WithNumberOfIterations(1000);
+            configuration.MaxSchedulingSteps = 10000;
+
+
+            var engine = Microsoft.PSharp.TestingServices.TestingEngineFactory.CreateBugFindingEngine(
+                configuration, PSharpWrapper.Execute);
+            engine.Run();
+
+            Console.WriteLine("Bugs found: {0}", engine.TestReport.NumOfFoundBugs);
+        }
     }
+
+    public class PSharpWrapper
+    {
+        public static void Execute(PSharpRuntime runtime)
+        {
+            runtime.CreateMachine(typeof(PSharpMachine), new MachineInitEvent((StateImpl)PTesterCommandLine.main_s.Clone()));
+        }
+
+        public class Unit : Microsoft.PSharp.Event { }
+
+        public class MachineInitEvent : Microsoft.PSharp.Event
+        {
+            public StateImpl s;
+
+            public MachineInitEvent(StateImpl s)
+            {
+                this.s = s;
+            }
+        }
+
+        class PSharpMachine : Microsoft.PSharp.Machine
+        {
+            StateImpl currImpl;
+
+            [Microsoft.PSharp.Start]
+            [Microsoft.PSharp.OnEntry(nameof(Configure))]
+            [Microsoft.PSharp.OnEventDoAction(typeof(Unit), nameof(Step))]
+            class Init : Microsoft.PSharp.MachineState { }
+
+            void Configure()
+            {
+                var e = (this.ReceivedEvent as MachineInitEvent);
+                this.currImpl = e.s;
+                this.Raise(new Unit());
+            }
+
+            void Step()
+            {
+                if (currImpl.EnabledMachines.Count == 0)
+                {
+                    return;
+                }
+
+                var num = currImpl.EnabledMachines.Count;
+                var choosenext = this.RandomInteger(num);
+                currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
+                if (currImpl.Exception != null)
+                {
+                    if (currImpl.Exception is PrtAssumeFailureException)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        this.Assert(false, currImpl.Exception.ToString());
+                    }
+                }
+
+                this.Raise(new Unit());
+            }
+
+        }
+    }
+
 }

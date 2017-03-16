@@ -811,7 +811,7 @@ namespace Microsoft.Pc
                 eventInitializationStmts.Add((StatementSyntax)CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(lhs, rhs));
             }
 
-            var staticMethodName = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName);
+            var staticMethodName = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName.ToLower());
             var staticInitializer =
                     MethodDeclaration(
                         PredefinedType(
@@ -853,7 +853,7 @@ namespace Microsoft.Pc
             typeDeclarations.AddRange(typeContext.typeDeclaration);
 
 
-            var staticMethodName = "Types_" + Path.GetFileNameWithoutExtension(cSharpFileName);
+            var staticMethodName = "Types_" + Path.GetFileNameWithoutExtension(cSharpFileName.ToLower());
             var staticInitializer =
                     MethodDeclaration(
                         PredefinedType(
@@ -4230,7 +4230,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            //Log.WriteMessage(string.Format("Writing {0}.dll ...", testCaseName), SeverityKind.Info);
+            Log.WriteMessage(string.Format("Writing {0}.dll ...", testCaseName), SeverityKind.Info);
             var tree = CSharpSyntaxTree.ParseText(cs_code);
 
             var pruntime = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\prt.dll";

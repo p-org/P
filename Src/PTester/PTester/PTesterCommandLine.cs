@@ -212,7 +212,7 @@ namespace P.Tester
                 {
                     var currImpl = (StateImpl)s.Clone();
                     Console.WriteLine("-----------------------------------------------------");
-                    Console.WriteLine("New Schedule:");
+                    Console.WriteLine("New Schedule: {0}", numOfSchedules);
                     Console.WriteLine("-----------------------------------------------------");
                     numOfSteps = 0;
                     while (numOfSteps < 10000)

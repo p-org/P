@@ -35,10 +35,10 @@ namespace P.Runtime
             }
             else
             {
-                return sendAct.target.Item1 == this.target.Item1 &&
-                    sendAct.target.Item2 == this.target.Item2 &&
-                    sendAct.ev == this.ev &&
-                    sendAct.payload == this.payload;
+                return sendAct.target.Item1.Equals(this.target.Item1) &&
+                    sendAct.target.Item2.Equals(this.target.Item2) &&
+                    sendAct.ev.Equals(this.ev) &&
+                    sendAct.payload.Equals(this.payload);
             }
         }
 
@@ -117,7 +117,7 @@ namespace P.Runtime
 
                 for (int i = 0; i < trace2.Count(); i++)
                 {
-                    if (trace[i] != trace2[i])
+                    if (!trace[i].Equals(trace2[i]))
                     {
                         return false;
                     }

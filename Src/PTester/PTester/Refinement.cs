@@ -51,8 +51,11 @@ namespace P.Tester
 
         public void RunChecker()
         {
+            //create a appdomain for RHS
+            var rhsDomain = AppDomain.CreateDomain("RHSModel");
             //First phase compute all possible traces of RHS
-            var asm = Assembly.LoadFrom(RHSModel);
+            rhsDomain.Load(@"C:\Workspace\P\Bld\Drops\Debug\x64\Binaries\Prt.dll");
+            var asm = rhsDomain.Load(RHSModel);
             StateImpl rhsStateImpl = (StateImpl)asm.CreateInstance("P.Program.Application",
                                                         false,
                                                         BindingFlags.CreateInstance,
@@ -70,7 +73,7 @@ namespace P.Tester
             {
                 var currImpl = (StateImpl)rhsStateImpl.Clone();
                 Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine("New Schedule:");
+                Console.WriteLine("New Schedule: {0}", numOfSchedules);
                 Console.WriteLine("-----------------------------------------------------");
                 numOfSteps = 0;
                 while (true)
@@ -110,7 +113,8 @@ namespace P.Tester
 
             Console.WriteLine("Loaded all traces of RHS");
             Console.WriteLine("Total Traces: {0}", allTracesRHS.Count);
-
+            Console.WriteLine("Press any key to continue");
+            Console.ReadKey();
             //starting the second phase
             asm = Assembly.LoadFrom(LHSModel);
             StateImpl lhsStateImpl = (StateImpl)asm.CreateInstance("P.Program.Application",
@@ -126,11 +130,11 @@ namespace P.Tester
             numOfSchedules = 0;
             numOfSteps = 0;
             randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 10000)
+            while (numOfSchedules < 100)
             {
                 var currImpl = (StateImpl)lhsStateImpl.Clone();
                 Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine("New Schedule:");
+                Console.WriteLine("New Schedule: {0}", numOfSchedules);
                 Console.WriteLine("-----------------------------------------------------");
                 numOfSteps = 0;
                 while (true)

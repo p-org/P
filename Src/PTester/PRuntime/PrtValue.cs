@@ -359,7 +359,7 @@ namespace P.Runtime
         {
             var machineVal = val as PrtMachineValue;
             if (machineVal == null) return false;
-            return this.mach == machineVal.mach;
+            return this.mach.renamedName == machineVal.mach.renamedName && this.mach.instanceNumber == machineVal.mach.instanceNumber;
         }
 
         public override int GetHashCode()

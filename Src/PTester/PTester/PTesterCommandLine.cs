@@ -193,53 +193,56 @@ namespace P.Tester
                 refinementCheck.RunChecker();
                 return;
             }
-
-            var asm = Assembly.LoadFrom(options.inputFileName);
-            StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application", 
-                                                        false,
-                                                        BindingFlags.CreateInstance, 
-                                                        null,
-                                                        new object[] { true },
-                                                        null, 
-                                                        new object[] { });
-            if (s == null)
-                throw new ArgumentException("Invalid assembly");
-            int numOfSchedules = 0;
-            int numOfSteps = 0;
-            var randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 1000)
+            else
             {
-                var currImpl = (StateImpl)s.Clone();
-                Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine("New Schedule:");
-                Console.WriteLine("-----------------------------------------------------");
-                numOfSteps = 0;
-                while (numOfSteps < 10000)
+                var asm = Assembly.LoadFrom(options.inputFileName);
+                StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application",
+                                                            false,
+                                                            BindingFlags.CreateInstance,
+                                                            null,
+                                                            new object[] { true },
+                                                            null,
+                                                            new object[] { });
+                if (s == null)
+                    throw new ArgumentException("Invalid assembly");
+                int numOfSchedules = 0;
+                int numOfSteps = 0;
+                var randomScheduler = new Random(DateTime.Now.Millisecond);
+                while (numOfSchedules < 1000)
                 {
-                    if (currImpl.EnabledMachines.Count == 0)
+                    var currImpl = (StateImpl)s.Clone();
+                    Console.WriteLine("-----------------------------------------------------");
+                    Console.WriteLine("New Schedule:");
+                    Console.WriteLine("-----------------------------------------------------");
+                    numOfSteps = 0;
+                    while (numOfSteps < 10000)
                     {
-                        break;
-                    }
-
-                    var num = currImpl.EnabledMachines.Count;
-                    var choosenext = randomScheduler.Next(0, num);
-                    currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
-                    if (currImpl.Exception != null)
-                    {
-                        if (currImpl.Exception is PrtAssumeFailureException)
+                        if (currImpl.EnabledMachines.Count == 0)
                         {
                             break;
                         }
-                        else
+
+                        var num = currImpl.EnabledMachines.Count;
+                        var choosenext = randomScheduler.Next(0, num);
+                        currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
+                        if (currImpl.Exception != null)
                         {
-                            Console.WriteLine("Exception hit during execution: {0}", currImpl.Exception.ToString());
-                            Environment.Exit(-1);
+                            if (currImpl.Exception is PrtAssumeFailureException)
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Exception hit during execution: {0}", currImpl.Exception.ToString());
+                                Environment.Exit(-1);
+                            }
                         }
+                        numOfSteps++;
                     }
-                    numOfSteps++;
+                    numOfSchedules++;
                 }
-                numOfSchedules++;
             }
+            
         }
     }
 }

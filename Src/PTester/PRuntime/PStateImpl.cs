@@ -82,7 +82,7 @@ namespace P.Runtime
                 foreach (var x in specMachinesMap.Values)
                 {
                     if (hot) break;
-                    hot = hot || x.IsHot;
+                    hot = hot || x.currentTemperature == StateTemperature.Hot;
                 }
                 return (!enabled && hot);
             }

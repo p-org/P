@@ -334,8 +334,7 @@ domain PStaticTyping extends PData, PError
 	MemberOfInterfaceType ::= sub (InterfaceType, NonNullEventName).
 								
 	MachineReceives(m, evName) :- MachineReceives(m, NIL), ev is EventDecl, ev.name = evName;
-								  MachineReceives(m, NIL), evName = HALT;
-								  MachineExports(m, i), InterfaceTypeDecl(i, evlist, _, _), MemberOfInterfaceType(evlist, evName).
+								  MachineReceives(m, NIL), evName = HALT.
 
 	MachineCreates(m, iorm.name) :- MachineCreates(m, NIL), iorm is MachineDecl;
 									MachineCreates(m, NIL), iorm is MachineProtoDecl;
@@ -354,6 +353,9 @@ domain PStaticTyping extends PData, PError
 	OneIdError(m.id, "Constructor argument type is not a subtype of the exported interface argument type"),
 	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeRel(iargt, ct, k), ct != iargt, k != SUB. 						 
     
+	[rule_Classes = '"error, msg: the exported interface must be a subset of receive set"']
+	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, evL, iargt, _), no MachineReceives(m, ev), MemberOfInterfaceType(evL, ev). 
+
 	ExportedEvent ::= (String).
 	ExportedEvent(e.name) :- e is EventDecl, PFile(fileName), e.id.tl.val = fileName.
 

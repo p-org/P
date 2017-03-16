@@ -829,7 +829,7 @@ domain PStaticTyping extends PData, PError
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
 	[ rule_Classes = '"error, msg: linear argument should be passed for exactly one parameter"']
 	OneIdError(e.id, "Linear argument should be passed for exactly one parameter"),
-	QualifierError(c, e, expr) :- StmtArgs(c, e, Exprs(qual, expr, tl)), StmtArgs(c, e, Exprs(_, expr, tl')), qual != NONE, tl != tl'.
+	QualifierError(c, e, expr) :- StmtArgs(c, e, Exprs(qual, expr, tl)), expr = Name(n, _), StmtArgs(c, e, Exprs(_, expr', tl')), expr' = Name(n, _), qual != NONE, tl != tl'.
 	[ rule_Classes = '"error, msg: move or swap not allowed"']
 	OneIdError(e.id, "Keywords move or swap not allowed"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: FunApp, exprs = Exprs(qual, expr, _), qual != NONE.

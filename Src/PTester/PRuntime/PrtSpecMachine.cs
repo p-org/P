@@ -9,7 +9,7 @@ namespace P.Runtime
     {
         #region Fields
         public List<PrtEventValue> observes;
-        public bool IsHot;
+        public StateTemperature currentTemperature;
         #endregion
 
         public abstract PrtSpecMachine MakeSkeleton();
@@ -17,13 +17,13 @@ namespace P.Runtime
         public PrtSpecMachine() : base()
         {
             observes = new List<PrtEventValue>();
-            IsHot = false;
+            currentTemperature =  StateTemperature.Warm;
         }
 
         public PrtSpecMachine(StateImpl app) : base()
         {
             observes = new List<PrtEventValue>();
-            IsHot = false;
+            currentTemperature = StateTemperature.Warm;
             stateImpl = app;
             //Push the start state function on the funStack.
             PrtPushState(StartState);
@@ -56,7 +56,7 @@ namespace P.Runtime
 
             //spec class fields
             clonedMachine.observes = this.observes.ToList();
-            clonedMachine.IsHot = this.IsHot;
+            clonedMachine.currentTemperature = this.currentTemperature;
 
             return clonedMachine;
         }
@@ -154,6 +154,7 @@ namespace P.Runtime
                                 case PrtStateExitReason.OnGotoStatement:
                                     {
                                         PrtChangeState(destOfGoto);
+                                        currentTemperature = destOfGoto.temperature;
                                         nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                         stateExitReason = PrtStateExitReason.NotExit;
                                         hasMoreWork = true;
@@ -185,6 +186,7 @@ namespace P.Runtime
                                             currentPayload = continuation.retLocals[0];
                                         }
                                         PrtChangeState(transition.gotoState);
+                                        currentTemperature = transition.gotoState.temperature;
                                         hasMoreWork = true;
                                         nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                         stateExitReason = PrtStateExitReason.NotExit;

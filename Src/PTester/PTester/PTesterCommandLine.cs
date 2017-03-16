@@ -60,6 +60,9 @@ namespace P.Tester
         public string inputFileName;
         public bool printStats;
         public int timeout;
+        public bool isRefinement;
+        public string LHSModel;
+        public string RHSModel;
     }
 
     public class PTesterCommandLine
@@ -108,7 +111,30 @@ namespace P.Tester
                                 options.timeout = int.Parse(param);
                             }
                             break;
-
+                        case "lhs":
+                            if (param.Length != 0)
+                            {
+                                options.LHSModel = param;
+                                options.isRefinement = true;
+                            }
+                            else
+                            {
+                                PrintHelp(arg, "missing file name");
+                                return null;
+                            }
+                            break;
+                        case "rhs":
+                            if (param.Length != 0)
+                            {
+                                options.RHSModel = param;
+                                options.isRefinement = true;
+                            }
+                            else
+                            {
+                                PrintHelp(arg, "missing file name");
+                                return null;
+                            }
+                            break;
                         default:
                             PrintHelp(arg, "Invalid option");
                             return null;
@@ -132,7 +158,7 @@ namespace P.Tester
                 }
             }
 
-            if (options.inputFileName == null)
+            if (!options.isRefinement && options.inputFileName == null)
             {
                 PrintHelp(null, "No input file specified");
                 return null;
@@ -161,52 +187,62 @@ namespace P.Tester
                 Environment.Exit((int)TestResult.InvalidParameters);
             }
 
-            var asm = Assembly.LoadFrom(options.inputFileName);
-            StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application", 
-                                                        false,
-                                                        BindingFlags.CreateInstance, 
-                                                        null,
-                                                        new object[] { true },
-                                                        null, 
-                                                        new object[] { });
-            if (s == null)
-                throw new ArgumentException("Invalid assembly");
-            int numOfSchedules = 0;
-            int numOfSteps = 0;
-            var randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 1000)
+            if(options.isRefinement)
             {
-                var currImpl = (StateImpl)s.Clone();
-                Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine("New Schedule:");
-                Console.WriteLine("-----------------------------------------------------");
-                numOfSteps = 0;
-                while (numOfSteps < 10000)
+                var refinementCheck = new RefinementChecking(options.LHSModel, options.RHSModel);
+                refinementCheck.RunChecker();
+                return;
+            }
+            else
+            {
+                var asm = Assembly.LoadFrom(options.inputFileName);
+                StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application",
+                                                            false,
+                                                            BindingFlags.CreateInstance,
+                                                            null,
+                                                            new object[] { true },
+                                                            null,
+                                                            new object[] { });
+                if (s == null)
+                    throw new ArgumentException("Invalid assembly");
+                int numOfSchedules = 0;
+                int numOfSteps = 0;
+                var randomScheduler = new Random(DateTime.Now.Millisecond);
+                while (numOfSchedules < 1000)
                 {
-                    if (currImpl.EnabledMachines.Count == 0)
+                    var currImpl = (StateImpl)s.Clone();
+                    Console.WriteLine("-----------------------------------------------------");
+                    Console.WriteLine("New Schedule:");
+                    Console.WriteLine("-----------------------------------------------------");
+                    numOfSteps = 0;
+                    while (numOfSteps < 10000)
                     {
-                        break;
-                    }
-
-                    var num = currImpl.EnabledMachines.Count;
-                    var choosenext = randomScheduler.Next(0, num);
-                    currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
-                    if (currImpl.Exception != null)
-                    {
-                        if (currImpl.Exception is PrtAssumeFailureException)
+                        if (currImpl.EnabledMachines.Count == 0)
                         {
                             break;
                         }
-                        else
+
+                        var num = currImpl.EnabledMachines.Count;
+                        var choosenext = randomScheduler.Next(0, num);
+                        currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
+                        if (currImpl.Exception != null)
                         {
-                            Console.WriteLine("Exception hit during execution: {0}", currImpl.Exception.ToString());
-                            Environment.Exit(-1);
+                            if (currImpl.Exception is PrtAssumeFailureException)
+                            {
+                                break;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Exception hit during execution: {0}", currImpl.Exception.ToString());
+                                Environment.Exit(-1);
+                            }
                         }
+                        numOfSteps++;
                     }
-                    numOfSteps++;
+                    numOfSchedules++;
                 }
-                numOfSchedules++;
             }
+            
         }
     }
 }

@@ -17,6 +17,7 @@ namespace P.Runtime
             implMachines = new List<PrtImplMachine>();
             specMachinesMap = new Dictionary<string, PrtSpecMachine>();
             exception = null;
+            currentTrace = new VisibleTrace();
         }
         #endregion
 
@@ -51,6 +52,9 @@ namespace P.Runtime
         /// </summary>
         private Exception exception;
 
+        public VisibleTrace currentTrace;
+        public static List<string> visibleEvents = new List<string>();
+        public static List<string> visibleInterfaces = new List<string>();
         public delegate PrtImplMachine CreateMachineDelegate(StateImpl application, PrtValue payload);
         public delegate PrtSpecMachine CreateSpecDelegate(StateImpl application);
         public static Dictionary<string, Dictionary<string, string>> linkMap = new Dictionary<string, Dictionary<string, string>>();
@@ -77,7 +81,7 @@ namespace P.Runtime
                 foreach (var x in specMachinesMap.Values)
                 {
                     if (hot) break;
-                    hot = hot || x.IsHot;
+                    hot = hot || x.currentTemperature == StateTemperature.Hot;
                 }
                 return (!enabled && hot);
             }
@@ -113,6 +117,12 @@ namespace P.Runtime
 
             clonedState.exception = this.exception;
 
+            clonedState.currentTrace = new VisibleTrace();
+            foreach(var item in currentTrace.Trace)
+            {
+                clonedState.currentTrace.Trace.Add(item);
+            }
+
             return clonedState;
 
         }
@@ -127,6 +137,12 @@ namespace P.Runtime
         }
         public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
         {
+            //add visible action to trace
+            if(visibleInterfaces.Contains(interfaceOrMachineName))
+            {
+                currentTrace.AddAction(interfaceOrMachineName);
+            }
+
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
             var impMachineName = renameMap[renamedImpMachine];
             var machine = createMachineMap[impMachineName](this, payload);

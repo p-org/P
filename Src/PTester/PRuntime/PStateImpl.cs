@@ -123,6 +123,11 @@ namespace P.Runtime
         }
         #endregion
 
+        public List<PrtSpecMachine> GetAllSpecMachines()
+        {
+            return specMachinesMap.Values.ToList();
+        }
+
         private List<PrtSpecMachine> GetSpecMachines(string currMachine)
         {
             var allSpecMachines = specMachineMap.Where(mon => mon.Value.Contains(currMachine))

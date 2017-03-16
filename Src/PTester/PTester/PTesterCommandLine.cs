@@ -114,7 +114,9 @@ namespace P.Tester
                         case "psharp":
                             options.UsePSharp = true;
                             break;
-
+                        case "break":
+                            System.Diagnostics.Debugger.Launch();
+                            break;
                         default:
                             PrintHelp(arg, "Invalid option");
                             return null;
@@ -230,7 +232,7 @@ namespace P.Tester
 
             var configuration = Configuration.Create()
                 .WithNumberOfIterations(1000);
-            configuration.MaxSchedulingSteps = 10000;
+            configuration.MaxSchedulingSteps = 1000;
 
 
             var engine = Microsoft.PSharp.TestingServices.TestingEngineFactory.CreateBugFindingEngine(
@@ -263,6 +265,7 @@ namespace P.Tester
         class PSharpMachine : Microsoft.PSharp.Machine
         {
             StateImpl currImpl;
+            Dictionary<PrtSpecMachine, Type> specToMonitor;
 
             [Microsoft.PSharp.Start]
             [Microsoft.PSharp.OnEntry(nameof(Configure))]
@@ -273,6 +276,19 @@ namespace P.Tester
             {
                 var e = (this.ReceivedEvent as MachineInitEvent);
                 this.currImpl = e.s;
+                this.specToMonitor = new Dictionary<PrtSpecMachine, Type>();
+
+                // register monitors
+                foreach (var spec in currImpl.GetAllSpecMachines())
+                {
+                    var genericTy = typeof(PSharpMonitor<int>).GetGenericTypeDefinition();
+                    var specTy = spec.GetType();
+                    var monitorTy = genericTy.MakeGenericType(specTy);
+                    this.specToMonitor.Add(spec, monitorTy);
+
+                    this.Id.Runtime.RegisterMonitor(monitorTy);
+                }
+
                 this.Raise(new Unit());
             }
 
@@ -282,6 +298,16 @@ namespace P.Tester
                 {
                     return;
                 }
+
+                foreach (var tup in specToMonitor)
+                {
+                    Event ev = tup.Key.currentTemperature == StateTemperature.Hot ? (Event) new MoveToHot() :
+                        tup.Key.currentTemperature == StateTemperature.Warm ? (Event) new MoveToWarm() :
+                        (Event) new MoveToCold();
+
+                    this.Monitor(tup.Value, ev);
+                }
+
 
                 var num = currImpl.EnabledMachines.Count;
                 var choosenext = this.RandomInteger(num);
@@ -299,6 +325,47 @@ namespace P.Tester
                 }
 
                 this.Raise(new Unit());
+            }
+
+        }
+
+        class MoveToHot : Event { }
+        class MoveToCold : Event { }
+        class MoveToWarm : Event { }
+
+        class PSharpMonitor<T> : Monitor
+        {
+            [Start]
+            [Cold]
+            [OnEventDoAction(typeof(MoveToHot), nameof(GotHot))]
+            [OnEventDoAction(typeof(MoveToCold), nameof(GotCold))]
+            [OnEventDoAction(typeof(MoveToWarm), nameof(GotWarm))]
+            class S1 : MonitorState { }
+
+            [Hot]
+            [OnEventDoAction(typeof(MoveToHot), nameof(GotHot))]
+            [OnEventDoAction(typeof(MoveToCold), nameof(GotCold))]
+            [OnEventDoAction(typeof(MoveToWarm), nameof(GotWarm))]
+            class S2 : MonitorState { }
+
+            [OnEventDoAction(typeof(MoveToHot), nameof(GotHot))]
+            [OnEventDoAction(typeof(MoveToCold), nameof(GotCold))]
+            [OnEventDoAction(typeof(MoveToWarm), nameof(GotWarm))]
+            class S3 : MonitorState { }
+
+            void GotHot()
+            {
+                this.Goto(typeof(S2));
+            }
+
+            void GotCold()
+            {
+                this.Goto(typeof(S1));
+            }
+
+            void GotWarm()
+            {
+                this.Goto(typeof(S3));
             }
 
         }

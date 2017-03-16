@@ -3873,7 +3873,7 @@ namespace Microsoft.Pc
             var stmtList = new List<StatementSyntax>();
 
             //Initialize types and events
-            var nodes = dependsOn.Keys.ToList();
+            var nodes = dependsOn.Keys.Select(s => s.ToLower()).ToList();
             var edges = new List<Tuple<string, string>>();
             foreach (var file in dependsOn)
             {
@@ -3881,7 +3881,7 @@ namespace Microsoft.Pc
                 {
                     if (file.Key != dep)
                     {
-                        edges.Add(new Tuple<string, string>(dep, file.Key));
+                        edges.Add(new Tuple<string, string>(dep.ToLower(), file.Key.ToLower()));
                     }
                 }
             }

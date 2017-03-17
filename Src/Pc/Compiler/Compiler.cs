@@ -517,7 +517,7 @@
         private const string AliasPrefix = "p_compiler__";
 
         private Dictionary<string, string> ReservedModuleToLocation;
-        private Dictionary<string, Tuple<AST<Program>, bool>> ManifestPrograms;
+        private HashSet<string> LoadedManifestPrograms;
 
         void InitManifestPrograms()
         {
@@ -529,13 +529,7 @@
             ReservedModuleToLocation.Add(P2InfTypesTransform, "PWithInferredTypes.4ml");
             ReservedModuleToLocation.Add(P2CTransform, "P2CProgram.4ml");
 
-            ManifestPrograms = new Dictionary<string, Tuple<AST<Program>, bool>>();
-            ManifestPrograms["Pc.Domains.P.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P.4ml", "P.4ml"), false);
-            ManifestPrograms["Pc.Domains.PLink.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.PLink.4ml", "PLink.4ml"), false);
-            ManifestPrograms["Pc.Domains.C.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.C.4ml", "C.4ml"), false);
-            ManifestPrograms["Pc.Domains.Zing.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.Zing.4ml", "Zing.4ml"), false);
-            ManifestPrograms["Pc.Domains.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.PWithInferredTypes.4ml", "PWithInferredTypes.4ml"), false);
-            ManifestPrograms["Pc.Domains.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P2CProgram.4ml", "P2CProgram.4ml"), false);
+            LoadedManifestPrograms = new HashSet<string>();
         }
 
         public ICompilerOutput Log { get; set; }
@@ -796,8 +790,8 @@
         {
             using (this.Profiler.Start("Compiler installing", Path.GetFileName(inputFileName)))
             {
-                //// Step 0. Load P.4ml.
-                LoadManifestProgram("Pc.Domains.P.4ml");
+                //// Step 0. Load all dependencies of P.4ml in order
+                LoadManifestProgram("P.4ml");
 
                 //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
                 AST<Model> rootModel = null;
@@ -981,7 +975,9 @@
 
             using (this.Profiler.Start("Generating Zing", zingFileName))
             {
-                LoadManifestProgram("Pc.Domains.Zing.4ml");
+                // Load all dependencies of Zing.4ml in order
+                LoadManifestProgram("Zing.4ml");
+
                 zingModel = MkZingOutputModel();
                 var pToZing = new PToZing(this, RootModelWithTypes, idToSourceInfo);
                 bool success = pToZing.GenerateZing(zingFileName, ref zingModel);
@@ -1169,7 +1165,10 @@
 
         private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel, out ProgramName RootProgramNameWithTypes, out AST<Model> RootModelWithTypes)
         {
-            LoadManifestProgram("Pc.Domains.PWithInferredTypes.4ml");
+            // Load all dependenciesof PWithInferredTypes.4ml in order
+            LoadManifestProgram("P.4ml");
+            LoadManifestProgram("PWithInferredTypes.4ml");
+
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
             var RootModuleWithTypes = RootModel.Node.Name + "_WithTypes";
@@ -1321,15 +1320,14 @@
             return (AST<Program>)Factory.Instance.ToAST(config.Root);
         }
 
-        private void LoadManifestProgram(string manifestName)
+        private void LoadManifestProgram(string programName)
         {
-            // ManifestPrograms is a static field; so lock must be held while reading and updating it.
-            lock (ManifestPrograms)
+            string manifestName = "Pc.Domains." + programName;
+            lock (LoadedManifestPrograms)
             {
                 InstallResult result;
-                var tuple = ManifestPrograms[manifestName];
-                if (tuple.Item2) return;
-                var program = tuple.Item1;
+                if (LoadedManifestPrograms.Contains(programName)) return;
+                var program = ParseManifestProgram(manifestName, programName);
                 CompilerEnv.Install(program, out result);
 
                 if (!result.Succeeded)
@@ -1342,7 +1340,7 @@
                     }
                     throw new Exception("Error: Could not load resources");
                 }
-                ManifestPrograms[manifestName] = Tuple.Create<AST<Program>, bool>(program, true);
+                LoadedManifestPrograms.Add(programName);
             }
         }
 
@@ -1435,9 +1433,12 @@
         {
             using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
             {
-                LoadManifestProgram("Pc.Domains.C.4ml");
-                LoadManifestProgram("Pc.Domains.PLink.4ml");
-                LoadManifestProgram("Pc.Domains.P2CProgram.4ml");
+                // Load all dependencies of P2CProgram.4ml in order
+                LoadManifestProgram("P.4ml");
+                LoadManifestProgram("C.4ml");
+                LoadManifestProgram("PLink.4ml");
+                LoadManifestProgram("PWithInferredTypes.4ml");
+                LoadManifestProgram("P2CProgram.4ml");
                 return InternalGenerateCode(RootProgramName, RootModel, importedFiles, idToSourceInfo);
             }
         }
@@ -1691,8 +1692,9 @@
                             return false;
                         }
 
-                        //// Step 0. Load PLink.4ml.
-                        LoadManifestProgram("Pc.Domains.PLink.4ml");
+                        //// Step 0. Load all dependencies of PLink.4ml in order
+                        LoadManifestProgram("C.4ml");
+                        LoadManifestProgram("PLink.4ml");
 
                         //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
                         var mkModelResult = Factory.Instance.MkModel(

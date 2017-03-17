@@ -68,7 +68,7 @@ namespace P.Tester
             int numOfSchedules = 0;
             int numOfSteps = 0;
             var randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 10000)
+            while (numOfSchedules < 100000)
             {
                 var currImpl = (StateImpl)rhsStateImpl.Clone();
                 Console.WriteLine("-----------------------------------------------------");
@@ -144,7 +144,7 @@ namespace P.Tester
             int numOfSchedules = 0;
             int numOfSteps = 0;
             var randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 1000)
+            while (numOfSchedules < 100)
             {
                 var currImpl = (StateImpl)lhsStateImpl.Clone();
                 Console.WriteLine("-----------------------------------------------------");

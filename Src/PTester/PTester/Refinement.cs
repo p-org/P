@@ -16,7 +16,7 @@ namespace P.Tester
         string RHSModel;
 
         int maxLengthOfExecution = 1000;
-        int maxRHSSchedules = 1000;
+        int maxRHSSchedules = 100000;
         int maxLHSSchedules = 100;
         List<VisibleTrace> allTracesRHS;
         public void AddTrace(VisibleTrace tc)
@@ -116,8 +116,7 @@ namespace P.Tester
 
             Console.WriteLine("Loaded all traces of RHS");
             Console.WriteLine("Total Traces: {0}", allTracesRHS.Count);
-            Console.WriteLine("Press any key to continue");
-            Console.ReadKey();
+            
 
             Stream writeStream = File.Open("alltraces", FileMode.Create);
             BinaryFormatter bFormat = new BinaryFormatter();

@@ -63,6 +63,19 @@ namespace P.Tester
         public bool isRefinement;
         public string LHSModel;
         public string RHSModel;
+        public bool verbose;
+        public int numberOfSchedules;
+        public CommandLineOptions()
+        {
+            inputFileName = null;
+            printStats = false;
+            timeout = 0;
+            isRefinement = false;
+            LHSModel = null;
+            RHSModel = null;
+            verbose = false;
+            numberOfSchedules = 1000;
+        }
     }
 
     public class PTesterCommandLine
@@ -104,7 +117,16 @@ namespace P.Tester
                         case "stats":
                             options.printStats = true;
                             break;
-
+                        case "v":
+                        case "verbose":
+                            options.verbose = true;
+                            break;
+                        case "ns":
+                            if (param.Length != 0)
+                            {
+                                options.numberOfSchedules = int.Parse(param);
+                            }
+                            break;
                         case "timeout":
                             if (param.Length != 0)
                             {
@@ -178,7 +200,14 @@ namespace P.Tester
                     PTesterUtil.PrintErrorMessage(String.Format("Error: {0}", errorMessage));
             }
 
-            Console.Write("HELP ME");
+            Console.WriteLine("---------------------------------------------");
+            Console.WriteLine("Options ::");
+            Console.WriteLine("---------------------------------------------");
+            Console.WriteLine("-h                       Print the help message");
+            Console.WriteLine("-v or -verbose           Print the execution trace during exploration");
+            Console.WriteLine("-ns:<int>                Number of schedulers <int> to explore");
+            Console.WriteLine("-lhs:<LHS Model Dll>     Load the pre-computed traces of RHS Model and perform trace containment");
+            Console.WriteLine("-rhs:<RHS Model Dll>     Compute all possible trace of the RHS Model using sampling and dump it in a file on disk");
         }
 
         public static void Main(string[] args)
@@ -215,19 +244,18 @@ namespace P.Tester
                 if (s == null)
                     throw new ArgumentException("Invalid assembly");
 
-                int maxNumOfSchedules = 10000;
+                int maxNumOfSchedules = options.numberOfSchedules;
                 int maxDepth = 1000;
-                int numOfSchedules = 0;
+                int numOfSchedules = 1;
                 int numOfSteps = 0;
                 var randomScheduler = new Random(DateTime.Now.Millisecond);
-                while (numOfSchedules < maxNumOfSchedules)
+                while (numOfSchedules <= maxNumOfSchedules)
                 {
                     var currImpl = (StateImpl)s.Clone();
                     if (numOfSchedules % 10 == 0)
                     {
                         Console.WriteLine("-----------------------------------------------------");
                         Console.WriteLine("Total Schedules Explored: {0}", numOfSchedules);
-                        Console.WriteLine("-----------------------------------------------------");
                     }
                     numOfSteps = 0;
                     while (numOfSteps < maxDepth)
@@ -261,6 +289,14 @@ namespace P.Tester
                             }
                         }
                         numOfSteps++;
+
+                        //print the execution if verbose
+                        if(options.verbose)
+                        {
+                            Console.WriteLine("-----------------------------------------------------");
+                            Console.WriteLine("Execution {0}", numOfSchedules);
+                            Console.WriteLine(currImpl.errorTrace.ToString());
+                        }
                     }
                     numOfSchedules++;
                 }

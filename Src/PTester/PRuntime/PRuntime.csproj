@@ -69,6 +69,7 @@
     <Compile Include="PrtBaseClasses.cs" />
     <Compile Include="PrtImplMachine.cs" />
     <Compile Include="PrtSpecMachine.cs" />
+    <Compile Include="PrtTrace.cs" />
     <Compile Include="PrtType.cs" />
     <Compile Include="PrtValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

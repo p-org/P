@@ -20,10 +20,12 @@ creates ServerClientInterface, ClientInterface;
 }
 
 machine TestDriver_Refinement : ClientInterface 
+receives eResponse;
 sends eRequest;
 creates ServerClientInterface;
 {
   var nextReqId : int;
+  var server: ServerClientInterface;
   start state Init {
     entry {
       //create server

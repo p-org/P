@@ -186,6 +186,7 @@
     <Compile Include="PTester.cs" />
     <Compile Include="PTesterCommandLine.cs" />
     <Compile Include="PTesterUtilities.cs" />
+    <Compile Include="Refinement.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

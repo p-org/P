@@ -1089,6 +1089,7 @@ namespace Microsoft.Pc
             blocks.Add(MkZingBlock("enter", MkZingSeq(enterStmts)));
 
             List<AST<Node>> gotoStmts = new List<AST<Node>>();
+            gotoStmts.Add(MkZingAssign(payload, MkZingDot("myHandle", "currentArg")));
             gotoStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("TraceExitState"), state)));
             gotoStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingDot(state, "exitFun"), MkZingIdentifier("null"))));
             gotoStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingDot("myHandle", "destState")));

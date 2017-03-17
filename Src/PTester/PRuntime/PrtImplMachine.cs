@@ -41,7 +41,7 @@ namespace P.Runtime
 
         #endregion
 
-        #region Clone and Undo
+        #region Clone
         public PrtImplMachine Clone(StateImpl app)
         {
             var clonedMachine = MakeSkeleton();
@@ -156,6 +156,12 @@ namespace P.Runtime
                 throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", arg.ToString(), prtType.ToString(), ev.evt.name));
             }
 
+
+            //add action to the trace
+            if(StateImpl.visibleEvents.Contains(ev.evt.name))
+            {
+                stateImpl.currentVisibleTrace.AddAction(new Tuple<string, int>(target.mach.renamedName, target.mach.instanceNumber), ev, arg);
+            }
             if (currentStatus == PrtMachineStatus.Halted)
             {
                 stateImpl.Trace(

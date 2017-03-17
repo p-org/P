@@ -811,7 +811,7 @@ namespace Microsoft.Pc
                 eventInitializationStmts.Add((StatementSyntax)CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(lhs, rhs));
             }
 
-            var staticMethodName = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName);
+            var staticMethodName = "Events_" + Path.GetFileNameWithoutExtension(cSharpFileName.ToLower());
             var staticInitializer =
                     MethodDeclaration(
                         PredefinedType(
@@ -853,7 +853,7 @@ namespace Microsoft.Pc
             typeDeclarations.AddRange(typeContext.typeDeclaration);
 
 
-            var staticMethodName = "Types_" + Path.GetFileNameWithoutExtension(cSharpFileName);
+            var staticMethodName = "Types_" + Path.GetFileNameWithoutExtension(cSharpFileName.ToLower());
             var staticInitializer =
                     MethodDeclaration(
                         PredefinedType(
@@ -3496,6 +3496,8 @@ namespace Microsoft.Pc
             public Dictionary<string, bool> isSafeMap;
             public Dictionary<string, List<string>> specMachineMap;
             public Dictionary<string, List<string>> interfaceMap;
+            public HashSet<string> sendActions;
+            public HashSet<string> createActions;
             public TestCaseInfo()
             {
                 linkMap = new Dictionary<string, Dictionary<string, string>>();
@@ -3503,6 +3505,8 @@ namespace Microsoft.Pc
                 isSafeMap = new Dictionary<string, bool>();
                 specMachineMap = new Dictionary<string, List<string>>();
                 interfaceMap = new Dictionary<string, System.Collections.Generic.List<string>>();
+                sendActions = new HashSet<string>();
+                createActions = new HashSet<string>();
             }
         }
 
@@ -3554,7 +3558,6 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var impMachineName = ((Cnst)it.Current).GetStringValue();
 
-                    var testInfo = new TestCaseInfo();
                     if (allTests.ContainsKey(name))
                     {
                         if (allTests[name].linkMap.ContainsKey(currMachineName))
@@ -3588,8 +3591,6 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var impName = ((Cnst)it.Current).GetStringValue();
                    
-
-                    var testInfo = new TestCaseInfo();
                     if (allTests.ContainsKey(name))
                     {
                         if (allTests[name].renameMap.ContainsKey(renamedMachineName))
@@ -3646,8 +3647,6 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var isSafe = (it.Current as Id).Name == PData.Cnst_True.Node.Name;
 
-
-                    var testInfo = new TestCaseInfo();
                     if (allTests.ContainsKey(name))
                     {
                         if (allTests[name].isSafeMap.ContainsKey(renamedMachineName))
@@ -3680,8 +3679,6 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var impMachine = ((Cnst)it.Current).GetStringValue();
 
-
-                    var testInfo = new TestCaseInfo();
                     if (allTests.ContainsKey(name))
                     {
                         if (allTests[name].specMachineMap.ContainsKey(newSpecMachineName))
@@ -3735,6 +3732,40 @@ namespace Microsoft.Pc
                         allTests[name].interfaceMap[iname] = new List<string>();
                         allTests[name].interfaceMap[iname].Add(evname);
                     }
+                }
+            }
+
+            terms = GetBin(factBins, "CSharpEventActionsRefinementTest");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var eventName = ((Cnst)it.Current).GetStringValue();
+
+                    var lhsName = string.Format("{0}LHS", name);
+                    var rhsName = string.Format("{0}RHS", name);
+                    allTests[lhsName].sendActions.Add(eventName);
+                    allTests[rhsName].sendActions.Add(eventName);
+                }
+            }
+
+            terms = GetBin(factBins, "CSharpInterfaceActionsRefinementTest");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var eventName = ((Cnst)it.Current).GetStringValue();
+
+                    var lhsName = string.Format("{0}LHS", name);
+                    var rhsName = string.Format("{0}RHS", name);
+                    allTests[lhsName].createActions.Add(eventName);
+                    allTests[rhsName].createActions.Add(eventName);
                 }
             }
         }
@@ -3841,7 +3872,7 @@ namespace Microsoft.Pc
             var stmtList = new List<StatementSyntax>();
 
             //Initialize types and events
-            var nodes = dependsOn.Keys.ToList();
+            var nodes = dependsOn.Keys.Select(s => s.ToLower()).ToList();
             var edges = new List<Tuple<string, string>>();
             foreach (var file in dependsOn)
             {
@@ -3849,7 +3880,7 @@ namespace Microsoft.Pc
                 {
                     if (file.Key != dep)
                     {
-                        edges.Add(new Tuple<string, string>(file.Key, dep));
+                        edges.Add(new Tuple<string, string>(dep.ToLower(), file.Key.ToLower()));
                     }
                 }
             }
@@ -3924,7 +3955,7 @@ namespace Microsoft.Pc
                 var eventsParams = new SeparatedSyntaxList<ExpressionSyntax>();
                 foreach (var ev in it.Value)
                 {
-                    eventsParams = eventsParams.Add(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName(ev)));
+                    eventsParams = eventsParams.Add(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName(String.Format("event_{0}", ev))));
                 }
                 var initStmt = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
                     ElementAccessExpression(
@@ -3935,6 +3966,40 @@ namespace Microsoft.Pc
                         GenericName(Identifier("List"), TypeArgumentList(SingletonSeparatedList<TypeSyntax>(IdentifierName("PrtEventValue")))),
                         ArgumentList(),
                         InitializerExpression(SyntaxKind.CollectionInitializerExpression, eventsParams))
+                );
+                stmtList.Add(initStmt);
+            }
+
+            //send actions
+            {
+                var eventsParams = new SeparatedSyntaxList<ExpressionSyntax>();
+                foreach (var ev in allTests[testName].sendActions)
+                {
+                    eventsParams = eventsParams.Add(CSharpHelper.MkCSharpStringLiteralExpression(ev));
+                }
+                var initStmt = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                    IdentifierName("visibleEvents"),
+                    ObjectCreationExpression(
+                        GenericName(Identifier("List"), TypeArgumentList(SingletonSeparatedList<TypeSyntax>(IdentifierName("string")))),
+                        ArgumentList(),
+                        InitializerExpression(SyntaxKind.CollectionInitializerExpression, eventsParams))
+                );
+                stmtList.Add(initStmt);
+            }
+
+            //interface actions
+            {
+                var interfaceParams = new SeparatedSyntaxList<ExpressionSyntax>();
+                foreach (var it in allTests[testName].createActions)
+                {
+                    interfaceParams = interfaceParams.Add(CSharpHelper.MkCSharpStringLiteralExpression(it));
+                }
+                var initStmt = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                    IdentifierName("visibleInterfaces"),
+                    ObjectCreationExpression(
+                        GenericName(Identifier("List"), TypeArgumentList(SingletonSeparatedList<TypeSyntax>(IdentifierName("string")))),
+                        ArgumentList(),
+                        InitializerExpression(SyntaxKind.CollectionInitializerExpression, interfaceParams))
                 );
                 stmtList.Add(initStmt);
             }
@@ -4165,7 +4230,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            //Log.WriteMessage(string.Format("Writing {0}.dll ...", testCaseName), SeverityKind.Info);
+            Log.WriteMessage(string.Format("Writing {0}.dll ...", testCaseName), SeverityKind.Info);
             var tree = CSharpSyntaxTree.ParseText(cs_code);
 
             var pruntime = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().Location) + "\\prt.dll";

@@ -63,6 +63,9 @@ namespace P.Tester
         public bool printStats;
         public int timeout;
         public bool UsePSharp = false;
+        public bool isRefinement;
+        public string LHSModel;
+        public string RHSModel;
     }
 
     public class PTesterCommandLine
@@ -117,6 +120,32 @@ namespace P.Tester
                         case "break":
                             System.Diagnostics.Debugger.Launch();
                             break;
+                        case "lhs":
+                            if (param.Length != 0)
+                            {
+                                options.LHSModel = param;
+                                options.RHSModel = null;
+                                options.isRefinement = true;
+                            }
+                            else
+                            {
+                                PrintHelp(arg, "missing file name");
+                                return null;
+                            }
+                            break;
+                        case "rhs":
+                            if (param.Length != 0)
+                            {
+                                options.RHSModel = param;
+                                options.LHSModel = null;
+                                options.isRefinement = true;
+                            }
+                            else
+                            {
+                                PrintHelp(arg, "missing file name");
+                                return null;
+                            }
+                            break;
                         default:
                             PrintHelp(arg, "Invalid option");
                             return null;
@@ -140,7 +169,7 @@ namespace P.Tester
                 }
             }
 
-            if (options.inputFileName == null)
+            if (!options.isRefinement && options.inputFileName == null)
             {
                 PrintHelp(null, "No input file specified");
                 return null;
@@ -169,6 +198,20 @@ namespace P.Tester
                 Environment.Exit((int)TestResult.InvalidParameters);
             }
 
+            if (options.isRefinement)
+            {
+                var refinementCheck = new RefinementChecking(options);
+                if (options.LHSModel == null)
+                {
+                    refinementCheck.RunCheckerRHS();
+                }
+                else
+                {
+                    refinementCheck.RunCheckerLHS();
+                }
+                return;
+            }
+
             var asm = Assembly.LoadFrom(options.inputFileName);
             StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application",
                                                         false,
@@ -186,17 +229,22 @@ namespace P.Tester
                 return;
             }
 
+            int maxNumOfSchedules = 10000;
+            int maxDepth = 1000;
             int numOfSchedules = 0;
             int numOfSteps = 0;
             var randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 1000)
+            while (numOfSchedules < maxNumOfSchedules)
             {
                 var currImpl = (StateImpl)s.Clone();
-                Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine("New Schedule:");
-                Console.WriteLine("-----------------------------------------------------");
+                if (numOfSchedules % 10 == 0)
+                {
+                    Console.WriteLine("-----------------------------------------------------");
+                    Console.WriteLine("Total Schedules Explored: {0}", numOfSchedules);
+                    Console.WriteLine("-----------------------------------------------------");
+                }
                 numOfSteps = 0;
-                while (numOfSteps < 10000)
+                while (numOfSteps < maxDepth)
                 {
                     if (currImpl.EnabledMachines.Count == 0)
                     {
@@ -212,9 +260,17 @@ namespace P.Tester
                         {
                             break;
                         }
+                        else if (currImpl.Exception is PrtException)
+                        {
+                            Console.WriteLine(currImpl.errorTrace.ToString());
+                            Console.WriteLine("ERROR: {0}", currImpl.Exception.Message);
+                            Environment.Exit(-1);
+                        }
                         else
                         {
-                            Console.WriteLine("Exception hit during execution: {0}", currImpl.Exception.ToString());
+                            Console.WriteLine(currImpl.errorTrace.ToString());
+                            Console.WriteLine("[Internal Exception]: Please report to the P Team");
+                            Console.WriteLine(currImpl.Exception.ToString());
                             Environment.Exit(-1);
                         }
                     }
@@ -222,6 +278,7 @@ namespace P.Tester
                 }
                 numOfSchedules++;
             }
+
         }
 
         public static StateImpl main_s;

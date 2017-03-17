@@ -12,10 +12,6 @@ include "Header.p"
 type ServerHelperInterface() = { eReqSuccessful, eReqFailed };
 type HelperInterface(ServerHelperInterface) = { eProcessReq };
 
-<<<<<<< HEAD
-=======
-
->>>>>>> 67e07c7449eeb61e3ee19fa58dbe9632d2861fb7
 event eProcessReq: int;
 event eReqSuccessful;
 event eReqFailed;
@@ -73,8 +69,4 @@ creates;
       }
     }
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 67e07c7449eeb61e3ee19fa58dbe9632d2861fb7

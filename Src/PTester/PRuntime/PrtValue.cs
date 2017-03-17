@@ -5,6 +5,7 @@ using System.Linq;
 
 namespace P.Runtime
 {
+    [Serializable]
     public abstract class PrtValue
     {
         public static PrtEventValue @null = new PrtEventValue(new PrtEvent("null", new PrtNullType(), PrtEvent.DefaultMaxInstances, false));
@@ -197,6 +198,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtIntValue : PrtValue
     {
         public int nt;
@@ -233,6 +235,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtBoolValue : PrtValue
     {
         public bool bl;
@@ -269,6 +272,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtEventValue : PrtValue
     {
         public PrtEvent evt;
@@ -301,6 +305,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtEnumValue : PrtIntValue
     {
         public string constName;
@@ -316,6 +321,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtInterfaceValue : PrtMachineValue
     {
         public List<PrtEventValue> permissions;
@@ -341,6 +347,7 @@ namespace P.Runtime
 
     }
 
+    [Serializable]
     public class PrtMachineValue : PrtValue
     {
         public PrtImplMachine mach;
@@ -359,7 +366,7 @@ namespace P.Runtime
         {
             var machineVal = val as PrtMachineValue;
             if (machineVal == null) return false;
-            return this.mach == machineVal.mach;
+            return this.mach.renamedName == machineVal.mach.renamedName && this.mach.instanceNumber == machineVal.mach.instanceNumber;
         }
 
         public override int GetHashCode()
@@ -373,6 +380,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtTupleValue : PrtValue
     {
         public List<PrtValue> fieldValues;
@@ -453,6 +461,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtNamedTupleValue : PrtTupleValue
     {
         public List<string> fieldNames;
@@ -526,6 +535,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtSeqValue : PrtValue
     {
         public List<PrtValue> elements;
@@ -646,6 +656,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtMapKey
     {
         public PrtValue key;
@@ -668,6 +679,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class PrtMapValue : PrtValue
     {
         public int nextKeyIndex;

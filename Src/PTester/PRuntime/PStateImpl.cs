@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Text;
 
 namespace P.Runtime
 {
@@ -18,6 +18,8 @@ namespace P.Runtime
             implMachines = new List<PrtImplMachine>();
             specMachinesMap = new Dictionary<string, PrtSpecMachine>();
             exception = null;
+            currentVisibleTrace = new VisibleTrace();
+            errorTrace = new StringBuilder();
         }
         #endregion
 
@@ -56,6 +58,10 @@ namespace P.Runtime
         /// </summary>
         private Exception exception;
 
+        public VisibleTrace currentVisibleTrace;
+        public StringBuilder errorTrace;
+        public static List<string> visibleEvents = new List<string>();
+        public static List<string> visibleInterfaces = new List<string>();
         public delegate PrtImplMachine CreateMachineDelegate(StateImpl application, PrtValue payload);
         public delegate PrtSpecMachine CreateSpecDelegate(StateImpl application);
         public static Dictionary<string, Dictionary<string, string>> linkMap = new Dictionary<string, Dictionary<string, string>>();
@@ -118,6 +124,13 @@ namespace P.Runtime
 
             clonedState.exception = this.exception;
 
+            clonedState.currentVisibleTrace = new VisibleTrace();
+            foreach(var item in currentVisibleTrace.Trace)
+            {
+                clonedState.currentVisibleTrace.Trace.Add(item);
+            }
+
+            clonedState.errorTrace = new StringBuilder(errorTrace.ToString());
             return clonedState;
 
         }
@@ -137,6 +150,12 @@ namespace P.Runtime
         }
         public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
         {
+            //add visible action to trace
+            if(visibleInterfaces.Contains(interfaceOrMachineName))
+            {
+                currentVisibleTrace.AddAction(interfaceOrMachineName);
+            }
+
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
             var impMachineName = renameMap[renamedImpMachine];
             var machine = createMachineMap[impMachineName](this, payload);
@@ -229,7 +248,7 @@ namespace P.Runtime
 
         public void Trace(string message, params object[] arguments)
         {
-            Console.WriteLine(String.Format(message, arguments));
+            errorTrace.AppendLine(String.Format(message, arguments));
         }
 
 

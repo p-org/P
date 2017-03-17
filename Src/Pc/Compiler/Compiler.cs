@@ -626,12 +626,12 @@
 
         private HashSet<string> CreateFileSystemHashSet()
         {
-            return new HashSet<string>(IsFileSystemCaseInensitive() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+            return new HashSet<string>(IsFileSystemCaseInsensitive() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         }
 
         static bool? _isFileSystemCaseInsensitive;
 
-        public bool IsFileSystemCaseInensitive()
+        public bool IsFileSystemCaseInsensitive()
         {
             if (!_isFileSystemCaseInsensitive.HasValue)
             {

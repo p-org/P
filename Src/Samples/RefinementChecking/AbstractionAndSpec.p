@@ -2,9 +2,9 @@ include "Header.p"
 
 
 machine ServerAbstraction: ServerClientInterface
-receives eReqSuccessful, eReqFailed, eRequest;
-sends eResponse, eProcessReq;
-creates HelperInterface;
+receives eRequest;
+sends eResponse;
+creates;
 {
   start state Init {
 <<<<<<< HEAD
@@ -12,7 +12,9 @@ creates HelperInterface;
 
 >>>>>>> 67e07c7449eeb61e3ee19fa58dbe9632d2861fb7
     on eRequest do (payload: requestType){
-      send payload.source, eResponse, (id = payload.id, success = $);
+      var successful : bool;
+      successful = $;
+      send payload.source, eResponse, (id = payload.id, success = successful);
     }
   }
 }

@@ -115,6 +115,7 @@ namespace P.Tester
                             if (param.Length != 0)
                             {
                                 options.LHSModel = param;
+                                options.RHSModel = null;
                                 options.isRefinement = true;
                             }
                             else
@@ -127,6 +128,7 @@ namespace P.Tester
                             if (param.Length != 0)
                             {
                                 options.RHSModel = param;
+                                options.LHSModel = null;
                                 options.isRefinement = true;
                             }
                             else
@@ -189,8 +191,15 @@ namespace P.Tester
 
             if(options.isRefinement)
             {
-                var refinementCheck = new RefinementChecking(options.LHSModel, options.RHSModel);
-                refinementCheck.RunChecker();
+                var refinementCheck = new RefinementChecking(options);
+                if(options.LHSModel == null)
+                {
+                    refinementCheck.RunCheckerRHS();
+                }
+                else
+                {
+                    refinementCheck.RunCheckerLHS();
+                }
                 return;
             }
             else

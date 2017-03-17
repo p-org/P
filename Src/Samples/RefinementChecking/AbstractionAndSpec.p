@@ -3,7 +3,7 @@ include "Header.p"
 
 machine ServerAbstraction: ServerClientInterface
 receives eRequest;
-sends eResponse, eProcessReq;
+sends eResponse;
 creates;
 {
   start state Init {

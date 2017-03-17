@@ -9,22 +9,24 @@ namespace P.Runtime
     /// <summary>
     /// Visible actions of a trace
     /// </summary>
+    [Serializable]
     public abstract class VisibleAction
     {
 
     }
 
+    [Serializable]
     public class SendAction : VisibleAction
     {
         Tuple<string, int> target;
-        PrtEventValue ev;
-        PrtValue payload;
+        string ev;
+        string payload;
 
-        public SendAction(Tuple<string, int> t, PrtEventValue e, PrtValue v)
+        public SendAction(Tuple<string, int> t, string e, PrtValue v)
         {
             target = new Tuple<string, int>(t.Item1, t.Item2);
             ev = e;
-            payload = v.Clone();
+            payload = v.ToString();
         }
         public override bool Equals(object obj)
         {
@@ -53,6 +55,7 @@ namespace P.Runtime
         }
     }
 
+    [Serializable]
     public class CreateAction : VisibleAction
     {
         string interfaceName;
@@ -88,6 +91,7 @@ namespace P.Runtime
     /// <summary>
     /// Sequence of visible actions
     /// </summary>
+    [Serializable]
     public class VisibleTrace
     {
         List<VisibleAction> trace;
@@ -150,7 +154,7 @@ namespace P.Runtime
 
         public void AddAction(Tuple<string, int> t, PrtEventValue e, PrtValue v)
         {
-            trace.Add(new SendAction(t, e, v));
+            trace.Add(new SendAction(t, e.evt.name, v));
         }
     }
 }

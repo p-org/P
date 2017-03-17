@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using P.Runtime;
 using System.Reflection;
+using System.Security.Policy;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace P.Tester
 {
@@ -30,18 +32,19 @@ namespace P.Tester
             {
                 Console.WriteLine("Following trace not contained in abstraction ::");
                 Console.WriteLine(tc.ToString());
+                Environment.Exit(-1);
             }
         }
-        public RefinementChecking(string lhs, string rhs)
+        public RefinementChecking(CommandLineOptions options)
         {
-            LHSModel = lhs;
-            if(!File.Exists(LHSModel))
+            LHSModel = options.LHSModel;
+            if(LHSModel!= null && !File.Exists(LHSModel))
             {
                 Console.WriteLine("LHSModel file: {0} does not exist", LHSModel);
                 Environment.Exit(-1);
             }
-            RHSModel = rhs;
-            if (!File.Exists(RHSModel))
+            RHSModel = options.RHSModel;
+            if (RHSModel != null && !File.Exists(RHSModel))
             {
                 Console.WriteLine("LHSModel file: {0} does not exist", RHSModel);
                 Environment.Exit(-1);
@@ -49,13 +52,9 @@ namespace P.Tester
             allTracesRHS = new List<VisibleTrace>();
         }
 
-        public void RunChecker()
+        public void RunCheckerRHS()
         {
-            //create a appdomain for RHS
-            var rhsDomain = AppDomain.CreateDomain("RHSModel");
-            //First phase compute all possible traces of RHS
-            rhsDomain.Load(@"C:\Workspace\P\Bld\Drops\Debug\x64\Binaries\Prt.dll");
-            var asm = rhsDomain.Load(RHSModel);
+            var asm = Assembly.LoadFrom(RHSModel);
             StateImpl rhsStateImpl = (StateImpl)asm.CreateInstance("P.Program.Application",
                                                         false,
                                                         BindingFlags.CreateInstance,
@@ -115,8 +114,23 @@ namespace P.Tester
             Console.WriteLine("Total Traces: {0}", allTracesRHS.Count);
             Console.WriteLine("Press any key to continue");
             Console.ReadKey();
+
+            Stream writeStream = File.Open("alltraces", FileMode.Create);
+            BinaryFormatter bFormat = new BinaryFormatter();
+            bFormat.Serialize(writeStream, allTracesRHS);
+            Console.WriteLine("Traces cached successfully");
+        }
+
+        public void RunCheckerLHS()
+        {
+            //Deserialize allTraces
+            Stream readStream = File.Open("alltraces", FileMode.Open);
+            BinaryFormatter bFormat = new BinaryFormatter();
+            allTracesRHS = (List<VisibleTrace>)bFormat.Deserialize(readStream);
+            Console.WriteLine("Traces loaded successfully");
+
             //starting the second phase
-            asm = Assembly.LoadFrom(LHSModel);
+            var asm = Assembly.LoadFrom(LHSModel);
             StateImpl lhsStateImpl = (StateImpl)asm.CreateInstance("P.Program.Application",
                                                         false,
                                                         BindingFlags.CreateInstance,
@@ -124,13 +138,13 @@ namespace P.Tester
                                                         new object[] { true },
                                                         null,
                                                         new object[] { });
-            if (rhsStateImpl == null)
+            if (lhsStateImpl == null)
                 throw new ArgumentException("Invalid RHS assembly");
 
-            numOfSchedules = 0;
-            numOfSteps = 0;
-            randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 100)
+            int numOfSchedules = 0;
+            int numOfSteps = 0;
+            var randomScheduler = new Random(DateTime.Now.Millisecond);
+            while (numOfSchedules < 1000)
             {
                 var currImpl = (StateImpl)lhsStateImpl.Clone();
                 Console.WriteLine("-----------------------------------------------------");
@@ -171,6 +185,8 @@ namespace P.Tester
                 }
                 numOfSchedules++;
             }
+
+            Console.WriteLine("Performed trace-containment check for {0} random executions and it succeeded", numOfSchedules);
         }
     }
 }

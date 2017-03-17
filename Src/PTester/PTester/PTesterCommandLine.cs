@@ -214,17 +214,23 @@ namespace P.Tester
                                                             new object[] { });
                 if (s == null)
                     throw new ArgumentException("Invalid assembly");
+
+                int maxNumOfSchedules = 10000;
+                int maxDepth = 1000;
                 int numOfSchedules = 0;
                 int numOfSteps = 0;
                 var randomScheduler = new Random(DateTime.Now.Millisecond);
-                while (numOfSchedules < 1000)
+                while (numOfSchedules < maxNumOfSchedules)
                 {
                     var currImpl = (StateImpl)s.Clone();
-                    Console.WriteLine("-----------------------------------------------------");
-                    Console.WriteLine("New Schedule: {0}", numOfSchedules);
-                    Console.WriteLine("-----------------------------------------------------");
+                    if (numOfSchedules % 10 == 0)
+                    {
+                        Console.WriteLine("-----------------------------------------------------");
+                        Console.WriteLine("Total Schedules Explored: {0}", numOfSchedules);
+                        Console.WriteLine("-----------------------------------------------------");
+                    }
                     numOfSteps = 0;
-                    while (numOfSteps < 10000)
+                    while (numOfSteps < maxDepth)
                     {
                         if (currImpl.EnabledMachines.Count == 0)
                         {
@@ -240,9 +246,16 @@ namespace P.Tester
                             {
                                 break;
                             }
+                            else if (currImpl.Exception is PrtException)
+                            {
+
+                                Console.WriteLine("ERROR: {0}", currImpl.Exception.Message);
+                                Environment.Exit(-1);
+                            }
                             else
                             {
-                                Console.WriteLine("Exception hit during execution: {0}", currImpl.Exception.ToString());
+                                Console.WriteLine("[Internal Exception]: Please report to the P Team");
+                                Console.WriteLine(currImpl.Exception.ToString());
                                 Environment.Exit(-1);
                             }
                         }

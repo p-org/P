@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Text;
 
 namespace P.Runtime
 {
@@ -17,7 +17,8 @@ namespace P.Runtime
             implMachines = new List<PrtImplMachine>();
             specMachinesMap = new Dictionary<string, PrtSpecMachine>();
             exception = null;
-            currentTrace = new VisibleTrace();
+            currentVisibleTrace = new VisibleTrace();
+            errorTrace = new StringBuilder();
         }
         #endregion
 
@@ -52,7 +53,8 @@ namespace P.Runtime
         /// </summary>
         private Exception exception;
 
-        public VisibleTrace currentTrace;
+        public VisibleTrace currentVisibleTrace;
+        public StringBuilder errorTrace;
         public static List<string> visibleEvents = new List<string>();
         public static List<string> visibleInterfaces = new List<string>();
         public delegate PrtImplMachine CreateMachineDelegate(StateImpl application, PrtValue payload);
@@ -117,12 +119,13 @@ namespace P.Runtime
 
             clonedState.exception = this.exception;
 
-            clonedState.currentTrace = new VisibleTrace();
-            foreach(var item in currentTrace.Trace)
+            clonedState.currentVisibleTrace = new VisibleTrace();
+            foreach(var item in currentVisibleTrace.Trace)
             {
-                clonedState.currentTrace.Trace.Add(item);
+                clonedState.currentVisibleTrace.Trace.Add(item);
             }
 
+            clonedState.errorTrace = new StringBuilder(errorTrace.ToString());
             return clonedState;
 
         }
@@ -140,7 +143,7 @@ namespace P.Runtime
             //add visible action to trace
             if(visibleInterfaces.Contains(interfaceOrMachineName))
             {
-                currentTrace.AddAction(interfaceOrMachineName);
+                currentVisibleTrace.AddAction(interfaceOrMachineName);
             }
 
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
@@ -229,7 +232,7 @@ namespace P.Runtime
 
         public void Trace(string message, params object[] arguments)
         {
-            Console.WriteLine(String.Format(message, arguments));
+            errorTrace.AppendLine(String.Format(message, arguments));
         }
 
 

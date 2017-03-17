@@ -16,7 +16,8 @@ namespace P.Tester
         string RHSModel;
 
         int maxLengthOfExecution = 1000;
-
+        int maxRHSSchedules = 1000;
+        int maxLHSSchedules = 100;
         List<VisibleTrace> allTracesRHS;
         public void AddTrace(VisibleTrace tc)
         {
@@ -68,12 +69,15 @@ namespace P.Tester
             int numOfSchedules = 0;
             int numOfSteps = 0;
             var randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 100000)
+            while (numOfSchedules < maxRHSSchedules)
             {
                 var currImpl = (StateImpl)rhsStateImpl.Clone();
-                Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine("New Schedule: {0}", numOfSchedules);
-                Console.WriteLine("-----------------------------------------------------");
+                if (numOfSchedules % 10 == 0)
+                {
+                    Console.WriteLine("-----------------------------------------------------");
+                    Console.WriteLine("Total Schedules Explored: {0}", numOfSchedules);
+                    Console.WriteLine("-----------------------------------------------------");
+                }
                 numOfSteps = 0;
                 while (true)
                 {
@@ -86,7 +90,7 @@ namespace P.Tester
                     if (currImpl.EnabledMachines.Count == 0)
                     {
                         //execution terminated, add the trace to set of traces
-                        AddTrace(currImpl.currentTrace);
+                        AddTrace(currImpl.currentVisibleTrace);
                         break;
                     }
 
@@ -144,12 +148,16 @@ namespace P.Tester
             int numOfSchedules = 0;
             int numOfSteps = 0;
             var randomScheduler = new Random(DateTime.Now.Millisecond);
-            while (numOfSchedules < 100)
+            while (numOfSchedules < maxLHSSchedules)
             {
                 var currImpl = (StateImpl)lhsStateImpl.Clone();
-                Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine("New Schedule: {0}", numOfSchedules);
-                Console.WriteLine("-----------------------------------------------------");
+                if(numOfSchedules % 10 == 0)
+                {
+                    Console.WriteLine("-----------------------------------------------------");
+                    Console.WriteLine("Total Schedules Explored: {0}", numOfSchedules);
+                    Console.WriteLine("-----------------------------------------------------");
+                }
+                
                 numOfSteps = 0;
                 while (true)
                 {
@@ -162,7 +170,7 @@ namespace P.Tester
                     if (currImpl.EnabledMachines.Count == 0)
                     {
                         //execution terminated, add the trace to set of traces
-                        CheckTraceContainment(currImpl.currentTrace);
+                        CheckTraceContainment(currImpl.currentVisibleTrace);
                         break;
                     }
 

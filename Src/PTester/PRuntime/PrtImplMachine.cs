@@ -160,7 +160,7 @@ namespace P.Runtime
             //add action to the trace
             if(StateImpl.visibleEvents.Contains(ev.evt.name))
             {
-                stateImpl.currentTrace.AddAction(new Tuple<string, int>(target.mach.renamedName, target.mach.instanceNumber), ev, arg);
+                stateImpl.currentVisibleTrace.AddAction(new Tuple<string, int>(target.mach.renamedName, target.mach.instanceNumber), ev, arg);
             }
             if (currentStatus == PrtMachineStatus.Halted)
             {

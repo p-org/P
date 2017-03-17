@@ -248,12 +248,13 @@ namespace P.Tester
                             }
                             else if (currImpl.Exception is PrtException)
                             {
-
+                                Console.WriteLine(currImpl.errorTrace.ToString());
                                 Console.WriteLine("ERROR: {0}", currImpl.Exception.Message);
                                 Environment.Exit(-1);
                             }
                             else
                             {
+                                Console.WriteLine(currImpl.errorTrace.ToString());
                                 Console.WriteLine("[Internal Exception]: Please report to the P Team");
                                 Console.WriteLine(currImpl.Exception.ToString());
                                 Environment.Exit(-1);

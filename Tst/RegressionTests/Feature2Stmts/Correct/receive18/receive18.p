@@ -1,12 +1,26 @@
-//Testing variable scoping in nested "receives"
+//Testing variable scoping in nested "receive"
 
 event e1;
 event e2;
+event e3;
+event e4;
 
 enum Foo { foo0, foo1, foo2 }
 enum Bar { bar0, bar1 }
 
 machine Main {
+	var m: machine;
+	start state Init {
+		entry {
+			m = new Receiver();
+			send m, e1;
+			send m, e2;
+			send m, e3;
+			send m, e4;
+		}
+	}
+}
+machine Receiver {
 	var x: int;
 	var y: event; 
 	var z : int;
@@ -24,6 +38,7 @@ machine Main {
 					var a: int;
 					x = 19;
 					assert x == 19;   //OK
+					//assert x == 0;    //reachable (debug only)
 					y = 1;
 					foo0 = 5;
 					assert foo0 == 5;    //OK
@@ -40,6 +55,7 @@ machine Main {
 					receive {
 						case e2: {
 							assert x == 19;  //OK
+							//assert x == 0;    //reachable (debug only)
 							assert foo0 == 5;  //OK
 							assert Foo == bar0; //OK
 							assert z == 1;		//OK
@@ -50,20 +66,27 @@ machine Main {
 						}
 					}
 				}
-				case e2 : {
+				
+			}
+			receive {
+				case e3 : {
 					assert x == 10;  //OK
+					//assert x == 0;    //reachable (debug only)
 					assert y == e1;   //OK
 					assert foo0 == 0;  //OK
 					assert default(Foo) == foo0;  //OK
-					assert ts.a == default(int);	//OK
+					assert ts.a == 5;	//OK
 				}
 			}
 			
+			bar();
+			
 			assert x == 10;  //OK
+			//assert x == 0;    // reachable (debug only)
 			assert y == e1;  //OK
 			assert foo0 == 0;  //OK
 			assert default(Foo) == foo0; //OK
-			assert ts.a == default(int);	//OK
+			assert ts.a == 5;	//OK
 		}
 	}
 	
@@ -75,4 +98,13 @@ machine Main {
 		z = a;
 		return a;
 	}
+	fun bar() {
+		var x: int;
+		receive {
+			case e4: {
+				//var x: int;
+			}
+		}
+	}
+	
 }

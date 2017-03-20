@@ -36,9 +36,9 @@ machine Main {
 			baz(xloc swap, xloc + yloc);           //error: " Variable is not available"
 			baz(xloc move, xloc + yloc);           //error: " Variable is not available"
 			xloc = 20;                          //to make xloc available 
-			baz(xloc move, xloc move);              //OK
+			baz(xloc move, xloc move);              //error: "Linear argument should be passed for exactly one parameter"
 			xloc = 20;                             //to make xloc available 
-			baz(xloc swap, xloc swap);              //OK
+			baz(xloc swap, xloc swap);              //error: "Linear argument should be passed for exactly one parameter"
 			
 			xloc = 20;                          //to make xloc available 
 			x = xloc move;                        //OK

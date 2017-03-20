@@ -14,11 +14,13 @@
     
     public class CommandLineOptions
     {
+        // Be careful when adding fields/getters/setters to this class.
+        // XMLSerializer is used to serialize an instance of this class to communicate 
+        // between pc.exe and pcompilerservice.exe.
         public bool profile { get; set; }
         public LivenessOption liveness { get; set; }
-        private string outputDir { get; set; }
-        // SHAZ: What is the difference between Environment.CurrentDirectory and Directory.GetCurrentDirectory
-        public string OutputDir {  get { return outputDir == null ? Environment.CurrentDirectory : outputDir; } }
+        public string outputDir { get; set; }
+        public string OutputDir {  get { return outputDir == null ? Directory.GetCurrentDirectory() : outputDir; } }
         public bool outputFormula { get; set; }
         public bool shortFileNames { get; set; }
         public bool printTypeInference { get; set; }
@@ -29,22 +31,6 @@
         public bool eraseModel { get; set; } // set internally
         public bool compilerService { get; set; } // whether to use the compiler service.
         public string compilerId { get; set; } // for internal use only.
-        public bool rebuild { get; set; }
-        //get p file
-        public List<string> PFiles {
-            get
-            {
-                return inputFileNames;
-            }
-        }
-
-        public List<string> FormulaFiles
-        {
-            get
-            {
-                return dependencies;
-            }
-        }
 
         public CommandLineOptions()
         {
@@ -60,7 +46,6 @@
             dependencies = new List<string>();
             unitName = null;
             compilerService = false;
-            rebuild = false;
         }
 
         public bool ParseArguments(IEnumerable<string> args)
@@ -105,10 +90,6 @@
 
                         case "link":
                             isLinkerPhase = true;
-                            break;
-
-                        case "rebuild":
-                            rebuild = true;
                             break;
 
                         case "r":

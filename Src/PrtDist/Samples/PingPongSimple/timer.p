@@ -1,5 +1,3 @@
-#include "Events.p"
-
 //Functions for interacting with the timer machine
 model fun CreateTimer(owner : machine): TimerPtr {
 	var m: machine;

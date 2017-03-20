@@ -28,10 +28,10 @@
     <None Include="FailureDetector.p">
       <Filter>P Sources</Filter>
     </None>
-    <None Include="Timer.p">
+    <None Include="PrtDistHelp.p">
       <Filter>P Sources</Filter>
     </None>
-    <None Include="PrtDistHelp.p">
+    <None Include="Timer.p">
       <Filter>P Sources</Filter>
     </None>
   </ItemGroup>

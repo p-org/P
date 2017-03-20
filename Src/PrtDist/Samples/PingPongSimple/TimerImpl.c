@@ -1,4 +1,4 @@
-#include "test.h"
+#include "PingPongSimple.h"
 
 static PRT_UINT32 numTimerInstances = 0;
 typedef struct TimerContext {

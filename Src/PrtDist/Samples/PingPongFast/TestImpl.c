@@ -3,7 +3,7 @@
 
 #include "stdafx.h"
 #include "PrtDist.h"
-#include "test.h"
+#include "PingPongFast.h"
 #include "Prt.h"
 #include <stdio.h>
 

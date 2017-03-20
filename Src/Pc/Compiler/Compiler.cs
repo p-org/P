@@ -1274,14 +1274,14 @@
             try
             {
                 // compile the P file into formula file 
-                var plinkFile = options.PFiles.Count == 1 ? options.PFiles.First() : "";
+                var plinkFile = options.inputFileNames.Count == 1 ? options.inputFileNames[0] : "";
 
                 using (this.Profiler.Start("Linker parsing", Path.GetFileName(plinkFile)))
                 {
                     LProgram linkProgram;
                     ProgramName RootProgramName;
                     AST<Model> RootModel = null;
-                    if (options.PFiles.Count == 1)
+                    if (options.inputFileNames.Count == 1)
                     {
                         if (!ParseLinkProgram(plinkFile, out linkProgram, out RootProgramName))
                         {
@@ -1318,7 +1318,7 @@
                                 linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
                             });
                     }
-                    foreach (var fileName in options.FormulaFiles)
+                    foreach (var fileName in options.dependencies)
                     {
                         var program = ParseFormulaFile(fileName);
                         program.FindAll(
@@ -1403,7 +1403,7 @@
                 return false;
             }
 
-            var linker = new PToCSharpLinker(Log, errorProgram, Options.FormulaFiles.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
+            var linker = new PToCSharpLinker(Log, errorProgram, Options.dependencies.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
             linker.GenerateCSharpLinkerOutput(outputDirName);
 
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));

@@ -1,4 +1,4 @@
-#include "Driver.h"
+#include "FailureDetector.h"
 
 static PRT_UINT32 numTimerInstances = 0;
 typedef struct TimerContext {

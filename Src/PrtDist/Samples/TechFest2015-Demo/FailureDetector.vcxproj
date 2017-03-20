@@ -175,8 +175,6 @@
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="Driver.p" />
-  </ItemGroup>
-  <ItemGroup>
     <PCompile Include="FailureDetector.p" />
     <PCompile Include="PrtDistHelp.p" />
     <PCompile Include="Timer.p" />

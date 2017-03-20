@@ -21,11 +21,7 @@ namespace Microsoft.Pc
             {
                 // use separate process that contains pre-compiled P compiler.
                 CompilerServiceClient svc = new CompilerServiceClient();
-                if (string.IsNullOrEmpty(options.outputDir))
-                {
-                    options.outputDir = Directory.GetCurrentDirectory();
-                }
-                if(!options.isLinkerPhase)
+                if (options.compilerOutput != CompilerOutput.Link)
                 {
                     result = svc.Compile(options, Console.Out);
                 }
@@ -38,7 +34,7 @@ namespace Microsoft.Pc
             else
             {
                 var compiler = new Compiler(options.shortFileNames);
-                if(!options.isLinkerPhase)
+                if (options.compilerOutput != CompilerOutput.Link)
                 {
                     result = compiler.Compile(new StandardOutput(), options);
                 }

@@ -29,8 +29,7 @@ TopDeclList
 	;
 
 TopDecl
-    : IncludeDecl
-	| TypeDefDecl
+	: TypeDefDecl
 	| InterfaceDecl
 	| EventSetDecl
 	| EnumTypeDefDecl
@@ -82,11 +81,6 @@ EnumElemList
 NumberedEnumElemList
 	: ID ASSIGN INT									{ AddEnumElem($1.str, ToSpan(@1), $3.str, ToSpan(@3)); }									
 	| ID ASSIGN INT COMMA NumberedEnumElemList		{ AddEnumElem($1.str, ToSpan(@1), $3.str, ToSpan(@3)); }
-	;
-
-/******************* Include Declarations *******************/ 
-IncludeDecl
-	: INCLUDE STR { AddDependency($2.str.Substring(1,$2.str.Length-2)); parseIncludedFileNames.Add($2.str.Substring(1,$2.str.Length-2)); }
 	;
 
 /******************* Event Declarations *******************/ 

@@ -5,6 +5,7 @@ using System.Windows.Forms;
 using Microsoft.Msagl.Drawing;
 using Microsoft.Msagl.GraphViewerGdi;
 using Microsoft.Pc;
+using Microsoft.Pc.Parser;
 using Microsoft.Formula.API;
 using System.Collections.Generic;
 using Microsoft.Pc.Domains;
@@ -142,12 +143,13 @@ namespace Microsoft.PVisualizer
         private static void ReadFile(string inputFileName, GViewer gViewer)
         {
             var compiler = new Compiler(false);
-            PProgram parsedProgram;
             ProgramName RootProgramName;
-            bool doCompile = false;
-            var result = compiler.ParsePProgram(inputFileName, out parsedProgram, out RootProgramName, out doCompile);
+            PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
+            PProgram parsedProgram = new PProgram();
 
-            if (result)
+            compiler.ParsePProgram(topDeclNames, parsedProgram, inputFileName, out RootProgramName);
+
+            if (RootProgramName == null)
             {
                 lastFileName = inputFileName;
                 GViewer.Graph = PtoGraph.GenerateGraph(program);

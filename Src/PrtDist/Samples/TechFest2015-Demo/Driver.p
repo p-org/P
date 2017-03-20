@@ -1,5 +1,3 @@
-include "FailureDetector.p"
-
 fun CreateNode(container: machine) : machine
 [container = container]
 {

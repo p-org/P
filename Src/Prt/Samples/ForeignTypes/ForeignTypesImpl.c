@@ -1,4 +1,4 @@
-#include "ForeignStringType.h"
+#include "ForeignTypes.h"
 
 void PRT_FORGN_FREE_StringType_IMPL(PRT_UINT64 frgnVal)
 {

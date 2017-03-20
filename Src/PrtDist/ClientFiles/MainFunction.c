@@ -1,5 +1,5 @@
 #include "PrtDist.h"
-#include "driver.h"
+#include "FailureDetector.h"
 #include "Prt.h"
 #include <stdio.h>
 

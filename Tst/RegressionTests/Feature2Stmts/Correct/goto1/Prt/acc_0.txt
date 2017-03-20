@@ -1,0 +1,18 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Init
+OUT: <CreateLog> Machine M2(2) is created
+OUT: <StateLog> Machine M2(2) entered state Init
+OUT: <EnqueueLog> Enqueued event E with payload null on Machine Main(1)
+OUT: <GotoLog> Machine Main(1) goes to state T with payload 15
+OUT: <ExitLog> Machine Main(1) exiting state Init
+OUT: <StateLog> Machine Main(1) entered state T
+OUT: <GotoLog> Machine Main(1) goes to state S with payload {0 --> 5, 1 --> 1} (2 / 3)
+OUT: <ExitLog> Machine Main(1) exiting state T
+OUT: <StateLog> Machine Main(1) entered state S
+OUT: <DequeueLog> Dequeued event E with payload null by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state S
+OUT: 
+EXIT: 0

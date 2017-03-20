@@ -288,9 +288,12 @@ namespace P.Tester
             main_s = s;
 
             var configuration = Configuration.Create()
-                .WithNumberOfIterations(1000);
-            configuration.MaxSchedulingSteps = 1000;
+                .WithNumberOfIterations(10000); 
 
+            configuration.UserExplicitlySetMaxFairSchedulingSteps = true;
+            configuration.MaxUnfairSchedulingSteps = 100;
+            configuration.MaxFairSchedulingSteps = configuration.MaxUnfairSchedulingSteps * 10;
+            configuration.LivenessTemperatureThreshold = configuration.MaxFairSchedulingSteps / 3;
 
             var engine = Microsoft.PSharp.TestingServices.TestingEngineFactory.CreateBugFindingEngine(
                 configuration, PSharpWrapper.Execute);

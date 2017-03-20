@@ -1721,24 +1721,28 @@ namespace Microsoft.Pc
                 aout = args.Last();
                 args.RemoveAt(args.Count-1);
             }
-            var createdIorM = GetName(ft, 0);
-            var machineName = linkMap[createdIorM];
-            MachineInfo machineInfo = allMachines[machineName];
-            string initStateEntryActionName = machineInfo.stateNameToStateInfo[machineInfo.initStateName].entryActionName;
-            FunInfo entryFunInfo = allGlobalFuns.ContainsKey(initStateEntryActionName)
-                                    ? allGlobalFuns[initStateEntryActionName]
-                                    : machineInfo.funNameToFunInfo[initStateEntryActionName];
-            AST<Node> payloadVar = MkPayload(ctxt, args, typeContext.PTypeToZingExpr(entryFunInfo.PayloadType));
-            var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
-            ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", machineName)), payloadVar)));
-            string afterLabel = ctxt.GetFreshLabel();
-            ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), newMachine)));
-            ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
-            ctxt.AddSideEffect(MkZingBlock(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
-            ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
-            if (aout != null)
+            var machineName = GetName(ft, 0);
+            // Ignore all indirect creation 
+            // PtoZing does not support indirect creation via interfaces
+            if (allMachines.ContainsKey(machineName))
             {
-                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), aout, newMachine)));
+                MachineInfo machineInfo = allMachines[machineName];
+                string initStateEntryActionName = machineInfo.stateNameToStateInfo[machineInfo.initStateName].entryActionName;
+                FunInfo entryFunInfo = allGlobalFuns.ContainsKey(initStateEntryActionName)
+                                        ? allGlobalFuns[initStateEntryActionName]
+                                        : machineInfo.funNameToFunInfo[initStateEntryActionName];
+                AST<Node> payloadVar = MkPayload(ctxt, args, typeContext.PTypeToZingExpr(entryFunInfo.PayloadType));
+                var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
+                ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", machineName)), payloadVar)));
+                string afterLabel = ctxt.GetFreshLabel();
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), newMachine)));
+                ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
+                ctxt.AddSideEffect(MkZingBlock(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
+                ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
+                if (aout != null)
+                {
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), aout, newMachine)));
+                }
             }
             return new ZingTranslationInfo(ZingData.Cnst_Nil);
         }

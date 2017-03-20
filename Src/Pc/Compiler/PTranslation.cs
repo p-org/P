@@ -388,7 +388,6 @@ namespace Microsoft.Pc
         public Dictionary<string, EventInfo> allEvents;
         public Dictionary<string, Dictionary<string, int>> allEnums;
         public Dictionary<string, MachineInfo> allMachines;
-        public Dictionary<string, string> linkMap;
         public HashSet<string> exportedEvents;
         public Dictionary<string, FunInfo> allGlobalFuns;
         public Dictionary<AST<Node>, string> anonFunToName;
@@ -465,7 +464,6 @@ namespace Microsoft.Pc
             allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
             allMachines = new Dictionary<string, MachineInfo>();
             allGlobalFuns = new Dictionary<string, FunInfo>();
-            linkMap = new Dictionary<string, string>();
 
             LinkedList<AST<FuncTerm>> terms;
 
@@ -964,19 +962,6 @@ namespace Microsoft.Pc
                             allMachines[ownerName].funNameToFunInfo[funName].invokePluginFuns.Add(it.Current);
                         }
                     }
-                }
-            }
-
-            terms = GetBin(factBins, "LinkMap");
-            foreach (var term in terms)
-            {
-                using (var it = term.Node.Args.GetEnumerator())
-                {
-                    it.MoveNext();
-                    var createdIorM = ((Cnst)it.Current).GetStringValue();
-                    it.MoveNext();
-                    var createdM = ((Cnst)it.Current).GetStringValue();
-                    linkMap.Add(createdIorM, createdM);
                 }
             }
 

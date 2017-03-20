@@ -22,7 +22,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	inf.TranslatedBody(c, s) :- in.TranslatedBody(c, s).
 	inf.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).
 	inf.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n), c: in.TypingContext.
-	inf.LinkMap(m,n) :- in.LinkMap(m,n).
 	inf.ExportedType(n, t) :- in.ExportedType(n, t).
 	inf.ImportedType(n, t) :- in.ImportedType(n, t).
 	inf.ExportedEvent(n) :- in.ExportedEvent(n).

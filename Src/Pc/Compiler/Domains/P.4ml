@@ -12,8 +12,9 @@ domain PError extends PData
 
 domain PData
 {   
-	PFile ::= new (name: String).
-	DependsOn ::= new (d: String).
+	PUnit ::= new (name: String).
+	PUnitContains ::= new (unitName: String, fileName: String).
+	DependsOn ::= new (thisUnitName: String, thatUnitName: String).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 
@@ -355,6 +356,9 @@ domain PStaticTyping extends PData, PError
     
 	[rule_Classes = '"error, msg: the exported interface must be a subset of receive set"']
 	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, evL, iargt, _), no MachineReceives(m, ev), MemberOfInterfaceType(evL, ev). 
+
+	PFile ::= (fileName: String).
+	PFile(fileName) :- PUnit(unitName), PUnitContains(unitName, fileName).
 
 	ExportedEvent ::= (String).
 	ExportedEvent(e.name) :- e is EventDecl, PFile(fileName), e.id.tl.val = fileName.

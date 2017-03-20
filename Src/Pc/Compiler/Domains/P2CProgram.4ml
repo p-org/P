@@ -33,7 +33,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
     /*************************************************************/
     /**********         Create PLink output            ***********/
     /*************************************************************/
-	link.DependsOn(n, d) :- in.PFile(n), in.DependsOn(d); in.PFile(n), in.PFile(d).
+	link.DependsOn(n, d) :- in.DependsOn(n, d).
 
 	link.MachineDecl(name, eft, id), link.MachineProtoDecl(name, eft) :- 
 				decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), in.TypeExpansion(ft, eft);

@@ -571,8 +571,128 @@
             options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             this.Log = log;
             this.Options = options;
-            //this.errorReporter = new ErrorReporter();
-            return CompileAllFiles();
+            return CompileAllFiles3();
+        }
+
+        private bool CompileAllFiles3()
+        {
+            errorReporter = new ErrorReporter();
+            PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
+            PProgram parsedProgram = new PProgram();
+            List<ProgramName> inputProgramNames = new List<ProgramName>();
+            foreach (var inputFileName in Options.inputFileNames)
+            {
+                ProgramName inputProgramName;
+                ParsePProgram3(topDeclNames, parsedProgram, inputFileName, out inputProgramName);
+                if (inputProgramName != null)
+                {
+                    inputProgramNames.Add(inputProgramName);
+                }
+            }
+            if (errorReporter.errors.Count > 0)
+            {
+                errorReporter.PrintErrors(Log, Options);
+                Log.WriteMessage("Compilation failed", SeverityKind.Error);
+                return false;
+            }
+            string outputDirName = Options.OutputDir;
+            if (!Directory.Exists(outputDirName))
+            {
+                Directory.CreateDirectory(outputDirName);
+            }
+            string unitFileName = Options.unitName;
+            ProgramName unitProgramName = new ProgramName(unitFileName);
+            AST<Program> unitProgram;
+            AST<Model> unitModel;
+
+            using (this.Profiler.Start("Compiler installing", Path.GetFileName(unitFileName)))
+            {
+                // Load all dependencies of P.4ml in order
+                LoadManifestProgram("P.4ml");
+
+                // Serialize the parsed object graph into a Formula model and install it. Should not fail.
+                var mkModelResult = Factory.Instance.MkModel(
+                    MkSafeModuleName(unitProgramName.ToString()),
+                    PDomain,
+                    parsedProgram.Terms,
+                    out unitModel,
+                    null,
+                    MkReservedModuleLocation(PDomain),
+                    ComposeKind.None);
+                Contract.Assert(mkModelResult);
+
+                var PUnitTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PUnit"));
+                PUnitTerm = Factory.Instance.AddArg(PUnitTerm, Factory.Instance.MkCnst(unitProgramName.Uri.LocalPath));
+                unitModel = Factory.Instance.AddFact(unitModel, Factory.Instance.MkModelFact(null, PUnitTerm));
+                foreach (var inputProgramName in inputProgramNames)
+                {
+                    var PUnitContainsTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PUnitContains"));
+                    PUnitContainsTerm = Factory.Instance.AddArg(PUnitContainsTerm, Factory.Instance.MkCnst(unitProgramName.Uri.LocalPath));
+                    PUnitContainsTerm = Factory.Instance.AddArg(PUnitContainsTerm, Factory.Instance.MkCnst(inputProgramName.Uri.LocalPath));
+                    unitModel = Factory.Instance.AddFact(unitModel, Factory.Instance.MkModelFact(null, PUnitContainsTerm));
+                }
+                foreach (var fileName in Options.dependencies)
+                {
+                    var program = ParseFormulaFile(fileName);
+                    program.FindAll(
+                        new NodePred[]
+                        {
+                            NodePredFactory.Instance.Star,
+                            NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)
+                        },
+                        (path, n) =>
+                        {
+                            ModelFact mf = (ModelFact)n;
+                            FuncTerm ft = mf.Match as FuncTerm;
+                            string ftName = (ft.Function as Id).Name;
+                            if (ftName == "EventDecl" ||
+                                ftName == "EventSet" ||
+                                ftName == "TypeDef" ||
+                                ftName == "EnumTypeDef" ||
+                                ftName == "ModelType" ||
+                                ftName == "InterfaceTypeDecl" ||
+                                ftName == "FunProtoDecl" ||
+                                ftName == "MachineProtoDecl")
+                            {
+                                unitModel = Factory.Instance.AddFact(unitModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
+                            }
+                        });
+                    var DependsOnTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("DependsOn"));
+                    DependsOnTerm = Factory.Instance.AddArg(DependsOnTerm, Factory.Instance.MkCnst(unitProgramName.Uri.LocalPath));
+                    DependsOnTerm = Factory.Instance.AddArg(DependsOnTerm, Factory.Instance.MkCnst(program.Node.Name.Uri.LocalPath));
+                    unitModel = Factory.Instance.AddFact(unitModel, Factory.Instance.MkModelFact(null, DependsOnTerm));
+                }
+
+                InstallResult instResult;
+                unitProgram = MkProgWithSettings(unitProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+                // CompilerEnv only expects one call to Install at a time.
+                bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(unitProgram, unitModel), out instResult);
+                Contract.Assert(progressed && instResult.Succeeded, GetFirstMessage(from t in instResult.Flags select t.Item2));
+
+                if (Options.outputFormula)
+                {
+                    StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.GetFileName(unitFileName) + ".4ml")));
+                    unitModel.Print(wr);
+                    wr.Close();
+                }
+            }
+
+            bool rc;
+            if (Options.compilerOutput == CompilerOutput.Zing)
+            {
+                rc = GenerateZing(unitProgramName, unitModel, errorReporter.idToSourceInfo);
+            }
+            else
+            {
+                rc = GenerateCode(unitProgramName, unitModel, Options.dependencies, errorReporter.idToSourceInfo);
+            }
+            UninstallProgram(unitProgramName);
+            errorReporter.PrintErrors(Log, Options);
+            if (!rc)
+            {
+                Log.WriteMessage("Compilation failed", SeverityKind.Error);
+            }
+            return rc;
         }
 
         private bool CompileAllFiles()
@@ -596,7 +716,7 @@
                 Stack<string> importChainOfPFiles = new Stack<string>();
                 HashSet<string> visitedPFiles = CreateFileSystemHashSet();
                 HashSet<string> wasRecentlyCompiled = new HashSet<string>();
-                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                string outputDirName = Options.OutputDir;
                 if (!Directory.Exists(outputDirName))
                 {
                     Directory.CreateDirectory(outputDirName);
@@ -620,27 +740,59 @@
 
         private HashSet<string> CreateFileSystemHashSet()
         {
-            return new HashSet<string>(IsFileSystemCaseInsensitive() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+            return new HashSet<string>(IsFileSystemCaseInsensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         }
 
-        static bool? _isFileSystemCaseInsensitive;
+        private static bool isFileSystemCaseInsensitive;
 
-        public bool IsFileSystemCaseInsensitive()
+        public static bool IsFileSystemCaseInsensitive
         {
-            if (!_isFileSystemCaseInsensitive.HasValue)
+            get
             {
-                string fileUpperCase = Path.GetTempPath() + "TEST 4481D0EF-9458-4CA0-802B-DD706A811E3B";
-                string fileLowerCase = Path.GetTempPath() + "test 4481d0ef-9458-4ca0-802b-dd706a811e3b";
-
-                if (File.Exists(fileUpperCase))
-                {
-                    File.Delete(fileUpperCase);
-                }
-                File.CreateText(fileLowerCase).Close();
-                _isFileSystemCaseInsensitive = File.Exists(fileUpperCase);
-                File.Delete(fileLowerCase);
+                return isFileSystemCaseInsensitive;
             }
-            return _isFileSystemCaseInsensitive.Value;
+        }
+
+        static Compiler()
+        {
+            string fileUpperCase = Path.GetTempPath() + "TEST 4481D0EF-9458-4CA0-802B-DD706A811E3B";
+            string fileLowerCase = Path.GetTempPath() + "test 4481d0ef-9458-4ca0-802b-dd706a811e3b";
+            if (File.Exists(fileUpperCase))
+            {
+                File.Delete(fileUpperCase);
+            }
+            File.CreateText(fileLowerCase).Close();
+            isFileSystemCaseInsensitive = File.Exists(fileUpperCase);
+            File.Delete(fileLowerCase);
+        }
+
+        public void ParsePProgram3(PProgramTopDeclNames topDeclNames, PProgram parsedProgram, string inputFileName, out ProgramName inputProgramName)
+        {
+            inputProgramName = null;
+            using (this.Profiler.Start("Compiler parsing", Path.GetFileName(inputFileName)))
+            {
+                try
+                {
+                    inputProgramName = new ProgramName(inputFileName);
+                    List<Flag> parserFlags;
+                    var parser = new Parser.PParser();
+                    List<string> includedFiles;
+                    var result = parser.ParseFile(inputProgramName, Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags, out includedFiles);
+                    foreach (Flag f in parserFlags)
+                    {
+                        errorReporter.AddFlag(f);
+                    }
+                }
+                catch (Exception e)
+                {
+                    errorReporter.AddFlag(
+                        new Flag(
+                            SeverityKind.Error,
+                            default(Span),
+                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                            Constants.BadFile.Code));
+                }
+            }
         }
 
         public bool ParsePProgram2(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out List<string> importedPFiles)
@@ -717,7 +869,7 @@
                 var RootFileName = RootProgramName.ToString();
                 SeenFileNames[RootFileName] = RootProgramName;
                 parserWorkQueue.Enqueue(RootFileName);
-                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                string outputDirName = Options.OutputDir;
                 if (!Directory.Exists(outputDirName))
                 {
                     Directory.CreateDirectory(outputDirName);
@@ -844,7 +996,7 @@
 
                 if (Options.outputFormula)
                 {
-                    string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                    string outputDirName = Options.OutputDir;
                     StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.GetFileName(inputFileName) + ".4ml")));
                     rootModel.Print(wr);
                     wr.Close();
@@ -971,7 +1123,7 @@
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            string outputDirName = Options.OutputDir;
 
             using (this.Profiler.Start("Generating Zing", zingFileName))
             {
@@ -1426,9 +1578,9 @@
         }
 
         public bool GenerateCode(
-            ProgramName RootProgramName, 
-            AST<Model> RootModel, 
-            List<string> importedFiles, 
+            ProgramName RootProgramName,
+            AST<Model> RootModel,
+            List<string> importedFiles,
             Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
@@ -1455,8 +1607,8 @@
         }
 
         bool InternalGenerateCode(
-            ProgramName RootProgramName, 
-            AST<Model> RootModel, 
+            ProgramName RootProgramName,
+            AST<Model> RootModel,
             List<string> importedFiles,
             Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
@@ -1527,7 +1679,7 @@
                 Contract.Assert(linkModel != null);
                 string outputFileName = Path.ChangeExtension(fileName, ".4ml");
                 Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
-                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                string outputDirName = Options.OutputDir;
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
                 linkModel.Print(wr);
                 wr.Close();
@@ -1738,7 +1890,7 @@
                     // Dump out the formula file corresponding to linker
                     if (options.outputFormula)
                     {
-                        string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                        string outputDirName = Options.OutputDir;
                         StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
                         linkModel.Print(wr);
                         wr.Close();
@@ -1788,7 +1940,7 @@
             extractTask.Wait();
             var errorProgram = extractTask.Result;
             Contract.Assert(errorProgram != null);
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            string outputDirName = Options.OutputDir;
             if (Options.outputFormula)
             {
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "outputError.4ml")));
@@ -1964,7 +2116,7 @@
             {
                 it.MoveNext();
                 shortFileName = filePrefix + ((Cnst)it.Current).GetStringValue();
-                fileName = Path.Combine(Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir, shortFileName);
+                fileName = Path.Combine(Options.OutputDir, shortFileName);
                 it.MoveNext();
                 fileBody = (Quote)it.Current;
             }

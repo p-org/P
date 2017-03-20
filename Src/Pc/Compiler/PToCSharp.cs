@@ -3874,6 +3874,16 @@ namespace Microsoft.Pc
 
             //Initialize types and events
             var nodes = dependsOn.Keys.Select(s => s.ToLower()).ToList();
+            foreach(var files in dependsOn.Values)
+            {
+                foreach(var f in files)
+                {
+                    if(!nodes.Contains(f))
+                    {
+                        nodes.Add(f);
+                    }
+                }
+            }
             var edges = new List<Tuple<string, string>>();
             foreach (var file in dependsOn)
             {

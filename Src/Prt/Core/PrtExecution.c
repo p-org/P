@@ -529,7 +529,7 @@ PrtGoto(
 				args[i] = PrtCloneValue(arg);
 				break;
 			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtGoto");
 				break;
 			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);

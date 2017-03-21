@@ -270,7 +270,7 @@
             fullPathName = null;
             if (fileName.Length <= 2 || !fileName.EndsWith(".p"))
             {
-                Console.WriteLine("Illegal source file name: {0}", fileName);
+                Console.WriteLine("Illegal file name: {0}", fileName);
                 return false;
             }
             fullPathName = Path.GetFullPath(fileName);
@@ -284,9 +284,9 @@
         private bool IsLegal4mlFile(string fileName, out string fullPathName)
         {
             fullPathName = null;
-            if (fileName.Length <= 4 && !fileName.EndsWith(".4ml"))
+            if (fileName.Length <= 4 || !fileName.EndsWith(".4ml"))
             {
-                Console.WriteLine("Illegal source file name: {0}", fileName);
+                Console.WriteLine("Illegal file name: {0}", fileName);
                 return false;
             }
             fullPathName = Path.GetFullPath(fileName);

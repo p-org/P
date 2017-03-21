@@ -4,25 +4,15 @@
     using System.IO;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
-
-    using Domains;
-    using Microsoft.Formula.API;
-    using Microsoft.Formula.API.Generators;
-    using Microsoft.Formula.API.Nodes;
-    using System.Xml.Serialization;
 
     public class CommandLineOptions
     {
         // XMLSerializer is used to serialize an instance of this class to communicate 
-        // between pc.exe and pcompilerservice.exe.  Use XmlIgnore if you do not want 
+        // between pc.exe and pcompilerservice.exe.  Use XmlIgnore attribute if you do not want 
         // a field to be communicated across.
         public bool profile { get; set; }
         public LivenessOption liveness { get; set; }
         public string outputDir { get; set; }
-        [XmlIgnore]
-        public string OutputDir {  get { return outputDir == null ? Directory.GetCurrentDirectory() : outputDir; } }
         public bool outputFormula { get; set; }
         public bool shortFileNames { get; set; }
         public bool printTypeInference { get; set; }
@@ -265,6 +255,11 @@
                 {
                     unitName = targetName;
                 }
+            }
+
+            if (outputDir == null)
+            {
+                outputDir = Directory.GetCurrentDirectory();
             }
 
             return true;

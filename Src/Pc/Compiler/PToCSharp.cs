@@ -3474,7 +3474,7 @@ namespace Microsoft.Pc
 
         private void EmitCSharpOutput()
         {
-            var outputDir = compiler.Options.OutputDir;
+            var outputDir = compiler.Options.outputDir;
             compiler.Log.WriteMessage(string.Format("Writing {0} ...", cSharpFileName), SeverityKind.Info);
             System.IO.StreamWriter file = new System.IO.StreamWriter(Path.Combine(outputDir, cSharpFileName));
             file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168, CS0649");

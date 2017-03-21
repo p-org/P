@@ -454,7 +454,7 @@
                 Log.WriteMessage("Compilation failed", SeverityKind.Error);
                 return false;
             }
-            string outputDirName = Options.OutputDir;
+            string outputDirName = Options.outputDir;
             if (!Directory.Exists(outputDirName))
             {
                 Directory.CreateDirectory(outputDirName);
@@ -640,7 +640,7 @@
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";
-            string outputDirName = Options.OutputDir;
+            string outputDirName = Options.outputDir;
 
             using (this.Profiler.Start("Generating Zing", zingFileName))
             {
@@ -1125,7 +1125,7 @@
                 Contract.Assert(linkModel != null);
                 string outputFileName = Path.ChangeExtension(fileName, ".4ml");
                 Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
-                string outputDirName = Options.OutputDir;
+                string outputDirName = Options.outputDir;
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
                 linkModel.Print(wr);
                 wr.Close();
@@ -1336,7 +1336,7 @@
                     // Dump out the formula file corresponding to linker
                     if (options.outputFormula)
                     {
-                        string outputDirName = Options.OutputDir;
+                        string outputDirName = Options.outputDir;
                         StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
                         linkModel.Print(wr);
                         wr.Close();
@@ -1386,7 +1386,7 @@
             extractTask.Wait();
             var errorProgram = extractTask.Result;
             Contract.Assert(errorProgram != null);
-            string outputDirName = Options.OutputDir;
+            string outputDirName = Options.outputDir;
             if (Options.outputFormula)
             {
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "outputError.4ml")));
@@ -1562,7 +1562,7 @@
             {
                 it.MoveNext();
                 shortFileName = filePrefix + ((Cnst)it.Current).GetStringValue();
-                fileName = Path.Combine(Options.OutputDir, shortFileName);
+                fileName = Path.Combine(Options.outputDir, shortFileName);
                 it.MoveNext();
                 fileBody = (Quote)it.Current;
             }

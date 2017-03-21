@@ -418,7 +418,6 @@
             }
             CompilerEnv = new Env(envParams);
             this.Profiler = new NullProfiler();
-            this.errorReporter = new ErrorReporter();
         }
 
         public bool Compile(ICompilerOutput log, CommandLineOptions options)
@@ -430,12 +429,7 @@
             options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             this.Log = log;
             this.Options = options;
-            return CompileAllFiles();
-        }
-
-        private bool CompileAllFiles()
-        {
-            errorReporter = new ErrorReporter();
+            this.errorReporter = new ErrorReporter();
             PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
             PProgram parsedProgram = new PProgram();
             List<ProgramName> inputProgramNames = new List<ProgramName>();
@@ -587,8 +581,7 @@
                     inputProgramName = new ProgramName(inputFileName);
                     List<Flag> parserFlags;
                     var parser = new Parser.PParser();
-                    List<string> includedFiles;
-                    var result = parser.ParseFile(inputProgramName, Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags, out includedFiles);
+                    var result = parser.ParseFile(inputProgramName, Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags);
                     foreach (Flag f in parserFlags)
                     {
                         errorReporter.AddFlag(f);

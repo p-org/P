@@ -325,14 +325,12 @@
             PProgramTopDeclNames topDeclNames,
             PProgram program,
             Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo,
-            out List<Flag> flags,
-            out List<string> includedFileNames)
+            out List<Flag> flags)
         {
             flags = parseFlags = new List<Flag>();
             this.PPTopDeclNames = topDeclNames;
             parseProgram = program;
             this.idToSourceInfo = idToSourceInfo;
-            includedFileNames = new List<string>();
             parseSource = file;
             Options = options;
             bool result;

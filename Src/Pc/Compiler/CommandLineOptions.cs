@@ -11,15 +11,17 @@
     using Microsoft.Formula.API;
     using Microsoft.Formula.API.Generators;
     using Microsoft.Formula.API.Nodes;
-    
+    using System.Xml.Serialization;
+
     public class CommandLineOptions
     {
-        // Be careful when adding fields/getters/setters to this class.
         // XMLSerializer is used to serialize an instance of this class to communicate 
-        // between pc.exe and pcompilerservice.exe.
+        // between pc.exe and pcompilerservice.exe.  Use XmlIgnore if you do not want 
+        // a field to be communicated across.
         public bool profile { get; set; }
         public LivenessOption liveness { get; set; }
         public string outputDir { get; set; }
+        [XmlIgnore]
         public string OutputDir {  get { return outputDir == null ? Directory.GetCurrentDirectory() : outputDir; } }
         public bool outputFormula { get; set; }
         public bool shortFileNames { get; set; }

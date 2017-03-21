@@ -9,7 +9,7 @@
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
     <PCompileOptions>/generate:C0 /t:$(ProjectName).4ml /shared /outputDir:$(PGeneratedDir)</PCompileOptions>
-    <PLinkOptions>/shared /link /r:$(PGeneratedDir)\$(ProjectName).4ml /outputDir:$(PGeneratedDir)</PLinkOptions>
+    <PLinkOptions>/shared /link /outputDir:$(PGeneratedDir)</PLinkOptions>
     <PCompileOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PCompileOptions) /profile</PCompileOptions>
     <PLinkOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PLinkOptions) /profile</PLinkOptions>
   </PropertyGroup>
@@ -49,7 +49,7 @@
     </ItemGroup>
     
     <Message Importance="high" Text="########## generating p linker.c  ##################" />
-    <Exec Command="$(DropFolder)\Binaries\pc.exe $(PLinkOptions)"/>
+    <Exec Command="$(DropFolder)\Binaries\pc.exe $(PLinkOptions) /r:@(PLink)"/>
     <Message Importance="high" Text="########## generating p linker complete ##################" />
   </Target>
 

@@ -2489,13 +2489,13 @@ namespace Microsoft.Pc
                             {
                                 var returnStmt =
                                     MkZingSeq(
-                                        MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSetAndReturnOldValue"), dest, index, src)),
+                                        MkZingCallStmt(MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSet"), dest, index, src)),
                                         MkZingAssign(src, MkZingIdentifier("null")));
                                 return new ZingTranslationInfo(returnStmt);
                             }
                             else
                             {   // assignType == "SWAP"
-                                var returnStmt = MkZingAssign(src, MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSet"), dest, index, src));
+                                var returnStmt = MkZingAssign(src, MkZingCall(MkZingDot("PRT_VALUE", "PrtMapSetAndReturnOldValue"), dest, index, src));
                                 return new ZingTranslationInfo(returnStmt);
                             }
                         }

@@ -4,7 +4,7 @@
 
 domain PLink
 {
-	DependsOn ::= new (o: String, d: String).
+	DependsOn ::= new (o: String, d: String + { NIL }).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 	NonNullEventName  ::= String + { HALT }.
@@ -129,7 +129,7 @@ domain PLinkError
 	CSharpSafeMap ::= new (testName: String, newName: String, isSafe: Boolean).
 	CSharpMonitorMap ::= new (testName: String, newMonitorName: String, impMachine: String).
 	CSharpInterfaceMap ::= new (testName: String, iName: String, evName: String + { HALT }).
-	CSharpDependsOn ::= new (o: String, d: String).
+	CSharpDependsOn ::= new (o: String, d: String + { NIL }).
 	CSharpEventActionsRefinementTest ::= new (testName: String, eventName: String + { HALT }).
 	CSharpInterfaceActionsRefinementTest ::= new (testName: String, interfaceName: String).
 	TestError ::= new (modId: String, arg: any String).

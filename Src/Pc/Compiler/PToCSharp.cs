@@ -3621,18 +3621,34 @@ namespace Microsoft.Pc
                     var currFileName = ((Cnst)it.Current).GetStringValue();
                     currFileName = Path.GetFileNameWithoutExtension(currFileName);
                     it.MoveNext();
-                    var dOn = ((Cnst)it.Current).GetStringValue();
-                    dOn = Path.GetFileNameWithoutExtension(dOn);
                     
-                    if (dependsOn.ContainsKey(currFileName))
+                    if (it.Current.NodeKind == NodeKind.Id)
                     {
-                        dependsOn[currFileName].Add(dOn);
+                        var name = ((Id)it.Current).Name;
+                        if (name == "NIL")
+                        {
+                            if (!dependsOn.ContainsKey(currFileName))
+                            { 
+                                dependsOn[currFileName] = new List<string>();
+                            }
+                        }
                     }
                     else
                     {
-                        dependsOn[currFileName] = new List<string>();
-                        dependsOn[currFileName].Add(dOn);
+                        var dOn = ((Cnst)it.Current).GetStringValue();
+                        dOn = Path.GetFileNameWithoutExtension(dOn);
+
+                        if (dependsOn.ContainsKey(currFileName))
+                        {
+                            dependsOn[currFileName].Add(dOn);
+                        }
+                        else
+                        {
+                            dependsOn[currFileName] = new List<string>();
+                            dependsOn[currFileName].Add(dOn);
+                        }
                     }
+                    
                 }
             }
 

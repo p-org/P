@@ -14,7 +14,7 @@ domain PData
 {   
 	PUnit ::= new (name: String).
 	PUnitContains ::= new (unitName: String, fileName: String).
-	DependsOn ::= new (thisUnitName: String, thatUnitName: String).
+	DependsOn ::= new (thisUnitName: String, thatUnitName: String + { NIL }).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 
@@ -316,6 +316,9 @@ domain PStaticTyping extends PData, PError
 	conforms no ExportInterfaceError(_).
     /*************************************************************/
 	
+	//populate the depends on
+	DependsOn(n, NIL) :- PUnit(n).
+
 	/******************************************************************/
 	/*		Computation related to module system					  */
 	/******************************************************************/

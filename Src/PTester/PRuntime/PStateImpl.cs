@@ -5,6 +5,7 @@ using System.Text;
 
 namespace P.Runtime
 {
+
     public abstract class StateImpl : ICloneable
     {
 
@@ -23,6 +24,7 @@ namespace P.Runtime
         #endregion
 
         #region Fields
+
         /// <summary>
         /// Map from the statemachine id to the instance of the statemachine.
         /// </summary>
@@ -131,6 +133,11 @@ namespace P.Runtime
         }
         #endregion
 
+        public List<PrtSpecMachine> GetAllSpecMachines()
+        {
+            return specMachinesMap.Values.ToList();
+        }
+
         private List<PrtSpecMachine> GetSpecMachines(string currMachine)
         {
             var allSpecMachines = specMachineMap.Where(mon => mon.Value.Contains(currMachine))
@@ -152,7 +159,8 @@ namespace P.Runtime
             machine.isSafe = isSafeMap[renamedImpMachine];
             machine.renamedName = renamedImpMachine;
             AddImplMachineToStateImpl(machine);
-            if(interfaceMap.ContainsKey(interfaceOrMachineName))
+
+            if (interfaceMap.ContainsKey(interfaceOrMachineName))
             {
                 return new PrtInterfaceValue(machine, interfaceMap[interfaceOrMachineName]);
             }

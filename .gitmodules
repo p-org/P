@@ -5,3 +5,6 @@
 [submodule "Ext/Formula"]
 	path = Ext/Formula
 	url = https://github.com/Microsoft/formula.git
+[submodule "Ext/PSharp"]
+	path = Ext/PSharp
+	url = https://github.com/p-org/PSharp.git

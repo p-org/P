@@ -141,11 +141,13 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.PSharp">
-      <HintPath>..\..\..\..\PSharp\Binaries\Microsoft.PSharp.dll</HintPath>
+    <Reference Include="Microsoft.PSharp, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c4566cf0a7f74012, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Ext\PSharp\Binaries\Microsoft.PSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.PSharp.TestingServices">
-      <HintPath>..\..\..\..\PSharp\Binaries\Microsoft.PSharp.TestingServices.dll</HintPath>
+    <Reference Include="Microsoft.PSharp.TestingServices, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c4566cf0a7f74012, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\..\Ext\PSharp\Binaries\Microsoft.PSharp.TestingServices.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>

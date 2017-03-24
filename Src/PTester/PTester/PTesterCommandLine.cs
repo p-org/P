@@ -198,6 +198,12 @@ namespace P.Tester
                 Environment.Exit((int)TestResult.InvalidParameters);
             }
 
+            if (options.UsePSharp && options.isRefinement)
+            {
+                Console.WriteLine("Error: Refinement checking isn't yet supported with /psharp flag");
+                Environment.Exit((int)TestResult.InvalidParameters);
+            }
+
             if (options.isRefinement)
             {
                 var refinementCheck = new RefinementChecking(options);
@@ -294,7 +300,7 @@ namespace P.Tester
             configuration.MaxUnfairSchedulingSteps = 100;
             configuration.MaxFairSchedulingSteps = configuration.MaxUnfairSchedulingSteps * 10;
             configuration.LivenessTemperatureThreshold = configuration.MaxFairSchedulingSteps / 3;
-
+            
             var engine = Microsoft.PSharp.TestingServices.TestingEngineFactory.CreateBugFindingEngine(
                 configuration, PSharpWrapper.Execute);
             engine.Run();

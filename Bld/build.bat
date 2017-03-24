@@ -117,6 +117,15 @@ for %%i in (zc\bin\%Platform%\Release\zc.exe
    
 cd ..\..
 
+REM Build PSharp
+cd ext\PSharp
+..\..\Bld\nuget restore PSharp.sln
+echo devenv PSharp.sln /Build %Configuration%
+devenv PSharp.sln /Build %Configuration%
+if ERRORLEVEL 1 goto :exit
+
+cd ..\..
+
 if "%NoClean%"=="true" goto :build
 echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%  /t:Clean
 msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean

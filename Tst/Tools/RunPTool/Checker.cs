@@ -53,6 +53,7 @@ namespace CheckP
             LinkFileOption
         };
 
+        private string originalDirectory;
         private string activeDirectory;
         private bool reset;
         private bool cooperative;
@@ -72,8 +73,9 @@ namespace CheckP
             private set;
         }
 
-        public Checker(string activeDirectory, string testRoot, bool reset, bool cooperative, string configuration, string platform, string execsToRun, string zingFilePath, Compiler compiler)
+        public Checker(string originalDirectory, string activeDirectory, string testRoot, bool reset, bool cooperative, string configuration, string platform, string execsToRun, string zingFilePath, Compiler compiler)
         {
+            this.originalDirectory = originalDirectory;
             this.activeDirectory = activeDirectory;
             this.reset = reset;
             this.cooperative = cooperative;
@@ -493,7 +495,7 @@ namespace CheckP
                 result = false;
             }
 
-            if (result && !CompareAcceptors(activeDirectory, isAdd))
+            if (result && !CompareAcceptors(isAdd))
             {
                 File.Delete(Path.Combine(activeDirectory, LogFile));
                 File.Copy(
@@ -704,15 +706,15 @@ namespace CheckP
             return true;
         }
 
-        private bool CompareAcceptors(string accDir, bool add)
+        private bool CompareAcceptors(bool add)
         {
             var tmpFile = Path.Combine(activeDirectory, TmpStreamFile);
             try
             {
-                var di = new DirectoryInfo(Path.Combine(activeDirectory, accDir));
+                var di = new DirectoryInfo(activeDirectory);
                 if (!di.Exists)
                 {
-                    WriteError("ERROR: Acceptor directory {0} does not exist", accDir);
+                    WriteError("ERROR: Acceptor directory {0} does not exist", activeDirectory);
                     return false;
                 }
 
@@ -737,7 +739,8 @@ namespace CheckP
 
                     File.Copy(
                         Path.Combine(activeDirectory, TmpStreamFile),
-                        Path.Combine(Path.Combine(activeDirectory, accDir), name));
+                        Path.Combine(originalDirectory, name),
+                        true);
                     return true;
                 }
                 else

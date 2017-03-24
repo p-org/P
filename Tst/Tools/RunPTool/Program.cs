@@ -291,7 +291,6 @@ namespace RunPTool
                 }
                 if (listTests)
                 {
-
                     foreach (var dir in allTestDirs)
                     {
                         Console.WriteLine("  " + dir.FullName);
@@ -330,7 +329,6 @@ namespace RunPTool
                     {
                         throw new Exception("Cannot open display-diffs.bat for writing");
                     }
-
                 }
 
                 string zingExe = string.Format(@"..\Bld\Drops\{0}\{1}\Binaries\zinger.exe", configuration, platform);
@@ -339,14 +337,6 @@ namespace RunPTool
                 {
                     WriteError("ERROR in Test: zinger.exe not find in {0}", zingFilePath);
                     WriteError(@"Please run ~\Bld\build.bat");
-                    return;
-                }
-
-                string executingProcessDirectoryName = Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName);
-                string pciFilePath = Path.Combine(executingProcessDirectoryName, "Pci.exe");
-                if (!File.Exists(pciFilePath))
-                {
-                    WriteError("Cannot find pci.exe");
                     return;
                 }
 
@@ -583,6 +573,7 @@ namespace RunPTool
                 foreach (var di in dirs)
                 {
                     string name = Path.GetFileName(di);
+                    string odi = Path.Combine(testDir.FullName, name);
                     if ((name == "Pc") ||
                         (name == "Zing" && (execsToRun == "runzing" || execsToRun == "runall")) ||
                         (name == "Prt" && (execsToRun == "runprt" || execsToRun == "runall")))
@@ -591,7 +582,7 @@ namespace RunPTool
                         if (File.Exists(configFile))
                         {
                             testCount++;
-                            var checker = new Checker(di, testRoot, reset, cooperative, configuration, platform, execsToRun, zingFilePath, compiler);
+                            var checker = new Checker(odi, di, testRoot, reset, cooperative, configuration, platform, execsToRun, zingFilePath, compiler);
                             if (!checker.Check(configFile))
                             {
                                 ++failCount;
@@ -606,8 +597,7 @@ namespace RunPTool
                             }
                         }
                     }
-                }
-               
+                }             
             }
             catch (Exception e)
             {

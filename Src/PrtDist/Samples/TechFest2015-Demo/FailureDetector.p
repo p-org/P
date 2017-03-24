@@ -1,6 +1,3 @@
-include "Timer.p"
-include "PrtDistHelp.p"
-
 event PING: machine;
 event PONG: machine;
 

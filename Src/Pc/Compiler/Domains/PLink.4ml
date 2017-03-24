@@ -4,7 +4,7 @@
 
 domain PLink
 {
-	DependsOn ::= new (o: String, d: String).
+	DependsOn ::= new (o: String, d: String + { NIL }).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 	NonNullEventName  ::= String + { HALT }.
@@ -129,7 +129,7 @@ domain PLinkError
 	CSharpSafeMap ::= new (testName: String, newName: String, isSafe: Boolean).
 	CSharpMonitorMap ::= new (testName: String, newMonitorName: String, impMachine: String).
 	CSharpInterfaceMap ::= new (testName: String, iName: String, evName: String + { HALT }).
-	CSharpDependsOn ::= new (o: String, d: String).
+	CSharpDependsOn ::= new (o: String, d: String + { NIL }).
 	CSharpEventActionsRefinementTest ::= new (testName: String, eventName: String + { HALT }).
 	CSharpInterfaceActionsRefinementTest ::= new (testName: String, interfaceName: String).
 	TestError ::= new (modId: String, arg: any String).
@@ -596,11 +596,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 							TestDecl(testName, _, _), InterfaceTypeDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
 
 	//If there is no testdecl then generate linkmap corresponding to CLinkMap
-	CSharpRenameMap("output", newName, impName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CRenameMap (newName, impName).
-	CSharpLinkMap("output", creatorM, IorM, impM) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CLinkMap(creatorM, IorM, impM).
-	CSharpSafeMap("output", newName, FALSE) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CRenameMap (newName, _).
-	CSharpMonitorMap("output", monName, impMachine) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), MonitorDecl(monName, _, _), MachineDecl(impMachine, _, _).
-	CSharpInterfaceMap("output", iName, evName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), InterfaceTypeDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
+	CSharpRenameMap("linker", newName, impName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CRenameMap (newName, impName).
+	CSharpLinkMap("linker", creatorM, IorM, impM) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CLinkMap(creatorM, IorM, impM).
+	CSharpSafeMap("linker", newName, FALSE) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CRenameMap (newName, _).
+	CSharpMonitorMap("linker", monName, impMachine) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), MonitorDecl(monName, _, _), MachineDecl(impMachine, _, _).
+	CSharpInterfaceMap("linker", iName, evName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), InterfaceTypeDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
 	
 	/*code generation for refinement*/
 	CSharpLinkMap(testName', MachineName, interfaceOrMachine, ImpMachine) :- 

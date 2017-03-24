@@ -15,7 +15,7 @@ machine Main {
 			var xloc, yloc: int;
 			var mloc: map[int, int];
 			
-			foo(xloc swap);
+			foo(xloc swap);                 //error: "Parameter passed with swap not available at callee return"
 			assert xloc == 1;                   //holds
 			foo(xloc move);
 			yloc = xloc + 1;                      //error (variable xloc is not available)
@@ -32,11 +32,13 @@ machine Main {
 			assert xloc == 7;                       //holds
 			yloc = 20;                           //to make yloc available 
 			
-			baz(xloc swap, xloc move);              //error: not detected********************
+			baz(xloc swap, xloc move);              //error: "Linear argument should be passed for exactly one parameter"	
+			baz(xloc swap, xloc + yloc);           //error: " Variable is not available"
+			baz(xloc move, xloc + yloc);           //error: " Variable is not available"
 			xloc = 20;                          //to make xloc available 
-			baz(xloc move, xloc move);              //OK
+			baz(xloc move, xloc move);              //error: "Linear argument should be passed for exactly one parameter"
 			xloc = 20;                             //to make xloc available 
-			baz(xloc swap, xloc swap);              //OK
+			baz(xloc swap, xloc swap);              //error: "Linear argument should be passed for exactly one parameter"
 			
 			xloc = 20;                          //to make xloc available 
 			x = xloc move;                        //OK
@@ -51,13 +53,14 @@ machine Main {
 			m[xloc] = xloc;                    //OK
 			
 			
-			x = 1;                              ////to make x available
-			client1 = new Client1(x swap);	    //errors are not detected (x is not local, swap is not allowed)***
-			client1 = new Client1(x move);      //error not detected (x is not local)***********************
+			x = 1;                              //to make x available
+			client1 = new Client1(x swap);	    //errors: "Argument should be a local variable" and
+			                                    //"Keyword swap not allowed"
+			client1 = new Client1(x move);      //"Argument should be a local variable"
 			client1 = new Client1(xloc move);    //OK
 			x = 1;                              ////to make x available
-			client2 = new Client2(this move);	//OK
-			client2 = new Client2(this swap);   //error not detected (swap is not allowed)******************
+			client2 = new Client2(this move);	//error: "Argument should be a variable"
+			client2 = new Client2(this swap);   //errors: "Argument should be a variable", "Keyword swap not allowed"
 			raise E1, x swap;                   //error  (argument x should be a local variable)
 			raise E1, xloc swap;                //error (swap not allowed)
 			raise E1, xloc move;   			    //OK
@@ -76,8 +79,8 @@ machine Main {
 			
         }
 		
-        on E1 do { goto S, yloc move; }            //TODO: edit
-		on E3 do { goto S, yloc swap; }            //TODO: edit
+        on E1 do { goto S, yloc move; }            //error: "Argument should be a local variable"
+		on E3 do { goto S, yloc swap; }            //errors
         on E2 do Action2;
         exit {   }
 	}
@@ -87,13 +90,12 @@ machine Main {
 		assert x == 1;               //holds
 		x = a;                       //error (variable is not available)
 	}
-	fun bar(): int {                 //error (swap parameter not available at callee return) - 
-	                                 //refers to "y = foo_1(y swap);" below
+	fun bar(): int {                 
 		var x, y: int;
 		y = x swap;
-		x = foo(y);                   //OK
+		foo(y);                       //OK
 		x = foo_1(y) swap;             //error (argument should be a variable)
-		y = foo_1(y swap);            //swap parameter accessed at return
+		y = foo_1(y swap);            //error: "Parameter passed with swap not available at callee return"
 		
 		x = foo_3(y swap);
 		y = foo_2(x);                 //OK

@@ -3474,7 +3474,8 @@ namespace Microsoft.Pc
 
         private void EmitCSharpOutput()
         {
-            var outputDir = compiler.Options.outputDir == null ? Environment.CurrentDirectory : compiler.Options.outputDir;
+            var outputDir = compiler.Options.outputDir;
+            compiler.Log.WriteMessage(string.Format("Writing {0} ...", cSharpFileName), SeverityKind.Info);
             System.IO.StreamWriter file = new System.IO.StreamWriter(Path.Combine(outputDir, cSharpFileName));
             file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168, CS0649");
             file.WriteLine(result);
@@ -3620,18 +3621,34 @@ namespace Microsoft.Pc
                     var currFileName = ((Cnst)it.Current).GetStringValue();
                     currFileName = Path.GetFileNameWithoutExtension(currFileName);
                     it.MoveNext();
-                    var dOn = ((Cnst)it.Current).GetStringValue();
-                    dOn = Path.GetFileNameWithoutExtension(dOn);
                     
-                    if (dependsOn.ContainsKey(currFileName))
+                    if (it.Current.NodeKind == NodeKind.Id)
                     {
-                        dependsOn[currFileName].Add(dOn);
+                        var name = ((Id)it.Current).Name;
+                        if (name == "NIL")
+                        {
+                            if (!dependsOn.ContainsKey(currFileName))
+                            { 
+                                dependsOn[currFileName] = new List<string>();
+                            }
+                        }
                     }
                     else
                     {
-                        dependsOn[currFileName] = new List<string>();
-                        dependsOn[currFileName].Add(dOn);
+                        var dOn = ((Cnst)it.Current).GetStringValue();
+                        dOn = Path.GetFileNameWithoutExtension(dOn);
+
+                        if (dependsOn.ContainsKey(currFileName))
+                        {
+                            dependsOn[currFileName].Add(dOn);
+                        }
+                        else
+                        {
+                            dependsOn[currFileName] = new List<string>();
+                            dependsOn[currFileName].Add(dOn);
+                        }
                     }
+                    
                 }
             }
 
@@ -3873,6 +3890,16 @@ namespace Microsoft.Pc
 
             //Initialize types and events
             var nodes = dependsOn.Keys.Select(s => s.ToLower()).ToList();
+            foreach(var files in dependsOn.Values)
+            {
+                foreach(var f in files)
+                {
+                    if(!nodes.Contains(f))
+                    {
+                        nodes.Add(f);
+                    }
+                }
+            }
             var edges = new List<Tuple<string, string>>();
             foreach (var file in dependsOn)
             {
@@ -4204,7 +4231,7 @@ namespace Microsoft.Pc
                                 NormalizeWhitespace();
                 var outputFile = Path.Combine(outputDir, testCase.Key + ".cs");
                 EmitLinkerCS(finalOutput, outputFile);
-                //Log.WriteMessage(string.Format("Writing {0}.cs ...", testCase.Key), SeverityKind.Info);
+                Log.WriteMessage(string.Format("Writing {0}.cs ...", testCase.Key), SeverityKind.Info);
                 EmitCSDll(outputDir, testCase.Key);
             }
         }

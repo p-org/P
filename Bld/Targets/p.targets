@@ -8,31 +8,26 @@
     <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
-    <PCompileOptions>/generate:C0 /shared /outputDir:$(PGeneratedDir)</PCompileOptions>
-    <PLinkOptions>/link /outputDir:$(PGeneratedDir)</PLinkOptions>
+    <PCompileOptions>/generate:C0 /t:$(ProjectName).4ml /shared /outputDir:$(PGeneratedDir)</PCompileOptions>
+    <PLinkOptions>/shared /link /outputDir:$(PGeneratedDir)</PLinkOptions>
     <PCompileOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PCompileOptions) /profile</PCompileOptions>
     <PLinkOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PLinkOptions) /profile</PLinkOptions>
   </PropertyGroup>
 
   <!-- Invoke pc.exe - pc.exe will do the right thing based on which p files (or include files) have actually changed. -->
-  <!-- The 'no_build_optimize' hack is a trick to force msbuild to pass all files to pc.exe even if the output files are up to date.
-       We need to do this because pc.exe is smarter about tracking the entire include graph which msbuild doesn't know about.
-       This is ok because pc.exe is smart about only compiling things that need to based on what has changed.
-       The downside is that pc.exe now gets invoked always, so we have to pay that #include graph parsing when have changed
-       nothing.  Hopefully the P parser is quick then.  -->  
   <Target Name="CompileP" Inputs="@(PCompile);"
-          Outputs="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml');@(PCompile->'$(PGeneratedDir)\%(FileName).c');@(PCompile->'$(PGeneratedDir)\%(FileName).h;no_build_optimize')"
+          Outputs="$(PGeneratedDir)\$(ProjectName).4ml;$(PGeneratedDir)\$(ProjectName).c;$(PGeneratedDir)\$(ProjectName).h;"
           BeforeTargets="BeforeBuildGenerateSources" >
 
     <ItemGroup>
-      <PLink Include="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml')"/>
-      <ClCompile Include="@(PCompile->'$(PGeneratedDir)\%(FileName).c')"/>
+      <PLink Include="$(PGeneratedDir)\$(ProjectName).4ml"/>
+      <ClCompile Include="$(PGeneratedDir)\$(ProjectName).c"/>
     </ItemGroup>
 
       <ItemGroup>
-        <FileWrites Include="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml')" />
-        <FileWrites Include="@(PCompile->'$(PGeneratedDir)\%(FileName).c')" />
-        <FileWrites Include="@(PCompile->'$(PGeneratedDir)\%(FileName).h')" />
+        <FileWrites Include="$(PGeneratedDir)\$(ProjectName).4ml" />
+        <FileWrites Include="$(PGeneratedDir)\$(ProjectName).c" />
+        <FileWrites Include="$(PGeneratedDir)\$(ProjectName).h" />
       </ItemGroup>
 
       <Message Importance="high" Text="########## compiling p files @(PCompile)  ##################" />
@@ -54,16 +49,12 @@
     </ItemGroup>
     
     <Message Importance="high" Text="########## generating p linker.c  ##################" />
-    <Exec Command="$(DropFolder)\Binaries\pc.exe $(PLinkOptions) @(PLink->'%(FullPath)',' ')"/>
+    <Exec Command="$(DropFolder)\Binaries\pc.exe $(PLinkOptions) /r:@(PLink)"/>
     <Message Importance="high" Text="########## generating p linker complete ##################" />
   </Target>
 
   <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >   
-    <Delete Files="@(PCompile->'$(PGeneratedDir)\%(FileName).c')"/>
-    <Delete Files="@(PCompile->'$(PGeneratedDir)\%(FileName).h')"/>
-    <Delete Files="@(PCompile->'$(PGeneratedDir)\%(FileName).4ml')"/>
-    <Delete Files="$(PGeneratedDir)\linker.c"/>
-    <Delete Files="$(PGeneratedDir)\linker.h"/>
+    <RemoveDir Directories="$(PGeneratedDir)"/>
   </Target>
 
   <Target Name="CopySdkHeaders" Inputs="@(ClInclude)"  Outputs="$(DropFolder)\Headers\%(Filename)" BeforeTargets="PrepareForBuild">

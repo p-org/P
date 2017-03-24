@@ -1,5 +1,3 @@
-include "Header.p"
-
 /********************************************************
 * ServerMachine receives a eRequest event from the clients and 
   performs some local computation.

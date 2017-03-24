@@ -12,8 +12,9 @@ domain PError extends PData
 
 domain PData
 {   
-	PFile ::= new (name: String).
-	DependsOn ::= new (d: String).
+	PUnit ::= new (name: String).
+	PUnitContains ::= new (unitName: String, fileName: String).
+	DependsOn ::= new (thisUnitName: String, thatUnitName: String + { NIL }).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
 
@@ -315,6 +316,9 @@ domain PStaticTyping extends PData, PError
 	conforms no ExportInterfaceError(_).
     /*************************************************************/
 	
+	//populate the depends on
+	DependsOn(n, NIL) :- PUnit(n).
+
 	/******************************************************************/
 	/*		Computation related to module system					  */
 	/******************************************************************/
@@ -339,13 +343,6 @@ domain PStaticTyping extends PData, PError
 	MachineCreates(m, iorm.name) :- MachineCreates(m, NIL), iorm is MachineDecl;
 									MachineCreates(m, NIL), iorm is MachineProtoDecl;
 									MachineCreates(m, NIL), iorm is InterfaceTypeDecl.
-	
-	//// TODO: This will go away after fixing the zing output
-	//// populate the link map
-	LinkMap ::= (createdIorM: String, createdM: String).
-	LinkMap(createdIorM, createdM) :- m is MachineDecl, m.name = createdIorM, m.name = createdM;
-									  m is MachineProtoDecl, m.name = createdIorM, m.name = createdM;
-									  MachineExports(m, createdIorM), m.name = createdM.
 
 	//Checking the constructor type error for each exported interface
 	ExportInterfaceError ::= (m: MachineDecl).
@@ -355,6 +352,9 @@ domain PStaticTyping extends PData, PError
     
 	[rule_Classes = '"error, msg: the exported interface must be a subset of receive set"']
 	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, evL, iargt, _), no MachineReceives(m, ev), MemberOfInterfaceType(evL, ev). 
+
+	PFile ::= (fileName: String).
+	PFile(fileName) :- PUnit(unitName), PUnitContains(unitName, fileName).
 
 	ExportedEvent ::= (String).
 	ExportedEvent(e.name) :- e is EventDecl, PFile(fileName), e.id.tl.val = fileName.

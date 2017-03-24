@@ -310,148 +310,6 @@
             return true;
         }
 
-        public void AddErrors(ProgramName RootProgramName, QueryResult result, string errorPattern, int locationIndex = -1)
-        {
-            List<Flag> queryFlags;
-            foreach (var p in result.EnumerateProofs(errorPattern, out queryFlags, 1))
-            {
-                if (!p.HasRuleClass(ErrorClassName))
-                {
-                    continue;
-                }
-#if DEBUG_DGML
-
-                graph = new Graph();
-                DumpTermGraph(graph, p.Conclusion);
-#endif
-                var errorMsg = GetMessageFromProof(p);
-                if (locationIndex >= 0)
-                {
-                    int id;
-                    string file;
-                    if (FindIdFromTerm(p.Conclusion.Args[locationIndex], out file, out id) && idToSourceInfo.ContainsKey(file))
-                    {
-                        SourceInfo sourceInfo = idToSourceInfo[file][id];
-                        Span span = sourceInfo.entrySpan;
-                        AddFlag(new Flag(
-                            SeverityKind.Error,
-                            span,
-                            errorMsg,
-                            TypeErrorCode,
-                            span.Program));
-                    }
-                    else
-                    {
-                        foreach (var loc in p.ComputeLocators())
-                        {
-                            var exprLoc = loc[locationIndex];
-                            AddFlag(new Flag(
-                                SeverityKind.Error,
-                                exprLoc.Span,
-                                errorMsg,
-                                TypeErrorCode,
-                                exprLoc.Span.Program));
-                        }
-                    }
-                }
-                else
-                {
-                    AddFlag(new Flag(
-                        SeverityKind.Error,
-                        default(Span),
-                        errorMsg,
-                        TypeErrorCode,
-                        RootProgramName));
-                }
-            }
-
-            foreach (var f in queryFlags)
-            {
-                AddFlag(f);
-            }
-        }
-
-        private static string GetMessageFromProof(ProofTree p)
-        {
-            foreach (var cls in p.RuleClasses)
-            {
-                if (cls.StartsWith(MsgPrefix))
-                {
-                    return cls.Substring(MsgPrefix.Length).Trim();
-
-                }
-            }
-
-            return "Unknown error";
-        }
-
-        public void AddTerms(
-                    ProgramName RootProgramName,
-                    QueryResult result,
-                    string termPattern,
-                    SeverityKind severity,
-                    int msgCode,
-                    string msgPrefix,
-                    int locationIndex = -1,
-                    int printIndex = -1)
-        {
-            List<Flag> queryFlags;
-            foreach (var p in result.EnumerateProofs(termPattern, out queryFlags, 1))
-            {
-                if (locationIndex >= 0)
-                {
-                    foreach (var loc in p.ComputeLocators())
-                    {
-                        var sw = new System.IO.StringWriter();
-                        sw.Write(msgPrefix);
-                        sw.Write(" ");
-                        if (printIndex < 0)
-                        {
-                            p.Conclusion.PrintTerm(sw);
-                        }
-                        else
-                        {
-                            p.Conclusion.Args[printIndex].PrintTerm(sw);
-                        }
-
-                        var exprLoc = loc[locationIndex];
-                        AddFlag(new Flag(
-                            severity,
-                            exprLoc.Span,
-                            sw.ToString(),
-                            msgCode,
-                            exprLoc.Span.Program));
-                    }
-                }
-                else
-                {
-                    var sw = new System.IO.StringWriter();
-                    sw.Write(msgPrefix);
-                    sw.Write(" ");
-                    if (printIndex < 0)
-                    {
-                        p.Conclusion.PrintTerm(sw);
-                    }
-                    else
-                    {
-                        p.Conclusion.Args[printIndex].PrintTerm(sw);
-                    }
-
-                    AddFlag(new Flag(
-                        severity,
-                        default(Span),
-                        sw.ToString(),
-                        msgCode,
-                        RootProgramName));
-                }
-            }
-
-            foreach (var f in queryFlags)
-            {
-                AddFlag(f);
-            }
-        }
-
         private struct FlagSorter : IComparer<Flag>
         {
             public int Compare(Flag x, Flag y)
@@ -517,7 +375,7 @@
         private const string AliasPrefix = "p_compiler__";
 
         private Dictionary<string, string> ReservedModuleToLocation;
-        private Dictionary<string, Tuple<AST<Program>, bool>> ManifestPrograms;
+        private HashSet<string> LoadedManifestPrograms;
 
         void InitManifestPrograms()
         {
@@ -529,13 +387,7 @@
             ReservedModuleToLocation.Add(P2InfTypesTransform, "PWithInferredTypes.4ml");
             ReservedModuleToLocation.Add(P2CTransform, "P2CProgram.4ml");
 
-            ManifestPrograms = new Dictionary<string, Tuple<AST<Program>, bool>>();
-            ManifestPrograms["Pc.Domains.P.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P.4ml", "P.4ml"), false);
-            ManifestPrograms["Pc.Domains.PLink.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.PLink.4ml", "PLink.4ml"), false);
-            ManifestPrograms["Pc.Domains.C.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.C.4ml", "C.4ml"), false);
-            ManifestPrograms["Pc.Domains.Zing.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.Zing.4ml", "Zing.4ml"), false);
-            ManifestPrograms["Pc.Domains.PWithInferredTypes.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.PWithInferredTypes.4ml", "PWithInferredTypes.4ml"), false);
-            ManifestPrograms["Pc.Domains.P2CProgram.4ml"] = Tuple.Create<AST<Program>, bool>(ParseManifestProgram("Pc.Domains.P2CProgram.4ml", "P2CProgram.4ml"), false);
+            LoadedManifestPrograms = new HashSet<string>();
         }
 
         public ICompilerOutput Log { get; set; }
@@ -577,244 +429,62 @@
             options.eraseModel = options.compilerOutput != CompilerOutput.C0;
             this.Log = log;
             this.Options = options;
-            //this.errorReporter = new ErrorReporter();
-            return CompileAllFiles();
-        }
-
-        private bool CompileAllFiles()
-        {
-            if (Options.compilerOutput == CompilerOutput.Zing)
+            this.errorReporter = new ErrorReporter();
+            PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
+            PProgram parsedProgram = new PProgram();
+            List<ProgramName> inputProgramNames = new List<ProgramName>();
+            foreach (var inputFileName in Options.inputFileNames)
             {
-                foreach (var inputFileName in Options.inputFileNames)
+                ProgramName inputProgramName;
+                ParsePProgram(topDeclNames, parsedProgram, inputFileName, out inputProgramName);
+                if (inputProgramName != null)
                 {
-                    errorReporter = new ErrorReporter();
-                    var result = InternalCompile(inputFileName);
-                    errorReporter.PrintErrors(Log, Options);
-                    if (!result)
-                    {
-                        Log.WriteMessage("Compilation failed", SeverityKind.Error);
-                        return false;
-                    }
+                    inputProgramNames.Add(inputProgramName);
                 }
             }
-            else
+            if (errorReporter.errors.Count > 0)
             {
-                Stack<string> importChainOfPFiles = new Stack<string>();
-                HashSet<string> visitedPFiles = CreateFileSystemHashSet();
-                HashSet<string> wasRecentlyCompiled = new HashSet<string>();
-                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-                if (!Directory.Exists(outputDirName))
-                {
-                    Directory.CreateDirectory(outputDirName);
-                }
-                foreach (var fileName in Options.inputFileNames)
-                {
-                    var inputFileName = Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, fileName));
-                    if (visitedPFiles.Contains(inputFileName)) continue;
-                    errorReporter = new ErrorReporter();
-                    var result = InternalCompile2(outputDirName, inputFileName, importChainOfPFiles, visitedPFiles, wasRecentlyCompiled);
-                    errorReporter.PrintErrors(Log, Options);
-                    if (!result)
-                    {
-                        Log.WriteMessage("Compilation failed", SeverityKind.Error);
-                        return false;
-                    }
-                }
-            }
-            return true;
-        }
-
-        private HashSet<string> CreateFileSystemHashSet()
-        {
-            return new HashSet<string>(IsFileSystemCaseInsensitive() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
-        }
-
-        static bool? _isFileSystemCaseInsensitive;
-
-        public bool IsFileSystemCaseInsensitive()
-        {
-            if (!_isFileSystemCaseInsensitive.HasValue)
-            {
-                string fileUpperCase = Path.GetTempPath() + "TEST 4481D0EF-9458-4CA0-802B-DD706A811E3B";
-                string fileLowerCase = Path.GetTempPath() + "test 4481d0ef-9458-4ca0-802b-dd706a811e3b";
-
-                if (File.Exists(fileUpperCase))
-                {
-                    File.Delete(fileUpperCase);
-                }
-                File.CreateText(fileLowerCase).Close();
-                _isFileSystemCaseInsensitive = File.Exists(fileUpperCase);
-                File.Delete(fileLowerCase);
-            }
-            return _isFileSystemCaseInsensitive.Value;
-        }
-
-        public bool ParsePProgram2(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out List<string> importedPFiles)
-        {
-            parsedProgram = new PProgram();
-            RootProgramName = null;
-            importedPFiles = null;
-            using (this.Profiler.Start("Compiler parsing", Path.GetFileName(inputFileName)))
-            {
-                try
-                {
-                    RootProgramName = new ProgramName(inputFileName);
-                }
-                catch (Exception e)
-                {
-                    errorReporter.AddFlag(
-                        new Flag(
-                            SeverityKind.Error,
-                            default(Span),
-                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
-                            Constants.BadFile.Code));
-                    return false;
-                }
-                PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
-                List<Flag> parserFlags;
-                var parser = new Parser.PParser();
-                List<string> includedFiles;
-                var result = parser.ParseFile(RootProgramName, Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags, out includedFiles);
-                foreach (Flag f in parserFlags)
-                {
-                    errorReporter.AddFlag(f);
-                }
-                if (!result)
-                {
-                    RootProgramName = null;
-                    return false;
-                }
-                importedPFiles = new List<string>();
-                string inputDirectoryName = Path.GetDirectoryName(Path.GetFullPath(inputFileName));
-                foreach (var fileName in includedFiles)
-                {
-                    string fullFileName = Path.GetFullPath(Path.Combine(inputDirectoryName, fileName));
-                    importedPFiles.Add(fullFileName);
-                }
-                return true;
-            }
-        }
-
-        public bool ParsePProgram(string inputFileName, out PProgram parsedProgram, out ProgramName RootProgramName, out bool fileOrDependChanged)
-        {
-            fileOrDependChanged = false;
-            parsedProgram = new PProgram();
-            using (this.Profiler.Start("Compiler parsing", Path.GetFileName(inputFileName)))
-            {
-                try
-                {
-                    RootProgramName = new ProgramName(Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, inputFileName)));
-                }
-                catch (Exception e)
-                {
-                    errorReporter.AddFlag(
-                        new Flag(
-                            SeverityKind.Error,
-                            default(Span),
-                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
-                            Constants.BadFile.Code));
-                    RootProgramName = null;
-                    return false;
-                }
-
-                PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
-                Dictionary<string, ProgramName> SeenFileNames = new Dictionary<string, ProgramName>(StringComparer.OrdinalIgnoreCase);
-                Queue<string> parserWorkQueue = new Queue<string>();
-                var RootFileName = RootProgramName.ToString();
-                SeenFileNames[RootFileName] = RootProgramName;
-                parserWorkQueue.Enqueue(RootFileName);
-                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-                if (!Directory.Exists(outputDirName))
-                {
-                    Directory.CreateDirectory(outputDirName);
-                }
-                var root4mlFilePath = Path.Combine(outputDirName, Path.ChangeExtension(Path.GetFileName(RootFileName), ".4ml"));
-                var lastCompileTime = File.Exists(root4mlFilePath) ? File.GetLastWriteTime(root4mlFilePath) : DateTime.MinValue;
-                while (parserWorkQueue.Count > 0)
-                {
-                    List<string> includedFileNames;
-                    List<Flag> parserFlags;
-                    string currFileName = parserWorkQueue.Dequeue();
-                    var parser = new Parser.PParser();
-                    var result = parser.ParseFile(SeenFileNames[currFileName], Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags, out includedFileNames);
-                    foreach (Flag f in parserFlags)
-                    {
-                        errorReporter.AddFlag(f);
-                    }
-                    if (!result)
-                    {
-                        RootProgramName = null;
-                        return false;
-                    }
-
-                    //check if the parsed file has changed
-                    fileOrDependChanged = fileOrDependChanged | CheckIfPFileShouldBeCompiled(currFileName, lastCompileTime);
-
-                    string currDirectoryName = Path.GetDirectoryName(Path.GetFullPath(currFileName));
-                    foreach (var fileName in includedFileNames)
-                    {
-                        string fullFileName = Path.GetFullPath(Path.Combine(currDirectoryName, fileName));
-                        ProgramName programName;
-                        if (SeenFileNames.ContainsKey(fullFileName)) continue;
-                        try
-                        {
-                            programName = new ProgramName(fullFileName);
-                        }
-                        catch (Exception e)
-                        {
-                            errorReporter.AddFlag(
-                                new Flag(
-                                    SeverityKind.Error,
-                                    default(Span),
-                                    Constants.BadFile.ToString(string.Format("{0} : {1}", fullFileName, e.Message)),
-                                    Constants.BadFile.Code));
-                            RootProgramName = null;
-                            return false;
-                        }
-                        SeenFileNames[fullFileName] = programName;
-                        parserWorkQueue.Enqueue(fullFileName);
-                    }
-                }
-            }
-            return true;
-        }
-
-        bool CheckIfPFileShouldBeCompiled(string fullPFilePath, DateTime lastCompileTime)
-        {
-            var lastWriteTimePFile = File.GetLastWriteTime(fullPFilePath);
-            if (DateTime.Compare(lastWriteTimePFile, lastCompileTime) < 0)
-            {
+                errorReporter.PrintErrors(Log, Options);
+                Log.WriteMessage("Compilation failed", SeverityKind.Error);
                 return false;
             }
-            else
+            string outputDirName = Options.outputDir;
+            if (!Directory.Exists(outputDirName))
             {
-                return true;
+                Directory.CreateDirectory(outputDirName);
             }
-        }
+            string unitFileName = Options.unitName;
+            ProgramName unitProgramName = new ProgramName(unitFileName);
+            AST<Program> unitProgram;
+            AST<Model> unitModel;
 
-        void InstallProgram(string inputFileName, PProgram parsedProgram, ProgramName RootProgramName, List<string> imported4mlFiles, out AST<Model> RootModel)
-        {
-            using (this.Profiler.Start("Compiler installing", Path.GetFileName(inputFileName)))
+            using (this.Profiler.Start("Compiler installing", Path.GetFileName(unitFileName)))
             {
-                //// Step 0. Load P.4ml.
-                LoadManifestProgram("Pc.Domains.P.4ml");
+                // Load all dependencies of P.4ml in order
+                LoadManifestProgram("P.4ml");
 
-                //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
-                AST<Model> rootModel = null;
+                // Serialize the parsed object graph into a Formula model and install it. Should not fail.
                 var mkModelResult = Factory.Instance.MkModel(
-                    MkSafeModuleName(RootProgramName.ToString()),
+                    MkSafeModuleName(unitProgramName.ToString()),
                     PDomain,
                     parsedProgram.Terms,
-                    out rootModel,
+                    out unitModel,
                     null,
                     MkReservedModuleLocation(PDomain),
                     ComposeKind.None);
                 Contract.Assert(mkModelResult);
 
-                var PFileTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PFile"));
-                PFileTerm = Factory.Instance.AddArg(PFileTerm, Factory.Instance.MkCnst(RootProgramName.Uri.LocalPath));
-                rootModel = Factory.Instance.AddFact(rootModel, Factory.Instance.MkModelFact(null, PFileTerm));
-                foreach (var fileName in imported4mlFiles)
+                var PUnitTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PUnit"));
+                PUnitTerm = Factory.Instance.AddArg(PUnitTerm, Factory.Instance.MkCnst(unitProgramName.Uri.LocalPath));
+                unitModel = Factory.Instance.AddFact(unitModel, Factory.Instance.MkModelFact(null, PUnitTerm));
+                foreach (var inputProgramName in inputProgramNames)
+                {
+                    var PUnitContainsTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PUnitContains"));
+                    PUnitContainsTerm = Factory.Instance.AddArg(PUnitContainsTerm, Factory.Instance.MkCnst(unitProgramName.Uri.LocalPath));
+                    PUnitContainsTerm = Factory.Instance.AddArg(PUnitContainsTerm, Factory.Instance.MkCnst(inputProgramName.Uri.LocalPath));
+                    unitModel = Factory.Instance.AddFact(unitModel, Factory.Instance.MkModelFact(null, PUnitContainsTerm));
+                }
+                foreach (var fileName in Options.dependencies)
                 {
                     var program = ParseFormulaFile(fileName);
                     program.FindAll(
@@ -837,26 +507,95 @@
                                 ftName == "FunProtoDecl" ||
                                 ftName == "MachineProtoDecl")
                             {
-                                rootModel = Factory.Instance.AddFact(rootModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
+                                unitModel = Factory.Instance.AddFact(unitModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
                             }
                         });
+                    var DependsOnTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("DependsOn"));
+                    DependsOnTerm = Factory.Instance.AddArg(DependsOnTerm, Factory.Instance.MkCnst(unitProgramName.Uri.LocalPath));
+                    DependsOnTerm = Factory.Instance.AddArg(DependsOnTerm, Factory.Instance.MkCnst(program.Node.Name.Uri.LocalPath));
+                    unitModel = Factory.Instance.AddFact(unitModel, Factory.Instance.MkModelFact(null, DependsOnTerm));
                 }
 
                 InstallResult instResult;
-                AST<Program> modelProgram = MkProgWithSettings(RootProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+                unitProgram = MkProgWithSettings(unitProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
                 // CompilerEnv only expects one call to Install at a time.
-                bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(modelProgram, rootModel), out instResult);
+                bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(unitProgram, unitModel), out instResult);
                 Contract.Assert(progressed && instResult.Succeeded, GetFirstMessage(from t in instResult.Flags select t.Item2));
 
                 if (Options.outputFormula)
                 {
-                    string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
-                    StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.GetFileName(inputFileName) + ".4ml")));
-                    rootModel.Print(wr);
+                    StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.GetFileName(unitFileName) + ".4ml")));
+                    unitModel.Print(wr);
                     wr.Close();
                 }
+            }
 
-                RootModel = rootModel;
+            bool rc;
+            if (Options.compilerOutput == CompilerOutput.Zing)
+            {
+                rc = GenerateZing(unitProgramName, unitModel, errorReporter.idToSourceInfo);
+            }
+            else
+            {
+                rc = GenerateCode(unitProgramName, unitModel, Options.dependencies, errorReporter.idToSourceInfo);
+            }
+            UninstallProgram(unitProgramName);
+            errorReporter.PrintErrors(Log, Options);
+            if (!rc)
+            {
+                Log.WriteMessage("Compilation failed", SeverityKind.Error);
+            }
+            return rc;
+        }
+
+        private static bool isFileSystemCaseInsensitive;
+
+        public static bool IsFileSystemCaseInsensitive
+        {
+            get
+            {
+                return isFileSystemCaseInsensitive;
+            }
+        }
+
+        static Compiler()
+        {
+            string fileUpperCase = Path.GetTempPath() + "TEST 4481D0EF-9458-4CA0-802B-DD706A811E3B";
+            string fileLowerCase = Path.GetTempPath() + "test 4481d0ef-9458-4ca0-802b-dd706a811e3b";
+            if (File.Exists(fileUpperCase))
+            {
+                File.Delete(fileUpperCase);
+            }
+            File.CreateText(fileLowerCase).Close();
+            isFileSystemCaseInsensitive = File.Exists(fileUpperCase);
+            File.Delete(fileLowerCase);
+        }
+
+        public void ParsePProgram(PProgramTopDeclNames topDeclNames, PProgram parsedProgram, string inputFileName, out ProgramName inputProgramName)
+        {
+            inputProgramName = null;
+            using (this.Profiler.Start("Compiler parsing", Path.GetFileName(inputFileName)))
+            {
+                try
+                {
+                    inputProgramName = new ProgramName(inputFileName);
+                    List<Flag> parserFlags;
+                    var parser = new Parser.PParser();
+                    var result = parser.ParseFile(inputProgramName, Options, topDeclNames, parsedProgram, errorReporter.idToSourceInfo, out parserFlags);
+                    foreach (Flag f in parserFlags)
+                    {
+                        errorReporter.AddFlag(f);
+                    }
+                }
+                catch (Exception e)
+                {
+                    errorReporter.AddFlag(
+                        new Flag(
+                            SeverityKind.Error,
+                            default(Span),
+                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                            Constants.BadFile.Code));
+                }
             }
         }
 
@@ -865,89 +604,6 @@
             InstallResult uninstallResult;
             var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { programName }, out uninstallResult);
             Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
-        }
-
-        bool InternalCompile2(string outputDirName, string inputFileName, Stack<string> importChainOfPFiles, HashSet<string> visitedPFiles, HashSet<string> wasRecentlyCompiled)
-        {
-            if (importChainOfPFiles.Contains(inputFileName))
-            {
-                Log.WriteMessage("Circular dependency", SeverityKind.Error);
-                return false;
-            }
-            importChainOfPFiles.Push(inputFileName);
-            PProgram parsedProgram;
-            ProgramName RootProgramName;
-            List<string> importedPFiles;
-            if (!ParsePProgram2(inputFileName, out parsedProgram, out RootProgramName, out importedPFiles))
-            {
-                return false;
-            }
-            var RootFileName = RootProgramName.ToString();
-            var root4mlFilePath = Path.Combine(outputDirName, Path.ChangeExtension(Path.GetFileName(RootFileName), ".4ml"));
-            var lastCompileTime = File.Exists(root4mlFilePath) ? File.GetLastWriteTime(root4mlFilePath) : DateTime.MinValue;
-            bool compileInputFile = CheckIfPFileShouldBeCompiled(inputFileName, lastCompileTime);
-            foreach (var f in importedPFiles)
-            {
-                if (!visitedPFiles.Contains(f))
-                {
-                    if (!InternalCompile2(outputDirName, f, importChainOfPFiles, visitedPFiles, wasRecentlyCompiled))
-                    {
-                        return false;
-                    }
-                }
-                compileInputFile = compileInputFile | wasRecentlyCompiled.Contains(f);
-            }
-
-            if (compileInputFile || Options.rebuild)
-            {
-                List<string> importedFiles = new List<string>();
-                List<string> imported4mlFiles = new List<string>();
-                foreach (var f in importedPFiles)
-                {
-                    importedFiles.Add(Path.GetFileNameWithoutExtension(f));
-                    imported4mlFiles.Add(Path.Combine(outputDirName, Path.ChangeExtension(Path.GetFileName(f), ".4ml")));
-                }
-                AST<Model> RootModel;
-                InstallProgram(inputFileName, parsedProgram, RootProgramName, imported4mlFiles, out RootModel);
-                bool rc = GenerateCode(RootProgramName, RootModel, importedFiles, errorReporter.idToSourceInfo);
-                UninstallProgram(RootProgramName);
-                if (!rc)
-                {
-                    return false;
-                }
-                wasRecentlyCompiled.Add(inputFileName);
-            }
-            else
-            {
-                Log.WriteMessage(string.Format("Reusing summary for file {0} ...", inputFileName), SeverityKind.Info);
-            }
-            visitedPFiles.Add(inputFileName);
-            importChainOfPFiles.Pop();
-            return true;
-        }
-
-        bool InternalCompile(string inputFileName)
-        {
-            PProgram parsedProgram;
-            ProgramName RootProgramName;
-            AST<Model> RootModel;
-            bool doCompileFile = false;
-            if (!ParsePProgram(inputFileName, out parsedProgram, out RootProgramName, out doCompileFile))
-            {
-                return false;
-            }
-
-            //If file has not changed and no rebuild required.
-            if (!(doCompileFile || Options.rebuild))
-            {
-                Log.WriteMessage(string.Format("ignoring file {0} ...", inputFileName), SeverityKind.Info);
-                return true;
-            }
-
-            InstallProgram(inputFileName, parsedProgram, RootProgramName, new List<string>(), out RootModel);
-            bool rc = GenerateZing(RootProgramName, RootModel, errorReporter.idToSourceInfo);
-            UninstallProgram(RootProgramName);
-            return rc;
         }
 
         public static string GetFirstMessage(IEnumerable<Flag> flags)
@@ -977,11 +633,13 @@
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            string outputDirName = Options.outputDir;
 
             using (this.Profiler.Start("Generating Zing", zingFileName))
             {
-                LoadManifestProgram("Pc.Domains.Zing.4ml");
+                // Load all dependencies of Zing.4ml in order
+                LoadManifestProgram("Zing.4ml");
+
                 zingModel = MkZingOutputModel();
                 var pToZing = new PToZing(this, RootModelWithTypes, idToSourceInfo);
                 bool success = pToZing.GenerateZing(zingFileName, ref zingModel);
@@ -1169,7 +827,10 @@
 
         private bool CreateRootModelWithTypes(ProgramName RootProgramName, AST<Model> RootModel, out ProgramName RootProgramNameWithTypes, out AST<Model> RootModelWithTypes)
         {
-            LoadManifestProgram("Pc.Domains.PWithInferredTypes.4ml");
+            // Load all dependenciesof PWithInferredTypes.4ml in order
+            LoadManifestProgram("P.4ml");
+            LoadManifestProgram("PWithInferredTypes.4ml");
+
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(P2InfTypesTransform, null, MkReservedModuleLocation(P2InfTypesTransform)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(RootModel.Node.Name, null, RootProgramName.ToString()));
             var RootModuleWithTypes = RootModel.Node.Name + "_WithTypes";
@@ -1190,77 +851,6 @@
                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
             Contract.Assert(RootModelWithTypes != null);
             return AddCompilerErrorFlags(extractTask.Result);
-        }
-
-        /// <summary>
-        /// Run static analysis on the program.
-        /// </summary>
-        private bool Check(ProgramName RootProgramName, string inputModule)
-        {
-            Task<QueryResult> task;
-
-            using (this.Profiler.Start("Compiler analyzing", Path.GetFileName(inputModule)))
-            {
-                //// Run static analysis on input program.
-                List<Flag> queryFlags;
-                Formula.Common.Rules.ExecuterStatistics stats;
-
-                var canStart = CompilerEnv.Query(
-                    RootProgramName,
-                    inputModule,
-                    new AST<Body>[] { Factory.Instance.AddConjunct(Factory.Instance.MkBody(), Factory.Instance.MkFind(null, Factory.Instance.MkId(inputModule + ".requires"))) },
-                    true,
-                    false,
-                    out queryFlags,
-                    out task,
-                    out stats);
-                Contract.Assert(canStart);
-                if (canStart)
-                {
-                    foreach (Flag f in queryFlags)
-                    {
-                        errorReporter.AddFlag(f);
-                    }
-                    task.RunSynchronously();
-                }
-                else
-                {
-                    MessageBox.Show("Debug me !!!");
-                    throw new Exception("Compiler.Query cannot start, is another compile running in parallel?");
-                }
-            }
-
-            // Enumerate typing errors
-            using (this.Profiler.Start("Compiler error reporting", Path.GetFileName(inputModule)))
-            {
-                errorReporter.AddErrors(RootProgramName, task.Result, "DupNmdSubE(_, _, _, _)", 1);
-                errorReporter.AddErrors(RootProgramName, task.Result, "PurityError(_, _)", 1);
-                errorReporter.AddErrors(RootProgramName, task.Result, "SpecError(_, _)", 1);
-                errorReporter.AddErrors(RootProgramName, task.Result, "LValueError(_, _)", 1);
-                errorReporter.AddErrors(RootProgramName, task.Result, "BadLabelError(_)", 0);
-                errorReporter.AddErrors(RootProgramName, task.Result, "PayloadError(_)", 0);
-                errorReporter.AddErrors(RootProgramName, task.Result, "TypeDefError(_)", 0);
-                errorReporter.AddErrors(RootProgramName, task.Result, "FunRetError(_)", 0);
-
-                errorReporter.AddErrors(RootProgramName, task.Result, "QualifierError(_, _, _)", 2);
-                errorReporter.AddErrors(RootProgramName, task.Result, "UnavailableVarAccessError(_, _, _)", 1);
-                errorReporter.AddErrors(RootProgramName, task.Result, "UnavailableParameterError(_, _)", 0);
-
-                //// Enumerate structural errors
-                errorReporter.AddErrors(RootProgramName, task.Result, "OneDeclError(_)", 0);
-                errorReporter.AddErrors(RootProgramName, task.Result, "TwoDeclError(_, _)", 1);
-                errorReporter.AddErrors(RootProgramName, task.Result, "DeclFunError(_, _)", 1);
-                errorReporter.AddErrors(RootProgramName, task.Result, "ExportInterfaceError(_)", 0);
-
-                // this one is slow, so we do it last.
-                errorReporter.AddErrors(RootProgramName, task.Result, "TypeOf(_, _, ERROR)", 1);
-
-                if (Options.printTypeInference)
-                {
-                    errorReporter.AddTerms(RootProgramName, task.Result, "TypeOf(_, _, _)", SeverityKind.Info, 0, "inferred type: ", 1, 2);
-                }
-            }
-            return task.Result.Conclusion == LiftedBool.True;
         }
 
 #if DEBUG_DGML
@@ -1321,15 +911,14 @@
             return (AST<Program>)Factory.Instance.ToAST(config.Root);
         }
 
-        private void LoadManifestProgram(string manifestName)
+        private void LoadManifestProgram(string programName)
         {
-            // ManifestPrograms is a static field; so lock must be held while reading and updating it.
-            lock (ManifestPrograms)
+            string manifestName = "Pc.Domains." + programName;
+            lock (LoadedManifestPrograms)
             {
                 InstallResult result;
-                var tuple = ManifestPrograms[manifestName];
-                if (tuple.Item2) return;
-                var program = tuple.Item1;
+                if (LoadedManifestPrograms.Contains(programName)) return;
+                var program = ParseManifestProgram(manifestName, programName);
                 CompilerEnv.Install(program, out result);
 
                 if (!result.Succeeded)
@@ -1342,7 +931,7 @@
                     }
                     throw new Exception("Error: Could not load resources");
                 }
-                ManifestPrograms[manifestName] = Tuple.Create<AST<Program>, bool>(program, true);
+                LoadedManifestPrograms.Add(programName);
             }
         }
 
@@ -1428,16 +1017,19 @@
         }
 
         public bool GenerateCode(
-            ProgramName RootProgramName, 
-            AST<Model> RootModel, 
-            List<string> importedFiles, 
+            ProgramName RootProgramName,
+            AST<Model> RootModel,
+            List<string> importedFiles,
             Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
             {
-                LoadManifestProgram("Pc.Domains.C.4ml");
-                LoadManifestProgram("Pc.Domains.PLink.4ml");
-                LoadManifestProgram("Pc.Domains.P2CProgram.4ml");
+                // Load all dependencies of P2CProgram.4ml in order
+                LoadManifestProgram("P.4ml");
+                LoadManifestProgram("C.4ml");
+                LoadManifestProgram("PLink.4ml");
+                LoadManifestProgram("PWithInferredTypes.4ml");
+                LoadManifestProgram("P2CProgram.4ml");
                 return InternalGenerateCode(RootProgramName, RootModel, importedFiles, idToSourceInfo);
             }
         }
@@ -1454,8 +1046,8 @@
         }
 
         bool InternalGenerateCode(
-            ProgramName RootProgramName, 
-            AST<Model> RootModel, 
+            ProgramName RootProgramName,
+            AST<Model> RootModel,
             List<string> importedFiles,
             Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
@@ -1526,7 +1118,7 @@
                 Contract.Assert(linkModel != null);
                 string outputFileName = Path.ChangeExtension(fileName, ".4ml");
                 Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
-                string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                string outputDirName = Options.outputDir;
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
                 linkModel.Print(wr);
                 wr.Close();
@@ -1675,14 +1267,14 @@
             try
             {
                 // compile the P file into formula file 
-                var plinkFile = options.PFiles.Count == 1 ? options.PFiles.First() : "";
+                var plinkFile = options.inputFileNames.Count == 1 ? options.inputFileNames[0] : "";
 
                 using (this.Profiler.Start("Linker parsing", Path.GetFileName(plinkFile)))
                 {
                     LProgram linkProgram;
                     ProgramName RootProgramName;
                     AST<Model> RootModel = null;
-                    if (options.PFiles.Count == 1)
+                    if (options.inputFileNames.Count == 1)
                     {
                         if (!ParseLinkProgram(plinkFile, out linkProgram, out RootProgramName))
                         {
@@ -1691,8 +1283,9 @@
                             return false;
                         }
 
-                        //// Step 0. Load PLink.4ml.
-                        LoadManifestProgram("Pc.Domains.PLink.4ml");
+                        //// Step 0. Load all dependencies of PLink.4ml in order
+                        LoadManifestProgram("C.4ml");
+                        LoadManifestProgram("PLink.4ml");
 
                         //// Step 1. Serialize the parsed object graph into a Formula model and install it. Should not fail.
                         var mkModelResult = Factory.Instance.MkModel(
@@ -1718,7 +1311,7 @@
                                 linkModel = Factory.Instance.AddFact(linkModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
                             });
                     }
-                    foreach (var fileName in options.FormulaFiles)
+                    foreach (var fileName in options.dependencies)
                     {
                         var program = ParseFormulaFile(fileName);
                         program.FindAll(
@@ -1736,7 +1329,7 @@
                     // Dump out the formula file corresponding to linker
                     if (options.outputFormula)
                     {
-                        string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+                        string outputDirName = Options.outputDir;
                         StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "output.4ml")));
                         linkModel.Print(wr);
                         wr.Close();
@@ -1786,7 +1379,7 @@
             extractTask.Wait();
             var errorProgram = extractTask.Result;
             Contract.Assert(errorProgram != null);
-            string outputDirName = Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir;
+            string outputDirName = Options.outputDir;
             if (Options.outputFormula)
             {
                 StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, "outputError.4ml")));
@@ -1803,7 +1396,7 @@
                 return false;
             }
 
-            var linker = new PToCSharpLinker(Log, errorProgram, Options.FormulaFiles.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
+            var linker = new PToCSharpLinker(Log, errorProgram, Options.dependencies.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
             linker.GenerateCSharpLinkerOutput(outputDirName);
 
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
@@ -1962,7 +1555,7 @@
             {
                 it.MoveNext();
                 shortFileName = filePrefix + ((Cnst)it.Current).GetStringValue();
-                fileName = Path.Combine(Options.outputDir == null ? Environment.CurrentDirectory : Options.outputDir, shortFileName);
+                fileName = Path.Combine(Options.outputDir, shortFileName);
                 it.MoveNext();
                 fileBody = (Quote)it.Current;
             }

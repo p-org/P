@@ -1,7 +1,3 @@
-//Functions for interacting with the timer machine
-#include "timer.p"
-#include "events.p" 
-
 // PingPong.p 
 event PING assert 1: machine; 
 event PONG assert 1; 

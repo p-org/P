@@ -1,4 +1,4 @@
-#include "Driver.h"
+#include "FailureDetector.h"
 
 static PRT_UINT32 numTimerInstances = 0;
 typedef struct TimerContext {
@@ -66,7 +66,7 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 	state.machineName = "Timer";
 	state.stateId = 1;
 	state.stateName = "Tick";
-	PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_MOVE, timerId);
+	PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_MOVE, &timerId);
 	PrtFreeValue(ev);
 }
 

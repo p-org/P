@@ -65,7 +65,6 @@
         private ProgramName parseSource;
         private List<Flag> parseFlags;
         private PProgram parseProgram;
-        private List<string> parseIncludedFileNames;
 
         private bool parseFailed = false;
 
@@ -326,14 +325,12 @@
             PProgramTopDeclNames topDeclNames,
             PProgram program,
             Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo,
-            out List<Flag> flags,
-            out List<string> includedFileNames)
+            out List<Flag> flags)
         {
             flags = parseFlags = new List<Flag>();
             this.PPTopDeclNames = topDeclNames;
             parseProgram = program;
             this.idToSourceInfo = idToSourceInfo;
-            includedFileNames = parseIncludedFileNames = new List<string>();
             parseSource = file;
             Options = options;
             bool result;
@@ -1470,13 +1467,6 @@
                 modelType.id = (P_Root.IArgType_ModelType__1)MkUniqueId(nameSpan);
                 parseProgram.Add(modelType);
             }
-        }
-
-        private void AddDependency(string fileName)
-        {
-            var depends = P_Root.MkDependsOn();
-            depends.d = MkString(fileName, Span.Unknown);
-            parseProgram.Add(depends);
         }
 
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)

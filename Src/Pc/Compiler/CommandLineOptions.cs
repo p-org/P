@@ -4,16 +4,12 @@
     using System.IO;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
-    using System.Threading.Tasks;
 
-    using Domains;
-    using Microsoft.Formula.API;
-    using Microsoft.Formula.API.Generators;
-    using Microsoft.Formula.API.Nodes;
-    
     public class CommandLineOptions
     {
+        // XMLSerializer is used to serialize an instance of this class to communicate 
+        // between pc.exe and pcompilerservice.exe.  Use XmlIgnore attribute if you do not want 
+        // a field to be communicated across.
         public bool profile { get; set; }
         public LivenessOption liveness { get; set; }
         public string outputDir { get; set; }
@@ -22,28 +18,11 @@
         public bool printTypeInference { get; set; }
         public CompilerOutput compilerOutput { get; set; }
         public List<string> inputFileNames { get; set; }
+        public List<string> dependencies { get; set; }
+        public string unitName { get; set; }
         public bool eraseModel { get; set; } // set internally
-        public bool generateSourceInfo { get; set; } // not supported currently
         public bool compilerService { get; set; } // whether to use the compiler service.
         public string compilerId { get; set; } // for internal use only.
-        //linker phase
-        public bool isLinkerPhase { get; set; }
-        public bool rebuild { get; set; }
-        //get p file
-        public List<string> PFiles {
-            get
-            {
-                return inputFileNames.Where(f => f.EndsWith(".p")).ToList();
-            }
-        }
-
-        public List<string> FormulaFiles
-        {
-            get
-            {
-                return inputFileNames.Where(f => f.EndsWith(".4ml")).ToList();
-            }
-        }
 
         public CommandLineOptions()
         {
@@ -56,14 +35,17 @@
             printTypeInference = false;
             compilerOutput = CompilerOutput.C0;
             inputFileNames = new List<string>();
+            dependencies = new List<string>();
+            unitName = null;
             compilerService = false;
-            isLinkerPhase = false;
-            rebuild = false;
         }
 
         public bool ParseArguments(IEnumerable<string> args)
         {
             List<string> commandLineFileNames = new List<string>();
+            List<string> dependencyFileNames = new List<string>();
+            string targetName = null;
+            bool isLinkerPhase = false;
             foreach (string x in args)
             {
                 string arg = x;
@@ -97,16 +79,44 @@
                         case "printtypeinference":
                             printTypeInference = true;
                             break;
+
                         case "link":
                             isLinkerPhase = true;
                             break;
-                        case "rebuild":
-                            rebuild = true;
+
+                        case "r":
+                        case "reference":
+                            if (colonArg == null)
+                            {
+                                Console.WriteLine("Missing reference, expecting a .4ml file");
+                                return false;
+                            }
+                            else
+                            {
+                                dependencyFileNames.Add(colonArg);
+                            }
                             break;
+
+                        case "t":
+                        case "target":
+                            if (colonArg == null)
+                            {
+                                Console.WriteLine("Missing target name, expecting a .4ml file");
+                            }
+                            else if (targetName == null)
+                            {
+                                targetName = colonArg;
+                            }
+                            else
+                            {
+                                Console.WriteLine("Only one target must be specified");
+                            }
+                            break;
+
                         case "generate":
                             if (colonArg == null)
                             {
-                                Console.WriteLine("Missing generation argument, expecting one of generate:C0, C#, or Zing");
+                                Console.WriteLine("Missing generation argument, expecting generate:[C0,C#,Zing]");
                                 return false;
                             }
                             else if (colonArg == "C0")
@@ -156,37 +166,133 @@
                 }
             }
 
-            if (commandLineFileNames.Count == 0)
+            if (compilerOutput == CompilerOutput.Zing && dependencyFileNames.Count > 0)
             {
-                Console.WriteLine("Must provide files to compile");
+                Console.WriteLine("Compilation to Zing does not support dependencies");
                 return false;
-            }
-            //populate the input files
-            foreach (var inputFileName in commandLineFileNames)
-            {
-                if (!(inputFileName != null && inputFileName.Length > 2 && (inputFileName.EndsWith(".p") || inputFileName.EndsWith(".4ml"))))
-                {
-                    Console.WriteLine("Illegal source file name: {0}", inputFileName);
-                    return false;
-                }
-                if (!File.Exists(inputFileName))
-                {
-                    Console.WriteLine("File does not exist: {0}", inputFileName);
-                    return false;
-                }
-                inputFileNames.Add(Path.GetFullPath(inputFileName));
             }
 
-            //check if the files are correct with respect to the compiler phase
-            if(!isLinkerPhase && FormulaFiles.Count() > 0)
+            bool fileCheck = true;
+
+            // target name should be legal .4ml file name
+            if (targetName != null)
             {
-                Console.WriteLine(".4ml file not expected as input without /link option");
+                string fullPathName;
+                if (IsLegal4mlFile(targetName, out fullPathName))
+                {
+                    targetName = fullPathName;
+                }
+                else
+                {
+                    fileCheck = false;
+                }
+            }
+
+            // Each command line file name must be a legal P file name
+            foreach (var inputFileName in commandLineFileNames)
+            {
+                string fullPathName;
+                if (IsLegalPFile(inputFileName, out fullPathName))
+                {
+                    inputFileNames.Add(fullPathName);
+                }
+                else
+                {
+                    fileCheck = false;
+                }
+            }
+
+            // Each dependency file name must be a legal .4ml file name
+            foreach (var dependencyFileName in dependencyFileNames)
+            {
+                string fullPathName;
+                if (IsLegal4mlFile(dependencyFileName, out fullPathName))
+                {
+                    dependencies.Add(fullPathName);
+                }
+                else
+                {
+                    fileCheck = false;
+                }
+            }
+
+            // Check that all files exist
+            foreach (var fileName in commandLineFileNames.Union(dependencyFileNames))
+            {
+                if (!File.Exists(fileName))
+                {
+                    Console.WriteLine("File does not exist: {0}", fileName);
+                    fileCheck = false;
+                }
+            }
+
+            if (!fileCheck)
+            {
                 return false;
             }
-            else if(isLinkerPhase && !(PFiles.Count <= 1 && FormulaFiles.Count > 0))
+
+            if (isLinkerPhase)
             {
-                Console.WriteLine("must provide atleast one .4ml file and atmost one .p file with /link option");
+                if (inputFileNames.Count > 1 || dependencies.Count == 0)
+                {
+                    Console.WriteLine("Linking requires at most one .p file and at least one .4ml dependency file");
+                    return false;
+                }
+                compilerOutput = CompilerOutput.Link;
+            }
+            else
+            {
+                if (inputFileNames.Count == 0)
+                {
+                    Console.WriteLine("At least one .p file must be provided");
+                    return false;
+                }
+                if (targetName == null)
+                {
+                    unitName = Path.ChangeExtension(inputFileNames.First(), ".4ml");
+                }
+                else
+                {
+                    unitName = targetName;
+                }
+            }
+
+            if (outputDir == null)
+            {
+                outputDir = Directory.GetCurrentDirectory();
+            }
+
+            return true;
+        }
+
+        private bool IsLegalPFile(string fileName, out string fullPathName)
+        {
+            fullPathName = null;
+            if (fileName.Length <= 2 || !fileName.EndsWith(".p"))
+            {
+                Console.WriteLine("Illegal file name: {0}", fileName);
                 return false;
+            }
+            fullPathName = Path.GetFullPath(fileName);
+            if (Compiler.IsFileSystemCaseInsensitive)
+            {
+                fullPathName = fullPathName.ToLowerInvariant();
+            }
+            return true;
+        }
+
+        private bool IsLegal4mlFile(string fileName, out string fullPathName)
+        {
+            fullPathName = null;
+            if (fileName.Length <= 4 || !fileName.EndsWith(".4ml"))
+            {
+                Console.WriteLine("Illegal file name: {0}", fileName);
+                return false;
+            }
+            fullPathName = Path.GetFullPath(fileName);
+            if (Compiler.IsFileSystemCaseInsensitive)
+            {
+                fullPathName = fullPathName.ToLowerInvariant();
             }
             return true;
         }

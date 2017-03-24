@@ -1,6 +1,3 @@
-include "Header.p"
-
-
 machine ServerAbstraction: ServerClientInterface
 receives eRequest;
 sends eResponse;

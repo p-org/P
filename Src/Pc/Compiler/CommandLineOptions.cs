@@ -15,7 +15,6 @@
         public string outputDir { get; set; }
         public bool outputFormula { get; set; }
         public bool shortFileNames { get; set; }
-        public bool printTypeInference { get; set; }
         public CompilerOutput compilerOutput { get; set; }
         public List<string> inputFileNames { get; set; }
         public List<string> dependencies { get; set; }
@@ -32,7 +31,6 @@
             outputDir = null;
             outputFormula = false;
             shortFileNames = false;
-            printTypeInference = false;
             compilerOutput = CompilerOutput.C0;
             inputFileNames = new List<string>();
             dependencies = new List<string>();
@@ -76,17 +74,13 @@
                             outputFormula = true;
                             break;
 
-                        case "printtypeinference":
-                            printTypeInference = true;
-                            break;
-
                         case "link":
                             isLinkerPhase = true;
                             break;
 
                         case "r":
                         case "reference":
-                            if (colonArg == null)
+                            if (colonArg == null)   
                             {
                                 Console.WriteLine("Missing reference, expecting a .4ml file");
                                 return false;

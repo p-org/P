@@ -66,7 +66,6 @@ namespace Microsoft.Pc
                 Console.WriteLine("    Zing: generate Zing");
                 Console.WriteLine("/liveness[:sampling]    -- controls compilation for Zinger");
                 Console.WriteLine("/shortFileNames         -- print only file names in error messages");
-                Console.WriteLine("/printTypeInference     -- dumps compiler type inference information (in formula)");
                 Console.WriteLine("/dumpFormulaModel       -- write the entire formula model to a file named 'output.4ml'");
                 Console.WriteLine(" ------------ Linker Phase ------------");
                 Console.WriteLine("USAGE: Pc.exe [linkfile.p] /link /r:file1.4ml [/r:file2.4ml ...] [options]");

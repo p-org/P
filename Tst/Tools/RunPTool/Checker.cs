@@ -105,28 +105,15 @@ namespace CheckP
             Console.WriteLine("-{0}\tDescriptions of this test", DescrOption);
         }
 
-        void ParsePcArgs(IEnumerable<object> pcArgs, out string fileName, out bool liveness)
+        void ParsePcArgs(IEnumerable<object> pcArgs, out bool liveness)
         {
-            fileName = null;
             liveness = false;
             foreach (string pcArg in pcArgs)
             {
-                if (pcArg.EndsWith(".p"))
-                {
-                    if (fileName != null)
-                    {
-                        throw new Exception("multiple input file names not supported");
-                    }
-                    fileName = Path.GetFullPath(Path.Combine(activeDirectory, pcArg));
-                }
-                else if (pcArg == "/liveness")
+                if (pcArg == "/liveness")
                 {
                     liveness = true;
                 }
-            }
-            if (fileName == null)
-            {
-                throw new Exception("no input file");
             }
         }
 
@@ -270,22 +257,29 @@ namespace CheckP
                             result;
                     result = ValidateOption(opts, ArgsPcOption, true, 1, int.MaxValue, out isArgsPc, out pcArgs) && result;
                     result = ValidateOption(opts, LinkFileOption, true, 1, int.MaxValue, out isLinkOption, out linkFile) && result;
-                    if(isLinkOption && linkFile.Count() > 1)
+                    if (isLinkOption && linkFile.Count() > 1)
                     {
                             throw new Exception("multiple link files are not supported");
                     }
                     tmpWriter.WriteLine("=================================");
                     tmpWriter.WriteLine("         Console output          ");
                     tmpWriter.WriteLine("=================================");
-                    string inputFileName;
                     bool liveness;
-                    ParsePcArgs(pcArgs.Select(x => x.Item2), out inputFileName, out liveness);
+                    ParsePcArgs(pcArgs.Select(x => x.Item2), out liveness);
+                    List<string> pFiles = new List<string>();
+                    foreach (var pFile in Directory.EnumerateFiles(workDirectory, "*.p"))
+                    {
+                        pFiles.Add(Path.GetFullPath(pFile));
+                    }
+                    if (pFiles.Count == 0)
+                    {
+                        throw new Exception("no .p file found in test directory");
+                    }
+                    string inputFileName = pFiles.First();
+                    string linkFileName = Path.ChangeExtension(inputFileName, ".4ml");
 
                     var compileArgs = new CommandLineOptions();
-                    string linkFileName = Path.ChangeExtension(inputFileName, ".4ml");
-                    compileArgs.inputFileNames = new List<string>();
-                    compileArgs.inputFileNames.Add(inputFileName);
-                    compileArgs.compilerOutput = CompilerOutput.CSharp;
+                    compileArgs.inputFileNames = new List<string>(pFiles);
                     compileArgs.shortFileNames = true;
                     compileArgs.outputDir = workDirectory;
                     compileArgs.shortFileNames = true;
@@ -314,9 +308,8 @@ namespace CheckP
                     if (compileResult)
                     {
                         // compile *.p again, this time with Zing option.
-                        compileArgs.inputFileNames.Clear();
+                        compileArgs.inputFileNames = new List<string>(pFiles);
                         compileArgs.dependencies.Clear();
-                        compileArgs.inputFileNames.Add(inputFileName);
                         compileArgs.compilerOutput = CompilerOutput.Zing;
                         if (liveness)
                         {

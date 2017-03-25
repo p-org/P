@@ -1,5 +1,3 @@
-#include "Includes\Node.p"
-
 machine Main {
 
 		    var N1 : machine;

@@ -1,5 +1,3 @@
-include "Header.p"
-
 machine PingDingMachine {
     var pongId: machine;
 

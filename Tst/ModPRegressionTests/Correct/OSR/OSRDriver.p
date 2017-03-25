@@ -1,5 +1,3 @@
-include "Headers.p"
-		
 machine OSRDriverMachine : OSRDriverInterface
 sends eUpdateBarGraphStateUsingControlTransfer, eSetLedStateToStableUsingControlTransfer, 
 eSetLedStateToUnstableUsingControlTransfer, eStartDebounceTimer, eStopTimer;

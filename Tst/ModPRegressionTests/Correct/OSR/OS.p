@@ -1,5 +1,3 @@
-include "Headers.p"
-
 machine SwitchMachine : SwitchInterface
 sends eSwitchStatusChange; 
 creates;

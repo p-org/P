@@ -1,5 +1,3 @@
-include "temp.p"
-
 machine Main {
 	var local: machine;
     start state S {

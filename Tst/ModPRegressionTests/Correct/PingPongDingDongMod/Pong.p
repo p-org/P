@@ -1,5 +1,3 @@
-include "Header.p"
-
 machine PongDongMachine {
 	var pingid: machine;
     start state _Init {

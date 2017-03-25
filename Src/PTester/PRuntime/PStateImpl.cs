@@ -1,13 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-
+using System.Text;
 
 namespace P.Runtime
 {
 
     public abstract class StateImpl : ICloneable
     {
+
         #region Constructors
         /// <summary>
         /// This function is called when the stateimp is loaded first time.
@@ -17,6 +18,8 @@ namespace P.Runtime
             implMachines = new List<PrtImplMachine>();
             specMachinesMap = new Dictionary<string, PrtSpecMachine>();
             exception = null;
+            currentVisibleTrace = new VisibleTrace();
+            errorTrace = new StringBuilder();
         }
         #endregion
 
@@ -55,6 +58,10 @@ namespace P.Runtime
         /// </summary>
         private Exception exception;
 
+        public VisibleTrace currentVisibleTrace;
+        public StringBuilder errorTrace;
+        public static List<string> visibleEvents = new List<string>();
+        public static List<string> visibleInterfaces = new List<string>();
         public delegate PrtImplMachine CreateMachineDelegate(StateImpl application, PrtValue payload);
         public delegate PrtSpecMachine CreateSpecDelegate(StateImpl application);
         public static Dictionary<string, Dictionary<string, string>> linkMap = new Dictionary<string, Dictionary<string, string>>();
@@ -81,7 +88,7 @@ namespace P.Runtime
                 foreach (var x in specMachinesMap.Values)
                 {
                     if (hot) break;
-                    hot = hot || x.IsHot;
+                    hot = hot || x.currentTemperature == StateTemperature.Hot;
                 }
                 return (!enabled && hot);
             }
@@ -117,6 +124,13 @@ namespace P.Runtime
 
             clonedState.exception = this.exception;
 
+            clonedState.currentVisibleTrace = new VisibleTrace();
+            foreach(var item in currentVisibleTrace.Trace)
+            {
+                clonedState.currentVisibleTrace.Trace.Add(item);
+            }
+
+            clonedState.errorTrace = new StringBuilder(errorTrace.ToString());
             return clonedState;
 
         }
@@ -131,6 +145,12 @@ namespace P.Runtime
         }
         public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
         {
+            //add visible action to trace
+            if(visibleInterfaces.Contains(interfaceOrMachineName))
+            {
+                currentVisibleTrace.AddAction(interfaceOrMachineName);
+            }
+
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
             var impMachineName = renameMap[renamedImpMachine];
             var machine = createMachineMap[impMachineName](this, payload);
@@ -181,6 +201,25 @@ namespace P.Runtime
 
         public void Announce(PrtEventValue ev, PrtValue payload, PrtMachine parent)
         {
+            if (ev.Equals(PrtValue.@null))
+            {
+                throw new PrtIllegalEnqueueException("Enqueued event must not be null");
+            }
+
+            PrtType prtType = ev.evt.payloadType;
+            //assertion to check if argument passed inhabits the payload type.
+            if (prtType is PrtNullType)
+            {
+                if (!payload.Equals(PrtValue.@null))
+                {
+                    throw new PrtIllegalEnqueueException("Did not expect a payload value");
+                }
+            }
+            else if (!PrtValue.PrtInhabitsType(payload, prtType))
+            {
+                throw new PrtInhabitsTypeException(String.Format("Payload <{0}> does not match the expected type <{1}> with event <{2}>", payload.ToString(), prtType.ToString(), ev.evt.name));
+            }
+
             var allSpecMachines = GetSpecMachines(parent.renamedName);
             foreach (var mon in allSpecMachines)
             {
@@ -204,7 +243,7 @@ namespace P.Runtime
 
         public void Trace(string message, params object[] arguments)
         {
-            Console.WriteLine(String.Format(message, arguments));
+            errorTrace.AppendLine(String.Format(message, arguments));
         }
 
 
@@ -218,7 +257,7 @@ namespace P.Runtime
         public Boolean GetSelectedChoiceValue(PrtImplMachine process)
         {
             //throw new NotImplementedException();
-            return (new Random(1)).Next(1) == 0;
+            return (new Random(DateTime.Now.Millisecond)).Next(10) > 5;
         }
     }
 

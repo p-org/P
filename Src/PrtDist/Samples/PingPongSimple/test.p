@@ -1,17 +1,11 @@
-//Functions for interacting with the timer machine
-extern fun CreateTimer(owner : machine): machine;
-extern fun StartTimer(timer : machine, time: int);
-extern fun CancelTimer(timer : machine);
-event TIMEOUT: machine;
-
 // PingPong.p 
 event PING assert 1: machine; 
 event PONG assert 1; 
 event SUCCESS;
  
 machine Client {
-  var server: machine; 
-  start state Init { 
+  var server: machine;  
+  start state Init {  
     entry { 	
 	  print "Client created\n";
       server = new Server(); 
@@ -34,7 +28,7 @@ machine Client {
 }
 
 machine Server { 
-  var timer: machine;
+  var timer: TimerPtr;
   var client: machine;
 
   start state Init {  
@@ -59,7 +53,7 @@ machine Server {
   }
 
   state SendPong { 
-    entry (payload: machine) { 
+    entry (payload: TimerPtr) { 
 	  print "Server sending PONG\n";
       announce M_PONG, client;
       send client, PONG; 

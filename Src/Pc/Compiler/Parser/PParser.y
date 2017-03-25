@@ -29,8 +29,7 @@ TopDeclList
 	;
 
 TopDecl
-    : IncludeDecl
-	| TypeDefDecl
+	: TypeDefDecl
 	| InterfaceDecl
 	| EventSetDecl
 	| EnumTypeDefDecl
@@ -84,11 +83,6 @@ NumberedEnumElemList
 	| ID ASSIGN INT COMMA NumberedEnumElemList		{ AddEnumElem($1.str, ToSpan(@1), $3.str, ToSpan(@3)); }
 	;
 
-/******************* Include Declarations *******************/ 
-IncludeDecl
-	: INCLUDE STR { parseIncludedFileNames.Add($2.str.Substring(1,$2.str.Length-2)); }
-	;
-
 /******************* Event Declarations *******************/ 
 EventDecl
 	: EVENT ID EvCardOrNone EvTypeOrNone EventAnnotOrNone SEMICOLON { AddEvent($2.str, ToSpan(@2), ToSpan(@1)); }
@@ -130,7 +124,7 @@ ConstTypeOrNone
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone ReceivesOrExports Sends Creates LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); ResetProgramIgnore(); }
+	: ImplMachineNameDecl MachAnnotOrNone Exports Receives Sends Creates LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); ResetProgramIgnore(); }
 	;
 
 ImplMachineProtoDecl
@@ -142,9 +136,13 @@ MachineConstTypeOrNone
 	|
 	;
 
-ReceivesOrExports
+Exports
 	: COLON ID										{ AddExportsInterface($2.str, ToSpan(@2), ToSpan(@1)); }
-	| RECEIVES SEMICOLON							
+	|
+	;
+
+Receives
+	: RECEIVES SEMICOLON							
 	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(true, ToSpan(@1)); }
 	|												{ AddReceivesList(false); }
 	;

@@ -21,11 +21,7 @@ namespace Microsoft.Pc
             {
                 // use separate process that contains pre-compiled P compiler.
                 CompilerServiceClient svc = new CompilerServiceClient();
-                if (string.IsNullOrEmpty(options.outputDir))
-                {
-                    options.outputDir = Directory.GetCurrentDirectory();
-                }
-                if(!options.isLinkerPhase)
+                if (options.compilerOutput != CompilerOutput.Link)
                 {
                     result = svc.Compile(options, Console.Out);
                 }
@@ -38,7 +34,7 @@ namespace Microsoft.Pc
             else
             {
                 var compiler = new Compiler(options.shortFileNames);
-                if(!options.isLinkerPhase)
+                if (options.compilerOutput != CompilerOutput.Link)
                 {
                     result = compiler.Compile(new StandardOutput(), options);
                 }
@@ -57,27 +53,26 @@ namespace Microsoft.Pc
             error:
             {
                 Console.WriteLine(" ------------ Compiler Phase ------------");
-                Console.WriteLine("USAGE: Pc.exe file.p [options]");
-                Console.WriteLine("Compiles *.p programs and produces *.4ml intermediate output which can then be passed to PLink.exe");
-                Console.WriteLine("/outputDir:path         -- where to write the generated *.c, *.h and *.4ml files");
-                Console.WriteLine("/liveness[:sampling]    -- these control what the Zing program is looking for");
+                Console.WriteLine("USAGE: Pc.exe file1.p [file2.p ...] [/t:tfile.4ml] [/r:rfile.4ml ...] [options]");
+                Console.WriteLine("Compiles *.p programs and produces .4ml summary file which can then be passed to PLink.exe");
+                Console.WriteLine("/t:file.4ml             -- name of summary file produced for this compilation unit; if not supplied then file1.4ml");
+                Console.WriteLine("/r:file.4ml             -- refer to another summary file");
+                Console.WriteLine("/outputDir:path         -- where to write the generated files");
+                Console.WriteLine("/shared                 -- use the compiler service)");
+                Console.WriteLine("/profile                -- print detailed timing information");
+                Console.WriteLine("/generate:[C0,C#,Zing]");
+                Console.WriteLine("    C0  : generate C without model functions");
+                Console.WriteLine("    C#  : generate C# (and C) with model functions");
+                Console.WriteLine("    Zing: generate Zing");
+                Console.WriteLine("/liveness[:sampling]    -- controls compilation for Zinger");
                 Console.WriteLine("/shortFileNames         -- print only file names in error messages");
                 Console.WriteLine("/printTypeInference     -- dumps compiler type inference information (in formula)");
                 Console.WriteLine("/dumpFormulaModel       -- write the entire formula model to a file named 'output.4ml'");
-                Console.WriteLine("/profile                -- print detailed timing information");
-                Console.WriteLine("/rebuild                -- rebuild all the P files");
-                Console.WriteLine("/generate:[C0,C,Zing,C#]");
-                Console.WriteLine("    C0  : generate C without model functions");
-                Console.WriteLine("    C   : generate C with model functions");
-                Console.WriteLine("    Zing: generate Zing");
-                Console.WriteLine("    C#  : generate C# code");
-                Console.WriteLine("/shared                 -- use the compiler service)"   );
                 Console.WriteLine(" ------------ Linker Phase ------------");
-                Console.WriteLine("USAGE: Pc.exe /link file1.4ml [file2.4ml ...] linkfile.p [options]");
-                Console.WriteLine("Takes the *.4ml output from pc.exe and generates the combined linker.c linker.h output from them");
-                Console.WriteLine("/outputDir:path  -- where to write the generated linker.c and linker.h files");
+                Console.WriteLine("USAGE: Pc.exe [linkfile.p] /link /r:file1.4ml [/r:file2.4ml ...] [options]");
+                Console.WriteLine("Links *.4ml summary files against an optional linkfile.p and generates linker.{h,c,dll}");
+                Console.WriteLine("/outputDir:path  -- where to write the generated files");
                 Console.WriteLine("/shared          -- use the compiler service");
-                Console.WriteLine("/parallel        -- run multiple tests in parallel for quicker overall test run times");
                 Console.WriteLine("/profile         -- print detailed timing information");
                 Console.WriteLine("Profiling can also be enabled by setting the environment variable PCOMPILE_PROFILE=1");
                 return -1;

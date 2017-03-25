@@ -101,8 +101,8 @@ MonitorNameList
 
 /* Test Declaration */
 TestDecl
-	: TEST ID ModuleExpr SEMICOLON							{ AddTestDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
-	| TEST ID ModuleExpr REFINES ModuleExpr SEMICOLON		{ AddRefinementDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
+	: TEST ID COLON ModuleExpr SEMICOLON							{ AddTestDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
+	| TEST ID COLON ModuleExpr REFINES ModuleExpr SEMICOLON		{ AddRefinementDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 /* Implementation Declaration */

@@ -1,7 +1,8 @@
-include "Timer.p"
-
 event PING: machine;
 event PONG: machine;
+
+event M_PING: machine;
+event M_PONG: machine;
 
 event REGISTER_CLIENT: machine;
 event UNREGISTER_CLIENT: machine;

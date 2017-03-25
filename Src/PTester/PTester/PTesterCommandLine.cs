@@ -60,6 +60,22 @@ namespace P.Tester
         public string inputFileName;
         public bool printStats;
         public int timeout;
+        public bool isRefinement;
+        public string LHSModel;
+        public string RHSModel;
+        public bool verbose;
+        public int numberOfSchedules;
+        public CommandLineOptions()
+        {
+            inputFileName = null;
+            printStats = false;
+            timeout = 0;
+            isRefinement = false;
+            LHSModel = null;
+            RHSModel = null;
+            verbose = false;
+            numberOfSchedules = 1000;
+        }
     }
 
     public class PTesterCommandLine
@@ -101,14 +117,48 @@ namespace P.Tester
                         case "stats":
                             options.printStats = true;
                             break;
-
+                        case "v":
+                        case "verbose":
+                            options.verbose = true;
+                            break;
+                        case "ns":
+                            if (param.Length != 0)
+                            {
+                                options.numberOfSchedules = int.Parse(param);
+                            }
+                            break;
                         case "timeout":
                             if (param.Length != 0)
                             {
                                 options.timeout = int.Parse(param);
                             }
                             break;
-
+                        case "lhs":
+                            if (param.Length != 0)
+                            {
+                                options.LHSModel = param;
+                                options.RHSModel = null;
+                                options.isRefinement = true;
+                            }
+                            else
+                            {
+                                PrintHelp(arg, "missing file name");
+                                return null;
+                            }
+                            break;
+                        case "rhs":
+                            if (param.Length != 0)
+                            {
+                                options.RHSModel = param;
+                                options.LHSModel = null;
+                                options.isRefinement = true;
+                            }
+                            else
+                            {
+                                PrintHelp(arg, "missing file name");
+                                return null;
+                            }
+                            break;
                         default:
                             PrintHelp(arg, "Invalid option");
                             return null;
@@ -132,7 +182,7 @@ namespace P.Tester
                 }
             }
 
-            if (options.inputFileName == null)
+            if (!options.isRefinement && options.inputFileName == null)
             {
                 PrintHelp(null, "No input file specified");
                 return null;
@@ -150,7 +200,14 @@ namespace P.Tester
                     PTesterUtil.PrintErrorMessage(String.Format("Error: {0}", errorMessage));
             }
 
-            Console.Write("HELP ME");
+            Console.WriteLine("---------------------------------------------");
+            Console.WriteLine("Options ::");
+            Console.WriteLine("---------------------------------------------");
+            Console.WriteLine("-h                       Print the help message");
+            Console.WriteLine("-v or -verbose           Print the execution trace during exploration");
+            Console.WriteLine("-ns:<int>                Number of schedulers <int> to explore");
+            Console.WriteLine("-lhs:<LHS Model Dll>     Load the pre-computed traces of RHS Model and perform trace containment");
+            Console.WriteLine("-rhs:<RHS Model Dll>     Compute all possible trace of the RHS Model using sampling and dump it in a file on disk");
         }
 
         public static void Main(string[] args)
@@ -161,52 +218,90 @@ namespace P.Tester
                 Environment.Exit((int)TestResult.InvalidParameters);
             }
 
-            var asm = Assembly.LoadFrom(options.inputFileName);
-            StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application", 
-                                                        false,
-                                                        BindingFlags.CreateInstance, 
-                                                        null,
-                                                        new object[] { true },
-                                                        null, 
-                                                        new object[] { });
-            if (s == null)
-                throw new ArgumentException("Invalid assembly");
-            int numOfSchedules = 0;
-            int numOfSteps = 0;
-            var randomScheduler = new Random(1);
-            while (numOfSchedules < 100)
+            if(options.isRefinement)
             {
-                var currImpl = (StateImpl)s.Clone();
-                Console.WriteLine("-----------------------------------------------------");
-                Console.WriteLine("New Schedule:");
-                Console.WriteLine("-----------------------------------------------------");
-                numOfSteps = 0;
-                while (numOfSteps < 1000)
+                var refinementCheck = new RefinementChecking(options);
+                if(options.LHSModel == null)
                 {
-                    if (currImpl.EnabledMachines.Count == 0)
-                    {
-                        break;
-                    }
+                    refinementCheck.RunCheckerRHS();
+                }
+                else
+                {
+                    refinementCheck.RunCheckerLHS();
+                }
+                return;
+            }
+            else
+            {
+                var asm = Assembly.LoadFrom(options.inputFileName);
+                StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application",
+                                                            false,
+                                                            BindingFlags.CreateInstance,
+                                                            null,
+                                                            new object[] { true },
+                                                            null,
+                                                            new object[] { });
+                if (s == null)
+                    throw new ArgumentException("Invalid assembly");
 
-                    var num = currImpl.EnabledMachines.Count;
-                    var choosenext = randomScheduler.Next(0, num);
-                    currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
-                    if (currImpl.Exception != null)
+                int maxNumOfSchedules = options.numberOfSchedules;
+                int maxDepth = 1000;
+                int numOfSchedules = 1;
+                int numOfSteps = 0;
+                var randomScheduler = new Random(DateTime.Now.Millisecond);
+                while (numOfSchedules <= maxNumOfSchedules)
+                {
+                    var currImpl = (StateImpl)s.Clone();
+                    if (numOfSchedules % 10 == 0)
                     {
-                        if (currImpl.Exception is PrtAssumeFailureException)
+                        Console.WriteLine("-----------------------------------------------------");
+                        Console.WriteLine("Total Schedules Explored: {0}", numOfSchedules);
+                    }
+                    numOfSteps = 0;
+                    while (numOfSteps < maxDepth)
+                    {
+                        if (currImpl.EnabledMachines.Count == 0)
                         {
                             break;
                         }
-                        else
+
+                        var num = currImpl.EnabledMachines.Count;
+                        var choosenext = randomScheduler.Next(0, num);
+                        currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
+                        if (currImpl.Exception != null)
                         {
-                            Console.WriteLine("Exception hit during execution: {0}", currImpl.Exception.ToString());
-                            Environment.Exit(-1);
+                            if (currImpl.Exception is PrtAssumeFailureException)
+                            {
+                                break;
+                            }
+                            else if (currImpl.Exception is PrtException)
+                            {
+                                Console.WriteLine(currImpl.errorTrace.ToString());
+                                Console.WriteLine("ERROR: {0}", currImpl.Exception.Message);
+                                Environment.Exit(-1);
+                            }
+                            else
+                            {
+                                Console.WriteLine(currImpl.errorTrace.ToString());
+                                Console.WriteLine("[Internal Exception]: Please report to the P Team");
+                                Console.WriteLine(currImpl.Exception.ToString());
+                                Environment.Exit(-1);
+                            }
+                        }
+                        numOfSteps++;
+
+                        //print the execution if verbose
+                        if(options.verbose)
+                        {
+                            Console.WriteLine("-----------------------------------------------------");
+                            Console.WriteLine("Execution {0}", numOfSchedules);
+                            Console.WriteLine(currImpl.errorTrace.ToString());
                         }
                     }
-                    numOfSteps++;
+                    numOfSchedules++;
                 }
-                numOfSchedules++;
             }
+            
         }
     }
 }

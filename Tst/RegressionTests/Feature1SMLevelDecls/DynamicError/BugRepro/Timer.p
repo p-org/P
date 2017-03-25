@@ -26,8 +26,8 @@ machine Timer {
 
   state WaitForCancel {
     ignore START;
-    on null goto WaitForReq with { 
-	  send client, TIMEOUT, this; 
+    on null goto WaitForReq with {
+	   send client, TIMEOUT, this; 
 	}
     on CANCEL goto WaitForReq with {
       if ($) {

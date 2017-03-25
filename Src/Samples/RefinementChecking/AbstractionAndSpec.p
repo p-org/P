@@ -1,24 +1,22 @@
-include "Header.p"
-
-
 machine ServerAbstraction: ServerClientInterface
-receives eReqSuccessful, eReqFailed, eRequest;
-sends eResponse, eProcessReq;
-creates HelperInterface;
+receives eRequest;
+sends eResponse;
+creates;
 {
   start state Init {
-
     on eRequest do (payload: requestType){
-      send payload.source, eResponse, (id = payload.id, success = $);
+      var successful : bool;
+      successful = $;
+      send payload.source, eResponse, (id = payload.id, success = successful);
     }
   }
 }
 
 
 /***************************************************************************
-If the response is success then the value should always be greater than zero
+Request Ids must be monotonically Increasing
 ***************************************************************************/
-spec ReqIdsAreMonotonicallyIncreasing observes eResponse {
+spec ReqIdsAreMonotonicallyIncreasing observes eRequest {
   var previousId : int;
   start state Init {
     on eRequest do (payload: requestType){

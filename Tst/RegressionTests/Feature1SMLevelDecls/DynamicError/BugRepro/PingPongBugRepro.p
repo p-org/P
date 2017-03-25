@@ -65,7 +65,7 @@ machine FailureDetector {
 		    SendPingsToAliveSet(0);
 			send timer, START, 100;
 	    }
-        on PONG do (payload: machine) { 
+    on PONG do (payload: machine) { 
 		    if (payload in alive) {
 				 responses[payload] = true; 
 				 if (sizeof(responses) == sizeof(alive)) {

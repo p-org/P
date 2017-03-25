@@ -282,11 +282,10 @@ namespace CheckP
                     var compileArgs = new CommandLineOptions();
                     compileArgs.inputFileNames = new List<string>();
                     compileArgs.inputFileNames.Add(inputFileName);
-                    compileArgs.compilerOutput = CompilerOutput.C;
+                    compileArgs.compilerOutput = CompilerOutput.CSharp;
                     compileArgs.shortFileNames = true;
                     compileArgs.outputDir = workDirectory;
                     compileArgs.shortFileNames = true;
-                    compileArgs.reBuild = true;
                     var compilerOutput = new CompilerTestOutputStream(tmpWriter);
 
                     bool compileResult = false;
@@ -300,7 +299,6 @@ namespace CheckP
                         compileArgs.inputFileNames.Clear();
                         compileArgs.inputFileNames.Add(inputFileName);
                         compileArgs.compilerOutput = CompilerOutput.CSharp;
-                        compileArgs.reBuild = true;
                         if (liveness)
                         {
                             compileArgs.liveness = LivenessOption.Standard;
@@ -319,7 +317,6 @@ namespace CheckP
                         compileArgs.inputFileNames.Clear();
                         string linkFileName = Path.ChangeExtension(inputFileName, ".4ml");
                         compileArgs.inputFileNames.Add(linkFileName);
-                        compileArgs.reBuild = true;
                         if (isLinkOption)
                         {
                             var linkPFile = Path.GetFullPath(Path.Combine(activeDirectory, (string)linkFile[0].Item2));
@@ -338,7 +335,6 @@ namespace CheckP
                         compileArgs.inputFileNames.Clear();
                         compileArgs.inputFileNames.Add(inputFileName);
                         compileArgs.compilerOutput = CompilerOutput.Zing;
-                        compileArgs.reBuild = true;
                         if (liveness)
                         {
                             compileArgs.liveness = LivenessOption.Standard;

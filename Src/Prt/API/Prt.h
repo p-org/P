@@ -67,7 +67,6 @@ extern "C"{
         PRT_PROCESS		    *process;     /**< The process that owns this machine.             */
         PRT_UINT32			instanceOf;   /**< Index of machine type in PRT_PROGRAMDECL.       */
         PRT_VALUE			*id;          /**< The id of this machine.                         */
-        void				*extContext;  /**< Pointer to an external context owned by client. */
     } PRT_MACHINEINST;
 
     /** The scheduling policy determines how the state machine is executed.  

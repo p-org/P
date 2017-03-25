@@ -1,0 +1,17 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Init
+OUT: <CreateLog> Machine Receiver(2) is created
+OUT: <StateLog> Machine Receiver(2) entered state Init
+OUT: <EnqueueLog> Enqueued event e1 with payload null on Machine Receiver(2)
+OUT: <DequeueLog> Dequeued event e1 with payload null by Machine Receiver(2)
+OUT: <EnqueueLog> Enqueued event e2 with payload null on Machine Receiver(2)
+OUT: <DequeueLog> Dequeued event e2 with payload null by Machine Receiver(2)
+OUT: <EnqueueLog> Enqueued event e3 with payload null on Machine Receiver(2)
+OUT: <DequeueLog> Dequeued event e3 with payload null by Machine Receiver(2)
+OUT: <EnqueueLog> Enqueued event e4 with payload null on Machine Receiver(2)
+OUT: <DequeueLog> Dequeued event e4 with payload null by Machine Receiver(2)
+OUT: 
+EXIT: 0

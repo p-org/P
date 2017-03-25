@@ -29,5 +29,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_3.bl,)
+Expression: assert(tmp_7.bl,)
 Comment: ImplicitPopExit.p (26, 11): Assert failed

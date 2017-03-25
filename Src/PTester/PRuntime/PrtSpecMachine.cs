@@ -9,7 +9,7 @@ namespace P.Runtime
     {
         #region Fields
         public List<PrtEventValue> observes;
-        public bool IsHot;
+        public StateTemperature currentTemperature;
         #endregion
 
         public abstract PrtSpecMachine MakeSkeleton();
@@ -17,13 +17,13 @@ namespace P.Runtime
         public PrtSpecMachine() : base()
         {
             observes = new List<PrtEventValue>();
-            IsHot = false;
+            currentTemperature =  StateTemperature.Warm;
         }
 
         public PrtSpecMachine(StateImpl app) : base()
         {
             observes = new List<PrtEventValue>();
-            IsHot = false;
+            currentTemperature = StateTemperature.Warm;
             stateImpl = app;
             //Push the start state function on the funStack.
             PrtPushState(StartState);
@@ -56,7 +56,7 @@ namespace P.Runtime
 
             //spec class fields
             clonedMachine.observes = this.observes.ToList();
-            clonedMachine.IsHot = this.IsHot;
+            clonedMachine.currentTemperature = this.currentTemperature;
 
             return clonedMachine;
         }
@@ -88,10 +88,11 @@ namespace P.Runtime
                 if (invertedFunStack.TopOfStack == null)
                 {
                     //Trace: entered state
-                    if (CurrentState.entryFun.IsAnonFun)
-                        PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
+                    PrtFun entryFun = CurrentState.entryFun;
+                    if (entryFun.IsAnonFun)
+                        PrtPushFunStackFrame(entryFun, entryFun.CreateLocals(currentPayload));
                     else
-                        PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals());
+                        PrtPushFunStackFrame(entryFun, entryFun.CreateLocals());
                 }
                 //invoke the function
                 invertedFunStack.TopOfStack.fun.Execute(stateImpl, this);
@@ -110,7 +111,14 @@ namespace P.Runtime
                     if (invertedFunStack.TopOfStack == null)
                     {
                         //Trace: executed the action handler for event
-                        PrtPushFunStackFrame(currAction, currAction.CreateLocals(currentPayload));
+                        if (currAction.IsAnonFun)
+                        {
+                            PrtPushFunStackFrame(currAction, currAction.CreateLocals(currentPayload));
+                        }
+                        else
+                        {
+                            PrtPushFunStackFrame(currAction, currAction.CreateLocals());
+                        }
                     }
                     //invoke the action handler
                     invertedFunStack.TopOfStack.fun.Execute(stateImpl, this);
@@ -146,6 +154,7 @@ namespace P.Runtime
                                 case PrtStateExitReason.OnGotoStatement:
                                     {
                                         PrtChangeState(destOfGoto);
+                                        currentTemperature = destOfGoto.temperature;
                                         nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                         stateExitReason = PrtStateExitReason.NotExit;
                                         hasMoreWork = true;
@@ -167,7 +176,17 @@ namespace P.Runtime
                                     }
                                 case PrtStateExitReason.OnTransitionAfterExit:
                                     {
-                                        PrtChangeState(CurrentState.transitions[eventValue].gotoState);
+                                        // The parameter to an anonymous transition function is always passed as swap.
+                                        // Update currentPayload to the latest value of the parameter so that the correct
+                                        // value gets passed to the entry function of the target state.
+                                        PrtTransition transition = CurrentState.transitions[eventValue];
+                                        PrtFun transitionFun = transition.transitionFun;
+                                        if (transitionFun.IsAnonFun)
+                                        {
+                                            currentPayload = continuation.retLocals[0];
+                                        }
+                                        PrtChangeState(transition.gotoState);
+                                        currentTemperature = transition.gotoState.temperature;
                                         hasMoreWork = true;
                                         nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                         stateExitReason = PrtStateExitReason.NotExit;
@@ -209,6 +228,7 @@ namespace P.Runtime
                 }
                 else if (PrtIsActionInstalled(currEventValue))
                 {
+                    eventValue = currEventValue;
                     goto DoAction;
                 }
                 else

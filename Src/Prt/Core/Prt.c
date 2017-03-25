@@ -238,7 +238,7 @@ PrtMkInterfaceOrMachine(
 				args[i] = PrtCloneValue(arg);
 				break;
 			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkInterfaceOrMachine");
 				break;
 			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
@@ -301,7 +301,7 @@ PrtMkMachine(
 				args[i] = PrtCloneValue(arg);
 				break;
 			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkMachine");
 				break;
 			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
@@ -389,7 +389,7 @@ PrtSend(
 				args[i] = PrtCloneValue(arg);
 				break;
 			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSend");
 				break;
 			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
@@ -449,7 +449,7 @@ PRT_CALL_CONV PrtSendInternal(
 				args[i] = PrtCloneValue(arg);
 				break;
 			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSendInternal");
 				break;
 			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);

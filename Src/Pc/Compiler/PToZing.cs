@@ -52,7 +52,7 @@ namespace Microsoft.Pc
             return string.Format("MACHINE_{0}", machineName);
         }
 
-        public PToZing(Compiler compiler, AST<Model> modelWithTypes, Dictionary<int, SourceInfo> idToSourceInfo)
+        public PToZing(Compiler compiler, AST<Model> modelWithTypes, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
             this.typeContext = new TypeTranslationContext(this);
@@ -402,7 +402,7 @@ namespace Microsoft.Pc
 
             List<AST<Node>> actionOrFunConsts = new List<AST<Node>>();
             actionOrFunConsts.Add(Factory.Instance.MkCnst("_default"));
-            foreach (string funName in allStaticFuns.Keys)
+            foreach (string funName in allGlobalFuns.Keys)
             {
                 actionOrFunConsts.Add(Factory.Instance.MkCnst(string.Format("_{0}", funName)));
             }
@@ -521,9 +521,9 @@ namespace Microsoft.Pc
                 Factory.Instance.MkCnst("PRT_TYPE"), ZingData.Cnst_Nil, MkZingBlocks(MkZingBlock("dummy", MkZingSeq(payloadOfBody))), ZingData.Cnst_Static);
             methods.Add(payloadOfMethod);
 
-            foreach (var funName in allStaticFuns.Keys)
+            foreach (var funName in allGlobalFuns.Keys)
             {
-                var funInfo = allStaticFuns[funName];
+                var funInfo = allGlobalFuns[funName];
                 methods.Add(MkZingStaticFunMethod(funName, funInfo));
             }
 
@@ -791,7 +791,7 @@ namespace Microsoft.Pc
 
         private AST<Node> ContinuationPrepareHelper(string machineName, string funName)
         {
-            FunInfo funInfo = allStaticFuns.ContainsKey(funName) ? allStaticFuns[funName] : allMachines[machineName].funNameToFunInfo[funName];
+            FunInfo funInfo = allGlobalFuns.ContainsKey(funName) ? allGlobalFuns[funName] : allMachines[machineName].funNameToFunInfo[funName];
             var locals = MkZingIdentifier("locals");
             var cont = MkZingDot("myHandle", "cont");
             var stmts = new List<AST<Node>>();
@@ -832,9 +832,9 @@ namespace Microsoft.Pc
             List<AST<Node>> initStmts = new List<AST<Node>>();
             initStmts.Add(MkZingAssign(doPop, ZingData.Cnst_False));
             initStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot(cont, "Reset"))));
-            foreach (var funName in allStaticFuns.Keys)
+            foreach (var funName in allGlobalFuns.Keys)
             {
-                var funInfo = allStaticFuns[funName];
+                var funInfo = allGlobalFuns[funName];
                 if (funInfo.parameterNames.Count > 0) continue;
                 var resetStmt = ContinuationPrepareHelper(machineName, funName);
                 var funExpr = MkZingActionOrFun(machineName, funName);
@@ -867,9 +867,9 @@ namespace Microsoft.Pc
             // Action blocks
             List<AST<Node>> blocks = new List<AST<Node>>();
             blocks.Add(initStmt);
-            foreach (var funName in allStaticFuns.Keys)
+            foreach (var funName in allGlobalFuns.Keys)
             {
-                var funInfo = allStaticFuns[funName];
+                var funInfo = allGlobalFuns[funName];
                 if (funInfo.parameterNames.Count > 0) continue;
                 var callStmt = MkZingCallStmt(MkZingCall(MkZingDot("Main", funName), MkZingIdentifier("myHandle"), cont));
                 List<AST<Node>> whileStmts = new List<AST<Node>>();
@@ -1089,6 +1089,7 @@ namespace Microsoft.Pc
             blocks.Add(MkZingBlock("enter", MkZingSeq(enterStmts)));
 
             List<AST<Node>> gotoStmts = new List<AST<Node>>();
+            gotoStmts.Add(MkZingAssign(payload, MkZingDot("myHandle", "currentArg")));
             gotoStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("TraceExitState"), state)));
             gotoStmts.Add(MkZingCallStmt(MkZingCall(MkZingIdentifier("ReentrancyHelper"), MkZingDot(state, "exitFun"), MkZingIdentifier("null"))));
             gotoStmts.Add(MkZingAssign(MkZingDot("myHandle", "stack", "state"), MkZingDot("myHandle", "destState")));
@@ -1607,7 +1608,7 @@ namespace Microsoft.Pc
                 var beforeLabel = ctxt.GetFreshLabel();
                 var eventName = eventNames[i];
                 var funName = funNames[i];
-                var calleeInfo = allStaticFuns.ContainsKey(funName) ? allStaticFuns[funName] : allMachines[ctxt.machineName].funNameToFunInfo[funName];
+                var calleeInfo = allGlobalFuns.ContainsKey(funName) ? allGlobalFuns[funName] : allMachines[ctxt.machineName].funNameToFunInfo[funName];
                 Debug.Assert(calleeInfo.isAnonymous);
                 List<AST<Node>> ifStmts = new List<AST<Node>>();
                 ifStmts.Add(MkZingAssign(MkZingIndex(MkZingIdentifier("locals"), Factory.Instance.MkCnst(calleeInfo.localNameToInfo[calleeInfo.PayloadVarName].index)), MkZingCall(PrtCloneValue, MkZingDot("myHandle", "currentArg"))));
@@ -1619,7 +1620,7 @@ namespace Microsoft.Pc
                 ifStmts.Add(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), MkZingIdentifier("locals"))));
                 ifStmts.Add(MkZingGoto(beforeLabel));
                 eventStmts.Add(MkZingIfThen(MkZingEq(MkZingDot("myHandle", "currentEvent"), MkZingEvent(eventName)), MkZingSeq(ifStmts)));
-                if (allStaticFuns.ContainsKey(funName))
+                if (allGlobalFuns.ContainsKey(funName))
                 {
                     funStmts.Add(MkZingBlock(beforeLabel, MkZingCallStmt(MkZingCall(MkZingDot("Main", funName), MkZingIdentifier("myHandle"), MkZingIdentifier("entryCtxt")))));
                 }
@@ -1720,24 +1721,28 @@ namespace Microsoft.Pc
                 aout = args.Last();
                 args.RemoveAt(args.Count-1);
             }
-            var createdIorM = GetName(ft, 0);
-            var machineName = linkMap[createdIorM];
-            MachineInfo machineInfo = allMachines[machineName];
-            string initStateEntryActionName = machineInfo.stateNameToStateInfo[machineInfo.initStateName].entryActionName;
-            FunInfo entryFunInfo = allStaticFuns.ContainsKey(initStateEntryActionName)
-                                    ? allStaticFuns[initStateEntryActionName]
-                                    : machineInfo.funNameToFunInfo[initStateEntryActionName];
-            AST<Node> payloadVar = MkPayload(ctxt, args, typeContext.PTypeToZingExpr(entryFunInfo.PayloadType));
-            var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
-            ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", machineName)), payloadVar)));
-            string afterLabel = ctxt.GetFreshLabel();
-            ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), newMachine)));
-            ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
-            ctxt.AddSideEffect(MkZingBlock(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
-            ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
-            if (aout != null)
+            var machineName = GetName(ft, 0);
+            // Ignore all indirect creation 
+            // PtoZing does not support indirect creation via interfaces
+            if (allMachines.ContainsKey(machineName))
             {
-                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), aout, newMachine)));
+                MachineInfo machineInfo = allMachines[machineName];
+                string initStateEntryActionName = machineInfo.stateNameToStateInfo[machineInfo.initStateName].entryActionName;
+                FunInfo entryFunInfo = allGlobalFuns.ContainsKey(initStateEntryActionName)
+                                        ? allGlobalFuns[initStateEntryActionName]
+                                        : machineInfo.funNameToFunInfo[initStateEntryActionName];
+                AST<Node> payloadVar = MkPayload(ctxt, args, typeContext.PTypeToZingExpr(entryFunInfo.PayloadType));
+                var newMachine = ctxt.GetTmpVar(SmHandle, "newMachine");
+                ctxt.AddSideEffect(MkZingAssign(newMachine, MkZingCall(MkZingDot("Main", string.Format("CreateMachine_{0}", machineName)), payloadVar)));
+                string afterLabel = ctxt.GetFreshLabel();
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "NewMachine"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"), newMachine)));
+                ctxt.AddSideEffect(MkZingReturn(ZingData.Cnst_Nil));
+                ctxt.AddSideEffect(MkZingBlock(afterLabel, MkZingAssign(newMachine, MkZingDot("entryCtxt", "id"))));
+                ctxt.AddSideEffect(MkZingAssign(MkZingDot("entryCtxt", "id"), MkZingIdentifier("null")));
+                if (aout != null)
+                {
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetMachine"), aout, newMachine)));
+                }
             }
             return new ZingTranslationInfo(ZingData.Cnst_Nil);
         }
@@ -1754,7 +1759,7 @@ namespace Microsoft.Pc
             }
 
             var calleeName = GetName(ft, 0);
-            var calleeInfo = allStaticFuns.ContainsKey(calleeName) ? allStaticFuns[calleeName] : allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
+            var calleeInfo = allGlobalFuns.ContainsKey(calleeName) ? allGlobalFuns[calleeName] : allMachines[ctxt.machineName].funNameToFunInfo[calleeName];
 
             ZingTranslationInfo outputVarInfo = null;
             var argCloneVar = ctxt.GetTmpVar(Factory.Instance.MkCnst("PRT_VALUE_ARRAY"), "argCloneVar");
@@ -1844,7 +1849,7 @@ namespace Microsoft.Pc
             ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "PushReturnTo"), Factory.Instance.MkCnst(0), argCloneVar)));
 
             var beforeLabel = ctxt.GetFreshLabel();
-            if (allStaticFuns.ContainsKey(calleeName))
+            if (allGlobalFuns.ContainsKey(calleeName))
             {
                 ctxt.AddSideEffect(MkZingBlock(beforeLabel, MkZingCallStmt(MkZingCall(MkZingDot("Main", calleeName), MkZingIdentifier("myHandle"), MkZingIdentifier("entryCtxt")))));
             }
@@ -2252,8 +2257,8 @@ namespace Microsoft.Pc
             var stateExpr = MkZingState(stateName);
             MachineInfo machineInfo = allMachines[ctxt.machineName];
             string stateEntryActionName = machineInfo.stateNameToStateInfo[stateName].entryActionName;
-            FunInfo entryFunInfo = allStaticFuns.ContainsKey(stateEntryActionName)
-                                    ? allStaticFuns[stateEntryActionName]
+            FunInfo entryFunInfo = allGlobalFuns.ContainsKey(stateEntryActionName)
+                                    ? allGlobalFuns[stateEntryActionName]
                                     : machineInfo.funNameToFunInfo[stateEntryActionName];
             List<AST<Node>> args = new List<AST<Node>>(children.Select(x => x.node));
             var payloadVar = MkPayload(ctxt, args, typeContext.PTypeToZingExpr(entryFunInfo.PayloadType));
@@ -2840,7 +2845,7 @@ namespace Microsoft.Pc
                         string funName = GetName(typingContext, 0);
                         if (ownerName == null)
                         {
-                            allStaticFuns[funName].typeInfo[expr] = type;
+                            allGlobalFuns[funName].typeInfo[expr] = type;
                         }
                         else
                         {
@@ -2854,7 +2859,7 @@ namespace Microsoft.Pc
                         string funName = anonFunToName[typingContextAlias];
                         if (ownerName == null)
                         {
-                            allStaticFuns[funName].typeInfo[expr] = type;
+                            allGlobalFuns[funName].typeInfo[expr] = type;
                         }
                         else
                         {
@@ -2973,7 +2978,7 @@ namespace Microsoft.Pc
             {
                 var typeAST = Factory.Instance.ToAST(type);
                 var eTypeAST = Factory.Instance.ToAST(eType);
-                if (!pTypeToZingExpr.ContainsKey(typeAST))
+                if (pTypeToZingExpr.ContainsKey(eTypeAST) && !pTypeToZingExpr.ContainsKey(typeAST))
                 {
                     pTypeToZingExpr[typeAST] = pTypeToZingExpr[eTypeAST];
                 }

@@ -7,6 +7,9 @@
 extern "C"{
 #endif
 
+	extern PRT_EVENTDECL _P_EVENT_NULL_STRUCT;
+	extern PRT_EVENTDECL _P_EVENT_HALT_STRUCT;
+
 	//
 	// Max call stack size of each machine
 	//
@@ -124,7 +127,6 @@ extern "C"{
 		PRT_PROCESS		    *process;
 		PRT_UINT32			instanceOf;
 		PRT_VALUE			*id;
-		void				*extContext;
 		PRT_VALUE           *recvMap;
 		PRT_VALUE			**varValues;
 		PRT_RECURSIVE_MUTEX stateMachineLock;

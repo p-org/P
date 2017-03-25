@@ -4,8 +4,6 @@ event Success;
 event M_Ping;
 event M_Pong;
 
-include "PrtDistHelp.p" 
-
 machine PING 
 {
     var pongMachine: (machine,machine);

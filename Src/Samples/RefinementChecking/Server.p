@@ -1,5 +1,3 @@
-include "Header.p"
-
 /********************************************************
 * ServerMachine receives a eRequest event from the clients and 
   performs some local computation.
@@ -11,11 +9,6 @@ include "Header.p"
 
 type ServerHelperInterface() = { eReqSuccessful, eReqFailed };
 type HelperInterface(ServerHelperInterface) = { eProcessReq };
-
-
-event eProcessReq: int;
-event eReqSuccessful;
-event eReqFailed;
 
 machine ServerMachine : ServerClientInterface
 receives eReqSuccessful, eReqFailed, eRequest;

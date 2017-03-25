@@ -1,4 +1,4 @@
-#include "Driver.h"
+#include "FailureDetector.h"
 
 static PRT_UINT32 numTimerInstances = 0;
 typedef struct TimerContext {
@@ -60,13 +60,13 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 	PRT_MACHINEINST *context = timerContext->clientContext;
 	PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
 	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, context->id);
-	PRT_VALUE *timerId = PrtMkForeignValue((PRT_UINT64)timerContext, P_GEND_TYPE_TimerPtr);
+	PRT_VALUE *timerId = PrtMkForeignValue((PRT_UINT64)timerContext, &P_GEND_TYPE_TimerPtr);
 	PRT_MACHINESTATE state;
 	state.machineId = timerContext->timerInstance;
 	state.machineName = "Timer";
 	state.stateId = 1;
 	state.stateName = "Tick";
-	PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_MOVE, timerId);
+	PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_MOVE, &timerId);
 	PrtFreeValue(ev);
 }
 
@@ -81,7 +81,7 @@ PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *owner)
 	numTimerInstances++;
 
 	PrtAssert(timerContext->timer != NULL, "CreateWaitableTimer failed");
-	return PrtMkForeignValue((PRT_UINT64)timerContext, P_GEND_TYPE_TimerPtr);
+	return PrtMkForeignValue((PRT_UINT64)timerContext, &P_GEND_TYPE_TimerPtr);
 }
 
 PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer, PRT_VALUE *time)

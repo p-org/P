@@ -1,0 +1,44 @@
+=================================
+         Console output          
+=================================
+OUT: linear3.p (18, 4): Parameter passed with swap not available at callee return
+OUT: linear3.p (21, 4): Variable is not available
+OUT: linear3.p (29, 4): Variable is not available
+OUT: linear3.p (31, 4): Variable is not available
+OUT: linear3.p (35, 4): Linear argument should be passed for exactly one parameter
+OUT: linear3.p (36, 4): Variable is not available
+OUT: linear3.p (37, 4): Variable is not available
+OUT: linear3.p (39, 4): Linear argument should be passed for exactly one parameter
+OUT: linear3.p (41, 4): Linear argument should be passed for exactly one parameter
+OUT: linear3.p (45, 4): Variable is not available
+OUT: linear3.p (46, 4): Argument should be a local variable
+OUT: linear3.p (51, 4): Argument should be a local variable
+OUT: linear3.p (57, 4): Argument should be a local variable
+OUT: linear3.p (57, 4): Keyword swap not allowed
+OUT: linear3.p (59, 4): Argument should be a local variable
+OUT: linear3.p (62, 4): Argument should be a variable
+OUT: linear3.p (63, 4): Argument should be a variable
+OUT: linear3.p (63, 4): Keyword swap not allowed
+OUT: linear3.p (64, 4): Argument should be a local variable
+OUT: linear3.p (64, 4): Keyword swap not allowed
+OUT: linear3.p (65, 4): Keyword swap not allowed
+OUT: linear3.p (70, 4): Keyword swap not allowed
+OUT: linear3.p (73, 4): Argument should be a variable
+OUT: linear3.p (73, 4): Parameter passed with swap not available at callee return
+OUT: linear3.p (76, 4): Keyword swap not allowed
+OUT: linear3.p (82, 20): Argument should be a local variable
+OUT: linear3.p (82, 28): Undefined symbol
+OUT: linear3.p (83, 14): Argument should be a local variable
+OUT: linear3.p (83, 14): Keyword swap not allowed
+OUT: linear3.p (83, 22): Undefined symbol
+OUT: linear3.p (91, 3): Variable is not available
+OUT: linear3.p (97, 3): Argument should be a variable
+OUT: linear3.p (98, 3): Parameter passed with swap not available at callee return
+OUT: linear3.p (106, 7): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: linear3.p (106, 7): Keywords move or swap not allowed
+OUT: linear3.p (108, 13): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: linear3.p (108, 13): Keywords move or swap not allowed
+OUT: linear3.p (109, 13): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: linear3.p (109, 13): Keywords move or swap not allowed
+OUT: Compilation failed
+EXIT: -1

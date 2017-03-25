@@ -193,11 +193,6 @@ namespace P.Runtime
                 }
             }
 
-            if (StateImpl.EnqueueCallBack != null)
-            {
-                StateImpl.EnqueueCallBack(source as PrtImplMachine, this);
-            }
-
             //Announce it to all the spec machines
             stateImpl.Announce(e as PrtEventValue, arg, source);
         }

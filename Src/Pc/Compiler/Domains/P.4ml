@@ -421,8 +421,10 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(type, type)  :- ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).	
+	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
+	TypeExpansion(type, eType) :- MachineReceives(m, _), type = NameType(m.name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(m, ev), ev: NonNullEventName}), eType : InterfaceType.
 	TypeExpansion(type, eType) :- MachineExports(m, name), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
+	TypeExpansion(type, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
 	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).
@@ -1027,20 +1029,20 @@ domain PStaticTyping extends PData, PError
 									  no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC,
-									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
 	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC,
-									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
 	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), no MachineDecl(n, _, _, _, _),
-									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
 	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
 	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), 
-									  t1 = BaseType(MACHINE), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
 	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _, _, _, _), 
 									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
@@ -1652,6 +1654,7 @@ domain PStaticTyping extends PData, PError
     CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = NmdTupType(lfa, ra), tb = NmdTupType(lfb, rb), la = lfa.type, lb = lfb.type.
     
 	CompTypeRel(t1, t2')      :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2').
+	CompTypeRel(t2, et2')     :- TypeOfArg2(c, e, t1, t2), e = NewStmt(n, _, _, _), TypeExpansion(NameType(n), et2').
 	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PolyRel.
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, cod).
 	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _, _), t2 = MapType(dom, _).      

@@ -57,11 +57,17 @@ shift
 goto :parseargs
 
 :initsub
-if exist "Ext\Formula\README.md" goto :updatesub
+if exist "Ext\PSharp\README.md" (
+    if exist "Ext\Formula\README.md" (
+        if exist "EXT\Zing\README.md" (
+            goto :updatesub
+        )
+    )
+)
 
 echo ### Initializing your submodules 
 git submodule init
-git submodule update
+git submodule update --recursive
 goto :sync
 
 :checksubmodule
@@ -77,6 +83,7 @@ if "%NoSync%"=="true" goto :nosync
 echo ### Updating your submodules 
 call :checksubmodule Ext/Formula
 call :checksubmodule Ext/Zing
+call :checksubmodule Ext/PSharp
 
 if "%SubmoduleOutOfDate%"=="false" goto :nosync
 

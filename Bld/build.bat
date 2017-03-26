@@ -120,8 +120,8 @@ cd ..\..
 REM Build PSharp
 cd ext\PSharp
 ..\..\Bld\nuget restore PSharp.sln
-echo devenv PSharp.sln /Build %Configuration%
-devenv PSharp.sln /Build %Configuration%
+echo msbuild PSharp.sln /p:Platform="Any CPU" /p:Configuration=%Configuration%
+msbuild  PSharp.sln /p:Platform="Any CPU" /p:Configuration=%Configuration%
 if ERRORLEVEL 1 goto :exit
 
 cd ..\..

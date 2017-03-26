@@ -67,7 +67,7 @@ if exist "Ext\PSharp\README.md" (
 
 echo ### Initializing your submodules 
 git submodule init
-git submodule update --recursive
+git submodule update
 goto :sync
 
 :checksubmodule

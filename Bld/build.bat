@@ -77,6 +77,7 @@ if "%NoSync%"=="true" goto :nosync
 echo ### Updating your submodules 
 call :checksubmodule Ext/Formula
 call :checksubmodule Ext/Zing
+call :checksubmodule Ext/PSharp
 
 if "%SubmoduleOutOfDate%"=="false" goto :nosync
 

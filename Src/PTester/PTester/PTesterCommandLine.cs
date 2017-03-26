@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using P.Runtime;
+using Microsoft.PSharp;
+using Microsoft.PSharp.Utilities;
 
 namespace P.Tester
 {
@@ -60,6 +62,7 @@ namespace P.Tester
         public string inputFileName;
         public bool printStats;
         public int timeout;
+        public bool UsePSharp = false;
         public bool isRefinement;
         public string LHSModel;
         public string RHSModel;
@@ -133,6 +136,12 @@ namespace P.Tester
                                 options.timeout = int.Parse(param);
                             }
                             break;
+                        case "psharp":
+                            options.UsePSharp = true;
+                            break;
+                        case "break":
+                            System.Diagnostics.Debugger.Launch();
+                            break;
                         case "lhs":
                             if (param.Length != 0)
                             {
@@ -189,7 +198,7 @@ namespace P.Tester
             }
             return options;
         }
-        
+
         public static void PrintHelp(string arg, string errorMessage)
         {
             if (errorMessage != null)
@@ -218,10 +227,16 @@ namespace P.Tester
                 Environment.Exit((int)TestResult.InvalidParameters);
             }
 
-            if(options.isRefinement)
+            if (options.UsePSharp && options.isRefinement)
+            {
+                Console.WriteLine("Error: Refinement checking isn't yet supported with /psharp flag");
+                Environment.Exit((int)TestResult.InvalidParameters);
+            }
+
+            if (options.isRefinement)
             {
                 var refinementCheck = new RefinementChecking(options);
-                if(options.LHSModel == null)
+                if (options.LHSModel == null)
                 {
                     refinementCheck.RunCheckerRHS();
                 }
@@ -231,77 +246,233 @@ namespace P.Tester
                 }
                 return;
             }
-            else
-            {
-                var asm = Assembly.LoadFrom(options.inputFileName);
-                StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application",
-                                                            false,
-                                                            BindingFlags.CreateInstance,
-                                                            null,
-                                                            new object[] { true },
-                                                            null,
-                                                            new object[] { });
-                if (s == null)
-                    throw new ArgumentException("Invalid assembly");
 
-                int maxNumOfSchedules = options.numberOfSchedules;
-                int maxDepth = 1000;
-                int numOfSchedules = 1;
-                int numOfSteps = 0;
-                var randomScheduler = new Random(DateTime.Now.Millisecond);
-                while (numOfSchedules <= maxNumOfSchedules)
+            var asm = Assembly.LoadFrom(options.inputFileName);
+            StateImpl s = (StateImpl)asm.CreateInstance("P.Program.Application",
+                                                        false,
+                                                        BindingFlags.CreateInstance,
+                                                        null,
+                                                        new object[] { true },
+                                                        null,
+                                                        new object[] { });
+            if (s == null)
+                throw new ArgumentException("Invalid assembly");
+
+            if (options.UsePSharp)
+            {
+                RunPSharpTester(s);
+                return;
+            }
+
+            int maxNumOfSchedules = 10000;
+            int maxDepth = 1000;
+            int numOfSchedules = 0;
+            int numOfSteps = 0;
+            var randomScheduler = new Random(DateTime.Now.Millisecond);
+            while (numOfSchedules < maxNumOfSchedules)
+            {
+                var currImpl = (StateImpl)s.Clone();
+                if (numOfSchedules % 10 == 0)
                 {
-                    var currImpl = (StateImpl)s.Clone();
-                    if (numOfSchedules % 10 == 0)
+                    Console.WriteLine("-----------------------------------------------------");
+                    Console.WriteLine("Total Schedules Explored: {0}", numOfSchedules);
+                    Console.WriteLine("-----------------------------------------------------");
+                }
+                numOfSteps = 0;
+                while (numOfSteps < maxDepth)
+                {
+                    if (currImpl.EnabledMachines.Count == 0)
                     {
-                        Console.WriteLine("-----------------------------------------------------");
-                        Console.WriteLine("Total Schedules Explored: {0}", numOfSchedules);
+                        break;
                     }
-                    numOfSteps = 0;
-                    while (numOfSteps < maxDepth)
+
+                    var num = currImpl.EnabledMachines.Count;
+                    var choosenext = randomScheduler.Next(0, num);
+                    currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
+                    if (currImpl.Exception != null)
                     {
-                        if (currImpl.EnabledMachines.Count == 0)
+                        if (currImpl.Exception is PrtAssumeFailureException)
                         {
                             break;
                         }
-
-                        var num = currImpl.EnabledMachines.Count;
-                        var choosenext = randomScheduler.Next(0, num);
-                        currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
-                        if (currImpl.Exception != null)
+                        else if (currImpl.Exception is PrtException)
                         {
-                            if (currImpl.Exception is PrtAssumeFailureException)
-                            {
-                                break;
-                            }
-                            else if (currImpl.Exception is PrtException)
-                            {
-                                Console.WriteLine(currImpl.errorTrace.ToString());
-                                Console.WriteLine("ERROR: {0}", currImpl.Exception.Message);
-                                Environment.Exit(-1);
-                            }
-                            else
-                            {
-                                Console.WriteLine(currImpl.errorTrace.ToString());
-                                Console.WriteLine("[Internal Exception]: Please report to the P Team");
-                                Console.WriteLine(currImpl.Exception.ToString());
-                                Environment.Exit(-1);
-                            }
-                        }
-                        numOfSteps++;
-
-                        //print the execution if verbose
-                        if(options.verbose)
-                        {
-                            Console.WriteLine("-----------------------------------------------------");
-                            Console.WriteLine("Execution {0}", numOfSchedules);
                             Console.WriteLine(currImpl.errorTrace.ToString());
+                            Console.WriteLine("ERROR: {0}", currImpl.Exception.Message);
+                            Environment.Exit(-1);
+                        }
+                        else
+                        {
+                            Console.WriteLine(currImpl.errorTrace.ToString());
+                            Console.WriteLine("[Internal Exception]: Please report to the P Team");
+                            Console.WriteLine(currImpl.Exception.ToString());
+                            Environment.Exit(-1);
                         }
                     }
-                    numOfSchedules++;
+
+                    numOfSteps++;
+
+                    //print the execution if verbose
+                    if(options.verbose)
+                    {
+                        Console.WriteLine("-----------------------------------------------------");
+                        Console.WriteLine("Execution {0}", numOfSchedules);
+                        Console.WriteLine(currImpl.errorTrace.ToString());
+                    }                    
                 }
+                numOfSchedules++;
             }
+
+        }
+
+        public static StateImpl main_s;
+
+        public static void RunPSharpTester(StateImpl s)
+        {
+            main_s = s;
+
+            var configuration = Configuration.Create()
+                .WithNumberOfIterations(10000); 
+
+            configuration.UserExplicitlySetMaxFairSchedulingSteps = true;
+            configuration.MaxUnfairSchedulingSteps = 100;
+            configuration.MaxFairSchedulingSteps = configuration.MaxUnfairSchedulingSteps * 10;
+            configuration.LivenessTemperatureThreshold = configuration.MaxFairSchedulingSteps / 3;
             
+            var engine = Microsoft.PSharp.TestingServices.TestingEngineFactory.CreateBugFindingEngine(
+                configuration, PSharpWrapper.Execute);
+            engine.Run();
+
+            Console.WriteLine("Bugs found: {0}", engine.TestReport.NumOfFoundBugs);
         }
     }
+
+    public class PSharpWrapper
+    {
+        public static void Execute(PSharpRuntime runtime)
+        {
+            runtime.CreateMachine(typeof(PSharpMachine), new MachineInitEvent((StateImpl)PTesterCommandLine.main_s.Clone()));
+        }
+
+        public class Unit : Microsoft.PSharp.Event { }
+
+        public class MachineInitEvent : Microsoft.PSharp.Event
+        {
+            public StateImpl s;
+
+            public MachineInitEvent(StateImpl s)
+            {
+                this.s = s;
+            }
+        }
+
+        class PSharpMachine : Microsoft.PSharp.Machine
+        {
+            StateImpl currImpl;
+            Dictionary<PrtSpecMachine, Type> specToMonitor;
+
+            [Microsoft.PSharp.Start]
+            [Microsoft.PSharp.OnEntry(nameof(Configure))]
+            [Microsoft.PSharp.OnEventDoAction(typeof(Unit), nameof(Step))]
+            class Init : Microsoft.PSharp.MachineState { }
+
+            void Configure()
+            {
+                var e = (this.ReceivedEvent as MachineInitEvent);
+                this.currImpl = e.s;
+                this.specToMonitor = new Dictionary<PrtSpecMachine, Type>();
+
+                // register monitors
+                foreach (var spec in currImpl.GetAllSpecMachines())
+                {
+                    var genericTy = typeof(PSharpMonitor<int>).GetGenericTypeDefinition();
+                    var specTy = spec.GetType();
+                    var monitorTy = genericTy.MakeGenericType(specTy);
+                    this.specToMonitor.Add(spec, monitorTy);
+
+                    this.Id.Runtime.RegisterMonitor(monitorTy);
+                }
+
+                this.Raise(new Unit());
+            }
+
+            void Step()
+            {
+                if (currImpl.EnabledMachines.Count == 0)
+                {
+                    return;
+                }
+
+                foreach (var tup in specToMonitor)
+                {
+                    Event ev = tup.Key.currentTemperature == StateTemperature.Hot ? (Event) new MoveToHot() :
+                        tup.Key.currentTemperature == StateTemperature.Warm ? (Event) new MoveToWarm() :
+                        (Event) new MoveToCold();
+
+                    this.Monitor(tup.Value, ev);
+                }
+
+
+                var num = currImpl.EnabledMachines.Count;
+                var choosenext = this.RandomInteger(num);
+                currImpl.EnabledMachines[choosenext].PrtRunStateMachine();
+                if (currImpl.Exception != null)
+                {
+                    if (currImpl.Exception is PrtAssumeFailureException)
+                    {
+                        return;
+                    }
+                    else
+                    {
+                        this.Assert(false, currImpl.Exception.ToString());
+                    }
+                }
+
+                this.Raise(new Unit());
+            }
+
+        }
+
+        class MoveToHot : Event { }
+        class MoveToCold : Event { }
+        class MoveToWarm : Event { }
+
+        class PSharpMonitor<T> : Monitor
+        {
+            [Start]
+            [Cold]
+            [OnEventDoAction(typeof(MoveToHot), nameof(GotHot))]
+            [OnEventDoAction(typeof(MoveToCold), nameof(GotCold))]
+            [OnEventDoAction(typeof(MoveToWarm), nameof(GotWarm))]
+            class S1 : MonitorState { }
+
+            [Hot]
+            [OnEventDoAction(typeof(MoveToHot), nameof(GotHot))]
+            [OnEventDoAction(typeof(MoveToCold), nameof(GotCold))]
+            [OnEventDoAction(typeof(MoveToWarm), nameof(GotWarm))]
+            class S2 : MonitorState { }
+
+            [OnEventDoAction(typeof(MoveToHot), nameof(GotHot))]
+            [OnEventDoAction(typeof(MoveToCold), nameof(GotCold))]
+            [OnEventDoAction(typeof(MoveToWarm), nameof(GotWarm))]
+            class S3 : MonitorState { }
+
+            void GotHot()
+            {
+                this.Goto(typeof(S2));
+            }
+
+            void GotCold()
+            {
+                this.Goto(typeof(S1));
+            }
+
+            void GotWarm()
+            {
+                this.Goto(typeof(S3));
+            }
+
+        }
+    }
+
 }

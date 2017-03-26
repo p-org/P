@@ -57,7 +57,13 @@ shift
 goto :parseargs
 
 :initsub
-if exist "Ext\Formula\README.md" goto :updatesub
+if exist "Ext\PSharp\README.md" (
+    if exist "Ext\Formula\README.md" (
+        if exist "EXT\Zing\README.md" (
+            goto :updatesub
+        )
+    )
+)
 
 echo ### Initializing your submodules 
 git submodule init
@@ -77,6 +83,7 @@ if "%NoSync%"=="true" goto :nosync
 echo ### Updating your submodules 
 call :checksubmodule Ext/Formula
 call :checksubmodule Ext/Zing
+call :checksubmodule Ext/PSharp
 
 if "%SubmoduleOutOfDate%"=="false" goto :nosync
 
@@ -115,6 +122,15 @@ for %%i in (zc\bin\%Platform%\Release\zc.exe
     copy %%i %BinaryDrop%
 )
    
+cd ..\..
+
+REM Build PSharp
+cd ext\PSharp
+..\..\Bld\nuget restore PSharp.sln
+echo msbuild PSharp.sln /p:Platform="Any CPU" /p:Configuration=%Configuration%
+msbuild  PSharp.sln /p:Platform="Any CPU" /p:Configuration=%Configuration%
+if ERRORLEVEL 1 goto :exit
+
 cd ..\..
 
 if "%NoClean%"=="true" goto :build

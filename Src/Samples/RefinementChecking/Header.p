@@ -2,8 +2,8 @@
 Global Type Declarations
 *************************************************/
 //response payload type
-type responseType = (id: int, success: bool);
-type requestType = (source: ClientInterface, id:int);
+type responseType : (id: int, success: bool);
+type requestType : (source: ClientInterface, id:int);
 
 //Interface Types
 type ServerClientInterface() = { eRequest }; 

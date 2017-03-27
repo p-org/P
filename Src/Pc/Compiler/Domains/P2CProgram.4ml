@@ -272,6 +272,151 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
 
+	//// Extern declaration for foreign type enum
+	HOut(0, def) :- in.ModelType(name, _), cn = strJoin("P_FORGN_TYPE_", name),
+						def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_UINT32"), 
+								  cn, 
+								  NIL).
+
+	//// Extern declarations for foreign type functions
+	HOut(0, def) :- in.ModelType(name, _),
+	                params = NIL,
+				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
+					argTypes = PrmTypes(BaseType(VOID), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_MKDEF_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name, _),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_CLONE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name, _),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_FREE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name, _),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_GETHASHCODE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name, _),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_TOSTRING_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.ModelType(name, _),
+	                params = Params(Param(NIL, "frgnVal1"),
+					         Params(Param(NIL, "frgnVal2"), 
+							 NIL)),
+				    funType = FunType(NmdType(NIL, "PRT_BOOLEAN"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), 
+							   PrmTypes(NmdType(NIL, "PRT_UINT64"), 
+							   NIL)),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FORGN_ISEQUAL_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	//// Event structs
+	HOut(0, def) :- EventName(_, eventName),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_UINT32"), 
+								  eventName, 
+								  NIL).
+	HOut(0, def) :- EventName(_, eventName), eventStructName = strJoin(eventName, "_STRUCT"),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_EVENTDECL"), 
+								  eventStructName, 
+								  NIL).
+
+	//// Eventset enum
+	HOut(0, def) :- UniqueEventSetName(esName, _),
+								  def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_UINT32"), 
+								  esName, 
+								  NIL).
+
+	//// Fun structs
+ 	HOut(0, def) :- AnonOrNamedFunName(_, funName),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_UINT32"), 
+								  funName, 
+								  NIL).
+ 	HOut(0, def) :- AnonOrNamedFunName(_, funName), funStructName = strJoin(funName, "_STRUCT"),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_FUNDECL"), 
+								  funStructName, 
+								  NIL).
+
+	//// Machine structs
+	HOut(0, def) :- MachineName(_, machineName),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_UINT32"), 
+								  machineName, 
+								  NIL).
+	HOut(0, def) :- MachineName(_, machineName), machineStructName = strJoin(machineName, "_STRUCT"),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_MACHINEDECL"), 
+								  machineStructName, 
+								  NIL).
+
+	//// IORM enum names
+	HOut(0, def) :- in.MachineDecl(name, _, _, _, _), iormName = strJoin("P_IORM_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iormName, NIL).
+	HOut(0, def) :- in.MachineProtoDecl(name, _), iormName = strJoin("P_IORM_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iormName, NIL).
+	HOut(0, def) :- in.InterfaceTypeDecl(name, _, _, _), iormName = strJoin("P_IORM_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iormName, NIL).
+
+	//// Extern declaration for Program Decl
+	HOut(0, def) :- def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_PROGRAMDECL"), 
+								  "P_GEND_PROGRAM", 
+								  NIL).
+
+
     /*************************************************************/
     /******       Generate contents of code file            ******/
     /*************************************************************/	

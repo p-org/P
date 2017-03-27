@@ -722,14 +722,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	   list = toList(#Elements, NIL, { enumMember | 
 									   EventId(_, id, cn), enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_EVENTS_COUNT"), size = 2 + count({d | d is EventId}) }).  
-	
-	HOut(0, def) :- EventId(_, _, cn), eventStructName = strJoin(cn, "_STRUCT"),
-	                        def = out.VarDef(
-							      EXTERN, 
-								  NmdType(NIL, "PRT_EVENTDECL"), 
-								  eventStructName, 
-								  NIL).
-		
+			
 	//// MemberOfInterfaceTypes
 	HOut(0, out.EnmDef(NIL, "P_EVENTSET", list)) :- 
 	   list = toList(#Elements, NIL, { enumMember | 
@@ -750,13 +743,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 									   DeclId(d, id, cn), d is AnonOrNamedFun, x = 2*id, enumMember = Element(IntLit(x, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_FUNS_COUNT"), size = 1 + count({d | d is AnonOrNamedFun}) }).
 
-	HOut(0, def) :- d is AnonOrNamedFun, DeclId(d, _, funName), funStructName = strJoin(funName, "_STRUCT"),
-	                        def = out.VarDef(
-							      EXTERN, 
-								  NmdType(NIL, "PRT_FUNDECL"), 
-								  funStructName, 
-								  NIL).
-
 	//// Machine decls - Start at Id 0.
 	DeclId(d, id, cn) :- d is MachineDecl, id = toOrdinal(d, 0, { d' | d' is MachineDecl }), cn = strJoin("P_MACHINE_", d.name).
 	
@@ -764,13 +750,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	   list = toList(#Elements, NIL, { enumMember | 
 									   DeclId(d, id, cn), d : MachineDecl, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_MACHINES_COUNT"), size = count({d | d is MachineDecl}) }).  
-
-	HOut(0, def) :- d is MachineDecl, machineName = strJoin("P_MACHINE_", d.name), machineStructName = strJoin(machineName, "_STRUCT"),
-	                        def = out.VarDef(
-							      EXTERN, 
-								  NmdType(NIL, "PRT_MACHINEDECL"), 
-								  machineStructName, 
-								  NIL).
 
 	//// Enum for renamed machine names
 	HOut(0, out.EnmDef(NIL, "P_RENAME", list)) :- 
@@ -784,84 +763,6 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 									   CLinkMap(_, iOrM, _), id = toOrdinal(iOrM, 0, {n | CLinkMap(_, n, _)}), enumMember = Element(IntLit(id, DEC, NIL), strJoin("P_IORM_", iOrM)); 
 									   enumMember = Element(IntLit(size, DEC, NIL), "_P_IORM_COUNT"), size = count({n | CLinkMap(_, n, _)}) }). 
 	
-	//// Extern declarations for foreign type functions
-	HOut(0, def) :- ModelType(name, _),
-	                params = NIL,
-				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
-					argTypes = PrmTypes(BaseType(VOID), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_MKDEF_", strJoin(name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(0, def) :- ModelType(name, _),
-	                params = Params(Param(NIL, "frgnVal"), NIL),
-				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_CLONE_", strJoin(name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(0, def) :- ModelType(name, _),
-	                params = Params(Param(NIL, "frgnVal"), NIL),
-				    funType = FunType(BaseType(VOID), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_FREE_", strJoin(name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(0, def) :- ModelType(name, _),
-	                params = Params(Param(NIL, "frgnVal"), NIL),
-				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_GETHASHCODE_", strJoin(name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(0, def) :- ModelType(name, _),
-	                params = Params(Param(NIL, "frgnVal"), NIL),
-				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_TOSTRING_", strJoin(name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	HOut(0, def) :- ModelType(name, _),
-	                params = Params(Param(NIL, "frgnVal1"),
-					         Params(Param(NIL, "frgnVal2"), 
-							 NIL)),
-				    funType = FunType(NmdType(NIL, "PRT_BOOLEAN"), argTypes),
-					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), 
-							   PrmTypes(NmdType(NIL, "PRT_UINT64"), 
-							   NIL)),					  
-	                def = FunDef(
-					  NIL,
-					  funType,
-					  strJoin("PRT_FORGN_ISEQUAL_", strJoin(name, "_IMPL")),
-					  params,
-					  UNKNOWN).
-
-	//// Extern declaration for Program Decl
-	HOut(0, def) :- def = out.VarDef(
-							      EXTERN, 
-								  NmdType(NIL, "PRT_PROGRAMDECL"), 
-								  "P_GEND_PROGRAM", 
-								  NIL).
-
 	/*************************************************************/
     /**********   Generate contents of code file     ***********/
     /*************************************************************/

@@ -15,32 +15,32 @@ machine Main {
 			var mloc: map[int, int];
 			
 			foo(xloc swap);
-			assert xloc == 1;                   //holds?
+			assert xloc == 1;                   //holds
 			foo(xloc move);
 			xloc = 1;
 			yloc = xloc + 1;			          //OK
 			
-			assert x == 1;                    //holds?
+			assert xloc == 1;                    //holds
 			
 			baz(xloc swap, yloc move);
-			assert xloc == 5;                    //holds?
+			assert xloc == 7;                    //holds
 
 			xloc = xloc + 2;                          //OK
 
-			assert xloc == 7;                       //holds?
+			assert xloc == 9;                       //holds
 			
 			yloc = 2;                             //to make yloc available
 			baz(xloc swap, xloc + yloc);     
-			assert xloc == 9;                     //?
-			assert yloc == 2;					//?
+			assert xloc == 16;                     //holds
+			assert yloc == 2;					//holds
 			
 			yloc = baz_1(xloc move, xloc + yloc);
 			//assert xloc == 1;						//?
-			assert yloc == 7;						//?
+			assert yloc == 23;						//?
 			
 			xloc = 20;                          //to make xloc available 
 			x = xloc move;                        //OK
-			assert x == 40;                      //holds?
+			assert x == 20;                      //holds?
 
 			//x = 4;                              //to make x available
 			
@@ -111,9 +111,9 @@ machine Main {
 		a = b + 5;
 	}
 	fun baz_1(a: int, b: int): int{
-		assert a == 9;
+		assert a == 16;               //fails: TODO
 		a = b + 5;
-		return a;
+		return 23;
 	}
 }
 

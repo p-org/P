@@ -1,0 +1,40 @@
+{
+    "name": "msr-vscode-p",
+    "displayName": "p",
+    "description": "The P programming language ",
+    "version": "0.0.5",
+    "publisher": "lovettchris",
+	"icon": "images/p-icon.png",
+    "engines": {
+        "vscode": "^1.10.0"
+    },
+    "categories": [
+        "Languages"
+    ],
+    "homepage": "https://github.com/p-org/P/blob/master/README.md",
+    
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/p-org/P.git"
+    },
+    "license": "https://github.com/p-org/P/blob/master/LICENSE.txt",
+    "contributes": {
+        "languages": [{
+            "id": "p",
+            "aliases": ["P language", "p"],
+            "extensions": [".p"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "p",
+            "scopeName": "source.p",
+            "path": "./syntaxes/p.tmLanguage"
+        }],
+        "snippets": [
+            {
+                "language": "p",
+                "path": "./snippets/snippets.json"
+            }
+        ]
+    }
+}

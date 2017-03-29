@@ -28,7 +28,7 @@ sends PING;
 }
 
 machine Server : IServer
-receives PING;
+receives PING, TIMEOUT;
 sends PONG, START;
 { 
   var timer: TimerPtr;
@@ -51,9 +51,12 @@ sends PONG, START;
       client =  m;
       StartTimer(timer, 1000);
     } 
+    ignore TIMEOUT;
+    /*
     on TIMEOUT goto WaitPing with { 
 	  print "Server sending PONG\n";
       send client, PONG; 
     }
+    */
   }
 } 

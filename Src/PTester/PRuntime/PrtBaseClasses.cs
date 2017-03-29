@@ -126,7 +126,7 @@ namespace P.Runtime
                 }
                 else
                 {
-                    stateImpl.Trace("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
+                    stateImpl.TraceLine("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
                     currentStatus = PrtMachineStatus.Halted;
                 }
             }
@@ -150,7 +150,7 @@ namespace P.Runtime
         {
             if (!fun.IsAnonFun)
             {
-                stateImpl.Trace("<FunctionLog> Machine {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
+                stateImpl.TraceLine("<FunctionLog> Machine {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
             }
             invertedFunStack.PushFun(fun, locals);
         }
@@ -162,7 +162,7 @@ namespace P.Runtime
 
         public void PrtPushExitFunction()
         {
-            stateImpl.Trace("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
+            stateImpl.TraceLine("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
             PrtFun exitFun = CurrentState.exitFun;
             if (exitFun.IsAnonFun)
             {

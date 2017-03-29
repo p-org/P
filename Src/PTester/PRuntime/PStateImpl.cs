@@ -222,7 +222,7 @@ namespace P.Runtime
             {
                 if (mon.observes.Contains(ev))
                 {
-                    Trace("<AnnounceLog> Enqueued Event <{0}, {1}> to Spec Machine {2}", ev, payload, mon.Name);
+                    TraceLine("<AnnounceLog> Enqueued Event <{0}, {1}> to Spec Machine {2}", ev, payload, mon.Name);
                     mon.PrtEnqueueEvent(ev, payload, parent);
                 }
             }
@@ -239,6 +239,11 @@ namespace P.Runtime
         }
 
         public void Trace(string message, params object[] arguments)
+        {
+            errorTrace.Append(String.Format(message, arguments));
+        }
+
+        public void TraceLine(string message, params object[] arguments)
         {
             errorTrace.AppendLine(String.Format(message, arguments));
         }

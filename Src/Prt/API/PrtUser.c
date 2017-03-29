@@ -190,7 +190,7 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 		PrtUserPrintMachineId(PrtPrimGetMachine(value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALUE_KIND_FORGN:
-		frgnStr = prtForeignTypeDecls[value->valueUnion.frgn->typeTag].toStringFun(value->valueUnion.frgn->value);
+		frgnStr = prtForeignTypeDecls[value->valueUnion.frgn->typeTag]->toStringFun(value->valueUnion.frgn->value);
 		PrtUserPrintString(frgnStr, buffer, bufferSize, numCharsWritten);
 		PrtFree(frgnStr);
 		break;

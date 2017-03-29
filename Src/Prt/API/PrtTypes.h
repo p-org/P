@@ -25,18 +25,6 @@ extern "C"{
 #define PRT_MAXFLDNAME_LENGTH 256
 #include "PrtConfig.h"
 
-#ifdef PRT_USE_IDL
-#include "PrtTypes_IDL.h"
-#else
-/** Structure for representing a standard GUID */
-typedef struct PRT_GUID
-{
-	PRT_UINT32 data1;   /**< 0 First data field (32 bits)  */
-	PRT_UINT16 data2;   /**< 0 Second data field (16 bits) */
-	PRT_UINT16 data3;   /**< 0 Third data field (16 bits)  */
-	PRT_UINT64 data4;   /**< 0 Fourth data field (64 bits) */
-} PRT_GUID;
-
 /** 
 * \enum
 * These are the kinds of types in the P type system. 
@@ -70,7 +58,7 @@ typedef struct PRT_TYPE {
 		struct PRT_NMDTUPTYPE *nmTuple;	/**< Named Tuple type	*/
 		struct PRT_SEQTYPE *seq;		/**< Sequence type		*/
 		struct PRT_TUPTYPE *tuple;		/**< Tuple type		    */
-		PRT_UINT16 typeTag;             /**< Foreign type       */
+		struct PRT_FOREIGNTYPEDECL *foreignType;             /**< Foreign type       */
 	} typeUnion;
 } PRT_TYPE;
 
@@ -113,7 +101,6 @@ typedef struct PRT_TUPTYPE
 	PRT_UINT32    arity;         /**< Arity of tuple type; arity > 0 */
 	PRT_TYPE      **fieldTypes;   /**< Array of field types; length = arity */
 } PRT_TUPTYPE;
-#endif
 
 /** The PRT_FORGN_MKDEF function is called whenever a default foreign value is created.
 */
@@ -169,10 +156,10 @@ typedef struct PRT_FOREIGNTYPEDECL
 } PRT_FOREIGNTYPEDECL;
 
 /* The number of foreign type decls */
-extern PRT_UINT16 prtNumForeignTypeDecls;
+extern PRT_UINT32 prtNumForeignTypeDecls;
 
 /* The active set of foreign type decls */
-extern PRT_FOREIGNTYPEDECL *prtForeignTypeDecls;
+extern PRT_FOREIGNTYPEDECL **prtForeignTypeDecls;
 
 /** Makes an instance of a primitive type.
 * @param[in] primType Any primitive type; cannot be a foreign type.
@@ -182,11 +169,11 @@ extern PRT_FOREIGNTYPEDECL *prtForeignTypeDecls;
 PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType);
 
 /** Makes an instance of a foreign type.
-* @param[in] typeTag The typeTag of the foreign type.
+* @param[in] foreignType The foreign type.
 * @returns An instance of a foreign type. Caller is responsible for freeing.
 * @see PrtFreeType
 */
-PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkForeignType(_In_ PRT_UINT16 typeTag);
+PRT_API PRT_TYPE * PRT_CALL_CONV PrtMkForeignType(_In_ PRT_FOREIGNTYPEDECL *foreignType);
 
 /** Makes a map type. 
 * @param domType The domain type (will be deeply cloned).

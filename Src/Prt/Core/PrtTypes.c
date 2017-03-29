@@ -1,10 +1,10 @@
 #include "PrtTypes.h"
 
 /* The number of foreign type decls */
-PRT_UINT16 prtNumForeignTypeDecls = 0;
+PRT_UINT32 prtNumForeignTypeDecls = 0;
 
 /* The active set of foreign type decls */
-PRT_FOREIGNTYPEDECL *prtForeignTypeDecls = NULL;
+PRT_FOREIGNTYPEDECL **prtForeignTypeDecls = NULL;
 
 PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 {
@@ -31,12 +31,11 @@ PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 	}
 }
 
-PRT_TYPE * PRT_CALL_CONV PrtMkForeignType(_In_ PRT_UINT16 typeTag)
+PRT_TYPE * PRT_CALL_CONV PrtMkForeignType(_In_ PRT_FOREIGNTYPEDECL *foreignType)
 {
-	PrtAssert(typeTag < prtNumForeignTypeDecls, "Invalid type tag");
 	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
 	type->typeKind = PRT_KIND_FORGN;
-	type->typeUnion.typeTag = typeTag;
+	type->typeUnion.foreignType = foreignType;
 	return type;
 }
 
@@ -154,7 +153,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *su
 	case PRT_KIND_FORGN:
 	{
 		//// These types do not have any proper subtypes.
-		return (subKind == supKind && subType->typeUnion.typeTag == supType->typeUnion.typeTag) ? PRT_TRUE : PRT_FALSE;
+		return (subKind == supKind && subType->typeUnion.foreignType->declIndex == supType->typeUnion.foreignType->declIndex) ? PRT_TRUE : PRT_FALSE;
 	}
 	case PRT_KIND_MAP:
 	{	
@@ -276,7 +275,7 @@ PRT_TYPE * PRT_CALL_CONV PrtCloneType(_In_ PRT_TYPE *type)
 	}
 	case PRT_KIND_FORGN:
 	{
-		return PrtMkForeignType(type->typeUnion.typeTag);
+		return PrtMkForeignType(type->typeUnion.foreignType);
 	}
 	case PRT_KIND_MAP:
 	{		
@@ -410,7 +409,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE *type)
 			return PRT_TRUE;
 		case PRT_KIND_FORGN:
 		{
-			return type->typeUnion.typeTag < prtNumForeignTypeDecls;
+			return type->typeUnion.foreignType->declIndex < prtNumForeignTypeDecls;
 		}
 		case PRT_KIND_MAP:
 		{

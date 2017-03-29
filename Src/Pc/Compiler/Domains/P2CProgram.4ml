@@ -127,7 +127,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	HConcatOut(m', cmp) :- HConcatOut(m, before), HOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
 	
 	Includes ::= (in.StringList + {NIL}, out.Cmp).
-	Includes(%importFileNames, PpInclude("linker.h", FALSE)).
+	Includes(%importFileNames, Section(PpInclude("PrtUser.h", FALSE),
+									   PpInclude("PrtExecution.h", FALSE))).
 	Includes(tl, inc') :- Includes(in.StringList(name, tl), inc), inc' = out.Section(PpInclude(strJoin(name, ".h"), FALSE), inc).
 
 	out.File(headerFileName, body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
@@ -272,12 +273,18 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
 
-	//// Extern declaration for foreign type enum
-	HOut(0, def) :- in.ModelType(name, _), cn = strJoin("P_FORGN_TYPE_", name),
+	//// Extern declarations for foreign types
+	HOut(0, def) :- in.ModelType(name, _), foreignTypeName = strJoin("P_FORGN_TYPE_", name),
 						def = out.VarDef(
 							      EXTERN, 
 								  NmdType(NIL, "PRT_UINT32"), 
-								  cn, 
+								  foreignTypeName, 
+								  NIL).
+	HOut(0, def) :- in.ModelType(name, _), foreignTypeName = strJoin("P_FORGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+						def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_FOREIGNTYPEDECL"), 
+								  foreignTypeStructName, 
 								  NIL).
 
 	//// Extern declarations for foreign type functions
@@ -352,6 +359,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  UNKNOWN).
 
 	//// Event structs
+	HOut(0, def) :- def = out.VarDef(EXTERN, NmdType(NIL, "PRT_VALUE"), "P_GEND_VALUE_EVENT_NULL", NIL).
+	HOut(0, def) :- def = out.VarDef(EXTERN, NmdType(NIL, "PRT_VALUE"), "P_GEND_VALUE_EVENT_HALT", NIL).
+	HOut(0, def) :- d is in.EventDecl, def = out.VarDef(EXTERN, NmdType(NIL, "PRT_VALUE"), strJoin("P_GEND_VALUE_EVENT_", d.name), NIL).
 	HOut(0, def) :- EventName(_, eventName),
 	                        def = out.VarDef(
 							      EXTERN, 
@@ -369,23 +379,16 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	HOut(0, def) :- UniqueEventSetName(esName, _),
 								  def = out.VarDef(
 							      EXTERN, 
-								  NmdType(NIL, "PRT_UINT32"), 
+								  NmdType(NIL, "PRT_EVENTSETDECL"), 
 								  esName, 
 								  NIL).
 
 	//// Fun structs
- 	HOut(0, def) :- AnonOrNamedFunName(_, funName),
-	                        def = out.VarDef(
-							      EXTERN, 
-								  NmdType(NIL, "PRT_UINT32"), 
-								  funName, 
-								  NIL).
+ 	HOut(0, def) :- AnonOrNamedFunName(decl, funName), decl is in.FunProtoDecl, def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), funName, NIL).
+	HOut(0, def) :- AnonOrNamedFunName(decl, funName), decl.owner = NIL, def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), funName, NIL).
  	HOut(0, def) :- AnonOrNamedFunName(_, funName), funStructName = strJoin(funName, "_STRUCT"),
-	                        def = out.VarDef(
-							      EXTERN, 
-								  NmdType(NIL, "PRT_FUNDECL"), 
-								  funStructName, 
-								  NIL).
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_FUNDECL"), funStructName, NIL).
+	HOut(0, def) :- def = out.VarDef(EXTERN, NmdType(NIL, "PRT_FUNDECL"), "P_FUN_IGNORE_PUSH_STRUCT", NIL).
 
 	//// Machine structs
 	HOut(0, def) :- MachineName(_, machineName),
@@ -609,9 +612,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.NameType(name), in.ModelType(name, _),
 								defs = out.Section(before, def),
 								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								indexName = strJoin("P_FORGN_TYPE_", name),
+								foreignTypeName = strJoin("P_FORGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
                                 typeStruct = out.Init(Args(Ident("PRT_KIND_FORGN"), 
-								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), Ident(indexName)), NIL)), NIL))).						              
+								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(foreignTypeStructName))), NIL)), NIL))).						              
 	
 	//// Complex type Seq 
 	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
@@ -746,10 +749,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
     /*************************************************************/
 
 	ConstExpr ::= (e: in.Expr).
-	ConstExpr(in.NulApp(NULL, NIL)).
-	ConstExpr(in.NulApp(HALT, NIL)).
-	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op != THIS, op != NONDET, op != FAIRNONDET.
-	ConstExpr(in.Name(n, NIL)) :- SubSE(_, e), e = in.Name(n, _), eventDecl is in.EventDecl(n, _, _, _). 
+	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Integer.
+	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Boolean.
 	ConstExpr(in.Name(n, NIL)) :- EnumTypeElemIndex(_, StringList(n, _), _, _, _).
 
 	ConstId      ::= (id: Natural, const: in.Expr).
@@ -757,13 +758,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	//// Base types
 	BaseConstant2Kind ::= (const: in.Expr, kind: String, value: out.Expr).
-	BaseConstant2Kind(e, "PRT_VALUE_KIND_NULL", out.Ident("PRT_SPECIAL_EVENT_NULL")) :- ConstExpr(e), e = in.NulApp(NULL, _).
-	BaseConstant2Kind(e, "PRT_VALUE_KIND_EVENT", out.Ident("PRT_SPECIAL_EVENT_HALT")) :- ConstExpr(e), e = in.NulApp(HALT, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = in.NulApp(n, _), n: Integer.
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = in.NulApp(FALSE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = in.NulApp(TRUE, _).
-	BaseConstant2Kind(e, "PRT_VALUE_KIND_EVENT", out.Ident(eventName)) :- ConstExpr(e), e = in.Name(n, _), eventDecl is in.EventDecl(n, _, _, _), 
-																		  EventName(eventDecl, eventName). 
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = in.Name(name, _), EnumTypeElemIndex(d, StringList(name, _), _, _, _),
 																n = strJoin(strJoin(d.name, "_"), name).
 
@@ -801,7 +798,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								  eventStructName, 
 								  init),
 	                        init = Init(
-							   Args(Ident(cn),
+							   Args(IntLit(0, DEC, U),
 							   Args(StringLit(name, NIL),
 							   Args(card,
 							   Args(expr,
@@ -823,13 +820,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							d : in.VarDecl, TypeToExpr(d.type, expr),
 							arr = out.Args(def, after), 
 	                        def = Init(
-							   Args(Ident(cvar),
-							   Args(Ident(ownerMachineName),
 							   Args(StringLit(d.name, NIL),
 							   Args(expr,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))).
+							   NIL))))).
 
 	COut(5, def) :- VarDeclConcat(0, mach, arr),
 	                def = out.VarDef(
@@ -860,7 +855,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	//// Transition action index depends on whether the transition is a push transition or not.
     TransDeclAction  ::= (decl: in.TransDecl, funName: String).
-	TransDeclAction(t, funname) :- t is in.TransDecl, t.action = PUSH, funname = "_P_FUN_PUSH_OR_IGN". 
+	TransDeclAction(t, funname) :- t is in.TransDecl, t.action = PUSH, funname = "P_FUN_IGNORE_PUSH". 
 	TransDeclAction(t, funname) :- t is in.TransDecl, act = t.action, act : in.AnonFunDecl, AnonOrNamedFunName(act, funname). 
 	TransDeclAction(t, funname) :- t is in.TransDecl, act = t.action, act : String, FunAvailable(f, t.src.owner), f.name = act, AnonOrNamedFunName(f, funname). 
 
@@ -870,20 +865,18 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
     //// Build every transition list in reverse order
 	TransDeclConcat(m, d.src, arr) :- 
 							TransDeclId(d, m, srcname, dstname, machname),
-							TransDeclEvnt(d, evname),
-							TransDeclAction(d, funname),
+							TransDeclEvnt(d, evname), evStructName = strJoin(evname, "_STRUCT"),
+							TransDeclAction(d, funname), funStructName = strJoin(funname, "_STRUCT"),
 							TransDeclConcat(m + 1, d.src, after), 
 							arr = out.Args(def, after), 
 	                        def = Init(
-							   Args(IntLit(m, DEC, NIL),
 							   Args(Ident(srcname),
-							   Args(Ident(machname),
-							   Args(Ident(evname),
+							   Args(UnApp(ADDR, Ident(evStructName)),
 							   Args(Ident(dstname),
-							   Args(Ident(funname),
+							   Args(UnApp(ADDR, Ident(funStructName)),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))).
+							   NIL))))))).
 
 	COut(6, def) :- TransDeclConcat(0, state, arr),
 	                QualName2CStr(state.name, statename),
@@ -918,7 +911,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	//// Do action index depends on whether the do is an ignore or not.
     DoDeclAction  ::= (decl: in.DoDecl, funName: String).
-	DoDeclAction(d, funname) :- d is in.DoDecl, d.action = IGNORE, funname = "_P_FUN_PUSH_OR_IGN". 
+	DoDeclAction(d, funname) :- d is in.DoDecl, d.action = IGNORE, funname = "P_FUN_IGNORE_PUSH". 
 	DoDeclAction(d, funname) :- d is in.DoDecl, act = d.action, act : AnonOrNamedFun, AnonOrNamedFunName(act, funname). 
 	DoDeclAction(d, funname) :- d is in.DoDecl, act = d.action, act : String, FunAvailable(f, d.src.owner), f.name = act, AnonOrNamedFunName(f, funname). 
 
@@ -928,19 +921,17 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
     //// Build every transition list in reverse order
 	DoDeclConcat(m, d.src, arr) :- 
 							DoDeclId(d, m, srcname, machname),
-							DoDeclEvnt(d, evname),
-							DoDeclAction(d, funname),
+							DoDeclEvnt(d, evname), evStructName = strJoin(evname, "_STRUCT"),
+							DoDeclAction(d, funname), funStructName = strJoin(funname, "_STRUCT"),
 							DoDeclConcat(m + 1, d.src, after), 
 							arr = out.Args(def, after), 
 	                        def = Init(
-							   Args(IntLit(m, DEC, NIL),
 							   Args(Ident(srcname),
-							   Args(Ident(machname),
-							   Args(Ident(evname),
-							   Args(Ident(funname),
+							   Args(UnApp(ADDR, Ident(evStructName)),
+							   Args(UnApp(ADDR, Ident(funStructName)),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))).
+							   NIL)))))).
 
 	COut(7, def) :- DoDeclConcat(0, state, arr),
 	                QualName2CStr(state.name, statename),
@@ -1132,8 +1123,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	CaseDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, cases: in.Cases + { NIL }, arr: out.Args + { NIL }).
 	CaseDeclConcat(0, decl, NIL, NIL) :- decl is AnonOrNamedFun.
 	CaseDeclConcat(c, decl, cases, arr) :- SubSE(decl, cases), cases = in.Cases(trig, act, cases', _), CaseDeclConcat(c', decl, cases', arr'),
-										   CaseEvent(trig, eventName), AnonOrNamedFunName(act, funName),
-										   def = out.Init(Args(Ident(eventName), Args(Ident(funName), NIL))),
+										   CaseEvent(trig, eventName), AnonOrNamedFunName(act, funName), 
+										   eventStructName = strJoin(eventName, "_STRUCT"), funStructName = strJoin(funName, "_STRUCT"),
+										   def = out.Init(Args(UnApp(ADDR, Ident(eventStructName)), Args(UnApp(ADDR, Ident(funStructName)), NIL))),
 										   arr = out.Args(def, arr'), c = c' + 1.
 
 	COut(9, def) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = in.Receive(cases, label, _),
@@ -1153,7 +1145,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 									   UniqueEventSetName(index, toList(link.#EventNameList, NIL, { ev | ReceiveCases(decl, receive, x), ev = x.trig })),
 									   def = out.Init(
 												Args(IntLit(label, DEC, U),
-												Args(Ident(index),
+												Args(UnApp(ADDR, Ident(index)),
 												Args(IntLit(nCases, DEC, U),
 												Args(Ident(strJoin("P_GEND_CASES_", strJoin(declName, strJoin("_", toString(label))))),
 												NIL))))).
@@ -1173,14 +1165,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args,
 				AnonOrNamedFunName(decl, declName), receives = Ident(strJoin("P_GEND_RECEIVE_", declName)).
 
-	COut(11, def) :-  		AnonOrNamedFunName(d, cfun), d : in.FunDecl, d.owner = NIL,
+	COut(11, def) :-  		AnonOrNamedFunName(d, cfun), d : in.FunDecl,
 							funStructName = strJoin(cfun, "_STRUCT"),
 							in.MaxNumLocals(d, maxNumLocals), 
 							LocalsType(d, localsType),
 							ReceiveDeclInit(d, nReceives, receives), 
 							numParameters = lstLength(in.#NmdTupType, d.params),
 	                        init = Init(
-							   Args(Ident(cfun),
 							   Args(IntLit(0, DEC, U),
 							   Args(StringLit(d.name, NIL),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
@@ -1193,21 +1184,20 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))))))),
+							   NIL))))))))))))),
 							def = out.VarDef(
 							      NIL, 
 								  NmdType(NIL, "PRT_FUNDECL"), 
 								  funStructName, 
 								  init).
 
-	COut(11, def) :- 		AnonOrNamedFunName(d, cfun), d : in.AnonFunDecl, d.owner = NIL,
+	COut(11, def) :- 		AnonOrNamedFunName(d, cfun), d : in.AnonFunDecl,
 							funStructName = strJoin(cfun, "_STRUCT"),
 							in.MaxNumLocals(d, maxNumLocals), 
 							r = lstReverse(in.#NmdTupType, d.envVars), TypeToExpr(r.hd.type, payloadType),
 							LocalsType(d, localsType),
 							ReceiveDeclInit(d, nReceives, receives),
 	                        init = Init(
-							   Args(Ident(cfun),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
@@ -1220,7 +1210,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL)))))))))))))),
+							   NIL))))))))))))),
 							def = out.VarDef(
 							      NIL, 
 								  NmdType(NIL, "PRT_FUNDECL"), 
@@ -1238,55 +1228,21 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
     //// Build every fundecl array in reverse order
 	FunDeclConcat(m, d.owner, arr) :-  
-							DeclId(d, m, cfun), MachineName(d.owner, ownerMachineName), FunDeclConcat(m + 1, d.owner, after), d : in.FunDecl,
-							in.MaxNumLocals(d, maxNumLocals), 
-							LocalsType(d, localsType),
-							ReceiveDeclInit(d, nReceives, receives), 
-							numParameters = lstLength(in.#NmdTupType, d.params),
+							DeclId(d, m, cfun), d: in.FunDecl, FunDeclConcat(m + 1, d.owner, after),
+							funStructName = strJoin(cfun, "_STRUCT"),
 							arr = out.Args(def, after),
-	                        def = Init(
-							   Args(Ident(cfun),
-							   Args(Ident(ownerMachineName),
-							   Args(StringLit(d.name, NIL),
-							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
-							   Args(IntLit(numParameters, DEC, U),
-							   Args(IntLit(maxNumLocals, DEC, U),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   Args(localsType,
-							   Args(IntLit(nReceives, DEC, U),
-							   Args(receives,
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL)))))))))))))).
+	                        def = out.UnApp(ADDR, Ident(funStructName)).
 
-	FunDeclConcat(m, d.owner, arr) :- 
-							DeclId(d, m, cfun), MachineName(d.owner, ownerMachineName), FunDeclConcat(m + 1, d.owner, after), d : in.AnonFunDecl,
-							in.MaxNumLocals(d, maxNumLocals), 
-							r = lstReverse(in.#NmdTupType, d.envVars), TypeToExpr(r.hd.type, payloadType),
-							LocalsType(d, localsType),
-							ReceiveDeclInit(d, nReceives, receives),
-							arr = out.Args(def, after), 
-	                        def = Init(
-							   Args(Ident(cfun),
-							   Args(Ident(ownerMachineName),
-							   Args(Ident("NULL"),
-							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
-							   Args(IntLit(1, DEC, U),
-							   Args(IntLit(maxNumLocals, DEC, U),
-							   Args(IntLit(lstLength(in.#NmdTupType, d.envVars), DEC, U),
-							   Args(payloadType,
-							   Args(localsType,
-							   Args(IntLit(nReceives, DEC, U),
-							   Args(receives,
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL)))))))))))))).
+	FunDeclConcat(m, d.owner, arr) :-  
+							DeclId(d, m, cfun), d: in.AnonFunDecl, FunDeclConcat(m + 1, d.owner, after),
+							funStructName = strJoin(cfun, "_STRUCT"),
+							arr = out.Args(def, after),
+	                        def = out.UnApp(ADDR, Ident(funStructName)).
 
 	COut(11, def) :- FunDeclConcat(0, mach, arr),
 	                def = out.VarDef(
 							      NIL, 
-								  ArrType(NmdType(NIL, "PRT_FUNDECL"), NIL), 
+								  ArrType(PtrType(NmdType(NIL, "PRT_FUNDECL")), NIL), 
 								  strJoin("P_GEND_FUNS_", mach.name), 
 								  Init(arr)).
 
@@ -1352,26 +1308,24 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							StateDeclConcat(m + 1, d.owner, after), d : in.StateDecl, 
 							QualName2CStr(d.name, sname),
 							StateEventSetIndices(d, ti, doi, dfi),
-							StateEntryAction(d, entryname),
-							StateExitFun(d, exitname),
+							StateEntryAction(d, entryname), entryStructName = strJoin(entryname, "_STRUCT"),
+							StateExitFun(d, exitname), exitStructName = strJoin(exitname, "_STRUCT"),
 							StateHandlerArrays(d, transArrSize, transArr, doArrSize, doArr),
 							arr = out.Args(def, after), 
 	                        def = Init(
-							   Args(Ident(cstate),
-							   Args(Ident(ownerMachineName),
 							   Args(StringLit(sname, NIL),
 							   Args(IntLit(transArrSize, DEC, NIL),
 							   Args(IntLit(doArrSize, DEC, NIL),
-							   Args(Ident(dfi),
-							   Args(Ident(ti),
-							   Args(Ident(doi),
+							   Args(UnApp(ADDR, Ident(dfi)),
+							   Args(UnApp(ADDR, Ident(ti)),
+							   Args(UnApp(ADDR, Ident(doi)),
 							   Args(transArr,
 							   Args(doArr,
-							   Args(Ident(entryname),
-							   Args(Ident(exitname),
+							   Args(UnApp(ADDR, Ident(entryStructName)),
+							   Args(UnApp(ADDR, Ident(exitStructName)),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))))))).
+							   NIL))))))))))))).
 
 	COut(12, def) :- StateDeclConcat(0, mach, arr),
 	                def = out.VarDef(
@@ -1416,7 +1370,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							MachQueueSize(d, queueSize),
 							QualName2CStr(d.start, sname), 
 	                        init = Init(
-							   Args(Ident(machineName),
+							   Args(IntLit(0, DEC, U),
 							   Args(StringLit(d.name, NIL),
 							   Args(IntLit(varArrSize, DEC, NIL),
 							   Args(IntLit(stateArrSize, DEC, NIL),
@@ -1433,6 +1387,26 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							      NIL, 
 								  NmdType(NIL, "PRT_MACHINEDECL"), 
 								  machineStructName, 
+								  init).
+
+	COut(13, def) :- in.ModelType(name, _), in.ExportedType(name, _), foreignTypeName = strJoin("P_FORGN_TYPE_", name),
+					 foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+	                        init = Init(
+							   Args(IntLit(0, DEC, U),
+							   Args(StringLit(name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_MKDEF_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_CLONE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_FREE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_GETHASHCODE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_ISEQUAL_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_TOSTRING_", strJoin(name, "_IMPL")))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))),
+							def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_FOREIGNTYPEDECL"), 
+								  foreignTypeStructName, 
 								  init).
 
     /*************************************************************/
@@ -1495,8 +1469,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 									ec = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
-									e = in.Name(n, _), IsEventCnst(c, n, _), ConstId(m, in.Name(n, NIL)),
-									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									e = in.Name(n, _), IsEventCnst(c, n, _),
+									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_EVENT_", n))). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.Name(n, _), IsEnumCnst(c, n, _), ConstId(m, in.Name(n, NIL)),
@@ -1543,11 +1517,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.NulApp(NULL, _),
-									ConstId(m, in.NulApp(NULL, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									ec = out.UnApp(ADDR, Ident("P_GEND_VALUE_EVENT_NULL")). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.NulApp(HALT, _),
-									ConstId(m, in.NulApp(HALT, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									ec = out.UnApp(ADDR, Ident("P_GEND_VALUE_EVENT_HALT")). 
 
 	//// Unary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
@@ -1747,7 +1721,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label, x),
 						   receiveCall = out.FunApp(Ident("PrtReceive"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), NIL)))),
 						   receive = Lbl(strJoin("L", toString(label)), out.Seq(info, ITE(BinApp(LAND, BinApp(EQ, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("NULL")), UnApp(LNOT, receiveCall)), Seq(info, Return(Ident("NULL"))), NIL))),
-						   caseFun = out.FunApp(Ident("PrtGetFunction"), Args(Ident("p_tmp_mach_priv"), Args(BinApp(PFLD, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("funIndex")), NIL))),
+						   caseFun = out.BinApp(PFLD, BinApp(PFLD, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("fun")), Ident("implementation")),
 						   case = out.FunApp(caseFun, Args(Ident("context"), NIL)),
 						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Seq(Seq(info, FunApp(Ident("PrtPushFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))), Seq(info, Return(Ident("NULL")))), NIL), 
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Seq(info, Goto("P_EXIT_FUN")), NIL),

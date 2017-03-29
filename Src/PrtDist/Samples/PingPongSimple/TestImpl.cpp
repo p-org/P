@@ -150,6 +150,7 @@ int main(int argc, char *argv[])
 		dgmlMonitor.NewGraph(L"d:\\temp\\trace.dgml");
 	}
 
+	PrtInitialize(&P_GEND_PROGRAM);
 
     PRT_GUID processGuid;
     processGuid.data1 = 1;

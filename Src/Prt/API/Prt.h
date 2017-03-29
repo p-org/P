@@ -114,12 +114,11 @@ extern "C"{
         );
 
 
-	/** If you want to start creating PRT_VALUES before starting the process, then you need to call this function.
-	*   @param[in] program Program to run (not cloned). Client must free. Client cannot free or modify before calling PrtStopProcess.
+	/** PrtInitialize must be called exactly once before performing any operation in the runtime.
+	*   @param[in] program Program to run (not cloned).
 	*   @see PRT_PROGRAMDECL
-	*   @see PrtStartProcess
 	*/
-	void PrtSetForeignTypes(
+	void PrtInitialize(
 		_In_ PRT_PROGRAMDECL *program);
 
     /** Set the scheduling policy for this process.  The default policy is TaskNeutral

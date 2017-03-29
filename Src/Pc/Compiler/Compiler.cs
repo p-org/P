@@ -1039,8 +1039,9 @@
             AST<Node> ret = Factory.Instance.MkId("NIL");
             foreach (var f in importedFiles)
             {
+                var name = Path.GetFileNameWithoutExtension(f);
                 var ft = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("in.StringList"));
-                ret = Factory.Instance.AddArg(Factory.Instance.AddArg(ft, Factory.Instance.MkCnst(f)), ret);
+                ret = Factory.Instance.AddArg(Factory.Instance.AddArg(ft, Factory.Instance.MkCnst(name)), ret);
             }
             return ret;
         }
@@ -1344,11 +1345,11 @@
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "LinkModel.4ml"));
             using (this.Profiler.Start("Linker analyzing", linkProgName.ToString()))
             {
-                return InternalLink(linkProgName, linkModel);
+                return InternalLink(linkProgName, linkModel, options.dependencies);
             }
         }
 
-        private bool InternalLink(ProgramName linkProgramName, AST<Model> linkModel)
+        private bool InternalLink(ProgramName linkProgramName, AST<Model> linkModel, List<string> importedFiles)
         {
             InstallResult instResult;
             AST<Program> modelProgram = MkProgWithSettings(linkProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
@@ -1357,6 +1358,7 @@
 
             var transApply = Factory.Instance.MkModApply(Factory.Instance.MkModRef(PLinkTransform, null, MkReservedModuleLocation(PLinkDomain)));
             transApply = Factory.Instance.AddArg(transApply, Factory.Instance.MkModRef(linkModel.Node.Name, null, linkProgramName.ToString()));
+            transApply = Factory.Instance.AddArg(transApply, GenerateImportFileNames(importedFiles));
             var transStep = Factory.Instance.AddLhs(Factory.Instance.MkStep(transApply), Factory.Instance.MkId("ErrorModel"));
             transStep = Factory.Instance.AddLhs(transStep, Factory.Instance.MkId("CLinkModel"));
 

@@ -63,6 +63,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* senderState, PRT_MACHINE
 int main(int argc, char *argv[])
 {
     startTime = GetTickCount();
+	PrtInitialize(&P_GEND_PROGRAM);
 
     PRT_GUID processGuid;
     processGuid.data1 = 1;

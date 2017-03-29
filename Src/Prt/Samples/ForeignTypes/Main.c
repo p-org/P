@@ -53,6 +53,8 @@ extern PRT_BOOLEAN UserIsEqualForeignValue(_In_ PRT_UINT16 typeTag1, _In_ PRT_UI
 
 int main(int argc, char *argv[])
 {
+	PrtInitialize(&P_GEND_PROGRAM);
+	
 	PRT_PROCESS *process;
 	PRT_GUID processGuid;
 	PRT_VALUE *payload;

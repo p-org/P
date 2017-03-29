@@ -1,17 +1,38 @@
 #include "PrtExecution.h"
 
-void PrtSetForeignTypes(
-	_In_ PRT_PROGRAMDECL *program)
-{
-	prtNumForeignTypeDecls = program->nForeignTypes;
-	prtForeignTypeDecls = program->foreignTypes;
-}
-
 /*********************************************************************************
 
 Public Functions
 
 *********************************************************************************/
+void PrtInitialize(
+	_In_ PRT_PROGRAMDECL *program
+)
+{
+	prtNumForeignTypeDecls = program->nForeignTypes;
+	prtForeignTypeDecls = program->foreignTypes;
+	for (PRT_UINT32 i = 0; i < program->nEvents; i++)
+	{
+		program->events[i]->declIndex = i;
+	}
+	for (PRT_UINT32 i = 0; i < program->nMachines; i++)
+	{
+		program->machines[i]->declIndex = i;
+		for (PRT_UINT32 j = 0; j < program->machines[i]->nFuns; j++)
+		{
+			program->machines[i]->funs[j]->declIndex = 2*j + 1;
+		}
+	}
+	for (PRT_UINT32 i = 0; i < program->nForeignTypes; i++)
+	{
+		program->foreignTypes[i]->declIndex = i;
+	}
+	for (PRT_UINT32 i = 0; i < program->nGlobalFuns; i++)
+	{
+		program->globalFuns[i]->declIndex = 2*i;
+	}
+}
+
 PRT_PROCESS *
 PrtStartProcess(
     _In_ PRT_GUID guid,
@@ -20,8 +41,6 @@ PrtStartProcess(
     _In_ PRT_LOG_FUN logFun
 )
 {
-	PrtSetForeignTypes(program);
-
     PRT_PROCESS_PRIV *process;
     process = (PRT_PROCESS_PRIV *)PrtMalloc(sizeof(PRT_PROCESS_PRIV));
     process->guid = guid;
@@ -191,7 +210,7 @@ GetFunDeclHelper(_In_ PRT_PROCESS	*process, _In_ PRT_UINT32 instanceOf, _In_ PRT
 	PRT_UINT32 arrayIndex = funIndex / 2;
 	if (isMachineLocal)
 	{
-		return &process->program->machines[instanceOf]->funs[arrayIndex];
+		return process->program->machines[instanceOf]->funs[arrayIndex];
 	}
 	else
 	{
@@ -253,7 +272,7 @@ PrtMkInterfaceOrMachine(
 		if (numArgs > 1)
 		{
 			PRT_MACHINEDECL *machineDecl = context->process->program->machines[instanceOf];
-			PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFunIndex;
+			PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFun->declIndex;
 			PRT_TYPE *payloadType = GetFunDeclHelper(context->process, instanceOf, entryFunIndex)->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
@@ -316,7 +335,7 @@ PrtMkMachine(
 		if (numArgs > 1)
 		{
 			PRT_MACHINEDECL *machineDecl = process->program->machines[instanceOf];
-			PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFunIndex;
+			PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFun->declIndex;
 			PRT_TYPE *payloadType = GetFunDeclHelper(process, instanceOf, entryFunIndex)->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}

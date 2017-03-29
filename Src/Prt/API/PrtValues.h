@@ -25,6 +25,15 @@ extern "C"{
 #include "PrtValues_IDL.h"
 #else
 
+	/** Structure for representing a standard GUID */
+	typedef struct PRT_GUID
+	{
+		PRT_UINT32 data1;   /**< 0 First data field (32 bits)  */
+		PRT_UINT16 data2;   /**< 0 Second data field (16 bits) */
+		PRT_UINT16 data3;   /**< 0 Third data field (16 bits)  */
+		PRT_UINT64 data4;   /**< 0 Fourth data field (64 bits) */
+	} PRT_GUID;
+
 	typedef enum PRT_FUN_PARAM_STATUS
 	{
 		PRT_FUN_PARAM_CLONE,
@@ -118,7 +127,7 @@ extern "C"{
 	/** A foreign value is foreign type paired with a char *. */
 	typedef struct PRT_FORGNVALUE
 	{
-		PRT_UINT16            typeTag;    /**< The index of the foreign type. */
+		PRT_UINT32            typeTag;    /**< The index of the foreign type. */
 		PRT_UINT64			  value;      /**< The foreign value. */
 	} PRT_FORGNVALUE;
 #endif

@@ -2,20 +2,6 @@
 #include "PrtExecution.h"
 
 #define MAX_LOG_SIZE 1000
-/**
-We do not serialize types anymore as they are removed from the PrtValues
-
-PRT_TYPE*
-PrtDistDeserializeType(
-__in PRT_TYPE* type
-);
-
-PRT_TYPE*
-PrtDistSerializeType(
-__in PRT_TYPE* type
-);
-
-*/
 
 /** Deserializes a Prt Value sent over RPC.
 * @param[in] value Prt Value.

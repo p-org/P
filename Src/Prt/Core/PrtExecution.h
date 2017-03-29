@@ -291,12 +291,6 @@ extern "C"{
 		_In_ PRT_MACHINEINST_PRIV			*context
 		);
 
-	PRT_API PRT_SM_FUN PRT_CALL_CONV
-		PrtGetFunction(
-		_In_ PRT_MACHINEINST_PRIV		*context,
-		_In_ PRT_UINT32 funIndex
-		);
-
 	FORCEINLINE
 		PRT_SM_FUN
 		PrtGetEntryFunction(

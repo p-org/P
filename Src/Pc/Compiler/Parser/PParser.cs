@@ -982,7 +982,6 @@
 
         private void PushPrint(string msg, Span msgSpan, Span span, bool hasArgs)
         {
-            msg = msg.Replace(@"\n", System.Environment.NewLine);
             P_Root.IArgType_Print__2 args = P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
             int numArgs = 0;
             if (hasArgs)

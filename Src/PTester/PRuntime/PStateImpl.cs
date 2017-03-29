@@ -240,11 +240,13 @@ namespace P.Runtime
 
         public void Trace(string message, params object[] arguments)
         {
+            message = message.Replace(@"\n", System.Environment.NewLine);
             errorTrace.Append(String.Format(message, arguments));
         }
 
         public void TraceLine(string message, params object[] arguments)
         {
+            message = message.Replace(@"\n", System.Environment.NewLine);
             errorTrace.AppendLine(String.Format(message, arguments));
         }
 

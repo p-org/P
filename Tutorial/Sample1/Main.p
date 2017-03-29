@@ -1,6 +1,6 @@
 machine Main 
 {
-  var client: machine;  
+  var client: ICoffeeMachine;  
   start state Init {  
     entry { 	
       client = new CoffeeMachine(); 

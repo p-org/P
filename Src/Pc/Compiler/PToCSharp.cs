@@ -268,10 +268,11 @@ namespace Microsoft.Pc
         }
         public static StatementSyntax MkCSharpPrint(string msg, params ExpressionSyntax[] pars)
         {
+            msg = "<PrintLog>" + msg;
             var allPars = new List<ExpressionSyntax>(pars);
             allPars.Insert(0, CSharpHelper.MkCSharpStringLiteralExpression(msg));
             return ExpressionStatement(MkCSharpInvocationExpression(
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Console"), IdentifierName("Write")),
+                                            MkCSharpDot("application", "Trace"),
                                             allPars.ToArray()));
         }
         public static StatementSyntax MkCSharpTrace(string msg, params ExpressionSyntax[] pars)

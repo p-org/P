@@ -164,13 +164,13 @@ namespace P.Runtime
             }
             if (currentStatus == PrtMachineStatus.Halted)
             {
-                stateImpl.Trace(
+                stateImpl.TraceLine(
                     @"<EnqueueLog> {0}-{1} Machine has been halted and Event {2} is dropped",
                     this.Name, this.instanceNumber, ev.evt.name);
             }
             else
             {
-                stateImpl.Trace(
+                stateImpl.TraceLine(
                     @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
                     ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
                 this.eventQueue.EnqueueEvent(e, arg);
@@ -206,7 +206,7 @@ namespace P.Runtime
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
                 }
 
-                stateImpl.Trace(
+                stateImpl.TraceLine(
                     "<DequeueLog> Dequeued Event <{0}, {1}> at Machine {2}-{3}",
                     (currentTrigger as PrtEventValue).evt.name, currentPayload.ToString(), Name, instanceNumber);
                 receiveSet = new HashSet<PrtValue>();
@@ -218,7 +218,7 @@ namespace P.Runtime
                 {
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
                 }
-                stateImpl.Trace(
+                stateImpl.TraceLine(
                     "<NullTransLog> Null transition taken by Machine {0}-{1}",
                     Name, instanceNumber);
                 currentPayload = PrtValue.@null;
@@ -232,7 +232,7 @@ namespace P.Runtime
                 {
                     throw new PrtInternalException("Internal error: Tyring to execute blocked machine");
                 }
-                stateImpl.Trace(
+                stateImpl.TraceLine(
                     "<NullActionLog> Null action taken by Machine {0}-{1}",
                     Name, instanceNumber);
                 currentPayload = PrtValue.@null;
@@ -317,7 +317,7 @@ namespace P.Runtime
              */
             if (invertedFunStack.TopOfStack == null)
             {
-                stateImpl.Trace("<StateLog> Machine {0}-{1} entering State {2}", this.Name, this.instanceNumber, CurrentState.name);
+                stateImpl.TraceLine("<StateLog> Machine {0}-{1} entering State {2}", this.Name, this.instanceNumber, CurrentState.name);
                 if (CurrentState.entryFun.IsAnonFun)
                     PrtPushFunStackFrame(CurrentState.entryFun, CurrentState.entryFun.CreateLocals(currentPayload));
                 else
@@ -331,7 +331,7 @@ namespace P.Runtime
             currAction = PrtFindActionHandler(eventValue);
             if (currAction == PrtFun.IgnoreFun)
             {
-                stateImpl.Trace("<ActionLog> Machine {0}-{1} ignoring Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
+                stateImpl.TraceLine("<ActionLog> Machine {0}-{1} ignoring Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                 PrtResetTriggerAndPayload();
                 nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
                 hasMoreWork = true;
@@ -341,7 +341,7 @@ namespace P.Runtime
             {
                 if (invertedFunStack.TopOfStack == null)
                 {
-                    stateImpl.Trace("<ActionLog> Machine {0}-{1} executing action for Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
+                    stateImpl.TraceLine("<ActionLog> Machine {0}-{1} executing action for Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                     if (currAction.IsAnonFun)
                     {
                         PrtPushFunStackFrame(currAction, currAction.CreateLocals(currentPayload));

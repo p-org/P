@@ -268,7 +268,7 @@ namespace Microsoft.Pc
         }
         public static StatementSyntax MkCSharpPrint(string msg, params ExpressionSyntax[] pars)
         {
-            msg = "<PrintLog>" + msg;
+            msg = "<PrintLog>" + " " + msg;
             var allPars = new List<ExpressionSyntax>(pars);
             allPars.Insert(0, CSharpHelper.MkCSharpStringLiteralExpression(msg));
             return ExpressionStatement(MkCSharpInvocationExpression(
@@ -279,7 +279,7 @@ namespace Microsoft.Pc
         {
             var allPars = new List<ExpressionSyntax>(pars);
             allPars.Insert(0, CSharpHelper.MkCSharpStringLiteralExpression(msg));
-            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("application", "Trace"), allPars.ToArray()));
+            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("application", "TraceLine"), allPars.ToArray()));
         }
         public static InvocationExpressionSyntax MkCSharpInvocationExpression(SyntaxNode first, params ExpressionSyntax[] pars)
         {

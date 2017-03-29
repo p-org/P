@@ -6,7 +6,7 @@ This extension provides syntax coloring and some handy snippets for the [P Progr
 
 The following screen shot shows the extension at work while editing the classic PingPong sample that comes with the P compiler.
 
-![pingpong](https://github.com/p-org/P/blob/master/Src/Tools/VSCode/msr-vscore-p/images/screenshot.png)
+![pingpong](https://raw.githubusercontent.com/p-org/P/master/Src/Tools/VSCode/msr-vscode-p/images/screenshot.png)
 
 ## Known Issues
 

@@ -2,7 +2,7 @@
     "name": "msr-vscode-p",
     "displayName": "p",
     "description": "The P programming language ",
-    "version": "0.0.2",
+    "version": "0.0.5",
     "publisher": "lovettchris",
 	"icon": "images/p-icon.png",
     "engines": {
@@ -11,6 +11,13 @@
     "categories": [
         "Languages"
     ],
+    "homepage": "https://github.com/p-org/P/blob/master/README.md",
+    
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/p-org/P.git"
+    },
+    "license": "https://github.com/p-org/P/blob/master/LICENSE.txt",
     "contributes": {
         "languages": [{
             "id": "p",

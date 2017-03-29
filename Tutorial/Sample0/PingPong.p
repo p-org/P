@@ -29,7 +29,7 @@ sends PING;
 
 machine Server : IServer
 receives PING;
-sends PONG;
+sends PONG, START;
 { 
   var timer: TimerPtr;
   var client: IClient;

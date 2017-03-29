@@ -1,1 +1,4 @@
+arg: -et:linear3.trace
+inc: linear3.trace
+del: linear3.trace
 dsc: zinger.exe, linear variables

@@ -1,5 +1,6 @@
 //Check contexts for swap and move
 
+//TODO: call bar
 event E1 assert 1: int;
 event E2 assert 1: int;
 
@@ -36,21 +37,25 @@ machine Main {
 			
 			yloc = baz_1(xloc move, xloc + yloc);
 			//assert xloc == 1;						//?
-			assert yloc == 23;						//?
+			assert yloc == 23;						//holds
+			
+			//assert false;                 //debug: reachable
 			
 			xloc = 20;                          //to make xloc available 
 			x = xloc move;                        //OK
 			assert x == 20;                      //holds?
 
 			//x = 4;                              //to make x available
-			
+			//assert false;                     //reachable
+			//////////////////////////////////////null ptr below
 			xloc = 1;                          //to make xloc available 
 			
-			m[1] = xloc swap;                  //OK
+			m[1] = xloc swap;                  
 			assert m[1] == 1;                   //?
-			m[xloc] = xloc + 2;                    //OK
+			m[xloc] = xloc + 2;                
 			assert m[1] == 3;                   //?
-						
+			///////////////////////////////////////////null ptr above	
+			//assert false;                    
 			x = 1;                              ////to make x available
 			client1 = new Client1(xloc move);    //OK
 			x = 1;                              ////to make x available
@@ -111,9 +116,9 @@ machine Main {
 		a = b + 5;
 	}
 	fun baz_1(a: int, b: int): int{
-		assert a == 16;               //fails: TODO
+		assert a == 16;               //holds
 		a = b + 5;
-		return 23;
+		return a;
 	}
 }
 

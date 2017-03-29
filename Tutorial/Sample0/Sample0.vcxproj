@@ -162,18 +162,16 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="TestImpl.cpp" />
     <ClCompile Include="TimerImpl.c" />
+    <ClCompile Include="Main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <PCompile Include="test.p" />
-    <PCompile Include="timer.p" />
+    <PCompile Include="Main.p" />
+    <PCompile Include="Timer.p" />
+    <PCompile Include="PingPong.p" />
+    <PCompile Include="Safety.p" />
   </ItemGroup>
   <ItemGroup>
-    <PCompile Include="events.p" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Events.p" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

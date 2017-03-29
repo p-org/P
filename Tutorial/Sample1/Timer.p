@@ -21,7 +21,7 @@ model fun StartTimer(timer: TimerPtr, time: int) {
 }
 
 model fun CancelTimer(timer: TimerPtr) {
-	send timer, CANCEL;
+	send timer, CANCEL; 
 }
 
 model Timer : ITimer

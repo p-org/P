@@ -409,7 +409,7 @@ namespace P.Tester
                         tup.Key.currentTemperature == StateTemperature.Warm ? (Event) new MoveToWarm() :
                         (Event) new MoveToCold();
 
-                    this.Monitor<PSharpMonitor<int>>(ev);
+                    this.Monitor(tup.Value, ev);
                 }
 
 

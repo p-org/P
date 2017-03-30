@@ -1,4 +1,4 @@
-#include "PingPongSimple.h"
+#include "CoffeeMachine.h"
 
 static PRT_UINT32 numTimerInstances = 0;
 typedef struct TimerContext {

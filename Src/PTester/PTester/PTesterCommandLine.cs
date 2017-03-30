@@ -357,7 +357,13 @@ namespace P.Tester
     {
         public static void Execute(PSharpRuntime runtime)
         {
-            runtime.CreateMachine(typeof(PSharpMachine), new MachineInitEvent((StateImpl)PTesterCommandLine.main_s.Clone()));
+            var s = (StateImpl)PTesterCommandLine.main_s.Clone();
+            s.UserBooleanChoice = delegate ()
+            {
+                return runtime.Random();
+            };
+
+            runtime.CreateMachine(typeof(PSharpMachine), new MachineInitEvent(s));
         }
 
         public class Unit : Microsoft.PSharp.Event { }

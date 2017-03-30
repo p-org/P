@@ -68,6 +68,10 @@ namespace P.Runtime
         public static Dictionary<string, CreateMachineDelegate> createMachineMap = new Dictionary<string, CreateMachineDelegate>();
         public static Dictionary<string, CreateSpecDelegate> createSpecMap = new Dictionary<string, CreateSpecDelegate>();
         public static Dictionary<string, List<PrtEventValue>> interfaceMap = new Dictionary<string, List<PrtEventValue>>();
+
+        public delegate bool GetBooleanChoiceDelegate();
+        public GetBooleanChoiceDelegate UserBooleanChoice = null;
+        
         #endregion
 
         #region Getters and Setters
@@ -260,8 +264,15 @@ namespace P.Runtime
 
         public Boolean GetSelectedChoiceValue(PrtImplMachine process)
         {
-            //throw new NotImplementedException();
-            return (new Random(DateTime.Now.Millisecond)).Next(10) > 5;
+            if (UserBooleanChoice != null)
+            {
+                return UserBooleanChoice();
+            }
+            else
+            {
+                //throw new NotImplementedException();
+                return (new Random(DateTime.Now.Millisecond)).Next(10) > 5;
+            }
         }
     }
 

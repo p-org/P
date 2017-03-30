@@ -56,6 +56,7 @@ MachineNamesList
 ModulePrivateEvents
 	: PRIVATE NonDefaultEventList SEMICOLON		{ AddPrivatesList(ToSpan(@1)); }
 	| PRIVATE SEMICOLON
+	|
 	;
 
 /* Composition */

@@ -31,7 +31,10 @@ model fun GrindBeans(c: ICoffeeMachine){
 event eEspressoButtonPressed;
 event eEspressoComplete;
 event eNoWater;
+event mMachineBusy;
+
 model fun StartEspresso(c: ICoffeeMachine){
+    announce mMachineBusy;
 	if ($) {
 		send c, eNoWater;
 	} else {
@@ -42,6 +45,7 @@ model fun StartEspresso(c: ICoffeeMachine){
 // start the steamer 
 event eSteamerButtonOn;
 model fun StartSteamer(c: ICoffeeMachine) {
+    announce mMachineBusy;
     if ($) {
 		send c, eNoWater;
 	}
@@ -72,17 +76,18 @@ model fun EmergencyStop(){
 
 // internal events
 event eReadyDoorOpened;
-event eNotHeating;
 
 type ICoffeeMachine() = { eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans, eGrindComplete,
          eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,
-         eDumpComplete, eReadyDoorOpened, eNotHeating };
+         eDumpComplete, eReadyDoorOpened, TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE
+};
 
 // Now for the the actual state machine
 machine CoffeeMachine : ICoffeeMachine
 receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans, eGrindComplete,
          eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,
-         eDumpComplete, eReadyDoorOpened, eNotHeating;
+         eDumpComplete, eReadyDoorOpened, TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
+sends START, CANCEL, eDumpComplete, eUnknownError, eNoWater, eEspressoComplete, eGrindComplete, eNoBeans, eTemperatureReached;
 {
     // fields
     var timer: TimerPtr;
@@ -96,10 +101,11 @@ receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans,
             open = CheckIsOpen();
             timer = CreateTimer(this);
             if (open) {
-                goto Error;
+                raise eDoorOpened;
             }
             goto WarmingUp;
         }
+        on eDoorOpened push DoorOpened;
         ignore eEspressoButtonPressed;
         ignore eSteamerButtonOn;
         ignore eSteamerButtonOff;
@@ -113,12 +119,23 @@ receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans,
         }
         on TIMEOUT do
         {
-            raise eNotHeating;    
+            goto Error;    
         }
-        on eNotHeating goto Error;
         on eDoorOpened push DoorOpened;
         on eUnknownError goto Error;
-        on eTemperatureReached goto Ready;
+        on eTemperatureReached goto Ready with {
+            CancelTimer(timer);
+            receive {
+                case CANCEL_SUCCESS: {
+                }                
+                case CANCEL_FAILURE: {
+                    receive {
+                        case TIMEOUT: {                            
+                        }
+                    }
+                }
+            }
+        }
         ignore eEspressoButtonPressed;
         ignore eSteamerButtonOn;
         ignore eSteamerButtonOff;

@@ -12,18 +12,18 @@ model fun ShowError(){
 
 // turn on heating element, and wait for eTemperatureReached
 event eTemperatureReached;
-model fun BeginHeating(){
-	raise eTemperatureReached;
+model fun BeginHeating(c: ICoffeeMachine){
+	send c, eTemperatureReached;
 }
 
 // start grinding beans to fill the filter holder
 event eNoBeans;
 event eGrindComplete;
-model fun GrindBeans(){
+model fun GrindBeans(c: ICoffeeMachine){
 	if ($) {
-		raise eNoBeans;
+		send c, eNoBeans;
 	} else {
-		raise eGrindComplete;
+		send c, eGrindComplete;
 	}
 }
 
@@ -31,40 +31,42 @@ model fun GrindBeans(){
 event eEspressoButtonPressed;
 event eEspressoComplete;
 event eNoWater;
-model fun StartEspresso(){
+model fun StartEspresso(c: ICoffeeMachine){
 	if ($) {
-		raise eNoWater;
+		send c, eNoWater;
 	} else {
-		raise eEspressoComplete;
+		send c, eEspressoComplete;
 	}
 }
 
 // start the steamer 
 event eSteamerButtonOn;
-model fun StartSteamer() {
+model fun StartSteamer(c: ICoffeeMachine) {
     if ($) {
-		raise eNoWater;
+		send c, eNoWater;
 	}
 }
 
 // stop the steamer 
 event eSteamerButtonOff;
-model fun StopSteamer(){    
+model fun StopSteamer(c: ICoffeeMachine){
+    if ($) {
+		send c, eUnknownError;
+	}
 }
 
 // start dumping the grinds
 event eDumpComplete;
-model fun DumpGrinds(){
+model fun DumpGrinds(c: ICoffeeMachine){
     if ($) {
-		raise eDumpComplete;
+		send c, eDumpComplete;
 	} else {
-		raise eUnknownError;
+		send c, eUnknownError;
 	}
 }
 
 // stop all functions
 model fun EmergencyStop(){
-    raise eUnknownError;
 }
 
 
@@ -107,7 +109,7 @@ receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans,
     state WarmingUp {
         entry {
             StartTimer(timer, 60000);
-            BeginHeating();
+            BeginHeating(this);
         }
         on TIMEOUT do
         {
@@ -139,7 +141,7 @@ receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans,
 
     state Grind {
         entry {
-            GrindBeans();   
+            GrindBeans(this);   
         }
         on eUnknownError goto Error;
         on eNoBeans goto Error;
@@ -155,7 +157,7 @@ receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans,
 
     state RunEspresso {
         entry {
-            StartEspresso();
+            StartEspresso(this);
         }
         on eEspressoComplete do { pop; }
         on eUnknownError goto Error;
@@ -171,9 +173,12 @@ receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans,
 
     state MakeSteam {
         entry {
-            StartSteamer();
+            StartSteamer(this);
         }
-        on eSteamerButtonOff  do { pop; }
+        on eSteamerButtonOff  do { 
+            StopSteamer(this);
+            pop; 
+        }
         on eUnknownError goto Error;
         on eDoorOpened do {
             EmergencyStop();

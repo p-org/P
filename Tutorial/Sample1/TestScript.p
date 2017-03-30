@@ -1,5 +1,4 @@
 module Test0
-private;
 {
     Main, CoffeeMachine
 }

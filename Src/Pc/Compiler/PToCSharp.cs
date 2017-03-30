@@ -1783,7 +1783,7 @@ namespace Microsoft.Pc
                 var payloadVar = MkPayload(children);
                 var equalsExpr = CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(eventExpr, "Equals"), pToCSharp.GetEventVar(NullEvent));
                 var assertStmt = CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
-                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
+                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<RaiseLog> Machine {{0}}-{{1}} raised Event {{2}}"), CSharpHelper.MkCSharpDot("parent", "Name"), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
                 var assignStmt1 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), eventExpr);
                 var assignStmt2 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var returnStmt = ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtFunContRaise")));

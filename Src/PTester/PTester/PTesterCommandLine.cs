@@ -326,6 +326,7 @@ namespace P.Tester
         }
 
         public static StateImpl main_s;
+        public static StateImpl currentImpl;
 
         public static void RunPSharpTester(StateImpl s)
         {
@@ -344,6 +345,26 @@ namespace P.Tester
             engine.Run();
 
             Console.WriteLine("Bugs found: {0}", engine.TestReport.NumOfFoundBugs);
+
+            if (engine.TestReport.NumOfFoundBugs > 0)
+            {
+                if (currentImpl.Exception != null && currentImpl.Exception is PrtException)
+                {
+                    Console.WriteLine("{0}", currentImpl.errorTrace.ToString());
+                    Console.WriteLine("ERROR: {0}", currentImpl.Exception.Message);
+                }
+                else if (currentImpl.Exception != null)
+                {
+                    Console.WriteLine("{0}", currentImpl.errorTrace.ToString());
+                    Console.WriteLine("[Internal Exception]: Please report to the P Team");
+                    Console.WriteLine("{0}", currentImpl.Exception.ToString());
+                }
+                else
+                {
+                    Console.WriteLine("{0}", currentImpl.errorTrace.ToString());
+                    Console.WriteLine("ERROR: Liveness violation");
+                }
+            }
         }
     }
 
@@ -351,7 +372,14 @@ namespace P.Tester
     {
         public static void Execute(PSharpRuntime runtime)
         {
-            runtime.CreateMachine(typeof(PSharpMachine), new MachineInitEvent((StateImpl)PTesterCommandLine.main_s.Clone()));
+            var s = (StateImpl)PTesterCommandLine.main_s.Clone();
+            s.UserBooleanChoice = delegate ()
+            {
+                return runtime.Random();
+            };
+            PTesterCommandLine.currentImpl = s;
+
+            runtime.CreateMachine(typeof(PSharpMachine), new MachineInitEvent(s));
         }
 
         public class Unit : Microsoft.PSharp.Event { }
@@ -422,9 +450,9 @@ namespace P.Tester
                     {
                         return;
                     }
-                    else
+                    else 
                     {
-                        this.Assert(false, currImpl.Exception.ToString());
+                        this.Assert(false);
                     }
                 }
 

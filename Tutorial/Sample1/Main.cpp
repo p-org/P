@@ -125,12 +125,13 @@ int main(int argc, char *argv[])
     PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_CoffeeMachine, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
 
+    PRT_MACHINEINST_PRIV* privMachine = (PRT_MACHINEINST_PRIV*)machine;
     // Wait for the timer.
 	int iterations = 100;
-    while (iterations--) {
+    while (iterations-- && !privMachine->isHalted) {
 		SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
     }
-
+    
 	PrtStopProcess(ContainerProcess);
 
     return 0;

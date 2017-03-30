@@ -2,10 +2,10 @@
 event DOOR_OPENED;
 event DOOR_CLOSED;
 event UNKNOWN_ERROR;
-event EXPRESSO_BUTTON;
+event ESPRESSO_BUTTON;
 event STEAMER_ON;
 event STEAMER_OFF;
-event EXPRESSO_COMPLETE;
+event ESPRESSO_COMPLETE;
 
 // this function returns true if something is open such that machine cannot safely operate.
 fun CheckIsOpen() : bool { return $; }
@@ -19,8 +19,8 @@ fun BeginHeating() {}
 // this function returns true if heating is complete.
 fun CheckHeat() : bool { return $; }
 
-// star the expresso function
-fun StartExpresso() {}
+// start the espresso function
+fun StartEspresso() {}
 
 // start the steamer 
 fun StartSteamer() {}
@@ -52,7 +52,7 @@ machine CoffeeMachine
             goto WarmingUp;
         }
 
-        ignore EXPRESSO_BUTTON;
+        ignore ESPRESSO_BUTTON;
         ignore STEAMER_ON;
         ignore STEAMER_OFF;
     }
@@ -72,7 +72,7 @@ machine CoffeeMachine
         }
         on DOOR_OPENED push DoorOpened;
         on UNKNOWN_ERROR goto Error;
-        ignore EXPRESSO_BUTTON;
+        ignore ESPRESSO_BUTTON;
         ignore STEAMER_ON;
         ignore STEAMER_OFF;
     }
@@ -85,22 +85,22 @@ machine CoffeeMachine
         }
         on DOOR_OPENED push DoorOpened;
         on UNKNOWN_ERROR goto Error;
-        on EXPRESSO_BUTTON push MakeExpresso;
+        on ESPRESSO_BUTTON push MakeExpresso;
         on STEAMER_ON push MakeSteam;
         on ReadyDoorOpened push DoorOpened;
     }
 
     state MakeExpresso {
         entry {
-            StartExpresso();   
+            StartEspresso();   
         }
-        on EXPRESSO_COMPLETE do { pop; }
+        on ESPRESSO_COMPLETE do { pop; }
         on UNKNOWN_ERROR goto Error;
         on DOOR_OPENED do {
             EmergencyStop();
             pop;
         }
-        // Can't make steam while we are making expresso
+        // Can't make steam while we are making espresso
         ignore STEAMER_ON;
         ignore STEAMER_OFF;
     }
@@ -116,8 +116,8 @@ machine CoffeeMachine
             pop;
         }
         ignore STEAMER_ON;
-        // can't make expresso while we are making steam
-        ignore EXPRESSO_BUTTON;
+        // can't make espresso while we are making steam
+        ignore ESPRESSO_BUTTON;
     }
 
     state DoorOpened {
@@ -128,7 +128,7 @@ machine CoffeeMachine
         }
         on DOOR_CLOSED  do { pop; }
         on UNKNOWN_ERROR goto Error;
-        ignore EXPRESSO_BUTTON;
+        ignore ESPRESSO_BUTTON;
         ignore STEAMER_ON;
         ignore STEAMER_OFF;
     }
@@ -140,7 +140,7 @@ machine CoffeeMachine
         }
         ignore DOOR_OPENED;
         ignore DOOR_CLOSED;
-        ignore EXPRESSO_BUTTON;
+        ignore ESPRESSO_BUTTON;
         ignore STEAMER_ON;
         ignore STEAMER_OFF;
     }

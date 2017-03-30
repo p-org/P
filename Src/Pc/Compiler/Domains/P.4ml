@@ -266,7 +266,7 @@ domain PStructuralTyping extends PData, PError
 	//interfaces or machine names in the creates
 	[rule_Classes = '"error, msg: interface or machine in creates is not declared"']
 	OneIdError(m.id, "Interface or machine in creates is not declared"),
-	OneDeclError(mc) :- mc is MachineCreates(m, name), name != NIL, no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
+	OneDeclError(mc) :- mc is MachineCreates(m, name), name != ALL, no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
 
 	//events in sends
 	[rule_Classes = '"error, msg: event in sends list is not declared"']

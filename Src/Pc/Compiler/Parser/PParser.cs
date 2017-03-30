@@ -2090,7 +2090,7 @@
             }
            else
             {
-                var rec = P_Root.MkMachineReceives(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.NIL, span));
+                var rec = P_Root.MkMachineReceives(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.ALL, span));
                 rec.Span = span;
                 parseProgram.Add(rec);
             }
@@ -2111,7 +2111,7 @@
             }
             else
             {
-                var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.NIL, span));
+                var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.ALL, span));
                 send.Span = span;
                 parseProgram.Add(send);
             }
@@ -2134,7 +2134,7 @@
             }
             else
             {
-                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.NIL, span));
+                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.ALL, span));
                 creates.Span = span;
                 parseProgram.Add(creates);
             }

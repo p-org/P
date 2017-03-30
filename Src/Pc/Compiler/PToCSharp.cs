@@ -2713,19 +2713,33 @@ namespace Microsoft.Pc
                     CSharpHelper.MkCSharpDot("machine", "instanceNumber")));
 
             //initialize the permission set for self
-            foreach (var ev in allMachines[machineName].receiveSet)
+            if(allMachines[machineName].receiveSet == null)
             {
-                fields.Add(
-                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "self", "permissions", "Add"), GetEventVar(ev))
-                    );
+                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "self", "permissions"), LiteralExpression(SyntaxKind.NullLiteralExpression));
+            }
+            else
+            {
+                foreach (var ev in allMachines[machineName].receiveSet)
+                {
+                    fields.Add(
+                        CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "self", "permissions", "Add"), GetEventVar(ev))
+                        );
+                }
             }
 
             //initialize the send set
-            foreach (var ev in allMachines[machineName].sendsSet)
+            if (allMachines[machineName].sendsSet ==  null)
             {
-                fields.Add(
-                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "sends", "Add"), GetEventVar(ev))
-                    );
+                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "sends"), LiteralExpression(SyntaxKind.NullLiteralExpression));
+            }
+            else
+            {
+                foreach (var ev in allMachines[machineName].sendsSet)
+                {
+                    fields.Add(
+                        CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "sends", "Add"), GetEventVar(ev))
+                        );
+                }
             }
 
             //machine.currentPayload = payload;

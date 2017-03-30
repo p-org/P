@@ -18,7 +18,7 @@ domain PLink
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
-	InterfaceType	::= new (ev: NonNullEventName, tail: any InterfaceType + {NIL}).
+	InterfaceType	::= new (ev: NonNullEventName + { ALL }, tail: any InterfaceType + {NIL}).
     TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
 
 	StringList		::= new (hd: String, tl: any StringList + { NIL }).
@@ -52,15 +52,15 @@ domain PLink
 
 	//// Machine Signature
 	MachineExports		::= fun (mach: String -> exports: String).
-	MachineReceives		::= new (mach: String, ev: NonNullEventName).
-	MachineSends		::=	new (mach: String, ev: NonNullEventName).
+	MachineReceives		::= new (mach: String, ev: NonNullEventName + { ALL }).
+	MachineSends		::=	new (mach: String, ev: NonNullEventName + { ALL }).
 	MachineCreatesInt	::= new (mach: String, iname: String).
 	MachineCreatesM		::= new (mach: String, mmname: String).
 
 	//// Module Declarations
 	ModuleDecl ::= fun (name: String -> id: any Id).
 	ModuleContains ::= new (mod: ModuleDecl, mach: String).
-	ModulePrivateEvents ::= new (mod: ModuleDecl, ev: NonNullEventName + { NIL }).
+	ModulePrivateEvents ::= new (mod: ModuleDecl, ev: NonNullEventName).
 	ModuleName ::= fun (name: String -> id: any Id).
 	
 
@@ -137,6 +137,13 @@ domain PLinkError
 
 transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 {
+	//// Populate the sends and receives
+	MachineReceives(m, ed.name) :- MachineReceives(m, ALL), ed is EventDecl.
+	MachineReceives(m, HALT)	:- MachineReceives(m, ALL). 
+
+	MachineSends(m, ed.name) :- MachineSends(m, ALL), ed is EventDecl.
+	MachineSends(m, HALT)	:- MachineSends(m, ALL).
+
 	//// Populate the depends on
 	CSharpDependsOn(n, d) :- DependsOn(n, d).
 
@@ -245,13 +252,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	/************************************************************************************/
 	/*	Generate sends, receives, exports, private and creates for Module Expressions   */
 	/************************************************************************************/
-	
-	//// Compute the private set for leaf module
-	ModulePrivate(mod, ev.name) :- mod is ModuleDecl, ModulePrivateEvents(mod, NIL), ev is EventDecl.
-
 	//// private events 
-	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : in.NonNullEventName;
-								  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, NIL), ModuleContains(ModuleDecl(modExpr.name, _), mach), MachineReceives(mach, ev).
+	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : in.NonNullEventName.
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModulePrivate(modExpr.mod, ev).
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModulePrivate(modExpr.mod, ev), ev: in.NonNullEventName;
 								  AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfInterfaceType(modExpr.evtNames, ev), ev: in.NonNullEventName.
@@ -259,11 +261,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.right, ev).
 									 
 	//// sends list 
-	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSends(mach, ev), ModuleContains(ModuleDecl(modExpr.name, _), mach), no ModulePrivate(modExpr, ev). 
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSends(mach, ev), ev: NonNullEventName, ModuleContains(ModuleDecl(modExpr.name, _), mach), no ModulePrivate(modExpr, ev). 
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModuleSends(modExpr.mod, ev).
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.left, ev);
 								AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.right, ev).
-	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MachineSends(_, ev), ModuleSends(modExpr.mod, ev), no MemberOfInterfaceType(modExpr.evtNames, ev).
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MachineSends(_, ev), ev: NonNullEventName, ModuleSends(modExpr.mod, ev), no MemberOfInterfaceType(modExpr.evtNames, ev).
 	
 	//// exports list
 	AllExportedInterfaces ::= (ix: String).
@@ -305,7 +307,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 	//// Export Operation 3 (\alpha = MR(m)\EP)
 	ModuleConstructionIllegal(id, ix, "interface exported is not equal to the interface implemented by machine") 
 	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleRenameMap(mod, m, mach), 
-	impInterface = toList(#InterfaceType, NIL, {ev | MachineReceives(mach, ev), no ModulePrivate(mod, ev)}), InterfaceTypeDecl(ix, exInterface, _, _), exInterface != impInterface.
+	impInterface = toList(#InterfaceType, NIL, {ev | MachineReceives(mach, ev), no ModulePrivate(mod, ev), ev: NonNullEventName}), InterfaceTypeDecl(ix, exInterface, _, _), exInterface != impInterface.
 
 	//// Export Operation 4 (constructor type match)
 	ModuleConstructionIllegal(id, ix, "exported interface constructor type is not equal to the contructor type of implemented machine") 
@@ -448,7 +450,7 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//// make sure that new M in the module are for private machines.
 	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M, but not all its events are private")
-	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), MachineCreatesM(mach, newM), MachineReceives(newM, ev), no ModulePrivate(mod, ev).
+	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), MachineCreatesM(mach, newM), MachineReceives(newM, ev), no ModulePrivate(mod, ev), ev: NonNullEventName.
 
 	//// ix is not disjoint from EP
 	WellFormednessError(mod.id, ix, "wellformedness error> the exported interfaces are not disjoint from private events") 

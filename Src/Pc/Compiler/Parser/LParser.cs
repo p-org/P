@@ -366,26 +366,16 @@
             parseLinker.ModuleDef.Add(moduleDef);
         }
 
-        private void AddPrivatesList(bool hasDecl, Span span = default(Span))
+        private void AddPrivatesList(Span span = default(Span))
         {
-            if (hasDecl)
+            Contract.Assert(crntEventList.Count > 0);
+            foreach (var ev in crntEventList)
             {
-                Contract.Assert(crntEventList.Count > 0);
-                foreach (var ev in crntEventList)
-                {
-                    var rec = PLink_Root.MkModulePrivateEvents(GetCurrentModuleDecl(span), (PLink_Root.IArgType_ModulePrivateEvents__1)ev);
-                    rec.Span = ev.Span;
-                    parseLinker.ModulePrivateEvents.Add(rec);
-                }
-                crntEventList.Clear();
-            }
-            else
-            {
-                var rec = PLink_Root.MkModulePrivateEvents(GetCurrentModuleDecl(span), MkUserCnst(PLink_Root.UserCnstKind.NIL, span));
-                rec.Span = span;
+                var rec = PLink_Root.MkModulePrivateEvents(GetCurrentModuleDecl(span), (PLink_Root.IArgType_ModulePrivateEvents__1)ev);
+                rec.Span = ev.Span;
                 parseLinker.ModulePrivateEvents.Add(rec);
             }
-
+            crntEventList.Clear();
         }
 
         private void AddModuleDecl(string name, Span nameSpan, Span span)

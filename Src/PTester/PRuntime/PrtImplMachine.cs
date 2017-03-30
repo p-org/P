@@ -127,7 +127,7 @@ namespace P.Runtime
             }
 
             //check if the sent event is in source send set
-            if (!source.sends.Contains(e as PrtEventValue))
+            if (source.sends != null && !source.sends.Contains(e as PrtEventValue))
             {
                 throw new PrtIllegalEnqueueException(String.Format("Machine {0} cannot send event {1}", source.Name, e.ToString()));
             }
@@ -135,7 +135,7 @@ namespace P.Runtime
             //check if the sent event is in target permissions
             if (target is PrtInterfaceValue)
             {
-                if (!(target as PrtInterfaceValue).permissions.Contains(e as PrtEventValue))
+                if ((target as PrtInterfaceValue).permissions != null && !(target as PrtInterfaceValue).permissions.Contains(e as PrtEventValue))
                 {
                     throw new PrtIllegalEnqueueException(String.Format("Event {0} is not in the permission set of the target", e.ToString()));
                 }

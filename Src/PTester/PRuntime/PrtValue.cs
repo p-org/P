@@ -108,6 +108,18 @@ namespace P.Runtime
                 }
                 else
                 {
+                    if(interValue.permissions == null)
+                    {
+                        return (type as PrtInterfaceType).permissions == null;
+                    }
+                    else
+                    {
+                        if((type as PrtInterfaceType).permissions == null)
+                        {
+                            return false;
+                        }
+                    }
+
                     if(interValue.permissions.Count() != (type as PrtInterfaceType).permissions.Count())
                     {
                         return false;
@@ -328,11 +340,17 @@ namespace P.Runtime
 
         public PrtInterfaceValue(PrtImplMachine m, List<PrtEventValue> perm): base(m)
         {
-            permissions = new List<PrtEventValue>();
-            foreach(var ev in perm)
+            if (perm == null)
+                permissions = null;
+            else
             {
-                permissions.Add(ev);
+                permissions = new List<PrtEventValue>();
+                foreach (var ev in perm)
+                {
+                    permissions.Add(ev);
+                }
             }
+            
         }
 
         public override PrtValue Clone()

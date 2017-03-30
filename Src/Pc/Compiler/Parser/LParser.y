@@ -54,9 +54,8 @@ MachineNamesList
 	;
 
 ModulePrivateEvents
-	: PRIVATE NonDefaultEventList SEMICOLON		{ AddPrivatesList(true, ToSpan(@1)); }
+	: PRIVATE NonDefaultEventList SEMICOLON		{ AddPrivatesList(ToSpan(@1)); }
 	| PRIVATE SEMICOLON
-	|											{ AddPrivatesList(false); }
 	;
 
 /* Composition */

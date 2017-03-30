@@ -326,6 +326,7 @@ namespace P.Tester
         }
 
         public static StateImpl main_s;
+        public static string ErrorMessage = null;
 
         public static void RunPSharpTester(StateImpl s)
         {
@@ -344,6 +345,11 @@ namespace P.Tester
             engine.Run();
 
             Console.WriteLine("Bugs found: {0}", engine.TestReport.NumOfFoundBugs);
+
+            if (ErrorMessage != null)
+            {
+                Console.WriteLine("{0}", ErrorMessage);
+            }
         }
     }
 
@@ -422,9 +428,22 @@ namespace P.Tester
                     {
                         return;
                     }
+                    else if (currImpl.Exception is PrtException)
+                    {
+                        PTesterCommandLine.ErrorMessage = currImpl.errorTrace.ToString();
+                        PTesterCommandLine.ErrorMessage += Environment.NewLine;
+                        PTesterCommandLine.ErrorMessage += string.Format("ERROR: {0}", currImpl.Exception.Message);
+
+                        this.Assert(false);
+                    }
                     else
                     {
-                        this.Assert(false, currImpl.Exception.ToString());
+                        PTesterCommandLine.ErrorMessage = currImpl.errorTrace.ToString();
+                        PTesterCommandLine.ErrorMessage += Environment.NewLine;
+                        PTesterCommandLine.ErrorMessage += string.Format("[Internal Exception]: Please report to the P Team");
+                        PTesterCommandLine.ErrorMessage += Environment.NewLine;
+                        PTesterCommandLine.ErrorMessage += currImpl.Exception.ToString();
+                        this.Assert(false);
                     }
                 }
 

@@ -1466,13 +1466,13 @@ namespace Microsoft.Pc
                 {
                     return MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("parent"), IdentifierName("self"));
                 }
-                else if (op == PData.Cnst_Nondet.Node.Name)
+                else if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
                 {
-                    return IdentifierName("$");
-                }
-                else if (op == PData.Cnst_FairNondet.Node.Name)
-                {
-                    return IdentifierName("$$");
+                    return CSharpHelper.MkCSharpObjectCreationExpression(
+                        IdentifierName("PrtBoolValue"), 
+                        CSharpHelper.MkCSharpInvocationExpression(
+                            CSharpHelper.MkCSharpDot("application", "GetSelectedChoiceValue"),
+                            CSharpHelper.MkCSharpCastExpression("PrtImplMachine", IdentifierName("parent"))));
                 }
                 else if (op == PData.Cnst_Null.Node.Name)
                 {

@@ -1924,6 +1924,7 @@ namespace Microsoft.Pc
             }
             else if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
             {
+                /*
                 var afterLabel = ctxt.GetFreshLabel();
                 var bvar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "nondet");
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot("entryCtxt", "Nondet"), Factory.Instance.MkCnst(ctxt.LabelToId(afterLabel)), MkZingIdentifier("locals"))));
@@ -1940,6 +1941,19 @@ namespace Microsoft.Pc
                 ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
                 ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, bvar)));
                 retVal = tmpVar;
+                */
+                var bvar = ctxt.GetTmpVar(ZingData.Cnst_Bool, "nondet");
+                ctxt.AddSideEffect(MkZingAssign(bvar, MkZingCall(Factory.Instance.MkCnst("choose"), Factory.Instance.MkCnst("bool"))));
+                var tmpVar = ctxt.GetTmpVar(PrtValue, "tmp");
+                ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeBool.Node))));
+                ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetBool"), tmpVar, bvar)));
+                retVal = tmpVar;
+                if (compiler.Options.liveness == LivenessOption.Standard && op == PData.Cnst_FairNondet.Node.Name)
+                {
+                    int i = ctxt.entityInfo.numFairChoices;
+                    ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(GetFairChoice(ctxt.entityName, i), "AtChoose"), bvar)));
+                    ctxt.entityInfo.numFairChoices++;
+                }
             }
             else if (op == PData.Cnst_Null.Node.Name)
             {

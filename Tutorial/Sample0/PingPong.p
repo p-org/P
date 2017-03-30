@@ -51,12 +51,9 @@ sends PONG, START;
       client =  m;
       StartTimer(timer, 1000);
     } 
-    ignore TIMEOUT;
-    /*
     on TIMEOUT goto WaitPing with { 
-	  print "Server sending PONG\n";
+	    print "Server sending PONG\n";
       send client, PONG; 
     }
-    */
   }
 } 

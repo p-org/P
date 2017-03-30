@@ -8,16 +8,16 @@ event STEAMER_OFF;
 event EXPRESSO_COMPLETE;
 
 // this function returns true if something is open such that machine cannot safely operate.
-fun CheckIsOpen() : bool { return false; }
-fun CheckWaterLevel() : bool { return false; }
-fun CheckBeans() : bool { return false; }
+fun CheckIsOpen() : bool { return $; }
+fun CheckWaterLevel() : bool { return $; }
+fun CheckBeans() : bool { return $; }
 // turn on red light
 fun ShowError() {}
 // turn on heating element
 fun BeginHeating() {}
 
 // this function returns true if heating is complete.
-fun CheckHeat() : bool { return false; }
+fun CheckHeat() : bool { return $; }
 
 // star the expresso function
 fun StartExpresso() {}

@@ -1555,8 +1555,9 @@ domain PStaticTyping extends PData, PError
 	Impure ::= (FunDecl + FunProtoDecl).
 	Impure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
 	Impure(c) :- c is FunDecl, c.kind = MODEL, no Annotation(c, "pure", _, _).
-	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(NONDET, _).
-	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(FAIRNONDET, _).
+	//Allowing $ and $$ in pure funs because they no longer cause a continuation to be created
+	//Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(NONDET, _).
+	//Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(FAIRNONDET, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Goto.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Raise.
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulStmt(POP, _).
@@ -1609,6 +1610,7 @@ domain PStaticTyping extends PData, PError
        SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' : New, toSymbol(e'') != #Name;
 	   SubSE0(c, e), e = Return(e', _),           e' : New.
 
+/*
     [ rule_Classes = '"error, msg: $ can only be used like "x = $" or "if ($)" or "while ($)" or "return $;" "']
 	OneIdError(e'.id, "Illegal nondeterministic choice: only x = $ or if ($) or while ($) or return $ is allowed"),
     PurityError(c, e') :- 
@@ -1642,6 +1644,7 @@ domain PStaticTyping extends PData, PError
        SubSE0(c, e), e = Announce(e', _, _),      e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Assert(e', _, _),        e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' = NulApp(FAIRNONDET, _), toSymbol(e'') != #Name.
+*/
 	                                       
     /*************************************************************/
     /*                      Type Comparability                   */

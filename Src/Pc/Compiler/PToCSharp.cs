@@ -2715,7 +2715,7 @@ namespace Microsoft.Pc
             //initialize the permission set for self
             if(allMachines[machineName].receiveSet == null)
             {
-                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "self", "permissions"), LiteralExpression(SyntaxKind.NullLiteralExpression));
+                fields.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "self", "permissions"), LiteralExpression(SyntaxKind.NullLiteralExpression)));
             }
             else
             {
@@ -2730,7 +2730,7 @@ namespace Microsoft.Pc
             //initialize the send set
             if (allMachines[machineName].sendsSet ==  null)
             {
-                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "sends"), LiteralExpression(SyntaxKind.NullLiteralExpression));
+                fields.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "sends"), LiteralExpression(SyntaxKind.NullLiteralExpression)));
             }
             else
             {

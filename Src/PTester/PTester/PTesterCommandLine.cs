@@ -326,7 +326,7 @@ namespace P.Tester
         }
 
         public static StateImpl main_s;
-        public static string ErrorMessage = null;
+        public static StateImpl currentImpl;
 
         public static void RunPSharpTester(StateImpl s)
         {
@@ -346,9 +346,24 @@ namespace P.Tester
 
             Console.WriteLine("Bugs found: {0}", engine.TestReport.NumOfFoundBugs);
 
-            if (ErrorMessage != null)
+            if (engine.TestReport.NumOfFoundBugs > 0)
             {
-                Console.WriteLine("{0}", ErrorMessage);
+                if (currentImpl.Exception != null && currentImpl.Exception is PrtException)
+                {
+                    Console.WriteLine("{0}", currentImpl.errorTrace.ToString());
+                    Console.WriteLine("ERROR: {0}", currentImpl.Exception.Message);
+                }
+                else if (currentImpl.Exception != null)
+                {
+                    Console.WriteLine("{0}", currentImpl.errorTrace.ToString());
+                    Console.WriteLine("[Internal Exception]: Please report to the P Team");
+                    Console.WriteLine("{0}", currentImpl.Exception.ToString());
+                }
+                else
+                {
+                    Console.WriteLine("{0}", currentImpl.errorTrace.ToString());
+                    Console.WriteLine("ERROR: Liveness violation");
+                }
             }
         }
     }
@@ -362,6 +377,7 @@ namespace P.Tester
             {
                 return runtime.Random();
             };
+            PTesterCommandLine.currentImpl = s;
 
             runtime.CreateMachine(typeof(PSharpMachine), new MachineInitEvent(s));
         }
@@ -434,21 +450,8 @@ namespace P.Tester
                     {
                         return;
                     }
-                    else if (currImpl.Exception is PrtException)
+                    else 
                     {
-                        PTesterCommandLine.ErrorMessage = currImpl.errorTrace.ToString();
-                        PTesterCommandLine.ErrorMessage += Environment.NewLine;
-                        PTesterCommandLine.ErrorMessage += string.Format("ERROR: {0}", currImpl.Exception.Message);
-
-                        this.Assert(false);
-                    }
-                    else
-                    {
-                        PTesterCommandLine.ErrorMessage = currImpl.errorTrace.ToString();
-                        PTesterCommandLine.ErrorMessage += Environment.NewLine;
-                        PTesterCommandLine.ErrorMessage += string.Format("[Internal Exception]: Please report to the P Team");
-                        PTesterCommandLine.ErrorMessage += Environment.NewLine;
-                        PTesterCommandLine.ErrorMessage += currImpl.Exception.ToString();
                         this.Assert(false);
                     }
                 }

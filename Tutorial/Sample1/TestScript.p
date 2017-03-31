@@ -1,11 +1,17 @@
-module Test0
+module CoffeeMaker
 private START, CANCEL;
 {
-    Main, CoffeeMachine, Timer
+    CoffeeMachine, Timer
 }
 
-module Test1 = (hide START, CANCEL in Test0);
+module Main0 { Main0 }
 
-test Test0: Test0;
+module Main1 { Main1 }
 
-test Test1: Test1;
+module Test0 = Main0 || CoffeeMaker;
+
+module Test1 = Main1 || CoffeeMaker;
+
+test Test0: (rename Main0 to Main in Test0);
+
+test Test1: (rename Main1 to Main in Test1);

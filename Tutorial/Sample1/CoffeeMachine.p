@@ -27,7 +27,7 @@ model fun GrindBeans(c: ICoffeeMachine){
 	}
 }
 
-// star the espresso function
+// start the espresso function
 event eEspressoButtonPressed;
 event eEspressoComplete;
 event eNoWater;

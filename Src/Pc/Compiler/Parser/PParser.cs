@@ -2117,31 +2117,30 @@
             }
         }
 
-        private void AddCreatesList(bool hasDecl, Span span = default(Span))
+        private void AddCreatesList(Span span = default(Span))
         {
-            if(hasDecl)
+            Contract.Assert(crntStringIdList.Count > 0);
+            foreach (var id in crntStringIdList)
             {
-                Contract.Assert(crntStringIdList.Count > 0);
-                foreach (var id in crntStringIdList)
-                {
-                    var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
-                    creates.Span = id.Span;
-                    parseProgram.Add(creates);
-                    
-                    
-                }
-                crntStringIdList.Clear();
+                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
+                creates.Span = id.Span;
+                parseProgram.Add(creates);           
             }
-            else
-            {
-                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.ALL, span));
-                creates.Span = span;
-                parseProgram.Add(creates);
-            }
-            
+            crntStringIdList.Clear();
         }
 
-        
+        private void AddFunCreatesList(Span span = default(Span))
+        {
+            Contract.Assert(crntStringIdList.Count > 0);
+            foreach (var id in crntStringIdList)
+            {
+                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
+                creates.Span = id.Span;
+                parseProgram.Add(creates);
+            }
+            crntStringIdList.Clear();
+        }
+
         private void AddToCreatesList(string name, Span nameSpan)
         {
             crntStringIdList.Add(MkString(name, nameSpan));

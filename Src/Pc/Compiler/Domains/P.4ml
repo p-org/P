@@ -113,7 +113,9 @@ domain PData
 	// Thus, the numbering of variables is consistent across nested scopes.
     FunDecl        ::= fun (name: String, owner: MachineDecl + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, id: any Id).
     FunProtoDecl   ::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
-	
+	FunProtoCreatesDecl ::= fun (fp: FunProtoDecl -> iormlist: StringList).
+	GlobalFunCreates ::= new (name: String, iorm: String).
+
 	AnonFunDecl    ::= new (owner: MachineDecl + { NIL }, ownerFun: String + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType, id: any Id).
     
     StateDecl      ::= fun (name: any QualifiedName, owner: MachineDecl -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }, id: any Id).
@@ -266,7 +268,7 @@ domain PStructuralTyping extends PData, PError
 	//interfaces or machine names in the creates
 	[rule_Classes = '"error, msg: interface or machine in creates is not declared"']
 	OneIdError(m.id, "Interface or machine in creates is not declared"),
-	OneDeclError(mc) :- mc is MachineCreates(m, name), name != ALL, no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
+	OneDeclError(mc) :- mc is MachineCreates(m, name), no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
 
 	//events in sends
 	[rule_Classes = '"error, msg: event in sends list is not declared"']
@@ -337,47 +339,59 @@ domain PStaticTyping extends PData, PError
 
 	InferredMachineCreates ::= (mname: String, iorM: String).
 	
-	GlobalFunCreates ::= (name: String, iorm: String).
+	
 	LocalFunCreates ::= (f: FunDecl, iorm: String).
 	LocalAnonFunCreates ::= (af: AnonFunDecl, iorm : String).
 
 	//// Populate the inferred creates for each machine
 	InferredMachineCreates (m.name, iorm) :-
-		m is MachineDecl, f is FunDecl, f.owner = m, GlobalFunCreates(f.name, iorm);
-		m is MachineDecl, af is AnonFunDecl, LocalAnonFunCreates(af, iorm), af.owner = m.
+		m is MachineDecl, af is AnonFunDecl, LocalAnonFunCreates(af, iorm), af.owner = m;
+		StateDecl(_, m , ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, no LocalFunCreates(fdecl, _), GlobalFunCreates(ent, iorm);
+		StateDecl(_, m , ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, LocalFunCreates(fdecl, iorm);
+		StateDecl(_, m , _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, no LocalFunCreates(fdecl, _), GlobalFunCreates(ext, iorm);
+		StateDecl(_, m , _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, LocalFunCreates(fdecl, iorm);
+		DoDecl(src, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, no LocalFunCreates(fdecl, _), GlobalFunCreates(act, iorm);
+		DoDecl(src, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, FunAvailable(fdecl, m), fdecl.name = act, LocalFunCreates(fdecl, iorm);
+		TransDecl(src, _, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, no LocalFunCreates(fdecl, _), GlobalFunCreates(act, iorm);
+		TransDecl(src, _, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, FunAvailable(fdecl, m), fdecl.name = act, LocalFunCreates(fdecl, iorm).
 
-	InferredCreatesError ::= (m: MachineDecl).
+	InferredCreatesError ::= (m: MachineDecl + FunDecl).
 
-	[rule_Classes = '"error, msg: the constructor argument type is not a subtype of the exported interface argument type"']
-	OneIdError(m.id, "Constructor argument type is not a subtype of the exported interface argument type"),
-	InferredCreatesError(m) :- InferredMachineCreates(mname, i), MachineCreates(mname, _), InterfaceTypeDecl(i, _, _, _), no MachineCreates(mname, i), m is MachineDecl, m.name = mname. 
+	[rule_Classes = '"error, msg: Inferred creates list is not equal to the given creates list"']
+	OneIdError(m.id, "Inferred creates list is not equal to the given creates list"),
+	InferredCreatesError(m) :- InferredMachineCreates(m.name, i), MachineCreates(m, _), no MachineCreates(m, i), m is MachineDecl. 
+
+	MemberOfStringList ::= sub (StringList, String).
+	[rule_Classes = '"error, msg: Creates list of the function prototype is not equal to the inferred creates list for the function"']
+	OneIdError(f.id, "Creates list of the function prototype is not a subset of the inferred creates list for the function"),
+	InferredCreatesError(f) :- f is FunDecl, fd is FunProtoDecl, f.owner != NIL, f.name = fd.name, GlobalFunCreates(f.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm).
 
 	//// Compute the FunCreates
 	GlobalFunCreates(f.name, iorm) :-
-		f is FunDecl, f.owner = NIL, SubSE0(f, NewStmt(iorm, _, _, _));
-		f is FunDecl, f.owner = NIL, SubSE0(f, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunDecl, f.owner = NIL, SubSE0(f, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE0(af, NewStmt(iorm, _, _, _));
-		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE0(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE0(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm).
+		f is FunDecl, f.owner = NIL, SubSE(f, NewStmt(iorm, _, _, _));
+		f is FunDecl, f.owner = NIL, SubSE(f, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
+		f is FunDecl, f.owner = NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, NewStmt(iorm, _, _, _));
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm).
 
 	LocalFunCreates(f, iorm) :-
-		f is FunDecl, f.owner != NIL, SubSE0(f, NewStmt(iorm, _, _, _));
-		f is FunDecl, f.owner != NIL, SubSE0(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		f is FunDecl, f.owner != NIL, SubSE0(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
-		f is FunDecl, f.owner != NIL, SubSE0(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		f is FunDecl, f.owner != NIL, SubSE0(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE0(af, NewStmt(iorm, _, _, _));
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE0(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE0(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE0(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE0(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm).
+		f is FunDecl, f.owner != NIL, SubSE(f, NewStmt(iorm, _, _, _));
+		f is FunDecl, f.owner != NIL, SubSE(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, NewStmt(iorm, _, _, _));
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm).
 
 	LocalAnonFunCreates(af, iorm) :-
-		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE0(af, NewStmt(iorm, _, _, _));
-		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE0(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
-		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE0(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE0(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, NewStmt(iorm, _, _, _));
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm).
 		
 	
 

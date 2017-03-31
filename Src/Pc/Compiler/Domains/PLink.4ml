@@ -9,6 +9,7 @@ domain PLink
 	Id ::= { NIL } + Integer + String + IdList.
 	NonNullEventName  ::= String + { HALT }.
 	EventName         ::= String + { NULL, HALT }.
+	StringList		::= new (hd: String, tl: any StringList + { NIL }).
 	EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
 
 	NameType        ::= new (name: String).
@@ -36,6 +37,7 @@ domain PLink
 	AnonFunDecl		    ::= new (ownerFun: String, anonFunIndex: Natural).
 	FunDecl				::= new (name: String, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
+	FunProtoCreatesDecl ::= fun (fp: FunProtoDecl -> iormlist: StringList).
 	Pure				::= new (name: String, isPure: { TRUE, FALSE }).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
 	InterfaceTypeDecl	::= new (name: String, list: InterfaceType, argType: any TypeExpr, id: any Id).
@@ -49,6 +51,8 @@ domain PLink
 	/*****************************************************************/
 	/*		Module system related declarations and constructs		 */
 	/*****************************************************************/
+	//Fun creates
+	GlobalFunCreates ::= new (name: String, iorm: String).
 
 	//// Machine Signature
 	MachineExports		::= fun (mach: String -> exports: String).
@@ -122,7 +126,7 @@ domain PLinkError
 	WellFormednessError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	TestOrImplDeclError ::= new (modExprId: any Id, arg: String, msg: String).
 	RefinementDeclError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
-
+	InferredCreatesError ::= new (fid : any Id, arg: String, msg: String).
 	
 	CSharpLinkMap ::= new (testName: String, newMachineName: String, interfaceOrMachine: String, newImpMachine: String).
 	CSharpRenameMap ::= new (testName: String, newName: String, impMachine: String).
@@ -197,6 +201,11 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 
 	//multiple declarations of the same type
 	err.OneNameError(NIL, td.name, "multiple declarations of named types have same name") :- NamedTypes(td), NamedTypes(td'), td != td', td.name = td'.name.
+
+	// creates list does not match
+	MemberOfStringList ::= sub (StringList, String).
+	InferredCreatesError(NIL, fd.name, "Creates list of the function prototype is not a subset of the inferred creates list for the function") 
+	:- fd is FunProtoDecl, GlobalFunCreates(fd.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm).
 
 	/******************************************/
 	/*   Module System related Linker Errors */

@@ -88,7 +88,6 @@ receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans,
          eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,
          eDumpComplete, eReadyDoorOpened, TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
 sends START, CANCEL, eDumpComplete, eUnknownError, eNoWater, eEspressoComplete, eGrindComplete, eNoBeans, eTemperatureReached;
-creates;
 {
     // fields
     var timer: TimerPtr;

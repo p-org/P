@@ -42,9 +42,12 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), in.TypeExpansion(ctype, ectype).
 	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev).
 	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev).
-	link.MachineCreatesInt(m.name, i) :- in.MachineCreates(m, i), no in.MachineDecl(i, _, _, _, _), no in.MachineProtoDecl(mcname, _), in.InterfaceTypeDecl(i, _, _, _).
-	link.MachineCreatesM(m.name, mcname) :- in.MachineCreates(m, mcname), in.MachineDecl(mcname, _, _, _, _);
-											in.MachineCreates(m, mcname), in.MachineProtoDecl(mcname, _).
+	link.FunProtoCreatesDecl(f, list) :- in.FunProtoCreatesDecl(f, list).
+	link.MachineCreatesInt(m, iorm) :- in.InferredMachineCreates(m, iorm), no in.MachineDecl(iorm, _, _, _, _), no in.MachineProtoDecl(iorm, _), in.InterfaceTypeDecl(iorm, _, _, _).
+	link.MachineCreatesM(m, mc) :- in.InferredMachineCreates(m, mc), in.MachineDecl(mc, _, _, _, _);
+								   in.InferredMachineCreates(m, mc), in.MachineProtoDecl(mc, _).
+
+	link.GlobalFunCreates(m, iorm) :- in.GlobalFunCreates(m, iorm).
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
 
 	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id)/*, ExportedEvent(name)*/.

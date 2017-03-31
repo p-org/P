@@ -24,7 +24,7 @@ model fun CancelTimer(timer: TimerPtr) {
 	send timer, CANCEL; 
 }
 
-model Timer : ITimer
+model Timer
 receives START, CANCEL;
 sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
 {

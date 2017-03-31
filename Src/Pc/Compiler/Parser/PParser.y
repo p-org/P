@@ -154,9 +154,9 @@ Sends
 	;
 
 Creates
-	: CREATES CreatesList SEMICOLON					{ AddCreatesList(true, ToSpan(@1)); }
+	: CREATES CreatesList SEMICOLON					{ AddCreatesList(ToSpan(@1)); }
 	| CREATES SEMICOLON
-	|												{ AddCreatesList(false); }
+	|												
 	;
 
 CreatesList
@@ -245,11 +245,17 @@ FunDecl
 	;
 
 FunProtoDecl
-	: EXTERN { isFunProtoDecl = true; } FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddFunProto(ToSpan(@1)); }
+	: EXTERN { isFunProtoDecl = true; } FunNameDecl FunCreates ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddFunProto(ToSpan(@1)); }
 	;
 
 FunNameDecl
 	: FUN ID { SetFunName($2.str, ToSpan(@2)); }
+	;
+
+FunCreates
+	: CREATES CreatesList SEMICOLON					{ AddFunCreatesList(ToSpan(@1)); }
+	| CREATES SEMICOLON
+	|
 	;
 
 IsModel

@@ -5,7 +5,7 @@
 #include <stdio.h>
 extern "C" {
 #include "PrtDist.h"
-#include "PingPongSimple.h"
+#include "CoffeeMachine.h"
 #include "Prt.h"
 }
 #include <string>
@@ -122,16 +122,16 @@ int main(int argc, char *argv[])
 
     //create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();
-    PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
+    PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_CoffeeMachine, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
 
+    PRT_MACHINEINST_PRIV* privMachine = (PRT_MACHINEINST_PRIV*)machine;
     // Wait for the timer.
-	int iterations = 10;
-    while (iterations--) {
+	int iterations = 100;
+    while (iterations-- && !privMachine->isHalted) {
 		SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
     }
-
-	PrtHaltMachine((PRT_MACHINEINST_PRIV*)machine);
+    
 	PrtStopProcess(ContainerProcess);
 
     return 0;

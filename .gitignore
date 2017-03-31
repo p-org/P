@@ -247,3 +247,12 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /Src/Pc/Compiler/Parser/LParser.report.html
 /Src/Pc/Compiler/TokensTokens.dat
 /Src/Tools/CompilerProfileToCsv/CompilerProfileToCsv.VC.db
+/Tutorial/Sample0/Sample0.VC.db
+/Tutorial/Sample1/Sample1.VC.db
+/Tutorial/Sample1/main.h
+/Tutorial/Sample1/main.cs
+/Tutorial/Sample1/main.c
+/Tutorial/Sample1/linker.h
+/Tutorial/Sample1/linker.dll
+/Tutorial/Sample1/linker.cs
+/Tutorial/Sample1/linker.c

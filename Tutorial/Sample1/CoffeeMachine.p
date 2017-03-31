@@ -1,41 +1,94 @@
-// hardware abstraction layer represented by events and functions.
-event DOOR_OPENED;
-event DOOR_CLOSED;
-event UNKNOWN_ERROR;
-event EXPRESSO_BUTTON;
-event STEAMER_ON;
-event STEAMER_OFF;
-event EXPRESSO_COMPLETE;
+// hardware abstraction layer represented by events and external functions.
+event eDoorOpened;
+event eDoorClosed;
+event eUnknownError;
 
 // this function returns true if something is open such that machine cannot safely operate.
-fun CheckIsOpen() : bool { return $; }
-fun CheckWaterLevel() : bool { return $; }
-fun CheckBeans() : bool { return $; }
+model fun CheckIsOpen() : bool { return $; }
+
 // turn on red light
-fun ShowError() {}
-// turn on heating element
-fun BeginHeating() {}
+model fun ShowError(){
+}
 
-// this function returns true if heating is complete.
-fun CheckHeat() : bool { return $; }
+// turn on heating element, and wait for eTemperatureReached
+event eTemperatureReached;
+model fun BeginHeating(c: ICoffeeMachine){
+	send c, eTemperatureReached;
+}
 
-// star the expresso function
-fun StartExpresso() {}
+// start grinding beans to fill the filter holder
+event eNoBeans;
+event eGrindComplete;
+model fun GrindBeans(c: ICoffeeMachine){
+	if ($) {
+		send c, eNoBeans;
+	} else {
+		send c, eGrindComplete;
+	}
+}
+
+// star the espresso function
+event eEspressoButtonPressed;
+event eEspressoComplete;
+event eNoWater;
+event mMachineBusy;
+
+model fun StartEspresso(c: ICoffeeMachine){
+    announce mMachineBusy;
+	if ($) {
+		send c, eNoWater;
+	} else {
+		send c, eEspressoComplete;
+	}
+}
 
 // start the steamer 
-fun StartSteamer() {}
+event eSteamerButtonOn;
+model fun StartSteamer(c: ICoffeeMachine) {
+    announce mMachineBusy;
+    if ($) {
+		send c, eNoWater;
+	}
+}
 
 // stop the steamer 
-fun StopSteamer() {}
+event eSteamerButtonOff;
+model fun StopSteamer(c: ICoffeeMachine){
+    if ($) {
+		send c, eUnknownError;
+	}
+}
+
+// start dumping the grinds
+event eDumpComplete;
+model fun DumpGrinds(c: ICoffeeMachine){
+    if ($) {
+		send c, eDumpComplete;
+	} else {
+		send c, eUnknownError;
+	}
+}
 
 // stop all functions
-fun EmergencyStop() {}
+model fun EmergencyStop(){
+}
+
 
 // internal events
-event ReadyDoorOpened;
+event eReadyDoorOpened;
+
+type ICoffeeMachine() = { eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans, eGrindComplete,
+         eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,
+         eDumpComplete, eReadyDoorOpened, TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE
+};
 
 // Now for the the actual state machine
-machine CoffeeMachine
+machine CoffeeMachine : ICoffeeMachine
+receives eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans, eGrindComplete,
+         eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,
+         eDumpComplete, eReadyDoorOpened, TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
+sends START, CANCEL, eDumpComplete, eUnknownError, eNoWater, eEspressoComplete, eGrindComplete, eNoBeans, eTemperatureReached;
+creates;
 {
     // fields
     var timer: TimerPtr;
@@ -45,79 +98,114 @@ machine CoffeeMachine
     {
         entry
         {
+            var open : bool;
+            open = CheckIsOpen();
             timer = CreateTimer(this);
-            if (CheckIsOpen() || !CheckWaterLevel() || !CheckBeans()) {
-                goto Error;
+            if (open) {
+                raise eDoorOpened;
             }
             goto WarmingUp;
         }
-
-        ignore EXPRESSO_BUTTON;
-        ignore STEAMER_ON;
-        ignore STEAMER_OFF;
+        on eDoorOpened push DoorOpened;
+        ignore eEspressoButtonPressed;
+        ignore eSteamerButtonOn;
+        ignore eSteamerButtonOff;
+        ignore eTemperatureReached;
     }
 
     state WarmingUp {
         entry {
-            StartTimer(timer, 1000);
-            BeginHeating();
+            StartTimer(timer, 60000);
+            BeginHeating(this);
         }
         on TIMEOUT do
         {
-            if (CheckHeat()) {
-                goto Ready;
-            } else {
-                StartTimer(timer, 1000);
+            goto Error;    
+        }
+        on eDoorOpened push DoorOpened;
+        on eUnknownError goto Error;
+        on eTemperatureReached goto Ready with {
+            CancelTimer(timer);
+            receive {
+                case CANCEL_SUCCESS: {
+                }                
+                case CANCEL_FAILURE: {
+                    receive {
+                        case TIMEOUT: {                            
+                        }
+                    }
+                }
             }
         }
-        on DOOR_OPENED push DoorOpened;
-        on UNKNOWN_ERROR goto Error;
-        ignore EXPRESSO_BUTTON;
-        ignore STEAMER_ON;
-        ignore STEAMER_OFF;
+        ignore eEspressoButtonPressed;
+        ignore eSteamerButtonOn;
+        ignore eSteamerButtonOff;
     }
     
     state Ready {
         entry {
-            if (CheckIsOpen()){
-                raise ReadyDoorOpened;
+            var open : bool;
+            open = CheckIsOpen();
+            if (open){
+                raise eReadyDoorOpened;
             }
         }
-        on DOOR_OPENED push DoorOpened;
-        on UNKNOWN_ERROR goto Error;
-        on EXPRESSO_BUTTON push MakeExpresso;
-        on STEAMER_ON push MakeSteam;
-        on ReadyDoorOpened push DoorOpened;
+        on eDoorOpened push DoorOpened;
+        on eUnknownError goto Error;
+        on eEspressoButtonPressed push Grind;
+        on eSteamerButtonOn push MakeSteam;
+        on eReadyDoorOpened push DoorOpened;
     }
 
-    state MakeExpresso {
+    state Grind {
         entry {
-            StartExpresso();   
+            GrindBeans(this);   
         }
-        on EXPRESSO_COMPLETE do { pop; }
-        on UNKNOWN_ERROR goto Error;
-        on DOOR_OPENED do {
+        on eUnknownError goto Error;
+        on eNoBeans goto Error;
+        on eGrindComplete goto RunEspresso;
+        on eDoorOpened do {
             EmergencyStop();
             pop;
         }
-        // Can't make steam while we are making expresso
-        ignore STEAMER_ON;
-        ignore STEAMER_OFF;
+        // Can't make steam while we are making espresso
+        ignore eSteamerButtonOn;
+        ignore eSteamerButtonOff;
     }
+
+    state RunEspresso {
+        entry {
+            StartEspresso(this);
+        }
+        on eEspressoComplete do { pop; }
+        on eUnknownError goto Error;
+        on eDoorOpened do {
+            EmergencyStop();
+            pop;
+        }
+        // Can't make steam while we are making espresso
+        ignore eSteamerButtonOn;
+        ignore eSteamerButtonOff;
+    }
+
 
     state MakeSteam {
         entry {
-            StartSteamer();
+            StartSteamer(this);
         }
-        on STEAMER_OFF  do { pop; }
-        on UNKNOWN_ERROR goto Error;
-        on DOOR_OPENED do {
+        on eSteamerButtonOff  do { 
+            StopSteamer(this);
+            pop; 
+        }
+        on eUnknownError goto Error;
+        on eDoorOpened do {
             EmergencyStop();
             pop;
         }
-        ignore STEAMER_ON;
-        // can't make expresso while we are making steam
-        ignore EXPRESSO_BUTTON;
+        ignore eSteamerButtonOn;
+        // can't make espresso while we are making steam
+        ignore eEspressoButtonPressed;
+        on eNoWater goto Error;
     }
 
     state DoorOpened {
@@ -126,22 +214,24 @@ machine CoffeeMachine
             EmergencyStop();
             ShowError();
         }
-        on DOOR_CLOSED  do { pop; }
-        on UNKNOWN_ERROR goto Error;
-        ignore EXPRESSO_BUTTON;
-        ignore STEAMER_ON;
-        ignore STEAMER_OFF;
+        on eDoorClosed  do { pop; }
+        on eUnknownError goto Error;
+        ignore eEspressoButtonPressed;
+        ignore eSteamerButtonOn;
+        ignore eSteamerButtonOff;
     }
     
     state Error {
         entry {
             // do not respond to any user input
             ShowError();
+            EmergencyStop();
+            raise halt;
         }
-        ignore DOOR_OPENED;
-        ignore DOOR_CLOSED;
-        ignore EXPRESSO_BUTTON;
-        ignore STEAMER_ON;
-        ignore STEAMER_OFF;
+        ignore eDoorOpened;
+        ignore eDoorClosed;
+        ignore eEspressoButtonPressed;
+        ignore eSteamerButtonOn;
+        ignore eSteamerButtonOff;
     }
 }

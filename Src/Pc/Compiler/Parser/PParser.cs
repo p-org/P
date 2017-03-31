@@ -2132,12 +2132,25 @@
         private void AddFunCreatesList(Span span = default(Span))
         {
             Contract.Assert(crntStringIdList.Count > 0);
+            Stack<P_Root.StringList> stringListStack = new Stack<P_Root.StringList>();
+            var strList = new P_Root.StringList();
+            strList.hd = (P_Root.IArgType_StringList__0)crntStringIdList.ElementAt(0);
+            strList.tl = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            stringListStack.Push(strList);
+            crntStringIdList.RemoveAt(0);
+
             foreach (var id in crntStringIdList)
             {
-                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
-                creates.Span = id.Span;
-                parseProgram.Add(creates);
+                strList = new P_Root.StringList();
+                strList.hd = (P_Root.IArgType_StringList__0)id;
+                strList.tl = (P_Root.IArgType_StringList__1)stringListStack.Pop();
+                stringListStack.Push(strList);
             }
+
+            var funcreates = P_Root.MkFunProtoCreatesDecl();
+            funcreates.Span = span;
+            funcreates.iormlist = stringListStack.Pop();
+            funcreates.fp = GetCurrentFunProtoDecl(span);
             crntStringIdList.Clear();
         }
 

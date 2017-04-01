@@ -373,7 +373,8 @@ domain PStaticTyping extends PData, PError
 		f is FunDecl, f.owner = NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, NewStmt(iorm, _, _, _));
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm).
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
+		f is FunProtoDecl, no FunDecl(f.name, NIL, _, _, _, _, _, _), FunProtoCreatesDecl(f, list), MemberOfStringList(list, iorm).
 
 	LocalFunCreates(f, iorm) :-
 		f is FunDecl, f.owner != NIL, SubSE(f, NewStmt(iorm, _, _, _));

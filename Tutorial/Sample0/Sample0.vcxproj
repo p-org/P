@@ -166,15 +166,17 @@
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="Main.p" />
-    <PCompile Include="Timer.p" />
     <PCompile Include="PingPong.p" />
+    <PCompile Include="Timer.p" />
     <PCompile Include="Safety.p" />
+    <PCompile Include="Liveness.p" />    
   </ItemGroup>
   <ItemGroup>
     <None Include="Main.p" />
     <None Include="PingPong.p" />
-    <None Include="Safety.p" />
     <None Include="Timer.p" />
+    <None Include="Safety.p" />
+    <None Include="Liveness.p" />    
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

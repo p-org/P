@@ -54,7 +54,7 @@ namespace P.Runtime
         /// Stores the exception encoutered during exploration.
         /// </summary>
         private Exception exception;
-
+        
         public VisibleTrace currentVisibleTrace;
         public StringBuilder errorTrace;
         public static List<string> visibleEvents = new List<string>();
@@ -71,7 +71,16 @@ namespace P.Runtime
 
         public delegate bool GetBooleanChoiceDelegate();
         public GetBooleanChoiceDelegate UserBooleanChoice = null;
-        
+
+        public delegate void CreateMachineCallbackDelegate(PrtImplMachine machine);
+        public CreateMachineCallbackDelegate CreateMachineCallback = null;
+
+        public delegate void DequeueCallbackDelegate(PrtImplMachine machine, string evName, string senderMachineName, string senderMachineStateName);
+        public DequeueCallbackDelegate DequeueCallback = null;
+
+        public delegate void StateTransitionCallbackDelegate(PrtImplMachine machine, PrtState from, PrtState to, string reason);
+        public StateTransitionCallbackDelegate StateTransitionCallback = null;
+
         #endregion
 
         #region Getters and Setters
@@ -163,6 +172,8 @@ namespace P.Runtime
             machine.isSafe = isSafeMap[renamedImpMachine];
             machine.renamedName = renamedImpMachine;
             AddImplMachineToStateImpl(machine);
+
+            CreateMachineCallback?.Invoke(machine);
 
             if (interfaceMap.ContainsKey(interfaceOrMachineName))
             {

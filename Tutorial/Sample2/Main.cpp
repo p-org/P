@@ -2,7 +2,6 @@
 extern "C" {
 #include "PrtDist.h"
 #include "Sample2.h"
-#include "Prt.h"
 }
 #include <string>
 

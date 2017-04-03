@@ -5,6 +5,7 @@ typedef struct LockContext {
 	PRT_UINT32 refCount;
 	PRT_UINT32 instance;
 	HANDLE mutex;
+	PRT_VALUE *data;
 } LockContext;
 
 PRT_UINT64 PRT_FORGN_MKDEF_LockPtr_IMPL(void)
@@ -56,6 +57,8 @@ PRT_VALUE *P_FUN_CreateLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **data)
 	LockContext *lockContext = (LockContext *)PrtMalloc(sizeof(LockContext));
 	lockContext->refCount = 1;
 	lockContext->mutex = CreateMutex(NULL, FALSE, NULL);
+	lockContext->data = *data;
+	*data = NULL;
 	lockContext->instance = numLockInstances;
 	numLockInstances++;
 
@@ -67,13 +70,16 @@ PRT_VALUE *P_FUN_AcquireLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **l, PR
 {
 	LockContext *lockContext = (LockContext *)PrtGetForeignValue(*l);
 	WaitForSingleObject(lockContext->mutex, INFINITE);
-	return NULL;
+	PRT_VALUE *data = lockContext->data;
+	lockContext->data = NULL;
+	return data;
 }
 
 PRT_VALUE *P_FUN_ReleaseLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **l, PRT_VALUE **data)
 {
 	LockContext *lockContext = (LockContext *)PrtGetForeignValue(*l);
+	lockContext->data = *data;
+	*data = NULL;
 	ReleaseMutex(lockContext->mutex);
 	return NULL;
 }
-

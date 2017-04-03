@@ -29,15 +29,17 @@ sends PING;
 
 machine Server : IServer
 receives PING, TIMEOUT;
-sends PONG, START;
+sends PONG, START, CANCEL;
 { 
-  var timer: TimerPtr;
+  var timer1: TimerPtr;
+  var timer2: TimerPtr;
   var client: IClient;
 
   start state Init {  
     entry { 
 	    print "Server created\n";
-	    timer = CreateTimer(this);
+	    timer1 = CreateTimer(this);
+      timer2 = CreateTimer(this);
 	    goto WaitPing;
     }
   }
@@ -49,11 +51,29 @@ sends PONG, START;
   state Sleep { 
     entry (m: IClient) {       
       client =  m;
-      StartTimer(timer, 1000);
+      StartTimer(timer1, 1000);
+      StartTimer(timer2, 1000);
     } 
-    on TIMEOUT goto WaitPing with { 
+    on TIMEOUT goto WaitPing with (timerFired: TimerPtr) { 
+      if (timerFired == timer1)
+      {
+        CancelTimerSafely(timer2);
+      }
+      else
+      {
+        CancelTimerSafely(timer1);
+      }
 	    print "Server sending PONG\n";
       send client, PONG; 
+    }
+  }
+
+  fun CancelTimerSafely(timer: TimerPtr)
+  {
+    CancelTimer(timer);
+    receive {
+      case CANCEL_SUCCESS: {}
+      case CANCEL_FAILURE: { receive { case TIMEOUT: {} } }
     }
   }
 } 

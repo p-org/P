@@ -129,7 +129,7 @@ namespace P.Runtime
             //check if the sent event is in source send set
             if (source.sends != null && !source.sends.Contains(e as PrtEventValue))
             {
-                throw new PrtIllegalEnqueueException(String.Format("Machine {0} cannot send event {1}", source.Name, e.ToString()));
+                throw new PrtIllegalEnqueueException(String.Format("Machine {0} sending event {1} not in its sends list", source.Name, e.ToString()));
             }
 
             //check if the sent event is in target permissions

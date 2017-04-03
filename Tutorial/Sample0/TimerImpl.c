@@ -9,6 +9,19 @@ typedef struct TimerContext {
 	BOOL started;
 } TimerContext;
 
+PRT_UINT64 PRT_FORGN_MKDEF_TimerPtr_IMPL(void)
+{
+	return 0;
+}
+
+PRT_UINT64 PRT_FORGN_CLONE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+{
+	if (frgnVal == 0) return 0;
+	TimerContext *timerContext = (TimerContext *)frgnVal;
+	timerContext->refCount++;
+	return frgnVal;
+}
+
 void PRT_FORGN_FREE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	if (frgnVal == 0) return;
@@ -38,19 +51,6 @@ PRT_STRING PRT_FORGN_TOSTRING_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 PRT_UINT32 PRT_FORGN_GETHASHCODE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	return (PRT_UINT32)frgnVal;
-}
-
-PRT_UINT64 PRT_FORGN_MKDEF_TimerPtr_IMPL(void)
-{
-	return 0;
-}
-
-PRT_UINT64 PRT_FORGN_CLONE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
-{
-	if (frgnVal == 0) return 0;
-	TimerContext *timerContext = (TimerContext *)frgnVal;
-	timerContext->refCount++;
-	return frgnVal;
 }
 
 VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue)

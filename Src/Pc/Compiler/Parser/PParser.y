@@ -143,8 +143,11 @@ Exports
 
 ReceivesSendsCreates
 	: RECEIVES NonDefaultEventList SEMICOLON        { RecordReceives(); }
+	| RECEIVES SEMICOLON							{ RecordReceives(); }
 	| SENDS NonDefaultEventList SEMICOLON			{ RecordSends(); }
+	| SENDS SEMICOLON								{ RecordSends(); }
 	| CREATES CreatesList SEMICOLON					{ RecordCreates(); }
+	| CREATES SEMICOLON								{ RecordCreates(); }
 	;
 
 ReceivesSendsCreatesList

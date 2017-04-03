@@ -152,25 +152,7 @@ ReceivesSendsList
 	: ReceivesSends ReceivesSendsList
 	|
 	;
-/*
-Receives
-	: RECEIVES SEMICOLON							
-	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(true, ToSpan(@1)); }
-	|												{ AddReceivesList(false); }
-	;
 
-Sends
-	: SENDS NonDefaultEventList SEMICOLON			{ AddSendsList(true, ToSpan(@1)); }
-	| SENDS SEMICOLON								
-	|												{ AddSendsList(false); }
-	;
-
-Creates
-	: CREATES CreatesList SEMICOLON					{ AddCreatesList(ToSpan(@1)); }
-	| CREATES SEMICOLON
-	|												
-	;
-*/
 CreatesList
 	: ID						{ AddToCreatesList($1.str, ToSpan(@1)); }									
 	| ID COMMA CreatesList		{ AddToCreatesList($1.str, ToSpan(@1)); }

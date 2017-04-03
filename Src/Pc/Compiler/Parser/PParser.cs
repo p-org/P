@@ -2138,60 +2138,6 @@
             sendsList = null;
         }
 
-        private void AddReceivesList(bool hasDecl, Span span = default(Span))
-        {
-           if(hasDecl)
-            {
-                Contract.Assert(crntEventList.Count > 0);
-                foreach (var ev in crntEventList)
-                {
-                    var rec = P_Root.MkMachineReceives(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineReceives__1)ev);
-                    rec.Span = ev.Span;
-                    parseProgram.Add(rec);
-                }
-                crntEventList.Clear();
-            }
-           else
-            {
-                var rec = P_Root.MkMachineReceives(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.ALL, span));
-                rec.Span = span;
-                parseProgram.Add(rec);
-            }
-            
-        }
-        private void AddSendsList(bool hasDecl, Span span = default(Span))
-        {
-            if(hasDecl)
-            {
-                Contract.Assert(crntEventList.Count > 0);
-                foreach (var ev in crntEventList)
-                {
-                    var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineSends__1)ev);
-                    send.Span = ev.Span;
-                    parseProgram.Add(send);
-                }
-                crntEventList.Clear();
-            }
-            else
-            {
-                var send = P_Root.MkMachineSends(GetCurrentMachineDecl(span), MkUserCnst(P_Root.UserCnstKind.ALL, span));
-                send.Span = span;
-                parseProgram.Add(send);
-            }
-        }
-
-        private void AddCreatesList(Span span = default(Span))
-        {
-            Contract.Assert(crntStringIdList.Count > 0);
-            foreach (var id in crntStringIdList)
-            {
-                var creates = P_Root.MkMachineCreates(GetCurrentMachineDecl(span), (P_Root.IArgType_MachineCreates__1)id);
-                creates.Span = id.Span;
-                parseProgram.Add(creates);           
-            }
-            crntStringIdList.Clear();
-        }
-
         private void AddFunCreatesList(Span span = default(Span))
         {
             Contract.Assert(crntStringIdList.Count > 0);

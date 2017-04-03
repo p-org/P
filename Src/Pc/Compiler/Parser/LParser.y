@@ -48,6 +48,7 @@ ModuleExprList
 NamedModuleDecl
 	: MODULE ID ASSIGN ModuleExpr SEMICOLON			{ AddModuleDef($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
+
 /* Module */
 ModuleDecl
 	: MODULE ID ModulePrivateEvents LCBRACE MachineNamesList RCBRACE			{ AddModuleDecl($2.str, ToSpan(@2), ToSpan(@1)); }
@@ -65,11 +66,6 @@ ModulePrivateEvents
 	;
 
 /* Composition */
-/*
-ComposeExpr
-	:  ModuleExpr LOR ModuleExpr		{ PushComposeExpr(ToSpan(@1)); }
-	;
-*/
 ComposeExpr
 	:  LPAREN COMPOSE ModuleExprList RPAREN
 	;
@@ -83,6 +79,7 @@ HideExpr
 SafeExpr
 	: LPAREN SAFE ModuleExpr RPAREN		{ PushSafeExpr(ToSpan(@1)); }
 	;
+
 /* Assert */
 AssertExpr
 	: LPAREN ASSERT MonitorNameList IN ModuleExpr RPAREN		{ PushAssertExpr(ToSpan(@1)); }

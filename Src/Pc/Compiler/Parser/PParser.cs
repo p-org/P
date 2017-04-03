@@ -97,7 +97,6 @@
 
         private List<P_Root.EventName> receivesList = null;
         private List<P_Root.EventName> sendsList = null;
-        private List<P_Root.String> createsList = null;
 
         private PProgramTopDeclNames PPTopDeclNames;
 
@@ -2054,6 +2053,7 @@
         private void AddMachine(Span span, Span entrySpan, Span exitSpan)
         {
             var machDecl = GetCurrentMachineDecl(span);
+            AddReceivesSendsLists();
             machDecl.id = (P_Root.IArgType_MachineDecl__4)MkUniqueId(entrySpan, exitSpan);
             machDecl.Span = span;
             parseProgram.Add(machDecl);
@@ -2098,17 +2098,7 @@
             crntEventList.Clear();
         }
 
-        private void RecordCreates()
-        {
-            if (createsList == null)
-            {
-                createsList = new List<P_Root.String>();
-            }
-            createsList.AddRange(crntStringIdList);
-            crntStringIdList.Clear();
-        }
-
-        private void AddReceivesSendsCreatesLists()
+        private void AddReceivesSendsLists()
         {
             if (receivesList == null)
             {
@@ -2136,7 +2126,7 @@
             }
             else
             {
-                foreach (var ev in crntEventList)
+                foreach (var ev in sendsList)
                 {
                     var send = P_Root.MkMachineSends(crntMachDecl, (P_Root.IArgType_MachineSends__1)ev);
                     send.Span = ev.Span;
@@ -2144,19 +2134,8 @@
                 }
             }
 
-            if (createsList != null)
-            {
-                foreach (var id in createsList)
-                {
-                    var creates = P_Root.MkMachineCreates(crntMachDecl, (P_Root.IArgType_MachineCreates__1)id);
-                    creates.Span = id.Span;
-                    parseProgram.Add(creates);
-                }
-            }
-
             receivesList = null;
             sendsList = null;
-            createsList = null;
         }
 
         private void AddReceivesList(bool hasDecl, Span span = default(Span))

@@ -51,7 +51,7 @@ PRT_UINT32 PRT_FORGN_GETHASHCODE_LockPtr_IMPL(PRT_UINT64 frgnVal)
 	return (PRT_UINT32)frgnVal;
 }
 
-PRT_VALUE *P_FUN_CreateLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *data)
+PRT_VALUE *P_FUN_CreateLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **data)
 {
 	LockContext *lockContext = (LockContext *)PrtMalloc(sizeof(LockContext));
 	lockContext->refCount = 1;
@@ -63,16 +63,16 @@ PRT_VALUE *P_FUN_CreateLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *data)
 	return PrtMkForeignValue((PRT_UINT64)lockContext, &P_GEND_TYPE_LockPtr);
 }
 
-PRT_VALUE *P_FUN_AcquireLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *l, PRT_VALUE *client)
+PRT_VALUE *P_FUN_AcquireLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **l, PRT_VALUE **client)
 {
-	LockContext *lockContext = (LockContext *)PrtGetForeignValue(l);
+	LockContext *lockContext = (LockContext *)PrtGetForeignValue(*l);
 	WaitForSingleObject(lockContext->mutex, INFINITE);
 	return NULL;
 }
 
-PRT_VALUE *P_FUN_ReleaseLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *l, PRT_VALUE *data)
+PRT_VALUE *P_FUN_ReleaseLock_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **l, PRT_VALUE **data)
 {
-	LockContext *lockContext = (LockContext *)PrtGetForeignValue(l);
+	LockContext *lockContext = (LockContext *)PrtGetForeignValue(*l);
 	ReleaseMutex(lockContext->mutex);
 	return NULL;
 }

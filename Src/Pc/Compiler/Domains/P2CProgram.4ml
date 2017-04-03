@@ -242,7 +242,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Prototypes for model functions
 	MakeParams ::= (in.FunDecl, in.NmdTupType + { NIL }, PrmTypes + { NIL }, Params + { NIL }).
 	MakeParams(f, type, NIL, NIL) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params).
-	MakeParams(f, tl, prmTypes', params') :- MakeParams(f, in.NmdTupType(NmdTupTypeField(name, _), tl), prmTypes, params), prmTypes' = PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), prmTypes), params' = Params(Param(NIL, name), params).
+	MakeParams(f, tl, prmTypes', params') :- MakeParams(f, in.NmdTupType(NmdTupTypeField(name, _), tl), prmTypes, params), prmTypes' = PrmTypes(PtrType(PtrType(NmdType(NIL, "PRT_VALUE"))), prmTypes), params' = Params(Param(NIL, name), params).
 
 	HOut(0, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
 					MakeParams(f, NIL, prmTypes, params),
@@ -886,7 +886,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	MakeArgs ::= (in.FunDecl, in.NmdTupType + { NIL }, Args + { NIL }, Natural).
 	MakeArgs(f, type, NIL, n) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params), n = lstLength(in.#NmdTupType, f.params).
 	MakeArgs(f, tl, args', n') :- MakeArgs(f, in.NmdTupType(_, tl), args, n), n' = n - 1, n':  Natural, 
-	                              args' = Args(BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n', DEC, U)), args).
+	                              args' = Args(UnApp(ADDR, BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n', DEC, U))), args).
 
 	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
 	                params = Params(Param(NIL, "context"), NIL),

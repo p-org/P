@@ -32,7 +32,7 @@ model fun CreateLock(data: any) : LockPtr
 	return x;
 }
 
-model fun AcquireLock(client: machine, l: LockPtr) : any 
+model fun AcquireLock(l: LockPtr, client: machine) : any 
 {
 	var data: any;
 	send l, ACQUIRE_REQ, client;

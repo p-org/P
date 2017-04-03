@@ -39,6 +39,11 @@ ModuleExpr
 	| ID								{ PushModuleName($1.str, ToSpan(@1)); }
 	;
 
+ModuleExprList
+	: ModuleExpr COMMA ModuleExpr		{ PushComposeExpr(ToSpan(@2)); }
+	| ModuleExpr COMMA ModuleExprList	{ PushComposeExpr(ToSpan(@2)); }
+	;
+
 /* Named Module Expr */
 NamedModuleDecl
 	: MODULE ID ASSIGN ModuleExpr SEMICOLON			{ AddModuleDef($2.str, ToSpan(@2), ToSpan(@1)); }
@@ -60,8 +65,13 @@ ModulePrivateEvents
 	;
 
 /* Composition */
+/*
 ComposeExpr
 	:  ModuleExpr LOR ModuleExpr		{ PushComposeExpr(ToSpan(@1)); }
+	;
+*/
+ComposeExpr
+	:  LPAREN COMPOSE ModuleExprList RPAREN
 	;
 
 /* Hide */

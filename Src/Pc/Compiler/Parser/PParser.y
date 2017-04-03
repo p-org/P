@@ -124,7 +124,7 @@ ConstTypeOrNone
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone Exports Receives Sends Creates LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); ResetProgramIgnore(); }
+	: ImplMachineNameDecl MachAnnotOrNone Exports ReceivesSendsCreatesList LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@5), ToSpan(@7)); ResetProgramIgnore(); }
 	;
 
 ImplMachineProtoDecl
@@ -141,6 +141,17 @@ Exports
 	|
 	;
 
+ReceivesSendsCreates
+	: RECEIVES NonDefaultEventList SEMICOLON        { RecordReceives(); }
+	| SENDS NonDefaultEventList SEMICOLON			{ RecordSends(); }
+	| CREATES CreatesList SEMICOLON					{ RecordCreates(); }
+	;
+
+ReceivesSendsCreatesList
+	: ReceivesSendsCreates ReceivesSendsCreatesList { AddReceivesSendsCreatesLists(); }
+	|                                               { AddReceivesSendsCreatesLists(); }
+	;
+/*
 Receives
 	: RECEIVES SEMICOLON							
 	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(true, ToSpan(@1)); }
@@ -158,7 +169,7 @@ Creates
 	| CREATES SEMICOLON
 	|												
 	;
-
+*/
 CreatesList
 	: ID						{ AddToCreatesList($1.str, ToSpan(@1)); }									
 	| ID COMMA CreatesList		{ AddToCreatesList($1.str, ToSpan(@1)); }

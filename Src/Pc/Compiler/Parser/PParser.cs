@@ -95,6 +95,9 @@
         private HashSet<string> crntFunNames = new HashSet<string>();
         private HashSet<string> crntVarNames = new HashSet<string>();
 
+        private List<P_Root.EventName> receivesList = null;
+        private List<P_Root.EventName> sendsList = null;
+        private List<P_Root.String> createsList = null;
 
         private PProgramTopDeclNames PPTopDeclNames;
 
@@ -2073,6 +2076,87 @@
             {
                 PPTopDeclNames.machineProto.Add(name);
             }
+        }
+
+        private void RecordReceives()
+        {
+            if (receivesList == null)
+            {
+                receivesList = new List<P_Root.EventName>();
+            }
+            receivesList.AddRange(crntEventList);
+            crntEventList.Clear();
+        }
+
+        private void RecordSends()
+        {
+            if (sendsList == null)
+            {
+                sendsList = new List<P_Root.EventName>();
+            }
+            sendsList.AddRange(crntEventList);
+            crntEventList.Clear();
+        }
+
+        private void RecordCreates()
+        {
+            if (createsList == null)
+            {
+                createsList = new List<P_Root.String>();
+            }
+            createsList.AddRange(crntStringIdList);
+            crntStringIdList.Clear();
+        }
+
+        private void AddReceivesSendsCreatesLists()
+        {
+            if (receivesList == null)
+            {
+                Span span = default(Span);
+                var rec = P_Root.MkMachineReceives(crntMachDecl, MkUserCnst(P_Root.UserCnstKind.ALL, span));
+                rec.Span = span;
+                parseProgram.Add(rec);
+            }
+            else
+            {
+                foreach (var ev in receivesList)
+                {
+                    var rec = P_Root.MkMachineReceives(crntMachDecl, (P_Root.IArgType_MachineReceives__1)ev);
+                    rec.Span = ev.Span;
+                    parseProgram.Add(rec);
+                }
+            }
+
+            if (sendsList == null)
+            {
+                Span span = default(Span);
+                var send = P_Root.MkMachineSends(crntMachDecl, MkUserCnst(P_Root.UserCnstKind.ALL, span));
+                send.Span = span;
+                parseProgram.Add(send);
+            }
+            else
+            {
+                foreach (var ev in crntEventList)
+                {
+                    var send = P_Root.MkMachineSends(crntMachDecl, (P_Root.IArgType_MachineSends__1)ev);
+                    send.Span = ev.Span;
+                    parseProgram.Add(send);
+                }
+            }
+
+            if (createsList != null)
+            {
+                foreach (var id in createsList)
+                {
+                    var creates = P_Root.MkMachineCreates(crntMachDecl, (P_Root.IArgType_MachineCreates__1)id);
+                    creates.Span = id.Span;
+                    parseProgram.Add(creates);
+                }
+            }
+
+            receivesList = null;
+            sendsList = null;
+            createsList = null;
         }
 
         private void AddReceivesList(bool hasDecl, Span span = default(Span))

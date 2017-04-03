@@ -173,7 +173,7 @@ namespace P.Runtime
                 stateImpl.TraceLine(
                     @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
                     ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
-                this.eventQueue.EnqueueEvent(e, arg);
+                this.eventQueue.EnqueueEvent(e, arg, source.Name, source.CurrentState.name);
                 if (this.maxBufferSize != DefaultMaxBufferSize && this.eventQueue.Size() > this.maxBufferSize)
                 {
                     if (this.doAssume)
@@ -209,6 +209,8 @@ namespace P.Runtime
                 stateImpl.TraceLine(
                     "<DequeueLog> Dequeued Event <{0}, {1}> at Machine {2}-{3}",
                     (currentTrigger as PrtEventValue).evt.name, currentPayload.ToString(), Name, instanceNumber);
+                stateImpl.DequeueCallback?.Invoke(this, (currentTrigger as PrtEventValue).evt.name, currentTriggerSenderInfo.Item1, currentTriggerSenderInfo.Item2);
+
                 receiveSet = new HashSet<PrtValue>();
                 return PrtDequeueReturnStatus.SUCCESS;
             }
@@ -423,13 +425,17 @@ namespace P.Runtime
                                 }
                             case PrtStateExitReason.OnPopStatement:
                                 {
+                                    var cs = CurrentState;
                                     hasMoreWork = !PrtPopState(true);
+                                    stateImpl.StateTransitionCallback?.Invoke(this, cs, CurrentState, "pop");
+
                                     nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
                                     stateExitReason = PrtStateExitReason.NotExit;
                                     goto Finish;
                                 }
                             case PrtStateExitReason.OnGotoStatement:
                                 {
+                                    stateImpl.StateTransitionCallback?.Invoke(this, CurrentState, destOfGoto, "goto");
                                     PrtChangeState(destOfGoto);
                                     nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                     stateExitReason = PrtStateExitReason.NotExit;
@@ -445,6 +451,7 @@ namespace P.Runtime
                                 }
                             case PrtStateExitReason.OnTransition:
                                 {
+                                    stateImpl.StateTransitionCallback?.Invoke(this, CurrentState, CurrentState.transitions[eventValue].gotoState, eventValue.ToString());
                                     stateExitReason = PrtStateExitReason.OnTransitionAfterExit;
                                     nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                     PrtPushTransitionFun(eventValue);
@@ -452,6 +459,8 @@ namespace P.Runtime
                                 }
                             case PrtStateExitReason.OnTransitionAfterExit:
                                 {
+                                    stateImpl.StateTransitionCallback?.Invoke(this, CurrentState, CurrentState.transitions[eventValue].gotoState, eventValue.ToString());
+
                                     // The parameter to an anonymous transition function is always passed as swap.
                                     // Update currentPayload to the latest value of the parameter so that the correct
                                     // value gets passed to the entry function of the target state.
@@ -521,6 +530,7 @@ namespace P.Runtime
             if (PrtIsPushTransitionPresent(currEventValue))
             {
                 eventValue = currEventValue;
+                stateImpl.StateTransitionCallback?.Invoke(this, CurrentState, CurrentState.transitions[currEventValue].gotoState, currEventValue.ToString());
                 PrtPushState(CurrentState.transitions[currEventValue].gotoState);
                 goto DoExecuteFunction;
             }

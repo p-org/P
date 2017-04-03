@@ -327,19 +327,26 @@ namespace P.Tester
 
         public static StateImpl main_s;
         public static StateImpl currentImpl;
+        public static Coverage coverage;
 
         public static void RunPSharpTester(StateImpl s)
         {
             main_s = s;
+            coverage = new Coverage();
 
             var configuration = Configuration.Create()
-                .WithNumberOfIterations(10000); 
+                .WithNumberOfIterations(100); 
 
             configuration.UserExplicitlySetMaxFairSchedulingSteps = true;
             configuration.MaxUnfairSchedulingSteps = 100;
             configuration.MaxFairSchedulingSteps = configuration.MaxUnfairSchedulingSteps * 10;
             configuration.LivenessTemperatureThreshold = configuration.MaxFairSchedulingSteps / 3;
             
+            foreach(var machine in main_s.EnabledMachines)
+            {
+                coverage.DeclareMachine(machine);
+            }
+
             var engine = Microsoft.PSharp.TestingServices.TestingEngineFactory.CreateBugFindingEngine(
                 configuration, PSharpWrapper.Execute);
             engine.Run();
@@ -365,6 +372,11 @@ namespace P.Tester
                     Console.WriteLine("ERROR: Liveness violation");
                 }
             }
+
+            Console.WriteLine("Dumping coverage information");
+            coverage.Dump("coverage");
+            Console.WriteLine("... Writing coverage.txt");
+            Console.WriteLine("... Writing coverage.dgml");
         }
     }
 
@@ -373,10 +385,27 @@ namespace P.Tester
         public static void Execute(PSharpRuntime runtime)
         {
             var s = (StateImpl)PTesterCommandLine.main_s.Clone();
+
             s.UserBooleanChoice = delegate ()
             {
                 return runtime.Random();
             };
+
+            s.CreateMachineCallback = delegate (PrtImplMachine machine)
+            {
+                PTesterCommandLine.coverage.DeclareMachine(machine);
+            };
+
+            s.DequeueCallback = delegate (PrtImplMachine machine, string evName, string senderMachineName, string senderMachineStateName)
+            {
+                PTesterCommandLine.coverage.ReportDequeue(machine, evName, senderMachineName, senderMachineStateName);
+            };
+
+            s.StateTransitionCallback = delegate (PrtImplMachine machine, PrtState from, PrtState to, string reason)
+            {
+                PTesterCommandLine.coverage.ReportStateTransition(machine, from, to, reason);
+            };
+
             PTesterCommandLine.currentImpl = s;
 
             runtime.CreateMachine(typeof(PSharpMachine), new MachineInitEvent(s));

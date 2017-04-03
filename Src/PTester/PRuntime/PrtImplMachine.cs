@@ -451,6 +451,7 @@ namespace P.Runtime
                                 }
                             case PrtStateExitReason.OnTransition:
                                 {
+                                    stateImpl.StateTransitionCallback?.Invoke(this, CurrentState, CurrentState.transitions[eventValue].gotoState, eventValue.ToString());
                                     stateExitReason = PrtStateExitReason.OnTransitionAfterExit;
                                     nextSMOperation = PrtNextStatemachineOperation.ExecuteFunctionOperation;
                                     PrtPushTransitionFun(eventValue);
@@ -458,6 +459,8 @@ namespace P.Runtime
                                 }
                             case PrtStateExitReason.OnTransitionAfterExit:
                                 {
+                                    stateImpl.StateTransitionCallback?.Invoke(this, CurrentState, CurrentState.transitions[eventValue].gotoState, eventValue.ToString());
+
                                     // The parameter to an anonymous transition function is always passed as swap.
                                     // Update currentPayload to the latest value of the parameter so that the correct
                                     // value gets passed to the entry function of the target state.

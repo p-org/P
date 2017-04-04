@@ -275,3 +275,9 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /Tutorial/Sample0/linker.dll
 /Tutorial/Sample0/linker.cs
 /Tutorial/Sample0/linker.c
+/Tutorial/Sample0/main.h
+/Tutorial/Sample0/main.cs
+/Tutorial/Sample0/main.c
+/Tutorial/Sample0/coverage.txt
+/Tutorial/Sample0/coverage.dgml
+/Tutorial/Sample0/PRT_CONTAINER_LOG_1.txt

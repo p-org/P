@@ -7,11 +7,11 @@ set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
 msbuild /p:Platform=x64 /p:Configuration=Release Sample0.sln
 
-%pc% /generate:C# /shared PingPong.p Main.p Liveness.p Safety.p Timer.p
+%pc% /generate:C# /shared Main.p PingPong.p Safety.p Timer.p
 
-%pc% /link /shared /r:PingPong.4ml
+%pc% /link /shared /r:Main.4ml
 
-%pt% linker.dll
+%pt% /psharp linker.dll
 
 goto :eof
 :noP

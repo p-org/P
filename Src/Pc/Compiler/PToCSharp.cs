@@ -4218,7 +4218,7 @@ namespace Microsoft.Pc
                 //make sure test case has a main file
                 if(!testCase.Value.renameMap.ContainsKey("Main"))
                 {
-                    Log.WriteMessage(string.Format("No Main Machine in {0}", testCase.Key), SeverityKind.Error);
+                    Log.WriteMessage(string.Format("No Main Machine, cannot generate {0}.dll", testCase.Key), SeverityKind.Error);
                     return;
                 }
                 SyntaxNode finalOutput = null;

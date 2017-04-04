@@ -258,6 +258,8 @@ transform PLink2C(in:: PLink) returns (err:: PLinkError, out:: C)
 			RefinementDecl(name, modExpr, _, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _);
 			RefinementDecl(name, _, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _).
 
+	NoMainMachineInModExpr(NIL, "linker.dll", "no Main machine declared") :- no CSharpRenameMap("linker", "Main", _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
+
 	/************************************************************************************/
 	/*	Generate sends, receives, exports, private and creates for Module Expressions   */
 	/************************************************************************************/

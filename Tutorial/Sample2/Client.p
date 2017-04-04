@@ -16,7 +16,7 @@ machine Client {
 		var i: int;
 		i = 0;
 		while (i < iter) {
-            x = AcquireLock(this, lock);
+            x = AcquireLock(lock, this);
             x = data swap;
 			Process(data swap);
             x = data swap;

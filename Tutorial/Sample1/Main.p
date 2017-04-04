@@ -1,6 +1,5 @@
 machine Main0 
 sends eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
-creates ICoffeeMachine;
 {
   var client: ICoffeeMachine;  
   start state Init {  
@@ -15,7 +14,6 @@ creates ICoffeeMachine;
 
 machine Main1 
 sends eEspressoButtonPressed, eDoorOpened, eDoorClosed;
-creates ICoffeeMachine;
 {
   var client: ICoffeeMachine;  
   start state Init {  

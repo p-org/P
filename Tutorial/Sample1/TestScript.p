@@ -8,9 +8,9 @@ module Main0 { Main0 }
 
 module Main1 { Main1 }
 
-module Test0 = Main0 || CoffeeMaker;
+module Test0 = (compose Main0, CoffeeMaker);
 
-module Test1 = Main1 || CoffeeMaker;
+module Test1 = (compose Main1, CoffeeMaker);
 
 test Test0: (rename Main0 to Main in Test0);
 

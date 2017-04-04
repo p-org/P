@@ -192,9 +192,9 @@ DWORD WINAPI PrtDistCreateRPCServerForEnqueueAndWait(LPVOID portNumber)
 * Implementation of all the model functions
 **/
 
-PRT_VALUE *P_FUN__SEND_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *target, PRT_VALUE *event, PRT_VALUE  *payload)
+PRT_VALUE *P_FUN__SEND_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **target, PRT_VALUE **event, PRT_VALUE  **payload)
 {
-	PrtDistSend(context->id, target, event, payload);
+	PrtDistSend(context->id, *target, *event, *payload);
 	return NULL;
 }
 

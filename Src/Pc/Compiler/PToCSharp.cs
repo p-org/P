@@ -4215,6 +4215,12 @@ namespace Microsoft.Pc
         {
             foreach(var testCase in allTests)
             {
+                //make sure test case has a main file
+                if(!testCase.Value.renameMap.ContainsKey("Main"))
+                {
+                    Log.WriteMessage(string.Format("No Main Machine in {0}", testCase.Key), SeverityKind.Error);
+                    return;
+                }
                 SyntaxNode finalOutput = null;
 
                 var workspace = new AdhocWorkspace();

@@ -22,7 +22,7 @@
     <ProjectGuid>{3EC51A08-22A0-4BB8-A784-6516F0DC1474}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Test</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>$(WindowsSDKVer)</WindowsTargetPlatformVersion>
     <ProjectName>Sample0</ProjectName>
     <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
   </PropertyGroup>

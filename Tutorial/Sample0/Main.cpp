@@ -101,6 +101,55 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 
 }
 
+
+void
+ExceptionHandler(
+	__in PRT_STATUS exception,
+	__in PRT_MACHINEINST* vcontext
+)
+{
+	PRT_STRING MachineName = vcontext->process->program->machines[vcontext->instanceOf]->name;
+	PRT_UINT32 MachineId = vcontext->id->valueUnion.mid->machineId;
+	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
+
+	switch (exception)
+	{
+	case PRT_STATUS_EVENT_UNHANDLED:
+		printf(
+			"<EXCEPTION> Machine %s(%d) : Unhandled Event Exception\n",
+			MachineName,
+			MachineId);
+		break;
+	case PRT_STATUS_EVENT_OVERFLOW:
+		printf(
+			"<EXCEPTION> Machine %s(%d) : MaxInstance of Event Exceeded Exception\n",
+			MachineName,
+			MachineId);
+		break;
+	case PRT_STATUS_QUEUE_OVERFLOW:
+		printf(
+			"<EXCEPTION> Queue Size Exceeded Max Limits in Machine %s(%d)\n",
+			MachineName,
+			MachineId);
+		break;
+	case PRT_STATUS_ILLEGAL_SEND:
+		printf(
+			"<EXCEPTION> Machine %s(%d) : Illegal use of send for sending message across process (source and target machines are in different process) ",
+			MachineName,
+			MachineId);
+		break;
+	default:
+		printf(
+			"<EXCEPTION> Machine %s(%d) : Unknown Exception\n",
+			MachineName,
+			MachineId);
+		break;
+	}
+
+	exit(-1);
+
+}
+
 /**
 * The main function performs the following steps
 * 1) If the createMain option is true then it create the main machine.
@@ -118,7 +167,7 @@ int main(int argc, char *argv[])
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;
     processGuid.data4 = 0;
-    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, LogHandler);
+    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ExceptionHandler, LogHandler);
 
     //create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();

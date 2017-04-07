@@ -49,9 +49,11 @@ machine Main {
 			//assert false;                     //reachable
 			//////////////////////////////////////null ptr below
 			xloc = 1;                          //to make xloc available 
-			
+			m[1] = 2;
 			m[1] = xloc swap;                  
 			assert m[1] == 1;                   //?
+			assert xloc == 2;
+			xloc = xloc - 1;
 			m[xloc] = xloc + 2;                
 			assert m[1] == 3;                   //?
 			///////////////////////////////////////////null ptr above	

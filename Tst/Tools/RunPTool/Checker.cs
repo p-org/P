@@ -348,7 +348,7 @@ namespace CheckP
                     string zingDllName = null;
                     foreach (var fileName in Directory.EnumerateFiles(workDirectory))
                     {
-                        if (Path.GetExtension(fileName) == ".dll" && !fileName.Contains("output"))
+                        if (Path.GetExtension(fileName) == ".dll" && !fileName.Contains("linker"))
                         {
                             zingDllName = Path.GetFullPath(fileName);
                             break;

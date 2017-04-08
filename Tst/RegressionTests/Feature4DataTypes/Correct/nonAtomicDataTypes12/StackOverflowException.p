@@ -229,7 +229,7 @@ machine Main {
 		  /************************************/
 		  ///////////////////////////////////////////////////////////////////////////
 		 
-          t1.a[foo()-1] = 2;        //runtime error
+          //t1.a[foo()-1] = 2;        //runtime error
 		  tmp = foo();               
 		  tmp4 = GetT1();             //Before the fix: StackOverflowException!
           //tmp4.a[tmp] = 1;  

@@ -70,11 +70,11 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 	PrtFreeValue(ev);
 }
 
-PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *owner)
+PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **owner)
 {
 	TimerContext *timerContext = (TimerContext *)PrtMalloc(sizeof(TimerContext));
 	timerContext->refCount = 1;
-	timerContext->clientContext = PrtGetMachine(context->process, owner);
+	timerContext->clientContext = PrtGetMachine(context->process, *owner);
 	timerContext->started = FALSE;
 	timerContext->timer = CreateWaitableTimer(NULL, TRUE, NULL);
 	timerContext->timerInstance = numTimerInstances;
@@ -84,13 +84,13 @@ PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *owner)
 	return PrtMkForeignValue((PRT_UINT64)timerContext, &P_GEND_TYPE_TimerPtr);
 }
 
-PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer, PRT_VALUE *time)
+PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer, PRT_VALUE **time)
 {
 	LARGE_INTEGER liDueTime;
 	BOOL success;
 
-	TimerContext *timerContext = (TimerContext *)PrtGetForeignValue(timer);
-	int timeout_value = time->valueUnion.nt;
+	TimerContext *timerContext = (TimerContext *)PrtGetForeignValue(*timer);
+	int timeout_value = (*time)->valueUnion.nt;
 	liDueTime.QuadPart = -10000 * timeout_value;
 	success = SetWaitableTimer(timerContext->timer, &liDueTime, 0, Callback, timerContext, FALSE);
 	timerContext->started = success;
@@ -99,12 +99,12 @@ PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer, 
 	return NULL;
 }
 
-PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer)
+PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer)
 {
 	BOOL success;
 	PRT_VALUE *ev;
 	PRT_MACHINESTATE state;
-	TimerContext *timerContext = (TimerContext *)PrtGetForeignValue(timer);
+	TimerContext *timerContext = (TimerContext *)PrtGetForeignValue(*timer);
 	state.machineId = timerContext->timerInstance;
 	state.machineName = "Timer";
 	state.stateId = 1;
@@ -116,11 +116,11 @@ PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE *timer)
 	success = CancelWaitableTimer(timerContext->timer);
 	if (success) {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);
-		PrtSend(&state, timerContext->clientContext, ev, 1, PRT_FUN_PARAM_CLONE, timer);
+		PrtSend(&state, timerContext->clientContext, ev, 1, PRT_FUN_PARAM_CLONE, *timer);
 	}
 	else {
 		ev = PrtMkEventValue(P_EVENT_CANCEL_FAILURE);
-		PrtSend(&state, timerContext->clientContext, ev, 1, PRT_FUN_PARAM_CLONE, timer);
+		PrtSend(&state, timerContext->clientContext, ev, 1, PRT_FUN_PARAM_CLONE, *timer);
 	}
 	PrtFreeValue(ev);
 

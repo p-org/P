@@ -15,57 +15,61 @@ machine Main {
 			var mloc: map[int, int];
 			
 			foo(xloc swap);
-			assert xloc == 1;                   //holds?
+			assert xloc == 1;                   
 			foo(xloc move);
 			xloc = 1;
-			yloc = xloc + 1;			          //OK
+			yloc = xloc + 1;			          
 			
-			assert x == 1;                    //holds?
+			assert xloc == 1;                    
 			
 			baz(xloc swap, yloc move);
-			assert xloc == 5;                    //holds?
+			assert xloc == 7;                    
 
-			xloc = xloc + 2;                          //OK
+			xloc = xloc + 2;                           
 
-			assert xloc == 7;                       //holds?
+			assert xloc == 9;                        
 			
 			yloc = 2;                             //to make yloc available
 			baz(xloc swap, xloc + yloc);     
-			assert xloc == 9;                     //?
-			assert yloc == 2;					//?
+			assert xloc == 16;                      
+			assert yloc == 2;					 
 			
 			yloc = baz_1(xloc move, xloc + yloc);
-			//assert xloc == 1;						//?
-			assert yloc == 7;						//?
+			assert yloc == 23;						 
 			
 			xloc = 20;                          //to make xloc available 
-			x = xloc move;                        //OK
-			assert x == 40;                      //holds?
+			x = xloc move;                         
+			assert x == 20;                       
 
-			//x = 4;                              //to make x available
-			
 			xloc = 1;                          //to make xloc available 
+			m[1] = 2;
+			m[1] = xloc swap;                  
+			assert m[1] == 1;                    
+			assert xloc == 2;                    
+			xloc = xloc - 1;
+			m[xloc] = xloc + 2;                
+			assert m[1] == 3;                        
+
+			assert xloc == 1;              
+			assert yloc == 23;             
+			x = bar();  
+			assert x == 4;                 
 			
-			m[1] = xloc swap;                  //OK
-			assert m[1] == 1;                   //?
-			m[xloc] = xloc + 2;                    //OK
-			assert m[1] == 3;                   //?
-						
-			x = 1;                              ////to make x available
-			client1 = new Client1(xloc move);    //OK
-			x = 1;                              ////to make x available
+			x = 1;                              //to make x available
+			client1 = new Client1(xloc move);     
+			x = 1;                              //to make x available
 			
 			xloc = 7;
-			raise E1, xloc move;   			    //OK
+			raise E1, xloc move;   			     
 			xloc = 15;                           //to make xloc available
-			send client1, E2, xloc move;          //OK
+			send client1, E2, xloc move;           
 			
 			xloc = 15;                           //to make xloc available
-			goto T, xloc move;                 //OK	
+			goto T, xloc move;                  	
         }
 		
-        on E1 do (payload: int) { assert payload == 7; }  //?                      
-        on E2 do (payload: int) { assert payload == 15; }  //? 
+        on E1 do (payload: int) { assert payload == 7; }                       
+        on E2 do (payload: int) { assert payload == 15; }   
         exit {   }
 	}
 	state T {
@@ -81,25 +85,27 @@ machine Main {
 		
 		x = 2;
 		y = x swap;
-		foo(y);                   //OK
-		assert y == 1;            //?
-		assert x == 2;            //?
+		assert x == 0;             
+		assert y == 2;              
+		foo(y swap);                    
+		assert y == 1;             
+		assert x == 0;             
 
 		
 		x = foo_1(y swap);
-		assert x == 2;            //?
-		assert y == 1;            //?
+		assert x == 2;             
+		assert y == 2;             
 		
-		y = foo_1(x);                 //OK
-		assert y == 3;				//?
-		assert x == 2;				//?
+		y = foo_1(x);                  
+		assert y == 3;				 
+		assert x == 2;				 
 		
 		x = foo_1(y move);
-		assert x == 4;				//?
+		assert x == 4;				 
 		
-		y = foo_1(x);                 //OK
-		assert y == 5;					//?
-		assert x == 4;                //?
+		y = foo_1(x);                  
+		assert y == 5;					 
+		assert x == 4;                 
 		
 		return x;
 	}
@@ -111,7 +117,7 @@ machine Main {
 		a = b + 5;
 	}
 	fun baz_1(a: int, b: int): int{
-		assert a == 9;
+		assert a == 16;                
 		a = b + 5;
 		return a;
 	}
@@ -120,7 +126,7 @@ machine Main {
 machine Client1 {
 	start state S {
 		entry (payload: int) {
-			assert payload == 1;   //?
+			assert payload == 1;    
 		}
 	}
 }

@@ -560,8 +560,12 @@ class PRT_SEQ {
     }
 
     void Set(int index, PRT_VALUE value) {
-		assert (0 <= index && index < size, "index out of bound");
-        contents[index] = PRT_VALUE.PrtCloneValue(value);
+		assert (0 <= index && index <= size, "index out of bound");
+		if (index == size) {
+			Insert(index, value);
+		} else {
+			contents[index] = PRT_VALUE.PrtCloneValue(value);
+		}
     }
 
     PRT_VALUE SetAndReturnOldValue(int index, PRT_VALUE value) {
@@ -695,6 +699,7 @@ class PRT_MAP {
 	PRT_VALUE SetAndReturnOldValue(PRT_VALUE key, PRT_VALUE value) {
 		PRT_VALUE oldValue;
 		oldValue = SetHelper(key, value);
+		assert (oldValue != null, "Illegal lookup in SetAndReturnOldValue");
 		return oldValue;
 	}
 

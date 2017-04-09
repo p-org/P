@@ -448,24 +448,33 @@ void PRT_CALL_CONV PrtSeqUpdateLinear(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *in
 	PrtAssert(PrtIsValidValue(*value), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
-	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt <= seq->valueUnion.seq->size, "Invalid index");
 
-	PRT_VALUE *oldValue = seq->valueUnion.seq->values[index->valueUnion.nt];
-	if (status == PRT_FUN_PARAM_MOVE)
+	if ((PRT_UINT32)index->valueUnion.nt == seq->valueUnion.seq->size)
 	{
-		if (oldValue != NULL)
-		{
-			PrtFreeValue(oldValue);
-			oldValue = NULL;
-		}
-		seq->valueUnion.seq->values[index->valueUnion.nt] = *value;
+		PrtAssert(status == PRT_FUN_PARAM_MOVE, "old value is not valid");
+		PrtSeqInsertEx(seq, index, *value, PRT_FALSE);
 		*value = NULL;
 	}
 	else
 	{
-		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
-		seq->valueUnion.seq->values[index->valueUnion.nt] = *value;
-		*value = oldValue;
+		PRT_VALUE *oldValue = seq->valueUnion.seq->values[index->valueUnion.nt];
+		if (status == PRT_FUN_PARAM_MOVE)
+		{
+			if (oldValue != NULL)
+			{
+				PrtFreeValue(oldValue);
+				oldValue = NULL;
+			}
+			seq->valueUnion.seq->values[index->valueUnion.nt] = *value;
+			*value = NULL;
+		}
+		else
+		{
+			PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+			seq->valueUnion.seq->values[index->valueUnion.nt] = *value;
+			*value = oldValue;
+		}
 	}
 }
 
@@ -475,11 +484,18 @@ void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index,
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
-	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt <= seq->valueUnion.seq->size, "Invalid index");
 
-	PRT_VALUE *oldValue = seq->valueUnion.seq->values[index->valueUnion.nt];
-	seq->valueUnion.seq->values[index->valueUnion.nt] = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
-	PrtFreeValue(oldValue);
+	if ((PRT_UINT32)index->valueUnion.nt == seq->valueUnion.seq->size)
+	{
+		PrtSeqInsertEx(seq, index, value, cloneValue);
+	}
+	else
+	{
+		PRT_VALUE *oldValue = seq->valueUnion.seq->values[index->valueUnion.nt];
+		seq->valueUnion.seq->values[index->valueUnion.nt] = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
+		PrtFreeValue(oldValue);
+	}
 }
 
 void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_VALUE *value)

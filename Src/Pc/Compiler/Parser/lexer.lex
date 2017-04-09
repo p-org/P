@@ -117,6 +117,7 @@
 			 keywords.Add("extern", (int)PTokens.EXTERN);
 			 
 			 keywords.Add("module", (int)PTokens.MODULE);
+			 keywords.Add("compose", (int)PTokens.COMPOSE);
 			 keywords.Add("hide", (int)PTokens.HIDE);
 			 keywords.Add("export", (int)PTokens.EXPORT);
 			 keywords.Add("safe", (int)PTokens.SAFE);

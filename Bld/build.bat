@@ -15,7 +15,7 @@ goto :exit
 :start
 echo ============= Building P SDK on %COMPUTERNAME% ===============
 
-Bld\nuget restore P.sln
+Bld\nuget restore -configfile NuGet.config P.sln
 
 set MSBuildPath=
 for /F "usebackq tokens=1,2* delims= " %%i in (`reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0 -v MSBuildToolsPath`) do (
@@ -126,7 +126,7 @@ cd ..\..
 
 REM Build PSharp
 cd ext\PSharp
-..\..\Bld\nuget restore PSharp.sln
+..\..\Bld\nuget restore -configfile NuGet.config PSharp.sln
 echo msbuild PSharp.sln /p:Platform="Any CPU" /p:Configuration=%Configuration%
 msbuild  PSharp.sln /p:Platform="Any CPU" /p:Configuration=%Configuration%
 if ERRORLEVEL 1 goto :exit

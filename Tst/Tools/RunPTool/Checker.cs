@@ -285,6 +285,7 @@ namespace CheckP
                     compileArgs.shortFileNames = true;
                     compileArgs.unitName = linkFileName;
                     compileArgs.liveness = LivenessOption.None;
+                    compileArgs.compilerOutput = CompilerOutput.CSharp;
                     var compilerOutput = new CompilerTestOutputStream(tmpWriter);
 
                     bool compileResult = false;
@@ -347,7 +348,7 @@ namespace CheckP
                     string zingDllName = null;
                     foreach (var fileName in Directory.EnumerateFiles(workDirectory))
                     {
-                        if (Path.GetExtension(fileName) == ".dll" && !fileName.Contains("output"))
+                        if (Path.GetExtension(fileName) == ".dll" && !fileName.Contains("linker"))
                         {
                             zingDllName = Path.GetFullPath(fileName);
                             break;

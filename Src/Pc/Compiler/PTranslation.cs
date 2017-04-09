@@ -601,7 +601,11 @@ namespace Microsoft.Pc
                     if (it.Current.NodeKind == NodeKind.Id)
                     {
                         var name = ((Id)it.Current).Name;
-                        if (name != "NIL")
+                        if (name == "ALL")
+                        {
+                            allMachines[machineName].receiveSet = null;
+                        }
+                        else
                         {
                             eventName = HaltEvent;
                             allMachines[machineName].receiveSet.Add(eventName);
@@ -630,7 +634,11 @@ namespace Microsoft.Pc
                     if (it.Current.NodeKind == NodeKind.Id)
                     {
                         var name = ((Id)it.Current).Name;
-                        if (name != "NIL")
+                        if (name == "ALL")
+                        {
+                            allMachines[machineName].sendsSet = null;
+                        }
+                        else
                         {
                             eventName = HaltEvent;
                             allMachines[machineName].sendsSet.Add(eventName);

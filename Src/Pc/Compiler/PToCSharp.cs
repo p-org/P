@@ -268,17 +268,18 @@ namespace Microsoft.Pc
         }
         public static StatementSyntax MkCSharpPrint(string msg, params ExpressionSyntax[] pars)
         {
+            msg = "<PrintLog>" + " " + msg;
             var allPars = new List<ExpressionSyntax>(pars);
             allPars.Insert(0, CSharpHelper.MkCSharpStringLiteralExpression(msg));
             return ExpressionStatement(MkCSharpInvocationExpression(
-                                            MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Console"), IdentifierName("Write")),
+                                            MkCSharpDot("application", "Trace"),
                                             allPars.ToArray()));
         }
         public static StatementSyntax MkCSharpTrace(string msg, params ExpressionSyntax[] pars)
         {
             var allPars = new List<ExpressionSyntax>(pars);
             allPars.Insert(0, CSharpHelper.MkCSharpStringLiteralExpression(msg));
-            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("application", "Trace"), allPars.ToArray()));
+            return ExpressionStatement(MkCSharpInvocationExpression(MkCSharpDot("application", "TraceLine"), allPars.ToArray()));
         }
         public static InvocationExpressionSyntax MkCSharpInvocationExpression(SyntaxNode first, params ExpressionSyntax[] pars)
         {
@@ -1465,13 +1466,13 @@ namespace Microsoft.Pc
                 {
                     return MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("parent"), IdentifierName("self"));
                 }
-                else if (op == PData.Cnst_Nondet.Node.Name)
+                else if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
                 {
-                    return IdentifierName("$");
-                }
-                else if (op == PData.Cnst_FairNondet.Node.Name)
-                {
-                    return IdentifierName("$$");
+                    return CSharpHelper.MkCSharpObjectCreationExpression(
+                        IdentifierName("PrtBoolValue"), 
+                        CSharpHelper.MkCSharpInvocationExpression(
+                            CSharpHelper.MkCSharpDot("application", "GetSelectedChoiceValue"),
+                            CSharpHelper.MkCSharpCastExpression("PrtImplMachine", IdentifierName("parent"))));
                 }
                 else if (op == PData.Cnst_Null.Node.Name)
                 {
@@ -1767,7 +1768,10 @@ namespace Microsoft.Pc
                                         ? pToCSharp.allGlobalFuns[stateEntryActionName]
                                         : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(children);
-                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<GotoLog> Machine {0}-{{0}} goes to {{1}}", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(stateExpr, "name"));
+                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<GotoLog> Machine {{0}}-{{1}} goes to {{2}}"), 
+                    CSharpHelper.MkCSharpDot("parent", "Name"), 
+                    CSharpHelper.MkCSharpDot("parent", "instanceNumber"), 
+                    CSharpHelper.MkCSharpDot(stateExpr, "name"));
                 var assignStmt1 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(NullEvent));
                 var assignStmt2 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var assignStmt3 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "destOfGoto"), stateExpr);
@@ -1782,7 +1786,10 @@ namespace Microsoft.Pc
                 var payloadVar = MkPayload(children);
                 var equalsExpr = CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(eventExpr, "Equals"), pToCSharp.GetEventVar(NullEvent));
                 var assertStmt = CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
-                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<RaiseLog> Machine {0}-{{0}} raised Event {{1}}", owner.machineName), CSharpHelper.MkCSharpDot("parent", "instanceNumber"), CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
+                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<RaiseLog> Machine {{0}}-{{1}} raised Event {{2}}"), 
+                    CSharpHelper.MkCSharpDot("parent", "Name"), 
+                    CSharpHelper.MkCSharpDot("parent", "instanceNumber"), 
+                    CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
                 var assignStmt1 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), eventExpr);
                 var assignStmt2 = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot("parent", "currentPayload"), payloadVar);
                 var returnStmt = ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtFunContRaise")));
@@ -2712,19 +2719,33 @@ namespace Microsoft.Pc
                     CSharpHelper.MkCSharpDot("machine", "instanceNumber")));
 
             //initialize the permission set for self
-            foreach (var ev in allMachines[machineName].receiveSet)
+            if(allMachines[machineName].receiveSet == null)
             {
-                fields.Add(
-                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "self", "permissions", "Add"), GetEventVar(ev))
-                    );
+                fields.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "self", "permissions"), LiteralExpression(SyntaxKind.NullLiteralExpression)));
+            }
+            else
+            {
+                foreach (var ev in allMachines[machineName].receiveSet)
+                {
+                    fields.Add(
+                        CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "self", "permissions", "Add"), GetEventVar(ev))
+                        );
+                }
             }
 
             //initialize the send set
-            foreach (var ev in allMachines[machineName].sendsSet)
+            if (allMachines[machineName].sendsSet ==  null)
             {
-                fields.Add(
-                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "sends", "Add"), GetEventVar(ev))
-                    );
+                fields.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "sends"), LiteralExpression(SyntaxKind.NullLiteralExpression)));
+            }
+            else
+            {
+                foreach (var ev in allMachines[machineName].sendsSet)
+                {
+                    fields.Add(
+                        CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(IdentifierName("machine"), "sends", "Add"), GetEventVar(ev))
+                        );
+                }
             }
 
             //machine.currentPayload = payload;
@@ -4194,6 +4215,12 @@ namespace Microsoft.Pc
         {
             foreach(var testCase in allTests)
             {
+                //make sure test case has a main file
+                if(!testCase.Value.renameMap.ContainsKey("Main"))
+                {
+                    Log.WriteMessage(string.Format("No Main Machine, cannot generate {0}.dll", testCase.Key), SeverityKind.Error);
+                    return;
+                }
                 SyntaxNode finalOutput = null;
 
                 var workspace = new AdhocWorkspace();

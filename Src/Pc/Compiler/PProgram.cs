@@ -148,6 +148,12 @@
             private set;
         }
 
+        public List<P_Root.FunProtoCreatesDecl> FunProtoCreates
+        {
+            get;
+            private set;
+        }
+
         public bool IgnoreDecl;
 
         public void Add(object item)
@@ -248,6 +254,10 @@
             else if(item is P_Root.DependsOn)
             {
                 DependsOn.Add(item as P_Root.DependsOn);
+            }
+            else if(item is P_Root.FunProtoCreatesDecl)
+            {
+                FunProtoCreates.Add(item as P_Root.FunProtoCreatesDecl);
             }
             else
             {
@@ -369,7 +379,10 @@
                 {
                     yield return mc;
                 }
-
+                foreach(var fp in FunProtoCreates)
+                {
+                    yield return fp;
+                }
                 foreach (var d in DependsOn)
                 {
                     yield return d;
@@ -403,6 +416,7 @@
             MachineCreates = new List<P_Root.MachineCreates>();
             DependsOn = new List<P_Root.DependsOn>();
             IgnoreDecl = false;
+            FunProtoCreates = new List<P_Root.FunProtoCreatesDecl>();
         }
     }
 }

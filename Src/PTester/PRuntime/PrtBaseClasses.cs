@@ -24,6 +24,7 @@ namespace P.Runtime
         protected PrtStateExitReason stateExitReason;
         public PrtValue currentTrigger;
         public PrtValue currentPayload;
+        public Tuple<string, string> currentTriggerSenderInfo;
         public PrtState destOfGoto;
         //just a reference to stateImpl
         protected StateImpl stateImpl;
@@ -126,7 +127,7 @@ namespace P.Runtime
                 }
                 else
                 {
-                    stateImpl.Trace("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
+                    stateImpl.TraceLine("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
                     currentStatus = PrtMachineStatus.Halted;
                 }
             }
@@ -150,7 +151,7 @@ namespace P.Runtime
         {
             if (!fun.IsAnonFun)
             {
-                stateImpl.Trace("<FunctionLog> Machine {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
+                stateImpl.TraceLine("<FunctionLog> Machine {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
             }
             invertedFunStack.PushFun(fun, locals);
         }
@@ -162,7 +163,7 @@ namespace P.Runtime
 
         public void PrtPushExitFunction()
         {
-            stateImpl.Trace("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
+            stateImpl.TraceLine("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
             PrtFun exitFun = CurrentState.exitFun;
             if (exitFun.IsAnonFun)
             {
@@ -379,16 +380,20 @@ namespace P.Runtime
     {
         public PrtValue ev;
         public PrtValue arg;
+        public string senderMachineName;
+        public string senderMachineStateName;
 
-        public PrtEventNode(PrtValue e, PrtValue payload)
+        public PrtEventNode(PrtValue e, PrtValue payload, string senderMachineName, string senderMachineStateName)
         {
             ev = e;
             arg = payload.Clone();
+            this.senderMachineName = senderMachineName;
+            this.senderMachineStateName = senderMachineStateName;
         }
 
         public PrtEventNode Clone()
         {
-            return new PrtEventNode(this.ev, this.arg);
+            return new PrtEventNode(this.ev, this.arg, this.senderMachineName, this.senderMachineStateName);
         }
     }
 
@@ -418,13 +423,13 @@ namespace P.Runtime
             return events.Select(en => en.ev).Where(ev => ev == e).Count();
         }
 
-        public void EnqueueEvent(PrtValue e, PrtValue arg)
+        public void EnqueueEvent(PrtValue e, PrtValue arg, string senderMachineName, string senderMachineStateName)
         {
             Debug.Assert(e is PrtEventValue, "Illegal enqueue of null event");
             PrtEventValue ev = e as PrtEventValue;
             if (ev.evt.maxInstances == PrtEvent.DefaultMaxInstances)
             {
-                events.Add(new PrtEventNode(e, arg));
+                events.Add(new PrtEventNode(e, arg, senderMachineName, senderMachineStateName));
             }
             else
             {
@@ -442,7 +447,7 @@ namespace P.Runtime
                 }
                 else
                 {
-                    events.Add(new PrtEventNode(e, arg));
+                    events.Add(new PrtEventNode(e, arg, senderMachineName, senderMachineStateName));
                 }
             }
         }
@@ -463,6 +468,7 @@ namespace P.Runtime
                 {
                     owner.currentTrigger = events[iter].ev;
                     owner.currentPayload = events[iter].arg;
+                    owner.currentTriggerSenderInfo = Tuple.Create(events[iter].senderMachineName, events[iter].senderMachineStateName);
                     events.Remove(events[iter]);
                     return true;
                 }

@@ -98,7 +98,21 @@ namespace P.Runtime
             }
             else if(value is PrtInterfaceValue)
             {
+                if(permissions == null)
+                {
+                    throw new PrtInternalException("Unexpected value of permissions in Interface Type");
+                }
+
+               
                 var iVal = value as PrtInterfaceValue;
+
+                //permissions in iVal is all events
+                if (iVal.permissions == null)
+                {
+                    return new PrtInterfaceValue(iVal.mach, permissions);
+                }
+
+
                 //type_permissions is subset of value_permissions
                 if(permissions.Where(ev => !iVal.permissions.Contains(ev)).Count() > 0)
                 {

@@ -40,11 +40,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(in.#InterfaceType, NIL, {ev | in.ObservesDecl(decl, ev) }), list : in.InterfaceType.
 
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), in.TypeExpansion(ctype, ectype).
-	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev), ev : in.NonNullEventName.
-	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev), ev : in.NonNullEventName.
-	link.MachineCreatesInt(m.name, i) :- in.MachineCreates(m, i), no in.MachineDecl(i, _, _, _, _), no in.MachineProtoDecl(mcname, _), in.InterfaceTypeDecl(i, _, _, _).
-	link.MachineCreatesM(m.name, mcname) :- in.MachineCreates(m, mcname), in.MachineDecl(mcname, _, _, _, _);
-											in.MachineCreates(m, mcname), in.MachineProtoDecl(mcname, _).
+	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev).
+	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev).
+	link.FunProtoCreatesDecl(f, list) :- in.FunProtoCreatesDecl(f, list).
+	link.MachineCreatesInt(m, iorm) :- in.InferredMachineCreates(m, iorm), no in.MachineDecl(iorm, _, _, _, _), no in.MachineProtoDecl(iorm, _), in.InterfaceTypeDecl(iorm, _, _, _).
+	link.MachineCreatesM(m, mc) :- in.InferredMachineCreates(m, mc), in.MachineDecl(mc, _, _, _, _);
+								   in.InferredMachineCreates(m, mc), in.MachineProtoDecl(mc, _).
+
+	link.GlobalFunCreates(m, iorm) :- in.GlobalFunCreates(m, iorm).
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
 
 	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id)/*, ExportedEvent(name)*/.
@@ -240,7 +243,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Prototypes for model functions
 	MakeParams ::= (in.FunDecl, in.NmdTupType + { NIL }, PrmTypes + { NIL }, Params + { NIL }).
 	MakeParams(f, type, NIL, NIL) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params).
-	MakeParams(f, tl, prmTypes', params') :- MakeParams(f, in.NmdTupType(NmdTupTypeField(name, _), tl), prmTypes, params), prmTypes' = PrmTypes(PtrType(NmdType(NIL, "PRT_VALUE")), prmTypes), params' = Params(Param(NIL, name), params).
+	MakeParams(f, tl, prmTypes', params') :- MakeParams(f, in.NmdTupType(NmdTupTypeField(name, _), tl), prmTypes, params), prmTypes' = PrmTypes(PtrType(PtrType(NmdType(NIL, "PRT_VALUE"))), prmTypes), params' = Params(Param(NIL, name), params).
 
 	HOut(0, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
 					MakeParams(f, NIL, prmTypes, params),
@@ -1019,7 +1022,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	MakeArgs ::= (in.FunDecl, in.NmdTupType + { NIL }, Args + { NIL }, Natural).
 	MakeArgs(f, type, NIL, n) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params), n = lstLength(in.#NmdTupType, f.params).
 	MakeArgs(f, tl, args', n') :- MakeArgs(f, in.NmdTupType(_, tl), args, n), n' = n - 1, n':  Natural, 
-	                              args' = Args(BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n', DEC, U)), args).
+	                              args' = Args(UnApp(ADDR, BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n', DEC, U))), args).
 
 	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
 	                params = Params(Param(NIL, "context"), NIL),

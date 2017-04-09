@@ -39,10 +39,16 @@ ModuleExpr
 	| ID								{ PushModuleName($1.str, ToSpan(@1)); }
 	;
 
+ModuleExprList
+	: ModuleExpr COMMA ModuleExpr		{ PushComposeExpr(ToSpan(@2)); }
+	| ModuleExpr COMMA ModuleExprList	{ PushComposeExpr(ToSpan(@2)); }
+	;
+
 /* Named Module Expr */
 NamedModuleDecl
 	: MODULE ID ASSIGN ModuleExpr SEMICOLON			{ AddModuleDef($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
+
 /* Module */
 ModuleDecl
 	: MODULE ID ModulePrivateEvents LCBRACE MachineNamesList RCBRACE			{ AddModuleDecl($2.str, ToSpan(@2), ToSpan(@1)); }
@@ -54,14 +60,14 @@ MachineNamesList
 	;
 
 ModulePrivateEvents
-	: PRIVATE NonDefaultEventList SEMICOLON		{ AddPrivatesList(true, ToSpan(@1)); }
+	: PRIVATE NonDefaultEventList SEMICOLON		{ AddPrivatesList(ToSpan(@1)); }
 	| PRIVATE SEMICOLON
-	|											{ AddPrivatesList(false); }
+	|
 	;
 
 /* Composition */
 ComposeExpr
-	:  ModuleExpr LOR ModuleExpr		{ PushComposeExpr(ToSpan(@1)); }
+	:  LPAREN COMPOSE ModuleExprList RPAREN
 	;
 
 /* Hide */
@@ -73,6 +79,7 @@ HideExpr
 SafeExpr
 	: LPAREN SAFE ModuleExpr RPAREN		{ PushSafeExpr(ToSpan(@1)); }
 	;
+
 /* Assert */
 AssertExpr
 	: LPAREN ASSERT MonitorNameList IN ModuleExpr RPAREN		{ PushAssertExpr(ToSpan(@1)); }

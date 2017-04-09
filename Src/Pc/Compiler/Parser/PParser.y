@@ -124,7 +124,7 @@ ConstTypeOrNone
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone Exports Receives Sends Creates LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@6), ToSpan(@8)); ResetProgramIgnore(); }
+	: ImplMachineNameDecl MachAnnotOrNone Exports ReceivesSendsList LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@5), ToSpan(@7)); ResetProgramIgnore(); }
 	;
 
 ImplMachineProtoDecl
@@ -141,22 +141,16 @@ Exports
 	|
 	;
 
-Receives
-	: RECEIVES SEMICOLON							
-	| RECEIVES NonDefaultEventList SEMICOLON        { AddReceivesList(true, ToSpan(@1)); }
-	|												{ AddReceivesList(false); }
+ReceivesSends
+	: RECEIVES NonDefaultEventList SEMICOLON        { RecordReceives(); }
+	| RECEIVES SEMICOLON							{ RecordReceives(); }
+	| SENDS NonDefaultEventList SEMICOLON			{ RecordSends(); }
+	| SENDS SEMICOLON								{ RecordSends(); }
 	;
 
-Sends
-	: SENDS NonDefaultEventList SEMICOLON			{ AddSendsList(true, ToSpan(@1)); }
-	| SENDS SEMICOLON								
-	|												{ AddSendsList(false); }
-	;
-
-Creates
-	: CREATES CreatesList SEMICOLON					{ AddCreatesList(true, ToSpan(@1)); }
-	| CREATES SEMICOLON
-	|												{ AddCreatesList(false); }
+ReceivesSendsList
+	: ReceivesSends ReceivesSendsList
+	|
 	;
 
 CreatesList
@@ -245,11 +239,17 @@ FunDecl
 	;
 
 FunProtoDecl
-	: EXTERN { isFunProtoDecl = true; } FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddFunProto(ToSpan(@1)); }
+	: EXTERN { isFunProtoDecl = true; } FunNameDecl FunCreates ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddFunProto(ToSpan(@1)); }
 	;
 
 FunNameDecl
 	: FUN ID { SetFunName($2.str, ToSpan(@2)); }
+	;
+
+FunCreates
+	: CREATES CreatesList SEMICOLON					{ AddFunCreatesList(ToSpan(@1)); }
+	| CREATES SEMICOLON
+	|
 	;
 
 IsModel

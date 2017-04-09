@@ -505,6 +505,7 @@
                                 ftName == "ModelType" ||
                                 ftName == "InterfaceTypeDecl" ||
                                 ftName == "FunProtoDecl" ||
+                                ftName == "GlobalFunCreates" ||
                                 ftName == "MachineProtoDecl")
                             {
                                 unitModel = Factory.Instance.AddFact(unitModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
@@ -1507,7 +1508,7 @@
                     string name = (it.Current as Cnst).GetStringValue();
                     it.MoveNext();
                     string msg = (it.Current as Cnst).GetStringValue();
-                    errorMessage = String.Format("({0}), {1}", name, msg);
+                    errorMessage = String.Format("{1}: ({0})", name, msg);
                 }
                 else
                 {
@@ -1517,7 +1518,7 @@
                     string name2 = (it.Current as Cnst).GetStringValue();
                     it.MoveNext();
                     string msg = (it.Current as Cnst).GetStringValue();
-                    errorMessage = String.Format("({0}, {1}), {2}", name1, name2, msg);
+                    errorMessage = String.Format("{2}: ({0}, {1})", name1, name2, msg);
                 }
                 //Add Flags
                 errorReporter.AddFlag(new Flag(

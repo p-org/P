@@ -108,6 +108,18 @@ namespace P.Runtime
                 }
                 else
                 {
+                    if(interValue.permissions == null)
+                    {
+                        return (type as PrtInterfaceType).permissions == null;
+                    }
+                    else
+                    {
+                        if((type as PrtInterfaceType).permissions == null)
+                        {
+                            return false;
+                        }
+                    }
+
                     if(interValue.permissions.Count() != (type as PrtInterfaceType).permissions.Count())
                     {
                         return false;
@@ -328,11 +340,17 @@ namespace P.Runtime
 
         public PrtInterfaceValue(PrtImplMachine m, List<PrtEventValue> perm): base(m)
         {
-            permissions = new List<PrtEventValue>();
-            foreach(var ev in perm)
+            if (perm == null)
+                permissions = null;
+            else
             {
-                permissions.Add(ev);
+                permissions = new List<PrtEventValue>();
+                foreach (var ev in perm)
+                {
+                    permissions.Add(ev);
+                }
             }
+            
         }
 
         public override PrtValue Clone()
@@ -583,43 +601,46 @@ namespace P.Runtime
             Insert(((PrtIntValue)index).nt, val);
         }
 
-        public void Update(PrtValue index, PrtValue val)
+        public void Update(int index, PrtValue val)
         {
-            var intIndex = (index as PrtIntValue).nt;
-            if (intIndex < 0 || intIndex > elements.Count)
+            if (index < 0 || index > elements.Count)
             {
                 throw new PrtAssertFailureException("Illegal index for Update");
             }
-            if (intIndex == elements.Count)
+            if (index == elements.Count)
             {
-                elements.Insert(intIndex, val);
+                elements.Insert(index, val);
             }
             else
             {
-                elements[intIndex] = val;
+                elements[index] = val;
             }
+        }
+
+        public void Update(PrtValue index, PrtValue val)
+        {
+            Update(((PrtIntValue)index).nt, val);
         }
 
         public PrtValue UpdateAndReturnOldValue(PrtValue index, PrtValue val)
         {
-            var intIndex = (index as PrtIntValue).nt;
-            if (intIndex < 0 || intIndex >= elements.Count)
-            {
-                throw new PrtAssertFailureException("Illegal index for UpdateAndReturnOldValue");
-            }
-            var oldVal = elements[intIndex];
-            elements[intIndex] = val;
+            var oldVal = Lookup(index);
+            Update(index, val);
             return oldVal;
+        }
+
+        public void Remove(int index)
+        {
+            if (index < 0 || index >= elements.Count)
+            {
+                throw new PrtAssertFailureException("Illegal index for Remove");
+            }
+            elements.RemoveAt(index);
         }
 
         public void Remove(PrtValue index)
         {
-            var intIndex = (index as PrtIntValue).nt;
-            if (intIndex < 0 || intIndex >= elements.Count)
-            {
-                throw new PrtAssertFailureException("Illegal index for Remove");
-            }
-            elements.RemoveAt(intIndex);
+            Remove(((PrtIntValue)index).nt);
         }
 
         public override int Size()
@@ -631,7 +652,7 @@ namespace P.Runtime
         {
             var seqVal = val as PrtSeqValue;
             if (seqVal == null) return false;
-            if (seqVal.elements.Count != this.elements.Count) return false;
+            if (this.elements.Count != seqVal.elements.Count) return false;
             for (int i = 0; i < this.elements.Count; i++)
             {
                 if (!this.elements[i].Equals(seqVal.elements[i])) return false;
@@ -715,7 +736,12 @@ namespace P.Runtime
             {
                 throw new PrtAssertFailureException("Illegal key in Lookup");
             }
-            return keyToValueMap.Where(x => x.Key.key.Equals(key)).Select(y => y.Value).First();
+            return keyToValueMap[new PrtMapKey(key, 0)];
+        }
+
+        public bool Contains(PrtValue key)
+        {
+            return keyToValueMap.ContainsKey(new PrtMapKey(key, 0));
         }
 
         public PrtSeqValue Keys()
@@ -738,11 +764,6 @@ namespace P.Runtime
             return seqValues;
         }
 
-        public bool Contains(PrtValue key)
-        {
-            return keyToValueMap.Select(k => k.Key.key).Where(x => x.Equals(key)).Count() > 0;
-        }
-
         public void Remove(PrtValue key)
         {
             if (!Contains(key))
@@ -754,14 +775,14 @@ namespace P.Runtime
 
         public void Update(PrtValue key, PrtValue val)
         {
-            keyToValueMap[new PrtMapKey(key, 0)] = val;
+            keyToValueMap[new PrtMapKey(key, nextKeyIndex)] = val;
+            nextKeyIndex++;
         }
 
         public PrtValue UpdateAndReturnOldValue(PrtValue key, PrtValue val)
         {
-            var prtKey = new PrtMapKey(key, 0);
-            var oldVal = keyToValueMap[prtKey];
-            keyToValueMap[prtKey] = val;
+            var oldVal = Lookup(key);
+            Update(key, val);
             return oldVal;
         }
 
@@ -772,7 +793,8 @@ namespace P.Runtime
             if (this.keyToValueMap.Count != mapVal.keyToValueMap.Count) return false;
             foreach (var k in this.keyToValueMap.Keys)
             {
-                if (!mapVal.Contains(k.key)) return false;
+                if (!mapVal.keyToValueMap.ContainsKey(k)) return false;
+                if (!this.keyToValueMap[k].Equals(mapVal.keyToValueMap[k])) return false;
             }
             return true;
         }

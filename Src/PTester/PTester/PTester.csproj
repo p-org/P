@@ -184,6 +184,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Coverage.cs" />
     <Compile Include="PTConfig.cs" />
     <Compile Include="PTester.cs" />
     <Compile Include="PTesterCommandLine.cs" />

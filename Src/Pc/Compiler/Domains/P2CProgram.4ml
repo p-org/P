@@ -1359,7 +1359,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	MachFunArr ::= (decl: in.MachineDecl, size: Natural, arr: out.Ident).
 	MachFunArr(m, size, arr) :- m is in.MachineDecl,
 	                arr = out.Ident(strJoin("P_GEND_FUNS_", m.name)),
-	                size = 1 + count({ f | f is AnonOrNamedFun, f.owner = m }).
+	                size = count({ f | f is AnonOrNamedFun, f.owner = m }).
 
 	MachQueueSize ::= (decl: in.MachineDecl, size: Natural).
 	MachQueueSize(m, size) :- m is in.MachineDecl, m.card = NIL, size = 4294967295. 

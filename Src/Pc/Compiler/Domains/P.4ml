@@ -394,6 +394,8 @@ domain PStaticTyping extends PData, PError
 	
 
 	//Checking the constructor type error for each exported interface
+	CompTypeRel(t1, t2) :- MachineExports(m, i), InterfaceTypeDecl(i, _, t1, _), ConstructorType(m, _, t2).
+
 	ExportInterfaceError ::= (m: MachineDecl).
 	[rule_Classes = '"error, msg: the constructor argument type is not a subtype of the exported interface argument type"']
 	OneIdError(m.id, "Constructor argument type is not a subtype of the exported interface argument type"),

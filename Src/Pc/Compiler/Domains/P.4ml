@@ -394,12 +394,12 @@ domain PStaticTyping extends PData, PError
 	
 
 	//Checking the constructor type error for each exported interface
-	CompTypeRel(t1, t2) :- MachineExports(m, i), InterfaceTypeDecl(i, _, t1, _), ConstructorType(m, _, t2).
+	CompTypeRel(t1, t2) :- MachineExports(m, i), InterfaceTypeDecl(i, _, t1', _), TypeExpansion(t1', t1), ConstructorType(m, _, t2).
 
 	ExportInterfaceError ::= (m: MachineDecl).
-	[rule_Classes = '"error, msg: the constructor argument type is not a subtype of the exported interface argument type"']
-	OneIdError(m.id, "Constructor argument type is not a subtype of the exported interface argument type"),
-	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeRel(iargt, ct, k), ct != iargt, k != SUB. 						 
+	[rule_Classes = '"error, msg: the constructor argument type is equal to the exported interface argument type"']
+	OneIdError(m.id, "the constructor argument type is equal to the exported interface argument type"),
+	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeExpansion(iargt, eargt), ct != eargt. 						 
     
 	[rule_Classes = '"error, msg: the exported interface must be a subset of receive set"']
 	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, evL, iargt, _), no MachineReceives(m, ALL), no MachineReceives(m, ev), MemberOfInterfaceType(evL, ev). 

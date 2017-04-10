@@ -42,7 +42,7 @@ Declaring all the events used in 2PC
 //Events used for interaction between client and coordinator
 event eTransaction : TransactionType;
 event eTransactionFailed;
-event eTransactionSuccess: int;
+event eTransactionSuccess;
 event eReadPartStatus: (source: ClientInterface, part:int);
 event eRespPartStatus: ParticipantStatusType;
 

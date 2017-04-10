@@ -1,9 +1,7 @@
 //We implemented a fault-tolerant 2-PC protocol.
 //There is a single co-ordinator and 2 participants. The two participants are two different bank accounts.
 
-
-
-module TPC_Coordinator
+machine Coordinator
 sends SMR_OPERATION, TRANSACTION_FAIL, TRANSACTION_SUCCESS, TRANSACTION_VALUE,
 	  STARTTIMER, CANCELTIMER  
 creates SMR_Machine, Timer_Machine
@@ -171,8 +169,9 @@ creates SMR_Machine, Timer_Machine
 	}
 }
 
-module TPC_Participant
-sends SMR_RESPONSE
+machine Participant
+receives ePrepare, 
+sends ePrepared, eNotPrepared, eStatusResp;
 {
 	machine Participant_Machine
 	receives SMR_RM_OPERATION

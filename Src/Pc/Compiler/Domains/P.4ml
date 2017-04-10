@@ -360,8 +360,8 @@ domain PStaticTyping extends PData, PError
 	MemberOfStringList ::= sub (StringList, String).
 	[rule_Classes = '"error, msg: Creates list of the function prototype is not equal to the inferred creates list for the function"']
 	OneIdError(f.id, "Creates list of the function prototype is not a subset of the inferred creates list for the function"),
-	InferredCreatesError(f) :- f is FunDecl, fd is FunProtoDecl, f.owner != NIL, f.name = fd.name, GlobalFunCreates(f.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm);
-							   f is FunDecl, fd is FunProtoDecl, f.owner != NIL, f.name = fd.name, GlobalFunCreates(f.name, iorm), no FunProtoCreatesDecl(fd, list).
+	InferredCreatesError(f) :- f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm);
+							   f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, _), no FunProtoCreatesDecl(fd, _).
 
 	//// Compute the FunCreates
 	GlobalFunCreates(f.name, iorm) :-

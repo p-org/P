@@ -31,27 +31,30 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
     }
     
     fun UpdateValues() {
-        if(op1.op == ADD_AMOUNT)
-            valueAtParticipant[0] = valueAtParticipant[0] + op1.val;
+        if(oper1.op == ADD_AMOUNT)
+            valueAtParticipant[0] = valueAtParticipant[0] + oper1.val;
         else
-            valueAtParticipant[0] = valueAtParticipant[0] - op1.val;
+            valueAtParticipant[0] = valueAtParticipant[0] - oper1.val;
 
-        if(op2.op == ADD_AMOUNT)
-            valueAtParticipant[1] = valueAtParticipant[1] + op2.val;
+        if(oper2.op == ADD_AMOUNT)
+            valueAtParticipant[1] = valueAtParticipant[1] + oper2.val;
         else
-            valueAtParticipant[1] = valueAtParticipant[1] - op2.val;
+            valueAtParticipant[1] = valueAtParticipant[1] - oper2.val;
     }
     
-    var op1 : OperationType;
-    var op2 : OperationType;
+    var oper1 : OperationType;
+    var oper2 : OperationType;
     state StartPumpingTransactions {
         entry {
+            var x : ClientInterface;
             if(numOfOperation == 0)
                 return;
             
-            op1 = ChooseOp();
-            op2 = ChooseOp();
-            send coor, eTransaction, (source = this as ClientInterface, op1 = op1, op2 = op2);
+            oper1 = ChooseOp();
+            oper2 = ChooseOp();
+            
+            x =  this as ClientInterface;
+            send coor, eTransaction, (source = x, op1 = oper1, op2 = oper2);
             StartTimer(timer, 100);
             numOfOperation = numOfOperation - 1;
             if($)

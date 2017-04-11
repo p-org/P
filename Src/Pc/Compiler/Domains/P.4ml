@@ -154,6 +154,10 @@ domain PStructuralTyping extends PData, PError
     TwoDeclError ::= (PDecl, PDecl).
     DeclFunError ::= (PDecl, String).
 	
+	//// List representation of interfacetypedecl
+    InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
+                                       it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
+
     [ rule_Classes = '"error, msg: Global function has the same name"']
     TwoIdError(f1.id, f2.id, "Multiple functions with same name"),
 	TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner != NIL.
@@ -763,17 +767,18 @@ domain PStaticTyping extends PData, PError
     //// (3) The types of binary expressions
     TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k != EMPTY.
 	//if the type is interface type then it acts as reduce, hence subset relation
-	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k != EMPTY.
+	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType.
 	[ rule_Classes = '"error, msg: Cast can never succeed"']
 	OneIdError(e.id, "Cast can never succeed"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k = EMPTY.
 	
-	SubsetInterfaces ::= (i1: InterfaceType, i2: InterfaceType).
-	SubsetInterfaces(evL1, evL2) :- i1 is InterfaceTypeDecl, i2 is InterfaceTypeDecl, evL1 = i1.evList, evL2 = i2.evList, count({ ev | MemberOfInterfaceType(evL2, ev), no MemberOfInterfaceType(evL1, ev) }) = 0.
+	AllInterfaceTypes ::= sub(InterfaceType).
+	NotSubsetInterfaces ::= (InterfaceType, InterfaceType).
+	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), count({ ev | MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev) }) != 0.
 	[ rule_Classes = '"error, msg: reduce can never succeed"']
 	OneIdError(e.id, "Reduce can never succeed"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
-									  TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, SubsetInterfaces(t1, t2').
+									  TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, NotSubsetInterfaces(t2', t1).
 									  
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	[ rule_Classes = '"error, msg: Bad field name"']

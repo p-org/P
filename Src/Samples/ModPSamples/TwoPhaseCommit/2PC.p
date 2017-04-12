@@ -1,229 +1,164 @@
 //We implemented a fault-tolerant 2-PC protocol.
 //There is a single co-ordinator and 2 participants. The two participants are two different bank accounts.
 
-machine Coordinator
-sends SMR_OPERATION, TRANSACTION_FAIL, TRANSACTION_SUCCESS, TRANSACTION_VALUE,
-	  STARTTIMER, CANCELTIMER  
-creates SMR_Machine, Timer_Machine
+machine Coordinator : CoorClientInterface
+receives eTransaction, eReadPartStatus, ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure;
+sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eRespPartStatus, eStartTimer, eCancelTimer;
 {
-	machine TPC_Coor_Machine
-	receives SMR_RESPONSE, SMR_SERVER_UPDATE, TRANSACTION, READ_TRANSACTION,
-			 CANCEL_SUCCESS, CANCEL_FAIL, TIMEOUT
-	{
-		var transId : int;
-		var part : map[int, SMR_SERVER_IN];
-		var timer : Timer_Machine;
-		var transStatus : map[int, (bool, int)];
-		var currentTransaction: (source: machine, val1: int, val2: int);
-		start state Init {
-			entry {
-				var temp : SMR_SERVER_IN;
-				var container : machine;
-				var clients : seq[SMR_CLIENT_IN];
-				clients += (0, this as SMR_CLIENT_IN);
-				
-				transId = 0;
-				//create timer
-				timer = new Timer_Machine(this as TIMER_CLIENT_IN);
-				container = CREATECONTAINER();
-				CreateSMR(container, (clients, false, 0));
-				receive {
-					case SMR_SERVER_UPDATE : { part[payload.0] =  payload.1; }
-				}
-				container = CREATECONTAINER();
-				CreateSMR(container, (clients, false, 1));
-				receive {
-					case SMR_SERVER_UPDATE : { part[payload.0] =  payload.1; }
-				}
-				
-				raise local;
-			}
-			on local push WaitForReq;
-			on SMR_SERVER_UPDATE do {
-				part[payload.0] =  payload.1;
-			};
-			
-			on SMR_RESPONSE do {
-				raise payload.response, payload.val;
-			};
-		}
-		
-		fun CreateSMR(cont : machine, param: any) : machine
-		[container = cont]
-		{
-			var smr : machine;
-			smr = new SMR_SERVER_IN(param);
-			return smr;
-		}
-		
-		state WaitForReq {
-			ignore RM_NOTPREPARED, RM_PREPARED;
-			on TRANSACTION goto ProcessTransaction with {
-				currentTransaction = payload;
-				transId = transId + 1;
-			};
-			on READ_TRANSACTION do {
-				if($)
-					SEND_REL(part[0], SMR_OPERATION, (source = this as SMR_CLIENT_IN, command = READ_QUERY, val = (tid = payload.tid, )));
-				else
-					SEND_REL(part[1], SMR_OPERATION, (source = this as SMR_CLIENT_IN, command = READ_QUERY, val = (tid = payload.tid, )));
-			};
-			on READ_RESPONSE do {
-				assert(transStatus[payload.tid].1 == payload.val);
-			};
-		}
-		
-		
-		fun AbortCurrentTransaction() {
-			var i : int;
-			i =0;
-			while(i < sizeof(part))
-			{
-				SEND(part[i], SMR_OPERATION, (source = this as SMR_CLIENT_IN, command = TM_ABORT, val = (tid = transId, )));
-				i = i + 1;
-			}
 
-			SEND(currentTransaction.source, TRANSACTION_FAIL, null);
-			transStatus[transId] = (false, -1);
-			
-			CancelTimer();
-			raise nextTransaction;
+	var transId : int;
+	var participants : map[int, ParticipantInterface];
+	var timer : TimerPtr;
+	var currentTransaction: TransactionType;
+	start state Init {
+		entry {
+			var temp : ParticipantInterface;
+			temp = new ParticipantInterface(this as CoorParticipantInterface, 0);
+			participants[0] = temp;
+			temp = new ParticipantInterface(this as CoorParticipantInterface, 1);
+			participants[1] = temp;
+			transId = 0;
+			//create timer
+			timer = CreateTimer(this as ITimerClient);
+
+			goto WaitForReq;
+		}
+	}
+	
+	
+	state WaitForReq {
+		ignore eNotPrepared, ePrepared;
+		on eTransaction goto ProcessTransaction with (payload : TransactionType){
+			currentTransaction = payload;
+			transId = transId + 1;
+		}
+		on eReadPartStatus do (clientS: (source: ClientInterface, part:int)){
+			send participants[clientS.part], eStatusQuery;
+			receive {
+				case eStatusResp: (payload: ParticipantStatusType) {
+					send clientS.source, eRespPartStatus, payload;
+				}
+			}
+		}
+	}
+	
+	fun SendToAllParticipants(ev: event, val: any)
+	{
+		var i : int;
+		i = 0;
+		while(i < sizeof(participants))
+		{
+			send participants[i], ev, val;
+			i = i + 1;
+		}
+	}
+
+	fun AbortCurrentTransaction() {
+		
+		SendToAllParticipants(eAbort, (tid = transId,));
+		send currentTransaction.source, eTransactionFailed;
+		CancelTimer(timer);
+		
+	}
+	
+	var prepareCount : int;
+	state ProcessTransaction {
+		defer eTransaction, eReadPartStatus;
+		entry{
+			prepareCount = 0;
+			//to part1
+			send participants[0], ePrepare, (tid = transId, op = currentTransaction.op1);
+			//to part2
+			send participants[1], ePrepare, (tid = transId, op = currentTransaction.op2);
+
+			//start timer 
+			StartTimer(timer, 100);
+		}
+		on eTimeOut do { AbortCurrentTransaction(); goto WaitForReq; }
+		
+		on eNotPrepared do (payload: (tid:int)){
+			if(payload.tid != transId)
+				return;
+			else
+				AbortCurrentTransaction();
 		}
 		
-		fun CancelTimer() {
-			send timer, CANCELTIMER;
-			receive 
+		on ePrepared do (payload: (tid: int)){
+			var i : int;
+			if(payload.tid == transId)
 			{
-				case CANCEL_SUCCESS : {}
-				case CANCEL_FAIL : {
-					receive { 
-						case TIMEOUT: {}
-					}
+				prepareCount = prepareCount + 1;
+				if(prepareCount == 2)
+				{
+					SendToAllParticipants(eCommit, (tid = transId,));
+					send currentTransaction.source, eTransactionSuccess;
+					CancelTimer(timer);
+					goto WaitForReq;
 				}
 			}
-		}
-		
-		var prepareCount : int;
-		state ProcessTransaction {
-			defer TRANSACTION, READ_TRANSACTION;
-			entry{
-				var i: int;
-				prepareCount = 0;
-				i = 0;
-				while(i < sizeof(part))
-				{
-					SEND(part[i], SMR_OPERATION, (source = this as SMR_CLIENT_IN, command = TM_PREPARE, val = (tid = transId, val = currentTransaction.val1)));
-					i = i + 1;
-				}
-				
-				//start timer 
-				send timer, STARTTIMER;
-			}
-			on TIMEOUT do AbortCurrentTransaction;
-			
-			on RM_NOTPREPARED do {
-				if(payload.tid != transId)
-					return;
-				else
-					AbortCurrentTransaction();
-				
-			};
-			
-			on RM_PREPARED do {
-				var i : int;
-				if(payload.tid == transId)
-				{
-					prepareCount = 	prepareCount + 1;
-					if(prepareCount ==  2)
-					{
-						
-						i =0;
-						while(i< sizeof(part))
-						{
-							//commit current transaction
-							SEND(part[i], SMR_OPERATION, (source = this as SMR_CLIENT_IN, command = TM_COMMIT, val = (tid = transId, )));
-							i = i + 1;
-						} 
-						
-						transStatus[transId] = (true, currentTransaction.val1);
-						SEND(currentTransaction.source, TRANSACTION_SUCCESS, (tid = transId,));
-						CancelTimer();
-						raise nextTransaction;
-					}
-				}
-			};
-			
-			on nextTransaction goto WaitForReq;
-			
-			on RM_STATUS_QUERY do {
-				if((payload.tid in transStatus) && transStatus[payload.tid].0)
-					SEND(payload.source, SMR_RM_OPERATION, (source = this as SMR_CLIENT_IN, command = TM_COMMIT, val = (tid = payload.tid, )));
-				else
-					SEND(payload.source, SMR_RM_OPERATION, (source = this as SMR_CLIENT_IN, command = TM_ABORT, val = (tid = payload.tid, )));
-			};
-			
-			on READ_RESPONSE do {
-				assert(transStatus[payload.tid].1 == payload.val);
-			};
 		}
 	}
 }
 
-machine Participant
-receives ePrepare, 
+
+machine Participant : ParticipantInterface
+receives ePrepare, eCommit, eAbort, eStatusQuery;
 sends ePrepared, eNotPrepared, eStatusResp;
 {
-	machine Participant_Machine
-	receives SMR_RM_OPERATION
-	{
-		var log : map[int, int];
-		var myId : int;
-		var client : SMR_CLIENT_IN;
-		var preparedValue: (tid: int, val: int);
-		start state Init {
-			entry {
-				myId = payload as int;
-				raise local;
-			}
-			on local push WaitForPrepare;
-			on SMR_RM_OPERATION do {
-				client = payload.source;
-				raise payload.command, payload.val;
-			};
-			on READ_QUERY do {
-				SEND_REL(client, SMR_RESPONSE, (response = READ_RESPONSE, val = (tid = payload.tid, val = log[payload.tid])));
-			};
+	var myId : int;
+	var preparedOp: (tid: int, op: OperationType);
+	var coordinator: CoorParticipantInterface;
+	var accountBalance: int;
+	start state Init {
+		entry (payload: (CoorParticipantInterface, int)){
+			myId = payload.1;
+			coordinator = payload.0;
+			goto WaitForPrepare;
 		}
-		
-		state WaitForPrepare{
-			on TM_PREPARE goto WaitForCommitOrAbort with 
-			{
-				preparedValue = payload;
-				if(true)// not considering the case when it says abort
-					SEND(client, SMR_RESPONSE, (response = RM_PREPARED, val = (tid = payload.tid,)));
-				else
-					SEND(client, SMR_RESPONSE, (response = RM_NOTPREPARED, val = (tid = payload.tid,)));
-			};
-			on TM_COMMIT do { assert(false); };
-			ignore TM_ABORT;
+		/*on SMR_RM_OPERATION do {
+			client = payload.source;
+			raise payload.command, payload.val;
 		}
-		
-		state WaitForCommitOrAbort{
-			on TM_COMMIT goto WaitForPrepare with {
-				assert(preparedValue.tid == payload.tid);
-				if(preparedValue.tid == payload.tid)
-				{
-					log[preparedValue.tid] = preparedValue.val;
-				}
-			};
-			on TM_ABORT goto WaitForPrepare;
-			on TM_PREPARE do {
-				assert(preparedValue.tid < payload.tid);
-				SEND(client, SMR_RESPONSE, (response = RM_STATUS_QUERY, val = (source = this, tid = preparedValue.tid)));
-			};
-		}
-		
+		on READ_QUERY do {
+			SEND_REL(client, SMR_RESPONSE, (response = READ_RESPONSE, val = (tid = payload.tid, val = log[payload.tid])));
+		}*/
 	}
+	
+	state WaitForPrepare{
+		on ePrepare goto WaitForCommitOrAbort with (payload: (tid: int, op: OperationType))
+		{
+			preparedOp = payload;
+			if($)
+				send coordinator, ePrepared, (tid = payload.tid,);
+			else
+				send coordinator, eNotPrepared, (tid = payload.tid,);
+		}
+		on eCommit do { 
+			print "unexpected commit message";
+			assert(false); 
+		}
+		ignore eAbort;
+	}
+	
+	state WaitForCommitOrAbort{
+		on eCommit goto WaitForPrepare with (payload: (tid: int)){
+			assert(preparedOp.tid == payload.tid);
+			if(preparedOp.op.op == ADD_AMOUNT)
+			{
+				accountBalance = accountBalance + preparedOp.op.val;
+			}
+			else
+			{
+				accountBalance = accountBalance - preparedOp.op.val;
+			}
+		}
+		on eAbort goto WaitForPrepare;
+		on ePrepare do {
+			print "unexpected prepare message";
+			assert(false);
+		}
+	}
+	
 }
 
 

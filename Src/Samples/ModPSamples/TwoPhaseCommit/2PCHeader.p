@@ -53,7 +53,7 @@ event eNotPrepared : (tid: int);
 event eCommit : (tid: int);
 event eAbort : (tid: int);
 event eStatusQuery;
-event eStatusResp : int;
+event eStatusResp : ParticipantStatusType;
 
 
 

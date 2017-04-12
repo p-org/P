@@ -59,14 +59,14 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
             numOfOperation = numOfOperation - 1;
             if($)
             {
-                //goto ReadStatusOfParticipant;
+                goto ReadStatusOfParticipant;
             }
         }
         on eTransactionFailed do { CancelTimer(timer); goto StartPumpingTransactions; }
         on eTransactionSuccess goto StartPumpingTransactions with UpdateValues;
         on eTimeOut goto StartPumpingTransactions;
     }
-    /*
+    
     state ReadStatusOfParticipant {
         ignore eTimeOut, eTransactionFailed;
         entry {
@@ -78,6 +78,6 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
         on eRespPartStatus goto StartPumpingTransactions with (payload: ParticipantStatusType){
             assert(payload.val == valueAtParticipant[payload.part]);
         }
-    }*/
+    }
 }
 

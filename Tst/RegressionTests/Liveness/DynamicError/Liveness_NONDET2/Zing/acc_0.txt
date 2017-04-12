@@ -4,6 +4,6 @@
 OUT: ##################
 OUT: Liveness Check Failed
 OUT: ##################
-OUT: 21 distinct states explored
+OUT: 17 distinct states explored
 OUT: 
 EXIT: 6

@@ -5,6 +5,8 @@ OUT: <CreateLog> Machine Main(1) is created
 OUT: <StateLog> Machine Main(1) entered state S
 OUT: <CreateLog> Machine XYZ(2) is created
 OUT: <StateLog> Machine XYZ(2) entered state init
+OUT: <RaiseLog> Machine Main(1) raised event halt with payload null
+OUT: <ExitLog> Machine Main(1) exiting state S
+OUT: <HaltLog> Machine Main(1) halted in state S
 OUT: 
-ERROR: ASSERT: Invalid index
-EXIT: 1
+EXIT: 0

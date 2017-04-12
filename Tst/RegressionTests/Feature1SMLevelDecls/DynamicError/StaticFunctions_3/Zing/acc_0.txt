@@ -29,5 +29,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_2.bl,)
-Comment: StaticFunctions_3.p (29, 15): Assert failed
+Expression: assert(tmp_1.bl,)
+Comment: staticfunctions_3.p (29, 15): Assert failed

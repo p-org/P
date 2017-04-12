@@ -1,13 +1,14 @@
 =================================
          Console output          
 =================================
-OUT: function.p (6, 7): invalid assignment. right hand side is not a subtype of left hand side
-OUT: function.p (6, 7): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: function.p (6, 11): function requires arguments
-OUT: function.p (7, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: function.p (7, 9): function does not return a value
-OUT: function.p (13, 5): return value has incorrect type
-OUT: function.p (21, 5): function must return a value
-OUT: function.p (33, 5): anonymous function cannot return a value
+OUT: function.p (6, 7): Invalid assignment: right hand side is not a subtype of left hand side
+OUT: function.p (6, 7): Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: function.p (6, 11): Function requires arguments
+OUT: function.p (7, 4): Invalid assignment: right hand side is not a subtype of left hand side
+OUT: function.p (7, 9): Function does not return a value
+OUT: function.p (7, 9): Function requires arguments
+OUT: function.p (13, 5): Return value has incorrect type
+OUT: function.p (21, 5): Function must return a value
+OUT: function.p (33, 5): Anonymous function cannot return a value
 OUT: Compilation failed
 EXIT: -1

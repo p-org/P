@@ -2,23 +2,8 @@
          Console output          
 =================================
 OUT: ##################
-OUT: Check Failed
+OUT: Check Passed
 OUT: ##################
-OUT: 4 distinct states explored
+OUT: 6 distinct states explored
 OUT: 
-EXIT: 3
-
-=================================
-StackOverflowException.trace
-=================================
-Safety Error Trace
-Trace-Log 0:
-<CreateLog> Created Machine Main-0
-<StateLog> Machine Main-0 entering State S
-<CreateLog> Created Machine XYZ-0
-<StateLog> Machine XYZ-0 entering State init
-
-Error:
-P Assertion failed:
-Expression: assert(0 <= index && index < size)
-Comment: index out of bound
+EXIT: 0

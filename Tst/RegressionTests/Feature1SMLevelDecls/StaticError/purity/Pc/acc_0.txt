@@ -1,11 +1,11 @@
 =================================
          Console output          
 =================================
-OUT: purity.p (2, 11): no start state in machine
-OUT: purity.p (8, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: purity.p (26, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: purity.p (47, 13): new M(...) can only be called like "new M(...);" or "x = new M(...);"
-OUT: purity.p (52, 12): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: purity.p (52, 23): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: purity.p (2, 11): No start state in machine
+OUT: purity.p (8, 12): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: purity.p (26, 12): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: purity.p (47, 13): Illegal machine creation: only new M(...); or x = new M(...) is allowed
+OUT: purity.p (52, 12): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: purity.p (52, 23): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
 OUT: Compilation failed
 EXIT: -1

@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: test.p (5, 8): return value has incorrect type
+OUT: test.p (5, 8): Return value has incorrect type
 OUT: Compilation failed
 EXIT: -1

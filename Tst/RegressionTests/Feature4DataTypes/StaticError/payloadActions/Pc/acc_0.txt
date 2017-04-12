@@ -1,9 +1,9 @@
 =================================
          Console output          
 =================================
-OUT: payloadActions.p (30, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadActions.p (30, 4): Invalid assignment: right hand side is not a subtype of left hand side
 OUT: payloadActions.p (30, 23): Index may not be in the domain of the map
-OUT: payloadActions.p (39, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: payloadActions.p (40, 4): invalid assignment. right hand side is not a subtype of left hand side
+OUT: payloadActions.p (39, 4): Invalid assignment: right hand side is not a subtype of left hand side
+OUT: payloadActions.p (40, 4): Invalid assignment: right hand side is not a subtype of left hand side
 OUT: Compilation failed
 EXIT: -1

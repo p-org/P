@@ -1,12 +1,12 @@
 =================================
          Console output          
 =================================
-OUT: lvalues.p (1, 11): no start state in machine
-OUT: lvalues.p (10, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: lvalues.p (12, 11): invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name
-OUT: lvalues.p (13, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: lvalues.p (15, 5): function requires arguments
-OUT: lvalues.p (16, 5): function arguments have incorrect types
+OUT: lvalues.p (1, 11): No start state in machine
+OUT: lvalues.p (10, 11): Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: lvalues.p (12, 11): Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: lvalues.p (13, 24): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: lvalues.p (15, 5): Function requires arguments
+OUT: lvalues.p (16, 5): Function arguments have incorrect types
 OUT: lvalues.p (36, 2): function must return a value
 OUT: Compilation failed
 EXIT: -1

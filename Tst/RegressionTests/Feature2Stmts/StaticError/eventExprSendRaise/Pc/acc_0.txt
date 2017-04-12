@@ -1,8 +1,10 @@
 =================================
          Console output          
 =================================
-OUT: eventExprSendRaise.p (17, 4): argument 1 of "announce" expects an event value
-OUT: eventExprSendRaise.p (19, 3): action on an undefined event
-OUT: eventExprSendRaise.p (21, 3): action on an undefined event
+OUT: EventExprSendRaise.p (17, 4): Argument 1 of announce expects an event value
+OUT: EventExprSendRaise.p (17, 4): Invalid payload type in announce
+OUT: EventExprSendRaise.p (17, 4): Invalid payload type in announce (cannot send null value)
+OUT: EventExprSendRaise.p (19, 3): Action on an undefined event
+OUT: EventExprSendRaise.p (21, 3): Action on an undefined event
 OUT: Compilation failed
 EXIT: -1

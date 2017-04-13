@@ -151,8 +151,9 @@ sends ePrepared, eNotPrepared, eStatusResp;
 			{
 				accountBalance = accountBalance - preparedOp.op.val;
 			}
+			announce eParticipantCommitted, (part = myId, tid = payload.tid);
 		}
-		on eAbort goto WaitForPrepare;
+		on eAbort goto WaitForPrepare with (payload: (tid: int)){ announce eParticipantCommitted, (part = myId, tid = payload.tid); }
 		on ePrepare do {
 			print "unexpected prepare message";
 			assert(false);

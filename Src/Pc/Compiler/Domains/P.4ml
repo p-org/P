@@ -475,18 +475,18 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(type, type)  :- AllTypeExprs(type), type : InterfaceType.
 	TypeExpansion(type, type)  :- ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
-	TypeExpansion(type, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
-	TypeExpansion(type, eType) :- MachineReceives(m, ev), ev: NonNullEventName, type = NameType(m.name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(m, ev), ev: NonNullEventName}), eType : InterfaceType.
-	TypeExpansion(type, eType) :- MachineReceives(m, ALL), type = NameType(m.name), eType = BaseType(MACHINE).
-	TypeExpansion(type, eType) :- MachineExports(m, name), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
-	TypeExpansion(type, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE).
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = NmdTupType(NmdTupTypeField(name, hd'), tl').
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
-	TypeExpansion(type, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(m, ev), ev: NonNullEventName, type = NameType(m.name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(m, ev), ev: NonNullEventName}), eType : InterfaceType.
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(m, ALL), type = NameType(m.name), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineExports(m, name), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = NmdTupType(NmdTupTypeField(name, hd'), tl').
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
 
 	OldTranslatedTypeExpr ::= (type: TypeExpr).
 	OldTranslatedTypeExpr(eType) :- TypeExpansion(_, eType).

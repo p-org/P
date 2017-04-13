@@ -76,7 +76,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.MapType(k, v), EmbeddedPermissionsInType(v, ev).
 
 	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), EmbeddedPermissionsInType(pt, perm).
-	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), EmbeddedPermissionsInType(pt, perm).
+	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), EmbeddedPermissionsInType(ct, perm).
 
 	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).

@@ -56,5 +56,6 @@ event eStatusQuery;
 event eStatusResp : ParticipantStatusType;
 
 
-
-
+//events used by specification.
+event eParticipantCommitted: (part: int, tid:int);
+event eParticipantAborted: (part: int, tid: int);

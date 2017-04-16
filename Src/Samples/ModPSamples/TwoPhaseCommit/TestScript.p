@@ -24,3 +24,4 @@ test Test0: (rename TestDriver1 to Main in (compose TwoPCWithTimer, ClientWithTi
 /* Test 1: To check that the simple (without fault-tolerance) 2PC protocol satisfies the AtomicitySpec in the absence of failure */
 module TwoPCwithSpec = (assert AtomicitySpec in TwoPCWithTimer);
 test Test1: (rename TestDriver1 to Main in (compose TwoPCwithSpec, ClientWithTimer, Test0));
+

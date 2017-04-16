@@ -103,7 +103,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 
 machine Participant : ParticipantInterface
 receives ePrepare, eCommit, eAbort, eStatusQuery;
-sends ePrepared, eNotPrepared, eStatusResp;
+sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantAborted;
 {
 	var myId : int;
 	var preparedOp: (tid: int, op: OperationType);
@@ -153,7 +153,7 @@ sends ePrepared, eNotPrepared, eStatusResp;
 			}
 			announce eParticipantCommitted, (part = myId, tid = payload.tid);
 		}
-		on eAbort goto WaitForPrepare with (payload: (tid: int)){ announce eParticipantCommitted, (part = myId, tid = payload.tid); }
+		on eAbort goto WaitForPrepare with (payload: (tid: int)){ announce eParticipantAborted, (part = myId, tid = payload.tid); }
 		on ePrepare do {
 			print "unexpected prepare message";
 			assert(false);

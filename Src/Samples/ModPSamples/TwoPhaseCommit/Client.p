@@ -13,7 +13,7 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
             timer = CreateTimer(this as ITimerClient);
             valueAtParticipant[0] = 10;
             valueAtParticipant[1] = 101;
-            //goto StartPumpingTransactions;
+            goto StartPumpingTransactions;
         }
     }
     fun ChooseOp(): OperationType {

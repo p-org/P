@@ -137,6 +137,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 			print "unexpected commit message";
 			assert(false); 
 		}
+		on eStatusQuery do { send coordinator, eStatusResp, (part = myId, val = accountBalance);}
 		ignore eAbort;
 	}
 	

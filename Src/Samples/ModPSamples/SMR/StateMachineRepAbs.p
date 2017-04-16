@@ -1,13 +1,4 @@
-//Interfaces
-interface SMR_CLIENT_IN SMR_RESPONSE, SMR_SERVER_UPDATE;
-interface SMR_REPLICATED_MACHINE_IN SMR_RM_OPERATION;
-interface SMR_SERVER_IN SMR_OPERATION;
 
-//Events used to interact with the SMR Protocol
-event SMR_OPERATION : (source: SMR_CLIENT_IN, command: event, val: any);
-event SMR_RESPONSE : (response: event, val: any);
-event SMR_RM_OPERATION : (source: SMR_CLIENT_IN, command: event, val: any);
-event SMR_SERVER_UPDATE : (int, SMR_SERVER_IN);
 
 event reorder;
 event noreorder;

@@ -10,7 +10,15 @@ model fun StartTimer(timer: TimerPtr, time: int) {
 }
 
 model fun CancelTimer(timer: TimerPtr) {
-	send timer, eCancelTimer; 
+	send timer, eCancelTimer;
+	receive {
+		case eCancelSuccess: (payload: TimerPtr){}
+		case eCancelFailure: (payload: TimerPtr){
+			receive {
+				case eTimeOut: (payload: TimerPtr){}
+			}
+		}
+	}
 }
 
 model Timer : ITimer

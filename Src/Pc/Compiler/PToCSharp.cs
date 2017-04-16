@@ -3975,27 +3975,26 @@ namespace Microsoft.Pc
                 stmtList.Add(ExpressionStatement(renameadd));
             }
             //create map
-            foreach (var renameItem in allTests[testName].renameMap)
+            var listOfSpecMachineNames = allTests[testName].renameMap.Where(item => allTests[testName].specMachineMap.ContainsKey(item.Key)).Select(item => item.Value).Distinct();
+            var listOfMachineNames = allTests[testName].renameMap.Where(item => !allTests[testName].specMachineMap.ContainsKey(item.Key)).Select(item => item.Value).Distinct();
+            foreach (var specMachine in listOfSpecMachineNames)
             {
-                if (allTests[testName].specMachineMap.ContainsKey(renameItem.Key))
-                {
-                    var createadd = CSharpHelper.MkCSharpInvocationExpression(
-                    CSharpHelper.MkCSharpDot("createSpecMap", "Add"),
-                    CSharpHelper.MkCSharpStringLiteralExpression(renameItem.Value),
-                    IdentifierName(string.Format("CreateSpecMachine_{0}", renameItem.Value)));
-                    stmtList.Add(ExpressionStatement(createadd));
-                }
-                else
-                {
-                    //its a machine
-                    var createadd = CSharpHelper.MkCSharpInvocationExpression(
-                    CSharpHelper.MkCSharpDot("createMachineMap", "Add"),
-                    CSharpHelper.MkCSharpStringLiteralExpression(renameItem.Value),
-                    IdentifierName(string.Format("CreateMachine_{0}", renameItem.Value))
-                    );
-                    stmtList.Add(ExpressionStatement(createadd));
-                }
-                
+                var createadd = CSharpHelper.MkCSharpInvocationExpression(
+                CSharpHelper.MkCSharpDot("createSpecMap", "Add"),
+                CSharpHelper.MkCSharpStringLiteralExpression(specMachine),
+                IdentifierName(string.Format("CreateSpecMachine_{0}", specMachine)));
+                stmtList.Add(ExpressionStatement(createadd));
+            }
+            foreach (var machine in listOfMachineNames)
+            {
+                //its a machine
+                var createadd = CSharpHelper.MkCSharpInvocationExpression(
+                CSharpHelper.MkCSharpDot("createMachineMap", "Add"),
+                CSharpHelper.MkCSharpStringLiteralExpression(machine),
+                IdentifierName(string.Format("CreateMachine_{0}", machine))
+                );
+                stmtList.Add(ExpressionStatement(createadd));
+ 
             }
             //interface map
             foreach (var it in allTests[testName].interfaceMap)

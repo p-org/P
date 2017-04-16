@@ -1,0 +1,6 @@
+=================================
+         Console output          
+=================================
+OUT: bug.p (18, 40): Reduce can never succeed
+OUT: Compilation failed
+EXIT: -1

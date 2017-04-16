@@ -1550,34 +1550,34 @@ domain PStaticTyping extends PData, PError
 	SpecError ::= (cntxt: StateDecl + TransDecl + DoDecl, expr: String + AnonFunDecl).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-	OneIdError(c.id, "$, $$, new, send, announce, receive, and pop not allowed in spec machines"),
+	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
     SpecError(c, n) :- 
 	       c is StateDecl(_, owner, n, _, _, _), owner.kind = SPEC, called.name = n, FunAvailable(called, owner), SpecImpure(called);
 		   c is StateDecl(_, owner, _, n, _, _), owner.kind = SPEC, called.name = n, FunAvailable(called, owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    OneIdError(c.id, "$, $$, new, send, announce, receive, and pop not allowed in spec machines"),
+    OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
 	       c is StateDecl(_, owner, called, _, _, _), owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called);
 		   c is StateDecl(_, owner, _, called, _, _), owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    OneIdError(c.id, "$, $$, new, send, announce, receive, and pop not allowed in spec machines"),
+    OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, n) :- 
 	       c is TransDecl(src, _, _, n, _), src.owner.kind = SPEC, called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    OneIdError(c.id, "$, $$, new, send, announce, receive, and pop not allowed in spec machines"),
+    OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
 	       c is TransDecl(src, _, _, called, _), src.owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-	OneIdError(c.id, "$, $$, new, send, announce, receive, and pop not allowed in spec machines"),
+	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, n) :-	
 		   c is DoDecl(src, _, n, _), src.owner.kind = SPEC, called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-	OneIdError(c.id, "$, $$, new, send, announce, receive, and pop not allowed in spec machines"),
+	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
 		   c is DoDecl(src, _, called, _), src.owner.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
 

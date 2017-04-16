@@ -15,7 +15,7 @@ model fun CancelTimer(timer: TimerPtr) {
 		case eCancelSuccess: (payload: TimerPtr){}
 		case eCancelFailure: (payload: TimerPtr){
 			receive {
-				case eTimeOut: (payload: TimerPtr){}
+				case eTimeOut: (payload1: TimerPtr){}
 			}
 		}
 	}

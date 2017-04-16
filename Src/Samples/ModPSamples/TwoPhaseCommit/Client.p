@@ -11,8 +11,8 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
             coor = payload.0;
             numOfOperation = payload.1;
             timer = CreateTimer(this as ITimerClient);
-            valueAtParticipant[0] = 10;
-            valueAtParticipant[1] = 101;
+            valueAtParticipant[0] = 0;
+            valueAtParticipant[1] = 0;
             goto StartPumpingTransactions;
         }
     }

@@ -1,81 +1,64 @@
-
-
-event reorder;
-event noreorder;
-
-module SMR_LINEARIZIBILITY_SPEC
-sends SMR_RM_OPERATION, SMR_SERVER_UPDATE
-creates SMR_REPLICATED_MACHINE_IN
+machine LinearizibilityAbs : SMRServerInterface
+receives eSMROperation;
+sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 {
-	machine SMR_Machine_spec
-	receives SMR_OPERATION
-	{
-		var repMachine : SMR_REPLICATED_MACHINE_IN;
-		var doReordering : bool;
-		var myId: int;
-		var allClients : seq[SMR_CLIENT_IN];
-		
-		start state Init {
-			entry {
-				var i : int;
-				i =0;
-				allClients = (payload as (seq[SMR_CLIENT_IN], bool, int, int)).0;
-				//create the replicated machine
-				doReordering = (payload as (seq[SMR_CLIENT_IN], bool, int, int)).1;
-				myId = (payload as (seq[SMR_CLIENT_IN], bool, int, int)).2;
-				repMachine = new SMR_REPLICATED_MACHINE_IN(myId);
-				
-				//for the specification case send the current 
-				while(i< sizeof(allClients))
-				{
-					SEND (allClients[i], SMR_SERVER_UPDATE, (myId, this as SMR_SERVER_IN));
-					i = i + 1;
-				}
-				
-				if(doReordering)
-					raise reorder;
-				else
-					raise noreorder;
-			}
-			on reorder goto DoReOrdering;
-			on noreorder goto DoNoReOrdering;
-		}
-		//we have created a parameterized linearizibility abstraction
-		//since some cases messages cannot be 
-		//reordered and for the case of like in replicated hash table they can be reordered.
-		var pending: seq[(source: SMR_CLIENT_IN, command: event, val: any)];	
-		state DoReOrdering {
-			entry {
-				while(sizeof(pending) >0)
-				{
-					send repMachine, SMR_RM_OPERATION, pending[0];
-					pending -= 0;
-					if($)
-						return;
-				}
-			}
-			on SMR_OPERATION goto DoReOrdering with {
-				pending += (chooseIndex(), payload);
-			};
-		}
-		
-		fun chooseIndex() : int {
-			var i: int;
+	var replicatedSM : SMRReplicatedMachineInterface;
+	var doReordering : bool;
+	var myId: int;
+	var client : SMRClientInterface;
+	
+	start state Init {
+		entry (payload: (client: SMRClientInterface, reorder: bool, id: int)){
+			var i : int;
 			i = 0;
-			while(i <sizeof(pending))
+			client = payload.client;
+			//create the replicated machine
+			doReordering = payload.reorder;
+			myId = payload.id;
+			replicatedSM = new SMRReplicatedMachineInterface(myId);
+			
+			//for the specification case send the current 
+			send client, eSMRLeaderUpdated, (myId, this as SMRServerInterface);
+			
+			if(doReordering)
+				goto DoReOrdering;
+			else
+				goto DoNoReOrdering;
+		}
+	}
+	//we have created a parameterized linearizibility abstraction
+	//since some cases messages cannot be 
+	//reordered and for the case of like in replicated hash table they can be reordered.
+	var pending: seq[SMROperationType];	
+	state DoReOrdering {
+		entry {
+			while(sizeof(pending) >0)
 			{
+				send replicatedSM, eSMRReplicatedMachineOperation, pending[0];
+				pending -= 0;
 				if($)
-					return i;
-					
-				i = i + 1;
-				
+					return;
 			}
 		}
-		
-		state DoNoReOrdering {
-			on SMR_OPERATION do {
-				send repMachine, SMR_RM_OPERATION, payload;
-			};
+		on eSMROperation goto DoReOrdering with (payload: SMROperationType){
+			pending += (chooseIndex(), payload);
+		}
+	}
+	
+	fun chooseIndex() : int {
+		var i: int;
+		i = 0;
+		while(i <sizeof(pending))
+		{
+			if($)
+				return i;
+			i = i + 1;
+		}
+	}
+	
+	state DoNoReOrdering {
+		on eSMROperation do (payload: SMROperationType){
+			send replicatedSM, eSMRReplicatedMachineOperation, payload;
 		}
 	}
 }

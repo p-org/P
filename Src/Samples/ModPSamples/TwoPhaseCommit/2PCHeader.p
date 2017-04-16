@@ -31,9 +31,9 @@ type ParticipantStatusType =
 
 // Interface type declarations
 type ClientInterface((CoorClientInterface, int)) = { eRespPartStatus, eTransactionFailed, eTransactionSuccess};
-type CoorClientInterface() = { eTransaction, eReadPartStatus };
+type CoorClientInterface((isfaultTolerant: bool)) = { eTransaction, eReadPartStatus };
 type CoorParticipantInterface() = { ePrepared, eNotPrepared, eStatusResp };
-type ParticipantInterface((CoorParticipantInterface, int)) = { ePrepare, eCommit, eAbort, eStatusQuery };
+type ParticipantInterface((machine, int, bool)) = { ePrepare, eCommit, eAbort, eStatusQuery };
 
 /*************************************
 Declaring all the events used in 2PC
@@ -59,3 +59,7 @@ event eStatusResp : ParticipantStatusType;
 //events used by specification.
 event eParticipantCommitted: (part: int, tid:int);
 event eParticipantAborted: (part: int, tid: int);
+
+
+//local events
+event local;

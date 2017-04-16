@@ -1,30 +1,65 @@
+
 //We implemented a fault-tolerant 2-PC protocol.
 //There is a single co-ordinator and 2 participants. The two participants are two different bank accounts.
 
 machine Coordinator : CoorClientInterface
-receives eTransaction, eReadPartStatus, ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure;
-sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eRespPartStatus, eStartTimer, eCancelTimer;
+receives eTransaction, eReadPartStatus, ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure, eSMRResponse, eSMRLeaderUpdated;
+sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eRespPartStatus, eStartTimer, eCancelTimer, eSMROperation;
 {
 
 	var transId : int;
-	var participants : map[int, ParticipantInterface];
+	var participants : map[int, machine];
 	var timer : TimerPtr;
 	var currentTransaction: TransactionType;
+	var isFaultTolerant : bool;
 	start state Init {
-		entry {
-			var temp : ParticipantInterface;
-			temp = new ParticipantInterface(this as CoorParticipantInterface, 0);
-			participants[0] = temp;
-			temp = new ParticipantInterface(this as CoorParticipantInterface, 1);
-			participants[1] = temp;
+		entry (payload: (isfaultTolerant: bool)){
+			var temp : machine;
+			isFaultTolerant = payload.isfaultTolerant;
+			if(isFaultTolerant)
+			{
+				temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, id = 0));
+				participants[0] = temp;
+				temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, id = 1));
+				participants[1] = temp;
+			}
+			else
+			{
+				temp = new ParticipantInterface(this as CoorParticipantInterface, 0, false);
+				participants[0] = temp;
+				temp = new ParticipantInterface(this as CoorParticipantInterface, 1, false);
+				participants[1] = temp;
+			}
+			
 			transId = 0;
 			//create timer
 			timer = CreateTimer(this as ITimerClient);
 
-			goto WaitForReq;
+			raise local;
 		}
+
+		//install common handlers for all states
+		on eSMRResponse do (payload: SMRResponseType){
+			raise payload.response, payload.val;
+		} 
+
+		on eSMRLeaderUpdated do (payload: (int, SMRServerInterface)) {
+			participants[payload.0] = payload.1;
+		}
+
+		on local push WaitForReq;
 	}
 	
+	fun SendToParticipant(part: machine, ev: event, payload: any) {
+		if(isFaultTolerant)
+		{
+			send part, eSMROperation, (source = this as SMRClientInterface, operation = ev, val = payload);
+		}
+		else
+		{
+			send part, ev, payload;
+		}
+	}
 	
 	state WaitForReq {
 		ignore eNotPrepared, ePrepared;
@@ -48,7 +83,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		i = 0;
 		while(i < sizeof(participants))
 		{
-			send participants[i], ev, val;
+			SendToParticipant(participants[i], ev, val);
 			i = i + 1;
 		}
 	}
@@ -67,9 +102,9 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		entry{
 			prepareCount = 0;
 			//to part1
-			send participants[0], ePrepare, (tid = transId, op = currentTransaction.op1);
+			SendToParticipant(participants[0], ePrepare, (tid = transId, op = currentTransaction.op1));
 			//to part2
-			send participants[1], ePrepare, (tid = transId, op = currentTransaction.op2);
+			SendToParticipant(participants[1], ePrepare, (tid = transId, op = currentTransaction.op2));
 
 			//start timer 
 			StartTimer(timer, 100);
@@ -101,43 +136,58 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 }
 
 
-machine Participant : ParticipantInterface
-receives ePrepare, eCommit, eAbort, eStatusQuery;
-sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantAborted;
+machine Participant
+receives ePrepare, eCommit, eAbort, eStatusQuery, eSMRReplicatedMachineOperation;
+sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantAborted, eSMRResponse;
 {
 	var myId : int;
 	var preparedOp: (tid: int, op: OperationType);
-	var coordinator: CoorParticipantInterface;
+	var coordinator: machine;
 	var accountBalance: int;
+	var isReplicated: bool;
 	start state Init {
-		entry (payload: (CoorParticipantInterface, int)){
+		entry (payload: (machine, int, bool)){
+
 			myId = payload.1;
 			coordinator = payload.0;
-			goto WaitForPrepare;
+			isReplicated = payload.2;
+			raise local;
 		}
-		/*on SMR_RM_OPERATION do {
-			client = payload.source;
-			raise payload.command, payload.val;
+
+		//install common handler
+		on eSMRReplicatedMachineOperation do (payload:SMROperationType){
+			coordinator = payload.source;
+			raise payload.operation, payload.val;
 		}
-		on READ_QUERY do {
-			SEND_REL(client, SMR_RESPONSE, (response = READ_RESPONSE, val = (tid = payload.tid, val = log[payload.tid])));
-		}*/
+
+		on local push WaitForPrepare;
 	}
 	
-	state WaitForPrepare{
+	fun SendToCoordinator(ev: event, payload: any)
+	{
+		if(isReplicated)
+		{
+			send coordinator, eSMRResponse, (response = ev, val = payload); 
+		}
+		else
+		{
+			send coordinator, ev, payload;
+		}
+	}
+	state WaitForPrepare {
 		on ePrepare goto WaitForCommitOrAbort with (payload: (tid: int, op: OperationType))
 		{
 			preparedOp = payload;
 			if($)
-				send coordinator, ePrepared, (tid = payload.tid,);
+				SendToCoordinator(ePrepared, (tid = payload.tid,));
 			else
-				send coordinator, eNotPrepared, (tid = payload.tid,);
+				SendToCoordinator(eNotPrepared, (tid = payload.tid,));
 		}
 		on eCommit do { 
 			print "unexpected commit message";
 			assert(false); 
 		}
-		on eStatusQuery do { send coordinator, eStatusResp, (part = myId, val = accountBalance);}
+		on eStatusQuery do { SendToCoordinator(eStatusResp, (part = myId, val = accountBalance));}
 		ignore eAbort;
 	}
 	

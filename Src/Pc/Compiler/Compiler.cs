@@ -1179,13 +1179,24 @@
                 NodePredFactory.Instance.MkNamePredicate("File")
             };
 
-            var success = true;
+            List<FuncTerm> nodes = new List<FuncTerm>();
             renderTask.Result.Module.FindAll(
                 fileQuery,
                 (p, n) =>
                 {
-                    success = PrintFile(string.Empty, n) && success;
+                    nodes.Add((FuncTerm)n);
                 });
+            nodes.Sort(delegate (FuncTerm ft1, FuncTerm ft2)
+            {
+                string name1 = ((Cnst)PTranslation.GetArgByIndex(ft1, 0)).GetStringValue();
+                string name2 = ((Cnst)PTranslation.GetArgByIndex(ft2, 0)).GetStringValue();
+                return name1.CompareTo(name2);
+            });
+            var success = true;
+            foreach (FuncTerm node in nodes)
+            {
+                success = PrintFile(string.Empty, node) && success;
+            }
             return success;
         }
 
@@ -1548,9 +1559,8 @@
             return linkErrorCount == 0;
         }
 
-        private bool PrintFile(string filePrefix, Node n)
+        private bool PrintFile(string filePrefix, FuncTerm file)
         {
-            var file = (FuncTerm)n;
             string fileName;
             string shortFileName;
             Quote fileBody;

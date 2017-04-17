@@ -634,7 +634,6 @@
             string fileName = Path.GetFileNameWithoutExtension(RootFileName);
             string zingFileName = fileName + ".zing";
             string dllFileName = fileName + ".dll";
-            string outputDirName = Options.outputDir;
 
             using (this.Profiler.Start("Generating Zing", zingFileName))
             {
@@ -650,7 +649,7 @@
                 }
             }
 
-            if (!PrintZingFile(zingModel, CompilerEnv, outputDirName))
+            if (!RenderZing(zingModel, CompilerEnv))
                 return false;
 
             Process zcProcess = null;
@@ -665,8 +664,8 @@
                     return false;
                 }
                 var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(zingCompiler);
-                string zingFileNameFull = Path.Combine(outputDirName, zingFileName);
-                zcProcessInfo.Arguments = string.Format("/nowarn:292 \"/out:{0}\\{1}\" \"{2}\"", outputDirName, dllFileName, zingFileNameFull);
+                string zingFileNameFull = Path.Combine(Options.outputDir, zingFileName);
+                zcProcessInfo.Arguments = string.Format("/nowarn:292 \"/out:{0}\\{1}\" \"{2}\"", Options.outputDir, dllFileName, zingFileNameFull);
                 zcProcessInfo.UseShellExecute = false;
                 zcProcessInfo.CreateNoWindow = true;
                 zcProcessInfo.RedirectStandardOutput = true;
@@ -684,9 +683,9 @@
             return true;
         }
 
-        private bool PrintZingFile(AST<Model> m, Env env, string outputDirName)
+        private bool RenderZing(AST<Model> m, Env env)
         {
-            var progName = new ProgramName(Path.Combine(outputDirName, m.Node.Name + "_ZingModel.4ml"));
+            var progName = new ProgramName(Path.Combine(Options.outputDir, m.Node.Name + "_ZingModel.4ml"));
             var zingProgram = Factory.Instance.MkProgram(progName);
             //// Set the renderer of the Zing program so terms can be converted to text.
             var zingProgramConfig = (AST<Config>)zingProgram.FindAny(new NodePred[]
@@ -703,50 +702,17 @@
             zingProgram = (AST<Program>)Factory.Instance.ToAST(zingProgramConfig.Root);
             zingProgram = Factory.Instance.AddModule(zingProgram, m);
 
-            //var sw = new StreamWriter("out.4ml");
-            //zingProgram.Print(sw);
-            //sw.Flush();
-
-            //// Install and render the program.
-            InstallResult instResult;
-            Task<RenderResult> renderTask;
-            var didStart = CompilerEnv.Install(zingProgram, out instResult);
-            Contract.Assert(didStart);
-            PrintResult(instResult);
-            if (!instResult.Succeeded)
-                return false;
-            didStart = CompilerEnv.Render(progName, m.Node.Name, out renderTask);
-            Contract.Assert(didStart);
-            renderTask.Wait();
-            Contract.Assert(renderTask.Result.Succeeded);
-            var rendered = renderTask.Result.Module;
-
-            var fileQuery = new NodePred[]
-            {
-                NodePredFactory.Instance.Star,
-                NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact),
-                NodePredFactory.Instance.MkPredicate(NodeKind.FuncTerm) &
-                NodePredFactory.Instance.MkNamePredicate("File")
-            };
-
+            List<FuncTerm> nodes = SortedFiles(zingProgram, m.Node.Name);
             var success = true;
-            rendered.FindAll(
-                fileQuery,
-                (p, n) =>
-                {
-                    success = PrintZingFile(n, outputDirName) && success;
-                });
-
-            InstallResult uninstallResult;
-            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
-            Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
-
+            foreach (var node in nodes)
+            {
+                success = PrintZingFile(node) && success;
+            }
             return success;
         }
 
-        private bool PrintZingFile(Node n, string outputDirName)
+        private bool PrintZingFile(FuncTerm file)
         {
-            var file = (FuncTerm)n;
             string fileName;
             Quote fileBody;
             using (var it = file.Args.GetEnumerator())
@@ -760,7 +726,7 @@
 
             try
             {
-                var fullPath = Path.Combine(outputDirName, fileName);
+                var fullPath = Path.Combine(Options.outputDir, fileName);
                 using (var sw = new System.IO.StreamWriter(fullPath))
                 {
                     foreach (var c in fileBody.Contents)
@@ -1105,7 +1071,7 @@
                 extractTask.Wait();
                 var cProgram = extractTask.Result;
                 Contract.Assert(cProgram != null);
-                var success = Render(cProgram, RootModel.Node.Name + "_CModel", progName);
+                var success = RenderC(cProgram, RootModel.Node.Name + "_CModel");
                 Contract.Assert(success);
             }
 
@@ -1129,46 +1095,20 @@
             return true;
         }
 
-        private bool Render(AST<Program> cProgram, string moduleName, ProgramName progName)
+        private List<FuncTerm> SortedFiles(AST<Program> program, string moduleName)
         {
-            //// Set the renderer of the C program so terms can be converted to text.
-            var cProgramConfig = (AST<Config>)cProgram.FindAny(new NodePred[]
-                {
-                    NodePredFactory.Instance.MkPredicate(NodeKind.Program),
-                    NodePredFactory.Instance.MkPredicate(NodeKind.Config)
-                });
-            Contract.Assert(cProgramConfig != null);
-            var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
-
-            cProgramConfig = Factory.Instance.AddSetting(
-                cProgramConfig,
-                Factory.Instance.MkId(Configuration.ParsersCollectionName + ".C"),
-                Factory.Instance.MkCnst(typeof(CParser.Parser).Name + " at " + Path.Combine(binPath.FullName, "CParser.dll")));
-
-            cProgramConfig = Factory.Instance.AddSetting(
-                cProgramConfig,
-                Factory.Instance.MkId(Configuration.Parse_ActiveRenderSetting),
-                Factory.Instance.MkCnst("C"));
-
-            cProgram = (AST<Program>)Factory.Instance.ToAST(cProgramConfig.Root);
-
-            //// Install and render the program.
             InstallResult instResult;
             Task<RenderResult> renderTask;
             bool didStart = false;
-            didStart = CompilerEnv.Install(cProgram, out instResult);
+            didStart = CompilerEnv.Install(program, out instResult);
             Contract.Assert(didStart && instResult.Succeeded);
-            if (!instResult.Succeeded)
-            {
-                return false;
-            }
-            didStart = CompilerEnv.Render(cProgram.Node.Name, moduleName, out renderTask);
+            didStart = CompilerEnv.Render(program.Node.Name, moduleName, out renderTask);
             Contract.Assert(didStart);
             renderTask.Wait();
             Contract.Assert(renderTask.Result.Succeeded);
 
             InstallResult uninstallResult;
-            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { progName }, out uninstallResult);
+            var uninstallDidStart = CompilerEnv.Uninstall(new ProgramName[] { program.Node.Name }, out uninstallResult);
             Contract.Assert(uninstallDidStart && uninstallResult.Succeeded);
 
             var fileQuery = new NodePred[]
@@ -1192,10 +1132,37 @@
                 string name2 = ((Cnst)PTranslation.GetArgByIndex(ft2, 0)).GetStringValue();
                 return name1.CompareTo(name2);
             });
+            return nodes;
+        }
+
+        private bool RenderC(AST<Program> cProgram, string moduleName)
+        {
+            //// Set the renderer of the C program so terms can be converted to text.
+            var cProgramConfig = (AST<Config>)cProgram.FindAny(new NodePred[]
+                {
+                    NodePredFactory.Instance.MkPredicate(NodeKind.Program),
+                    NodePredFactory.Instance.MkPredicate(NodeKind.Config)
+                });
+            Contract.Assert(cProgramConfig != null);
+            var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
+
+            cProgramConfig = Factory.Instance.AddSetting(
+                cProgramConfig,
+                Factory.Instance.MkId(Configuration.ParsersCollectionName + ".C"),
+                Factory.Instance.MkCnst(typeof(CParser.Parser).Name + " at " + Path.Combine(binPath.FullName, "CParser.dll")));
+
+            cProgramConfig = Factory.Instance.AddSetting(
+                cProgramConfig,
+                Factory.Instance.MkId(Configuration.Parse_ActiveRenderSetting),
+                Factory.Instance.MkCnst("C"));
+
+            cProgram = (AST<Program>)Factory.Instance.ToAST(cProgramConfig.Root);
+
+            List<FuncTerm> nodes = SortedFiles(cProgram, moduleName);
             var success = true;
             foreach (FuncTerm node in nodes)
             {
-                success = PrintFile(string.Empty, node) && success;
+                success = PrintCFile(node) && success;
             }
             return success;
         }
@@ -1419,7 +1386,7 @@
             extractTask.Wait();
             var cProgram = extractTask.Result;
             Contract.Assert(cProgram != null);
-            success = Render(cProgram, "CLinkModel", progName);
+            success = RenderC(cProgram, "CLinkModel");
 
             UninstallProgram(linkProgramName);
             return success;
@@ -1559,7 +1526,7 @@
             return linkErrorCount == 0;
         }
 
-        private bool PrintFile(string filePrefix, FuncTerm file)
+        private bool PrintCFile(FuncTerm file)
         {
             string fileName;
             string shortFileName;
@@ -1567,7 +1534,7 @@
             using (var it = file.Args.GetEnumerator())
             {
                 it.MoveNext();
-                shortFileName = filePrefix + ((Cnst)it.Current).GetStringValue();
+                shortFileName = ((Cnst)it.Current).GetStringValue();
                 fileName = Path.Combine(Options.outputDir, shortFileName);
                 it.MoveNext();
                 fileBody = (Quote)it.Current;

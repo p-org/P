@@ -249,6 +249,12 @@
                 {
                     unitName = targetName;
                 }
+                var unitFileName = Path.GetFileNameWithoutExtension(unitName);
+                if (!IsLegalUnitName(unitFileName))
+                {
+                    Console.WriteLine("{0} is not a legal name for a compilation unit", unitFileName);
+                    return false;
+                }
             }
 
             if (outputDir == null)
@@ -257,6 +263,11 @@
             }
 
             return true;
+        }
+
+        private bool IsLegalUnitName(string unitFileName)
+        {
+            return System.Text.RegularExpressions.Regex.IsMatch(unitFileName, "^[A-Za-z_][A-Za-z_0-9]*");
         }
 
         private bool IsLegalPFile(string fileName, out string fullPathName)

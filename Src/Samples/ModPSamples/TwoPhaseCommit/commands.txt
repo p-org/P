@@ -1,0 +1,3 @@
+ pc /shared .\Timer.p .\TimerHeader.p /generate:C#
+ pc /shared /r:../CommonUtilities/timer.4ml .\2PC.p .\Client.p .\2PCHeader.p .\SafetySpec.p .\TestDrivers.p  /generate:C#
+ pc /shared /link /r:../CommonUtilities/timer.4ml /r:2pc.4ml .\TestScript.p

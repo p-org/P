@@ -142,11 +142,6 @@
             private set;
         }
 
-        public List<P_Root.MachineCreates> MachineCreates
-        {
-            get;
-            private set;
-        }
 
         public List<P_Root.FunProtoCreatesDecl> FunProtoCreates
         {
@@ -163,10 +158,6 @@
                 return;
             }
 
-            if (item is P_Root.MachineCreates)
-            {
-                MachineCreates.Add(item as P_Root.MachineCreates);
-            }
             else if (item is P_Root.MachineSends)
             {
                 MachineSends.Add(item as P_Root.MachineSends);
@@ -374,11 +365,6 @@
                 {
                     yield return ms;
                 }
-
-                foreach (var mc in MachineCreates)
-                {
-                    yield return mc;
-                }
                 foreach(var fp in FunProtoCreates)
                 {
                     yield return fp;
@@ -413,7 +399,6 @@
             MachineProtoDecls = new List<P_Root.MachineProtoDecl>();
             MachineSends = new List<P_Root.MachineSends>();
             MachineReceives = new List<P_Root.MachineReceives>();
-            MachineCreates = new List<P_Root.MachineCreates>();
             DependsOn = new List<P_Root.DependsOn>();
             IgnoreDecl = false;
             FunProtoCreates = new List<P_Root.FunProtoCreatesDecl>();

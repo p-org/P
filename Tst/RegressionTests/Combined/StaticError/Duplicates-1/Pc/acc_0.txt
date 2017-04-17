@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Duplicates-1.p (15, 11): no start state in machine
-OUT: Duplicates-1.p (19, 12): no start state in machine
+OUT: Duplicates-1.p (15, 11): No start state in machine
+OUT: Duplicates-1.p (19, 12): No start state in machine
 OUT: Duplicates-1.p (21, 2): Multiple transitions over the same event
 OUT: Duplicates-1.p (23, 2): Multiple transitions over the same event
 OUT: Duplicates-1.p (27, 3): Multiple actions over the same event

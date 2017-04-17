@@ -76,9 +76,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="output.cs" />
+    <Compile Include="2pc.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SpinlockWithTypestate.cs" />
+    <Compile Include="Test0.cs" />
+    <Compile Include="timer.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\PRuntime\PRuntime.csproj">

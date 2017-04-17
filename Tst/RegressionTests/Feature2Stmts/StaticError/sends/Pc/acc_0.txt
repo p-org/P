@@ -2,24 +2,27 @@
          Console output          
 =================================
 OUT: sends.p (21, 4): Undefined machine or interface type
-OUT: sends.p (28, 4): invalid assignment. right hand side is not a subtype of left hand side
-OUT: sends.p (31, 4): invalid payload type in send
-OUT: sends.p (32, 4): invalid payload type in send
-OUT: sends.p (33, 4): invalid payload type in send
-OUT: sends.p (34, 4): invalid payload type in send
-OUT: sends.p (35, 4): invalid payload type in send
-OUT: sends.p (37, 4): invalid payload type in send
-OUT: sends.p (39, 4): invalid payload type in send
-OUT: sends.p (40, 4): invalid payload type in send
-OUT: sends.p (41, 4): invalid payload type in send
-OUT: sends.p (42, 4): invalid payload type in send
-OUT: sends.p (45, 4): invalid payload type in send
-OUT: sends.p (49, 4): invalid payload type in send
-OUT: sends.p (50, 4): invalid payload type in send
-OUT: sends.p (51, 4): invalid payload type in send
-OUT: sends.p (54, 4): argument 1 of "send" expects a machine or interface type value
-OUT: sends.p (57, 4): invalid payload type in announce
-OUT: sends.p (58, 4): invalid payload type in announce (cannot send null value)
-OUT: sends.p (62, 4): argument 1 of "announce" expects an event value
+OUT: sends.p (28, 4): Invalid assignment: right hand side is not a subtype of left hand side
+OUT: sends.p (31, 4): Invalid payload type in send
+OUT: sends.p (32, 4): Invalid payload type in send
+OUT: sends.p (33, 4): Invalid payload type in send
+OUT: sends.p (34, 4): Invalid payload type in send
+OUT: sends.p (35, 4): Invalid payload type in send
+OUT: sends.p (37, 4): Invalid payload type in send
+OUT: sends.p (39, 4): Invalid payload type in send
+OUT: sends.p (40, 4): Invalid payload type in send
+OUT: sends.p (41, 4): Invalid payload type in send
+OUT: sends.p (42, 4): Invalid payload type in send
+OUT: sends.p (45, 4): Invalid payload type in send
+OUT: sends.p (49, 4): Invalid payload type in send
+OUT: sends.p (50, 4): Invalid payload type in send
+OUT: sends.p (51, 4): Invalid payload type in send
+OUT: sends.p (54, 4): Argument 1 of send expects a machine or interface type value
+OUT: sends.p (57, 4): Invalid payload type in announce
+OUT: sends.p (58, 4): Invalid payload type in announce
+OUT: sends.p (58, 4): Invalid payload type in announce (cannot send null value)
+OUT: sends.p (62, 4): Argument 1 of announce expects an event value
+OUT: sends.p (62, 4): Invalid payload type in announce
+OUT: sends.p (62, 4): Invalid payload type in announce (cannot send null value)
 OUT: Compilation failed
 EXIT: -1

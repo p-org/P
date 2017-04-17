@@ -79,7 +79,7 @@ Trace-Log 3:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_5.bl,)
+Expression: assert(tmp_4.bl,)
 Comment: receive10.p (30, 33): Assert failed
 Safety Error Trace
 Trace-Log 4:
@@ -96,5 +96,5 @@ Trace-Log 4:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_5.bl,)
+Expression: assert(tmp_4.bl,)
 Comment: receive10.p (30, 33): Assert failed

@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: ControlImpureInEntry.p (26, 6): function not defined
-OUT: ControlImpureInEntry.p (30, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: ControlImpureInEntry.p (32, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
+OUT: ControlImpureInEntry.p (26, 6): Function not defined
+OUT: ControlImpureInEntry.p (30, 14): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: ControlImpureInEntry.p (32, 8): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
 OUT: Compilation failed
 EXIT: -1

@@ -1,12 +1,12 @@
 =================================
          Console output          
 =================================
-OUT: ControlImpureErrorsGoto.p (24, 34): function may cause a change in current state; this is not allowed here
-OUT: ControlImpureErrorsGoto.p (25, 28): function may cause a change in current state; this is not allowed here
-OUT: ControlImpureErrorsGoto.p (26, 28): function may cause a change in current state; this is not allowed here
-OUT: ControlImpureErrorsGoto.p (32, 14): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: ControlImpureErrorsGoto.p (35, 8): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: ControlImpureErrorsGoto.p (43, 31): function may cause a change in current state; this is not allowed here
-OUT: ControlImpureErrorsGoto.p (44, 28): function may cause a change in current state; this is not allowed here
+OUT: ControlImpureErrorsGoto.p (24, 9): Transition function may cause a change in current state
+OUT: ControlImpureErrorsGoto.p (25, 3): Transition function may cause a change in current state
+OUT: ControlImpureErrorsGoto.p (26, 3): Transition function may cause a change in current state
+OUT: ControlImpureErrorsGoto.p (32, 14): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: ControlImpureErrorsGoto.p (35, 8): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: ControlImpureErrorsGoto.p (43, 6): Transition function may cause a change in current state
+OUT: ControlImpureErrorsGoto.p (44, 3): Transition function may cause a change in current state
 OUT: Compilation failed
 EXIT: -1

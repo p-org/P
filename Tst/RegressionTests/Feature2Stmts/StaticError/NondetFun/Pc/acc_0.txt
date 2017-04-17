@@ -1,11 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: NondetFun.p (10, 19): $ can only be used like "x = $" or "if ($)" or "while ($)" or "return $;"
-OUT: NondetFun.p (15, 9): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: NondetFun.p (27, 7): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: NondetFun.p (27, 16): $$ can only be used like "x = $$" or "if ($$)" or "while ($$)" or "return $$;"
-OUT: NondetFun.p (32, 10): this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);"
-OUT: NondetFun.p (36, 19): $ can only be used like "x = $" or "if ($)" or "while ($)" or "return $;"
+OUT: NondetFun.p (32, 10): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
 OUT: Compilation failed
 EXIT: -1

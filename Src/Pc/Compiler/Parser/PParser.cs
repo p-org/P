@@ -2160,6 +2160,7 @@
             funcreates.Span = span;
             funcreates.iormlist = stringListStack.Pop();
             funcreates.fp = GetCurrentFunProtoDecl(span);
+            parseProgram.Add(funcreates);
             crntStringIdList.Clear();
         }
 

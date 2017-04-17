@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: goto1.p (21, 2): undefined state
-OUT: goto1.p (27, 5): invalid payload type in goto
-OUT: goto1.p (31, 15): undefined state
+OUT: goto1.p (21, 2): Undefined state
+OUT: goto1.p (27, 5): Invalid payload type in goto
+OUT: goto1.p (31, 15): Undefined state
 OUT: Compilation failed
 EXIT: -1

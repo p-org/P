@@ -1,10 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: typedef.p (1, 6): type depends on itself
-OUT: typedef.p (1, 21): type depends on itself
-OUT: typedef.p (2, 6): type depends on itself
-OUT: typedef.p (2, 16): type depends on itself
-OUT: typedef.p (13, 9): undefined type
+OUT: ? (0, 0): Undefined type: X
+OUT: typedef.p (1, 1): Type depends on itself
+OUT: typedef.p (2, 1): Type depends on itself
 OUT: Compilation failed
 EXIT: -1

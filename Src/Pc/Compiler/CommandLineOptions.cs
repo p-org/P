@@ -267,7 +267,7 @@
 
         private bool IsLegalUnitName(string unitFileName)
         {
-            return System.Text.RegularExpressions.Regex.IsMatch(unitFileName, "^[A-Za-z_][A-Za-z_0-9]*");
+            return System.Text.RegularExpressions.Regex.IsMatch(unitFileName, "^[A-Za-z_][A-Za-z_0-9]*$");
         }
 
         private bool IsLegalPFile(string fileName, out string fullPathName)

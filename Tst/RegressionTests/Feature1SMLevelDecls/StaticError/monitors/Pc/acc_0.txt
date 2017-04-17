@@ -1,19 +1,19 @@
 =================================
          Console output          
 =================================
-OUT: monitors.p (9, 3): spec machine cannot be created
+OUT: monitors.p (9, 3): Cannot create a spec machine
 OUT: monitors.p (10, 3): Undefined machine or interface type
 OUT: monitors.p (11, 3): Undefined machine or interface type
 OUT: monitors.p (14, 3): Multiple actions over the same event
 OUT: monitors.p (15, 3): Multiple actions over the same event
-OUT: monitors.p (24, 4): invalid payload type in raise (cannot send null value)
-OUT: monitors.p (25, 4): invalid payload type in raise
-OUT: monitors.p (34, 3): defer not allowed in spec machine
+OUT: monitors.p (24, 4): Invalid payload type in raise (cannot send null value)
+OUT: monitors.p (25, 4): Invalid payload type in raise
+OUT: monitors.p (34, 3): Event cannot be deferred in spec machine
 OUT: monitors.p (34, 3): Multiple actions over the same event
 OUT: monitors.p (35, 3): Multiple actions over the same event
-OUT: monitors.p (36, 24): spec may not use this keyword or perform nondeterministic choice or create machines or execute send
+OUT: monitors.p (36, 24): $, $$, this, new, send, announce, receive, and pop not allowed in spec machines
 OUT: monitors.p (38, 4): Undefined machine or interface type
 OUT: monitors.p (39, 4): Undefined machine or interface type
-OUT: monitors.p (43, 3): null transitions not allowed in spec machine
+OUT: monitors.p (43, 3): Transition on null event not allowed in spec machine
 OUT: Compilation failed
 EXIT: -1

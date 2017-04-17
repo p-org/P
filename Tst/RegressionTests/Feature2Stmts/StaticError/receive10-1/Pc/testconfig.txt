@@ -1,4 +1,4 @@
-arg: ..\receive10_1.p
+arg: ..\receive10-1.p
 arg: /shortFileNames
 arg: /test
 arg: /outputDir:..\.

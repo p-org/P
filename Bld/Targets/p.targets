@@ -31,12 +31,13 @@
       </ItemGroup>
 
       <Message Importance="high" Text="########## compiling p files @(PCompile)  ##################" />
-      <Exec Command="$(DropFolder)\Binaries\pc.exe $(PCompileOptions) @(PCompile->'%(FullPath)',' ')"/>
+      <Exec Command="$(DropFolder)\Binaries\pc.exe $(PCompileOptions) @(PLibraryReference->'/r:%(FullPath)',' ') @(PCompile->'%(FullPath)',' ')"/>
       <Message Importance="high" Text="########## compiling p files complete ##################" />
 
     </Target>
 
   <Target Name="LinkP" Inputs="@(PLink);" Outputs="$(PGeneratedDir)\linker.c;$(PGeneratedDir)\linker.h"
+          Condition="'@(Link)' != ''"
           DependsOnTargets="CompileP" BeforeTargets="BeforeBuildGenerateSources" >
     <ItemGroup>
       <FileWrites Include="$(PGeneratedDir)\linker.c" />
@@ -49,7 +50,7 @@
     </ItemGroup>
     
     <Message Importance="high" Text="########## generating p linker.c  ##################" />
-    <Exec Command="$(DropFolder)\Binaries\pc.exe $(PLinkOptions) /r:@(PLink)"/>
+    <Exec Command="$(DropFolder)\Binaries\pc.exe $(PLinkOptions) @(PLibraryReference->'/r:%(FullPath)',' ') /r:@(PLink)"/>
     <Message Importance="high" Text="########## generating p linker complete ##################" />
   </Target>
 

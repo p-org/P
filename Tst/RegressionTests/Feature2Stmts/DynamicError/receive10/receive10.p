@@ -1,5 +1,6 @@
-// This sample captures the behavior of null inside receive. This regression should be involved with the -m option in zing.
-// The traces reported should contain only 2 traces assert at line 30 and assert at 36. The unhandled because of send this, E, 10; should not happen.
+// This sample captures the behavior of null inside receive. This regression should be invoked with the -m option in zing.
+// The traces reported should contain only 2 traces assert at line 30 (this test) and assert at 36 (test receive10_1). 
+// The unhandled because of send this, E, 10; should not happen.
 event E : int;
 event F;
 event Unit;

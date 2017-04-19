@@ -58,7 +58,7 @@ extern "C"{
 		PRT_VALUE_KIND_INT = 2,    /**< The kind of int values                  */
 		PRT_VALUE_KIND_EVENT = 3,    /**< The kind of event id values             */
 		PRT_VALUE_KIND_MID = 4,    /**< The kind of machine id values   */
-		PRT_VALUE_KIND_FORGN = 5,    /**< The kind of all foreign values          */
+		PRT_VALUE_KIND_FOREIGN = 5,    /**< The kind of all foreign values          */
 		PRT_VALUE_KIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
 		PRT_VALUE_KIND_SEQ = 7,    /**< The kind of all sequence values         */
 		PRT_VALUE_KIND_MAP = 8,    /**< The kind of all map values              */
@@ -74,7 +74,7 @@ extern "C"{
 			PRT_INT32   nt;                 /**< An integer value           */
 			PRT_UINT32  ev;                 /**< An event id value          */
 			struct PRT_MACHINEID *mid;      /**< A machine id value */
-			struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
+			struct PRT_FOREIGNVALUE *frgn;	/**< A foreign value            */
 			struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
 			struct PRT_SEQVALUE *seq;		/**< A sequence value	        */
 			struct PRT_MAPVALUE *map;		/**< A map value		        */
@@ -125,11 +125,11 @@ extern "C"{
 	} PRT_MAPNODE;
 
 	/** A foreign value is foreign type paired with a char *. */
-	typedef struct PRT_FORGNVALUE
+	typedef struct PRT_FOREIGNVALUE
 	{
 		PRT_UINT32            typeTag;    /**< The index of the foreign type. */
 		PRT_UINT64			  value;      /**< The foreign value. */
-	} PRT_FORGNVALUE;
+	} PRT_FOREIGNVALUE;
 #endif
 
 	/** Makes a default value of an arbitrary type. The defaults (def) are as follows:

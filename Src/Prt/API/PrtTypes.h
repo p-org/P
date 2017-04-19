@@ -34,7 +34,7 @@ typedef enum PRT_TYPE_KIND
 	PRT_KIND_ANY    = 0,   /**< The kind of the `any` type        */
 	PRT_KIND_BOOL   = 1,   /**< The kind of the `bool` type       */
 	PRT_KIND_EVENT  = 2,   /**< The kind of the `event` type      */
-	PRT_KIND_FORGN  = 3,   /**< The kind of all foreign types     */
+	PRT_KIND_FOREIGN  = 3,   /**< The kind of all foreign types     */
 	PRT_KIND_MACHINE    = 4,   /**< The kind of the `MACHINE` type         */
 	PRT_KIND_INT    = 5,   /**< The kind of the `int` type        */
 	PRT_KIND_MAP    = 6,   /**< The kind of all map types         */
@@ -102,41 +102,41 @@ typedef struct PRT_TUPTYPE
 	PRT_TYPE      **fieldTypes;   /**< Array of field types; length = arity */
 } PRT_TUPTYPE;
 
-/** The PRT_FORGN_MKDEF function is called whenever a default foreign value is created.
+/** The PRT_FOREIGN_MKDEF function is called whenever a default foreign value is created.
 */
-typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_MKDEF)(void);
+typedef PRT_UINT64(PRT_CALL_CONV *PRT_FOREIGN_MKDEF)(void);
 
-/** The PRT_FORGN_CLONE function is called whenever a foreign value needs to be cloned.
+/** The PRT_FOREIGN_CLONE function is called whenever a foreign value needs to be cloned.
 *   The cloning semantics depends on the memory management strategy of the client.
-*   @see PRT_FORGN_FREE
+*   @see PRT_FOREIGN_FREE
 */
-typedef PRT_UINT64(PRT_CALL_CONV *PRT_FORGN_CLONE)(_In_ PRT_UINT64 frgnVal);
+typedef PRT_UINT64(PRT_CALL_CONV *PRT_FOREIGN_CLONE)(_In_ PRT_UINT64 frgnVal);
 
-/** The PRT_FORGN_FREE function is called whenever a foreign value will never be used again.
-*   The semantics of PRT_FORGN_FREE depends on the memory management strategy of the client.
-*   @see PRT_FORGN_CLONE
+/** The PRT_FOREIGN_FREE function is called whenever a foreign value will never be used again.
+*   The semantics of PRT_FOREIGN_FREE depends on the memory management strategy of the client.
+*   @see PRT_FOREIGN_CLONE
 */
-typedef void(PRT_CALL_CONV *PRT_FORGN_FREE)(_Inout_ PRT_UINT64 frgnVal);
+typedef void(PRT_CALL_CONV *PRT_FOREIGN_FREE)(_Inout_ PRT_UINT64 frgnVal);
 
-/** The PRT_FORGN_GETHASHCODE function is called to get a hashcode for a foreign value.
+/** The PRT_FOREIGN_GETHASHCODE function is called to get a hashcode for a foreign value.
 *   The semantics depends of the client's definition of value equality. If two values
 *   are equal, then the function must return the same hashcode.
-*   @see PRT_FORGN_GETHASHCODE
+*   @see PRT_FOREIGN_GETHASHCODE
 */
-typedef PRT_UINT32(PRT_CALL_CONV *PRT_FORGN_GETHASHCODE)(_In_ PRT_UINT64 frgnVal);
+typedef PRT_UINT32(PRT_CALL_CONV *PRT_FOREIGN_GETHASHCODE)(_In_ PRT_UINT64 frgnVal);
 
-/** The PRT_FORGN_TOSTRING function is called to convert the foreign value to string.
+/** The PRT_FOREIGN_TOSTRING function is called to convert the foreign value to string.
 *   The programmer should provide appropriate function for converting the value to string that needs to be printed for logging
-*   @see PRT_FORGN_TOSTRING
+*   @see PRT_FOREIGN_TOSTRING
 */
-typedef PRT_STRING(PRT_CALL_CONV *PRT_FORGN_TOSTRING)(_In_ PRT_UINT64 frgnVal);
+typedef PRT_STRING(PRT_CALL_CONV *PRT_FOREIGN_TOSTRING)(_In_ PRT_UINT64 frgnVal);
 
-/** The PRT_FORGN_ISEQUAL function tests if two values are equal.
+/** The PRT_FOREIGN_ISEQUAL function tests if two values are equal.
 *   Equality semantics is determined by the client. If two values
 *   are equal, then they should also have the same hashcode.
-*   @see PRT_FORGN_GETHASHCODE
+*   @see PRT_FOREIGN_GETHASHCODE
 */
-typedef PRT_BOOLEAN(PRT_CALL_CONV *PRT_FORGN_ISEQUAL)(_In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT64 frgnVal2);
+typedef PRT_BOOLEAN(PRT_CALL_CONV *PRT_FOREIGN_ISEQUAL)(_In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT64 frgnVal2);
 
 /** Represents a P foreign type declaration */
 typedef struct PRT_FOREIGNTYPEDECL
@@ -144,12 +144,12 @@ typedef struct PRT_FOREIGNTYPEDECL
 	PRT_UINT32       declIndex;     /**< The index of this type in an array of foreign type decls  */
 	PRT_STRING       name;          /**< The name of this type                                     */
 
-	PRT_FORGN_MKDEF       mkDefValueFun; /**< Function that constructs a default value */
-	PRT_FORGN_CLONE       cloneFun;      /**< Function that clones a value */
-	PRT_FORGN_FREE        freeFun;       /**< Function that frees a value */
-	PRT_FORGN_GETHASHCODE hashFun;       /**< Function that hashes a value */
-	PRT_FORGN_ISEQUAL     isEqualFun;    /**< Function that tests equality of values */
-	PRT_FORGN_TOSTRING    toStringFun;   /**< Function that converts a value to a string */
+	PRT_FOREIGN_MKDEF       mkDefValueFun; /**< Function that constructs a default value */
+	PRT_FOREIGN_CLONE       cloneFun;      /**< Function that clones a value */
+	PRT_FOREIGN_FREE        freeFun;       /**< Function that frees a value */
+	PRT_FOREIGN_GETHASHCODE hashFun;       /**< Function that hashes a value */
+	PRT_FOREIGN_ISEQUAL     isEqualFun;    /**< Function that tests equality of values */
+	PRT_FOREIGN_TOSTRING    toStringFun;   /**< Function that converts a value to a string */
 
 	PRT_UINT32      nAnnotations;   /**< Number of annotations                              */
 	void            **annotations;  /**< An array of annotations                            */

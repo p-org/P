@@ -740,10 +740,10 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
     /**********   Generate contents of code file     ***********/
     /*************************************************************/
 
-	COut(0, def) :- ModelType(name, _), id = toOrdinal(name, 0, { n | ModelType(n, _) }), cn = strJoin("P_FORGN_TYPE_", name), 
+	COut(0, def) :- ModelType(name, _), id = toOrdinal(name, 0, { n | ModelType(n, _) }), cn = strJoin("P_FOREIGN_TYPE_", name), 
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
 	COut(0, def) :- size = count({n | ModelType(n, _)}),
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_FORGN_TYPES_COUNT", IntLit(size, DEC, NIL)). 
+					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_FOREIGN_TYPES_COUNT", IntLit(size, DEC, NIL)). 
 
 	COut(0, def) :- EventId(_, id, cn),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
@@ -944,7 +944,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	ForeignTypeDeclConcat(m, arr) :- 
 							ModelType(name, _), m = toOrdinal(name, 0, { n | ModelType(n, _) }),
-							foreignTypeName = strJoin("P_FORGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+							foreignTypeName = strJoin("P_FOREIGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
 							ForeignTypeDeclConcat(m + 1, after),  
 							arr = out.Args(def, after), 
 	                        def = UnApp(ADDR, Ident(foreignTypeStructName)).

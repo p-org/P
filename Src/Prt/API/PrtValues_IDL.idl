@@ -44,7 +44,7 @@ interface PrtValues_IDL
 		PRT_VALUE_KIND_INT = 2,    /**< The kind of int values                  */
 		PRT_VALUE_KIND_EVENT = 3,    /**< The kind of event id values             */
 		PRT_VALUE_KIND_MID = 4,    /**< The kind of (model) machine id values   */
-		PRT_VALUE_KIND_FORGN = 5,    /**< The kind of all foreign values          */
+		PRT_VALUE_KIND_FOREIGN = 5,    /**< The kind of all foreign values          */
 		PRT_VALUE_KIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
 		PRT_VALUE_KIND_SEQ = 7,    /**< The kind of all sequence values         */
 		PRT_VALUE_KIND_MAP = 8,    /**< The kind of all map values              */
@@ -60,7 +60,7 @@ interface PrtValues_IDL
 		case PRT_VALUE_KIND_INT: PRT_INT32   nt;							/**< An integer value           */
 		case PRT_VALUE_KIND_EVENT: PRT_UINT32  ev;							/**< An event id value          */
 		case PRT_VALUE_KIND_MID: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
-		case PRT_VALUE_KIND_FORGN: [unique] struct PRT_FORGNVALUE *frgn;	/**< A foreign value            */
+		case PRT_VALUE_KIND_FOREIGN: [unique] struct PRT_FOREIGNVALUE *frgn;	/**< A foreign value            */
 		case PRT_VALUE_KIND_TUPLE:[unique] struct PRT_TUPVALUE *tuple;		/**< A (named) tuple value      */
 		case PRT_VALUE_KIND_SEQ:[unique] struct PRT_SEQVALUE *seq;			/**< A sequence value	        */
 		case PRT_VALUE_KIND_MAP:[unique] struct PRT_MAPVALUE *map;			/**< A map value		        */
@@ -119,9 +119,9 @@ interface PrtValues_IDL
 	} PRT_MAPNODE;
 
 	/** A foreign value is foreign type paired with a char *. */
-	typedef struct PRT_FORGNVALUE
+	typedef struct PRT_FOREIGNVALUE
 	{
 		PRT_UINT32            typeTag;    /**< The index of the foreign type. */
 		PRT_UINT64			  value;      /**< The foreign value. */
-	} PRT_FORGNVALUE;
+	} PRT_FOREIGNVALUE;
 }

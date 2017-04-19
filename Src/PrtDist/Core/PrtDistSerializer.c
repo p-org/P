@@ -57,7 +57,7 @@ PrtDistSerializeValue(
 	case PRT_VALUE_KIND_MID:
 	case PRT_VALUE_KIND_INT:
 		return PrtCloneValue(value);
-	case PRT_VALUE_KIND_FORGN:
+	case PRT_VALUE_KIND_FOREIGN:
 	{
 		PrtAssert(PRT_FALSE, "Invalid type");
 		return NULL;
@@ -155,7 +155,7 @@ PrtDistDeserializeValue(
 	case PRT_VALUE_KIND_MID:
 	case PRT_VALUE_KIND_INT:
 		return PrtCloneValue(value);
-	case PRT_VALUE_KIND_FORGN:
+	case PRT_VALUE_KIND_FOREIGN:
 	{
 		PrtAssert(PRT_FALSE, "Foreign Type not Expected");
 		return NULL;

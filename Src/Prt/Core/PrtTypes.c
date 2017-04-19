@@ -34,7 +34,7 @@ PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 PRT_TYPE * PRT_CALL_CONV PrtMkForeignType(_In_ PRT_FOREIGNTYPEDECL *foreignType)
 {
 	PRT_TYPE *type = (PRT_TYPE *)PrtMalloc(sizeof(PRT_TYPE));
-	type->typeKind = PRT_KIND_FORGN;
+	type->typeKind = PRT_KIND_FOREIGN;
 	type->typeUnion.foreignType = foreignType;
 	return type;
 }
@@ -150,7 +150,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *su
 	}
 	case PRT_KIND_BOOL:
 	case PRT_KIND_INT:
-	case PRT_KIND_FORGN:
+	case PRT_KIND_FOREIGN:
 	{
 		//// These types do not have any proper subtypes.
 		return (subKind == supKind && subType->typeUnion.foreignType->declIndex == supType->typeUnion.foreignType->declIndex) ? PRT_TRUE : PRT_FALSE;
@@ -273,7 +273,7 @@ PRT_TYPE * PRT_CALL_CONV PrtCloneType(_In_ PRT_TYPE *type)
 	{
 		return PrtMkPrimitiveType(kind);
 	}
-	case PRT_KIND_FORGN:
+	case PRT_KIND_FOREIGN:
 	{
 		return PrtMkForeignType(type->typeUnion.foreignType);
 	}
@@ -328,7 +328,7 @@ void PRT_CALL_CONV PrtFreeType(_Inout_ PRT_TYPE *type)
 	case PRT_KIND_EVENT:
 	case PRT_KIND_MACHINE:
 	case PRT_KIND_INT:
-	case PRT_KIND_FORGN:
+	case PRT_KIND_FOREIGN:
 	case PRT_KIND_NULL:
 		type->typeKind = PRT_TYPE_KIND_CANARY;
 		PrtFree(type);
@@ -407,7 +407,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE *type)
 		case PRT_KIND_INT:
 		case PRT_KIND_NULL:
 			return PRT_TRUE;
-		case PRT_KIND_FORGN:
+		case PRT_KIND_FOREIGN:
 		{
 			return type->typeUnion.foreignType->declIndex < prtNumForeignTypeDecls;
 		}

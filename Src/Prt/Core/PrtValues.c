@@ -202,13 +202,13 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 	_In_ PRT_UINT64 value,
 	_In_ PRT_TYPE *type)
 {
-	PrtAssert(type->typeKind == PRT_KIND_FORGN, "Bad type");
+	PrtAssert(type->typeKind == PRT_KIND_FOREIGN, "Bad type");
 	PRT_UINT32 typeTag = type->typeUnion.foreignType->declIndex;
 	PrtAssert(typeTag < prtNumForeignTypeDecls && prtForeignTypeDecls[typeTag]->declIndex == typeTag, "Bad type tag");
 
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-	PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-	retVal->discriminator = PRT_VALUE_KIND_FORGN;
+	PRT_FOREIGNVALUE *frgn = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
+	retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
 	retVal->valueUnion.frgn = frgn;
 	frgn->typeTag = typeTag;
 	frgn->value = prtForeignTypeDecls[typeTag]->cloneFun(value);
@@ -217,7 +217,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 
 PRT_UINT64 PRT_CALL_CONV PrtGetForeignValue(PRT_VALUE* v)
 {
-	PrtAssert(v->discriminator == PRT_VALUE_KIND_FORGN, "Input value is not a foreign value");
+	PrtAssert(v->discriminator == PRT_VALUE_KIND_FOREIGN, "Input value is not a foreign value");
 	return v->valueUnion.frgn->value;
 }
 
@@ -239,13 +239,13 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 		return PrtMkIntValue(0);
 	case PRT_KIND_NULL:
 		return PrtMkNullValue();
-	case PRT_KIND_FORGN:
+	case PRT_KIND_FOREIGN:
 	{
 		PRT_UINT32 declIndex = type->typeUnion.foreignType->declIndex;
 		PrtAssert(declIndex < prtNumForeignTypeDecls && prtForeignTypeDecls[declIndex]->declIndex == declIndex, "Invalid type expression.");
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
-		PRT_FORGNVALUE *frgn = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-		retVal->discriminator = PRT_VALUE_KIND_FORGN;
+		PRT_FOREIGNVALUE *frgn = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
 		retVal->valueUnion.frgn = frgn;
 		frgn->typeTag = declIndex;
 		frgn->value = prtForeignTypeDecls[declIndex]->mkDefValueFun();
@@ -1054,7 +1054,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		return PrtGetHashCodeUInt32(0x01000000 ^ PrtGetHashCodeMachineId(*inputValue->valueUnion.mid));
 	case PRT_VALUE_KIND_INT:
 		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)inputValue->valueUnion.nt));
-	case PRT_VALUE_KIND_FORGN:
+	case PRT_VALUE_KIND_FOREIGN:
 	{
 		return 0x08000000 ^ prtForeignTypeDecls[inputValue->valueUnion.frgn->typeTag]->hashFun(inputValue->valueUnion.frgn->value);
 	}
@@ -1180,10 +1180,10 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 	case PRT_VALUE_KIND_INT:
 		return
 			value1->valueUnion.nt == value2->valueUnion.nt ? PRT_TRUE : PRT_FALSE;
-	case PRT_VALUE_KIND_FORGN:
+	case PRT_VALUE_KIND_FOREIGN:
 	{
-		PRT_FORGNVALUE *fVal1 = value1->valueUnion.frgn;
-		PRT_FORGNVALUE *fVal2 = value2->valueUnion.frgn;
+		PRT_FOREIGNVALUE *fVal1 = value1->valueUnion.frgn;
+		PRT_FOREIGNVALUE *fVal2 = value2->valueUnion.frgn;
 		return (fVal1->typeTag == fVal2->typeTag) ? prtForeignTypeDecls[fVal1->typeTag]->isEqualFun(fVal1->value, fVal2->value) : PRT_FALSE;
 	}
 	case PRT_VALUE_KIND_MAP:
@@ -1274,12 +1274,12 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 		return PrtMkMachineValue(*value->valueUnion.mid);
 	case PRT_VALUE_KIND_INT:
 		return PrtMkIntValue(value->valueUnion.nt);
-	case PRT_VALUE_KIND_FORGN:
+	case PRT_VALUE_KIND_FOREIGN:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
-		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
-		PRT_FORGNVALUE *cVal = (PRT_FORGNVALUE *)PrtMalloc(sizeof(PRT_FORGNVALUE));
-		retVal->discriminator = PRT_VALUE_KIND_FORGN;
+		PRT_FOREIGNVALUE *fVal = value->valueUnion.frgn;
+		PRT_FOREIGNVALUE *cVal = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
+		retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
 		retVal->valueUnion.frgn = cVal;
 		cVal->typeTag = fVal->typeTag;
 		cVal->value = prtForeignTypeDecls[fVal->typeTag]->cloneFun(fVal->value);
@@ -1380,7 +1380,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 	}
 	case PRT_VALUE_KIND_BOOL:
 	case PRT_VALUE_KIND_INT:
-	case PRT_VALUE_KIND_FORGN:
+	case PRT_VALUE_KIND_FOREIGN:
 	case PRT_VALUE_KIND_MAP:
 	case PRT_VALUE_KIND_TUPLE:
 	case PRT_VALUE_KIND_SEQ:
@@ -1424,8 +1424,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 		return (vkind == PRT_VALUE_KIND_MID || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_INT:
 		return vkind == PRT_VALUE_KIND_INT ? PRT_TRUE : PRT_FALSE;
-	case PRT_KIND_FORGN:
-		return (vkind == PRT_VALUE_KIND_FORGN && value->valueUnion.frgn->typeTag == type->typeUnion.foreignType->declIndex) ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_FOREIGN:
+		return (vkind == PRT_VALUE_KIND_FOREIGN && value->valueUnion.frgn->typeTag == type->typeUnion.foreignType->declIndex) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MAP:
 	{
 		if (vkind != PRT_VALUE_KIND_MAP)
@@ -1549,9 +1549,9 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 		PrtFree(value);
 		break;
 	}
-	case PRT_VALUE_KIND_FORGN:
+	case PRT_VALUE_KIND_FOREIGN:
 	{
-		PRT_FORGNVALUE *fVal = value->valueUnion.frgn;
+		PRT_FOREIGNVALUE *fVal = value->valueUnion.frgn;
 		prtForeignTypeDecls[fVal->typeTag]->freeFun(fVal->value);
 		PrtFree(fVal);
 		PrtFree(value);
@@ -1637,8 +1637,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 	case PRT_VALUE_KIND_NULL:
 		return value->discriminator == PRT_VALUE_KIND_NULL &&
 			value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL;
-	case PRT_VALUE_KIND_FORGN:
-		return value->discriminator == PRT_VALUE_KIND_FORGN &&
+	case PRT_VALUE_KIND_FOREIGN:
+		return value->discriminator == PRT_VALUE_KIND_FOREIGN &&
 			value->valueUnion.frgn != NULL &&
 			value->valueUnion.frgn->typeTag < prtNumForeignTypeDecls &&
 			prtForeignTypeDecls[value->valueUnion.frgn->typeTag]->declIndex == value->valueUnion.frgn->typeTag;

@@ -277,13 +277,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
 
 	//// Extern declarations for foreign types
-	HOut(0, def) :- in.ModelType(name, _), foreignTypeName = strJoin("P_FORGN_TYPE_", name),
+	HOut(0, def) :- in.ModelType(name, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name),
 						def = out.VarDef(
 							      EXTERN, 
 								  NmdType(NIL, "PRT_UINT32"), 
 								  foreignTypeName, 
 								  NIL).
-	HOut(0, def) :- in.ModelType(name, _), foreignTypeName = strJoin("P_FORGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+	HOut(0, def) :- in.ModelType(name, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
 						def = out.VarDef(
 							      EXTERN, 
 								  NmdType(NIL, "PRT_FOREIGNTYPEDECL"), 
@@ -298,7 +298,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = FunDef(
 					  NIL,
 					  funType,
-					  strJoin("PRT_FORGN_MKDEF_", strJoin(name, "_IMPL")),
+					  strJoin("PRT_FOREIGN_MKDEF_", strJoin(name, "_IMPL")),
 					  params,
 					  UNKNOWN).
 
@@ -309,7 +309,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = FunDef(
 					  NIL,
 					  funType,
-					  strJoin("PRT_FORGN_CLONE_", strJoin(name, "_IMPL")),
+					  strJoin("PRT_FOREIGN_CLONE_", strJoin(name, "_IMPL")),
 					  params,
 					  UNKNOWN).
 
@@ -320,7 +320,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = FunDef(
 					  NIL,
 					  funType,
-					  strJoin("PRT_FORGN_FREE_", strJoin(name, "_IMPL")),
+					  strJoin("PRT_FOREIGN_FREE_", strJoin(name, "_IMPL")),
 					  params,
 					  UNKNOWN).
 
@@ -331,7 +331,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = FunDef(
 					  NIL,
 					  funType,
-					  strJoin("PRT_FORGN_GETHASHCODE_", strJoin(name, "_IMPL")),
+					  strJoin("PRT_FOREIGN_GETHASHCODE_", strJoin(name, "_IMPL")),
 					  params,
 					  UNKNOWN).
 
@@ -342,7 +342,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = FunDef(
 					  NIL,
 					  funType,
-					  strJoin("PRT_FORGN_TOSTRING_", strJoin(name, "_IMPL")),
+					  strJoin("PRT_FOREIGN_TOSTRING_", strJoin(name, "_IMPL")),
 					  params,
 					  UNKNOWN).
 
@@ -357,7 +357,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = FunDef(
 					  NIL,
 					  funType,
-					  strJoin("PRT_FORGN_ISEQUAL_", strJoin(name, "_IMPL")),
+					  strJoin("PRT_FOREIGN_ISEQUAL_", strJoin(name, "_IMPL")),
 					  params,
 					  UNKNOWN).
 
@@ -615,8 +615,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.NameType(name), in.ModelType(name, _),
 								defs = out.Section(before, def),
 								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
-								foreignTypeName = strJoin("P_FORGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
-                                typeStruct = out.Init(Args(Ident("PRT_KIND_FORGN"), 
+								foreignTypeName = strJoin("P_FOREIGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+                                typeStruct = out.Init(Args(Ident("PRT_KIND_FOREIGN"), 
 								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(foreignTypeStructName))), NIL)), NIL))).						              
 	
 	//// Complex type Seq 
@@ -1392,17 +1392,17 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								  machineStructName, 
 								  init).
 
-	COut(13, def) :- in.ModelType(name, _), in.ExportedType(name, _), foreignTypeName = strJoin("P_FORGN_TYPE_", name),
+	COut(13, def) :- in.ModelType(name, _), in.ExportedType(name, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name),
 					 foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
 	                        init = Init(
 							   Args(IntLit(0, DEC, U),
 							   Args(StringLit(name, NIL),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_MKDEF_", strJoin(name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_CLONE_", strJoin(name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_FREE_", strJoin(name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_GETHASHCODE_", strJoin(name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_ISEQUAL_", strJoin(name, "_IMPL")))),
-							   Args(UnApp(ADDR, Ident(strJoin("PRT_FORGN_TOSTRING_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_MKDEF_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_CLONE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_FREE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_GETHASHCODE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_ISEQUAL_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_TOSTRING_", strJoin(name, "_IMPL")))),
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   NIL))))))))))),

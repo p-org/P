@@ -31,8 +31,7 @@ machine B {
 				case F: { send this, E, 10; assert(false);}   //fails
 				case null : {raise F;}
 			}
-		
-			
+					
 		}
 		on F goto X with { assert false;}
 	}

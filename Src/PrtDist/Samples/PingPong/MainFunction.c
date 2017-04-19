@@ -25,11 +25,19 @@ char* GetApplicationName()
 {
     char* last = strrchr(FirstArgument, '/');
     char* last2 = strrchr(FirstArgument, '\\');
-    if (last2 > last)
+
+    if (last != NULL)
     {
-        last = last2;
+        return last + 1;
     }
-    return last + 1;
+    else if (last2 != NULL)
+    {
+        return last2 + 1;
+    }
+    else
+    {
+        return FirstArgument;
+    }
 }
 
 void PrintUsage() {

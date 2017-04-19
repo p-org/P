@@ -1,3 +1,13 @@
+model type TimerPtr = machine;
+
+// events from client to timer
+event START: int;
+event CANCEL;
+// events from timer to client
+event TIMEOUT: TimerPtr;
+event CANCEL_SUCCESS: TimerPtr;
+event CANCEL_FAILURE: TimerPtr;
+
 //Functions for interacting with the timer machine
 model fun CreateTimer(owner : machine): TimerPtr {
 	var m: machine;

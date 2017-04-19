@@ -29,7 +29,7 @@
         <FileWrites Include="$(PGeneratedDir)\$(ProjectName).c" />
         <FileWrites Include="$(PGeneratedDir)\$(ProjectName).h" />
       </ItemGroup>
-
+      
       <Message Importance="high" Text="########## compiling p files @(PCompile)  ##################" />
       <Exec Command="$(DropFolder)\Binaries\pc.exe $(PCompileOptions) @(PLibraryReference->'/r:%(FullPath)',' ') @(PCompile->'%(FullPath)',' ')"/>
       <Message Importance="high" Text="########## compiling p files complete ##################" />
@@ -37,7 +37,7 @@
     </Target>
 
   <Target Name="LinkP" Inputs="@(PLink);" Outputs="$(PGeneratedDir)\linker.c;$(PGeneratedDir)\linker.h"
-          Condition="'@(Link)' != ''"
+          Condition="'$(LinkCompiled)'=='true'"
           DependsOnTargets="CompileP" BeforeTargets="BeforeBuildGenerateSources" >
     <ItemGroup>
       <FileWrites Include="$(PGeneratedDir)\linker.c" />

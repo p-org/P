@@ -1,12 +1,4 @@
-model type TimerPtr = machine;
 
-// events from client to timer
-event START: int;
-event CANCEL;
-// events from timer to client
-event TIMEOUT: TimerPtr;
-event CANCEL_SUCCESS: TimerPtr;
-event CANCEL_FAILURE: TimerPtr;
 
 //make sure that the ints here match with the enums in POrbTopics.h
 enum Topics {

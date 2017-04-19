@@ -17,7 +17,7 @@ machine Client {
     entry { 
 	  print "Client sending PING\n";
       announce M_PING, this;
-      send server, PING, this; 
+      send server, PING, this;
       raise SUCCESS; 
     } 
     on SUCCESS goto WaitPong; 

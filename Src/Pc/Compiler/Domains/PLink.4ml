@@ -773,7 +773,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	COut(0, def) :- EventId(NULL, id, _), 
 					init = Init(
-							Args(Ident("PRT_VALUE_KIND_EVENT"),
+							Args(Ident("PRT_VALUE_KIND_NULL"),
 							Args(IntLit(id, DEC, U), 
 							NIL))),
 					def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), "P_GEND_VALUE_EVENT_NULL", init).

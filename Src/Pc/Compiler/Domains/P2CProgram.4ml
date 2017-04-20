@@ -50,8 +50,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.GlobalFunCreates(m, iorm) :- in.GlobalFunCreates(m, iorm).
 	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
 
-	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id)/*, ExportedEvent(name)*/.
-	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id)/*, ExportedEvent(name)*/, in.TypeExpansion(type, etype).
+	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id).
+	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id), in.TypeExpansion(type, etype).
 
 	link.ModelType(name, id) :- in.ModelType(name, id).
 	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), in.ExportedType(name, _), in.TypeExpansion(type, etype).
@@ -2375,7 +2375,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 											 Args(doClone,
 											      NIL))))).
 
-	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, src, x), e = in.BinApp(IDX, _, _, _), 	                       
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), e = in.BinApp(IDX, _, _, _), 	                       
                            StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
 						   LhsTrans(c, LhsPath(s, e, _), egetter), 
 						   egetter = out.FunApp(Ident("PrtSeqGetNC"), Args(seq, Args(ndex, NIL))),

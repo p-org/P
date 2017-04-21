@@ -80,7 +80,7 @@ Trace-Log 3:
 Error:
 P Assertion failed:
 Expression: assert(tmp_4.bl,)
-Comment: receive10.p (30, 33): Assert failed
+Comment: receive10.p (31, 33): Assert failed
 Safety Error Trace
 Trace-Log 4:
 <CreateLog> Created Machine Main-0
@@ -97,4 +97,4 @@ Trace-Log 4:
 Error:
 P Assertion failed:
 Expression: assert(tmp_4.bl,)
-Comment: receive10.p (30, 33): Assert failed
+Comment: receive10.p (31, 33): Assert failed

@@ -12,7 +12,6 @@ CliegntMachine Declaration:
 machine ClientMachine : ClientInterface
 receives eResponse;
 sends eRequest;
-creates;
 {
   var server : ServerClientInterface;
   var nextReqId : int;

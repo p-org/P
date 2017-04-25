@@ -19,11 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{A57EA5EE-934D-41ED-9670-18AF76C52A96}</ProjectGuid>
-    <RootNamespace>FailureDetector</RootNamespace>
-    <ProjectName>FailureDetector</ProjectName>
+    <ProjectGuid>{3EC51A08-22A0-4BB8-A784-6516F0DC1474}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
+    <RootNamespace>Test</RootNamespace>
     <WindowsTargetPlatformVersion>$(WindowsSDKVer)</WindowsTargetPlatformVersion>
+    <ProjectName>PingPongSimple</ProjectName>
     <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -57,6 +57,8 @@
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
   </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -72,22 +74,22 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(PSdkFolder)\Samples\FailureDetector\</OutDir>
+    <OutDir>$(PSdkFolder)\Samples\PingPongSimple\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\obj\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(PSdkFolder)\Samples\FailureDetector\</OutDir>
+    <OutDir>$(PSdkFolder)\Samples\PingPongSimple\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\obj\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(PSdkFolder)\Samples\FailureDetector\</OutDir>
+    <OutDir>$(PSdkFolder)\Samples\PingPongSimple\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\obj\$(Platform)\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(PSdkFolder)\Samples\FailureDetector\</OutDir>
+    <OutDir>$(PSdkFolder)\Samples\PingPongSimple\</OutDir>
     <IntDir>$(ProjectDir)$(Configuration)\obj\$(Platform)\</IntDir>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -95,8 +97,8 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>$(StandardPDefinitions);_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(StandardPDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;..\..\..\Tst\Tools\DgmlMonitorLib;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -116,9 +118,9 @@
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>$(StandardPDefinitions);_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(StandardPDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;..\..\..\Tst\Tools\DgmlMonitorLib;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -134,9 +136,9 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;..\..\..\Tst\Tools\DgmlMonitorLib;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -154,9 +156,9 @@
       <WarningLevel>Level3</WarningLevel>
       <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <Optimization>MaxSpeed</Optimization>
-      <PreprocessorDefinitions>$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;..\..\..\Tst\Tools\DgmlMonitorLib;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -170,23 +172,36 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\ClientFiles\MainFunction.c" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <PCompile Include="Driver.p" />
-    <PCompile Include="FailureDetector.p" />
-    <PCompile Include="PrtDistHelp.p" />
+    <ClCompile Include="stdafx.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
+    <ClCompile Include="TestImpl.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="FailureDetector.p" />
-    <None Include="PrtDistHelp.p" />
+    <PCompile Include="test.p" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Tst\Tools\DgmlMonitorLib\DgmlMonitorLib.vcxproj">
+      <Project>{b81f7e46-ff83-4534-aba2-64a5c723fedb}</Project>
+    </ProjectReference>
     <ProjectReference Include="..\Timer\Timer.vcxproj">
       <Project>{25142dd0-bc85-4156-8691-416ff932d341}</Project>
     </ProjectReference>
     <PLibraryReference Include="..\Timer\PGenerated\Timer.4ml" />
-  </ItemGroup>  
+  </ItemGroup>
+  <ItemGroup>
+    <PCompile Include="events.p" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Events.p" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />
   <ImportGroup Label="ExtensionTargets">

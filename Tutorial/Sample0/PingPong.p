@@ -27,33 +27,3 @@ sends PING;
   }
 }
 
-machine Server : IServer
-receives PING, TIMEOUT;
-sends PONG, START;
-{ 
-  var timer: TimerPtr;
-  var client: IClient;
-
-  start state Init {  
-    entry { 
-	    print "Server created\n";
-	    timer = CreateTimer(this);
-	    goto WaitPing;
-    }
-  }
-
-  state WaitPing { 
-    on PING goto Sleep; 
-  }
-  
-  state Sleep { 
-    entry (m: IClient) {       
-      client =  m;
-      StartTimer(timer, 1000);
-    } 
-    on TIMEOUT goto WaitPing with { 
-	    print "Server sending PONG\n";
-      send client, PONG; 
-    }
-  }
-} 

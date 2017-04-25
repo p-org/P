@@ -5,7 +5,6 @@ Simple TestDriver machine that sets up the testing problem
 machine TestDriver_1Client1Server
 receives;
 sends;
-creates ServerClientInterface, ClientInterface;
  {
   start state Init {
     entry {
@@ -21,7 +20,6 @@ creates ServerClientInterface, ClientInterface;
 machine TestDriver_Refinement : ClientInterface 
 receives eResponse;
 sends eRequest;
-creates ServerClientInterface;
 {
   var nextReqId : int;
   var server: ServerClientInterface;

@@ -28,7 +28,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ZingParser", "Src\Parsers\Z
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandLine", "Src\Pc\CommandLine\CommandLine.csproj", "{48B4C337-CD13-4826-B6A1-DA97CE71511B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPongSimple", "Src\PrtDist\Samples\PingPongSimple\PingPongSimple.vcxproj", "{3EC51A08-22A0-4BB8-A784-6516F0DC1474}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPongSimple", "Src\Samples\PingPongSimple\PingPongSimple.vcxproj", "{3EC51A08-22A0-4BB8-A784-6516F0DC1474}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F8C72C0E-450C-4AE1-9885-31B8565C1D63} = {F8C72C0E-450C-4AE1-9885-31B8565C1D63}
 		{13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145} = {13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145}
@@ -47,7 +47,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RunPTool", "Tst\Tools\RunPT
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Samples", "Samples", "{D47A1CE9-D9FF-4CE8-B06F-D320FE9565E9}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ForeignTypes", "Src\Prt\Samples\ForeignTypes\ForeignTypes.vcxproj", "{65DF9D53-1461-43AE-9A50-43E7C4D55E05}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ForeignTypes", "Src\Samples\ForeignTypes\ForeignTypes.vcxproj", "{65DF9D53-1461-43AE-9A50-43E7C4D55E05}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F8C72C0E-450C-4AE1-9885-31B8565C1D63} = {F8C72C0E-450C-4AE1-9885-31B8565C1D63}
 		{13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145} = {13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145}
@@ -60,7 +60,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ForeignTypes", "Src\Prt\Sam
 		{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04} = {9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FailureDetector", "Src\PrtDist\Samples\TechFest2015-Demo\FailureDetector.vcxproj", "{A57EA5EE-934D-41ED-9670-18AF76C52A96}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FailureDetector", "Src\Samples\FailureDetector\FailureDetector.vcxproj", "{A57EA5EE-934D-41ED-9670-18AF76C52A96}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F8C72C0E-450C-4AE1-9885-31B8565C1D63} = {F8C72C0E-450C-4AE1-9885-31B8565C1D63}
 		{13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145} = {13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145}
@@ -75,7 +75,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FailureDetector", "Src\PrtD
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DgmlLogViewer", "Tst\Tools\DgmlLogViewer\DgmlLogViewer.csproj", "{1454DADA-E822-43A6-B523-5F0C992D17F5}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPong", "Src\PrtDist\Samples\PingPong\PingPong.vcxproj", "{21BB07E5-A4E6-4BD3-AFC4-61B13BB0B667}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPong", "Src\Samples\PingPong\PingPong.vcxproj", "{21BB07E5-A4E6-4BD3-AFC4-61B13BB0B667}"
 	ProjectSection(ProjectDependencies) = postProject
 		{F8C72C0E-450C-4AE1-9885-31B8565C1D63} = {F8C72C0E-450C-4AE1-9885-31B8565C1D63}
 		{13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145} = {13DCFB0E-A18A-4E6B-AE2E-F46A7B89A145}
@@ -88,7 +88,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPong", "Src\PrtDist\Sam
 		{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04} = {9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPongFast", "Src\PrtDist\Samples\PingPongFast\PingPongFast.vcxproj", "{2010A7BF-C537-4311-9EE6-34DB5D9464B5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPongFast", "Src\Samples\PingPongFast\PingPongFast.vcxproj", "{2010A7BF-C537-4311-9EE6-34DB5D9464B5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{2C375A16-2C95-45C6-96A7-2EA71C4A6471} = {2C375A16-2C95-45C6-96A7-2EA71C4A6471}
 		{48B4C337-CD13-4826-B6A1-DA97CE71511B} = {48B4C337-CD13-4826-B6A1-DA97CE71511B}
@@ -111,7 +111,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PRuntime", "Src\PTester\PRu
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTester", "Src\PTester\PTester\PTester.csproj", "{56FF7823-8BE6-4EEA-8B5D-656D801DC87D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Timer", "Src\PrtDist\Samples\Timer\Timer.vcxproj", "{25142DD0-BC85-4156-8691-416FF932D341}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Timer", "Src\Samples\Timer\Timer.vcxproj", "{25142DD0-BC85-4156-8691-416FF932D341}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

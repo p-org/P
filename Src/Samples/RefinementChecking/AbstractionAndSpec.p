@@ -1,7 +1,6 @@
 machine ServerAbstraction: ServerClientInterface
 receives eRequest;
 sends eResponse;
-creates;
 {
   start state Init {
     on eRequest do (payload: requestType){

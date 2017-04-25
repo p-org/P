@@ -113,6 +113,8 @@ Also note that the machine hosting the main machine does not host container mach
 
 int main(int argc, char *argv[])
 {
+	PrtInitialize(&P_GEND_PROGRAM);
+
     PRT_GUID processGuid;
     processGuid.data1 = 1;
     processGuid.data2 = 1; //nodeId

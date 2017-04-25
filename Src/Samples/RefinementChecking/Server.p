@@ -13,7 +13,6 @@ type HelperInterface(ServerHelperInterface) = { eProcessReq };
 machine ServerMachine : ServerClientInterface
 receives eReqSuccessful, eReqFailed, eRequest;
 sends eResponse, eProcessReq;
-creates HelperInterface;
 {
   var helper: HelperInterface;
 
@@ -44,7 +43,6 @@ creates HelperInterface;
 ****************************************************************/
 machine HelperMachine : HelperInterface
 sends eReqSuccessful, eReqFailed;
-creates;
 {
   var server: ServerHelperInterface;
   

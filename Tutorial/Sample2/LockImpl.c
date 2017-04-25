@@ -8,12 +8,12 @@ typedef struct LockContext {
 	PRT_VALUE *data;
 } LockContext;
 
-PRT_UINT64 PRT_FORGN_MKDEF_LockPtr_IMPL(void)
+PRT_UINT64 PRT_FOREIGN_MKDEF_LockPtr_IMPL(void)
 {
 	return 0;
 }
 
-PRT_UINT64 PRT_FORGN_CLONE_LockPtr_IMPL(PRT_UINT64 frgnVal)
+PRT_UINT64 PRT_FOREIGN_CLONE_LockPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	if (frgnVal == 0) return 0;
 	LockContext *lockContext = (LockContext *)frgnVal;
@@ -21,7 +21,7 @@ PRT_UINT64 PRT_FORGN_CLONE_LockPtr_IMPL(PRT_UINT64 frgnVal)
 	return frgnVal;
 }
 
-void PRT_FORGN_FREE_LockPtr_IMPL(PRT_UINT64 frgnVal)
+void PRT_FOREIGN_FREE_LockPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	if (frgnVal == 0) return;
 	LockContext *lockContext = (LockContext *)frgnVal;
@@ -33,12 +33,12 @@ void PRT_FORGN_FREE_LockPtr_IMPL(PRT_UINT64 frgnVal)
 	}
 }
 
-PRT_BOOLEAN PRT_FORGN_ISEQUAL_LockPtr_IMPL(PRT_UINT64 frgnVal1, PRT_UINT64 frgnVal2)
+PRT_BOOLEAN PRT_FOREIGN_ISEQUAL_LockPtr_IMPL(PRT_UINT64 frgnVal1, PRT_UINT64 frgnVal2)
 {
 	return frgnVal1 == frgnVal2;
 }
 
-PRT_STRING PRT_FORGN_TOSTRING_LockPtr_IMPL(PRT_UINT64 frgnVal)
+PRT_STRING PRT_FOREIGN_TOSTRING_LockPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	if (frgnVal == 0) return "";
 	LockContext *lockContext = (LockContext *)frgnVal;
@@ -47,7 +47,7 @@ PRT_STRING PRT_FORGN_TOSTRING_LockPtr_IMPL(PRT_UINT64 frgnVal)
 	return str;
 }
 
-PRT_UINT32 PRT_FORGN_GETHASHCODE_LockPtr_IMPL(PRT_UINT64 frgnVal)
+PRT_UINT32 PRT_FOREIGN_GETHASHCODE_LockPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	return (PRT_UINT32)frgnVal;
 }

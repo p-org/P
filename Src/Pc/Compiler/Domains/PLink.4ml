@@ -302,6 +302,13 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	//// receives list //// ER = union(MR(m)) \EP
 	ModuleReceives(modExpr, ev) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr, ix), MachineExports(m, ix), MachineReceives(m, ev), ev: NonNullEventName, no ModulePrivate(modExpr, ev).
 
+	/**********************************/
+	/*	Some common computation		  */
+	/**********************************/
+	AllInterfaceTypes ::= sub(InterfaceType).
+	NotSubsetInterfaces ::= (InterfaceType, InterfaceType).
+	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), count({ ev | MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev) }) != 0.
+
 	/**************************************************************************/
 	/**				Check that the module contruction is legal			  	  */
 	/**************************************************************************/
@@ -310,14 +317,14 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ModuleConstructionIllegal(id, m, "exported machine undefined in the module expression") 
 	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), no ModuleRenameMap(mod, m, _).
 
-	//// Export Operation 2 (\alpha not empty and is defined)
-	ModuleConstructionIllegal(id, ix, "exported interface not declared") 
+	//// Export Operation 2 (\alpha not empty and is declared)
+	ModuleConstructionIllegal(id, ix, "exported interface not defined") 
 	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, _, id), no InterfaceTypeDecl(ix, _, _, _).
 
-	//// Export Operation 3 (\alpha = MR(m)\EP)
-	ModuleConstructionIllegal(id, ix, "interface exported is not equal to the interface implemented by machine") 
+	//// Export Operation 3 (\alpha \subset MR(m)\EP)
+	ModuleConstructionIllegal(id, ix, "interface exported is not a subset of the (public) receive-set of the machine") 
 	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleRenameMap(mod, m, mach), 
-	impInterface = toList(#InterfaceType, NIL, {ev | MachineReceives(mach, ev), no ModulePrivate(mod, ev), ev: NonNullEventName}), InterfaceTypeDecl(ix, exInterface, _, _), exInterface != impInterface.
+	impInterface = toList(#InterfaceType, NIL, {ev | MachineReceives(mach, ev), no ModulePrivate(mod, ev), ev: NonNullEventName}), InterfaceTypeDecl(ix, exInterface, _, _), NotSubsetInterfaces(exInterface, impInterface).
 
 	//// Export Operation 4 (constructor type match)
 	ModuleConstructionIllegal(id, ix, "exported interface constructor type is not equal to the contructor type of implemented machine") 
@@ -329,8 +336,8 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 		InterfaceTypeDecl(ix, eIx, _, _), InterfaceTypeDecl(ix', eIx', _, _), eIx = eIx'.
 									
 	/// Export Operation 7 (permissions in mod-expression is disjoint from \alpha )
-	ModuleConstructionIllegal(id, ix, "after hiding the public events in receives or sends have private permission in them") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), InterfaceTypeDecl(ix, el, _, _), MemberOfInterfaceType(el, ev), PermEmbeddedInEvent(pt, perm), ModulePrivate(modExpr, perm).
+	ModuleConstructionIllegal(id, ix, "after export the public events in receives or sends have private permission in them") 
+	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), InterfaceTypeDecl(ix, el, _, _), MemberOfInterfaceType(el, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm).
 
 
 	////Rename Operation
@@ -493,6 +500,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	//// private machines created by a module are part of the module.
 	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M is not included in the module")
 	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), no ModuleContains(mod, newM).
+
 
 	/**************************************************************************/
 	/*			Refinement, Implementation and Test Decls are legal			  */

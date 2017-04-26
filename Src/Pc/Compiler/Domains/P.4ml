@@ -396,18 +396,17 @@ domain PStaticTyping extends PData, PError
 		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm).
 		
 	
+	//populate the receive set if the machine exports an interface
+	MachineReceives(m, ev) :- MachineExports(m, i), InterfaceTypeDecl(i, it, _, _), MemberOfInterfaceType(it, ev).
 
 	//Checking the constructor type error for each exported interface
 	CompTypeRel(t1, t2) :- MachineExports(m, i), InterfaceTypeDecl(i, _, t1', _), TypeExpansion(t1', t1), ConstructorType(m, _, t2).
 
 	ExportInterfaceError ::= (m: MachineDecl).
-	[rule_Classes = '"error, msg: the constructor argument type is equal to the exported interface argument type"']
-	OneIdError(m.id, "the constructor argument type is equal to the exported interface argument type"),
-	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeExpansion(iargt, eargt), ct != eargt. 						 
+	[rule_Classes = '"error, msg: the exported interface argument type is not a subtype of the constructor argument type"']
+	OneIdError(m.id, "the exported interface argument type is not a subtype of the constructor argument type"),
+	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeExpansion(iargt, eargt), ct != eargt, TypeRel(eargt, ct, k), k != SUB. 						 
     
-	[rule_Classes = '"error, msg: the exported interface must be a subset of receive set"']
-	ExportInterfaceError(m) :- MachineExports(m, i), InterfaceTypeDecl(i, evL, iargt, _), no MachineReceives(m, ALL), no MachineReceives(m, ev), MemberOfInterfaceType(evL, ev). 
-
 	PFile ::= (fileName: String).
 	PFile(fileName) :- PUnit(unitName), PUnitContains(unitName, fileName).
 

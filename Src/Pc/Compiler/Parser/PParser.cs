@@ -82,6 +82,7 @@
         private P_Root.QualifiedName crntGotoTargetName = null;
         private P_Root.StateDecl crntState = null;
         private List<P_Root.VarDecl> crntVarList = new List<P_Root.VarDecl>();
+        private bool machineExportsInterface = false;
         private List<P_Root.EventName> crntEventList = new List<P_Root.EventName>();
         private List<P_Root.EventName> onEventList = new List<P_Root.EventName>();
         private List<P_Root.String> crntStringIdList = new List<P_Root.String>();
@@ -2102,10 +2103,13 @@
         {
             if (receivesList == null)
             {
-                Span span = default(Span);
-                var rec = P_Root.MkMachineReceives(crntMachDecl, MkUserCnst(P_Root.UserCnstKind.ALL, span));
-                rec.Span = span;
-                parseProgram.Add(rec);
+                if (!machineExportsInterface)
+                {
+                    Span span = default(Span);
+                    var rec = P_Root.MkMachineReceives(crntMachDecl, MkUserCnst(P_Root.UserCnstKind.ALL, span));
+                    rec.Span = span;
+                    parseProgram.Add(rec);
+                }
             }
             else
             {

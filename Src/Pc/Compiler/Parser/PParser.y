@@ -137,8 +137,13 @@ MachineConstTypeOrNone
 	;
 
 Exports
-	: COLON ID										{ AddExportsInterface($2.str, ToSpan(@2), ToSpan(@1)); }
-	|
+	: COLON ExportsList									{ machineExportsInterface = true; }
+	|													{ machineExportsInterface = false; }
+	;
+
+ExportsList
+	: ID											{ AddExportsInterface($1.str, ToSpan(@1), ToSpan(@1)); }
+	| ExportsList COMMA ID 							{ AddExportsInterface($3.str, ToSpan(@3), ToSpan(@1)); }
 	;
 
 ReceivesSends
@@ -153,10 +158,6 @@ ReceivesSendsList
 	|
 	;
 
-CreatesList
-	: ID						{ AddToCreatesList($1.str, ToSpan(@1)); }									
-	| ID COMMA CreatesList		{ AddToCreatesList($1.str, ToSpan(@1)); }
-	;
 	
 SpecMachineDecl
 	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); ResetProgramIgnore(); } 
@@ -244,6 +245,11 @@ FunProtoDecl
 
 FunNameDecl
 	: FUN ID { SetFunName($2.str, ToSpan(@2)); }
+	;
+
+CreatesList
+	: ID						{ AddToCreatesList($1.str, ToSpan(@1)); }									
+	| ID COMMA CreatesList		{ AddToCreatesList($1.str, ToSpan(@1)); }
 	;
 
 FunCreates

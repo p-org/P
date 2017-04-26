@@ -25,7 +25,7 @@ echo Configuration is $Configuration, $Platform
 
 git submodule update --init --recursive --remote
 
-mono Bld/nuget.exe restore P.sln
+mono Bld/nuget.exe restore PLinux.sln
 
 cd Ext/Zing
 
@@ -66,16 +66,12 @@ done
 
 cd ../..
 
-# This code fixes a problem in MIDL compile by forcing recompile of these files for each configuration.
-rm Src/PrtDist/Core/NodeManager_c.c
-rm Src/PrtDist/Core/NodeManager_s.c
-
 echo xbuild ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
 xbuild ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
 
-echo xbuild P.sln /p:Platform=$Platform /p:Configuration=$Configuration
-xbuild  P.sln /p:Platform=$Platform /p:Configuration=$Configuration /t:Clean
-xbuild P.sln /p:Platform=$Platform /p:Configuration=$Configuration
+echo xbuild PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration
+xbuild  PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration /t:Clean
+xbuild PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration
 
 popd
 

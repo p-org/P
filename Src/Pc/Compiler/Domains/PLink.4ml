@@ -351,12 +351,12 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	////Assume and Assert Operation
 	//Monitor is defined
-	ModuleConstructionIllegal(id, mon, "undefined monitor") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, _, id), MemberOfMonitorNameList(monNames, mon), no MonitorDecl(mon, _, _);
+	ModuleConstructionIllegal(id, mon, "illegal assume or assert, undefined monitor") 
+	:-	AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, _, id), MemberOfMonitorNameList(monNames, mon), no MonitorDecl(mon, _, _);
 		AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, _, id), MemberOfMonitorNameList(monNames, mon), no MonitorDecl(mon, _, _).
 	
 	//Events observed by monitor must be in ES or EP
-	ModuleConstructionIllegal(id, mon, "monitors observes list contains an event that is not sends or private events of the module expression") 
+	ModuleConstructionIllegal(id, mon, "illegal assume or assert, monitors observes list contains an event that is not sends or private events of the module expression") 
 	:- AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, mod, id), MemberOfMonitorNameList(monNames, mon), MonitorDecl(mon, obsList, _), MemberOfInterfaceType(obsList, ev),
 		no ModuleSends(mod, ev), no ModulePrivate(mod, ev);
 		AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, mod, id), MemberOfMonitorNameList(monNames, mon), MonitorDecl(mon, obsList, _), MemberOfInterfaceType(obsList, ev),

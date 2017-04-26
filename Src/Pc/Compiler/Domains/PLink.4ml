@@ -269,28 +269,29 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.left, ev);
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.right, ev).
 									 
-	//// sends list 
+	//// sends list ////ES = union(MS(m)) \ EP
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSends(mach, ev), ev: NonNullEventName, ModuleContains(ModuleDecl(modExpr.name, _), mach), no ModulePrivate(modExpr, ev). 
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModuleSends(modExpr.mod, ev).
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.left, ev);
 								AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.right, ev).
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MachineSends(_, ev), ev: NonNullEventName, ModuleSends(modExpr.mod, ev), no MemberOfInterfaceType(modExpr.evtNames, ev).
 	
-	//// exports list
+	//// exports list 
 	AllExportedInterfaces ::= (ix: String).
 	AllExportedInterfaces(ix) :-  ExportExpr(_, ix, _, _); MachineExports(_, ix).
 	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineExports(mach, ix), ModuleContains(ModuleDecl(modExpr.name, _), mach).
 	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr.mod, ix),
-										 toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, toSymbol(modExpr) != #ExportExpr.
+									toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, toSymbol(modExpr) != #ExportExpr.
 	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleExports(modExpr.mod, ix);
 								  AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ix = modExpr.iName.
 	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleExports(modExpr.left, ix);
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleExports(modExpr.right, ix).									 
-	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllExportedInterfaces(ix), ModuleExports(modExpr.mod, ix), InterfaceTypeDecl(ix, es, _, _), count({ev | MemberOfInterfaceType(es, ev), MemberOfInterfaceType(modExpr.evtNames, ev)}) = 0.
+	ModuleExports(modExpr, ix) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllExportedInterfaces(ix), ModuleExports(modExpr.mod, ix), 
+									InterfaceTypeDecl(ix, it, _, _), count({ev | MemberOfInterfaceType(it, ev), MemberOfInterfaceType(modExpr.evtNames, ev)}) = 0.
 
 	//// creates list
 	AllCreatedInterfaces ::= (ic: String).
-	AllCreatedInterfaces(ic) :- MachineCreatesInt(_, ic).
+	AllCreatedInterfaces(ic)  :-	MachineCreatesInt(_, ic).
 	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineCreatesInt(mach, ic), ModuleContains(ModuleDecl(modExpr.name, _), mach).
 	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), ModuleCreates(modExpr.mod, ic),
 										 toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl.
@@ -298,8 +299,8 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 									     AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleCreates(modExpr.right, ic).									 
 	ModuleCreates(modExpr, ic) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, AllCreatedInterfaces(ic), ModuleCreates(modExpr.mod, ic), InterfaceTypeDecl(ic, es, _, _), count({ev | MemberOfInterfaceType(es, ev), MemberOfInterfaceType(modExpr.evtNames, ev)}) = 0.
 
-	//// receives list
-	ModuleReceives(modExpr, er) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr, ix), InterfaceTypeDecl(ix, es, _, _), MemberOfInterfaceType(es, er), er : in.NonNullEventName.
+	//// receives list //// ER = union(MR(m)) \EP
+	ModuleReceives(modExpr, ev) :- AllExpandedModuleExprs(modExpr), ModuleExports(modExpr, ix), MachineExports(m, ix), MachineReceives(m, ev), ev: NonNullEventName, no ModulePrivate(modExpr, ev).
 
 	/**************************************************************************/
 	/**				Check that the module contruction is legal			  	  */

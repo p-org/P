@@ -262,10 +262,10 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	/*	Generate sends, receives, exports, private and creates for Module Expressions   */
 	/************************************************************************************/
 	//// module contains
-	ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, m).
+	/*ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, m).
 	ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModuleContains(modExpr.mod, m).
 	ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleContains(modExpr.left, m);
-								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleContains(modExpr.right, m).
+								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleContains(modExpr.right, m).*/
 	//// private events 
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : in.NonNullEventName.
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModulePrivate(modExpr.mod, ev).
@@ -377,12 +377,12 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ModuleConstructionIllegal(id, ic, "illegal hide, trying to hide an interface created but not exported by the module expression") 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), 
 		ModuleCreates(mod, ic), no ModuleExports(mod, ic), InterfaceTypeDecl(ic, el, _, _), MemberOfInterfaceType(el, ev).
-
+/*
 	//for each interface in dom(IX), it is either disjoint from alpha or all MR(m) is included in it.
 	ModuleConstructionIllegal(id, ix, "illegal hide, trying to partially hide an exported interface of the module expression") 
 	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), ModuleExports(mod, ix), InterfaceTypeDecl(ix, el, _, _), MemberOfInterfaceType(el, ev), 
 	MachineExports(m, ix), ModuleContains(mod, m), MachineReceives(m, ev'), ev': NonNullEventName, no ModulePrivate(modExpr, ev'), no MemberOfInterfaceType(evtList, ev').
-
+*/
 	/// (permissions in ER + ES is disjoint from EP )
 	ModuleConstructionIllegal(id, ev, "after hidding the event has private permission in them") 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleSends(modExpr, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm);
@@ -395,31 +395,37 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	///// All composition expressions
 	AllCompositionExprs ::= (modL: ModuleExpr, modR: ModuleExpr, emodL: ModuleExpr, emodR: ModuleExpr).
 	AllCompositionExprs(modL, modR, emodL, emodR) :- AllModuleExprs(modExpr), modExpr = ComposeExpr(modL, modR, _), ModuleExprExpansion(modL, emodL), ModuleExprExpansion(modR, emodR).
+	
 	//// Mp and Mq are disjoint
-	ModuleConstructionIllegal(modL.id, mname, "compatibility error> machine names are not disjoint") 
+	ModuleConstructionIllegal(modL.id, mname, "illegal composition, machine names are not disjoint") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleRenameMap(emodL, mname, _), ModuleRenameMap(emodR, mname, _).
 
 	//// dom(IXp) and dom(IXq) are disjoint
-	ModuleConstructionIllegal(modL.id, ixL, "compatibility error> exported interfaces are not disjoint") 
+	ModuleConstructionIllegal(modL.id, ixL, "illegal composition, exported interfaces are not disjoint") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleExports(emodL, ixL), ModuleExports(emodR, ixR), 
 	InterfaceTypeDecl(ixL, esL, _, _), MemberOfInterfaceType(esL, ev), InterfaceTypeDecl(ixR, esR, _, _), MemberOfInterfaceType(esR, ev).									
 
 	//// ICp and ICq are disjoint
-	ModuleConstructionIllegal(modL.id, icL, "compatibility error> created interfaces are not disjoint") 
+	ModuleConstructionIllegal(modL.id, icL, "illegal composition, created interfaces are not disjoint") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleCreates(emodL, icL), ModuleCreates(emodR, icR), 
 		InterfaceTypeDecl(icL, esL, _, _), MemberOfInterfaceType(esL, ev), InterfaceTypeDecl(icR, esR, _, _), MemberOfInterfaceType(esR, ev).
 
 	//// ESp and ESq are disjoint
-	ModuleConstructionIllegal(modL.id, ev, "compatibility error> sends are not disjoint") 
+	ModuleConstructionIllegal(modL.id, ev, "illegal composition, sends are not disjoint") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleSends(emodL, ev), ModuleSends(emodR, ev).
 
 	//// ES and EP are disjoint
-	ModuleConstructionIllegal(modL.id, ev, "compatibility error> sends and privates are not disjoint") 
-	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleSends(emodL, ev), ModulePrivate(emodR, ev);	
-	AllCompositionExprs(modL, modR, emodL, emodR), ModuleSends(emodR, ev), ModulePrivate(emodL, ev).
+	ModuleConstructionIllegal(modL.id, ev, "illegal composition, sends and privates are not disjoint") 
+	:-  AllCompositionExprs(modL, modR, emodL, emodR), ModuleSends(emodL, ev), ModulePrivate(emodR, ev);	
+		AllCompositionExprs(modL, modR, emodL, emodR), ModuleSends(emodR, ev), ModulePrivate(emodL, ev).
+
+	//// ER and EP are disjoint
+	ModuleConstructionIllegal(modL.id, ev, "illegal composition, receives and privates are not disjoint") 
+	:-  AllCompositionExprs(modL, modR, emodL, emodR), ModuleReceives(emodL, ev), ModulePrivate(emodR, ev);	
+		AllCompositionExprs(modL, modR, emodL, emodR), ModuleReceives(emodR, ev), ModulePrivate(emodL, ev).
 
 	//// e \in ER + ES, all a in A(e) is disjoint from EP
-	ModuleConstructionIllegal(modL.id, ev, "compatibility error> after composition the public events in receives or sends has private permissions in them") 
+	ModuleConstructionIllegal(modL.id, ev, "illegal composition, after composition the public events in receives or sends has private permissions in them") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleReceives(composedMod, ev),
 	PermEmbeddedInEvent(ev, perm), ModulePrivate(composedMod, perm);
 	AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleSends(composedMod, ev),
@@ -433,13 +439,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	//// IC of the composed module is disjoint from EP of the composed module
 	ModuleConstructionIllegal(modL.id, ic, "compatibility error> after composition the created interfaces are not disjoint from the private events") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
-	InterfaceTypeDecl(ic, es, _, _), MemberOfInterfaceType(es, ev), ModulePrivate(composedMod, ev).	
-
-	//// IC is either disjoint or equal to the IX
-	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the created interfaces are not disjoint or equal to the exported interfaces") 
-	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
-	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _, _), InterfaceTypeDecl(ix, ixL, _, _), icL != ixL,
-	InterfaceTypeDecl(ic, esc, _, _), MemberOfInterfaceType(esc, ev), InterfaceTypeDecl(ix, esx, _, _), MemberOfInterfaceType(esx, ev).
+	InterfaceTypeDecl(ic, es, _, _), MemberOfInterfaceType(es, ev), ModulePrivate(composedMod, ev).
 
 	//// for the match IC and IX, constructor(IC) subtype of constructor(IX).
 	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the constructor type of created interfaces is not a subtype of constructor type of exported interfaces") 

@@ -59,10 +59,11 @@ namespace P.Runtime
     public class CreateAction : VisibleAction
     {
         string interfaceName;
-
-        public CreateAction(string i)
+        string constructorArg;
+        public CreateAction(string i, string arg)
         {
             interfaceName = i;
+            constructorArg = arg;
         }
 
         public override bool Equals(object obj)
@@ -74,7 +75,7 @@ namespace P.Runtime
             }
             else
             {
-                return this.interfaceName == createAct.interfaceName;
+                return this.interfaceName == createAct.interfaceName && this.constructorArg == createAct.constructorArg;
             }
         }
 
@@ -85,7 +86,7 @@ namespace P.Runtime
 
         public override string ToString()
         {
-            return string.Format("[{0}]", interfaceName);
+            return string.Format("[{0}, {1}]", interfaceName, constructorArg);
         }
     }
     /// <summary>

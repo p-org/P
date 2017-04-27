@@ -13,14 +13,15 @@ domain PLink
 	EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
 
 	NameType        ::= new (name: String).
-    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }).
+    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE }).
+	AnyType			::= new (perm: String + { NIL }).
     TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
 	InterfaceType	::= new (ev: NonNullEventName + { ALL }, tail: any InterfaceType + {NIL}).
-    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
+    TypeExpr        ::= NameType + BaseType + AnyType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
 
 	StringList		::= new (hd: String, tl: any StringList + { NIL }).
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).

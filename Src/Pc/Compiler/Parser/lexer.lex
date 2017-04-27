@@ -82,6 +82,7 @@
 			 keywords.Add("include", (int)PTokens.INCLUDE);
 			 keywords.Add("main", (int)PTokens.MAIN);
 			 keywords.Add("event", (int)PTokens.EVENT);
+			 keywords.Add("eventset", (int)PTokens.EVENTSET);
 			 keywords.Add("machine", (int)PTokens.MACHINE);
 			 keywords.Add("assume", (int)PTokens.ASSUME);
 			 keywords.Add("default", (int)PTokens.DEFAULT);

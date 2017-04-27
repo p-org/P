@@ -611,9 +611,12 @@ namespace Microsoft.Pc
                         else
                         {
                             Debug.Assert(primitiveType == "ANY", "Illegal BaseType");
-                            AddTypeDeclaration(typeName);
-                            AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtAnyType")));
                         }
+                    }
+                    else if (typeKind == "AnyType")
+                    {
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(typeExpr, CSharpHelper.MkCSharpObjectCreationExpression(IdentifierName("PrtAnyType")));
                     }
                     else if (typeKind == "NameType")
                     {

@@ -487,6 +487,23 @@
             typeExprStack.Push(nameType);
         }
 
+        private void PushAnyWithPerm(Span span, string name = null, Span nameSpan = new Span())
+        {
+            var anyType = P_Root.MkAnyType();
+            if(name == null) //AnyType(NIL)
+            {
+                anyType.perm = MkUserCnst(P_Root.UserCnstKind.NIL, span);
+            }
+            else
+            {
+                anyType.perm = MkString(name, nameSpan);
+                var anytypedecl = P_Root.MkAnyTypeDecl(MkString(name, nameSpan), (P_Root.IArgType_AnyTypeDecl__1)MkUniqueId(nameSpan));
+                parseProgram.Add(anytypedecl);
+            }
+            anyType.Span = span;
+            typeExprStack.Push(anyType);
+        }
+
         private void PushSeqType(Span span)
         {
             Contract.Assert(typeExprStack.Count > 0);
@@ -2434,8 +2451,7 @@
                 kind == P_Root.UserCnstKind.BOOL ||
                 kind == P_Root.UserCnstKind.INT ||
                 kind == P_Root.UserCnstKind.MACHINE ||
-                kind == P_Root.UserCnstKind.EVENT ||
-                kind == P_Root.UserCnstKind.ANY);
+                kind == P_Root.UserCnstKind.EVENT);
 
             var cnst = P_Root.MkUserCnst(kind);
             cnst.Span = span;

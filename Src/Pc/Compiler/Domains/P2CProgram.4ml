@@ -58,25 +58,10 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
 	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id), in.TypeExpansion(type, etype).
 
-	//// Compute the permission set associated with each high level type
-	//// A(e)
-	EmbeddedPermissionsInType ::= (t: in.TypeExpr, perm: in.NonNullEventName).
+	
 
-	EmbeddedPermissionsInType(in.BaseType(MACHINE), ev),
-	EmbeddedPermissionsInType(in.BaseType(ANY), ev)   :- in.EventDecl(ev, _, _, _).
-
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), in.TypeExpansion(type, etype), etype : in.InterfaceType, in.InterfaceTypeDecl(i, etype, ctype, _), in.InterfaceTypeDef(i, es, _, _), in.EventSetDecl(es, ev), ev: in.NonNullEventName.	
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.TupType(hd, NIL), EmbeddedPermissionsInType(hd, ev).
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
-											AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), NIL), EmbeddedPermissionsInType(hd, ev).
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
-	 										AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.SeqType(x), EmbeddedPermissionsInType(x, ev).
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), in.TypeExpansion(type, etype), etype = in.MapType(k, v), EmbeddedPermissionsInType(v, ev).
-
-	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), EmbeddedPermissionsInType(pt, perm).
-	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), EmbeddedPermissionsInType(ct, perm).
+	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), in.EmbeddedPermissionsInType(pt, perm).
+	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), in.EmbeddedPermissionsInType(ct, perm).
 
 	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).
@@ -565,6 +550,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	NmdTupTypeDepNum(i, t) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), NmdTupTypeDepNum(k, t''), i = j + k + 1.  
 
 	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), t : in.BaseType.
+	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), t : in.AnyType.
 	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), t : in.InterfaceType.
 	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), t : in.NameType. 
 	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), in.ImportedType(_, t).
@@ -593,7 +579,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								defs = out.Section(before, def),
 								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
                                 typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
-	
+	//// Any types
+	TypeConstant(t, m, defs, def) :- 
+								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t : in.AnyType,
+								BaseType2Kind(ANY, kind),
+								defs = out.Section(before, def),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+                                typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).
 	//// Interface types
 	TypeConstant(t, m, defs, def) :- 
 								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t : in.InterfaceType, 

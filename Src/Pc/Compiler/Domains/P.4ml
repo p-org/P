@@ -30,14 +30,16 @@ domain PData
 	ModelType       ::= new (name: String, id: any Id).
 
 	NameType        ::= new (name: String).
-    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }).
-    TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
+    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE}).
+    AnyType			::= new (perm: String + { NIL }).
+	AnyTypeDecl		::= new (perm: String, id: Id).	
+	TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
     SeqType         ::= new (x: any TypeExpr).
     MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
     NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
 	InterfaceType	::= new (ev: any NonNullEventName, tail: any InterfaceType + { NIL }).
-    TypeExpr        ::= NameType + BaseType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
+    TypeExpr        ::= NameType + BaseType + AnyType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
         
     /*************************************************************/
     /****************          Action Language        ************/
@@ -121,7 +123,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + FunProtoCreatesDecl  + TypeDef + EnumTypeDef + ModelType.            
+    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + FunProtoCreatesDecl  + TypeDef + EnumTypeDef + ModelType.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -257,6 +259,11 @@ domain PStructuralTyping extends PData, PError
 	[rule_Classes = '"error, msg: unknown event in eventset"']
 	OneIdError(eventset.id, "Unknown event in eventset"),
 	OneDeclError(eventset) :- EventSetContains(eventset, ev), ev != HALT, no EventDecl(ev, _, _, _).
+
+	//eventset not declared
+	[rule_Classes = '"error, msg: eventset not declared"']
+	OneIdError(atype.id, "Unknown event in eventset"),
+	OneDeclError(atype) :- no EventSetDecl(es, _), atype is AnyTypeDecl, atype.perm = es.
 
 	//eventset in interface type
 	[rule_Classes = '"error, msg: unknown eventset in interface declaration"']
@@ -469,8 +476,8 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(BaseType(INT), BaseType(INT)).
 	TypeExpansion(BaseType(EVENT), BaseType(EVENT)).
 	TypeExpansion(BaseType(MACHINE), BaseType(MACHINE)).
-	TypeExpansion(BaseType(ANY), BaseType(ANY)).
-
+	
+	TypeExpansion(type, type) :- AllTypeExprs(type), type : AnyType.
 	TypeExpansion(type, type)  :- AllTypeExprs(type), type : InterfaceType.
 	TypeExpansion(type, type)  :- ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
@@ -525,7 +532,6 @@ domain PStaticTyping extends PData, PError
 	TranslatedTypeExpr(BaseType(INT)).
 	TranslatedTypeExpr(BaseType(EVENT)).
 	TranslatedTypeExpr(BaseType(MACHINE)).
-	TranslatedTypeExpr(BaseType(ANY)).
 	TranslatedTypeExpr(eType) :- ExportedType(_, eType).
 	TranslatedTypeExpr(eType) :- EventDecl(_, _, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
 	TranslatedTypeExpr(eType) :- VarDecl(_, _, type, _), TypeExpansion(type, eType).
@@ -1030,8 +1036,30 @@ domain PStaticTyping extends PData, PError
 	TwoIdError(e.id, decl.id, "Parameter passed with swap not available at callee return"),
 	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
 									   FunAvailable(decl, c.owner), e.name = decl.name, UnavailableAtReturn(decl, n).
-									   
+	
+	/*************************************************************/
+    /*            Permissions Embedded in Types                  */
     /*************************************************************/
+
+	//// Compute the permission set associated with each high level type
+	//// A(e)
+	MemberOfEventNameList ::= sub(EventNameList, EventName).
+	EmbeddedPermissionsInType ::= (t: TypeExpr, perm: NonNullEventName).
+
+	EmbeddedPermissionsInType(BaseType(MACHINE), ev) :- EventDecl(ev, _, _, _).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : InterfaceType, InterfaceTypeDecl(i, etype, ctype, _), InterfaceTypeDef(i, es, _, _), EventSetDecl(es, ev), ev: NonNullEventName.
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = AnyType(NIL), EventDecl(ev, _, _, _);
+											AllTypeExprs(type), TypeExpansion(type, etype), etype = AnyType(esname), EventSet(esname, evlist), MemberOfEventNameList(evlist, ev), ev : NonNullEventName.
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = TupType(hd, NIL), EmbeddedPermissionsInType(hd, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
+											AllTypeExprs(type), TypeExpansion(type, etype), etype = TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = NmdTupType(NmdTupTypeField(name, hd), NIL), EmbeddedPermissionsInType(hd, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
+	 										AllTypeExprs(type), TypeExpansion(type, etype), etype = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = SeqType(x), EmbeddedPermissionsInType(x, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = MapType(k, v), EmbeddedPermissionsInType(v, ev).							   
+    
+	/*************************************************************/
     /*                      Types of Statements                  */
     /*************************************************************/
 
@@ -1333,15 +1361,15 @@ domain PStaticTyping extends PData, PError
 	CommStmtPLType ::= (cntxt: TypingContext, comm: Raise + Send + Announce, type: TypeExpr + { ERROR }).
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, AnyType(NIL)) :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
 	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Raise(ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, AnyType(NIL)) :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
 	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
 
 	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
-	CommStmtPLType(c, e, BaseType(ANY)) :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, AnyType(NIL)) :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
 	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Announce(ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
 
 	ExprsToPayloadType ::= (TypingContext, Exprs + { NIL }, TypeExpr).
@@ -1750,12 +1778,12 @@ domain PStaticTyping extends PData, PError
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
 	
 	// Each model type has empty intersection with all types except itself and ANY
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, t != BaseType(ANY).
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, t != BaseType(ANY). 
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType.
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType. 
 	
 	// Each enum type has empty intersection with all types except itself and ANY and INT
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, t != BaseType(ANY), t != BaseType(INT).
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, t != BaseType(ANY), t != BaseType(INT). 
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT).
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT). 
     
     // The NULL type has empty intersections with NonNullBase and complex types.
     NonNullBase ::= (TypeExpr).
@@ -1769,13 +1797,13 @@ domain PStaticTyping extends PData, PError
     TypeRel(t, s, EMPTY)   :- CompTypeRel(t, s), s : ComplexType, t = BaseType(NULL).
         
     // BaseType(BOOL) has empty intersections with all types, except themselves and ANY.
-    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(BOOL), s != t, t != BaseType(ANY).
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(BOOL), s != t, t != BaseType(ANY).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(BOOL), s != t, toSymbol(t) != #AnyType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(BOOL), s != t, toSymbol(t) != #AnyType.
 
 	// BaseType(INT) has empty intersections with all types, except themselves and ANY.
 	// Relationship to NameType(_) has been dealt with above.
-    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(INT), s != t, t != BaseType(ANY), toSymbol(t) != #NameType.
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(INT), s != t, t != BaseType(ANY), toSymbol(t) != #NameType.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
 
     // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
     NullBase    ::= (TypeExpr).
@@ -1784,21 +1812,21 @@ domain PStaticTyping extends PData, PError
     TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), NullBase(s), NonNullBase(t).
     TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), NullBase(s), NonNullBase(t).
     
-    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), NullBase(s), toSymbol(t) != #BaseType, toSymbol(t) != #InterfaceType.
-    TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), NullBase(s), toSymbol(t) != #BaseType, toSymbol(t) != #InterfaceType.
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), NullBase(s), toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
+    TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), NullBase(s), toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
           
     TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), NullBase(s), NullBase(t), s != t.
     TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), NullBase(s), NullBase(t), s != t.
 
 	//Interface Type has empty intersection with all the types except themselves, ANY, MACHINE and NULL
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, t = BaseType(kt), kt != ANY, kt != NULL, kt != MACHINE.
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, t = BaseType(kt), kt != ANY, kt != NULL, kt != MACHINE.
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #InterfaceType.
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #InterfaceType.
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, t = BaseType(kt), kt != NULL, kt != MACHINE.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, t = BaseType(kt), kt != NULL, kt != MACHINE.
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
 
     // Complex types have empty intersections with all differing type kinds, except ANY.
-    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : ComplexType, toSymbol(s) != toSymbol(t), t != BaseType(ANY).
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : ComplexType, toSymbol(s) != toSymbol(t), t != BaseType(ANY).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : ComplexType, toSymbol(s) != toSymbol(t), toSymbol(t) != #AnyType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : ComplexType, toSymbol(s) != toSymbol(t), toSymbol(t) != #AnyType.
     
     // Sequences are EMPTY or NONEMPTY if their inner types are. (Only need one version of these rules.)
     TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', EMPTY). 
@@ -1866,13 +1894,19 @@ domain PStaticTyping extends PData, PError
     TypeRel(s, s, SUB) :- CompTypeRel(s, s), s != ERROR.
     TypeRel(s, s, SUP) :- CompTypeRel(s, s), s != ERROR.
    
-    // Every proper type is a sub-type of any.
-    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = BaseType(ANY).
-    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = BaseType(ANY).
+	PermissionsSubsetRel ::= (TypeExpr, TypeExpr).
+	PermissionsSubsetRel(t1, t2) :- AllTypeExprs(t1), AllTypeExprs(t2), count({ev | EmbeddedPermissionsInType(t1, ev), no EmbeddedPermissionsInType(t2, ev)}) = 0.
+
+	AllEventNameinList ::= sub(EventNameList, EventName).
+    // Every proper type is a sub-type of any if the permissions are subset.
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(NIL).
+    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(NIL).
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, PermissionsSubsetRel(s, t).
+    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, PermissionsSubsetRel(s, t).
         
     // NULL is a subtype of all Nullable types.
-    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = BaseType(NULL), t = BaseType(ANY).
-    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = BaseType(NULL), t = BaseType(ANY).
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = BaseType(NULL), t : AnyType.
+    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = BaseType(NULL), t : AnyType.
     
     TypeRel(s, t, SUB) :-  CompTypeRel(s, t), s = BaseType(NULL), NullBase(t).
     TypeRel(t, s, SUP) :-  CompTypeRel(t, s), s = BaseType(NULL), NullBase(t).
@@ -1887,10 +1921,6 @@ domain PStaticTyping extends PData, PError
 	//Interface type is a supertype of NULL
 	TypeRel(s, t, SUB) :- CompTypeRel(s, t), t : InterfaceType, s = BaseType(NULL).
 	TypeRel(t, s, SUP) :- CompTypeRel(t, s), t : InterfaceType, s = BaseType(NULL).
-
-	//Interface type is a subtype of ANY
-	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s : InterfaceType, t = BaseType(ANY).
-	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s : InterfaceType, t = BaseType(ANY).
 
 	// Enum types with values are a subtype of int
 	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
@@ -1919,7 +1949,7 @@ domain PStaticTyping extends PData, PError
 	EventPayloadType(e, et) :- EventDecl(e, _, t, _), t: TypeExpr, TypeExpansion(t, et).
 	EventPayloadType(e, t)  :- EventDecl(e, _, NIL, _), t = BaseType(NULL).
 	EventPayloadType(NULL, t) :- t = BaseType(NULL).
-	EventPayloadType(HALT, t) :- t = BaseType(ANY).
+	EventPayloadType(HALT, t) :- t = AnyType(NIL).
 
 	PayloadVarAux ::= (StateDecl + TransDecl + DoDecl + Cases, AnonFunDecl, String, TypeExpr).
 	PayloadVar ::= (StateDecl + TransDecl + DoDecl + Cases, AnonFunDecl, String, TypeExpr).

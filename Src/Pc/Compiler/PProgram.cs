@@ -11,6 +11,13 @@
 
     public class PProgram
     {
+
+        public List<P_Root.AnyTypeDecl> AnyTypeDecl
+        {
+            get;
+            private set;
+        }
+
         public List<P_Root.TypeDef> TypeDefs
         {
             get;
@@ -157,7 +164,10 @@
             {
                 return;
             }
-
+            else if (item is P_Root.AnyTypeDecl)
+            {
+                AnyTypeDecl.Add(item as P_Root.AnyTypeDecl);
+            }
             else if (item is P_Root.MachineSends)
             {
                 MachineSends.Add(item as P_Root.MachineSends);
@@ -260,6 +270,11 @@
         {
             get
             {
+                foreach (var at in AnyTypeDecl)
+                {
+                    yield return at;
+                }
+
                 foreach (var td in TypeDefs)
                 {
                     yield return td;
@@ -402,6 +417,7 @@
             DependsOn = new List<P_Root.DependsOn>();
             IgnoreDecl = false;
             FunProtoCreates = new List<P_Root.FunProtoCreatesDecl>();
+            AnyTypeDecl = new List<P_Root.AnyTypeDecl>();
         }
     }
 }

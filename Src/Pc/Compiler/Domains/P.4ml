@@ -262,7 +262,7 @@ domain PStructuralTyping extends PData, PError
 
 	//eventset not declared
 	[rule_Classes = '"error, msg: eventset not declared"']
-	OneIdError(atype.id, "Unknown event in eventset"),
+	OneIdError(atype.id, "eventset not declared"),
 	OneDeclError(atype) :- no EventSetDecl(es, _), atype is AnyTypeDecl, atype.perm = es.
 
 	//eventset in interface type
@@ -1047,7 +1047,7 @@ domain PStaticTyping extends PData, PError
 	EmbeddedPermissionsInType ::= (t: TypeExpr, perm: NonNullEventName).
 
 	EmbeddedPermissionsInType(BaseType(MACHINE), ev) :- EventDecl(ev, _, _, _).
-	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : InterfaceType, InterfaceTypeDecl(i, etype, ctype, _), InterfaceTypeDef(i, es, _, _), EventSetDecl(es, ev), ev: NonNullEventName.
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : InterfaceType, MemberOfInterfaceType(etype, ev).
 	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = AnyType(NIL), EventDecl(ev, _, _, _);
 											AllTypeExprs(type), TypeExpansion(type, etype), etype = AnyType(esname), EventSet(esname, evlist), MemberOfEventNameList(evlist, ev), ev : NonNullEventName.
 	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = TupType(hd, NIL), EmbeddedPermissionsInType(hd, ev).
@@ -1895,15 +1895,19 @@ domain PStaticTyping extends PData, PError
     TypeRel(s, s, SUP) :- CompTypeRel(s, s), s != ERROR.
    
 	PermissionsSubsetRel ::= (TypeExpr, TypeExpr).
-	PermissionsSubsetRel(t1, t2) :- AllTypeExprs(t1), AllTypeExprs(t2), count({ev | EmbeddedPermissionsInType(t1, ev), no EmbeddedPermissionsInType(t2, ev)}) = 0.
-
+	NoPermissionsSubsetRel ::= (TypeExpr, TypeExpr).
+	PermissionsSubsetRel(t1, t2) :- AllTypeExprs(t1), AllTypeExprs(t2), t2 = AnyType(k), k != NIL, count({ev | EmbeddedPermissionsInType(t1, ev), no EmbeddedPermissionsInType(t2, ev)}) = 0.
+	NoPermissionsSubsetRel(t1, t2) :- AllTypeExprs(t1), AllTypeExprs(t2), t2 = AnyType(k), k != NIL, EmbeddedPermissionsInType(t1, ev), no EmbeddedPermissionsInType(t2, ev).
+	
 	AllEventNameinList ::= sub(EventNameList, EventName).
     // Every proper type is a sub-type of any if the permissions are subset.
     TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(NIL).
     TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(NIL).
 	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, PermissionsSubsetRel(s, t).
     TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, PermissionsSubsetRel(s, t).
-        
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, NoPermissionsSubsetRel(s, t).
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, NoPermissionsSubsetRel(s, t).
+
     // NULL is a subtype of all Nullable types.
     TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = BaseType(NULL), t : AnyType.
     TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = BaseType(NULL), t : AnyType.

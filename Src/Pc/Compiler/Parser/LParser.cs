@@ -393,10 +393,10 @@
 
             foreach(var machine in crntStringList)
             {
-                var moduleContains = PLink_Root.MkModuleContains();
-                moduleContains.mod = (PLink_Root.IArgType_ModuleContains__0)moduleDecl;
-                moduleContains.mach = (PLink_Root.IArgType_ModuleContains__1)machine;
-                parseLinker.ModuleContains.Add(moduleContains);
+                var moduleContains = PLink_Root.MkModuleContainsMachine();
+                moduleContains.mod = (PLink_Root.IArgType_ModuleContainsMachine__0)moduleDecl;
+                moduleContains.mach = (PLink_Root.IArgType_ModuleContainsMachine__1)machine;
+                parseLinker.ModuleContainsMachine.Add(moduleContains);
             }
             crntStringList.Clear();
             crntModuleDecl = null;

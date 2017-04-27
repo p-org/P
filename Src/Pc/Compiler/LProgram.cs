@@ -11,7 +11,7 @@
 
     public class LProgram
     {
-        public List<PLink_Root.ModuleContains> ModuleContains
+        public List<PLink_Root.ModuleContainsMachine> ModuleContainsMachine
         {
             get;
             private set;
@@ -62,7 +62,7 @@
         {
             get
             {
-                foreach(var mc in ModuleContains)
+                foreach(var mc in ModuleContainsMachine)
                 {
                     yield return mc;
                 }
@@ -99,7 +99,7 @@
 
         public LProgram()
         {
-            ModuleContains = new List<PLink_Root.ModuleContains>();
+            ModuleContainsMachine = new List<PLink_Root.ModuleContainsMachine>();
             ModuleDecl = new List<PLink_Root.ModuleDecl>();
             ModulePrivateEvents = new List<PLink_Root.ModulePrivateEvents>();
             ModuleName = new List<PLink_Root.ModuleName>();

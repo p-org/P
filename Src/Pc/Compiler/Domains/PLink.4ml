@@ -63,7 +63,7 @@ domain PLink
 
 	//// Module Declarations
 	ModuleDecl ::= fun (name: String -> id: any Id).
-	ModuleContains ::= new (mod: ModuleDecl + ModuleExpr, mach: String).
+	ModuleContainsMachine ::= new (mod: ModuleDecl, mach: String).
 	ModulePrivateEvents ::= new (mod: ModuleDecl, ev: NonNullEventName).
 	ModuleName ::= fun (name: String -> id: any Id).
 	
@@ -92,6 +92,7 @@ domain PLink
 	ModuleReceives ::= (mod: ModuleExpr, ev: NonNullEventName).
 	ModuleExports ::= (mod: ModuleExpr, i: String).  
 	ModuleCreates ::= (mod: ModuleExpr, i: String).
+	ModuleContains ::= (mod: ModuleExpr, m: String).
 
 	//// Module Code Gen and Compatibity Helpers
 	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, interfaceOrMachine: String + { NIL }, newImpMachine: String + { NIL }).
@@ -262,10 +263,10 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	/*	Generate sends, receives, exports, private and creates for Module Expressions   */
 	/************************************************************************************/
 	//// module contains
-	/*ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(modExpr, m).
+	ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContainsMachine(modExpr, m).
 	ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModuleContains(modExpr.mod, m).
 	ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleContains(modExpr.left, m);
-								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleContains(modExpr.right, m).*/
+								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleContains(modExpr.right, m).
 	//// private events 
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : in.NonNullEventName.
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModulePrivate(modExpr.mod, ev).
@@ -377,12 +378,12 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ModuleConstructionIllegal(id, ic, "illegal hide, trying to hide an interface created but not exported by the module expression") 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), 
 		ModuleCreates(mod, ic), no ModuleExports(mod, ic), InterfaceTypeDecl(ic, el, _, _), MemberOfInterfaceType(el, ev).
-/*
+
 	//for each interface in dom(IX), it is either disjoint from alpha or all MR(m) is included in it.
 	ModuleConstructionIllegal(id, ix, "illegal hide, trying to partially hide an exported interface of the module expression") 
 	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), ModuleExports(mod, ix), InterfaceTypeDecl(ix, el, _, _), MemberOfInterfaceType(el, ev), 
 	MachineExports(m, ix), ModuleContains(mod, m), MachineReceives(m, ev'), ev': NonNullEventName, no ModulePrivate(modExpr, ev'), no MemberOfInterfaceType(evtList, ev').
-*/
+
 	/// (permissions in ER + ES is disjoint from EP )
 	ModuleConstructionIllegal(id, ev, "after hidding the event has private permission in them") 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleSends(modExpr, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm);
@@ -432,23 +433,23 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	PermEmbeddedInEvent(ev, perm), ModulePrivate(composedMod, perm).
 
 	//// IX of the composed module is disjoint from EP of the composed module
-	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the exported interfaces are not disjoint from the private events") 
+	ModuleConstructionIllegal(modL.id, ix, "illegal composition, after composition the exported interfaces are not disjoint from the private events") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleExports(composedMod, ix),
 	InterfaceTypeDecl(ix, es, _, _), MemberOfInterfaceType(es, ev), ModulePrivate(composedMod, ev).
 
 	//// IC of the composed module is disjoint from EP of the composed module
-	ModuleConstructionIllegal(modL.id, ic, "compatibility error> after composition the created interfaces are not disjoint from the private events") 
+	ModuleConstructionIllegal(modL.id, ic, "illegal composition, after composition the created interfaces are not disjoint from the private events") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
 	InterfaceTypeDecl(ic, es, _, _), MemberOfInterfaceType(es, ev), ModulePrivate(composedMod, ev).
 
 	//// for the match IC and IX, constructor(IC) subtype of constructor(IX).
-	ModuleConstructionIllegal(modL.id, ix, "compatibility error> after composition the constructor type of created interfaces is not a subtype of constructor type of exported interfaces") 
+	ModuleConstructionIllegal(modL.id, ix, "illegal composition, after composition the constructor type of created interfaces is not a subtype of constructor type of exported interfaces") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
 	ModuleExports(composedMod, ix), InterfaceTypeDecl(ic, icL, _, _), InterfaceTypeDecl(ix, ixL, _, _), icL = ixL,
 	InterfaceTypeDecl(ic, _, ct, _), InterfaceTypeDecl(ix, _, xt, _), ct != xt.
 	
 	//// make sure that the constructor arguments do not have private permissions in them.
-	ModuleConstructionIllegal(modL.id, ic, "compatibility error> after composition the constructor type of created interface has private permissions") 
+	ModuleConstructionIllegal(modL.id, ic, "illegal composition, after composition the constructor type of created interface has private permissions") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
 	ModuleLinkMap(composedMod, _, ic, renameM), ModuleRenameMap(composedMod, renameM, impM), PermEmbeddedInConstType(impM, ev), ModulePrivate(composedMod, ev).
 	
@@ -457,47 +458,42 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	/**************************************************************************/
 	
 	//// machines mentioned in the module declaration are legal
-	WellFormednessError(mod.id, mach, "wellformedness error> machine not defined")
+	WellFormednessError(mod.id, mach, "illegal primitive module, machine not defined")
 	:- ModuleContains(mod, mach), mod: ModuleDecl, no MachineDecl(mach, _, _).
 
 	//// events mentioned in the module declaration are legal
-	WellFormednessError(mod.id, ev, "wellformedness error> event not defined")
+	WellFormednessError(mod.id, ev, "illegal primitive module, event not defined")
 	:- mod is ModuleDecl, ModulePrivateEvents(mod, ev), ev: NonNullEventName, no EventDecl(ev, _, _, _).
 
 	//// make sure that new M in the module are for private machines.
-	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M, but not all its events are private")
+	WellFormednessError(mod.id, mach, "illegal primitive module, created machine using new M, but not all its events are private")
 	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), MachineCreatesM(mach, newM), MachineReceives(newM, ev), no ModulePrivate(mod, ev), ev: NonNullEventName.
 
 	//// ix is not disjoint from EP
-	WellFormednessError(mod.id, ix, "wellformedness error> the exported interfaces are not disjoint from private events") 
+	WellFormednessError(mod.id, ix, "illegal primitive module, the exported interfaces are not disjoint from private events") 
 	:- mod is ModuleDecl, ModuleExports(mod, ix), ModulePrivate(mod, ev), InterfaceTypeDecl(ix, es, _, _), MemberOfInterfaceType(es, ev).
 
 	//// ic is not disjoint from EP
-	WellFormednessError(mod.id, ic, "wellformedness error> the created interfaces are not disjoint from private events") 
+	WellFormednessError(mod.id, ic, "illegal primitive module, the created interfaces are not disjoint from private events") 
 	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModulePrivate(mod, ev), InterfaceTypeDecl(ic, es, _, _), MemberOfInterfaceType(es, ev).
 
-	//// IC is either disjoint or equal to the IX
-	WellFormednessError(mod.id, ix, "wellformedness error> the created interfaces are not disjoint or equal to the exported interface") 
-	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModuleExports(mod, ix), InterfaceTypeDecl(ic, icL, _, _), InterfaceTypeDecl(ix, ixL, _, _), 									
-	icL != ixL, InterfaceTypeDecl(ic, esc, _, _), MemberOfInterfaceType(esc, ev), InterfaceTypeDecl(ix, esx, _, _), MemberOfInterfaceType(esx, ev).
-
 	//// for the match IC and IX, constructor(IC) subtype of constructor(IX).
-	WellFormednessError(mod.id, ix, "wellformedness error> type of created interfaces is not a subtype of constructor type of exported interface") 
+	WellFormednessError(mod.id, ix, "illegal primitive module, constructor type of created interfaces is not equal to constructor type of exported interface") 
 	:- mod is ModuleDecl, ModuleCreates(mod, ic), ModuleExports(mod, ix), 
 	InterfaceTypeDecl(ic, icL, ct, _), InterfaceTypeDecl(ix, ixL, xt, _), icL = ixL, ct != xt.
 
 	//// e \in ER + ES, all a in A(e) is disjoint from EP
-	WellFormednessError(mod.id, ev, "wellformedness error> the public events in receives or sends has private permissions in them") 
+	WellFormednessError(mod.id, ev, "illegal primitive module, the public events in receives or sends has private permissions in them") 
 	:- mod is ModuleDecl, ModuleReceives(mod, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(mod, perm);
 	mod is ModuleDecl, ModuleSends(mod, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(mod, perm).
 
 	//// no two machines export the same interface
-	WellFormednessError(mod.id, ix, "wellformedness error> multiple machines export the same interface") 
+	WellFormednessError(mod.id, ix, "illegal primitive module, multiple machines export the same interface") 
 	:- mod is ModuleDecl, ModuleContains(mod, mach), ModuleContains(mod, mach'), MachineExports(mach, ix), MachineExports(mach', ix'),
 	InterfaceTypeDecl(ix, ixL, _, _), InterfaceTypeDecl(ix', ixL, _, _), mach != mach'.
 
 	//// private machines created by a module are part of the module.
-	WellFormednessError(mod.id, mach, "wellformedness error> created machine using new M is not included in the module")
+	WellFormednessError(mod.id, mach, "illegal primitive module, created machine using new M is not included in the module")
 	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), no ModuleContains(mod, newM).
 
 

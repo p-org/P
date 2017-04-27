@@ -163,7 +163,7 @@ namespace P.Runtime
             //add visible action to trace
             if(visibleInterfaces.Contains(interfaceOrMachineName))
             {
-                currentVisibleTrace.AddAction(interfaceOrMachineName);
+                currentVisibleTrace.AddAction(interfaceOrMachineName, payload.ToString());
             }
 
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];

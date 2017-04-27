@@ -148,9 +148,9 @@ namespace P.Runtime
             return ret;
         }
 
-        public void AddAction(string interfaceName)
+        public void AddAction(string interfaceName, string arg)
         {
-            trace.Add(new CreateAction(interfaceName));
+            trace.Add(new CreateAction(interfaceName, arg));
         }
 
         public void AddAction(Tuple<string, int> t, PrtEventValue e, PrtValue v)

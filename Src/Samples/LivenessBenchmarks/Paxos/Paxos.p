@@ -3,9 +3,6 @@ We implemented the basic paxos protocol as described
 in the "Paxos Made Simple" paper by Leslie Lamport
 ****************************************/
 
-include "TimerHeader.p"
-include "PaxosHeader.p"
-
 machine Main {
   start state Init {
     entry {

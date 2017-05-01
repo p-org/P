@@ -1,5 +1,3 @@
-include "TimerHeader.p"
-
 //Functions for interacting with the timer machine
 fun CreateTimer(owner : machine): machine {
 	var m: machine;

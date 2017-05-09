@@ -190,7 +190,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
 	err.OneNameError(NIL, ic, "created interface is not exported by any machine") 
-	:- MachineDecl(mach, _, _), no MachineExports(_, inName), MachineCreatesInt(mach, ic), InterfaceTypeDecl(iName, evL, t, _), InterfaceTypeDecl(ic, evL, t', _), 
+	:- MachineDecl(mach, _, _), no MachineExports(_, iName), MachineCreatesInt(mach, ic), InterfaceTypeDecl(iName, evL, _, _), InterfaceTypeDecl(ic, evL, _, _), 
 	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
 
 	err.TwoNameError(NIL, mach1, mach2, "two machines cannot export the same interface") 

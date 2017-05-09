@@ -1,16 +1,14 @@
-machine ClientMachine : ClientInterface
-receives eRespPartStatus, eTransactionFailed, eTransactionSuccess, eTimeOut, eCancelSuccess, eCancelFailure;
-sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
+machine ClientMachine
 {
-    var coor: CoorClientInterface;
+    var coor: machine;
     var numOfOperation : int;
     var timer : TimerPtr;
     var valueAtParticipant: map[int, int];
     start state Init {
-        entry (payload: (CoorClientInterface, int)){
+        entry (payload: (machine, int)){
             coor = payload.0;
             numOfOperation = payload.1;
-            timer = CreateTimer(this as ITimerClient);
+            timer = CreateTimer(this);
             valueAtParticipant[0] = 0;
             valueAtParticipant[1] = 0;
             goto StartPumpingTransactions;
@@ -46,21 +44,17 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
     var oper2 : OperationType;
     state StartPumpingTransactions {
         entry {
-            var x : ClientInterface;
+            var x : machine;
             /*if(numOfOperation == 0)
                 return;*/
             
             oper1 = ChooseOp();
             oper2 = ChooseOp();
             
-            x =  this as ClientInterface;
+            x =  this as machine;
             send coor, eTransaction, (source = x, op1 = oper1, op2 = oper2);
             StartTimer(timer, 100);
             numOfOperation = numOfOperation - 1;
-            if($)
-            {
-                goto ReadStatusOfParticipant;
-            }
         }
         on eTransactionFailed do { CancelTimer(timer); goto StartPumpingTransactions; }
         on eTransactionSuccess goto StartPumpingTransactions with UpdateValues;
@@ -72,7 +66,7 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
         entry {
                 var p: int;
                 if($) p = 0; else p = 1;
-                send coor, eReadPartStatus, (source = this as ClientInterface, part = p);
+                send coor, eReadPartStatus, (source = this, part = p);
         }
         on eTransactionSuccess do UpdateValues;
         on eRespPartStatus goto StartPumpingTransactions with (payload: ParticipantStatusType){

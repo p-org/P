@@ -2,7 +2,7 @@
 
 type ITimer(ITimerClient) = { eStartTimer, eCancelTimer };
 type ITimerClient() = { eTimeOut, eCancelSuccess, eCancelFailure }; 
-model type TimerPtr = ITimer;
+model type TimerPtr = machine;
 
 // events from client to timer
 event eStartTimer: int;
@@ -16,5 +16,5 @@ event eCancelFailure: TimerPtr;
 extern fun StartTimer(timer: TimerPtr, time: int);
 extern fun CancelTimer(timer: TimerPtr);
 extern fun CreateTimer 
-creates ITimer;
-(owner: ITimerClient): TimerPtr;
+creates Timer;
+(owner: machine): TimerPtr;

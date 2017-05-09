@@ -3,12 +3,12 @@
 machine Main
 sends;
 {
-	var coor: CoorClientInterface;
-	var client : ClientInterface;
+	var coor: machine;
+	var client : machine;
 	start state Init {
 		entry {
-			coor = new CoorClientInterface((isfaultTolerant = false,));
-			client = new ClientInterface(coor, 100);
+			coor = new Coordinator((isfaultTolerant = false,));
+			client = new ClientMachine(coor, 100);
 			raise halt;
 		}
 		

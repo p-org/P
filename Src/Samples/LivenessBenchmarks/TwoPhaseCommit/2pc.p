@@ -2,23 +2,20 @@
 //We implemented a fault-tolerant 2-PC protocol.
 //There is a single co-ordinator and 2 participants. The two participants are two different bank accounts.
 
-machine Coordinator : CoorClientInterface
-receives eTransaction, eReadPartStatus, ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure;
-sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eRespPartStatus, eStartTimer, eCancelTimer;
+machine Coordinator
 {
 
 	var transId : int;
 	var participants : map[int, machine];
-	var timer : TimerPtr;
 	var currentTransaction: TransactionType;
 	var isFaultTolerant : bool;
 	start state Init {
 		entry (payload: (isfaultTolerant: bool)){
 			var temp : machine;
 			isFaultTolerant = payload.isfaultTolerant;
-			temp = new ParticipantInterface(this as CoorParticipantInterface, 0, false);
+			temp = new Participant(this, 0, false);
 			participants[0] = temp;
-			temp = new ParticipantInterface(this as CoorParticipantInterface, 1, false);
+			temp = new Participant(this, 1, false);
 			participants[1] = temp;
 			transId = 0;
 
@@ -38,7 +35,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 			currentTransaction = payload;
 			transId = transId + 1;
 		}
-		on eReadPartStatus do (clientS: (source: ClientInterface, part:int)){
+		on eReadPartStatus do (clientS: (source: machine, part:int)){
 			send participants[clientS.part], eStatusQuery;
 			receive {
 				case eStatusResp: (payload: ParticipantStatusType) {
@@ -62,9 +59,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	fun AbortCurrentTransaction() {
 		
 		SendToAllParticipants(eAbort, (tid = transId,));
-		send currentTransaction.source, eTransactionFailed;
-		CancelTimer(timer);
-		
+		send currentTransaction.source, eTransactionFailed;		
 	}
 	
 	var prepareCount : int;
@@ -95,7 +90,6 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 				{
 					SendToAllParticipants(eCommit, (tid = transId,));
 					send currentTransaction.source, eTransactionSuccess;
-					CancelTimer(timer);
 					goto WaitForReq;
 				}
 			}
@@ -105,8 +99,6 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 
 
 machine Participant
-receives ePrepare, eCommit, eAbort, eStatusQuery;
-sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantAborted;
 {
 	var myId : int;
 	var preparedOp: (tid: int, op: OperationType);

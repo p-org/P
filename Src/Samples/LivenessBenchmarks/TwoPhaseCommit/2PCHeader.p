@@ -17,7 +17,7 @@ type OperationType = (
 //Defines the transaction type 
 type TransactionType =
 (
-    source: ClientInterface,
+    source: machine,
     op1: OperationType,
     op2: OperationType
 );
@@ -29,11 +29,6 @@ type ParticipantStatusType =
     val: int
 );
 
-// Interface type declarations
-type ClientInterface((CoorClientInterface, int)) = { eRespPartStatus, eTransactionFailed, eTransactionSuccess};
-type CoorClientInterface((isfaultTolerant: bool)) = { eTransaction, eReadPartStatus };
-type CoorParticipantInterface() = { ePrepared, eNotPrepared, eStatusResp };
-type ParticipantInterface((machine, int, bool)) = { ePrepare, eCommit, eAbort, eStatusQuery };
 
 /*************************************
 Declaring all the events used in 2PC
@@ -43,7 +38,7 @@ Declaring all the events used in 2PC
 event eTransaction : TransactionType;
 event eTransactionFailed;
 event eTransactionSuccess;
-event eReadPartStatus: (source: ClientInterface, part:int);
+event eReadPartStatus: (source: machine, part:int);
 event eRespPartStatus: ParticipantStatusType;
 
 //Events used for interaction between coordinator and participants

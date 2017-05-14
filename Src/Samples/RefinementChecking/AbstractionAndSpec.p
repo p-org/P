@@ -1,4 +1,4 @@
-machine ServerAbstractionMachine: ServerClientInterface
+machine AbstractServerMachine: ServerClientInterface
 receives eRequest;
 sends eResponse;
 {
@@ -11,10 +11,6 @@ sends eResponse;
   }
 }
 
-
-/***************************************************************************
-Request Ids must be monotonically Increasing
-***************************************************************************/
 spec ReqIdsAreMonotonicallyIncreasing observes eRequest {
   var previousId : int;
   start state Init {

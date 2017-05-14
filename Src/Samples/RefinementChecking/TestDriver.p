@@ -1,7 +1,4 @@
-/*********************************************
-Simple TestDriver machine that sets up the testing problem
-***********************************************/
-//test driver that creates 1 client and 1 server for testing the client || server
+//Test driver that creates 1 client and 1 server for testing the client-server system
 machine TestDriver_1Client1Server
 receives;
 sends;
@@ -17,7 +14,8 @@ sends;
   }
 }
 
-machine TestDriver_Refinement : ClientInterface 
+//Test driver that behaves as a client for testing that server's abstraction is correct
+machine TestDriver_CheckRefinement : ClientInterface 
 receives eResponse;
 sends eRequest;
 {

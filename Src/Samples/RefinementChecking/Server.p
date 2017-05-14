@@ -1,10 +1,7 @@
 /********************************************************
-* ServerMachine receives a eRequest event from the clients and 
-  performs some local computation.
-* ServerMachine based on the local computation either sends that the 
-  request succeeded or failed.
-* ServerMachine responds to the requests in order in which they were
-  received.
+Server receives eRequest event from the client and performs local computation.
+Based on the local computation, server responds with either eReqSuccessful or eReqFailed.
+Server responds to requests in the order in which they were received.
 *********************************************************/
 
 type ServerHelperInterface() = { eReqSuccessful, eReqFailed };
@@ -39,7 +36,7 @@ sends eResponse, eProcessReq;
 }
 
 /***************************************************************
-* The helper machine performs some complex computation and either returns Successful or Failed
+The helper machine performs some complex computation and returns either eReqSuccessful or eReqFailed.
 ****************************************************************/
 machine HelperMachine : HelperInterface
 sends eReqSuccessful, eReqFailed;

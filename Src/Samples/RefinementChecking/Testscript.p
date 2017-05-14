@@ -1,20 +1,20 @@
-module Client 
+module ClientModule
 private;
 {
   ClientMachine
 }
 
-module Server 
+module ServerModule
 private;
 {
   ServerMachine,
   HelperMachine
 }
 
-module ServerAbs 
+module ServerAbstractionModule
 private;
 {
-  ServerAbstraction
+  ServerAbstractionMachine
 }
 
 module TestDriver1 
@@ -29,25 +29,25 @@ private;
   TestDriver_Refinement
 }
 
-//test case 0: check that our abstraction is sound.
+//Check that server abstraction is correct.
 test testcase0: 
-  (compose (rename TestDriver_Refinement to Main in TestDriver2), Server) 
+  (compose (rename TestDriver_Refinement to Main in TestDriver2), ServerModule) 
   refines 
   (compose (rename TestDriver_Refinement to Main in TestDriver2), 
-           (rename ServerAbstraction to ServerMachine in ServerAbs));
+           (rename ServerAbstractionMachine to ServerMachine in ServerAbstractionModule));
 
-//test case 1: check that the compositin of client and serverAbs is safe (no local assertion failures).
+//Check that the composition of ClientModule and ServerAbstractionModule is safe (no local assertion failures).
 test testcase1: 
   (compose (rename TestDriver_1Client1Server to Main in TestDriver1), 
-           Client, 
-           ServerAbs);
+           ClientModule, 
+           ServerAbstractionModule);
 
-//test case 2: check that the client satisfies the spec of ReqIdsAreMonotonicallyIncreasing
+//Check that ClientModule satisfies the spec ReqIdsAreMonotonicallyIncreasing.
 test testcase2: 
   (compose (rename TestDriver_1Client1Server to Main in TestDriver1), 
-           (assert ReqIdsAreMonotonicallyIncreasing in Client), 
-           ServerAbs);
+           (assert ReqIdsAreMonotonicallyIncreasing in ClientModule), 
+           ServerAbstractionModule);
 
-//final c code generation for the implementation.
-//note that implementation module need not be closed.
-implementation (compose Client, Server);
+//C code generation for the implementation.
+//Note that implementation module need not be closed.
+implementation (compose ClientModule, ServerModule);

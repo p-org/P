@@ -1,4 +1,4 @@
-machine ServerAbstraction: ServerClientInterface
+machine ServerAbstractionMachine: ServerClientInterface
 receives eRequest;
 sends eResponse;
 {

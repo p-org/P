@@ -1,9 +1,5 @@
 /********************************************
-<<<<<<< HEAD
 ClientMachine Declaration:
-=======
-CliegntMachine Declaration:
->>>>>>> 67e07c7449eeb61e3ee19fa58dbe9632d2861fb7
 * ClientMachine sends multiple eRequest events to the server and waits for response.
 * ClientMachine makes an assumption that the responses are always 
   in the order as the requests being sent.

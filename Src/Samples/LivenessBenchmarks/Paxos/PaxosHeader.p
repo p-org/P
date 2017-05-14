@@ -10,9 +10,9 @@ event reject assume 3: ProposalIdType;
 event accepted assume 3: ProposalType;
 
 
-//Global constants
-enum GlobalContants {
-  GC_NumOfAccptNodes = 3,
+// Global constants
+enum GlobalConstants {
+  GC_NumOfAcceptNodes = 3,
   GC_NumOfProposerNodes = 2,
   GC_Default_Value = 0
 }

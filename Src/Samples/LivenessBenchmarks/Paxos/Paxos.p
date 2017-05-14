@@ -12,7 +12,7 @@ machine Main {
       var index: int;
       index = 0;
       //create acceptors
-      while(index < GC_NumOfAccptNodes)
+      while(index < GC_NumOfAcceptNodes)
       {
         temp =  new AcceptorMachine();
         acceptors += (index, temp);
@@ -119,7 +119,7 @@ machine ProposerMachine {
       //propose some random value;
       proposeValue = serverid * 10 + 1;
       nextProposalId = (serverid = serverid, round = 1);
-      majority = GC_NumOfAccptNodes/2 + 1;
+      majority = GC_NumOfAcceptNodes/2 + 1;
       timer = CreateTimer(this);
       goto ProposerPhaseOne;
     }
@@ -148,7 +148,7 @@ machine ProposerMachine {
     }
 
     on agree do (payload: ProposalType) {
-      numOfAgreeRecv =numOfAgreeRecv + 1;
+      numOfAgreeRecv = numOfAgreeRecv + 1;
       if(ProposalLessThan(promisedAgree.pid, payload.pid))
       {
         promisedAgree = payload;
@@ -174,7 +174,7 @@ machine ProposerMachine {
   }
 
   fun GetValueToBeProposed() : int {
-    if(promisedAgree.value == 0)
+    if(promisedAgree.value == GC_Default_Value)
     {
       return proposeValue;
     }

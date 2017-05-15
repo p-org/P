@@ -1,5 +1,4 @@
 machine AbstractServerMachine: ServerClientInterface
-receives eRequest;
 sends eResponse;
 {
   start state Init {
@@ -15,7 +14,17 @@ spec ReqIdsAreMonotonicallyIncreasing observes eRequest {
   var previousId : int;
   start state Init {
     on eRequest do (payload: requestType){
-        assert(payload.id > previousId);
+        assert(payload.id == previousId + 1);
+        previousId = payload.id;
+    }
+  }
+}
+
+spec RespIdsAreMonotonicallyIncreasing observes eResponse {
+  var previousId : int;
+  start state Init {
+    on eResponse do (payload: responseType){
+        assert(payload.id == previousId + 1);
         previousId = payload.id;
     }
   }

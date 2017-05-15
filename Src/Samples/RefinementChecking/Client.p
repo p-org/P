@@ -4,7 +4,6 @@ Client makes an assumption that the responses are in the same order as the reque
 ********************************************/
 
 machine ClientMachine : ClientInterface
-receives eResponse;
 sends eRequest;
 {
   var server : ServerClientInterface;

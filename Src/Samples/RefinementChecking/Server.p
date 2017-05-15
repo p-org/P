@@ -1,14 +1,12 @@
-/********************************************************
-Server receives eRequest event from the client and performs local computation.
-Based on the local computation, server responds with either eReqSuccessful or eReqFailed.
-Server responds to requests in the order in which they were received.
-*********************************************************/
-
-type ServerHelperInterface() = { eReqSuccessful, eReqFailed };
-type HelperInterface(ServerHelperInterface) = { eProcessReq };
+/*************************************************************
+Server receives eRequest event from the client and performs
+local computation.  Based on the local computation, server
+responds with either eReqSuccessful or eReqFailed.  Server
+responds to requests in the order in which they were received.
+*************************************************************/
 
 machine ServerMachine : ServerClientInterface
-receives eReqSuccessful, eReqFailed, eRequest;
+receives eReqSuccessful, eReqFailed;
 sends eResponse, eProcessReq;
 {
   var helper: HelperInterface;
@@ -36,7 +34,8 @@ sends eResponse, eProcessReq;
 }
 
 /***************************************************************
-The helper machine performs some complex computation and returns either eReqSuccessful or eReqFailed.
+The helper machine performs some complex computation and returns
+either eReqSuccessful or eReqFailed.
 ****************************************************************/
 machine HelperMachine : HelperInterface
 sends eReqSuccessful, eReqFailed;

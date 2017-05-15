@@ -16,7 +16,6 @@ sends;
 
 //Test driver that behaves as a client for testing that server's abstraction is correct
 machine TestDriver_CheckRefinement : ClientInterface 
-receives eResponse;
 sends eRequest;
 {
   var nextReqId : int;

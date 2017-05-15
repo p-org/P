@@ -14,28 +14,23 @@ module AbstractServerModule
   AbstractServerMachine
 }
 
-module TestDriver1 
-{
-  TestDriver_1Client1Server
-}
-
-module TestDriver2 
-{
-  TestDriver_CheckRefinement
-}
-
-//Check that server abstraction is correct.
-test testcase0: 
-  (compose (rename TestDriver_CheckRefinement to Main in TestDriver2), ServerModule) 
-  refines 
-  (compose (rename TestDriver_CheckRefinement to Main in TestDriver2), 
-           (rename AbstractServerMachine to ServerMachine in AbstractServerModule));
-
 //Check that the composition of ClientModule and AbstractServerModule is safe.
-test testcase1: 
-  (compose (rename TestDriver_1Client1Server to Main in TestDriver1), 
+module TestDriver0 
+{
+  Main
+}
+test testcase0: 
+  (compose TestDriver0, 
            (assert ReqIdsAreMonotonicallyIncreasing, RespIdsAreMonotonicallyIncreasing in
                    (compose ClientModule, AbstractServerModule)));
+
+//Check that server abstraction is correct.
+module TestDriver1 = (compose TestDriver0, ClientModule);
+test testcase1: 
+  (compose TestDriver1, ServerModule) 
+  refines 
+  (compose TestDriver1, 
+           (rename AbstractServerMachine to ServerMachine in AbstractServerModule));
 
 //C code generation for the implementation.
 //Note that implementation module need not be closed.

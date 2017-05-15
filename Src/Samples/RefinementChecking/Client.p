@@ -1,7 +1,8 @@
-/********************************************
+/**************************************************************************
 Client sends multiple eRequest events to the server and waits for response.
-Client makes an assumption that the responses are in the same order as the requests being sent.
-********************************************/
+Server responds with eResponse event for each eRequest event.
+The responses must be in the same order as the requests being sent.
+**************************************************************************/
 
 machine ClientMachine : ClientInterface
 sends eRequest;
@@ -37,7 +38,4 @@ sends eRequest;
         lastRecvSuccessfulReqId = payload.id;
     }
   }
-
 }
-
-

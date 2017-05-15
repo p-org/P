@@ -1,4 +1,4 @@
-//Events between server and client
+//Events between client and server
 event eRequest : requestType;
 event eResponse: responseType;
 

@@ -33,5 +33,4 @@ test testcase1:
            (rename AbstractServerMachine to ServerMachine in AbstractServerModule));
 
 //C code generation for the implementation.
-//Note that implementation module need not be closed.
 implementation (compose ClientModule, ServerModule);

@@ -60,7 +60,7 @@ spec ProgressGuarantee observes eTransaction, eTransactionSuccess, eTransactionF
 		ignore eTransactionFailed, eTransactionSuccess;
 	}
 
-	hot state WaitForSuccess {
+	hot state WaitForResponse {
 		ignore eTransaction;
 		on eTransactionSuccess goto WaitTransSuccess;
 		on eTransactionFailed goto WaitForTrans;

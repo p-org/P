@@ -1,6 +1,6 @@
 machine Main 
 {
-  var timer: Timer;
+  var timer: TimerPtr;
   start state Init {  
     entry { 	
       timer = CreateTimer(this);
@@ -10,7 +10,7 @@ machine Main
 
   state PrintHello {
     entry {
-      print "Hello";
+      print "Hello\n";
       StartTimer(timer, 100);
     }
     on TIMEOUT goto PrintHello;

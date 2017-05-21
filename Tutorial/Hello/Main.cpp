@@ -169,9 +169,12 @@ int main(int argc, char *argv[])
 
     //create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();
-    PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
+    PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Main, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
+	
+	//Sleep(INFINITE);
 
+	
     // Wait for the timer.
 	int iterations = 10;
     while (iterations--) {
@@ -180,7 +183,7 @@ int main(int argc, char *argv[])
 
 	PrtHaltMachine((PRT_MACHINEINST_PRIV*)machine);
 	PrtStopProcess(ContainerProcess);
-
+	
     return 0;
 
 }

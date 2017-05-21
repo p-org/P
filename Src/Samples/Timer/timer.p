@@ -16,7 +16,7 @@ model fun CreateTimer(owner : machine): TimerPtr {
 }
 
 model fun StartTimer(timer: TimerPtr, time: int) {
-	send timer, START, 100;
+	send timer, START, time;
 }
 
 model fun CancelTimer(timer: TimerPtr) {

@@ -22,11 +22,11 @@ Details about these extensions will be posted soon.
 
 Publications
 ==========================================================
-- **[P: Safe asynchronous event-driven programming]()**.
+- **[P: Safe asynchronous event-driven programming](https://people.eecs.berkeley.edu/~ankush/Papers/p321-desai.pdf)**.
 Ankush Desai, Vivek Gupta, Ethan Jackson, Shaz Qadeer, Sriram Rajamani, and Damien Zufferey.
 In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI), 2013.
 
-- **[Systematic testing of asynchronous reactive systems](http://dx.doi.org/10.1145/2786805.2786861)**.
+- **[Systematic testing of asynchronous reactive systems](https://people.eecs.berkeley.edu/~ankush/Papers/fse-desai.pdf)**.
 Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
 

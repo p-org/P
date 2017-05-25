@@ -75,6 +75,8 @@ xbuild PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration
 
 popd
 
+pushd $SCRIPTPATH
 mkdir -p build; cd build; cmake ../../Src; make
+popd
 
 

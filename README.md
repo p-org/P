@@ -22,11 +22,11 @@ Details about these extensions will be posted soon.
 
 Publications
 ==========================================================
-- **[P: Safe asynchronous event-driven programming](http://research.microsoft.com/pubs/191069/pldi212_desai.pdf)**.
+- **[P: Safe asynchronous event-driven programming](https://people.eecs.berkeley.edu/~ankush/Papers/p321-desai.pdf)**.
 Ankush Desai, Vivek Gupta, Ethan Jackson, Shaz Qadeer, Sriram Rajamani, and Damien Zufferey.
 In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI), 2013.
 
-- **[Systematic testing of asynchronous reactive systems](http://dx.doi.org/10.1145/2786805.2786861)**.
+- **[Systematic testing of asynchronous reactive systems](https://people.eecs.berkeley.edu/~ankush/Papers/fse-desai.pdf)**.
 Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
 
@@ -34,10 +34,17 @@ In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Enginee
 Ankush Desai, Indranil Saha, Jianqiao Yang, Shaz Qadeer, and Sanjit A. Seshia.
 In Proceedings of the 8th ACM/IEEE International Conference on Cyber-Physical Systems (ICCPS), 2017.
 
+Blogs
+============================================================
+- **[P: A programming language designed for asynchrony, fault-tolerance and uncertainty](https://www.microsoft.com/en-us/research/blog/p-programming-language-asynchrony/)** by Shaz Qadeer.
+- **[Building robust USB 3.0 support](https://blogs.msdn.microsoft.com/b8/2011/08/22/building-robust-usb-3-0-support/)**
+
+
+
 News
 ============================================================
 - **TechWorld[2016]**: **[Microsoft open-sources P language for IoT](http://www.techworld.com.au/article/608591/microsoft-open-sources-p-language-iot/)**
 - **InfoQ**[2016]: **[Microsoft Open-Sources P Language for Safe Async Event-Driven Programming](https://www.infoq.com/news/2016/10/microsoft-p-language-opensourced)**
 - **Reddit[2016]**: **[Microsoft opensources P language](https://www.reddit.com/r/programming/comments/56nbbx/microsoft_opensources_p_language/)**
-- **Microsoft Blog**[2011]: **[Building robust USB 3.0 support](https://blogs.msdn.microsoft.com/b8/2011/08/22/building-robust-usb-3-0-support/)**
+
 

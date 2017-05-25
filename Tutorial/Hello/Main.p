@@ -1,18 +1,46 @@
-machine Main 
+machine Hello
 {
   var timer: TimerPtr;
   start state Init {  
     entry { 	
       timer = CreateTimer(this);
-      goto PrintHello; 
+      goto GetInput; 
     } 
+  }
+
+  state GetInput {
+	  entry {
+      var b: bool;
+      b = Continue();
+      if (b) 
+        goto PrintHello;
+      else
+        goto Stop;
+	  }
   }
 
   state PrintHello {
     entry {
-      print "Hello\n";
       StartTimer(timer, 100);
     }
-    on TIMEOUT goto PrintHello;
+    on TIMEOUT goto GetInput with {
+      print "Hello\n";      
+    }
   }
-} 
+
+  state Stop { 
+    entry {
+      StopProgram();
+    }
+  }
+
+  model fun Continue() : bool
+  {
+    return $;
+  }
+
+  model fun StopProgram()
+  {
+    
+  }
+}

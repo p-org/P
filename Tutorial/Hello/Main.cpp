@@ -146,16 +146,6 @@ ExceptionHandler(
 
 }
 
-/**
-* The main function performs the following steps
-* 1) If the createMain option is true then it create the main machine.
-* 2) If the createMain option is false then it creates the Container machine.
-* 3) It creates a RPC server to listen for messages.
-
-Also note that the machine hosting the main machine does not host container machine.
-
-**/
-
 int main(int argc, char *argv[])
 {
 	PrtInitialize(&P_GEND_PROGRAM);
@@ -169,16 +159,20 @@ int main(int argc, char *argv[])
 
     //create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();
-    PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Main, 1, PRT_FUN_PARAM_CLONE, payload);
+    PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Hello, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
 	
-	//Sleep(INFINITE);
-
-	
+	while (true)
+	{
+		// read input
+		if (true)
+			SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
+		else
+			break;
+	}
     // Wait for the timer.
-	int iterations = 10;
+	int iteration = 10;
     while (iterations--) {
-		SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
     }
 
 	PrtHaltMachine((PRT_MACHINEINST_PRIV*)machine);

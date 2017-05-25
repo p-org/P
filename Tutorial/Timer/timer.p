@@ -19,7 +19,9 @@ model fun StartTimer(timer: TimerPtr, time: int) {
 // local event for control transfer within timer
 event UNIT; 
 
-model Timer {
+model Timer
+receives START;
+{
   var client: machine;
 
   start state Init {

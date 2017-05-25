@@ -15,7 +15,7 @@ machine FaultTolerantMachine
 receives eQueryStateResponse, halt;
 {
     var service: IService;
-    var  reliableStorage: IReliableStorage;
+    var reliableStorage: IReliableStorage;
     start state Init {
         entry (arg: (IService, IReliableStorage)) {
             service = arg.0;
@@ -38,32 +38,26 @@ receives eQueryStateResponse, halt;
 
     state State0 {
         entry {
-            var _halt: bool;
             send service, eDoOpI;
-            _halt = PossiblyHalt();
-            if (_halt) raise halt;
+            PossiblyRaiseHalt();
             send reliableStorage, eUpdateState1;
         }
     }
 
     state State1 {
         entry { 
-            var _halt: bool;
             send service, eDoOpJ; 
-            _halt = PossiblyHalt();
-            if (_halt) raise halt;
+            PossiblyRaiseHalt();
             send reliableStorage, eUpdateState0;
         }
     }
 
-    fun PossiblyHalt() : bool
+    model fun PossiblyHalt()
     {
-        var retVal: bool;
         receive {
-            case halt: { retVal = true; }
-            case null: { retVal = false; }
+	    case halt: { raise halt; }
+            case null: { }
         }
-        return retVal;
     }
 }
 

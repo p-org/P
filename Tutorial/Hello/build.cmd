@@ -5,7 +5,9 @@ if not exist "%pc%" goto :noP
 
 set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
-msbuild /p:Platform=x64 /p:Configuration=Release Hello.vcxproj
+REM msbuild /p:Platform=x64 /p:Configuration=Release Hello.vcxproj
+
+REM %pc% /generate:C# /shared ..\Timer\Timer.p /t:Timer.4ml /outputDir:..\Timer
 
 %pc% /generate:C# /shared Main.p /t:Hello.4ml /r:..\Timer\timer.4ml
 

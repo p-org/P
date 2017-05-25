@@ -7,9 +7,23 @@ cd ..
 
 export MONO_IOMAP=case
 
-echo ============= Building P SDK ===============
+echo ========= Detecting Build System ===========
 
-type xbuild >/dev/null 2>&1 || { echo >&2 "xbuild is not installed. Exiting..."; popd; exit 1; }
+if [ -z "$MSBUILD" ]; then
+    if $(type msbuild > /dev/null 2>&1); then
+        MSBUILD=msbuild
+    elif $(type xbuild > /dev/null 2>&1); then
+        MSBUILD=xbuild
+    else
+        echo >&2 "msbuild or xbuild are not installed. Exiting...";
+        popd;
+        exit 1;
+    fi
+fi
+
+echo Using $MSBUILD to build solutions
+
+echo ============= Building P SDK ===============
 
 Configuration=Debug
 Platform=x86
@@ -29,8 +43,8 @@ mono Bld/nuget.exe restore PLinux.sln
 
 cd Ext/Zing
 
-echo xbuild Zing.sln /p:Platform=$Platform /p:Configuration=$Configuration
-xbuild ZING.sln /p:Platform=$Platform /p:Configuration=$Configuration
+echo $MSBUILD Zing.sln /p:Platform=$Platform /p:Configuration=$Configuration
+$MSBUILD ZING.sln /p:Platform=$Platform /p:Configuration=$Configuration
 
 if [ $? -ne  0 ]; then
     echo "Zing build failed. Exiting..."
@@ -66,12 +80,12 @@ done
 
 cd ../..
 
-echo xbuild ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
-xbuild ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
+echo $MSBUILD ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
+$MSBUILD ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
 
-echo xbuild PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration
-xbuild  PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration /t:Clean
-xbuild PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration
+echo $MSBUILD PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration
+$MSBUILD PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration /t:Clean
+$MSBUILD PLinux.sln /p:Platform=$Platform /p:Configuration=$Configuration
 
 popd
 

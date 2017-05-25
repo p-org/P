@@ -7,9 +7,9 @@ set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
 msbuild /p:Platform=x64 /p:Configuration=Release Hello.vcxproj
 
-%pc% /generate:C# /shared Main.p /t:Hello.4ml /r:..\..\Src\Samples\Timer\PGenerated\timer.4ml
+%pc% /generate:C# /shared Main.p /t:Hello.4ml /r:..\Timer\timer.4ml
 
-%pc% /link /shared /r:Hello.4ml /r:..\..\Src\Samples\Timer\PGenerated\timer.4ml
+%pc% /link /shared TestScript.p /r:Hello.4ml /r:..\Timer\timer.4ml
 
 %pt% /psharp linker.dll
 

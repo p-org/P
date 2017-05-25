@@ -78,7 +78,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(StandardPDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.\PGenerated;..\..\Src\Samples\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -100,7 +100,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(StandardPDefinitions);%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.\PGenerated;..\..\Src\Samples\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -118,7 +118,7 @@
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.\PGenerated;..\..\Src\Samples\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -138,7 +138,7 @@
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.\PGenerated;..\..\Src\Samples\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -161,8 +161,8 @@
     <None Include="Main.p" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Src\Samples\Timer\Timer.vcxproj" />
-    <PLibraryReference Include="..\..\Src\Samples\Timer\PGenerated\Timer.4ml" />
+    <ProjectReference Include="..\Timer\Timer.vcxproj" />
+    <PLibraryReference Include="..\Timer\PGenerated\Timer.4ml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\Bld\Targets\p.targets" />

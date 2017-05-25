@@ -35,7 +35,7 @@ machine Hello
   }
 
   model fun Continue() : bool
-  {
+  { 
     return $;
   }
 

@@ -7,9 +7,7 @@ extern "C" {
 #include <string>
 
 /* Global variables */
-PRT_PROCESS* ContainerProcess;
-struct ClusterConfig ClusterConfiguration;
-PRT_INT64 sendMessageSeqNumber = 0;
+HANDLE terminationEvent;
 
 /* the Stubs */
 
@@ -67,13 +65,10 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	switch (step)
 	{
 	case PRT_STEP_HALT:
-		printf("HALT at %S\n", stateId.c_str());
 		break;
 	case PRT_STEP_ENQUEUE:
 		break;
 	case PRT_STEP_DEQUEUE:
-		printf("DEQUEUE event %S from %S at %S\n", eventName.c_str(), 
-			senderStateId.c_str(), stateId.c_str());
 		break;
 	case PRT_STEP_ENTRY:
 		break;
@@ -146,11 +141,44 @@ ExceptionHandler(
 
 }
 
+PRT_VALUE *P_FUN_Hello_Continue_FOREIGN(PRT_MACHINEINST *context)
+{
+	char input[2];
+	while (true)
+	{
+		fputs("Continue (Y/N): ", stdout);
+		fflush(stdout);
+		fgets(input, 2, stdin);
+		fseek(stdin, 0, SEEK_END);
+		if (input[0] == 'Y')
+		{
+			return PrtMkBoolValue(PRT_TRUE);
+		}
+		else if (input[0] == 'N')
+		{
+			return PrtMkBoolValue(PRT_FALSE);
+		}
+		else
+		{
+			fputs("Illegal input\n", stdout);
+			fflush(stdout);
+		}
+	}
+}
+
+PRT_VALUE *P_FUN_Hello_StopProgram_FOREIGN(PRT_MACHINEINST *context)
+{
+	SetEvent(terminationEvent);
+	return NULL;
+}
+
 int main(int argc, char *argv[])
 {
-	PrtInitialize(&P_GEND_PROGRAM);
+	PRT_PROCESS* ContainerProcess;
+	PRT_GUID processGuid;
 
-    PRT_GUID processGuid;
+	terminationEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	PrtInitialize(&P_GEND_PROGRAM);
     processGuid.data1 = 1;
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;
@@ -162,18 +190,7 @@ int main(int argc, char *argv[])
     PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Hello, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
 	
-	while (true)
-	{
-		// read input
-		if (true)
-			SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
-		else
-			break;
-	}
-    // Wait for the timer.
-	int iteration = 10;
-    while (iterations--) {
-    }
+	WaitForSingleObject(terminationEvent, INFINITE);
 
 	PrtHaltMachine((PRT_MACHINEINST_PRIV*)machine);
 	PrtStopProcess(ContainerProcess);

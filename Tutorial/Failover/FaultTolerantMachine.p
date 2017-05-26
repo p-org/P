@@ -4,11 +4,11 @@ event eDoOpI;
 event eDoOpJ;
 event eQueryState: machine;
 event eQueryStateResponse: MyState;
-event eUpdateState0;
-event eUpdateState1;
+event eUpdateToState0;
+event eUpdateToState1;
 
 type IService() = { eDoOpI, eDoOpJ };
-type IReliableStorage() = { eQueryState, eUpdateState0, eUpdateState1 };
+type IReliableStorage() = { eQueryState, eUpdateToState0, eUpdateToState1 };
 type Pair = (IService, IReliableStorage);
 
 machine FaultTolerantMachine : IHaltable
@@ -40,7 +40,7 @@ receives eQueryStateResponse;
         entry {
             send service, eDoOpI;
             PossiblyRaiseHalt();
-            send reliableStorage, eUpdateState1;
+            send reliableStorage, eUpdateToState1;
         }
     }
 
@@ -48,7 +48,7 @@ receives eQueryStateResponse;
         entry { 
             send service, eDoOpJ; 
             PossiblyRaiseHalt();
-            send reliableStorage, eUpdateState0;
+            send reliableStorage, eUpdateToState0;
         }
     }
 
@@ -94,10 +94,10 @@ machine ReliableStorage : IReliableStorage
         on eQueryState do (m: machine) {
             send m, eQueryStateResponse, s;
         }
-        on eUpdateState0 do {
+        on eUpdateToState0 do {
             s = State0;
         }
-        on eUpdateState1 do {
+        on eUpdateToState1 do {
             s = State1;
         }
     }

@@ -128,7 +128,7 @@ ExceptionHandler(
 	exit(-1);
 }
 
-PRT_VALUE *P_FUN_Hello_StopProgram_FOREIGN(PRT_MACHINEINST *context)
+PRT_VALUE *P_FUN_Client_StopProgram_FOREIGN(PRT_MACHINEINST *context)
 {
 	SetEvent(terminationEvent);
 	return NULL;

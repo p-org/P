@@ -9,7 +9,7 @@
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
     <PCompileOptions>/generate:C0 /t:$(ProjectName).4ml /shared /outputDir:$(PGeneratedDir)</PCompileOptions>
-    <PLinkOptions>/shared /link /outputDir:$(PGeneratedDir)</PLinkOptions>
+    <PLinkOptions>$(PLinkOptions) /shared /link /outputDir:$(PGeneratedDir)</PLinkOptions>
     <PCompileOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PCompileOptions) /profile</PCompileOptions>
     <PLinkOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PLinkOptions) /profile</PLinkOptions>
   </PropertyGroup>

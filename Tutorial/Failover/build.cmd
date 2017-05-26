@@ -5,7 +5,7 @@ if not exist "%pc%" goto :noP
 
 set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
-%pc% /generate:C# /shared Main.p FaultTolerantMachine.p Safety.p /t:Failover.4ml
+%pc% /generate:C# /shared Main.p FaultTolerantMachine.p /t:Failover.4ml
 
 if NOT errorlevel 0 goto :eof
 

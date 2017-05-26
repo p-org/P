@@ -73,6 +73,8 @@ machine Service : IService
                 donei = true;
             }
             donej = false;
+
+            assert i == j + 1;
         }
         on eDoOpJ do {
             if (!donej) {
@@ -80,6 +82,8 @@ machine Service : IService
                 donej = true;
             }
             donei = false;
+
+            assert i == j;
         }
     }
 }

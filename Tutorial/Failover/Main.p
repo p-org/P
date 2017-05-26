@@ -1,14 +1,16 @@
+type IHaltable() = { halt };
+
 machine Main {
     var reliableStorage: IReliableStorage;
     var service: IService;
     start state Init {
         entry {
             var m: machine;
-            reliableStorage = new ReliableStorage();
-            service = new Service();
-            m = new FaultTolerantMachine(service, reliableStorage);
+            reliableStorage = new IReliableStorage();
+            service = new IService();
+            m = new IHaltable(service, reliableStorage);
             send m, halt;
-            m = new FaultTolerantMachine(service, reliableStorage); 
+            m = new IHaltable(service, reliableStorage); 
         }
     }
 }

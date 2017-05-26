@@ -11,8 +11,8 @@ type IService() = { eDoOpI, eDoOpJ };
 type IReliableStorage() = { eQueryState, eUpdateState0, eUpdateState1 };
 type Pair = (IService, IReliableStorage);
 
-machine FaultTolerantMachine 
-receives eQueryStateResponse, halt;
+machine FaultTolerantMachine : IHaltable
+receives eQueryStateResponse;
 {
     var service: IService;
     var reliableStorage: IReliableStorage;
@@ -52,17 +52,16 @@ receives eQueryStateResponse, halt;
         }
     }
 
-    model fun PossiblyHalt()
+    model fun PossiblyRaiseHalt()
     {
         receive {
-	    case halt: { raise halt; }
+	        case halt: { raise halt; }
             case null: { }
         }
     }
 }
 
-machine Service 
-receives eDoOpI, eDoOpJ;
+machine Service : IService
 {
     var i, j: int;
     var donei, donej: bool;
@@ -85,8 +84,7 @@ receives eDoOpI, eDoOpJ;
     }
 }
 
-machine ReliableStorage
-receives eQueryState, eUpdateState0, eUpdateState1;
+machine ReliableStorage : IReliableStorage
 {
     var s: MyState;
     start state Init {

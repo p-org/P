@@ -1,3 +1,6 @@
+event PING;
+event PONG;
+
 spec Safety observes PING, PONG { 
     var pending: int;
     start state Init { 

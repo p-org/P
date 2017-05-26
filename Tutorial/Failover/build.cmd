@@ -9,7 +9,7 @@ set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
 %pc% /link /shared TestScript.p /r:Failover.4ml
 
-%pt% /psharp linker.dll
+%pt% /psharp Test0.dll
 
 goto :eof
 :noP

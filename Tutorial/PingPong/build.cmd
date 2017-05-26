@@ -7,9 +7,11 @@ set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
 msbuild /p:Platform=x64 /p:Configuration=Release PingPong.vcxproj
 
-%pc% /generate:C# /shared Main.p PingPong.p Safety.p Liveness.p /r:..\Timer\timer.4ml
+%pc% /generate:C# /shared ..\Timer\Timer.p /t:Timer.4ml /outputDir:..\Timer
 
-%pc% /link /shared TestScript.p /r:Main.4ml /r:..\Timer\timer.4ml
+%pc% /generate:C# /shared Main.p PingPong.p Safety.p Liveness.p /t:PingPong.4ml /r:..\Timer\timer.4ml
+
+%pc% /link /shared TestScript.p /r:PingPong.4ml /r:..\Timer\timer.4ml
 
 %pt% /psharp linker.dll
 

@@ -1,7 +1,3 @@
-// Test.cpp : Defines the entry point for the console application.
-//
-
-#include "stdafx.h"
 #include <stdio.h>
 extern "C" {
 #include "PrtDist.h"
@@ -11,21 +7,9 @@ extern "C" {
 #include <string>
 
 /* Global variables */
-PRT_PROCESS* ContainerProcess;
-struct ClusterConfig ClusterConfiguration;
-PRT_INT64 sendMessageSeqNumber = 0;
+HANDLE terminationEvent;
 
-/* the Stubs */
-
-
-typedef struct ClientContext {
-    PRT_VALUE *client;
-} ClientContext;
-
-typedef struct ServerContext {
-    PRT_VALUE *client;
-} ServerContext;
-
+/* Stubs */
 std::wstring ConvertToUnicode(const char* str)
 {
 	std::string temp(str == NULL ? "" : str);
@@ -71,13 +55,10 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	switch (step)
 	{
 	case PRT_STEP_HALT:
-		printf("HALT at %S\n", stateId.c_str());
 		break;
 	case PRT_STEP_ENQUEUE:
 		break;
 	case PRT_STEP_DEQUEUE:
-		printf("DEQUEUE event %S from %S at %S\n", eventName.c_str(), 
-			senderStateId.c_str(), stateId.c_str());
 		break;
 	case PRT_STEP_ENTRY:
 		break;
@@ -98,9 +79,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	case PRT_STEP_IGNORE:
 		break;
 	}
-
 }
-
 
 void
 ExceptionHandler(
@@ -147,44 +126,35 @@ ExceptionHandler(
 	}
 
 	exit(-1);
-
 }
 
-/**
-* The main function performs the following steps
-* 1) If the createMain option is true then it create the main machine.
-* 2) If the createMain option is false then it creates the Container machine.
-* 3) It creates a RPC server to listen for messages.
-
-Also note that the machine hosting the main machine does not host container machine.
-
-**/
+PRT_VALUE *P_FUN_Hello_StopProgram_FOREIGN(PRT_MACHINEINST *context)
+{
+	SetEvent(terminationEvent);
+	return NULL;
+}
 
 int main(int argc, char *argv[])
 {
-	PrtInitialize(&P_GEND_PROGRAM);
+	PRT_PROCESS* ContainerProcess;
+	PRT_GUID processGuid;
 
-    PRT_GUID processGuid;
+	terminationEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	PrtInitialize(&P_GEND_PROGRAM);
     processGuid.data1 = 1;
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;
     processGuid.data4 = 0;
     ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ExceptionHandler, LogHandler);
 
-    //create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();
     PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
-
-    // Wait for the timer.
-	int iterations = 10;
-    while (iterations--) {
-		SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
-    }
+	
+	WaitForSingleObject(terminationEvent, INFINITE);
 
 	PrtHaltMachine((PRT_MACHINEINST_PRIV*)machine);
 	PrtStopProcess(ContainerProcess);
-
+	
     return 0;
-
 }

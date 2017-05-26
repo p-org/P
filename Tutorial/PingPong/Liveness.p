@@ -1,5 +1,5 @@
 spec Liveness observes PING, PONG { 
-    start state WaitPing { 
+    start cold state WaitPing { 
         on PING goto WaitPong;
     }
     hot state WaitPong {

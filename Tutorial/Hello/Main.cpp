@@ -9,17 +9,7 @@ extern "C" {
 /* Global variables */
 HANDLE terminationEvent;
 
-/* the Stubs */
-
-
-typedef struct ClientContext {
-    PRT_VALUE *client;
-} ClientContext;
-
-typedef struct ServerContext {
-    PRT_VALUE *client;
-} ServerContext;
-
+/* Stubs */
 std::wstring ConvertToUnicode(const char* str)
 {
 	std::string temp(str == NULL ? "" : str);
@@ -89,7 +79,6 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	case PRT_STEP_IGNORE:
 		break;
 	}
-
 }
 
 
@@ -138,7 +127,6 @@ ExceptionHandler(
 	}
 
 	exit(-1);
-
 }
 
 PRT_VALUE *P_FUN_Hello_Continue_FOREIGN(PRT_MACHINEINST *context)
@@ -185,7 +173,6 @@ int main(int argc, char *argv[])
     processGuid.data4 = 0;
     ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ExceptionHandler, LogHandler);
 
-    //create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();
     PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Hello, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
@@ -196,5 +183,4 @@ int main(int argc, char *argv[])
 	PrtStopProcess(ContainerProcess);
 	
     return 0;
-
 }

@@ -36,6 +36,14 @@ sends PING;
   }
 
   state Stop {
+    entry {
+      StopProgram();
+    }
+  }
+
+  model fun StopProgram()
+  {
+    
   }
 }
 

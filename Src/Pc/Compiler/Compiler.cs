@@ -1377,7 +1377,7 @@
                 return false;
             }
 
-            var linker = new PToCSharpLinker(Log, errorProgram, Options.dependencies.Select(x => Path.GetFileNameWithoutExtension(x)).ToList());
+            var linker = new PToCSharpLinker(Log, errorProgram, Options.dependencies);
             linker.GenerateCSharpLinkerOutput(outputDirName);
 
             var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));

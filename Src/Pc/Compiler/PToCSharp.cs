@@ -4270,14 +4270,14 @@ namespace Microsoft.Pc
             List<string> allCSFiles = new List<string>();
 
             allCSFiles.Add(Path.Combine(outputDir, testCaseName + ".cs"));
-            allCSFiles.AddRange(inputFiles.Select(fileName => Path.Combine(outputDir, fileName + ".cs")).ToList());
+            allCSFiles.AddRange(inputFiles.Select(fileName => Path.ChangeExtension(fileName,".cs")).ToList());
             
             string cs_code = "";
             foreach(var file in allCSFiles)
             {
                 if (!File.Exists(file))
                 {
-                    //Log.WriteMessage(string.Format("{0} not found, recompile the corresponding P file", file), SeverityKind.Warning);
+                    Log.WriteMessage(string.Format("{0} not found, recompile the corresponding P file", file), SeverityKind.Warning);
                     return;
                 }
                 using (var sr = new StreamReader(file))

@@ -9,7 +9,11 @@ msbuild /p:Platform=x64 /p:Configuration=Release CoffeeMachine.vcxproj
 
 %pc% /generate:C# /shared CoffeeMachine.p Main.p Safety.p /t:CoffeeMachine.4ml /r:..\..\Src\Samples\Timer\Timer.4ml
 
+if NOT errorlevel 0 goto :eof
+
 %pc% /link /shared TestScript.p /r:CoffeeMachine.4ml /r:..\..\Src\Samples\Timer\Timer.4ml
+
+if NOT errorlevel 0 goto :eof
 
 %pt% linker.dll
 

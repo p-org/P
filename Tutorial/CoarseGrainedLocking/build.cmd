@@ -5,9 +5,9 @@ if not exist "%pc%" goto :noP
 
 set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
-msbuild /p:Platform=x64 /p:Configuration=Release CoarseGrainedLocking.sln
+msbuild /p:Platform=x64 /p:Configuration=Release CoarseGrainedLocking.vcxproj
 
-%pc% /generate:C# /shared Client.p Lock.p Main.p
+%pc% /generate:C# /shared Client.p Lock.p Main.p /t:Client.4ml
 
 %pc% /link /shared /r:Client.4ml
 

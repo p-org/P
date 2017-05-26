@@ -5,9 +5,9 @@ if not exist "%pc%" goto :noP
 
 set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
-%pc% /generate:C# /shared Main.p FaultTolerantMachine.p Safety.p 
+%pc% /generate:C# /shared Main.p FaultTolerantMachine.p Safety.p /t:Failover.4ml
 
-%pc% /link /shared TestScript.p /r:Main.4ml
+%pc% /link /shared TestScript.p /r:Failover.4ml
 
 %pt% /psharp linker.dll
 

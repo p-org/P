@@ -138,7 +138,7 @@
                                 Console.WriteLine("Must supply path for output directory");
                                 return false;
                             }
-                            outputDir = colonArg;
+                            outputDir = Path.GetFullPath(colonArg);
                             break;
 
                         case "liveness":

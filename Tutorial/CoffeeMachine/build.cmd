@@ -5,11 +5,11 @@ if not exist "%pc%" goto :noP
 
 set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
-msbuild /p:Platform=x64 /p:Configuration=Release Sample1.sln
+msbuild /p:Platform=x64 /p:Configuration=Release CoffeeMachine.sln
 
-%pc% /generate:C# /shared CoffeeMachine.p Main.p Safety.p Timer.p
+%pc% /generate:C# /shared CoffeeMachine.p Main.p Safety.p
 
-%pc% /link /shared /r:CoffeeMachine.4ml
+%pc% /link /shared TestScript.p /r:CoffeeMachine.4ml /r:..\Src\Samples\Timer\Timer.4ml
 
 %pt% linker.dll
 

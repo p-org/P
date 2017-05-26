@@ -5,13 +5,11 @@ if not exist "%pc%" goto :noP
 
 set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
-msbuild /p:Platform=x64 /p:Configuration=Release CoarseGrainedLocking.sln
+%pc% /generate:C# /shared Main.p FaultTolerantMachine.p Safety.p 
 
-%pc% /generate:C# /shared Client.p Lock.p Main.p
+%pc% /link /shared TestScript.p /r:Main.4ml
 
-%pc% /link /shared /r:Client.4ml
-
-%pt% linker.dll
+%pt% /psharp linker.dll
 
 goto :eof
 :noP

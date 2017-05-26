@@ -1,7 +1,7 @@
 #include <stdio.h>
 extern "C" {
 #include "PrtDist.h"
-#include "Sample2.h"
+#include "CoarseGrainedLocking.h"
 }
 #include <string>
 

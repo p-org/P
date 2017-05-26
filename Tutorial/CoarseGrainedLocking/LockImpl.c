@@ -1,4 +1,4 @@
-#include "Sample2.h"
+#include "CoarseGrainedLocking.h"
 
 static PRT_UINT32 numLockInstances = 0;
 typedef struct LockContext {

@@ -4005,7 +4005,7 @@ namespace Microsoft.Pc
                 var eventsParams = new SeparatedSyntaxList<ExpressionSyntax>();
                 foreach (var ev in it.Value)
                 {
-                    eventsParams = eventsParams.Add(MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName("Events"), IdentifierName(String.Format("event_{0}", ev))));
+                    eventsParams = eventsParams.Add(GetEventVar(ev));
                 }
                 var initStmt = CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
                     ElementAccessExpression(
@@ -4212,6 +4212,29 @@ namespace Microsoft.Pc
             }
         }
         #endregion
+
+        public static string EventName(string rawName)
+        {
+            if (rawName == "null")
+            {
+                return "@null";
+            }
+            else if (rawName == "halt")
+            {
+                return rawName;
+            }
+            else
+            {
+                return String.Format("event_{0}", rawName);
+            }
+        }
+
+        public ExpressionSyntax GetEventVar(string eventName)
+        {
+            var eventClass = "Events";
+            var retVal = MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, IdentifierName(eventClass), IdentifierName(EventName(eventName)));
+            return retVal;
+        }
 
         public void GenerateCSharpLinkerOutput(string outputDir)
         {

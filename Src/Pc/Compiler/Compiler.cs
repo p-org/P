@@ -1483,7 +1483,7 @@
                 if (ft.Args.Count == 3)
                 {
                     it.MoveNext();
-                    string name = (it.Current as Cnst).GetStringValue();
+                    var name = it.Current is Cnst ? ((Cnst)it.Current).GetStringValue() : "HALT";
                     it.MoveNext();
                     string msg = (it.Current as Cnst).GetStringValue();
                     errorMessage = String.Format("{1}: ({0})", name, msg);

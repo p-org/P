@@ -21,6 +21,7 @@ event UNIT;
 
 model Timer
 receives START;
+sends TIMEOUT;
 {
   var client: machine;
 

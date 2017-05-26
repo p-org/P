@@ -13,7 +13,9 @@ msbuild /p:Platform=x64 /p:Configuration=Release PingPong.vcxproj
 
 %pc% /link /shared TestScript.p /r:PingPong.4ml /r:..\Timer\timer.4ml
 
-%pt% /psharp linker.dll
+%pt% /psharp Test0.dll
+
+%pt% /psharp Test1.dll
 
 goto :eof
 :noP

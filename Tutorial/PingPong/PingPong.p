@@ -16,7 +16,7 @@ sends PING;
     entry (n: int) { 	
 	    print "Client created\n";
       numIterations = n;
-      server = new Server(); 
+      server = new IServer(); 
       raise SUCCESS; 
     } 
     on SUCCESS goto SendPing; 

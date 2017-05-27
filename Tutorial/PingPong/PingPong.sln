@@ -4,6 +4,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PingPong", "PingPong.vcxproj", "{3EC51A08-22A0-4BB8-A784-6516F0DC1474}"
+EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Timer", "..\Timer\Timer.vcxproj", "{25142DD0-BC85-4156-8691-416FF932D341}"
 EndProject
 Global
@@ -22,6 +23,14 @@ Global
 		{3EC51A08-22A0-4BB8-A784-6516F0DC1474}.Release|x64.Build.0 = Release|x64
 		{3EC51A08-22A0-4BB8-A784-6516F0DC1474}.Release|x86.ActiveCfg = Release|Win32
 		{3EC51A08-22A0-4BB8-A784-6516F0DC1474}.Release|x86.Build.0 = Release|Win32
+		{25142DD0-BC85-4156-8691-416FF932D341}.Debug|x64.ActiveCfg = Debug|x64
+		{25142DD0-BC85-4156-8691-416FF932D341}.Debug|x64.Build.0 = Debug|x64
+		{25142DD0-BC85-4156-8691-416FF932D341}.Debug|x86.ActiveCfg = Debug|Win32
+		{25142DD0-BC85-4156-8691-416FF932D341}.Debug|x86.Build.0 = Debug|Win32
+		{25142DD0-BC85-4156-8691-416FF932D341}.Release|x64.ActiveCfg = Release|x64
+		{25142DD0-BC85-4156-8691-416FF932D341}.Release|x64.Build.0 = Release|x64
+		{25142DD0-BC85-4156-8691-416FF932D341}.Release|x86.ActiveCfg = Release|Win32
+		{25142DD0-BC85-4156-8691-416FF932D341}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

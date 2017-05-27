@@ -15,7 +15,7 @@ if NOT errorlevel 0 goto :eof
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /link /shared TestScript.p /r:PingPong.4ml /r:..\Timer\timer.4ml
+%pc% /generate:C# /link /shared TestScript.p /r:PingPong.4ml /r:..\Timer\timer.4ml
 
 if NOT errorlevel 0 goto :eof
 

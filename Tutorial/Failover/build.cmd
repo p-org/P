@@ -9,7 +9,7 @@ set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /link /shared TestScript.p /r:Failover.4ml
+%pc% /generate:C# /link /shared TestScript.p /r:Failover.4ml
 
 if NOT errorlevel 0 goto :eof
 

@@ -147,7 +147,15 @@ int main(int argc, char *argv[])
     processGuid.data4 = 0;
     ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ExceptionHandler, LogHandler);
 
-	PRT_VALUE* payload = PrtMkNullValue();
+	PRT_VALUE* payload;
+	if (argc == 1)
+	{
+		payload = PrtMkIntValue(-1);
+	}
+	else
+	{
+		payload = PrtMkIntValue(atoi(argv[1]));
+	}
     PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
 	

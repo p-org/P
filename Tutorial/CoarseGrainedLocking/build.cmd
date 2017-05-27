@@ -11,7 +11,7 @@ msbuild /p:Platform=x64 /p:Configuration=Release CoarseGrainedLocking.vcxproj
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /link /shared /r:Client.4ml
+%pc% /generate:C# /link /shared /r:Client.4ml
 
 if NOT errorlevel 0 goto :eof
 

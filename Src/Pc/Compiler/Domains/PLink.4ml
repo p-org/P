@@ -991,7 +991,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 							CRenameMap(name, _), CLinkMap(_, mOrI, _), no CLinkMap(name, mOrI, _), 
 							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
 							LinkMapDeclInnerConcat(name, m + 1, after),  
-							arr = out.Args(IntLit(-1, DEC, U), after).
+							arr = out.Args(IntLit(-1, DEC, L), after).
 	COut(5, def) :- LinkMapDeclInnerConcat(name, 0, arr),
 					def = out.VarDef(
 							      NIL, 

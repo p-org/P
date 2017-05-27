@@ -4238,6 +4238,7 @@ namespace Microsoft.Pc
 
         public bool GenerateCSharpLinkerOutput(string outputDir)
         {
+            bool success = true;
             foreach(var testCase in allTests)
             {
                 //make sure test case has a main file
@@ -4284,10 +4285,9 @@ namespace Microsoft.Pc
                 var outputFile = Path.Combine(outputDir, testCase.Key + ".cs");
                 EmitLinkerCS(finalOutput, outputFile);
                 Log.WriteMessage(string.Format("Writing {0}.cs ...", testCase.Key), SeverityKind.Info);
-                return EmitCSDll(outputDir, testCase.Key);
+                success = success & EmitCSDll(outputDir, testCase.Key);
             }
-            Log.WriteMessage(string.Format("Internal error: No testcase"), SeverityKind.Error);
-            return false;
+            return success;
         }
 
         private bool EmitCSDll(string outputDir, string testCaseName)

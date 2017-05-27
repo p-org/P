@@ -257,7 +257,7 @@ namespace Microsoft.Pc
                             options.inputFileNames = new List<string>();
                         }
 
-                        if (options.compilerOutput == CompilerOutput.Link)
+                        if (options.isLinkerPhase)
                         {
                             DebugWriteLine("Linking: " + string.Join(", ", options.inputFileNames));
                             result = compiler.Link(output, options);

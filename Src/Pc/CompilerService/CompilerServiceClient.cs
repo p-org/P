@@ -28,7 +28,7 @@ namespace Microsoft.Pc
 
         public bool Link(CommandLineOptions options, TextWriter log)
         {
-            options.compilerOutput = CompilerOutput.Link;
+            options.isLinkerPhase = true;
             return Compile(options, log);
         }
 

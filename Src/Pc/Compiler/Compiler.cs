@@ -24,7 +24,7 @@
     using System.Windows.Forms;
     using System.Xml.Linq;
 
-    public enum CompilerOutput { C0, CSharp, Zing, Link };
+    public enum CompilerOutput { C0, CSharp, Zing };
 
     public enum LivenessOption { None, Standard, Sampling };
 
@@ -1376,18 +1376,21 @@
                 UninstallProgram(linkProgramName);
                 return false;
             }
-
-            var linker = new PToCSharpLinker(Log, errorProgram, Options.dependencies);
-            linker.GenerateCSharpLinkerOutput(outputDirName);
-
-            var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
-            string linkerAliasPrefix = null;
-            extractTask = apply.Result.GetOutputModel("CLinkModel", progName, linkerAliasPrefix);
-            extractTask.Wait();
-            var cProgram = extractTask.Result;
-            Contract.Assert(cProgram != null);
-            success = RenderC(cProgram, "CLinkModel");
-
+            if(Options.compilerOutput == CompilerOutput.CSharp)
+            {
+                var linker = new PToCSharpLinker(Log, errorProgram, Options.dependencies);
+                success = linker.GenerateCSharpLinkerOutput(outputDirName);
+            }
+            else
+            {
+                var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, "CLinkModel.4ml"));
+                string linkerAliasPrefix = null;
+                extractTask = apply.Result.GetOutputModel("CLinkModel", progName, linkerAliasPrefix);
+                extractTask.Wait();
+                var cProgram = extractTask.Result;
+                Contract.Assert(cProgram != null);
+                success = RenderC(cProgram, "CLinkModel");
+            }
             UninstallProgram(linkProgramName);
             return success;
         }

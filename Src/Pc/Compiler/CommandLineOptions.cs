@@ -15,6 +15,7 @@
         public string outputDir { get; set; }
         public bool outputFormula { get; set; }
         public bool shortFileNames { get; set; }
+        public bool isLinkerPhase { get; set; }
         public CompilerOutput compilerOutput { get; set; }
         public List<string> inputFileNames { get; set; }
         public List<string> dependencies { get; set; }
@@ -31,6 +32,7 @@
             outputDir = null;
             outputFormula = false;
             shortFileNames = false;
+            isLinkerPhase = false;
             compilerOutput = CompilerOutput.C0;
             inputFileNames = new List<string>();
             dependencies = new List<string>();
@@ -43,7 +45,6 @@
             List<string> commandLineFileNames = new List<string>();
             List<string> dependencyFileNames = new List<string>();
             string targetName = null;
-            bool isLinkerPhase = false;
             foreach (string x in args)
             {
                 string arg = x;
@@ -232,7 +233,6 @@
                     Console.WriteLine("Linking requires at most one .p file and at least one .4ml dependency file");
                     return false;
                 }
-                compilerOutput = CompilerOutput.Link;
             }
             else
             {

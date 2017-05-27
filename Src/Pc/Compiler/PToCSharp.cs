@@ -4236,7 +4236,7 @@ namespace Microsoft.Pc
             return retVal;
         }
 
-        public void GenerateCSharpLinkerOutput(string outputDir)
+        public bool GenerateCSharpLinkerOutput(string outputDir)
         {
             foreach(var testCase in allTests)
             {
@@ -4244,7 +4244,7 @@ namespace Microsoft.Pc
                 if(!testCase.Value.renameMap.ContainsKey("Main"))
                 {
                     Log.WriteMessage(string.Format("No Main Machine, cannot generate {0}.dll", testCase.Key), SeverityKind.Error);
-                    return;
+                    return false;
                 }
                 SyntaxNode finalOutput = null;
 
@@ -4284,11 +4284,13 @@ namespace Microsoft.Pc
                 var outputFile = Path.Combine(outputDir, testCase.Key + ".cs");
                 EmitLinkerCS(finalOutput, outputFile);
                 Log.WriteMessage(string.Format("Writing {0}.cs ...", testCase.Key), SeverityKind.Info);
-                EmitCSDll(outputDir, testCase.Key);
+                return EmitCSDll(outputDir, testCase.Key);
             }
+            Log.WriteMessage(string.Format("Internal error: No testcase"), SeverityKind.Error);
+            return false;
         }
 
-        private void EmitCSDll(string outputDir, string testCaseName)
+        private bool EmitCSDll(string outputDir, string testCaseName)
         {
             List<string> allCSFiles = new List<string>();
 
@@ -4301,7 +4303,7 @@ namespace Microsoft.Pc
                 if (!File.Exists(file))
                 {
                     Log.WriteMessage(string.Format("{0} not found, recompile the corresponding P file", file), SeverityKind.Warning);
-                    return;
+                    return false;
                 }
                 using (var sr = new StreamReader(file))
                 {
@@ -4316,7 +4318,7 @@ namespace Microsoft.Pc
             if(!File.Exists(pruntime))
             {
                 Log.WriteMessage(string.Format("could not find file {0}", pruntime), SeverityKind.Error);
-                return;
+                return false;
             }
             CSharpCompilation compilation = CSharpCompilation.Create(
             testCaseName,
@@ -4345,8 +4347,10 @@ namespace Microsoft.Pc
                 {
                     Log.WriteMessage(diagnostic.ToString(), SeverityKind.Error);
                 }
-                return;
+                return false;
             }
+
+            return true;
         }
         private void EmitLinkerCS(SyntaxNode finalOutput, string fileName)
         {

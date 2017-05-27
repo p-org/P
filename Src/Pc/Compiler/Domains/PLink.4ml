@@ -138,7 +138,8 @@ domain PLinkError
 	CSharpDependsOn ::= new (o: String, d: String + { NIL }).
 	CSharpEventActionsRefinementTest ::= new (testName: String, eventName: String + { HALT }).
 	CSharpInterfaceActionsRefinementTest ::= new (testName: String, interfaceName: String).
-	TestError ::= new (modId: String, arg: any String).
+
+	TestError ::= new (modId: String, arg: any String, i: String).
 }
 
 transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns (err:: PLinkError, out:: C)
@@ -661,11 +662,11 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	CRenameMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, ImpName).
 	
 	// If there is no implementation decl then generate the normal link map
-	CLinkMap(creatorM, IorM, impM) :- MachineDecl(creatorM, _, _), MachineDecl(IorM, _, _), impM = IorM, no ImplementationDecl(_, _);
-									  MachineDecl(creatorM, _, _), MachineCreatesInt(creatorM, IorM), MachineExports(impM, IorM), no ImplementationDecl(_, _).
+	CLinkMap(creatorM, m, m) :- MachineDecl(creatorM, _, _), MachineCreatesM(creatorM, m), no ImplementationDecl(_, _).
+	CLinkMap(creatorM, i, impM) :- MachineDecl(creatorM, _, _), MachineCreatesInt(creatorM, i), MachineExports(impM, i), no ImplementationDecl(_, _).
 	
 	CRenameMap (nName, nName) :- MachineDecl(nName, _, _), no ImplementationDecl(_, _).
-
+	//TestError (n,n',n'') :- CLinkMap(n, n', n'').
 
     /*************************************************************/
     /**********         Create Header File             ***********/
@@ -990,7 +991,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 							CRenameMap(name, _), CLinkMap(_, mOrI, _), no CLinkMap(name, mOrI, _), 
 							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
 							LinkMapDeclInnerConcat(name, m + 1, after),  
-							arr = out.Args(Ident("_P_RENAME_COUNT"), after).
+							arr = out.Args(IntLit(-1, DEC, U), after).
 	COut(5, def) :- LinkMapDeclInnerConcat(name, 0, arr),
 					def = out.VarDef(
 							      NIL, 

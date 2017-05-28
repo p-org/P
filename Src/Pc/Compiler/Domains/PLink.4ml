@@ -662,7 +662,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	CRenameMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, ImpName).
 	
 	// If there is no implementation decl then generate the normal link map
-	CLinkMap(creatorM, m, m) :- MachineDecl(creatorM, _, _), MachineCreatesM(creatorM, m), no ImplementationDecl(_, _).
+	CLinkMap(creatorM, m, m) :- MachineDecl(creatorM, _, _), MachineDecl(m, _, _), no ImplementationDecl(_, _).
 	CLinkMap(creatorM, i, impM) :- MachineDecl(creatorM, _, _), MachineCreatesInt(creatorM, i), MachineExports(impM, i), no ImplementationDecl(_, _).
 	
 	CRenameMap (nName, nName) :- MachineDecl(nName, _, _), no ImplementationDecl(_, _).

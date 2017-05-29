@@ -1139,6 +1139,11 @@ domain PStaticTyping extends PData, PError
 									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
+	//// Error rules for pop.
+	[rule_Classes = '"error, msg: Global function must not use pop statement"']
+	OneIdError(e.id, "Global function must not use pop statement"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = NulStmt(POP, _), c.owner = NIL.
+
 	//// Rules for raise.
     TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _),              ///// < raise has NIL payload,
 	                                  TypeRel(BaseType(NULL), plt, SUB).                          ///// < event type contains null.
@@ -1147,6 +1152,9 @@ domain PStaticTyping extends PData, PError
 	                                  TypeOf(c, p, pt), TypeRel(pt, plt, SUB).                    ///// < and pt is a subtype of evt.
 
 	//// Error rules for raise.
+	[rule_Classes = '"error, msg: Global function must not use raise statement"']
+	OneIdError(e.id, "Global function must not use raise statement"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Raise(_, _, _), c.owner = NIL.
 	[ rule_Classes = '"error, msg: argument 1 of "raise" expects an event value"']
 	OneIdError(e.id, "Argument 1 of raise expects an event value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Raise, t1 != BaseType(EVENT).
@@ -1193,8 +1201,8 @@ domain PStaticTyping extends PData, PError
 									  TypeRel(t3, plt, k), k != SUB, t3 != plt.                   ///// < and pt is not a subtype of plt.
 
 	//// Error rules for goto.
-	[rule_Classes = '"error, msg: undefined state"']
-	OneIdError(e.id, "Undefined state"),
+	[rule_Classes = '"error, msg: Global function must not use goto statement"']
+	OneIdError(e.id, "Global function must not use goto statement"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(_, _, _), c.owner = NIL.
 	[rule_Classes = '"error, msg: undefined state"']
 	OneIdError(e.id, "Undefined state"),
@@ -1528,7 +1536,9 @@ domain PStaticTyping extends PData, PError
     PurityError ::= (cntxt: TypingContext + StateDecl + TransDecl, expr: Typeable + String + AnonFunDecl).
 
 	ControlImpure ::= (TypingContext + FunProtoDecl).
-	ControlImpure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
+	//Global functions are checked to be control pure.
+	//Therefore, all FunProtoDecl's are control pure.
+	//ControlImpure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
 	ControlImpure(c) :- SubSE(c, e), e : Goto.
 	ControlImpure(c) :- SubSE(c, e), e : Raise.
 	ControlImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).

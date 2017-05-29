@@ -7,12 +7,11 @@ event eUnknownError;
 model fun CheckIsOpen() : bool { return $; }
 
 // turn on red light
-model fun ShowError(){
-}
+model fun ShowError() { }
 
 // turn on heating element, and wait for eTemperatureReached
 event eTemperatureReached;
-model fun BeginHeating(c: ICoffeeMachine){
+model fun BeginHeating(c: ICoffeeMachine) {
 	send c, eTemperatureReached;
 }
 
@@ -33,7 +32,7 @@ event eEspressoComplete;
 event eNoWater;
 event mMachineBusy;
 
-model fun StartEspresso(c: ICoffeeMachine){
+model fun StartEspresso(c: ICoffeeMachine) {
     announce mMachineBusy;
 	if ($) {
 		send c, eNoWater;
@@ -53,7 +52,7 @@ model fun StartSteamer(c: ICoffeeMachine) {
 
 // stop the steamer 
 event eSteamerButtonOff;
-model fun StopSteamer(c: ICoffeeMachine){
+model fun StopSteamer(c: ICoffeeMachine) {
     if ($) {
 		send c, eUnknownError;
 	}
@@ -61,7 +60,7 @@ model fun StopSteamer(c: ICoffeeMachine){
 
 // start dumping the grinds
 event eDumpComplete;
-model fun DumpGrinds(c: ICoffeeMachine){
+model fun DumpGrinds(c: ICoffeeMachine) {
     if ($) {
 		send c, eDumpComplete;
 	} else {
@@ -70,8 +69,7 @@ model fun DumpGrinds(c: ICoffeeMachine){
 }
 
 // stop all functions
-model fun EmergencyStop(){
-}
+model fun EmergencyStop() { }
 
 
 // internal events

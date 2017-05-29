@@ -5,6 +5,10 @@ if not exist "%pc%" goto :noP
 
 set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
+%pc% /generate:C# /shared ..\..\Src\Samples\Timer\Timer.p /t:Timer.4ml /outputDir:..\..\Src\Samples\Timer
+
+if NOT errorlevel 0 goto :eof
+
 %pc% /generate:C# /shared CoffeeMachine.p Main.p Safety.p /t:CoffeeMachine.4ml /r:..\..\Src\Samples\Timer\Timer.4ml
 
 if NOT errorlevel 0 goto :eof
@@ -13,7 +17,9 @@ if NOT errorlevel 0 goto :eof
 
 if NOT errorlevel 0 goto :eof
 
-%pt% linker.dll
+REM %pt% /psharp Test0.dll
+
+REM %pt% /psharp Test1.dll
 
 goto :eof
 :noP

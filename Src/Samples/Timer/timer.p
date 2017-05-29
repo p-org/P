@@ -1,4 +1,5 @@
-model type TimerPtr = machine;
+type ITimer(machine) = { START, CANCEL };
+model type TimerPtr = ITimer;
 
 // events from client to timer
 event START: int;
@@ -10,8 +11,8 @@ event CANCEL_FAILURE: TimerPtr;
 
 //Functions for interacting with the timer machine
 model fun CreateTimer(owner : machine): TimerPtr {
-	var m: machine;
-	m = new Timer(owner);
+	var m: ITimer;
+	m = new ITimer(owner);
 	return m;
 }
 
@@ -27,7 +28,9 @@ model fun CancelTimer(timer: TimerPtr) {
 // local event for control transfer within timer
 event UNIT; 
 
-model Timer {
+model Timer : ITimer
+sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
+{
   var client: machine;
 
   start state Init {

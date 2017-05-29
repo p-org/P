@@ -1,5 +1,4 @@
 module CoffeeMaker
-private START, CANCEL;
 {
     CoffeeMachine, Timer
 }

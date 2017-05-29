@@ -1,6 +1,6 @@
 module CoffeeMaker
 {
-    CoffeeMachine, Timer
+    CoffeeMachineController, CoffeeMachine, User, Timer
 }
 
 module Main0 { Main0 }

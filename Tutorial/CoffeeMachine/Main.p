@@ -1,27 +1,35 @@
 machine Main0 
-sends eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
+sends eInit, eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
 {
-  var client: ICoffeeMachine;  
+  var coffeeMachine: ICoffeeMachine;
+  var coffeeMachineController: ICoffeeMachineController;
+
   start state Init {  
-    entry { 	
-      client = new ICoffeeMachine(); 
-      send client, eEspressoButtonPressed;
-      send client, eSteamerButtonOn;
-      send client, eSteamerButtonOff;
+    entry {
+      coffeeMachineController = new ICoffeeMachineController(); 	
+      coffeeMachine = new ICoffeeMachine(coffeeMachineController); 
+      send coffeeMachineController, eInit, coffeeMachine;
+      send coffeeMachineController, eEspressoButtonPressed;
+      send coffeeMachineController, eSteamerButtonOn;
+      send coffeeMachineController, eSteamerButtonOff;
     } 
   }
 } 
 
 machine Main1 
-sends eEspressoButtonPressed, eDoorOpened, eDoorClosed;
+sends eInit, eEspressoButtonPressed;
 {
-  var client: ICoffeeMachine;  
+  var coffeeMachine: ICoffeeMachine; 
+  var coffeeMachineController: ICoffeeMachineController;
+  var user: User;
+
   start state Init {  
     entry { 	
-      client = new ICoffeeMachine(); 
-      send client, eEspressoButtonPressed;
-      send client, eDoorOpened;
-      send client, eDoorClosed;
+      coffeeMachineController = new ICoffeeMachineController(); 
+      coffeeMachine = new ICoffeeMachine(coffeeMachineController);
+      send coffeeMachineController, eInit, coffeeMachine;
+      user = new User((coffeeMachineController, 1));
+      send coffeeMachineController, eEspressoButtonPressed;
     } 
   }
 } 

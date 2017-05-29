@@ -9,7 +9,7 @@ set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /shared CoffeeMachine.p Main.p Safety.p /t:CoffeeMachine.4ml /r:..\..\Src\Samples\Timer\Timer.4ml
+%pc% /generate:C# /shared CoffeeMachine.p CoffeeMachineController.p User.p Main.p Safety.p /t:CoffeeMachine.4ml /r:..\..\Src\Samples\Timer\Timer.4ml
 
 if NOT errorlevel 0 goto :eof
 

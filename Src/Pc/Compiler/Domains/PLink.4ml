@@ -381,10 +381,11 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), 
 		ModuleCreates(mod, ic), no ModuleExports(mod, ic), InterfaceTypeDecl(ic, el, _, _), MemberOfInterfaceType(el, ev).
 
+	//TODO: THIS rule takes a long time try to simplify further !!
 	//for each interface in dom(IX), it is either disjoint from alpha or all MR(m) is included in it.
 	ModuleConstructionIllegal(id, ix, "illegal hide, trying to partially hide an exported interface of the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), ModuleExports(mod, ix), InterfaceTypeDecl(ix, el, _, _), MemberOfInterfaceType(el, ev), 
-	MachineExports(m, ix), ModuleContains(mod, m), MachineReceives(m, ev'), ev': NonNullEventName, no ModulePrivate(modExpr, ev'), no MemberOfInterfaceType(evtList, ev').
+	:- AllExpandedModuleExprs(modExpr), md is MachineDecl(m, _, _), ixd is InterfaceTypeDecl(ix, el, _, _), ModuleContains(mod, m), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), ModuleExports(mod, ix), MemberOfInterfaceType(el, ev), 
+	MachineExports(m, ix), MachineReceives(m, ev'), ev': NonNullEventName, count({ x | x = ModulePrivate(modExpr, ev'), MemberOfInterfaceType(evtList, ev')}) = 0.
 
 	/// (permissions in ER + ES is disjoint from EP )
 	ModuleConstructionIllegal(id, ev, "after hidding the event has private permission in them") 

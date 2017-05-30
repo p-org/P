@@ -1,9 +1,17 @@
 event eUnknownError;
 
+event eBeginHeating;
+event eGrindBeans;
+event eStartEspresso;
+event eStartSteamer;
+event eStopSteamer;
+event eDumpGrinds;
+
 type ICoffeeMachine(ICoffeeMachineController) = 
     { eBeginHeating, eGrindBeans, eStartEspresso, eStartSteamer, eStopSteamer, eDumpGrinds };
 
 model CoffeeMachine : ICoffeeMachine
+sends eTemperatureReached, eNoBeans, eGrindComplete, eEspressoComplete, eNoWater, eUnknownError, eDumpComplete;
 {
     var controller: ICoffeeMachineController;
 

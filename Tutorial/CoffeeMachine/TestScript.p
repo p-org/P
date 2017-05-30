@@ -1,11 +1,11 @@
 module CoffeeMaker
 {
-    CoffeeMachineController, CoffeeMachine, User, Timer
+    CoffeeMachineController, CoffeeMachine, Timer
 }
 
 module Main0 { Main0 }
 
-module Main1 { Main1 }
+module Main1 { User, Main1 }
 
 module Test0 = (compose Main0, CoffeeMaker);
 

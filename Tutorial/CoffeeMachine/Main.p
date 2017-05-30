@@ -1,4 +1,5 @@
 machine Main0 
+receives ;
 sends eInit, eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
 {
   var coffeeMachine: ICoffeeMachine;
@@ -17,11 +18,12 @@ sends eInit, eEspressoButtonPressed, eSteamerButtonOn, eSteamerButtonOff;
 } 
 
 machine Main1 
+receives ;
 sends eInit, eEspressoButtonPressed;
 {
   var coffeeMachine: ICoffeeMachine; 
   var coffeeMachineController: ICoffeeMachineController;
-  var user: User;
+  var user: machine;
 
   start state Init {  
     entry { 	

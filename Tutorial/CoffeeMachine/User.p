@@ -16,7 +16,7 @@ sends eDoorOpened, eDoorClosed;
     }
 
     start state Init {
-        entry (x: (ICoffeeMachineController, int) { 
+        entry (x: (ICoffeeMachineController, int)) { 
             coffeeMachineController = x.0;
             iter = x.1;
             JumpIfMoreWork();

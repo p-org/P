@@ -1,3 +1,5 @@
+event eInit : ICoffeeMachine;
+
 type ICoffeeMachineController() = { 
     eInit, eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans, eGrindComplete,
     eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,
@@ -11,29 +13,17 @@ sends START, CANCEL,
     var timer: TimerPtr;
     var coffeeMachine: ICoffeeMachine;
 
-    start state _Init {
-        entry (x: ICoffeeMachine) {
+    start state Init {
+        on eInit goto WarmingUp with (x: ICoffeeMachine) {
             coffeeMachine = x;
-            goto Init;
+            timer = CreateTimer(this);
         }
     }
     
-    state Init {
-        entry {
-            timer = CreateTimer(this);
-            goto WarmingUp;
-        }
-        on eDoorOpened push DoorOpened;
-        ignore eEspressoButtonPressed;
-        ignore eSteamerButtonOn;
-        ignore eSteamerButtonOff;
-        ignore eTemperatureReached;
-    }
-
     state WarmingUp {
         entry {
             StartTimer(timer, 60000);
-            BeginHeating(this);
+            BeginHeating(coffeeMachine);
         }
         on TIMEOUT do
         {
@@ -69,7 +59,7 @@ sends START, CANCEL,
 
     state Grind {
         entry {
-            GrindBeans(this);   
+            GrindBeans(coffeeMachine);   
         }
         on eUnknownError goto Error;
         on eNoBeans goto Error;
@@ -85,7 +75,7 @@ sends START, CANCEL,
 
     state RunEspresso {
         entry {
-            StartEspresso(this);
+            StartEspresso(coffeeMachine);
         }
         on eEspressoComplete do { pop; }
         on eUnknownError goto Error;
@@ -100,10 +90,10 @@ sends START, CANCEL,
 
     state MakeSteam {
         entry {
-            StartSteamer(this);
+            StartSteamer(coffeeMachine);
         }
         on eSteamerButtonOff  do { 
-            StopSteamer(this);
+            StopSteamer(coffeeMachine);
             pop; 
         }
         on eUnknownError goto Error;

@@ -17,9 +17,9 @@ if NOT errorlevel 0 goto :eof
 
 if NOT errorlevel 0 goto :eof
 
-REM %pt% /psharp Test0.dll
+%pt% /psharp Test0.dll
 
-REM %pt% /psharp Test1.dll
+%pt% /psharp Test1.dll
 
 goto :eof
 :noP

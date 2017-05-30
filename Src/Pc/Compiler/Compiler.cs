@@ -1041,56 +1041,52 @@
                 errorReporter.AddFlag(f);
             }
 
+            //// Extract the inferred types model
+            var iprogName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_InfModel.4ml"));
+            Func<Symbol, string> aliasPrefixFunc = (x => AliasFunc(x));
+            var iExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_InfModel", iprogName, aliasPrefixFunc);
+            iExtractTask.Wait();
+            var iProgram = iExtractTask.Result;
+            Contract.Assert(iProgram != null);
+            if (!AddCompilerErrorFlags(iProgram))
+                return false;
+
+            if (Options.compilerOutput == CompilerOutput.CSharp)
             {
-                //// Extract the inferred types model
-                var iprogName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_InfModel.4ml"));
-                Func<Symbol, string> aliasPrefixFunc = (x => AliasFunc(x));
-                var extractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_InfModel", iprogName, aliasPrefixFunc);
-                extractTask.Wait();
-                var iProgram = extractTask.Result;
-                Contract.Assert(iProgram != null);
-                if (!AddCompilerErrorFlags(iProgram))
-                    return false;
-                if (Options.compilerOutput == CompilerOutput.CSharp)
-                {
-                    var iModel = (AST<Model>)iProgram.FindAny(
-                                            new NodePred[] {
+                var iModel = (AST<Model>)iProgram.FindAny(
+                                        new NodePred[] {
                                             NodePredFactory.Instance.MkPredicate(NodeKind.Program),
                                             NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
-                    Contract.Assert(iModel != null);
-                    string csharpFileName = fileName + ".cs";
-                    var pToCSharp = new PToCSharpCompiler(this, iModel, idToSourceInfo, csharpFileName);
-                    pToCSharp.GenerateCSharp();
-                }
+                Contract.Assert(iModel != null);
+                string csharpFileName = fileName + ".cs";
+                var pToCSharp = new PToCSharpCompiler(this, iModel, idToSourceInfo, csharpFileName);
+                pToCSharp.GenerateCSharp();
             }
-
+            else
             {
                 //// Extract the C model
-                var progName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_CModel.4ml"));
-                var extractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_CModel", progName, AliasPrefix);
-                extractTask.Wait();
-                var cProgram = extractTask.Result;
+                var cProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_CModel.4ml"));
+                var cExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_CModel", cProgName, AliasPrefix);
+                cExtractTask.Wait();
+                var cProgram = cExtractTask.Result;
                 Contract.Assert(cProgram != null);
                 var success = RenderC(cProgram, RootModel.Node.Name + "_CModel");
                 Contract.Assert(success);
             }
 
-            {
-                //// Extract the link model
-                var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
-                string linkerAliasPrefix = null;
-                var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, linkerAliasPrefix);
-                linkExtractTask.Wait();
-                var linkModel = linkExtractTask.Result.FindAny(
-                                    new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
-                Contract.Assert(linkModel != null);
-                string outputFileName = Path.ChangeExtension(fileName, ".4ml");
-                Log.WriteMessage(string.Format("Writing {0} ...", outputFileName), SeverityKind.Info);
-                string outputDirName = Options.outputDir;
-                StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, outputFileName)));
-                linkModel.Print(wr);
-                wr.Close();
-            }
+            //// Extract the link model
+            var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
+            string linkerAliasPrefix = null;
+            var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, linkerAliasPrefix);
+            linkExtractTask.Wait();
+            var linkModel = linkExtractTask.Result.FindAny(
+                                new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
+            Contract.Assert(linkModel != null);
+            string linkFileName = Path.ChangeExtension(fileName, ".4ml");
+            Log.WriteMessage(string.Format("Writing {0} ...", linkFileName), SeverityKind.Info);
+            StreamWriter wr = new StreamWriter(File.Create(Path.Combine(Options.outputDir, linkFileName)));
+            linkModel.Print(wr);
+            wr.Close();
 
             return true;
         }

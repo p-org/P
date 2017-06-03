@@ -1182,7 +1182,7 @@
 
         public void SetProgramIgnore()
         {
-            if (Options.compilerOutput == CompilerOutput.C0)
+            if (Options.compilerOutput == CompilerOutput.C)
             {
                 parseProgram.IgnoreDecl = true;
             }
@@ -1280,7 +1280,7 @@
             P_Root.StateDecl state;
             var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
             state = GetCurrentStateDecl(stmt.Span);
-            var entry = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
+            var entry = P_Root.MkAnonFunDecl((P_Root.IArgType_AnonFunDecl__0)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             entry.Span = stmt.Span;
             entry.id = (P_Root.IArgType_AnonFunDecl__5)MkUniqueId(entrySpan, exitSpan);
             parseProgram.Add(entry);
@@ -1334,7 +1334,7 @@
 
             var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
             state = GetCurrentStateDecl(stmt.Span);
-            var exit = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
+            var exit = P_Root.MkAnonFunDecl((P_Root.IArgType_AnonFunDecl__0)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             exit.Span = stmt.Span;
             exit.id = (P_Root.IArgType_AnonFunDecl__5)MkUniqueId(entrySpan, exitSpan);
             parseProgram.Add(exit);
@@ -1624,7 +1624,7 @@
         {
             var varDecl = P_Root.MkVarDecl();
             varDecl.name = MkString(name, span);
-            varDecl.owner = GetCurrentMachineDecl(span);
+            varDecl.owner = (P_Root.IArgType_VarDecl__1) GetCurrentMachineDecl(span).name;
             varDecl.Span = span;
             varDecl.id = (P_Root.IArgType_VarDecl__3)MkUniqueId(span);
             crntVarList.Add(varDecl);
@@ -1707,7 +1707,7 @@
 
             var state = GetCurrentStateDecl(span);
             var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
-            var action = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
+            var action = P_Root.MkAnonFunDecl((P_Root.IArgType_AnonFunDecl__0)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             action.Span = stmt.Span;
             action.id = (P_Root.IArgType_AnonFunDecl__5)MkUniqueId(entrySpan, exitSpan);
             parseProgram.Add(action);
@@ -1770,7 +1770,7 @@
             }
             else
             {
-                action = MkSkipFun((P_Root.MachineDecl)state.owner, span);
+                action = MkSkipFun((P_Root.StringCnst)state.owner, span);
             }
 
             foreach (var e in onEventList)
@@ -1859,7 +1859,7 @@
             P_Root.IArgType_AnonFunDecl__0 owner =
                     crntMachDecl == null
                     ? (P_Root.IArgType_AnonFunDecl__0)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)
-                    : (P_Root.IArgType_AnonFunDecl__0)crntMachDecl;
+                    : (P_Root.IArgType_AnonFunDecl__0)crntMachDecl.name;
             P_Root.IArgType_AnonFunDecl__1 ownerFun =
                     crntFunDecl == null
                     ? (P_Root.IArgType_AnonFunDecl__1)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)
@@ -1883,7 +1883,7 @@
             var state = GetCurrentStateDecl(span);
             var stmt = (P_Root.IArgType_AnonFunDecl__3)stmtStack.Pop();
             var annots = isTrigAnnotated ? crntAnnotStack.Pop() : null;
-            var anonAction = P_Root.MkAnonFunDecl((P_Root.MachineDecl)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
+            var anonAction = P_Root.MkAnonFunDecl((P_Root.IArgType_AnonFunDecl__0)state.owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), (P_Root.IArgType_AnonFunDecl__2)localVarStack.LocalVarDecl, stmt, (P_Root.IArgType_AnonFunDecl__4)localVarStack.ContextLocalVarDecl);
             anonAction.Span = stmt.Span;
             anonAction.id = (P_Root.IArgType_AnonFunDecl__5)MkUniqueId(entrySpan, exitSpan);
             parseProgram.Add(anonAction);
@@ -2066,7 +2066,7 @@
             machDecl.kind = MkUserCnst(kind, span);
             foreach (var e in crntObservesList)
             {
-                var observes = P_Root.MkObservesDecl(machDecl, (P_Root.IArgType_ObservesDecl__1)e);
+                var observes = P_Root.MkObservesDecl((P_Root.IArgType_ObservesDecl__0) machDecl.name, (P_Root.IArgType_ObservesDecl__1)e);
                 parseProgram.Add(observes);
             }
             if (IsValidName(PProgramTopDecl.Machine, name, nameSpan))
@@ -2130,7 +2130,7 @@
                 if (!machineExportsInterface)
                 {
                     Span span = default(Span);
-                    var rec = P_Root.MkMachineReceives(crntMachDecl, MkUserCnst(P_Root.UserCnstKind.ALL, span));
+                    var rec = P_Root.MkMachineReceives((P_Root.IArgType_MachineReceives__0) crntMachDecl.name, MkUserCnst(P_Root.UserCnstKind.ALL, span));
                     rec.Span = span;
                     parseProgram.Add(rec);
                 }
@@ -2139,7 +2139,7 @@
             {
                 foreach (var ev in receivesList)
                 {
-                    var rec = P_Root.MkMachineReceives(crntMachDecl, (P_Root.IArgType_MachineReceives__1)ev);
+                    var rec = P_Root.MkMachineReceives((P_Root.IArgType_MachineReceives__0) crntMachDecl.name, (P_Root.IArgType_MachineReceives__1)ev);
                     rec.Span = ev.Span;
                     parseProgram.Add(rec);
                 }
@@ -2148,7 +2148,7 @@
             if (sendsList == null)
             {
                 Span span = default(Span);
-                var send = P_Root.MkMachineSends(crntMachDecl, MkUserCnst(P_Root.UserCnstKind.ALL, span));
+                var send = P_Root.MkMachineSends((P_Root.IArgType_MachineSends__0) crntMachDecl.name, MkUserCnst(P_Root.UserCnstKind.ALL, span));
                 send.Span = span;
                 parseProgram.Add(send);
             }
@@ -2156,7 +2156,7 @@
             {
                 foreach (var ev in sendsList)
                 {
-                    var send = P_Root.MkMachineSends(crntMachDecl, (P_Root.IArgType_MachineSends__1)ev);
+                    var send = P_Root.MkMachineSends((P_Root.IArgType_MachineSends__0) crntMachDecl.name, (P_Root.IArgType_MachineSends__1)ev);
                     send.Span = ev.Span;
                     parseProgram.Add(send);
                 }
@@ -2202,7 +2202,7 @@
             var machDecl = GetCurrentMachineDecl(span);
             var export = new P_Root.MachineExports();
             export.iname = (P_Root.IArgType_MachineExports__1)MkString(interfaceName, interfaceSpan);
-            export.mach = machDecl;
+            export.mach = (P_Root.IArgType_MachineExports__0)machDecl.name;
             export.Span = span;
             parseProgram.Add(export);
         }
@@ -2283,7 +2283,7 @@
             var funDecl = GetCurrentFunDecl(span);
             funDecl.Span = span;
             funDecl.owner = isGlobal ? (P_Root.IArgType_FunDecl__1) MkUserCnst(P_Root.UserCnstKind.NIL, span) 
-                                     : (P_Root.IArgType_FunDecl__1) GetCurrentMachineDecl(span);
+                                     : (P_Root.IArgType_FunDecl__1) GetCurrentMachineDecl(span).name;
             funDecl.locals = (P_Root.IArgType_FunDecl__5)localVarStack.LocalVarDecl;
             funDecl.body = (P_Root.IArgType_FunDecl__6)stmtStack.Pop();
             funDecl.id = (P_Root.IArgType_FunDecl__7)MkUniqueId(entrySpan, exitSpan);
@@ -2369,10 +2369,10 @@
 
             crntState = P_Root.MkStateDecl();
             crntState.Span = span;
-            crntState.owner = GetCurrentMachineDecl(span);
+            crntState.owner = (P_Root.IArgType_StateDecl__1) GetCurrentMachineDecl(span).name;
 
-            crntState.entryAction = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
-            crntState.exitFun = MkSkipFun((P_Root.MachineDecl)crntState.owner, span);
+            crntState.entryAction = MkSkipFun((P_Root.StringCnst)crntState.owner, span);
+            crntState.exitFun = MkSkipFun((P_Root.StringCnst)crntState.owner, span);
             crntState.temperature = MkUserCnst(P_Root.UserCnstKind.WARM, span);
             return crntState;
         }
@@ -2437,7 +2437,7 @@
             return nextPayloadVarLabel++;
         }
 
-        private P_Root.AnonFunDecl MkSkipFun(P_Root.MachineDecl owner, Span span)
+        private P_Root.AnonFunDecl MkSkipFun(P_Root.StringCnst owner, Span span)
         {
             var stmt = P_Root.MkNulStmt(MkUserCnst(P_Root.UserCnstKind.SKIP, span));
             stmt.id = (P_Root.IArgType_NulStmt__1)MkUniqueId(span);
@@ -2445,7 +2445,7 @@
             var field = P_Root.MkNmdTupTypeField(
                                    P_Root.MkString("_payload_skip"),
                                    (P_Root.IArgType_NmdTupTypeField__1)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown));
-            var decl = P_Root.MkAnonFunDecl(owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__4)P_Root.MkNmdTupType(field, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)));
+            var decl = P_Root.MkAnonFunDecl((P_Root.IArgType_AnonFunDecl__0) owner, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), P_Root.MkUserCnst(P_Root.UserCnstKind.NIL), stmt, (P_Root.IArgType_AnonFunDecl__4)P_Root.MkNmdTupType(field, P_Root.MkUserCnst(P_Root.UserCnstKind.NIL)));
             decl.Span = span;
             parseProgram.Add(decl);
             return decl;

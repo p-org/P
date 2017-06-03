@@ -295,7 +295,7 @@ namespace Microsoft.Pc
             return idToSourceInfo[file][integerId].entrySpan;
         }
 
-        public string GetOwnerName(FuncTerm ft, int ownerIndex, int ownerNameIndex)
+        public string GetOwnerName(FuncTerm ft, int ownerIndex)
         {
             var ownerArg = GetArgByIndex(ft, ownerIndex);
             switch (ownerArg.NodeKind)
@@ -305,8 +305,8 @@ namespace Microsoft.Pc
                         Debug.Assert(((Id)ownerArg).Name == "NIL");
                         return null;
                     }
-                case NodeKind.FuncTerm:
-                    return ((Cnst)GetArgByIndex((FuncTerm)ownerArg, ownerNameIndex)).GetStringValue();
+                case NodeKind.Cnst:
+                    return ((Cnst)ownerArg).GetStringValue();
                 default:
                     throw new InvalidOperationException();
             }
@@ -434,13 +434,6 @@ namespace Microsoft.Pc
                 factBins.Add(name, bin);
             }
             return bin;
-        }
-
-        public static string GetMachineName(FuncTerm ft, int index)
-        {
-            FuncTerm machineDecl = (FuncTerm)GetArgByIndex(ft, index);
-            var machineName = GetName(machineDecl, 0);
-            return machineName;
         }
 
         Dictionary<string, int> uniqIDCounters = new Dictionary<string, int>();
@@ -581,8 +574,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var machineName = GetName(machineDecl, 0);
+                    var machineName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
                     allMachines[machineName].observesEvents.Add(((Cnst)it.Current).GetStringValue());
                 }
@@ -594,8 +586,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var machineName = GetName(machineDecl, 0);
+                    var machineName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
                     string eventName;
                     if (it.Current.NodeKind == NodeKind.Id)
@@ -627,8 +618,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var machineName = GetName(machineDecl, 0);
+                    var machineName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
                     string eventName;
                     if (it.Current.NodeKind == NodeKind.Id)
@@ -660,8 +650,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var varName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var machineName = GetName(machineDecl, 0);
+                    var machineName = ((Cnst)it.Current).GetStringValue();
                     var varTable = allMachines[machineName].localVariableToVarInfo;
                     it.MoveNext();
                     var type = (FuncTerm)it.Current;
@@ -692,7 +681,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     string funName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
-                    var owner = it.Current;
+                    var owner = it.Current as Cnst;
                     it.MoveNext();
                     var isModel = ((Id)it.Current).Name == "MODEL";
                     it.MoveNext();
@@ -704,10 +693,9 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var body = translatedBody[termAlias];
                     var funInfo = new FunInfo(false, parameters, returnTypeName, locals, body);
-                    if (owner is FuncTerm)
+                    if (owner != null)
                     {
-                        var machineDecl = (FuncTerm)owner;
-                        var machineName = GetName(machineDecl, 0);
+                        var machineName = owner.GetStringValue();
                         var machineInfo = allMachines[machineName];
                         machineInfo.funNameToFunInfo[funName] = funInfo;
                     }
@@ -750,7 +738,7 @@ namespace Microsoft.Pc
                 using (var it = term.Node.Args.GetEnumerator())
                 {
                     it.MoveNext();
-                    var machineDecl = it.Current as FuncTerm;
+                    var ownerMachineName = it.Current as Cnst;
                     it.MoveNext();
                     var ownerFunName = it.Current as Cnst;
                     it.MoveNext();
@@ -759,7 +747,7 @@ namespace Microsoft.Pc
                     var body = translatedBody[termAlias];
                     it.MoveNext();
                     var envVars = it.Current as FuncTerm;
-                    if (machineDecl == null)
+                    if (ownerMachineName == null)
                     {
                         var funName = "AnonFunStatic" + anonFunCounterStatic;
                         allGlobalFuns[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
@@ -768,7 +756,7 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        var machineName = GetName(machineDecl, 0);
+                        var machineName = ownerMachineName.GetStringValue();
                         var machineInfo = allMachines[machineName];
                         var funName = "AnonFun" + anonFunCounter[machineName];
                         machineInfo.funNameToFunInfo[funName] = new FunInfo(true, envVars, PToZing.PTypeNull, locals, body);
@@ -786,8 +774,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var qualifiedStateName = (FuncTerm)it.Current;
                     it.MoveNext();
-                    var machineDecl = (FuncTerm)it.Current;
-                    var ownerName = GetName(machineDecl, 0);
+                    var ownerName = ((Cnst)it.Current).GetStringValue();
                     var stateName = GetNameFromQualifiedName(ownerName, qualifiedStateName);
                     it.MoveNext();
                     var entryActionName = it.Current.NodeKind == NodeKind.Cnst
@@ -821,7 +808,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var stateDecl = (FuncTerm)it.Current;
                     var qualifiedStateName = (FuncTerm)GetArgByIndex(stateDecl, 0);
-                    var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                    var stateOwnerMachineName = GetName(stateDecl, 1);
                     var stateName = GetNameFromQualifiedName(stateOwnerMachineName, qualifiedStateName);
                     var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
                     it.MoveNext();
@@ -872,7 +859,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var stateDecl = (FuncTerm)it.Current;
                     var qualifiedStateName = (FuncTerm)GetArgByIndex(stateDecl, 0);
-                    var stateOwnerMachineName = GetMachineName(stateDecl, 1);
+                    var stateOwnerMachineName = GetName(stateDecl, 1);
                     var stateName = GetNameFromQualifiedName(stateOwnerMachineName, qualifiedStateName);
                     var stateTable = allMachines[stateOwnerMachineName].stateNameToStateInfo[stateName];
                     it.MoveNext();
@@ -927,7 +914,7 @@ namespace Microsoft.Pc
                         : (FuncTerm)it.Current;
                     string annotationContextKind = ((Id)annotationContext.Function).Name;
                     if (annotationContextKind != "FunDecl") continue;
-                    string ownerName = GetOwnerName(annotationContext, 1, 0);
+                    string ownerName = GetOwnerName(annotationContext, 1);
                     string funName = GetName(annotationContext, 0);
                     it.MoveNext();
                     string annotation = ((Cnst)it.Current).GetStringValue();
@@ -998,7 +985,7 @@ namespace Microsoft.Pc
 
                     if (typingContextKind == "FunDecl")
                     {
-                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string ownerName = GetOwnerName(typingContext, 1);
                         string funName = GetName(typingContext, 0);
                         if (ownerName == null)
                         {
@@ -1012,7 +999,7 @@ namespace Microsoft.Pc
                     else
                     {
                         // typingContextKind == "AnonFunDecl"
-                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        string ownerName = GetOwnerName(typingContext, 0);
                         string funName = anonFunToName[typingContextAlias];
                         if (ownerName == null)
                         {

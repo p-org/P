@@ -115,7 +115,7 @@ machine Replica {
 		}
 	}
 
-	model fun ShouldCommitWrite(): bool 
+	fun ShouldCommitWrite(): bool 
 	{
 		return $;
 	}

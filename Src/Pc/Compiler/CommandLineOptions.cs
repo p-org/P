@@ -33,7 +33,7 @@
             outputFormula = false;
             shortFileNames = false;
             isLinkerPhase = false;
-            compilerOutput = CompilerOutput.C0;
+            compilerOutput = CompilerOutput.C;
             inputFileNames = new List<string>();
             dependencies = new List<string>();
             unitName = null;
@@ -111,12 +111,12 @@
                         case "generate":
                             if (colonArg == null)
                             {
-                                Console.WriteLine("Missing generation argument, expecting generate:[C0,C#,Zing]");
+                                Console.WriteLine("Missing generation argument, expecting generate:[C,C#,Zing]");
                                 return false;
                             }
-                            else if (colonArg == "C0")
+                            else if (colonArg == "C")
                             {
-                                compilerOutput = CompilerOutput.C0;
+                                compilerOutput = CompilerOutput.C;
                             }
                             else if (colonArg == "Zing")
                             {
@@ -128,7 +128,7 @@
                             }
                             else
                             {
-                                Console.WriteLine("Unrecognized generate option '{0}', expecing C0, C#, or Zing", colonArg);
+                                Console.WriteLine("Unrecognized generate option '{0}', expecting C, C#, or Zing", colonArg);
                                 return false;
                             }
                             break;

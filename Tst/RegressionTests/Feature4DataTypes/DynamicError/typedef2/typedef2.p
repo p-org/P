@@ -5,7 +5,7 @@ event resp: TUP;
 //type def for a complex type
 type TUP = (first: int, second: int);
 
-model fun PrintTime() {
+fun PrintTime() {
 	//something here
 }
 machine Main {
@@ -22,7 +22,7 @@ machine Main {
 		}
 	}
 	
-	model fun GetRandomVal() : TUP{
+	fun GetRandomVal() : TUP{
 		return default(TUP);
 	}
 }
@@ -42,7 +42,7 @@ machine client
 		on unit goto StartReqResp;
 	}
 	
-	model fun UpdateTuple(arg : TUP)
+	fun UpdateTuple(arg : TUP)
 	{
 		//update the value in external context
 	}

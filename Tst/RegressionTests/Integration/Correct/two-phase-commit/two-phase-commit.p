@@ -100,7 +100,7 @@ machine Replica {
 		on REQ_REPLICA do (payload :(seqNum:int, idx:int, val:int)) { HandleReqReplica(payload); }
 	}
 
-	model fun ShouldCommitWrite(): bool 
+	fun ShouldCommitWrite(): bool 
 	{
 		return $;
 	}

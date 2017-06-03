@@ -24,7 +24,7 @@
     using System.Windows.Forms;
     using System.Xml.Linq;
 
-    public enum CompilerOutput { C0, CSharp, Zing };
+    public enum CompilerOutput { C, CSharp, Zing };
 
     public enum LivenessOption { None, Standard, Sampling };
 
@@ -248,31 +248,18 @@
                     programName = (f.ProgramName.Uri.IsFile ? f.ProgramName.Uri.LocalPath : f.ProgramName.ToString());
                 }
             }
-            // for regression test compatibility reasons we do not include the error number when running regression tests.
-            if (Options.eraseModel)
-            {
-                return
-                  // this format causes VS to put the errors in the error list window.
-                  string.Format("{0} ({1}, {2}): {3}",
-                  programName,
-                  f.Span.StartLine,
-                  f.Span.StartCol,
-                  f.Message);
-            }
-            else
-            {
-                string errorNumber = "PC1001"; // todo: invent meaningful error numbers to go with P documentation...
-                return
-                  // this format causes VS to put the errors in the error list window.
-                  string.Format("{0}({1},{2},{3},{4}): error {5}: {6}",
-                  programName,
-                  f.Span.StartLine,
-                  f.Span.StartCol,
-                  f.Span.EndLine,
-                  f.Span.EndCol,
-                  errorNumber,
-                  f.Message);
-            }
+
+            string errorNumber = "PC1001"; // todo: invent meaningful error numbers to go with P documentation...
+            return
+              // this format causes VS to put the errors in the error list window.
+              string.Format("{0}({1},{2},{3},{4}): error {5}: {6}",
+              programName,
+              f.Span.StartLine,
+              f.Span.StartCol,
+              f.Span.EndLine,
+              f.Span.EndCol,
+              errorNumber,
+              f.Message);
         }
 
         public static bool FindIdFromTerm(Term term, out string fileName, out int id)
@@ -426,7 +413,7 @@
             {
                 this.Profiler = new ConsoleProfiler(log);
             }
-            options.eraseModel = options.compilerOutput != CompilerOutput.C0;
+            options.eraseModel = options.compilerOutput != CompilerOutput.C;
             this.Log = log;
             this.Options = options;
             this.errorReporter = new ErrorReporter();

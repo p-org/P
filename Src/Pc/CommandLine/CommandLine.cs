@@ -60,10 +60,10 @@ namespace Microsoft.Pc
                 Console.WriteLine("/outputDir:path         -- where to write the generated files");
                 Console.WriteLine("/shared                 -- use the compiler service)");
                 Console.WriteLine("/profile                -- print detailed timing information");
-                Console.WriteLine("/generate:[C0,C#,Zing]");
-                Console.WriteLine("    C0  : generate C without model functions");
-                Console.WriteLine("    C#  : generate C# (and C) with model functions");
-                Console.WriteLine("    Zing: generate Zing");
+                Console.WriteLine("/generate:[C,C#,Zing]");
+                Console.WriteLine("    C   : generate C without model functions");
+                Console.WriteLine("    C#  : generate C# with model functions");
+                Console.WriteLine("    Zing: generate Zing with model functions");
                 Console.WriteLine("/liveness[:sampling]    -- controls compilation for Zinger");
                 Console.WriteLine("/shortFileNames         -- print only file names in error messages");
                 Console.WriteLine("/dumpFormulaModel       -- write the entire formula model to a file named 'output.4ml'");

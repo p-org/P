@@ -13,13 +13,13 @@ if NOT errorlevel 0 goto :eof
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /shared .\TwoPhaseCommitHeader.p .\TwoPhaseCommitClient.p .\TestDrivers.p .\TwoPhaseCommit.p /r:..\CommonUtilities\Timer.4ml
+%pc% /generate:C# /shared .\TwoPhaseCommit.p .\TwoPhaseCommitHeader.p .\TwoPhaseCommitClient.p .\TestDrivers.p .\TwoPhaseCommitSpec.p /r:..\SMR\SMRAbs.4ml /r:..\CommonUtilities\Timer.4ml
+
+if NOT errorlevel 0 goto :eof
+%pc% /generate:C# /shared /link TestScripts.p /r:TwoPhaseCommit.4ml /r:..\SMR\SMRAbs.4ml /r:..\CommonUtilities\Timer.4ml
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /link /shared TestScript.p /r:CoffeeMachine.4ml /r:..\..\Src\Samples\Timer\Timer.4ml
-
-if NOT errorlevel 0 goto :eof
 
 %pt% /psharp Test0.dll
 

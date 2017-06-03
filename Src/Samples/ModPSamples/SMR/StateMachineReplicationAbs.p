@@ -41,12 +41,13 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 			}
 		}
 		on eSMROperation goto DoReOrdering with (payload: SMROperationType){
-			pending += (chooseIndex(), payload);
+			var index : int;
+			index = chooseIndex();
+			pending += (index, payload);
 		}
 	}
 	
 	fun chooseIndex() : int
-	[pure = null]
 	{
 		var i: int;
 		i = 0;

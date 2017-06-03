@@ -1,3 +1,6 @@
+event eParticipantCommitted: (part:int, tid:int);
+event eParticipantAborted: (part:int, tid:int);
+
 spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted 
 {
 	var partLog: map[int, map[int, bool]];

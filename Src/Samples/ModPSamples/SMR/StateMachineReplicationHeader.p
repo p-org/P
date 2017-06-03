@@ -1,6 +1,6 @@
 //Types
-type SMROperationType = (source: SMRClientInterface, operation: event, val: any);
-type SMRResponseType = (response: event, val: any);
+type SMROperationType = (source: SMRClientInterface, operation: event, val: data);
+type SMRResponseType = (response: event, val: data);
 
 //Events used to interact with the State Machine Replication (SMR) Protocols
 event eSMROperation : SMROperationType;

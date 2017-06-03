@@ -3036,11 +3036,14 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        Debug.Assert(primitiveType == "ANY", "Illegal BaseType");
-                        var tmpVar = GetType();
-                        AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_ANY"))));
-                        return tmpVar;
+                        throw new NotSupportedException("Internal Error: Please report to P Developers");
                     }
+                }
+                else if(typeKind == "AnyType")
+                {
+                    var tmpVar = GetType();
+                    AddTypeInitialization(MkZingAssign(tmpVar, MkZingCall(MkZingDot("PRT_TYPE", "PrtMkPrimitiveType"), MkZingDot("PRT_TYPE_KIND", "PRT_KIND_ANY"))));
+                    return tmpVar;
                 }
                 else if (typeKind == "NameType")
                 {

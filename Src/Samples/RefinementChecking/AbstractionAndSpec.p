@@ -10,6 +10,7 @@ sends eResponse;
   }
 }
 
+
 spec ReqIdsAreMonotonicallyIncreasing observes eRequest {
   var previousId : int;
   start state Init {

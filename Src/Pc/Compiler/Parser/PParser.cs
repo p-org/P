@@ -486,6 +486,13 @@
             nameType.Span = span;
             typeExprStack.Push(nameType);
         }
+        private void PushDataType(Span span)
+        {
+            var anyType = P_Root.MkAnyType();
+            anyType.perm = MkUserCnst(P_Root.UserCnstKind.DATA, span);
+            anyType.Span = span;
+            typeExprStack.Push(anyType);
+        }
 
         private void PushAnyWithPerm(Span span, string name = null, Span nameSpan = new Span())
         {

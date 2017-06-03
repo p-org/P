@@ -31,7 +31,7 @@ domain PData
 
 	NameType        ::= new (name: String).
     BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE}).
-    AnyType			::= new (perm: String + { NIL }).
+    AnyType			::= new (perm: String + { NIL, DATA }).
 	AnyTypeDecl		::= new (perm: String, id: Id).	
 	TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
@@ -1782,8 +1782,8 @@ domain PStaticTyping extends PData, PError
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
 	
 	// Each model type has empty intersection with all types except itself and ANY
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType.
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType. 
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, t = AnyType(k), k != NIL.
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, t = AnyType(k), k != NIL. 
 	
 	// Each enum type has empty intersection with all types except itself and ANY and INT
 	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT).

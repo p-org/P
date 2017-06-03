@@ -374,7 +374,8 @@ Type
 	| BOOL                                  { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.BOOL,    ToSpan(@1))); }
 	| INT                                   { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.INT,     ToSpan(@1))); }
 	| EVENT                                 { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.EVENT,   ToSpan(@1))); }
-	| MACHINE                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.MACHINE, ToSpan(@1))); }						
+	| MACHINE                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.MACHINE, ToSpan(@1))); }	
+	| DATA									{ PushDataType(ToSpan(@1)); }
 	| ANY                                   { PushAnyWithPerm(ToSpan(@1)); }
 	| ANY LT ID GT							{ PushAnyWithPerm(ToSpan(@1), $3.str, ToSpan(@3)); }
 	| ID                                    { PushNameType($1.str, ToSpan(@1)); }

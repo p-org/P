@@ -18,6 +18,9 @@ sends eRequest;
       server = payload;
       goto StartPumpingRequests;
     }
+    exit {
+
+    }
   }
 
   state StartPumpingRequests {
@@ -32,7 +35,7 @@ sends eRequest;
           index = index + 1;
       }
     }
-
+    
     on eResponse do (payload: responseType){
         assert(payload.id > lastRecvSuccessfulReqId);
         lastRecvSuccessfulReqId = payload.id;

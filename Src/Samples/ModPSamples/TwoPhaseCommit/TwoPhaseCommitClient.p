@@ -1,3 +1,16 @@
+/*****************************************************************
+* Description: This file implements the client of the two phase commit protocol
+* In this case study the client using two phase commit protocol to implement bank transactions.
+* Each participant stores an integer representing the total amount.
+*****************************************************************/
+
+/* Operation performed in a transaction */
+enum AccountOperations {
+    ADD_AMOUNT,
+    SUBS_AMOUNT
+}
+
+
 machine ClientMachine : ClientInterface
 receives eRespPartStatus, eTransactionFailed, eTransactionSuccess, eTimeOut, eCancelSuccess, eCancelFailure;
 sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;

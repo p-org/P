@@ -14,7 +14,7 @@ domain PLink
 
 	NameType        ::= new (name: String).
     BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE }).
-	AnyType			::= new (perm: String + { NIL }).
+	AnyType			::= new (perm: String + { NIL, DATA }).
     TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
     SeqType         ::= new (x: any TypeExpr).

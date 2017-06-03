@@ -128,6 +128,7 @@
 			 keywords.Add("implementation", (int)PTokens.IMPLEMENTATION);
 			 keywords.Add("test", (int)PTokens.TEST);
 			 keywords.Add("refines", (int)PTokens.REFINES);
+			 keywords.Add("data", (int)PTokens.DATA);
 		 }
 
          int GetIdToken(string txt)

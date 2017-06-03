@@ -45,7 +45,9 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 		}
 	}
 	
-	fun chooseIndex() : int {
+	fun chooseIndex() : int
+	[pure = null]
+	{
 		var i: int;
 		i = 0;
 		while(i <sizeof(pending))

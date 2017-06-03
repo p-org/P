@@ -9,7 +9,11 @@ set pt=..\..\..\..\Bld\drops\Debug\x64\Binaries\pt.exe
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /shared .\TwoPhaseCommitHeader.p .\TwoPhaseCommitClient.p .\TestDrivers.p /r:..\CommonUtilities\Timer.4ml
+%pc% /generate:C# /shared ..\SMR\StateMachineReplicationHeader.p ..\SMR\StateMachineReplicationAbs.p /t:SMRAbs.4ml /outputDir:..\SMR\
+
+if NOT errorlevel 0 goto :eof
+
+%pc% /generate:C# /shared .\TwoPhaseCommitHeader.p .\TwoPhaseCommitClient.p .\TestDrivers.p .\TwoPhaseCommit.p /r:..\CommonUtilities\Timer.4ml
 
 if NOT errorlevel 0 goto :eof
 

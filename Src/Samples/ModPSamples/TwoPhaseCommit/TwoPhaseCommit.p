@@ -3,7 +3,7 @@
 //There is a single co-ordinator and 2 participants. The two participants are two different bank accounts.
 
 machine Coordinator : CoorClientInterface
-receives eTransaction, eReadPartStatus, ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure, eSMRResponse, eSMRLeaderUpdated;
+receives ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure, eSMRResponse, eSMRLeaderUpdated;
 sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eRespPartStatus, eStartTimer, eCancelTimer, eSMROperation;
 {
 
@@ -47,7 +47,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 			participants[payload.0] = payload.1;
 		}
 
-		on local push WaitForReq;
+		on local push WaitForTransactionReq;
 	}
 	
 	fun SendToParticipant(part: machine, ev: event, payload: any) {
@@ -58,22 +58,6 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		else
 		{
 			send part, ev, payload;
-		}
-	}
-	
-	state WaitForReq {
-		ignore eNotPrepared, ePrepared;
-		on eTransaction goto ProcessTransaction with (payload : TransactionType){
-			currentTransaction = payload;
-			transId = transId + 1;
-		}
-		on eReadPartStatus do (clientS: (source: ClientInterface, part:int)){
-			send participants[clientS.part], eStatusQuery;
-			receive {
-				case eStatusResp: (payload: ParticipantStatusType) {
-					send clientS.source, eRespPartStatus, payload;
-				}
-			}
 		}
 	}
 	
@@ -88,12 +72,28 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		}
 	}
 
+	state WaitForTransactionReq {
+		ignore eNotPrepared, ePrepared;
+		on eTransaction goto ProcessTransaction with (payload : TransactionType){
+			currentTransaction = payload;
+			transId = transId + 1;
+		}
+		on eReadPartStatus do (clientReq: (source: ClientInterface, part:int)){
+			send participants[clientReq.part], eStatusQuery;
+			receive {
+				case eStatusResp: (payload: ParticipantStatusType) {
+					send clientS.source, eRespPartStatus, payload;
+				}
+			}
+		}
+	}
+	
+	
+
 	fun AbortCurrentTransaction() {
-		
 		SendToAllParticipants(eAbort, (tid = transId,));
 		send currentTransaction.source, eTransactionFailed;
-		CancelTimer(timer);
-		
+		CancelTimer(timer);	
 	}
 	
 	var prepareCount : int;
@@ -101,11 +101,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		defer eTransaction, eReadPartStatus;
 		entry{
 			prepareCount = 0;
-			//to part1
-			SendToParticipant(participants[0], ePrepare, (tid = transId, op = currentTransaction.op1));
-			//to part2
-			SendToParticipant(participants[1], ePrepare, (tid = transId, op = currentTransaction.op2));
-
+			SendToAllParticipants(ePrepare, (tid = transId, op = currentTransaction));
 			//start timer 
 			StartTimer(timer, 100);
 		}
@@ -136,8 +132,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 }
 
 
-machine Participant
-receives ePrepare, eCommit, eAbort, eStatusQuery, eSMRReplicatedMachineOperation;
+machine Participant : ParticipantInterface, SMRReplicatedMachineInterface
 sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantAborted, eSMRResponse;
 {
 	var myId : int;

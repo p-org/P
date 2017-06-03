@@ -22,7 +22,7 @@ type OperationType = (
 type TransactionType =
 (
     source: ClientInterface,
-    ops: OperationType
+    op: OperationType
 );
 
 /*

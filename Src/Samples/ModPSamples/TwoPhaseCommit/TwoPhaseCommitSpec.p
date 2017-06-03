@@ -1,10 +1,3 @@
-//Monitors
-
-//We need two properties 
-//1) Atomicity of transaction. If a transaction is either committed on all participants or aborted on all.
-
-
-
 spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted 
 {
 	var partLog: map[int, map[int, bool]];

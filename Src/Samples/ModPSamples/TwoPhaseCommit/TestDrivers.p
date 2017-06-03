@@ -1,5 +1,9 @@
-//This file contains the test drivers for testing the system
+/************************************************************************************************
+* Description: This file implements the test drivers for testing the two phase commit protocols
+************************************************************************************************/
 
+// TestDriver1 is used to test to the two phase commit protocol without fault-tolerance
+// In this case two phase commit protocol is not composed with the SMR.
 machine TestDriver1
 sends;
 {
@@ -15,6 +19,8 @@ sends;
 	}
 }
 
+// TestDriver2 is used to test to the two phase commit protocol with fault-tolerance
+// In this case two phase commit protocol is composed with the SMR Protocol.
 machine TestDriver2
 sends;
 {

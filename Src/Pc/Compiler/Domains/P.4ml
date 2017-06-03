@@ -1786,8 +1786,8 @@ domain PStaticTyping extends PData, PError
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
 	
 	// Each model type has empty intersection with all types except itself and ANY
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, t = AnyType(k), k != NIL.
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, t = AnyType(k), k != NIL. 
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType.
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType. 
 	
 	// Each enum type has empty intersection with all types except itself and ANY and INT
 	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT).
@@ -1913,8 +1913,8 @@ domain PStaticTyping extends PData, PError
     TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(NIL).
 	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, PermissionsSubsetRel(s, t).
     TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, PermissionsSubsetRel(s, t).
-    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, NoPermissionsSubsetRel(s, t).
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, NoPermissionsSubsetRel(s, t).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s != ERROR, s != NIL, toSymbol(s) != #AnyType, t = AnyType(esname), esname != NIL, NoPermissionsSubsetRel(s, t).
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s != ERROR, s != NIL, toSymbol(s) != #AnyType, t = AnyType(esname), esname != NIL, NoPermissionsSubsetRel(s, t).
 
     // NULL is a subtype of all Nullable types.
     TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = BaseType(NULL), t : AnyType.

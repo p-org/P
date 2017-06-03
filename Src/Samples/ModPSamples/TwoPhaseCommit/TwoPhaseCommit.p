@@ -50,7 +50,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		on local push WaitForTransactionReq;
 	}
 	
-	fun SendToParticipant(part: machine, ev: event, payload: any) {
+	fun SendToParticipant(part: machine, ev: event, payload: data) {
 		if(isFaultTolerant)
 		{
 			send part, eSMROperation, (source = this as SMRClientInterface, operation = ev, val = payload);
@@ -67,7 +67,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		i = 0;
 		while(i < sizeof(participants))
 		{
-			SendToParticipant(participants[i], ev, val);
+			SendToParticipant(participants[i], ev, val as data);
 			i = i + 1;
 		}
 	}
@@ -82,7 +82,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 			send participants[clientReq.part], eStatusQuery;
 			receive {
 				case eStatusResp: (payload: ParticipantStatusType) {
-					send clientS.source, eRespPartStatus, payload;
+					send clientReq.source, eRespPartStatus, payload;
 				}
 			}
 		}
@@ -105,7 +105,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 			//start timer 
 			StartTimer(timer, 100);
 		}
-		on eTimeOut do { AbortCurrentTransaction(); goto WaitForReq; }
+		on eTimeOut do { AbortCurrentTransaction(); goto WaitForTransactionReq; }
 		
 		on eNotPrepared do (payload: (tid:int)){
 			if(payload.tid != transId)
@@ -124,7 +124,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 					SendToAllParticipants(eCommit, (tid = transId,));
 					send currentTransaction.source, eTransactionSuccess;
 					CancelTimer(timer);
-					goto WaitForReq;
+					goto WaitForTransactionReq;
 				}
 			}
 		}
@@ -162,7 +162,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	{
 		if(isReplicated)
 		{
-			send coordinator, eSMRResponse, (response = ev, val = payload); 
+			send coordinator, eSMRResponse, (response = ev, val = (payload as data)); 
 		}
 		else
 		{

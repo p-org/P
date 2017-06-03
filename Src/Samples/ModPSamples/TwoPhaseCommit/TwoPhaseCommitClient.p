@@ -1,13 +1,33 @@
 /*****************************************************************
 * Description: This file implements the client of the two phase commit protocol
-* In this case study the client using two phase commit protocol to implement bank transactions.
-* Each participant stores an integer representing the total amount.
+* In this case study the client uses two phase commit protocol to implement bank transactions.
 *****************************************************************/
 
 /* Operation performed in a transaction */
-enum AccountOperations {
+enum BankOperations {
     ADD_AMOUNT,
     SUBS_AMOUNT
+}
+
+/* Perform operantion function invoked by the participant on receiving a transaction */
+fun PerformParticipantOp(opt: OperationType, oldVal: data) : data
+{
+    var bankOp : BankOperations;
+    var oldAmount : int;
+    var opVal : int;
+
+    oldAmount = oldVal as int;
+    opVal = opt.val as int;
+
+    bankOp = opt.op as BankOperations;
+    if(bankOp == ADD_AMOUNT)
+    {
+        return oldAmount + opVal;
+    }
+    else
+    {
+        return oldAmount - opVal;
+    }
 }
 
 
@@ -18,17 +38,19 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
     var coor: CoorClientInterface;
     var numOfOperation : int;
     var timer : TimerPtr;
-    var valueAtParticipant: map[int, int];
+    var valueAtParticipant: int;
     start state Init {
         entry (payload: (CoorClientInterface, int)){
             coor = payload.0;
             numOfOperation = payload.1;
             timer = CreateTimer(this as ITimerClient);
-            valueAtParticipant[0] = 0;
-            valueAtParticipant[1] = 0;
+            //initially amount at participants is 100
+            valueAtParticipant = 100;
             goto StartPumpingTransactions;
         }
     }
+
+    /* Choose next operation */
     fun ChooseOp(): OperationType {
         var oper: OperationType;
         if($)
@@ -43,31 +65,25 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
         return oper;
     }
     
-    fun UpdateValues() {
-        if(oper1.op == ADD_AMOUNT)
-            valueAtParticipant[0] = valueAtParticipant[0] + oper1.val;
-        else
-            valueAtParticipant[0] = valueAtParticipant[0] - oper1.val;
 
-        if(oper2.op == ADD_AMOUNT)
-            valueAtParticipant[1] = valueAtParticipant[1] + oper2.val;
+    fun UpdateValues() {
+        if((lastOperation.op as BankOperations) == ADD_AMOUNT)
+            valueAtParticipant = valueAtParticipant + lastOperation.val as int;
         else
-            valueAtParticipant[1] = valueAtParticipant[1] - oper2.val;
+            valueAtParticipant = valueAtParticipant - lastOperation.val as int;
     }
-    
-    var oper1 : OperationType;
-    var oper2 : OperationType;
+
+    var lastOperation : OperationType;
     state StartPumpingTransactions {
         entry {
             var x : ClientInterface;
             if(numOfOperation == 0)
                 return;
             
-            oper1 = ChooseOp();
-            oper2 = ChooseOp();
+            lastOperation = ChooseOp();
             
             x =  this as ClientInterface;
-            send coor, eTransaction, (source = x, op1 = oper1, op2 = oper2);
+            send coor, eTransaction, (source = x, op = lastOperation);
             StartTimer(timer, 100);
             numOfOperation = numOfOperation - 1;
             if($)
@@ -89,8 +105,7 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
         }
         on eTransactionSuccess do UpdateValues;
         on eRespPartStatus goto StartPumpingTransactions with (payload: ParticipantStatusType){
-            assert(payload.val == valueAtParticipant[payload.part]);
+            assert(payload.val == valueAtParticipant);
         }
     }
 }
-

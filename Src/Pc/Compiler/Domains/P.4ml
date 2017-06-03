@@ -1543,6 +1543,10 @@ domain PStaticTyping extends PData, PError
     ControlImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
 	ControlImpure(c) :- SubSE(c, e), e : Receive, ReceiveCases(c, e, cases), cases = Cases(_, act, _, _), ControlImpure(act).
 
+	[ rule_Classes = '"error, msg: Function is not pure"']
+    OneIdError(c.id, "Function is not pure"),
+	PurityError(c, n) :- c is FunDecl, Annotation(c, "pure", _, _), Impure(c), n = c.name.
+
     [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
 	OneIdError(c.id, "Exit function may cause a change in current state"),
     PurityError(c, n) :- 

@@ -180,7 +180,15 @@ domain PStructuralTyping extends PData, PError
 	[ rule_Classes = '"error, msg:  Action and transition over the same event"']
 	TwoIdError(t.id, a.id, "Action and transition over the same event"),
 	TwoDeclError(t, a)   :- t is TransDecl, a is DoDecl, t.src = a.src, t.trig = a.trig.
-	
+
+	[rule_Classes = '"error, msg: inconsistent partial annotations"']
+	TwoIdError(id, id', "Inconsistent partial annotations"),
+	TwoDeclError(m, m') :- m is MachineDecl(name, id), m' is MachineDecl(name, id'), id != id', Annotation(m, "partial", _, _), no Annotation(m', "partial", _, _).
+
+	[rule_Classes = '"error, msg: another machine with same name declared"']
+	TwoIdError(id, id', "Another machine with same name declared"),
+	TwoDeclError(m, m') :- m is MachineDecl(name, id), m' is MachineDecl(name, id'), id != id', no Annotation(m, "partial", _, _), no Annotation(m', "partial", _, _).
+
 	[rule_Classes = '"error, msg: no start state in machine"']
 	OneIdError(id, "No start state in machine"),
 	OneDeclError(m) :- m is MachineDecl(name, id), no MachineStart(name, _).

@@ -58,7 +58,7 @@ namespace Microsoft.Pc
                 Console.WriteLine("/t:file.4ml             -- name of summary file produced for this compilation unit; if not supplied then file1.4ml");
                 Console.WriteLine("/r:file.4ml             -- refer to another summary file");
                 Console.WriteLine("/outputDir:path         -- where to write the generated files");
-                Console.WriteLine("/shared                 -- use the compiler service)");
+                Console.WriteLine("/shared                 -- use the compiler service");
                 Console.WriteLine("/profile                -- print detailed timing information");
                 Console.WriteLine("/generate:[C,C#,Zing]");
                 Console.WriteLine("    C   : generate C without model functions");

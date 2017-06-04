@@ -424,12 +424,12 @@
                     }
                     break;
                 case PProgramTopDecl.Machine:
-                    if (PPTopDeclNames.machineNames.Contains(name))
+                    /*if (PPTopDeclNames.machineNames.Contains(name))
                     {
                         errorMessage = string.Format("A machine with name {0} already declared", name);
                         error = true;
                     }
-                    else if(PPTopDeclNames.interfaceNames.Contains(name))
+                    else*/ if(PPTopDeclNames.interfaceNames.Contains(name))
                     {
                         errorMessage = string.Format("A interface with name {0} already declared", name);
                         error = true;

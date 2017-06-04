@@ -172,11 +172,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						 cn = strJoin("P_VAR_", strJoin(d.owner, strJoin("_", d.name))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is in.MachineDecl,
-	   enumName = strJoin("P_VARS_", m.name),
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_VARS_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.VarDecl, d.owner = m.name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(m.name, "_COUNT"))), size = count({d | d is in.VarDecl, d.owner = m.name}) }).  
+									   DeclId(d, id, cn), d : in.VarDecl, d.owner = name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(name, "_COUNT"))), size = count({d | d is in.VarDecl, d.owner = name}) }).  
 
 	//// (Anon)FunDecls
 	AnonOrNamedFun ::= in.FunDecl + in.AnonFunDecl.
@@ -204,14 +204,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                     en = strJoin("P_FUN_", strJoin(d.owner, strJoin("_", d.name))).
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is in.MachineDecl,
-	   enumName = strJoin("P_FUNS_", m.name),
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_FUNS_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = m.name, AnonFunDeclGen(d), x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
-									   DeclId(d, id, cn), d : in.FunDecl, d.owner = m.name, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), 
-									   size = count({d | d is in.AnonFunDecl, d.owner = m.name, AnonFunDeclGen(d)}) 
-											  + count({d | d is in.FunDecl, d.owner = m.name}) }).
+									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = name, AnonFunDeclGen(d), x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d : in.FunDecl, d.owner = name, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(name, "_COUNT"))), 
+									   size = count({d | d is in.AnonFunDecl, d.owner = name, AnonFunDeclGen(d)}) 
+											  + count({d | d is in.FunDecl, d.owner = name}) }).
 
 	//// StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is in.StateDecl, 
@@ -220,11 +220,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						 cn = strJoin("P_STATE_", strJoin(d.owner, strJoin("_", name))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is in.MachineDecl,
-	   enumName = strJoin("P_STATES_", m.name),
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_STATES_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.StateDecl, d.owner = m.name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(m.name, "_COUNT"))), size = count({d | d is in.StateDecl, d.owner = m.name}) }).  
+									   DeclId(d, id, cn), d : in.StateDecl, d.owner = name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(name, "_COUNT"))), size = count({d | d is in.StateDecl, d.owner = name}) }).  
 
 	//// Prototypes for model functions
 	MakeParams ::= (in.FunDecl, in.NmdTupType + { NIL }, PrmTypes + { NIL }, Params + { NIL }).

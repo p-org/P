@@ -553,8 +553,28 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var machineName = ((Cnst)it.Current).GetStringValue();
                     allMachines[machineName] = new MachineInfo();
+                }
+            }
+
+            terms = GetBin(factBins, "MachineKind");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var machineName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
                     allMachines[machineName].type = ((Id)it.Current).Name;
+                }
+            }
+
+            terms = GetBin(factBins, "MachineCard");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var machineName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
                     var bound = it.Current;
                     if (bound.NodeKind != NodeKind.Id)
@@ -563,6 +583,16 @@ namespace Microsoft.Pc
                         allMachines[machineName].maxQueueSize = (int)((Cnst)GetArgByIndex(ft, 0)).GetNumericValue().Numerator;
                         allMachines[machineName].maxQueueSizeAssumed = ((Id)ft.Function).Name == "AssumeMaxInstances";
                     }
+                }
+            }
+
+            terms = GetBin(factBins, "MachineStart");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var machineName = ((Cnst)it.Current).GetStringValue();
                     it.MoveNext();
                     allMachines[machineName].initStateName = GetNameFromQualifiedName(machineName, (FuncTerm)it.Current);
                 }

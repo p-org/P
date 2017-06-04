@@ -100,7 +100,10 @@ domain PData
     /*************************************************************/
 
     EventDecl      ::= new (name: String, card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
-    MachineDecl    ::= fun (name: String -> kind: { REAL, SPEC }, card: any QueueConstraint, start: any QualifiedName, id: any Id).
+    MachineKind    ::= fun (name: String -> kind: { REAL, SPEC }).
+	MachineCard    ::= fun (name: String -> card: any QueueConstraint).
+	MachineStart   ::= fun (name: String -> start: any QualifiedName).
+	MachineDecl    ::= new (name: String, id: any Id).
 	MachineProtoDecl ::= fun (name: String -> constType: any TypeExpr).
 
 	ObservesDecl   ::= new (spec: String, ev: NonNullEventName).
@@ -178,11 +181,34 @@ domain PStructuralTyping extends PData, PError
 	TwoIdError(t.id, a.id, "Action and transition over the same event"),
 	TwoDeclError(t, a)   :- t is TransDecl, a is DoDecl, t.src = a.src, t.trig = a.trig.
 	
-	//// there should be a start state in each state machine.
 	[rule_Classes = '"error, msg: no start state in machine"']
-	OneIdError(m.id, "No start state in machine"),
-	OneDeclError(m) :- m is MachineDecl, no StateDecl(s, m.name, _, _, _, _), m.start = s.
+	OneIdError(id, "No start state in machine"),
+	OneDeclError(m) :- m is MachineDecl(name, id), no MachineStart(name, _).
+
+	[rule_Classes = '"error, msg: multiple start states in machine"']
+	OneIdError(id, "Multiple start states in machine"),
+	OneDeclError(m) :- m is MachineDecl(name, id), MachineStart(name, s1), MachineStart(name, s2), s1 != s2.
+
+	[rule_Classes = '"error, msg: inconsistent machine kinds"']
+	OneIdError(id, "Inconsistent machine kinds"),
+	OneDeclError(m) :- m is MachineDecl(name, id), MachineKind(name, k1), MachineKind(name, k2), k1 != k2.
+
+	[rule_Classes = '"error, msg: multiple cardinality constraints in machine"']
+	OneIdError(id, "Multiple cardinality constraints in machine"),
+	OneDeclError(m) :- m is MachineDecl(name, id), MachineCard(name, c1), MachineCard(name, c2), c1 != c2.
 	
+	[rule_Classes = '"error, msg: another variable with same name declared"']
+	OneIdError(id1, "Another variable with same name declared"),
+	OneDeclError(m) :- m is VarDecl(name, owner, _, id1), VarDecl(name, owner, _, id2), id1 != id2.
+
+	[rule_Classes = '"error, msg: another state with same name declared"']
+	OneIdError(id1, "Another state with same name declared"),
+	OneDeclError(m) :- m is StateDecl(name, owner, _, _, _, id1), StateDecl(name, owner, _, _, _, id2), id1 != id2.
+
+	[rule_Classes = '"error, msg: another function with same name declared"']
+	OneIdError(id1, "Another function with same name declared"),
+	OneDeclError(m) :- m is FunDecl(name, owner, _, _, _, _, _, id1), FunDecl(name, owner, _, _, _, _, _, id2), owner != NIL, id1 != id2.
+
 	//Valid TransDecl
 	[rule_Classes = '"error, msg: transition on an undefined event"']
 	OneIdError(trns.id, "Transition on an undefined event"),
@@ -240,20 +266,20 @@ domain PStructuralTyping extends PData, PError
 	//cannot have null in spec machines
 	[rule_Classes = '"error, msg: null transitions not allowed in spec machine"']
 	OneIdError(t.id, "Transition on null event not allowed in spec machine"),
-	OneDeclError(t) :- t is TransDecl(s, NULL, _, _, _), m is MachineDecl(s.owner, _, _, _, _), m.kind = SPEC.
+	OneDeclError(t) :- t is TransDecl(s, NULL, _, _, _), m is MachineKind(s.owner, SPEC).
 	[rule_Classes = '"error, msg: push transitions not allowed in spec machine"']
 	OneIdError(t.id, "Push transition not allowed in spec machine"),
-	OneDeclError(t) :- t is TransDecl(s, _, _, PUSH, _), m is MachineDecl(s.owner, _, _, _, _), m.kind = SPEC.
+	OneDeclError(t) :- t is TransDecl(s, _, _, PUSH, _), m is MachineKind(s.owner, SPEC).
 
 	//no defer in Spec
 	[rule_Classes = '"error, msg: defer not allowed in spec machine"']
 	OneIdError(d.id, "Event cannot be deferred in spec machine"),
-	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), m is MachineDecl(s.owner, _, _, _, _), m.kind = SPEC.	
+	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), m is MachineKind(s.owner, SPEC).	
 
 	//event in spec is defined
 	[rule_Classes = '"error, msg: event in observes list is undefined"']
-	OneIdError(decl.id, "Event in observes list is undefined"),
-	OneDeclError(decl) :- obs is ObservesDecl, decl is MachineDecl(obs.spec, _, _, _, _), decl.kind = SPEC, no EventDecl(obs.ev, _, _, _).	
+	OneIdError(id, "Event in observes list is undefined"),
+	OneDeclError(decl) :- obs is ObservesDecl, decl is MachineDecl(obs.spec, id), MachineKind(obs.spec, SPEC), no EventDecl(obs.ev, _, _, _).	
 
 	//event in eventset not declared
 	[rule_Classes = '"error, msg: unknown event in eventset"']
@@ -272,24 +298,24 @@ domain PStructuralTyping extends PData, PError
 
 	//interface declared in the exports
 	[rule_Classes = '"error, msg: interface in exports is not declared"']
-	OneIdError(decl.id, "Interface in exports is not declared"),
-	OneDeclError(me) :- decl is MachineDecl(mach, _, _, _, _), me is MachineExports(mach, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
+	OneIdError(id, "Interface in exports is not declared"),
+	OneDeclError(me) :- decl is MachineDecl(mach, id), me is MachineExports(mach, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
 
 	MemberOfStringList ::= sub (StringList, String).
 	//interfaces or machine names in the creates of a fun proto
 	[rule_Classes = '"error, msg: interface or machine in creates of extern fun is not declared"']
 	OneIdError(NIL, "Interface or machine in creates of extern fun is not declared"),
-	OneDeclError(fp) :- fp is FunProtoCreatesDecl(f, list), MemberOfStringList(list, name), no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _).
+	OneDeclError(fp) :- fp is FunProtoCreatesDecl(f, list), MemberOfStringList(list, name), no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _).
 
 	//events in sends
 	[rule_Classes = '"error, msg: event in sends list is not declared"']
-	OneIdError(decl.id, "Event in sends list is not declared"),
-	OneDeclError(ms) :- decl is MachineDecl(mach, _, _, _, _), ms is MachineSends(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
+	OneIdError(id, "Event in sends list is not declared"),
+	OneDeclError(ms) :- decl is MachineDecl(mach, id), ms is MachineSends(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//events in receives
 	[rule_Classes = '"error, msg: event in receives list is not declared"']
-	OneIdError(decl.id, "Event in receives list is not declared"),
-	OneDeclError(mr) :- decl is MachineDecl(mach, _, _, _, _), mr is MachineReceives(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
+	OneIdError(id, "Event in receives list is not declared"),
+	OneDeclError(mr) :- decl is MachineDecl(mach, id), mr is MachineReceives(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//multiple declarations of the same event
 	[rule_Classes = '"error, msg: multiple declarations of the same event"']
@@ -356,7 +382,7 @@ domain PStaticTyping extends PData, PError
 
 	//// Populate the inferred creates for each machine
 	InferredMachineCreates (m, iorm) :-
-		MachineDecl(m, _, _, _, _), af is AnonFunDecl, LocalAnonFunCreates(af, iorm), af.owner = m;
+		MachineDecl(m, _), af is AnonFunDecl, LocalAnonFunCreates(af, iorm), af.owner = m;
 		StateDecl(_, m, ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, no LocalFunCreates(fdecl, _), GlobalFunCreates(ent, iorm);
 		StateDecl(_, m, ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, LocalFunCreates(fdecl, iorm);
 		StateDecl(_, m, _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, no LocalFunCreates(fdecl, _), GlobalFunCreates(ext, iorm);
@@ -407,12 +433,13 @@ domain PStaticTyping extends PData, PError
 	MachineReceives(m, ev) :- MachineExports(m, i), InterfaceTypeDecl(i, it, _, _), MemberOfInterfaceType(it, ev).
 
 	//Checking the constructor type error for each exported interface
-	CompTypeRel(t1, t2) :- MachineExports(m.name, i), InterfaceTypeDecl(i, _, t1', _), TypeExpansion(t1', t1), ConstructorType(m, _, t2).
+	CompTypeRel(t1, t2) :- MachineExports(name, i), InterfaceTypeDecl(i, _, t1', _), TypeExpansion(t1', t1), ConstructorType(name, _, t2).
 
 	ExportInterfaceError ::= (m: MachineDecl).
 	[rule_Classes = '"error, msg: the exported interface argument type is not a subtype of the constructor argument type"']
-	OneIdError(m.id, "the exported interface argument type is not a subtype of the constructor argument type"),
-	ExportInterfaceError(m) :- MachineExports(m.name, i), InterfaceTypeDecl(i, _, iargt, _), ConstructorType(m, _, ct), TypeExpansion(iargt, eargt), ct != eargt, TypeRel(eargt, ct, k), k != SUB. 						 
+	OneIdError(id, "the exported interface argument type is not a subtype of the constructor argument type"),
+	ExportInterfaceError(m) :- m is MachineDecl(name, id), MachineExports(name, i), ConstructorType(name, _, ct),
+	                           InterfaceTypeDecl(i, _, iargt, _), TypeExpansion(iargt, eargt), ct != eargt, TypeRel(eargt, ct, k), k != SUB. 						 
     
 	PFile ::= (fileName: String).
 	PFile(fileName) :- PUnit(unitName), PUnitContains(unitName, fileName).
@@ -483,9 +510,9 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- m is MachineDecl(_, _, _, _, _), MachineReceives(m.name, ev), ev: NonNullEventName, type = NameType(m.name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(m.name, ev), ev: NonNullEventName}), eType : InterfaceType.
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- m is MachineDecl(_, _, _, _, _), MachineReceives(m.name, ALL), type = NameType(m.name), eType = BaseType(MACHINE).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- m is MachineDecl(_, _, _, _, _), MachineExports(m.name, name), type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ev), ev: NonNullEventName, type = NameType(name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(name, ev), ev: NonNullEventName}), eType : InterfaceType.
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ALL), type = NameType(name), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineExports(name, iname), type = NameType(iname), InterfaceTypeDecl(iname, eType, _, _).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
@@ -548,9 +575,9 @@ domain PStaticTyping extends PData, PError
 	TranslatedTypeExpr(x) :- TranslatedTypeExpr(t), NotImportedType(t), t = SeqType(x).
 
 	FunAvailable ::= (f: FunDecl + FunProtoDecl, name: String + { NIL }).
-    FunAvailable(f, name) :- f is FunDecl, m is MachineDecl, f.owner = NIL, m.name = name;
+    FunAvailable(f, name) :- f is FunDecl, m is MachineDecl(name, _), f.owner = NIL;
 	                         f is FunDecl, f.owner = name.
-	FunAvailable(f, name) :- f is FunProtoDecl, m is MachineDecl, m.name = name;
+	FunAvailable(f, name) :- f is FunProtoDecl, m is MachineDecl(name, _);
 						     f is FunProtoDecl, name = NIL.
 
 	AnonFunDeclGen ::= (AnonFunDecl).
@@ -1106,22 +1133,22 @@ domain PStaticTyping extends PData, PError
                
 	[ rule_Classes = '"error, msg: spec machine cannot be created"']
 	OneIdError(e.id, "Cannot create a spec machine"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, SPEC, _, _, _).
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineKind(n, SPEC).
 
 	[ rule_Classes = '"error, msg: Undefined machine or interface type"']
 	OneIdError(e.id, "Undefined machine or interface type"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _, _, _, _), 
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
 									  no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
 
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC,
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineKind(n, kind), kind != SPEC,
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
 	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineDecl(n, kind, _, _, _), kind != SPEC,
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineKind(n, kind), kind != SPEC,
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), no MachineDecl(n, _, _, _, _),
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), no MachineDecl(n, _),
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
@@ -1129,13 +1156,13 @@ domain PStaticTyping extends PData, PError
 	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _, _, _, _), 
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
 									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 	
 	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
 	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _, _, _, _), 
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
 									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
@@ -1590,34 +1617,34 @@ domain PStaticTyping extends PData, PError
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
 	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
     SpecError(c, n) :- 
-	       c is StateDecl(_, owner, n, _, _, _), decl is MachineDecl(owner, _, _, _, _), decl.kind = SPEC, called.name = n, FunAvailable(called, owner), SpecImpure(called);
-		   c is StateDecl(_, owner, _, n, _, _), decl is MachineDecl(owner, _, _, _, _), decl.kind = SPEC, called.name = n, FunAvailable(called, owner), SpecImpure(called).
+	       c is StateDecl(_, owner, n, _, _, _), decl is MachineKind(owner, SPEC), called.name = n, FunAvailable(called, owner), SpecImpure(called);
+		   c is StateDecl(_, owner, _, n, _, _), decl is MachineKind(owner, SPEC), called.name = n, FunAvailable(called, owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
     OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
-	       c is StateDecl(_, owner, called, _, _, _), decl is MachineDecl(owner, _, _, _, _), decl.kind = SPEC, called: AnonFunDecl, SpecImpure(called);
-		   c is StateDecl(_, owner, _, called, _, _), decl is MachineDecl(owner, _, _, _, _), decl.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
+	       c is StateDecl(_, owner, called, _, _, _), decl is MachineKind(owner, SPEC), called: AnonFunDecl, SpecImpure(called);
+		   c is StateDecl(_, owner, _, called, _, _), decl is MachineKind(owner, SPEC), called: AnonFunDecl, SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
     OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, n) :- 
-	       c is TransDecl(src, _, _, n, _), decl is MachineDecl(src.owner, _, _, _, _), decl.kind = SPEC, called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
+	       c is TransDecl(src, _, _, n, _), decl is MachineKind(src.owner, SPEC), called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
     OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
-	       c is TransDecl(src, _, _, called, _), decl is MachineDecl(src.owner, _, _, _, _), decl.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
+	       c is TransDecl(src, _, _, called, _), decl is MachineKind(src.owner, SPEC), called: AnonFunDecl, SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
 	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, n) :-	
-		   c is DoDecl(src, _, n, _), decl is MachineDecl(src.owner, _, _, _, _), decl.kind = SPEC, called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
+		   c is DoDecl(src, _, n, _), decl is MachineKind(src.owner, SPEC), called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
 	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
 	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
-		   c is DoDecl(src, _, called, _), decl is MachineDecl(src.owner, _, _, _, _), decl.kind = SPEC, called: AnonFunDecl, SpecImpure(called).
+		   c is DoDecl(src, _, called, _), decl is MachineKind(src.owner, SPEC), called: AnonFunDecl, SpecImpure(called).
 
     /*************************************************************/
     /*                         Receive Labels                    */
@@ -1971,8 +1998,8 @@ domain PStaticTyping extends PData, PError
 	PayloadVarAux(cases, f, name, type) :- SubSE(_, cases), cases: Cases, f = cases.action, r = lstReverse(#NmdTupType, f.envVars), name = r.hd.name, type = r.hd.type, type != BaseType(NULL).
 	PayloadVar(x, f, name, ft) :- PayloadVarAux(x, f, name, type), TypeExpansion(type, ft).
 
-    ConstructorType ::= (m: MachineDecl, s: StateDecl, t: TypeExpr).
-	ConstructorType(m, s, ft) :- s is StateDecl, m is MachineDecl(s.owner, _, _, _, _), s.name = m.start, PayloadVar(s, _, _, ft).
+    ConstructorType ::= (m: String, s: StateDecl, t: TypeExpr).
+	ConstructorType(m, s, ft) :- s is StateDecl, MachineStart(m, s.name), m = s.owner, PayloadVar(s, _, _, ft).
 
 	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVar(_, _, _, ft);
 						   SubSE(c, n), n: New, TypeOf(c, n.args, et), et: TypeExpr, PayloadVar(_, _, _, ft);
@@ -2001,32 +2028,32 @@ domain PStaticTyping extends PData, PError
 	// for creation of machines
 	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
 	OneIdError(n.id, "Entry function of start state expects an argument"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), ConstructorType(m, _, ft), m.name = name.
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), ConstructorType(name, _, ft).
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	OneIdError(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), ConstructorType(m, _, ft), m.name = name, TypeOfArg1(c, n, type), type: TypeExpr,
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), ConstructorType(name, _, ft), TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 	
 	// for creation of machines proto
 	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
 	OneIdError(n.id, "Entry function of start state expects an argument"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), ft != BaseType(NULL).
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _), ft != BaseType(NULL).
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
 	OneIdError(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _, _, _, _), TypeOfArg1(c, n, type), type: TypeExpr,
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _), TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 					   			   
 	//for creation of interfaces
 	[ rule_Classes = '"error, msg: created interface expects an argument;"']
 	OneIdError(n.id, "Created interface expects an argument"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
 	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']
 	OneIdError(n.id, "Payload type of constructor must be subtype of payload type of the created interface"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), no MachineDecl(name, _, _, _, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
 	//Entry function of spec machine must have null constructor type
 	[ rule_Classes = '"error, msg: entry function of start state of a spec machine cannot have an argument;"']
-	OneIdError(m.id, "Entry function of start state of a spec machine cannot have an argument"),
-	PayloadError(s) :- ConstructorType(m, s, ft), m.kind = SPEC, ft != BaseType(NULL).
+	OneIdError(id, "Entry function of start state of a spec machine cannot have an argument"),
+	PayloadError(s) :- ConstructorType(name, s, ft), MachineDecl(name, id), MachineKind(name, SPEC), ft != BaseType(NULL).
 }

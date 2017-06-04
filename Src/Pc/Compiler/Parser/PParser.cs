@@ -1246,13 +1246,13 @@
             {
                 var assertNode = P_Root.MkAssertMaxInstances(MkNumeric(card, span));
                 assertNode.Span = span;
-                machDecl.card = assertNode;
+                parseProgram.Add(P_Root.MkMachineCard((P_Root.StringCnst)machDecl.name, assertNode));
             }
             else
             {
                 var assumeNode = P_Root.MkAssumeMaxInstances(MkNumeric(card, span));
                 assumeNode.Span = span;
-                machDecl.card = assumeNode;
+                parseProgram.Add(P_Root.MkMachineCard((P_Root.StringCnst)machDecl.name, assumeNode));
             }
         }
 
@@ -1978,21 +1978,7 @@
             if (isStart)
             {
                 var machDecl = GetCurrentMachineDecl(span);
-                if (string.IsNullOrEmpty(((P_Root.StringCnst)machDecl.start[0]).Value))
-                {
-                    machDecl.start = (P_Root.QualifiedName)state.name;
-                }
-                else
-                {
-                    var errFlag = new Flag(
-                                     SeverityKind.Error,
-                                     span,
-                                     Constants.BadSyntax.ToString("Too many start states"),
-                                     Constants.BadSyntax.Code,
-                                     parseSource);
-                    parseFailed = true;
-                    parseFlags.Add(errFlag);
-                }
+                parseProgram.Add(P_Root.MkMachineStart((P_Root.StringCnst)machDecl.name, (P_Root.QualifiedName)state.name));
             }
 
             var stateName = QualifiedNameToString(state.name as P_Root.QualifiedName);
@@ -2063,7 +2049,7 @@
             var machDecl = GetCurrentMachineDecl(span);
             machDecl.Span = span;
             machDecl.name = MkString(name, nameSpan);
-            machDecl.kind = MkUserCnst(kind, span);
+            parseProgram.Add(P_Root.MkMachineKind((P_Root.StringCnst)machDecl.name, MkUserCnst(kind, span)));
             foreach (var e in crntObservesList)
             {
                 var observes = P_Root.MkObservesDecl((P_Root.IArgType_ObservesDecl__0) machDecl.name, (P_Root.IArgType_ObservesDecl__1)e);
@@ -2079,7 +2065,7 @@
         {
             var machDecl = GetCurrentMachineDecl(span);
             AddReceivesSendsLists();
-            machDecl.id = (P_Root.IArgType_MachineDecl__4)MkUniqueId(entrySpan, exitSpan);
+            machDecl.id = (P_Root.IArgType_MachineDecl__1)MkUniqueId(entrySpan, exitSpan);
             machDecl.Span = span;
             parseProgram.Add(machDecl);
             crntMachDecl = null;
@@ -2385,13 +2371,6 @@
             }
 
             crntMachDecl = P_Root.MkMachineDecl();
-            crntMachDecl.name = MkString(string.Empty, span);
-            crntMachDecl.kind = MkUserCnst(P_Root.UserCnstKind.REAL, span);
-            crntMachDecl.card = MkUserCnst(P_Root.UserCnstKind.NIL, span);
-            crntMachDecl.start = P_Root.MkQualifiedName(
-                                        MkString(string.Empty, span),
-                                        MkUserCnst(P_Root.UserCnstKind.NIL, span));
-            crntMachDecl.start.Span = span;
             return crntMachDecl;
         }
 

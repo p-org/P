@@ -44,7 +44,7 @@ type CoorClientInterface((isfaultTolerant: bool)) = { eTransaction, eReadPartSta
 // Interface exported by the Coordinator to the Participants in 2PC
 type CoorParticipantInterface() = { ePrepared, eNotPrepared, eStatusResp };
 // Interface implemented by the Participant machines in 2PC
-type ParticipantInterface((machine, int, bool)) = { ePrepare, eCommit, eAbort, eStatusQuery };
+type ParticipantInterface((CoorParticipantInterface, int, bool)) = { ePrepare, eCommit, eAbort, eStatusQuery };
 
 /* Declaring all the events */
 

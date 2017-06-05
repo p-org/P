@@ -384,8 +384,8 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	//TODO: THIS rule takes a long time try to simplify further !!
 	//for each interface in dom(IX), it is either disjoint from alpha or all MR(m) is included in it.
 	ModuleConstructionIllegal(id, ix, "illegal hide, trying to partially hide an exported interface of the module expression") 
-	:- AllExpandedModuleExprs(modExpr), md is MachineDecl(m, _, _), ixd is InterfaceTypeDecl(ix, el, _, _), ModuleContains(mod, m), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), ModuleExports(mod, ix), MemberOfInterfaceType(el, ev), 
-	MachineExports(m, ix), MachineReceives(m, ev'), ev': NonNullEventName, count({ x | x = ModulePrivate(modExpr, ev'), MemberOfInterfaceType(evtList, ev')}) = 0.
+	:- AllExpandedModuleExprs(modExpr), ModuleContains(mod, m), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), ModuleExports(mod, ix), MemberOfInterfaceType(el, ev), 
+	MachineExports(m, ix), MachineReceives(m, ev'), ev': NonNullEventName, count({ x | modExpr = HideExpr(evtList, mod, id), x = ModulePrivate(modExpr, ev'), MemberOfInterfaceType(evtList, ev')}) = 0.
 
 	/// (permissions in ER + ES is disjoint from EP )
 	ModuleConstructionIllegal(id, ev, "after hidding the event has private permission in them") 
@@ -469,7 +469,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	:- mod is ModuleDecl, ModulePrivateEvents(mod, ev), ev: NonNullEventName, no EventDecl(ev, _, _, _).
 
 	//// make sure that new M in the module are for private machines.
-	WellFormednessError(mod.id, mach, "illegal primitive module, created machine using new M, but not all its events are private")
+	WellFormednessError(mod.id, mach, "illegal primitive module, created machine using new <MachineName>, but not all its events are private")
 	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), MachineCreatesM(mach, newM), MachineReceives(newM, ev), no ModulePrivate(mod, ev), ev: NonNullEventName.
 
 	//// ix is not disjoint from EP
@@ -496,7 +496,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	InterfaceTypeDecl(ix, ixL, _, _), InterfaceTypeDecl(ix', ixL, _, _), mach != mach'.
 
 	//// private machines created by a module are part of the module.
-	WellFormednessError(mod.id, mach, "illegal primitive module, created machine using new M is not included in the module")
+	WellFormednessError(mod.id, mach, "illegal primitive module, created machine using new <MachineName> is not included in the module")
 	:- mod is ModuleDecl, ModuleContains(mod, mach), MachineCreatesM(mach, newM), no ModuleContains(mod, newM).
 
 
@@ -582,24 +582,23 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #RenameExpr, toSymbol(modExpr) != #ModuleDecl,
 													  toSymbol(modExpr) != #ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, IorM, ImpMachine).
 
-	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.left, creatorM, IorM, ImpMachine);
-														  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.right, creatorM, IorM, ImpMachine);
-														  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.left, creatorM, _, _), ModuleLinkMap(modExpr.right, _, IorM, ImpMachine), ModuleExports(modExpr.right, IorM);
-														  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleLinkMap(modExpr.right, creatorM, _, _), ModuleLinkMap(modExpr.left, _, IorM, ImpMachine), ModuleExports(modExpr.left, IorM).
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(left, _, _), ModuleLinkMap(left, creatorM, IorM, ImpMachine);
+														  AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(_, right, _), ModuleLinkMap(right, creatorM, IorM, ImpMachine);
+														  AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(left, right, _), ModuleLinkMap(modExpr, creatorM, _, _), ModuleLinkMap(right, _, IorM, ImpMachine), ModuleExports(right, IorM), ModuleRenameMap(left, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM);
+														  AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(left, right, _), ModuleLinkMap(modExpr, creatorM, _, _), ModuleLinkMap(left, _, IorM, ImpMachine), ModuleExports(left, IorM), ModuleRenameMap(right, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM).
 
 
-	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, IorM, ImpMachine);
-													  	  AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleLinkMap(modExpr.mod, creatorM, _, _), IorM = modExpr.iName, ImpMachine = modExpr.mName.
+	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(_, _, mod, _), ModuleLinkMap(mod, creatorM, IorM, ImpMachine);
+													  	  AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(mName, iName, mod, _), ModuleLinkMap(mod, creatorM, _, _), IorM = iName, ImpMachine = mName, ModuleRenameMap(mod, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM).
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr', _), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine), creatorM != oldname, ImpMachine != oldname;
 														AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr',_), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine), creatorM' = oldname, creatorM = newname, ImpMachine != oldname;
 													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine'), ImpMachine' = oldname, ImpMachine = newname, creatorM != oldname;
 													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine'), ImpMachine' = oldname, creatorM' = oldname, creatorM = newname, ImpMachine = newname.
 
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), MachineCreatesM(creatorM, ImpMachine), IorM =  ImpMachine;
-														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), 
+														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM),
 														  ModuleExports(modExpr, IorM), MachineExports(ImpMachine, IorM), ModuleContains(ModuleDecl(modExpr.name, _), ImpMachine);
 														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), IorM = NIL, ImpMachine = NIL.
-	
 
 	/*code generation for test decls*/
 	CSharpLinkMap(testName, MachineName, interfaceOrMachine, ImpMachine) :- 

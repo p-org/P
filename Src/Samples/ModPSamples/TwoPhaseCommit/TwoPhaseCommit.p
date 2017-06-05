@@ -131,17 +131,18 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	}
 }
 
+eventset esCoordinatorEvents = { ePrepared, eNotPrepared, eStatusResp, eSMRResponse, eSMRLeaderUpdated};
 
 machine Participant : ParticipantInterface, SMRReplicatedMachineInterface
 sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantAborted, eSMRResponse;
 {
 	var myId : int;
 	var preparedOp: (tid: int, op: OperationType);
-	var coordinator: machine;
+	var coordinator: any<esCoordinatorEvents>;
 	var accountBalance: int;
 	var isReplicated: bool;
 	start state Init {
-		entry (payload: (machine, int, bool)){
+		entry (payload: (any<esCoordinatorEvents>, int, bool)){
 
 			myId = payload.1;
 			coordinator = payload.0;
@@ -162,11 +163,11 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	{
 		if(isReplicated)
 		{
-			send coordinator, eSMRResponse, (response = ev, val = (payload as data)); 
+			send coordinator as SMRClientInterface, eSMRResponse, (response = ev, val = (payload as data)); 
 		}
 		else
 		{
-			send coordinator, ev, payload;
+			send coordinator as CoorParticipantInterface, ev, payload;
 		}
 	}
 	state WaitForPrepare {

@@ -101,7 +101,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		defer eTransaction, eReadPartStatus;
 		entry{
 			prepareCount = 0;
-			SendToAllParticipants(ePrepare, (tid = transId, op = currentTransaction));
+			SendToAllParticipants(ePrepare, (tid = transId, op = currentTransaction.op));
 			//start timer 
 			StartTimer(timer, 100);
 		}

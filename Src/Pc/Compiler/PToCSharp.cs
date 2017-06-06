@@ -270,7 +270,7 @@ namespace Microsoft.Pc
                 CSharpHelper.MkCSharpNot(expr),
                 ThrowStatement(MkCSharpObjectCreationExpression(IdentifierName("PrtAssertFailureException"), CSharpHelper.MkCSharpStringLiteralExpression(errorMsg))));
         }
-        public static StatementSyntax MkCSharpPrint(string msg, params ExpressionSyntax[] pars)
+        public static StatementSyntax MkCSharpPrint(string msg, List<ExpressionSyntax> pars)
         {
             msg = "<PrintLog>" + " " + msg;
             var allPars = new List<ExpressionSyntax>(pars);
@@ -1933,18 +1933,18 @@ namespace Microsoft.Pc
             SyntaxNode FoldPrint(FuncTerm ft, List<SyntaxNode> children)
             {
                 string msg = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
-                List<StatementSyntax> stmts = new List<StatementSyntax>();
-                stmts.Add(CSharpHelper.MkCSharpPrint(msg));
                 FuncTerm seg = GetArgByIndex(ft, 1) as FuncTerm;
                 while (seg != null)
                 {
                     int formatArg = (int)(GetArgByIndex(seg, 0) as Cnst).GetNumericValue().Numerator;
                     string str = (GetArgByIndex(seg, 1) as Cnst).GetStringValue();
                     seg = GetArgByIndex(seg, 2) as FuncTerm;
-                    stmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot((ExpressionSyntax)children[formatArg], "ToString"))));
-                    stmts.Add(CSharpHelper.MkCSharpPrint(str));
+                    msg += string.Format("{{{0}}}", formatArg);
+                    msg += str;
                 }
-                return Block(stmts);
+                List<ExpressionSyntax> exprs = new List<ExpressionSyntax>();
+                children.ForEach(x => exprs.Add((ExpressionSyntax)x));
+                return CSharpHelper.MkCSharpPrint(msg, exprs);
             }
 
             SyntaxNode FoldBinStmt(FuncTerm ft, List<SyntaxNode> children)

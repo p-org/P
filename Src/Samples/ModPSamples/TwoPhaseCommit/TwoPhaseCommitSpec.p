@@ -3,39 +3,43 @@ event eParticipantAborted: (part:int, tid:int);
 
 spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted 
 {
+	//log from partitionId -> transactionid -> CommittedOrAborted.
 	var partLog: map[int, map[int, bool]];
 
 	start state Init {
-		
+		entry {
+			//for two partitions
+			partLog[0] = default(map[int, bool]);
+			partLog[1] = default(map[int, bool]);
+			assert(false);
+		}
 		on eParticipantCommitted do (payload : (part:int, tid:int)) {
-			if(payload.part == 0){
-				if(payload.tid in partLog[1])
-				{
-					assert(partLog[1][payload.tid]);
-				}
-			}
-			else
+			var partid : int;
+			while(partid < sizeof(partLog))
 			{
-				if(payload.tid in partLog[0])
+				if(partid != payload.part)
 				{
-					assert(partLog[0][payload.tid]);
+					if(payload.tid in partLog[partid])
+					{
+						assert(partLog[partid][payload.tid]);
+					}
 				}
+				partid = partid + 1;
 			}
 			partLog[payload.part][payload.tid] = true;
 		}
 		on eParticipantAborted do (payload : (part:int, tid:int)) {
-			if(payload.part == 0){
-				if(payload.tid in partLog[1])
-				{
-					assert(!partLog[1][payload.tid]);
-				}
-			}
-			else
+			var partid : int;
+			while(partid < sizeof(partLog))
 			{
-				if(payload.tid in partLog[0])
+				if(partid != payload.part)
 				{
-					assert(!partLog[0][payload.tid]);
+					if(payload.tid in partLog[partid])
+					{
+						assert(!partLog[partid][payload.tid]);
+					}
 				}
+				partid = partid + 1;
 			}
 			partLog[payload.part][payload.tid] = false;
 		}

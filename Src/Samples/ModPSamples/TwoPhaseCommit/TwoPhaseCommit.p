@@ -79,7 +79,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 			transId = transId + 1;
 		}
 		on eReadPartStatus do (clientReq: (source: ClientInterface, part:int)){
-			send participants[clientReq.part], eStatusQuery;
+			SendToParticipant(participants[clientReq.part], eStatusQuery, null);
 			receive {
 				case eStatusResp: (payload: ParticipantStatusType) {
 					send clientReq.source, eRespPartStatus, payload;
@@ -175,9 +175,14 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 		{
 			preparedOp = payload;
 			if($)
+			{
 				SendToCoordinator(ePrepared, (tid = payload.tid,));
+			}
 			else
+			{
 				SendToCoordinator(eNotPrepared, (tid = payload.tid,));
+				//assert(false);
+			}
 		}
 		on eCommit do { 
 			print "unexpected commit message";

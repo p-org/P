@@ -91,7 +91,7 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
                 goto ReadStatusOfParticipant;
             }
         }
-        on eTransactionFailed do { assert(false); CancelTimer(timer); goto StartPumpingTransactions; }
+        on eTransactionFailed do { CancelTimer(timer); goto StartPumpingTransactions; }
         on eTransactionSuccess goto StartPumpingTransactions with UpdateValues;
         on eTimeOut goto StartPumpingTransactions;
     }

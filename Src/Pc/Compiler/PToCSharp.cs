@@ -251,6 +251,10 @@ namespace Microsoft.Pc
             return BinaryExpression(SyntaxKind.EqualsExpression, expr1, expr2);
         }
 
+        public static ExpressionSyntax MkCSharpEquals(ExpressionSyntax expr1, ExpressionSyntax expr2)
+        {
+            return MkCSharpInvocationExpression(MkCSharpDot(expr1, "Equals"), expr2);
+        }
         public static ExpressionSyntax MkCSharpNeq(ExpressionSyntax expr1, ExpressionSyntax expr2)
         {
             return BinaryExpression(SyntaxKind.NotEqualsExpression, expr1, expr2);
@@ -1305,7 +1309,7 @@ namespace Microsoft.Pc
                         CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"),
                         IdentifierName(funName), CSharpHelper.MkCSharpDot("currFun", "locals"))));
                     ifStmts.Add(CSharpHelper.MkCSharpGoto(beforeLabel));
-                    eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(eventName)), Block(ifStmts)));
+                    eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEquals(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(eventName)), Block(ifStmts)));
                     funStmts.Add(CSharpHelper.MkCSharpEmptyLabeledStatement(beforeLabel));
                     funStmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
                     var elseStmt = Block(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), CSharpHelper.MkCSharpDot("currFun", "fun"), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),

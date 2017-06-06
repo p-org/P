@@ -22,7 +22,13 @@ if NOT errorlevel 0 goto :eof
 
 
 %pt% /psharp Test0.dll
-
+if NOT errorlevel 0 goto :eof
+%pt% /psharp Test1.dll
+if NOT errorlevel 0 goto :eof
+%pt% /psharp Test2.dll
+if NOT errorlevel 0 goto :eof
+%pt% /psharp Test3.dll
+if NOT errorlevel 0 goto :eof
 goto :eof
 :noP
 echo please run ..\..\bld\build debug x64

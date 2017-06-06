@@ -11,7 +11,6 @@ spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted
 			//for two partitions
 			partLog[0] = default(map[int, bool]);
 			partLog[1] = default(map[int, bool]);
-			assert(false);
 		}
 		on eParticipantCommitted do (payload : (part:int, tid:int)) {
 			var partid : int;

@@ -175,9 +175,14 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 		{
 			preparedOp = payload;
 			if($)
+			{
 				SendToCoordinator(ePrepared, (tid = payload.tid,));
+			}
 			else
+			{
 				SendToCoordinator(eNotPrepared, (tid = payload.tid,));
+				//assert(false);
+			}
 		}
 		on eCommit do { 
 			print "unexpected commit message";

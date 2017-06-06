@@ -91,7 +91,7 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
                 goto ReadStatusOfParticipant;
             }
         }
-        on eTransactionFailed do { CancelTimer(timer); goto StartPumpingTransactions; }
+        on eTransactionFailed do { assert(false); CancelTimer(timer); goto StartPumpingTransactions; }
         on eTransactionSuccess goto StartPumpingTransactions with UpdateValues;
         on eTimeOut goto StartPumpingTransactions;
     }
@@ -105,8 +105,8 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
         }
         on eTransactionSuccess do UpdateValues;
         on eRespPartStatus goto StartPumpingTransactions with (payload: ParticipantStatusType){
-            print "{0} - {1}", payload.val, valueAtParticipant;
-            assert(payload.val == valueAtParticipant);
+            //print payload.val; print valueAtParticipant;
+            //assert(payload.val == valueAtParticipant);
         }
     }
 }

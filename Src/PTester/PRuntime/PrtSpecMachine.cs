@@ -27,8 +27,7 @@ namespace P.Runtime
             stateImpl = app;
             //Push the start state function on the funStack.
             PrtPushState(StartState);
-            //Execute the entry function
-            PrtEnqueueEvent(PrtValue.@null, PrtValue.@null, null);
+            
         }
         public PrtSpecMachine Clone(StateImpl app)
         {

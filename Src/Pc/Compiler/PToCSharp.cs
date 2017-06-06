@@ -2790,6 +2790,11 @@ namespace Microsoft.Pc
                 fields.Add(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), GetEventVar(x)));
             }
 
+            var prtvalueNull = CSharpHelper.MkCSharpDot("PrtValue", "@null");
+            //execute the entry function of the machine
+            fields.Add(
+                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "PrtEnqueueEvent"), prtvalueNull, prtvalueNull, LiteralExpression(SyntaxKind.NullLiteralExpression))
+                );
             //return machine;
             fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
 

@@ -15,7 +15,7 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 			//create the replicated machine
 			doReordering = payload.reorder;
 			myId = payload.id;
-			replicatedSM = new SMRReplicatedMachineInterface(myId);
+			replicatedSM = new SMRReplicatedMachineInterface((payload.client, payload.id, true));
 			
 			//for the specification case send the current 
 			send client, eSMRLeaderUpdated, (myId, this as SMRServerInterface);

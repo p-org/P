@@ -79,7 +79,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 			transId = transId + 1;
 		}
 		on eReadPartStatus do (clientReq: (source: ClientInterface, part:int)){
-			send participants[clientReq.part], eStatusQuery;
+			SendToParticipant(participants[clientReq.part], eStatusQuery, null);
 			receive {
 				case eStatusResp: (payload: ParticipantStatusType) {
 					send clientReq.source, eRespPartStatus, payload;

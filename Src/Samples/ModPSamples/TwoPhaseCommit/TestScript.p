@@ -39,7 +39,7 @@ module TwoPCWithTimer = (rename Timer to Timer2 in
 
 // Test 0: To check that the 2PC protocol (without fault-tolerance)  is safe. 
 test Test0: (rename TestDriver1 to Main in (compose TwoPCWithTimer, LinearAbs, ClientWithTimer, TestDriver1));
-/*
+
 // Test 1: To check that the 2PC protocol (without fault-tolerance) satisfies the AtomicitySpec. 
 module TwoPCwithSpec = (assert AtomicitySpec in TwoPCWithTimer);
 test Test1: (rename TestDriver1 to Main in (compose TwoPCwithSpec, LinearAbs, ClientWithTimer, TestDriver1));
@@ -55,5 +55,5 @@ test Test2: (rename TestDriver2 to Main in (compose TwoPCWithTimer, LinearAbs, C
 module TwoPCwithSpecFT = (assert AtomicitySpec in TwoPCWithTimer);
 test Test3: (rename TestDriver2 to Main in (compose TwoPCwithSpecFT, LinearAbs, ClientWithTimer, TestDriver2));
 
-*/
+
 

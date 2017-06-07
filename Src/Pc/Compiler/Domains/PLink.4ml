@@ -391,7 +391,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ModuleContains(mod, m), MachineExports(m, ix), MachineReceives(m, ev'), ev': NonNullEventName, no MemberOfInterfaceType(evtList, ev').
 
 	/// (permissions in ER + ES is disjoint from EP )
-	ModuleConstructionIllegal(id, ev, "after hidding the event has private permission in them") 
+	ModuleConstructionIllegal(id, ev, "after hiding the event has private permission in them") 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleSends(modExpr, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm);
 		AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), ModuleReceives(modExpr, ev), PermEmbeddedInEvent(ev, perm), ModulePrivate(modExpr, perm).
 

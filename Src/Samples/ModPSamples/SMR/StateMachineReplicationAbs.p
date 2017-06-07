@@ -1,4 +1,4 @@
-machine LinearizibilityAbs : SMRServerInterface
+machine LinearizabilityAbs : SMRServerInterface
 receives eSMROperation;
 sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 {
@@ -26,9 +26,9 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 				goto DoNoReOrdering;
 		}
 	}
-	//we have created a parameterized linearizibility abstraction
-	//since some cases messages cannot be 
-	//reordered and for the case of like in replicated hash table they can be reordered.
+	//we have created a parameterized linearizability abstraction
+	//since some cases messages can be 
+	//reordered while in some cases the SMR implementation provides a guarantee of inorder responses.
 	var pending: seq[SMROperationType];	
 	state DoReOrdering {
 		entry {

@@ -1,6 +1,11 @@
 event eParticipantCommitted: (part:int, tid:int);
 event eParticipantAborted: (part:int, tid:int);
 
+/**********************************
+* Atomicity Spec:
+The spec monitor asserts that if a participant commits or aborts a transaction then all other 
+participants have either made the same decision or have not made any decision yet.
+***********************************/
 spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted 
 {
 	//log from partitionId -> transactionid -> CommittedOrAborted.
@@ -44,3 +49,9 @@ spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted
 		}
 	}
 }
+
+/******************************************************
+Progress Guarantee:
+The progress spec asserts that in the presence of bounded time-outs and no message loss.
+For each transaction, the client always eventually receives
+*/

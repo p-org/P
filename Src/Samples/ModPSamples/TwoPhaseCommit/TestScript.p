@@ -24,9 +24,9 @@ module TestDriver2 {
     TestDriver2
 }
 
-//The module that implements the linearizibility abstraction for the SMR protocols
+//The module that implements the linearizability abstraction for the SMR protocols
 module LinearAbs {
-    LinearizibilityAbs
+    LinearizabilityAbs
 }
 
 // Client module composed with Timer module. Timer machine is made private in the new constructed module.

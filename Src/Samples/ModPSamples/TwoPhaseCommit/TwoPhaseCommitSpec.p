@@ -1,5 +1,6 @@
 event eParticipantCommitted: (part:int, tid:int);
 event eParticipantAborted: (part:int, tid:int);
+event eTransactionTimeOut;
 
 /**********************************
 * Atomicity Spec:
@@ -14,12 +15,17 @@ spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted
 	start state Init {
 		entry {
 			//for two partitions
-			partLog[0] = default(map[int, bool]);
-			partLog[1] = default(map[int, bool]);
+			var index : int;
+			index = 0;
+			while(index < NumOfParticipants)
+			{
+				partLog[index] = default(map[int, bool]);
+				index = index + 1;
+			}
 		}
 		on eParticipantCommitted do (payload : (part:int, tid:int)) {
 			var partid : int;
-			while(partid < sizeof(partLog))
+			while(partid < NumOfParticipants)
 			{
 				if(partid != payload.part)
 				{
@@ -34,7 +40,7 @@ spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted
 		}
 		on eParticipantAborted do (payload : (part:int, tid:int)) {
 			var partid : int;
-			while(partid < sizeof(partLog))
+			while(partid < NumOfParticipants)
 			{
 				if(partid != payload.part)
 				{
@@ -52,6 +58,22 @@ spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted
 
 /******************************************************
 Progress Guarantee:
-The progress spec asserts that in the presence of bounded time-outs and no message loss.
+The progress spec asserts that in the presence of bounded time-outs.
 For each transaction, the client always eventually receives
-*/
+*******************************************************/
+spec ProgressSpec observes eTransaction, eTransactionFailed, eTransactionSuccess, eTransactionTimeOut
+{
+	start state WaitForNewTransaction {
+		on eTransaction goto WaitForTransactionCompletion;
+	}
+	
+	cold state ResetTemperature {
+		entry {
+			goto WaitForTransactionCompletion;
+		}
+	}
+	hot state WaitForTransactionCompletion {
+		on eTransactionFailed, eTransactionSuccess goto WaitForNewTransaction;
+		on eTransactionTimeOut goto ResetTemperature;
+	}
+}

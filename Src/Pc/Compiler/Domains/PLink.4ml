@@ -270,7 +270,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ModuleContains(modExpr, m) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleContains(modExpr.left, m);
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleContains(modExpr.right, m).
 	//// private events 
-	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : in.NonNullEventName.
+	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModulePrivateEvents(modExpr, ev), ev : NonNullEventName.
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModulePrivate(modExpr.mod, ev).
 	ModulePrivate(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModulePrivate(modExpr.mod, ev), ev: in.NonNullEventName;
 								  AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MemberOfInterfaceType(modExpr.evtNames, ev), ev: in.NonNullEventName.
@@ -278,11 +278,11 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 								  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivate(modExpr.right, ev).
 									 
 	//// sends list ////ES = union(MS(m)) \ EP
-	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSends(mach, ev), ev: NonNullEventName, ModuleContains(ModuleDecl(modExpr.name, _), mach), no ModulePrivate(modExpr, ev). 
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, MachineSends(mach, ev), ev: NonNullEventName, ModuleContains(modExpr, mach), no ModulePrivateEvents(modExpr, ev). 
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #ModuleDecl, ModuleSends(modExpr.mod, ev).
 	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.left, ev);
 								AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSends(modExpr.right, ev).
-	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, MachineSends(_, ev), ev: NonNullEventName, ModuleSends(modExpr.mod, ev), no MemberOfInterfaceType(modExpr.evtNames, ev).
+	ModuleSends(modExpr, ev) :- AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModuleSends(modExpr.mod, ev)/*, no MemberOfInterfaceType(modExpr.evtNames, ev)*/.
 	
 	//// exports list 
 	AllExportedInterfaces ::= (ix: String).

@@ -1,10 +1,13 @@
 
 //We implemented a fault-tolerant 2-PC protocol.
 //There is a single co-ordinator and 2 participants. The two participants are two different bank accounts.
-
+enum TPCConfig {
+	dummy = 0,
+	NumOfParticipants = 2
+}
 machine Coordinator : CoorClientInterface
 receives ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure, eSMRResponse, eSMRLeaderUpdated;
-sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eRespPartStatus, eStartTimer, eCancelTimer, eSMROperation;
+sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eTransactionTimeOut, eRespPartStatus, eStartTimer, eCancelTimer, eSMROperation;
 {
 
 	var transId : int;
@@ -15,20 +18,27 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	start state Init {
 		entry (payload: (isfaultTolerant: bool)){
 			var temp : machine;
+			var index : int;
 			isFaultTolerant = payload.isfaultTolerant;
 			if(isFaultTolerant)
 			{
-				temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, id = 0));
-				participants[0] = temp;
-				temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, id = 1));
-				participants[1] = temp;
+				index = 0;
+				while(index < NumOfParticipants)
+				{
+					temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, id = index));
+					participants[index] = temp;
+					index = index + 1;
+				}
 			}
 			else
 			{
-				temp = new ParticipantInterface(this as CoorParticipantInterface, 0, false);
-				participants[0] = temp;
-				temp = new ParticipantInterface(this as CoorParticipantInterface, 1, false);
-				participants[1] = temp;
+				index = 0;
+				while(index < NumOfParticipants)
+				{
+					temp = new ParticipantInterface(this as CoorParticipantInterface, index, false);
+					participants[index] = temp;
+					index = index + 1;
+				}
 			}
 			
 			transId = 0;
@@ -65,7 +75,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	{
 		var i : int;
 		i = 0;
-		while(i < sizeof(participants))
+		while(i < NumOfParticipants)
 		{
 			SendToParticipant(participants[i], ev, val as data);
 			i = i + 1;
@@ -96,16 +106,46 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		CancelTimer(timer);	
 	}
 	
-	var prepareCount : int;
+	var isPrepared : map[int, bool];
+	fun ResetPrepared() {
+		var index : int;
+		index = 0;
+		while(index < NumOfParticipants)
+		{
+			isPrepared[index] = false;
+			index = index + 1;
+		}
+	}
+	fun ReceivedAllPrepare() : bool 
+	[pure = null]
+	{
+		var index : int;
+		index = 0;
+		print "{0}\n", isPrepared;
+		print "Num: {0}\n", NumOfParticipants;
+		while(index < NumOfParticipants)
+		{
+			if(!isPrepared[index])
+			{
+				return false;
+			}
+			index = index + 1;
+		}
+		return true;
+	}
 	state ProcessTransaction {
 		defer eTransaction, eReadPartStatus;
 		entry{
-			prepareCount = 0;
+			ResetPrepared();
 			SendToAllParticipants(ePrepare, (tid = transId, op = currentTransaction.op));
 			//start timer 
 			StartTimer(timer, 100);
 		}
-		on eTimeOut do { AbortCurrentTransaction(); goto WaitForTransactionReq; }
+		on eTimeOut do { 
+			AbortCurrentTransaction();
+			announce eTransactionTimeOut;
+			goto ProcessTransaction; 
+		}
 		
 		on eNotPrepared do (payload: (tid:int)){
 			if(payload.tid != transId)
@@ -114,12 +154,14 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 				AbortCurrentTransaction();
 		}
 		
-		on ePrepared do (payload: (tid: int)){
+		on ePrepared do (payload: (tid: int, part: int)){
 			var i : int;
 			if(payload.tid == transId)
 			{
-				prepareCount = prepareCount + 1;
-				if(prepareCount == 2)
+				print "{0}\n", isPrepared;
+				print "Num: {0}\n", NumOfParticipants;
+				isPrepared[payload.part] = true;
+				if(ReceivedAllPrepare())
 				{
 					SendToAllParticipants(eCommit, (tid = transId,));
 					send currentTransaction.source, eTransactionSuccess;
@@ -176,12 +218,11 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 			preparedOp = payload;
 			if($)
 			{
-				SendToCoordinator(ePrepared, (tid = payload.tid,));
+				SendToCoordinator(ePrepared, (tid = payload.tid, part = myId));
 			}
 			else
 			{
 				SendToCoordinator(eNotPrepared, (tid = payload.tid,));
-				//assert(false);
 			}
 		}
 		on eCommit do { 
@@ -206,9 +247,9 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 			announce eParticipantCommitted, (part = myId, tid = payload.tid);
 		}
 		on eAbort goto WaitForPrepare with (payload: (tid: int)){ announce eParticipantAborted, (part = myId, tid = payload.tid); }
-		on ePrepare do {
-			print "unexpected prepare message";
-			assert(false);
+		on ePrepare do (payload: (tid: int, op: OperationType)){
+			assert(preparedOp.tid == payload.tid);
+			SendToCoordinator(ePrepared, (tid = payload.tid,));
 		}
 	}
 	

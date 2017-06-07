@@ -1245,7 +1245,7 @@
                 // compile the P file into formula file 
                 var plinkFile = options.inputFileNames.Count == 1 ? options.inputFileNames[0] : "";
 
-                using (this.Profiler.Start("Linker parsing", Path.GetFileName(plinkFile)))
+                using (this.Profiler.Start("Linker parsing and installing", Path.GetFileName(plinkFile)))
                 {
                     LProgram linkProgram;
                     ProgramName RootProgramName;

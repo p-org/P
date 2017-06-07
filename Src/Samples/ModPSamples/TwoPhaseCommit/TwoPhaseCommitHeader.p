@@ -64,7 +64,7 @@ event eRespPartStatus: ParticipantStatusType;
 // Event sent from Coor to Participant requesting to prepare for a transaction.
 event ePrepare : (tid: int, op: OperationType);
 // Event sent from Participant to Coor if it is ready for the transaction.
-event ePrepared : (tid: int);
+event ePrepared : (tid: int, part: int);
 // Event sent from Participant to Coor if it is not ready for the transaction.
 event eNotPrepared : (tid: int);
 // Event sent from Coor to Participant requesting to commit the transaction.

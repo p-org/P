@@ -1,11 +1,15 @@
 // The module that implements the two phase commit protocol
-module TwoPC {
+module TwoPC 
+private eTransactionTimeOut;
+{
     Coordinator, 
     Participant
 }
 
 //The client module that interacts with the two phase commit protocol
-module Client {
+module Client 
+private eTransactionTimeOut;
+{
     ClientMachine
 }
 
@@ -44,16 +48,14 @@ test Test0: (rename TestDriver1 to Main in (compose TwoPCWithTimer, LinearAbs, C
 module TwoPCwithSpec = (assert AtomicitySpec in TwoPCWithTimer);
 test Test1: (rename TestDriver1 to Main in (compose TwoPCwithSpec, LinearAbs, ClientWithTimer, TestDriver1));
 
-
-
-
-
 // Test 2: To check that the fault tolerant 2PC protocol is safe 
 test Test2: (rename TestDriver2 to Main in (compose TwoPCWithTimer, LinearAbs, ClientWithTimer, TestDriver2));
 
 // Test 3: To check that the fault tolerant 2PC protocol satisfies the AtomicitySpec 
-module TwoPCwithSpecFT = (assert AtomicitySpec in TwoPCWithTimer);
-test Test3: (rename TestDriver2 to Main in (compose TwoPCwithSpecFT, LinearAbs, ClientWithTimer, TestDriver2));
+module TwoPCwithAtomicitySpec = (assert AtomicitySpec in TwoPCWithTimer);
+test Test3: (rename TestDriver2 to Main in (compose TwoPCwithAtomicitySpec, LinearAbs, ClientWithTimer, TestDriver2));
 
-
+//Test 4: To check that the fault tolerant 2PC protocol satisfies the ProgressSpec
+module TwoPCwithProgressSpec = (assert ProgressSpec in (compose TwoPCWithTimer, LinearAbs, ClientWithTimer, TestDriver2));
+test Test4: (rename TestDriver2 to Main in TwoPCwithProgressSpec);
 

@@ -315,7 +315,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	/**********************************/
 	AllInterfaceTypes ::= sub(InterfaceType).
 	NotSubsetInterfaces ::= (InterfaceType, InterfaceType).
-	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), count({ ev | MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev) }) != 0.
+	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev).
 
 	/**************************************************************************/
 	/**				Check that the module contruction is legal			  	  */
@@ -381,11 +381,14 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	:-	AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), 
 		ModuleCreates(mod, ic), no ModuleExports(mod, ic), InterfaceTypeDecl(ic, el, _, _), MemberOfInterfaceType(el, ev).
 
-	//TODO: THIS rule takes a long time try to simplify further !!
 	//for each interface in dom(IX), it is either disjoint from alpha or all MR(m) is included in it.
+	HiddenInterfaces ::= (HideExpr, String).
+    HiddenInterfaces(modExpr, ix) :-
+          AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, _), MemberOfInterfaceType(evtList, ev),
+          ModuleExports(mod, ix), InterfaceTypeDecl(ix, ixEvtList, _, _), MemberOfInterfaceType(ixEvtList, ev).
 	ModuleConstructionIllegal(id, ix, "illegal hide, trying to partially hide an exported interface of the module expression") 
-	:- AllExpandedModuleExprs(modExpr), ModuleContains(mod, m), modExpr = HideExpr(evtList, mod, id), MemberOfInterfaceType(evtList, ev), ModuleExports(mod, ix), MemberOfInterfaceType(el, ev), 
-	MachineExports(m, ix), MachineReceives(m, ev'), ev': NonNullEventName, count({ x | modExpr = HideExpr(evtList, mod, id), x = ModulePrivate(modExpr, ev'), MemberOfInterfaceType(evtList, ev')}) = 0.
+	:- AllExpandedModuleExprs(modExpr), modExpr = HideExpr(evtList, mod, id), HiddenInterfaces(modExpr, ix), 
+	ModuleContains(mod, m), MachineExports(m, ix), MachineReceives(m, ev'), ev': NonNullEventName, no MemberOfInterfaceType(evtList, ev').
 
 	/// (permissions in ER + ES is disjoint from EP )
 	ModuleConstructionIllegal(id, ev, "after hidding the event has private permission in them") 

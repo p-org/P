@@ -64,6 +64,7 @@ For each transaction, the client always eventually receives
 spec ProgressSpec observes eTransaction, eTransactionFailed, eTransactionSuccess, eTransactionTimeOut
 {
 	start state WaitForNewTransaction {
+		ignore eTransactionFailed, eTransactionSuccess;
 		on eTransaction goto WaitForTransactionCompletion;
 	}
 	

@@ -4,7 +4,6 @@ event eMonitorTransaction;
 event eMonitorTransactionFailed;
 event eMonitorTransactionSuccess;
 event eMonitorCoordinatorTimeOut;
-event eMonitorClientTimeOut;
 
 /**********************************
 * Atomicity Spec:
@@ -65,7 +64,7 @@ Progress Guarantee:
 The progress spec asserts that in the presence of bounded time-outs.
 For each transaction, the client always eventually receives
 *******************************************************/
-spec ProgressSpec observes eMonitorTransaction, eMonitorTransactionFailed, eMonitorTransactionSuccess, eMonitorCoordinatorTimeOut, eMonitorClientTimeOut
+spec ProgressSpec observes eMonitorTransaction, eMonitorTransactionFailed, eMonitorTransactionSuccess, eMonitorCoordinatorTimeOut
 {
 	start state WaitForNewTransaction {
 		ignore eMonitorTransactionFailed, eMonitorTransactionSuccess;
@@ -81,6 +80,5 @@ spec ProgressSpec observes eMonitorTransaction, eMonitorTransactionFailed, eMoni
 	hot state WaitForTransactionCompletion {
 		on eMonitorTransactionFailed, eMonitorTransactionSuccess goto WaitForNewTransaction;
 		on eMonitorCoordinatorTimeOut goto ResetTemperature;
-		on eMonitorClientTimeOut goto WaitForNewTransaction;
 	}
 }

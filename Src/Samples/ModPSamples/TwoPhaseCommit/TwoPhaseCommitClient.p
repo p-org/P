@@ -33,7 +33,7 @@ fun PerformParticipantOp(opt: OperationType, oldVal: data) : data
 
 machine ClientMachine : ClientInterface
 receives eRespPartStatus, eTransactionFailed, eTransactionSuccess, eTimeOut, eCancelSuccess, eCancelFailure;
-sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTimer, eMonitorClientTimeOut;
+sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
 {
     var coor: CoorClientInterface;
     var numOfOperation : int;
@@ -94,8 +94,7 @@ sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTi
         }
         on eTransactionFailed do { CancelTimer(timer); goto StartPumpingTransactions; }
         on eTransactionSuccess goto StartPumpingTransactions with UpdateValues;
-        ignore eTimeOut;
-        //on eTimeOut goto StartPumpingTransactions with { announce eMonitorClientTimeOut; print "Timer out at Client\n";}
+        on eTimeOut goto StartPumpingTransactions with { print "Client Timed Out !"; }
     }
     
     state ReadStatusOfParticipant {

@@ -4,9 +4,7 @@ enum DSOperation {
     READ
 }
 
-type DSClientInterface() = { eDSOperationResp };
-type DataStructureInterface() = { eDSOperation };
-type DSOperationType = (source: DSClientInterface, opId: int, op: DSOperation, val: data);
+type DSOperationType = (opId: int, op: DSOperation, val: data);
 type DSOperationRespType = (opId: int, val: data);
 
 event eDSOperation : DSOperationType;

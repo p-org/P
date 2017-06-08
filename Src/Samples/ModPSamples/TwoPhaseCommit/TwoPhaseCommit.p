@@ -7,7 +7,7 @@ enum TPCConfig {
 }
 machine Coordinator : CoorClientInterface
 receives ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure, eSMRResponse, eSMRLeaderUpdated;
-sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eTransactionTimeOut, eRespPartStatus, eStartTimer, eCancelTimer, eSMROperation;
+sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eMonitorTransactionFailed, eMonitorTransactionSuccess, eMonitorCoordinatorTimeOut, eRespPartStatus, eStartTimer, eCancelTimer, eSMROperation;
 {
 
 	var transId : int;
@@ -83,7 +83,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	}
 
 	state WaitForTransactionReq {
-		ignore eNotPrepared, ePrepared;
+		ignore eNotPrepared, ePrepared, eTimeOut;
 		on eTransaction goto ProcessTransaction with (payload : TransactionType){
 			currentTransaction = payload;
 			transId = transId + 1;
@@ -102,8 +102,10 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 
 	fun AbortCurrentTransaction() {
 		SendToAllParticipants(eAbort, (tid = transId,));
+		announce eMonitorTransactionFailed;
 		send currentTransaction.source, eTransactionFailed;
 		CancelTimer(timer);	
+		goto WaitForTransactionReq;
 	}
 	
 	var isPrepared : map[int, bool];
@@ -143,7 +145,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 		}
 		on eTimeOut do { 
 			AbortCurrentTransaction();
-			announce eTransactionTimeOut;
+			announce eMonitorCoordinatorTimeOut;
 			goto ProcessTransaction; 
 		}
 		
@@ -164,6 +166,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 				if(ReceivedAllPrepare())
 				{
 					SendToAllParticipants(eCommit, (tid = transId,));
+					announce eMonitorTransactionSuccess;
 					send currentTransaction.source, eTransactionSuccess;
 					CancelTimer(timer);
 					goto WaitForTransactionReq;

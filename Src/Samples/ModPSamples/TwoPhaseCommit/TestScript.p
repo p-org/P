@@ -1,6 +1,5 @@
 // The module that implements the two phase commit protocol
 module TwoPC 
-private eTransactionTimeOut;
 {
     Coordinator, 
     Participant
@@ -8,7 +7,6 @@ private eTransactionTimeOut;
 
 //The client module that interacts with the two phase commit protocol
 module Client 
-private eTransactionTimeOut;
 {
     ClientMachine
 }

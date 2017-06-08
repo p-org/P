@@ -1,6 +1,10 @@
 event eParticipantCommitted: (part:int, tid:int);
 event eParticipantAborted: (part:int, tid:int);
-event eTransactionTimeOut;
+event eMonitorTransaction;
+event eMonitorTransactionFailed;
+event eMonitorTransactionSuccess;
+event eMonitorCoordinatorTimeOut;
+event eMonitorClientTimeOut;
 
 /**********************************
 * Atomicity Spec:
@@ -61,11 +65,12 @@ Progress Guarantee:
 The progress spec asserts that in the presence of bounded time-outs.
 For each transaction, the client always eventually receives
 *******************************************************/
-spec ProgressSpec observes eTransaction, eTransactionFailed, eTransactionSuccess, eTransactionTimeOut
+spec ProgressSpec observes eMonitorTransaction, eMonitorTransactionFailed, eMonitorTransactionSuccess, eMonitorCoordinatorTimeOut, eMonitorClientTimeOut
 {
 	start state WaitForNewTransaction {
-		ignore eTransactionFailed, eTransactionSuccess;
-		on eTransaction goto WaitForTransactionCompletion;
+		ignore eMonitorTransactionFailed, eMonitorTransactionSuccess;
+		on eMonitorClientTimeOut do { print "Spec: Client Timeout"; }
+		on eMonitorTransaction goto WaitForTransactionCompletion;
 	}
 	
 	cold state ResetTemperature {
@@ -74,7 +79,8 @@ spec ProgressSpec observes eTransaction, eTransactionFailed, eTransactionSuccess
 		}
 	}
 	hot state WaitForTransactionCompletion {
-		on eTransactionFailed, eTransactionSuccess goto WaitForNewTransaction;
-		on eTransactionTimeOut goto ResetTemperature;
+		on eMonitorTransactionFailed, eMonitorTransactionSuccess goto WaitForNewTransaction;
+		on eMonitorCoordinatorTimeOut goto ResetTemperature;
+		on eMonitorClientTimeOut goto WaitForNewTransaction;
 	}
 }

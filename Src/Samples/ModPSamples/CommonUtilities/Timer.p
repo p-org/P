@@ -13,11 +13,7 @@ model fun CancelTimer(timer: TimerPtr) {
 	send timer, eCancelTimer;
 	receive {
 		case eCancelSuccess: (payload: TimerPtr){}
-		case eCancelFailure: (payload: TimerPtr){
-			receive {
-				case eTimeOut: (payload1: TimerPtr){}
-			}
-		}
+		case eCancelFailure: (payload: TimerPtr){}
 	}
 }
 
@@ -36,7 +32,7 @@ sends eTimeOut, eCancelSuccess, eCancelFailure;
 
 	state WaitForReq {
 		on eCancelTimer goto WaitForReq with { 
-			send client, eCancelFailure, this;
+			send client, eCancelSuccess, this;
 		} 
 		on eStartTimer goto WaitForCancel;
 	}
@@ -51,7 +47,6 @@ sends eTimeOut, eCancelSuccess, eCancelFailure;
 				send client, eCancelSuccess, this;
 			} else {
 				send client, eCancelFailure, this;
-				send client, eTimeOut, this;
 			}
 		}
 	}

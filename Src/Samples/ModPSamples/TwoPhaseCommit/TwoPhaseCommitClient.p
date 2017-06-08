@@ -94,7 +94,7 @@ sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTi
         }
         on eTransactionFailed do { CancelTimer(timer); goto StartPumpingTransactions; }
         on eTransactionSuccess goto StartPumpingTransactions with UpdateValues;
-        on eTimeOut goto StartPumpingTransactions with { print "Client Timed Out !"; }
+        on eTimeOut do { print "Client Timed Out !\n"; }
     }
     
     state ReadStatusOfParticipant {

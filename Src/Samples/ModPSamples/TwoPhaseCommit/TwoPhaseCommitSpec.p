@@ -68,7 +68,6 @@ spec ProgressSpec observes eMonitorTransaction, eMonitorTransactionFailed, eMoni
 {
 	start state WaitForNewTransaction {
 		ignore eMonitorTransactionFailed, eMonitorTransactionSuccess;
-		on eMonitorClientTimeOut do { print "Spec: Client Timeout"; }
 		on eMonitorTransaction goto WaitForTransactionCompletion;
 	}
 	

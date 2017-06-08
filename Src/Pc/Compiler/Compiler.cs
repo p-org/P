@@ -989,7 +989,7 @@
             List<string> importedFiles,
             Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
-            using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
+            using (this.Profiler.Start("Compiler generating code", Path.GetFileName(RootProgramName.ToString())))
             {
                 // Load all dependencies of P2CProgram.4ml in order
                 LoadManifestProgram("P.4ml");

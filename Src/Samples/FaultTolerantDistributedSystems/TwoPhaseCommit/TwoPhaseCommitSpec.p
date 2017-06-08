@@ -6,11 +6,11 @@ event eMonitorTransactionSuccess;
 event eMonitorCoordinatorTimeOut;
 
 /**********************************
-* Atomicity Spec:
+* Consistency Spec:
 The spec monitor asserts that if a participant commits or aborts a transaction then all other 
 participants have either made the same decision or have not made any decision yet.
 ***********************************/
-spec AtomicitySpec observes eParticipantCommitted, eParticipantAborted 
+spec ConsistencySpec observes eParticipantCommitted, eParticipantAborted 
 {
 	//log from partitionId -> transactionid -> CommittedOrAborted.
 	var partLog: map[int, map[int, bool]];

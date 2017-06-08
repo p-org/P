@@ -15,7 +15,10 @@ fun PerformParticipantOp(opt: OperationType, oldVal: data) : data
     var bankOp : BankOperations;
     var oldAmount : int;
     var opVal : int;
-
+    if(oldVal == null)
+    {
+        oldVal = 0;
+    }
     oldAmount = oldVal as int;
     opVal = opt.val as int;
 

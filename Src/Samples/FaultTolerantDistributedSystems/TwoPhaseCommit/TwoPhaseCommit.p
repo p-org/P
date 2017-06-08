@@ -184,7 +184,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	var myId : int;
 	var preparedOp: (tid: int, op: OperationType);
 	var coordinator: any<esCoordinatorEvents>;
-	var accountBalance: int;
+	var repData: data;
 	var isReplicated: bool;
 	start state Init {
 		entry (payload: (any<esCoordinatorEvents>, int, bool)){
@@ -232,21 +232,14 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 			print "unexpected commit message";
 			assert(false); 
 		}
-		on eStatusQuery do { SendToCoordinator(eStatusResp, (part = myId, val = accountBalance));}
+		on eStatusQuery do { SendToCoordinator(eStatusResp, (part = myId, val = repData));}
 		ignore eAbort;
 	}
 	
 	state WaitForCommitOrAbort{
 		on eCommit goto WaitForPrepare with (payload: (tid: int)){
 			assert(preparedOp.tid == payload.tid);
-			if(preparedOp.op.op == ADD_AMOUNT)
-			{
-				accountBalance = accountBalance + preparedOp.op.val;
-			}
-			else
-			{
-				accountBalance = accountBalance - preparedOp.op.val;
-			}
+			repData = PerformParticipantOp(preparedOp.op, repData);
 			announce eParticipantCommitted, (part = myId, tid = payload.tid);
 		}
 		on eAbort goto WaitForPrepare with (payload: (tid: int)){ announce eParticipantAborted, (part = myId, tid = payload.tid); }

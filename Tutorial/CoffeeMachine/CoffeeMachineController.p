@@ -8,7 +8,7 @@ type ICoffeeMachineController() = {
 
 machine CoffeeMachineController : ICoffeeMachineController
 sends START, CANCEL, 
-      eDumpComplete, eUnknownError, eNoWater, eEspressoComplete, eGrindComplete, eNoBeans, eTemperatureReached;
+      eDumpComplete, eUnknownError, eNoWater, eEspressoComplete, eGrindComplete, eNoBeans, eTemperatureReached, eBeginHeating;
 {
     var timer: TimerPtr;
     var coffeeMachine: ICoffeeMachine;
@@ -64,10 +64,7 @@ sends START, CANCEL,
         on eUnknownError goto Error;
         on eNoBeans goto Error;
         on eGrindComplete goto RunEspresso;
-        on eDoorOpened do {
-            EmergencyStop();
-            pop;
-        }
+        on eDoorOpened push DoorOpened;
         // Can't make steam while we are making espresso
         ignore eSteamerButtonOn;
         ignore eSteamerButtonOff;
@@ -79,10 +76,7 @@ sends START, CANCEL,
         }
         on eEspressoComplete do { pop; }
         on eUnknownError goto Error;
-        on eDoorOpened do {
-            EmergencyStop();
-            pop;
-        }
+        on eDoorOpened push DoorOpened;
         // Can't make steam while we are making espresso
         ignore eSteamerButtonOn;
         ignore eSteamerButtonOff;
@@ -97,10 +91,7 @@ sends START, CANCEL,
             pop; 
         }
         on eUnknownError goto Error;
-        on eDoorOpened do {
-            EmergencyStop();
-            pop;
-        }
+        on eDoorOpened push DoorOpened;
         ignore eSteamerButtonOn;
         // can't make espresso while we are making steam
         ignore eEspressoButtonPressed;

@@ -4,7 +4,7 @@ This state machine implements the list data-structure.
 In the case of fault-tolerant list data-structure, the ListMachine is replicated using SMR protocol
 */
 
-machine ListMachine: SMRReplicatedMachineInterface, DataStructureInterface
+machine ListMachine: SMRReplicatedMachineInterface
 {
     var localStore: seq[data];
     var lastRecvOperation: DSOperationType;

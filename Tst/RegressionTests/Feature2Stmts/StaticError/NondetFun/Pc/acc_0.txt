@@ -1,6 +1,11 @@
 =================================
          Console output          
 =================================
-OUT: NondetFun.p (32, 10): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: NondetFun.p(10,19,10,20): error PC1001: Illegal nondeterministic choice: only x = $ or if ($) or while ($) or return $ is allowed
+OUT: NondetFun.p(15,9,15,12): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: NondetFun.p(27,7,27,10): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: NondetFun.p(27,16,27,18): error PC1001: Illegal fair nondeterministic choice: only x = $$ or if ($$) or while ($$) or return $$ is allowed
+OUT: NondetFun.p(32,10,32,13): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: NondetFun.p(36,19,36,20): error PC1001: Illegal nondeterministic choice: only x = $ or if ($) or while ($) or return $ is allowed
 OUT: Compilation failed
 EXIT: -1

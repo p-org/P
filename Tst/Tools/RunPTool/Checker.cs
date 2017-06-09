@@ -285,7 +285,7 @@ namespace CheckP
                     compileArgs.shortFileNames = true;
                     compileArgs.unitName = linkFileName;
                     compileArgs.liveness = LivenessOption.None;
-                    compileArgs.compilerOutput = CompilerOutput.CSharp;
+                    compileArgs.compilerOutput = CompilerOutput.C;
                     var compilerOutput = new CompilerTestOutputStream(tmpWriter);
 
                     bool compileResult = false;

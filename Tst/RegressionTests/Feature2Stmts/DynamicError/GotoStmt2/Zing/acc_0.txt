@@ -35,4 +35,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: gotoStmt2.p (33, 4): Assert failed
+Comment: gotoStmt2.p(33,4,33,10): error PC1001: Assert failed

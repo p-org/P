@@ -74,4 +74,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_2.bl,)
-Comment: typedef2.p (57, 5): Assert failed
+Comment: typedef2.p(57,5,57,11): error PC1001: Assert failed

@@ -1,12 +1,12 @@
-model type float32 = int;
+type float32 = int;
 
 //// Converts an integer to float
-model fun IntToFloat32(val: int) : float32
+fun IntToFloat32(val: int) : float32
 {
    return default(float32); 
 } 
 
-model fun AddFloat32(op1: float32, op2: float32) : float32
+fun AddFloat32(op1: float32, op2: float32) : float32
 {
    return default(float32);
 } 

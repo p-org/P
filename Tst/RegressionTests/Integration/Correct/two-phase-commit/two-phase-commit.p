@@ -56,7 +56,7 @@ machine Timer {
 
 machine Replica {
 	var coordinator: machine;
-    var data: map[int,int];
+    var dataValues: map[int,int];
 	var pendingWriteReq: (seqNum: int, idx: int, val: int);
 	var shouldCommit: bool;
 	var lastSeqNum: int;
@@ -92,7 +92,7 @@ machine Replica {
 		on GLOBAL_COMMIT do (payload:int) {
 			assert (pendingWriteReq.seqNum >= payload);
 			if (pendingWriteReq.seqNum == payload) {
-				data[pendingWriteReq.idx] = pendingWriteReq.val;
+				dataValues[pendingWriteReq.idx] = pendingWriteReq.val;
 				lastSeqNum = payload;
 			}
 		}
@@ -100,14 +100,14 @@ machine Replica {
 		on REQ_REPLICA do (payload :(seqNum:int, idx:int, val:int)) { HandleReqReplica(payload); }
 	}
 
-	model fun ShouldCommitWrite(): bool 
+	fun ShouldCommitWrite(): bool 
 	{
 		return $;
 	}
 }
 
 machine Coordinator {
-	var data: map[int,int];
+	var dataValues: map[int,int];
 	var replicas: seq[machine];
 	var numReplicas: int;
 	var i: int;
@@ -134,9 +134,9 @@ machine Coordinator {
 	}
 
 	fun DoRead(payload: (client:machine, idx:int)) {
-		if (payload.idx in data) {
-			announce announce_READ_SUCCESS, (idx=payload.idx, val=data[payload.idx]);
-			send payload.client, READ_SUCCESS, data[payload.idx];
+		if (payload.idx in dataValues) {
+			announce announce_READ_SUCCESS, (idx=payload.idx, val=dataValues[payload.idx]);
+			send payload.client, READ_SUCCESS, dataValues[payload.idx];
 		} else {
 			announce announce_READ_UNAVAILABLE, payload.idx;
 			send payload.client, READ_UNAVAILABLE;
@@ -178,7 +178,7 @@ machine Coordinator {
 					send replicas[i], GLOBAL_COMMIT, currSeqNum;
 					i = i + 1;
 				}
-				data[pendingWriteReq.idx] = pendingWriteReq.val;
+				dataValues[pendingWriteReq.idx] = pendingWriteReq.val;
 				announce announce_WRITE, (idx=pendingWriteReq.idx, val=pendingWriteReq.val);
 				send pendingWriteReq.client, WRITE_SUCCESS;
 				send timer, CancelTimer;
@@ -272,16 +272,16 @@ machine Client {
 }
 
 spec M observes announce_WRITE, announce_READ_SUCCESS, announce_READ_UNAVAILABLE {
-	var data: map[int,int];
+	var dataValues: map[int,int];
 
 	start state Init {
-		on announce_WRITE do (payload: (idx:int, val:int)) { data[payload.idx] = payload.val; }
+		on announce_WRITE do (payload: (idx:int, val:int)) { dataValues[payload.idx] = payload.val; }
 		on announce_READ_SUCCESS do (payload : (idx:int, val:int)) { 
-			assert(payload.idx in data);
-			assert(data[payload.idx] == payload.val);
+			assert(payload.idx in dataValues);
+			assert(dataValues[payload.idx] == payload.val);
 		}
 		on announce_READ_UNAVAILABLE do (payload: int) {
-			assert(!(payload in data));
+			assert(!(payload in dataValues));
 		}
 	}
 }

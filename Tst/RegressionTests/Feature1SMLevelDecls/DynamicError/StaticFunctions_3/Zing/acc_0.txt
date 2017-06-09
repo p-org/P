@@ -30,4 +30,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_1.bl,)
-Comment: staticfunctions_3.p (29, 15): Assert failed
+Comment: staticfunctions_3.p(29,15,29,21): error PC1001: Assert failed

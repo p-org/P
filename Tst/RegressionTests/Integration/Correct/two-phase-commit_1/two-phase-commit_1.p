@@ -65,7 +65,7 @@ machine Timer {
 
 machine Replica {
 	var coordinator: machine;
-    var data: map[int,int];
+    var dataValues: map[int,int];
 	var pendingWriteReq: (seqNum: int, key: int, val: int);
 	var lastSeqNum: int;
 	var shouldCommit : bool;
@@ -101,28 +101,28 @@ machine Replica {
 		on GLOBAL_COMMIT do (payload:int) {
 			assert (pendingWriteReq.seqNum >= payload);
 			if (pendingWriteReq.seqNum == payload) {
-				data[pendingWriteReq.key] = pendingWriteReq.val;
+				dataValues[pendingWriteReq.key] = pendingWriteReq.val;
 				lastSeqNum = payload;
 			}
 		}
 		
 		on REQ_REPLICA do (payload :(seqNum:int, key:int, val:int)) { HandleReqReplica(payload); }
 		on READ_REQ_REPLICA do (payload : int) {
-			if(payload in data)
-				send coordinator, REP_READ_SUCCESS, data[payload];
+			if(payload in dataValues)
+				send coordinator, REP_READ_SUCCESS, dataValues[payload];
 			else
 				send coordinator, REP_READ_FAIL;
 		}
 	}
 
-	model fun ShouldCommitWrite(): bool 
+	fun ShouldCommitWrite(): bool 
 	{
 		return $;
 	}
 }
 
 machine Coordinator {
-	var data: map[int,int];
+	var dataValues: map[int,int];
 	var replicas: seq[machine];
 	var numReplicas: int;
 	var i: int;
@@ -216,7 +216,7 @@ machine Coordinator {
 					send replicas[i], GLOBAL_COMMIT, currSeqNum;
 					i = i + 1;
 				}
-				data[pendingWriteReq.key] = pendingWriteReq.val;
+				dataValues[pendingWriteReq.key] = pendingWriteReq.val;
 				//invoke Termination(announce_UPDATE, (m = this, key = pendingWriteReq.key, val = pendingWriteReq.val));
 				send pendingWriteReq.client, WRITE_SUCCESS;
 				send timer, CancelTimer;

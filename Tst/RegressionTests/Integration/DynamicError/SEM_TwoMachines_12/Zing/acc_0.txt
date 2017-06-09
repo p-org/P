@@ -24,4 +24,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: NonConstantEventExprMonitor1.p (51, 30): Assert failed
+Comment: NonConstantEventExprMonitor1.p(51,30,51,36): error PC1001: Assert failed

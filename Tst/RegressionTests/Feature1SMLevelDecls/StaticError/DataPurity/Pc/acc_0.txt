@@ -1,9 +1,9 @@
 =================================
          Console output          
 =================================
-OUT: DataImpureFunction.p (15, 11): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: DataImpureFunction.p (22, 8): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: DataImpureFunction.p (35, 12): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: DataImpureFunction.p (58, 15): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: DataImpureFunction.p(15,11,15,15): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: DataImpureFunction.p(22,8,22,12): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: DataImpureFunction.p(35,12,35,16): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: DataImpureFunction.p(58,15,58,19): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
 OUT: Compilation failed
 EXIT: -1

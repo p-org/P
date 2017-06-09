@@ -251,6 +251,10 @@ namespace Microsoft.Pc
             return BinaryExpression(SyntaxKind.EqualsExpression, expr1, expr2);
         }
 
+        public static ExpressionSyntax MkCSharpEquals(ExpressionSyntax expr1, ExpressionSyntax expr2)
+        {
+            return MkCSharpInvocationExpression(MkCSharpDot(expr1, "Equals"), expr2);
+        }
         public static ExpressionSyntax MkCSharpNeq(ExpressionSyntax expr1, ExpressionSyntax expr2)
         {
             return BinaryExpression(SyntaxKind.NotEqualsExpression, expr1, expr2);
@@ -266,7 +270,7 @@ namespace Microsoft.Pc
                 CSharpHelper.MkCSharpNot(expr),
                 ThrowStatement(MkCSharpObjectCreationExpression(IdentifierName("PrtAssertFailureException"), CSharpHelper.MkCSharpStringLiteralExpression(errorMsg))));
         }
-        public static StatementSyntax MkCSharpPrint(string msg, params ExpressionSyntax[] pars)
+        public static StatementSyntax MkCSharpPrint(string msg, List<ExpressionSyntax> pars)
         {
             msg = "<PrintLog>" + " " + msg;
             var allPars = new List<ExpressionSyntax>(pars);
@@ -1305,7 +1309,7 @@ namespace Microsoft.Pc
                         CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"),
                         IdentifierName(funName), CSharpHelper.MkCSharpDot("currFun", "locals"))));
                     ifStmts.Add(CSharpHelper.MkCSharpGoto(beforeLabel));
-                    eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEq(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(eventName)), Block(ifStmts)));
+                    eventStmts.Add(IfStatement(CSharpHelper.MkCSharpEquals(CSharpHelper.MkCSharpDot("parent", "currentTrigger"), pToCSharp.GetEventVar(eventName)), Block(ifStmts)));
                     funStmts.Add(CSharpHelper.MkCSharpEmptyLabeledStatement(beforeLabel));
                     funStmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(funName, "Execute"), IdentifierName("application"), IdentifierName("parent"))));
                     var elseStmt = Block(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("parent", "PrtPushFunStackFrame"), CSharpHelper.MkCSharpDot("currFun", "fun"), CSharpHelper.MkCSharpDot("currFun", "locals"), CSharpHelper.MkCSharpNumericLiteralExpression(beforeLabelId))),
@@ -1929,18 +1933,18 @@ namespace Microsoft.Pc
             SyntaxNode FoldPrint(FuncTerm ft, List<SyntaxNode> children)
             {
                 string msg = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
-                List<StatementSyntax> stmts = new List<StatementSyntax>();
-                stmts.Add(CSharpHelper.MkCSharpPrint(msg));
                 FuncTerm seg = GetArgByIndex(ft, 1) as FuncTerm;
                 while (seg != null)
                 {
                     int formatArg = (int)(GetArgByIndex(seg, 0) as Cnst).GetNumericValue().Numerator;
                     string str = (GetArgByIndex(seg, 1) as Cnst).GetStringValue();
                     seg = GetArgByIndex(seg, 2) as FuncTerm;
-                    stmts.Add(ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot((ExpressionSyntax)children[formatArg], "ToString"))));
-                    stmts.Add(CSharpHelper.MkCSharpPrint(str));
+                    msg += string.Format("{{{0}}}", formatArg);
+                    msg += str;
                 }
-                return Block(stmts);
+                List<ExpressionSyntax> exprs = new List<ExpressionSyntax>();
+                children.ForEach(x => exprs.Add((ExpressionSyntax)x));
+                return CSharpHelper.MkCSharpPrint(msg, exprs);
             }
 
             SyntaxNode FoldBinStmt(FuncTerm ft, List<SyntaxNode> children)
@@ -2786,6 +2790,11 @@ namespace Microsoft.Pc
                 fields.Add(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), GetEventVar(x)));
             }
 
+            var prtvalueNull = (ExpressionSyntax)generator.MemberAccessExpression(IdentifierName("PrtEventValue"), IdentifierName("@null"));
+            //execute the entry function of the machine
+            fields.Add(
+                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "PrtEnqueueEvent"), prtvalueNull, prtvalueNull, LiteralExpression(SyntaxKind.NullLiteralExpression))
+                );
             //return machine;
             fields.Add(generator.ReturnStatement(generator.IdentifierName("machine")));
 

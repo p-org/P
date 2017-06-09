@@ -4,9 +4,9 @@ machine Main {
 			var lock: LockPtr;
 			var client1: machine;
 			var client2: machine;
-			var data:seq[int];
+			var val:seq[int];
 
-			lock = CreateLock(data move);
+			lock = CreateLock(val move);
 			client1 = new Client(lock, 3);
 			client2 = new Client(lock, 2);
 		}

@@ -10,7 +10,7 @@ event eSMRLeaderUpdated : (int, SMRServerInterface);
 
 //Interfaces used by clients of State Machine Replication (SMR)
 type SMRClientInterface()  = {eSMRResponse, eSMRLeaderUpdated};
-type SMRReplicatedMachineInterface((machine, int, bool)) =  { eSMRReplicatedMachineOperation };
+type SMRReplicatedMachineInterface((SMRClientInterface, int, bool)) =  { eSMRReplicatedMachineOperation };
 type SMRServerInterface((client: SMRClientInterface, reorder: bool, id: int)) = { eSMROperation };
 
 

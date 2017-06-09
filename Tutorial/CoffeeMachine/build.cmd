@@ -21,6 +21,8 @@ if NOT errorlevel 0 goto :eof
 
 %pt% /psharp Test1.dll
 
+%pt% /psharp Test2.dll
+
 goto :eof
 :noP
 echo please run ..\..\bld\build release x64

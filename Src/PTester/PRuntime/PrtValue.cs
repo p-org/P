@@ -734,7 +734,7 @@ namespace P.Runtime
         {
             if (!Contains(key))
             {
-                throw new PrtAssertFailureException("Illegal key in Lookup");
+                throw new PrtAssertFailureException(string.Format("Illegal key ({0}) in Lookup", key.ToString()));
             }
             return keyToValueMap[new PrtMapKey(key, 0)];
         }

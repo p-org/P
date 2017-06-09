@@ -15,7 +15,10 @@ fun PerformParticipantOp(opt: OperationType, oldVal: data) : data
     var bankOp : BankOperations;
     var oldAmount : int;
     var opVal : int;
-
+    if(oldVal == null)
+    {
+        oldVal = 0;
+    }
     oldAmount = oldVal as int;
     opVal = opt.val as int;
 
@@ -33,7 +36,7 @@ fun PerformParticipantOp(opt: OperationType, oldVal: data) : data
 
 machine ClientMachine : ClientInterface
 receives eRespPartStatus, eTransactionFailed, eTransactionSuccess, eTimeOut, eCancelSuccess, eCancelFailure;
-sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
+sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
 {
     var coor: CoorClientInterface;
     var numOfOperation : int;
@@ -78,11 +81,12 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
         entry {
             var x : ClientInterface;
             if(numOfOperation == 0)
-                return;
+                raise halt;
             
             lastOperation = ChooseOp();
             
             x =  this as ClientInterface;
+            announce eMonitorTransaction;
             send coor, eTransaction, (source = x, op = lastOperation);
             StartTimer(timer, 100);
             numOfOperation = numOfOperation - 1;
@@ -93,7 +97,7 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
         }
         on eTransactionFailed do { CancelTimer(timer); goto StartPumpingTransactions; }
         on eTransactionSuccess goto StartPumpingTransactions with UpdateValues;
-        on eTimeOut goto StartPumpingTransactions;
+        on eTimeOut do { print "Client Timed Out !\n"; }
     }
     
     state ReadStatusOfParticipant {
@@ -105,7 +109,8 @@ sends eTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
         }
         on eTransactionSuccess do UpdateValues;
         on eRespPartStatus goto StartPumpingTransactions with (payload: ParticipantStatusType){
-            assert(payload.val == valueAtParticipant);
+            //print payload.val; print valueAtParticipant;
+            //assert(payload.val == valueAtParticipant);
         }
     }
 }

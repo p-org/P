@@ -12,20 +12,20 @@ machine Client {
 
 	fun Work() {
         var x: any;
-		var data: seq[int];
+		var val: seq[int];
 		var i: int;
 		i = 0;
 		while (i < iter) {
             x = AcquireLock(lock, this);
-            x = data swap;
-			Process(data swap);
-            x = data swap;
+            x = val swap;
+			Process(val swap);
+            x = val swap;
 			ReleaseLock(lock, x move);
 			i = i + 1;
 		}
 	}
 
-	fun Process(data: seq[int]) {
-		data += (0, 1);
+	fun Process(val: seq[int]) {
+		val += (0, 1);
 	}
 }

@@ -976,7 +976,7 @@
             List<string> importedFiles,
             Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
-            using (this.Profiler.Start("Compiler generating C", Path.GetFileName(RootProgramName.ToString())))
+            using (this.Profiler.Start("Compiler generating code", Path.GetFileName(RootProgramName.ToString())))
             {
                 // Load all dependencies of P2CProgram.4ml in order
                 LoadManifestProgram("P.4ml");
@@ -1232,7 +1232,7 @@
                 // compile the P file into formula file 
                 var plinkFile = options.inputFileNames.Count == 1 ? options.inputFileNames[0] : "";
 
-                using (this.Profiler.Start("Linker parsing", Path.GetFileName(plinkFile)))
+                using (this.Profiler.Start("Linker parsing and installing", Path.GetFileName(plinkFile)))
                 {
                     LProgram linkProgram;
                     ProgramName RootProgramName;

@@ -10,7 +10,7 @@ enum BankOperations {
 }
 
 /* Perform operantion function invoked by the participant on receiving a transaction */
-fun PerformParticipantOp(opt: OperationType, oldVal: data) : data
+fun PerformParticipantOp(opt: OperationType, oldVal: data)
 {
     var bankOp : BankOperations;
     var oldAmount : int;
@@ -25,11 +25,11 @@ fun PerformParticipantOp(opt: OperationType, oldVal: data) : data
     bankOp = opt.op as BankOperations;
     if(bankOp == ADD_AMOUNT)
     {
-        return oldAmount + opVal;
+        oldVal = oldAmount + opVal;
     }
     else
     {
-        return oldAmount - opVal;
+        oldVal = oldAmount - opVal;
     }
 }
 

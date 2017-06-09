@@ -239,7 +239,10 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	state WaitForCommitOrAbort{
 		on eCommit goto WaitForPrepare with (payload: (tid: int)){
 			assert(preparedOp.tid == payload.tid);
-			repData = PerformParticipantOp(preparedOp.op, repData);
+			var tempVal : data;
+			tempVal = repData swap;
+			PerformParticipantOp(preparedOp.op, tempVal swap);
+			repData = tempVal swap;
 			announce eParticipantCommitted, (part = myId, tid = payload.tid);
 		}
 		on eAbort goto WaitForPrepare with (payload: (tid: int)){ announce eParticipantAborted, (part = myId, tid = payload.tid); }

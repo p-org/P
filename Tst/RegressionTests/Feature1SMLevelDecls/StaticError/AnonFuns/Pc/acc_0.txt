@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: anonFunction.p (12, 3): Transition to an undefined state
+OUT: anonFunction.p(12,3,12,10): error PC1001: Transition to an undefined state
 OUT: Compilation failed
 EXIT: -1

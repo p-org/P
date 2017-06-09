@@ -19,4 +19,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: foreigntypes.p (20, 6): Assert failed
+Comment: foreigntypes.p(20,6,20,12): error PC1001: Assert failed

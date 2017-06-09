@@ -23,4 +23,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(ev1.ev != null)
-Comment: RaisedNullDetected.p (17, 4): Raised event must be non-null
+Comment: RaisedNullDetected.p(17,4,17,9): error PC1001: Raised event must be non-null

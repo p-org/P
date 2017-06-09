@@ -19,4 +19,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_5.bl,)
-Comment: NondetFun.p (32, 3): Assert failed
+Comment: NondetFun.p(32,3,32,9): error PC1001: Assert failed

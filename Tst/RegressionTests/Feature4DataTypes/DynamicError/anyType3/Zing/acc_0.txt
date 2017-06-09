@@ -19,4 +19,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_9.bl,)
-Comment: anyType3.p (32, 4): Assert failed
+Comment: anyType3.p(32,4,32,10): error PC1001: Assert failed

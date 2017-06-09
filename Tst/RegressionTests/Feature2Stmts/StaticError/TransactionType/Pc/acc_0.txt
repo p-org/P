@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: bug.p (18, 40): Reduce can never succeed
+OUT: bug.p(18,40,18,42): error PC1001: Reduce can never succeed
 OUT: Compilation failed
 EXIT: -1

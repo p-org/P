@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: DeferredNullEvent.p (23, 8): Syntax error - Syntax error, unexpected NULL, expecting ID, or HALT
+OUT: DeferredNullEvent.p(23,8,23,12): error PC1001: Syntax error - Syntax error, unexpected NULL, expecting ID, or HALT
 OUT: Compilation failed
 EXIT: -1

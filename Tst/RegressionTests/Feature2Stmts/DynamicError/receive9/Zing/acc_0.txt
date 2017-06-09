@@ -27,5 +27,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_8.bl,)
-Comment: receive9.p (31, 22): Assert failed
+Expression: assert(tmp_9.bl,)
+Comment: receive9.p(31,22,31,28): error PC1001: Assert failed

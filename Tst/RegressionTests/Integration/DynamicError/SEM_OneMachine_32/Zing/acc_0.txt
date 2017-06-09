@@ -24,4 +24,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_1.bl,)
-Comment: RaisedHaltHandled.p (22, 3): Assert failed
+Comment: RaisedHaltHandled.p(22,3,22,9): error PC1001: Assert failed

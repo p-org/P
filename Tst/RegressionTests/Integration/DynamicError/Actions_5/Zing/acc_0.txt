@@ -38,5 +38,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_3.bl,)
-Comment: Actions_5.p (42, 6): Assert failed
+Expression: assert(tmp_5.bl,)
+Comment: Actions_5.p(42,6,42,12): error PC1001: Assert failed

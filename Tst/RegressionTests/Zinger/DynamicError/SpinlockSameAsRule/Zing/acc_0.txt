@@ -21,8 +21,8 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_16.bl,)
-Comment: SpinlockSameAsRule.p (47, 4): Assert failed
+Expression: assert(tmpVar_10.bl,)
+Comment: SpinlockSameAsRule.p(47,4,47,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 1:
 <CreateLog> Created spec Spinlock
@@ -33,8 +33,8 @@ Trace-Log 1:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_16.bl,)
-Comment: SpinlockSameAsRule.p (47, 4): Assert failed
+Expression: assert(tmpVar_10.bl,)
+Comment: SpinlockSameAsRule.p(47,4,47,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 2:
 <CreateLog> Created spec Spinlock
@@ -49,23 +49,10 @@ Trace-Log 2:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (78, 4): Assert failed
+Expression: assert(tmp_10.bl,)
+Comment: SpinlockSameAsRule.p(78,4,78,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 3:
-<CreateLog> Created spec Spinlock
-<StateLog> Machine Spinlock-0 entering State Init
-<CreateLog> Created Machine Main-0
-<StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
-<AnnounceLog> Enqueued Event < ____REL, 0 > to Spinlock spec machine
-
-Error:
-P Assertion failed:
-Expression: assert(tmpVar_16.bl,)
-Comment: SpinlockSameAsRule.p (47, 4): Assert failed
-Safety Error Trace
-Trace-Log 4:
 <CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
@@ -75,8 +62,21 @@ Trace-Log 4:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_16.bl,)
-Comment: SpinlockSameAsRule.p (47, 4): Assert failed
+Expression: assert(tmpVar_10.bl,)
+Comment: SpinlockSameAsRule.p(47,4,47,10): error PC1001: Assert failed
+Safety Error Trace
+Trace-Log 4:
+<CreateLog> Created spec Spinlock
+<StateLog> Machine Spinlock-0 entering State Init
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____REL, 0 > to Spinlock spec machine
+
+Error:
+P Assertion failed:
+Expression: assert(tmpVar_10.bl,)
+Comment: SpinlockSameAsRule.p(47,4,47,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 5:
 <CreateLog> Created spec Spinlock
@@ -91,8 +91,8 @@ Trace-Log 5:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (78, 4): Assert failed
+Expression: assert(tmp_10.bl,)
+Comment: SpinlockSameAsRule.p(78,4,78,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 6:
 <CreateLog> Created spec Spinlock
@@ -108,8 +108,8 @@ Trace-Log 6:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (78, 4): Assert failed
+Expression: assert(tmp_10.bl,)
+Comment: SpinlockSameAsRule.p(78,4,78,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 7:
 <CreateLog> Created spec Spinlock
@@ -125,16 +125,16 @@ Trace-Log 7:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (78, 4): Assert failed
+Expression: assert(tmp_10.bl,)
+Comment: SpinlockSameAsRule.p(78,4,78,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 8:
 <CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
@@ -142,16 +142,16 @@ Trace-Log 8:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (78, 4): Assert failed
+Expression: assert(tmp_10.bl,)
+Comment: SpinlockSameAsRule.p(78,4,78,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 9:
 <CreateLog> Created spec Spinlock
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
@@ -159,5 +159,5 @@ Trace-Log 9:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_12.bl,)
-Comment: SpinlockSameAsRule.p (78, 4): Assert failed
+Expression: assert(tmp_10.bl,)
+Comment: SpinlockSameAsRule.p(78,4,78,10): error PC1001: Assert failed

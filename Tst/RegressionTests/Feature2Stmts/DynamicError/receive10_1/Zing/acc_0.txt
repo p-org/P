@@ -27,7 +27,7 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmp_5.bl,)
-Comment: receive10_1.p (42, 22): Assert failed
+Comment: receive10_1.p(42,22,42,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 1:
 <CreateLog> Created Machine Main-0
@@ -45,7 +45,7 @@ Trace-Log 1:
 Error:
 P Assertion failed:
 Expression: assert(tmp_5.bl,)
-Comment: receive10_1.p (42, 22): Assert failed
+Comment: receive10_1.p(42,22,42,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 2:
 <CreateLog> Created Machine Main-0
@@ -63,7 +63,7 @@ Trace-Log 2:
 Error:
 P Assertion failed:
 Expression: assert(tmp_5.bl,)
-Comment: receive10_1.p (42, 22): Assert failed
+Comment: receive10_1.p(42,22,42,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 3:
 <CreateLog> Created Machine Main-0

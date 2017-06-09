@@ -24,4 +24,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_11.bl,)
-Comment: receive2.p (15, 4): Assert failed
+Comment: receive2.p(15,4,15,10): error PC1001: Assert failed

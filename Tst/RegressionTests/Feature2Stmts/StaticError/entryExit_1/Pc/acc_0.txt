@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: entryExit_1.p (83, 9): $, $$, this, new, send, announce, receive, and pop not allowed in spec machines
+OUT: entryExit_1.p(83,9,83,10): error PC1001: $, $$, this, new, send, announce, receive, and pop not allowed in spec machines
 OUT: Compilation failed
 EXIT: -1

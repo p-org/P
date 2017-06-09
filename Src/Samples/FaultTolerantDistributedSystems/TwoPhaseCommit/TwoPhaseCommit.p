@@ -35,7 +35,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 				index = 0;
 				while(index < NumOfParticipants)
 				{
-					temp = new ParticipantInterface(this as CoorParticipantInterface, index, false);
+					temp = new ParticipantInterface((client = this as CoorParticipantInterface, val = (index, false)));
 					participants[index] = temp;
 					index = index + 1;
 				}
@@ -187,11 +187,12 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	var repData: data;
 	var isReplicated: bool;
 	start state Init {
-		entry (payload: (any<esCoordinatorEvents>, int, bool)){
-
-			myId = payload.1;
-			coordinator = payload.0;
-			isReplicated = payload.2;
+		entry (payload: (client: any<esCoordinatorEvents>, val: data)){
+			var payVal: (int, bool);
+			payVal = payload.val as (int, bool);
+			myId = payVal.0;
+			coordinator = payload.client;
+			isReplicated = payVal.1;
 			raise local;
 		}
 
@@ -238,9 +239,9 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	
 	state WaitForCommitOrAbort{
 		on eCommit goto WaitForPrepare with (payload: (tid: int)){
-			assert(preparedOp.tid == payload.tid);
 			var tempVal : data;
-			tempVal = repData swap;
+			assert(preparedOp.tid == payload.tid);
+			repData = tempVal swap;
 			PerformParticipantOp(preparedOp.op, tempVal swap);
 			repData = tempVal swap;
 			announce eParticipantCommitted, (part = myId, tid = payload.tid);

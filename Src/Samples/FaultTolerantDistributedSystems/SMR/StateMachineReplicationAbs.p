@@ -8,14 +8,14 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 	var client : SMRClientInterface;
 	
 	start state Init {
-		entry (payload: (client: SMRClientInterface, reorder: bool, id: int)){
+		entry (payload: (client: SMRClientInterface, reorder: bool, val: data)){
 			var i : int;
 			i = 0;
 			client = payload.client;
 			//create the replicated machine
 			doReordering = payload.reorder;
-			myId = payload.id;
-			replicatedSM = new SMRReplicatedMachineInterface((payload.client, payload.id, true));
+			myId = payload.val as int;
+			replicatedSM = new SMRReplicatedMachineInterface((client = payload.client, val = (payload.val as int, true)));
 			
 			//for the specification case send the current 
 			send client, eSMRLeaderUpdated, (myId, this as SMRServerInterface);

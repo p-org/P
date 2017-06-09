@@ -413,7 +413,7 @@
             {
                 this.Profiler = new ConsoleProfiler(log);
             }
-            options.eraseModel = options.compilerOutput != CompilerOutput.C;
+            options.erase = options.compilerOutput == CompilerOutput.C;
             this.Log = log;
             this.Options = options;
             this.errorReporter = new ErrorReporter();

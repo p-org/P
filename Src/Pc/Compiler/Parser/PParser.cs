@@ -1182,7 +1182,7 @@
 
         public void SetProgramIgnore()
         {
-            if (Options.compilerOutput == CompilerOutput.C)
+            if (Options.erase)
             {
                 parseProgram.IgnoreDecl = true;
             }
@@ -1404,9 +1404,11 @@
 
         private void SetFunKind(P_Root.UserCnstKind kind, Span span)
         {
-            if (Options.eraseModel) return;
-            var funDecl = GetCurrentFunDecl(span);
-            funDecl.kind = MkUserCnst(kind, span);
+            if (Options.erase)
+            {
+                var funDecl = GetCurrentFunDecl(span);
+                funDecl.kind = MkUserCnst(kind, span);
+            }
         }
 
         private void SetFunName(string name, Span span)
@@ -1483,16 +1485,16 @@
         #region Adders
         private void AddModelTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
-            if (Options.eraseModel)
-            {
-                AddTypeDef(name, nameSpan, typeDefSpan);
-            }
-            else
+            if (Options.erase)
             {
                 var modelType = P_Root.MkModelType();
                 modelType.name = MkString(name, nameSpan);
                 modelType.id = (P_Root.IArgType_ModelType__1)MkUniqueId(nameSpan);
                 parseProgram.Add(modelType);
+            }
+            else
+            {
+                AddTypeDef(name, nameSpan, typeDefSpan);
             }
         }
 

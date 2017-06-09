@@ -168,7 +168,7 @@ ImplMachineNameDecl
 	;
 
 SpecMachineNameDecl
-	: SPEC { SetProgramIgnore(); } ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $3.str, ToSpan(@3), ToSpan(@1)); }
+	: SPEC ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 	
 ObservesList

@@ -20,7 +20,7 @@
         public List<string> inputFileNames { get; set; }
         public List<string> dependencies { get; set; }
         public string unitName { get; set; }
-        public bool eraseModel { get; set; } // set internally
+        public bool erase { get; set; } // set internally; if this field is set, then implementations of model types, functions, and machines are erased.
         public bool compilerService { get; set; } // whether to use the compiler service.
         public string compilerId { get; set; } // for internal use only.
 

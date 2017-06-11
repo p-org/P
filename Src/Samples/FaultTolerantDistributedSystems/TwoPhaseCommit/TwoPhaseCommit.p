@@ -63,7 +63,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	fun SendToParticipant(part: machine, ev: event, payload: data) {
 		if(isFaultTolerant)
 		{
-			send part, eSMROperation, (source = this as SMRClientInterface, operation = ev, val = payload);
+			SendSMROperation(part, ev, payload, this as SMRClientInterface);
 		}
 		else
 		{
@@ -209,13 +209,14 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	{
 		if(isReplicated)
 		{
-			send coordinator as SMRClientInterface, eSMRResponse, (response = ev, val = (payload as data)); 
+			SendSMRResponse(coordinator, ev, payload as data); 
 		}
 		else
 		{
 			send coordinator as CoorParticipantInterface, ev, payload;
 		}
 	}
+	
 	state WaitForPrepare {
 		on ePrepare goto WaitForCommitOrAbort with (payload: (tid: int, op: OperationType))
 		{

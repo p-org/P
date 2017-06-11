@@ -9,3 +9,5 @@ type DSOperationRespType = (opId: int, val: data);
 
 event eDSOperation : DSOperationType;
 event eDSOperationResp : DSOperationRespType;
+
+event local;

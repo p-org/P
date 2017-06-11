@@ -5,13 +5,14 @@ It creates the replicated datastructure state machine if fault tolerance is need
 **********************************/
 
 machine DSClientMachine : SMRClientInterface
+sends eSMROperation;
 {
     var numOfOperations : int;
     var repDS : SMRServerInterface;
     var operationId : int;
     start state Init {
-        entry (payload: int){
-            numOfOperations = payload;
+        entry (payload: data){
+            numOfOperations = payload as int;
             repDS = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, val = 0));
             raise local;
         }
@@ -68,7 +69,7 @@ machine DSClientMachine : SMRClientInterface
                 operation = ChooseOp();
                 val = ChooseVal();
                 //send the operation to replicated data-structure
-                SendSMROperation(repDS, eDSOperation, (opId = operationId, op = operation, val = val));
+                SendSMROperation(repDS, eDSOperation, (opId = operationId, op = operation, val = val), this as SMRClientInterface);
 
                 print "Performed operation {0}({1}) with operation id = {2}", operation, val, operationId;
             }

@@ -5,6 +5,7 @@ In the case of fault-tolerant list data-structure, the HashSetMachine is replica
 */
 
 machine HashSetMachine: SMRReplicatedMachineInterface
+sends eSMRResponse;
 {
     var localStore: map[data, bool];
     var lastRecvOperation: DSOperationType;
@@ -24,7 +25,7 @@ machine HashSetMachine: SMRReplicatedMachineInterface
     state WaitForOperationReq {
 
         on eDSOperation do (payload: DSOperationType) {
-            if(payload.opId <= lastRecvOperation)
+            if(payload.opId <= lastRecvOperation.opId)
             {
                 return;
             }

@@ -253,7 +253,6 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 			SendToCoordinator(ePrepared, (tid = payload.tid,));
 		}
 	}
-	
 }
 
 

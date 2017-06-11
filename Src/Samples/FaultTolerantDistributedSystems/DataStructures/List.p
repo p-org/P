@@ -5,6 +5,7 @@ In the case of fault-tolerant list data-structure, the ListMachine is replicated
 */
 
 machine ListMachine: SMRReplicatedMachineInterface
+sends eSMRResponse;
 {
     var localStore: seq[data];
     var lastRecvOperation: DSOperationType;
@@ -24,7 +25,7 @@ machine ListMachine: SMRReplicatedMachineInterface
     state WaitForOperationReq {
         
         on eDSOperation do (payload: DSOperationType) {
-            if(payload.opId <= lastRecvOperation)
+            if(payload.opId <= lastRecvOperation.opId)
             {
                 return;
             }
@@ -50,8 +51,8 @@ machine ListMachine: SMRReplicatedMachineInterface
                 }
                 else if(payload.op == READ)
                 {
-                    if((payload.val as int) < sizeof(payload)) {
-                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = localStore[value]));
+                    if((payload.val as int) < sizeof(localStore)) {
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = localStore[payload.val as int]));
                     }
                     else
                     {

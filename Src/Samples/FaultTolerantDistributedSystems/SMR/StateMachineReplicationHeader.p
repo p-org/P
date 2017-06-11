@@ -33,7 +33,7 @@ fun SendSMRRepMachineOperation(target: machine, operation: SMROperationType)
     send target as SMRReplicatedMachineInterface, eSMRReplicatedMachineOperation, operation;
 }
 
-fun SendSMRServerUpdate(target: machine, val: (int, machine))
+fun SendSMRServerUpdate(target: machine, val: (int, SMRServerInterface))
 {
     send target, eSMRLeaderUpdated, val;
 }

@@ -34,7 +34,7 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 		entry {
 			while(sizeof(pending) >0)
 			{
-				SendSMRRepMachineOperation(replicatedSM, eSMRReplicatedMachineOperation, pending[0]);
+				SendSMRRepMachineOperation(replicatedSM, pending[0]);
 				pending -= 0;
 				if($)
 					return;
@@ -61,7 +61,7 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 	
 	state DoNoReOrdering {
 		on eSMROperation do (payload: SMROperationType){
-			SendSMRRepMachineOperation(replicatedSM, eSMRReplicatedMachineOperation, payload);
+			SendSMRRepMachineOperation(replicatedSM, payload);
 		}
 	}
 }

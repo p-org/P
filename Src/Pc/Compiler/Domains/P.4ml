@@ -1509,9 +1509,19 @@ domain PStaticTyping extends PData, PError
 	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, t').
 	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
 
-	FuncSig    ::= (cntxt: FunDecl, inputType: TupType + { NIL }, outputType: TypeExpr + { NIL }).
+	//// The input type of a function prototype, ignoring names.
+	FuncProtoSigTupleType    ::= (cntxt: FunProtoDecl, type: TupType + { NIL }).
+	FuncProtoSigTupleTypeAux ::= (cntxt: FunProtoDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
+
+	FuncProtoSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunProtoDecl(_, params, _), params = NIL.
+	FuncProtoSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunProtoDecl(_, params, _), params = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, NIL).
+	FuncProtoSigTupleTypeAux(cntxt, type, tl)    :- FuncProtoSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, t').
+	FuncProtoSigTupleType(cntxt, type)           :- FuncProtoSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
+
+	FuncSig    ::= (cntxt: FunDecl + FunProtoDecl, inputType: TupType + { NIL }, outputType: TypeExpr + { NIL }).
 	FuncSig(cntxt, inputType, NIL) :- FuncSigTupleType(cntxt, inputType), cntxt.return = NIL.
 	FuncSig(cntxt, inputType, et)  :- FuncSigTupleType(cntxt, inputType), TypeExpansion(cntxt.return, et).
+	FuncSig(cntxt, inputType, returnType) :- cntxt is FunProtoDecl(_, _, returnType), FuncProtoSigTupleType(cntxt, inputType).
 
     /*************************************************************/
     /* Check that named tuple (types) don't reuse the same name  */

@@ -5,7 +5,7 @@ It creates the replicated datastructure state machine if fault tolerance is need
 **********************************/
 
 machine DSClientMachine : SMRClientInterface
-sends eSMROperation;
+sends eSMROperation, eDSOperation;
 {
     var numOfOperations : int;
     var repDS : SMRServerInterface;
@@ -68,6 +68,8 @@ sends eSMROperation;
                 //perform random operation
                 operation = ChooseOp();
                 val = ChooseVal();
+
+                announce eDSOperation, (opId = operationId, op = operation, val = val);
                 //send the operation to replicated data-structure
                 SendSMROperation(repDS, eDSOperation, (opId = operationId, op = operation, val = val), this as SMRClientInterface);
 

@@ -21,13 +21,9 @@ if NOT errorlevel 0 goto :eof
 if NOT errorlevel 0 goto :eof
 %pt% /psharp Test1.dll
 if NOT errorlevel 0 goto :eof
-REM %pt% /psharp Test2.dll
-REM if NOT errorlevel 0 goto :eof
-REM %pt% /psharp Test3.dll
-REM if NOT errorlevel 0 goto :eof
-REM %pt% /psharp Test4.dll
-REM if NOT errorlevel 0 goto :eof
-goto :eof
+%pt% /psharp Test2.dll
+if NOT errorlevel 0 goto :eof
+
 :noP
 echo please run ..\..\bld\build release x64
 

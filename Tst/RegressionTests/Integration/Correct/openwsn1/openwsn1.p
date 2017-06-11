@@ -119,7 +119,7 @@ machine OpenWSN_Mote {
 			raise Sleep;
 	}
 	
-	model fun OperationTxorRxorSleep() : int {
+	fun OperationTxorRxorSleep() : int {
 		if($)
 			return 0; // Tx
 		else if ($)
@@ -139,7 +139,7 @@ machine OpenWSN_Mote {
 		}
 	}
 	
-	model fun TransmitData(target:machine) {
+	fun TransmitData(target:machine) {
 		if(target == null)
 		{
 			//choose non-det
@@ -161,7 +161,7 @@ machine OpenWSN_Mote {
 		}
 	}
 	
-	model fun CSMA_CA() : bool {
+	fun CSMA_CA() : bool {
 		if($)
 		{
 			return true;

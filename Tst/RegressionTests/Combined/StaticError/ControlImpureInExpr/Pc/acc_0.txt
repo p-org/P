@@ -1,7 +1,7 @@
 =================================
          Console output          
 =================================
-OUT: ControlImpureInExpr.p (23, 14): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: ControlImpureInExpr.p (25, 8): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: ControlImpureInExpr.p(23,14,23,21): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: ControlImpureInExpr.p(25,8,25,15): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
 OUT: Compilation failed
 EXIT: -1

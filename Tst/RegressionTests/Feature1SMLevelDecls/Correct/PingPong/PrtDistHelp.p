@@ -1,9 +1,9 @@
 // unreliable send 
-model fun _SEND(target:machine, e:event, p:any) {
+fun _SEND(target:machine, e:event, p:any) {
 		send target, e, p;
 }
 
-model fun _CREATECONTAINER() : machine {
+fun _CREATECONTAINER() : machine {
 	var retVal : machine;
 	retVal = new Container();
 	return retVal;

@@ -35,20 +35,21 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.DependsOn(n, d) :- in.DependsOn(n, d). 
 
 	link.MachineDecl(name, eft, id), link.MachineProtoDecl(name, eft) :- 
-				decl is in.MachineDecl(name, _, _, _, id), ConstructorType(decl, _, ft), in.TypeExpansion(ft, eft);
-				decl is in.MachineDecl(name, _, _, _, id), no ConstructorType(decl, _, _), eft = link.BaseType(NULL).
-	link.MonitorDecl(name, list, id) :- decl is in.MachineDecl(name, SPEC, _, _, id), list = toList(in.#InterfaceType, NIL, {ev | in.ObservesDecl(decl, ev) }), list : in.InterfaceType.
+				in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), ConstructorType(name, _, ft), in.TypeExpansion(ft, eft);
+				in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), no ConstructorType(name, _, _), eft = link.BaseType(NULL).
+	link.MonitorDecl(name, list, id) :- in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), in.MachineKind(name, SPEC), 
+	                                    list = toList(in.#InterfaceType, NIL, {ev | in.ObservesDecl(name, ev) }), list : in.InterfaceType.
 
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), in.TypeExpansion(ctype, ectype).
-	link.MachineReceives(m.name, ev) :- in.MachineReceives(m, ev).
-	link.MachineSends(m.name, ev) :- in.MachineSends(m, ev).
+	link.MachineReceives(m, ev) :- in.MachineReceives(m, ev).
+	link.MachineSends(m, ev) :- in.MachineSends(m, ev).
 	link.FunProtoCreatesDecl(f, list) :- in.FunProtoCreatesDecl(f, list).
-	link.MachineCreatesInt(m, iorm) :- in.InferredMachineCreates(m, iorm), no in.MachineDecl(iorm, _, _, _, _), no in.MachineProtoDecl(iorm, _), in.InterfaceTypeDecl(iorm, _, _, _).
-	link.MachineCreatesM(m, mc) :- in.InferredMachineCreates(m, mc), in.MachineDecl(mc, _, _, _, _);
+	link.MachineCreatesInt(m, iorm) :- in.InferredMachineCreates(m, iorm), no in.MachineDecl(iorm, _), no in.MachineProtoDecl(iorm, _), in.InterfaceTypeDecl(iorm, _, _, _).
+	link.MachineCreatesM(m, mc) :- in.InferredMachineCreates(m, mc), in.MachineDecl(mc, _);
 								   in.InferredMachineCreates(m, mc), in.MachineProtoDecl(mc, _).
 
 	link.GlobalFunCreates(m, iorm) :- in.GlobalFunCreates(m, iorm).
-	link.MachineExports(decl.name, intfName) :- in.MachineExports(decl, intfName).
+	link.MachineExports(decl, intfName) :- in.MachineExports(decl, intfName).
 
 	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id).
 	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id), in.TypeExpansion(type, etype).
@@ -61,7 +62,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	
 
 	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), in.EmbeddedPermissionsInType(pt, perm).
-	PermEmbeddedInConstType(mach.name, perm) :- mach is in.MachineDecl, ConstructorType(m, _, ct), in.EmbeddedPermissionsInType(ct, perm).
+	PermEmbeddedInConstType(name, perm) :- ConstructorType(name, _, ct), in.EmbeddedPermissionsInType(ct, perm).
 
 	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).
@@ -159,23 +160,23 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	EventName(HALT, "_P_EVENT_HALT").
 	EventName(d, cn) :- d is in.EventDecl, cn = strJoin("P_EVENT_", d.name).
 
-	MachineName ::= (decl: in.MachineDecl + in.MachineProtoDecl, enumName: String).
-	MachineName(d, en) :- d is in.MachineDecl, en = strJoin("P_MACHINE_", d.name).
-	MachineName(d, en) :- d is in.MachineProtoDecl, en = strJoin("P_MACHINE_", d.name). 
+	MachineName ::= (machineName: String, enumName: String).
+	MachineName(name, en) :- in.MachineDecl(name, _), en = strJoin("P_MACHINE_", name).
+	MachineName(name, en) :- in.MachineProtoDecl(name, _), en = strJoin("P_MACHINE_", name). 
 
 	DeclId ::= (decl: in.VarDecl + in.AnonFunDecl + in.FunDecl + in.StateDecl + in.TransDecl + in.DoDecl, id: Natural, cname: String).
 
 	//// VarDecls - Start at Id 0.
 	DeclId(d, id, cn) :- d is in.VarDecl, 
 	                     id = toOrdinal(d, 0, { d' | d' is in.VarDecl, d'.owner = d.owner }), 
-						 cn = strJoin("P_VAR_", strJoin(d.owner.name, strJoin("_", d.name))).
+						 cn = strJoin("P_VAR_", strJoin(d.owner, strJoin("_", d.name))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is in.MachineDecl,
-	   enumName = strJoin("P_VARS_", m.name),
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_VARS_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.VarDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(m.name, "_COUNT"))), size = count({d | d is in.VarDecl, d.owner = m}) }).  
+									   DeclId(d, id, cn), d : in.VarDecl, d.owner = name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(name, "_COUNT"))), size = count({d | d is in.VarDecl, d.owner = name}) }).  
 
 	//// (Anon)FunDecls
 	AnonOrNamedFun ::= in.FunDecl + in.AnonFunDecl.
@@ -194,36 +195,36 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	DeclId(d, id, en), AnonOrNamedFunName(d, en) :- 
 						 d is in.AnonFunDecl, d.owner != NULL, AnonFunDeclGen(d),
 	                     id = toOrdinal(d, 0, { d' | d' is in.AnonFunDecl, d'.owner = d.owner, AnonFunDeclGen(d') }),
-						 en = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_ANON", toString(id)))).
+						 en = strJoin("P_FUN_", strJoin(d.owner, strJoin("_ANON", toString(id)))).
 
 	DeclId(d, id, en), AnonOrNamedFunName(d, en) :- 
 						 d is in.FunDecl,
 	                     id = count({ d' | d' is in.AnonFunDecl, d'.owner = d.owner, AnonFunDeclGen(d') }) 
 						      + toOrdinal(d, 0, { d' | d' is in.FunDecl, d'.owner = d.owner }), 
-	                     en = strJoin("P_FUN_", strJoin(d.owner.name, strJoin("_", d.name))).
+	                     en = strJoin("P_FUN_", strJoin(d.owner, strJoin("_", d.name))).
 
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is in.MachineDecl,
-	   enumName = strJoin("P_FUNS_", m.name),
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_FUNS_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = m, AnonFunDeclGen(d), x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
-									   DeclId(d, id, cn), d : in.FunDecl, d.owner = m, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(m.name, "_COUNT"))), 
-									   size = count({d | d is in.AnonFunDecl, d.owner = m, AnonFunDeclGen(d)}) 
-											  + count({d | d is in.FunDecl, d.owner = m}) }).
+									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = name, AnonFunDeclGen(d), x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d : in.FunDecl, d.owner = name, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(name, "_COUNT"))), 
+									   size = count({d | d is in.AnonFunDecl, d.owner = name, AnonFunDeclGen(d)}) 
+											  + count({d | d is in.FunDecl, d.owner = name}) }).
 
 	//// StateDecls - Start at Id 0. Need to encode qualified names.
 	DeclId(d, id, cn) :- d is in.StateDecl, 
 	                     QualName2CStr(d.name, name), 
 					     id = toOrdinal(d, 0, { d' | d' is in.StateDecl, d'.owner = d.owner }), 
-						 cn = strJoin("P_STATE_", strJoin(d.owner.name, strJoin("_", name))).
+						 cn = strJoin("P_STATE_", strJoin(d.owner, strJoin("_", name))).
 	
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
-	   m is in.MachineDecl,
-	   enumName = strJoin("P_STATES_", m.name),
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_STATES_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.StateDecl, d.owner = m, enumMember = Element(IntLit(id, DEC, NIL), cn); 
-									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(m.name, "_COUNT"))), size = count({d | d is in.StateDecl, d.owner = m}) }).  
+									   DeclId(d, id, cn), d : in.StateDecl, d.owner = name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(name, "_COUNT"))), size = count({d | d is in.StateDecl, d.owner = name}) }).  
 
 	//// Prototypes for model functions
 	MakeParams ::= (in.FunDecl, in.NmdTupType + { NIL }, PrmTypes + { NIL }, Params + { NIL }).
@@ -393,7 +394,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								  NIL).
 
 	//// IORM enum names
-	HOut(0, def) :- in.MachineDecl(name, _, _, _, _), iormName = strJoin("P_IORM_", name),
+	HOut(0, def) :- in.MachineDecl(name, _), iormName = strJoin("P_IORM_", name),
 	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iormName, NIL).
 	HOut(0, def) :- in.MachineProtoDecl(name, _), iormName = strJoin("P_IORM_", name),
 	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iormName, NIL).
@@ -804,10 +805,10 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
     /*************************************************************/
     /******            Generate Variable Decl Arrays        ******/
     /*************************************************************/	
-	VarDeclConcat ::= (pos: Natural, mach: in.MachineDecl, arr: out.Args + {NIL}).
+	VarDeclConcat ::= (pos: Natural, mach: String, arr: out.Args + {NIL}).
 
 	//// Base case
-	VarDeclConcat(c, m, NIL) :- m is in.MachineDecl, c = count({v | v is in.VarDecl, v.owner = m}).
+	VarDeclConcat(c, name, NIL) :- in.MachineDecl(name, _), c = count({v | v is in.VarDecl, v.owner = name}).
 
     //// Build every variable array in reverse order
 	VarDeclConcat(m, d.owner, arr) :- 
@@ -825,7 +826,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_VARDECL"), NIL), 
-								  strJoin("P_GEND_VARS_", mach.name), 
+								  strJoin("P_GEND_VARS_", mach), 
 								  Init(arr)).
 
     /*************************************************************/
@@ -878,7 +879,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_TRANSDECL"), NIL), 
-								  strJoin("P_GEND_TRANS_", strJoin(state.owner.name, strJoin("_", statename))), 
+								  strJoin("P_GEND_TRANS_", strJoin(state.owner, strJoin("_", statename))), 
 								  Init(arr)).
 
     /*************************************************************/
@@ -933,7 +934,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_DODECL"), NIL), 
-								  strJoin("P_GEND_DOS_", strJoin(state.owner.name, strJoin("_", statename))), 
+								  strJoin("P_GEND_DOS_", strJoin(state.owner, strJoin("_", statename))), 
 								  Init(arr)).
 
     /*************************************************************/
@@ -1215,11 +1216,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
     /*************************************************************/
     /******            Generate Fun Decl Arrays             ******/
     /*************************************************************/	
-	FunDeclConcat ::= (pos: Natural, mach: in.MachineDecl, arr: out.Args + {NIL}).
+	FunDeclConcat ::= (pos: Natural, mach: String, arr: out.Args + {NIL}).
 
 	//// Base case
-	FunDeclConcat(c, m, NIL) :- m is in.MachineDecl,
-								c = count({d | d is in.AnonFunDecl, d.owner = m, AnonFunDeclGen(d)}) + count({d | d is in.FunDecl, d.owner = m}).
+	FunDeclConcat(c, name, NIL) :- in.MachineDecl(name, _),
+								c = count({d | d is in.AnonFunDecl, d.owner = name, AnonFunDeclGen(d)}) + count({d | d is in.FunDecl, d.owner = name}).
 
     //// Build every fundecl array in reverse order
 	FunDeclConcat(m, d.owner, arr) :-  
@@ -1238,13 +1239,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(PtrType(NmdType(NIL, "PRT_FUNDECL")), NIL), 
-								  strJoin("P_GEND_FUNS_", mach.name), 
+								  strJoin("P_GEND_FUNS_", mach), 
 								  Init(arr)).
 
     /*************************************************************/
     /******            Generate State Decl Arrays           ******/
     /*************************************************************/	
-	StateDeclConcat      ::= (pos: Natural, mach: in.MachineDecl, arr: out.Args + {NIL}).
+	StateDeclConcat      ::= (pos: Natural, mach: String, arr: out.Args + {NIL}).
 
 	StateEventSetIndices ::= (state: in.StateDecl, transIndex: String, doIndex: String, deferIndex: String).
 	StateEventSetIndices(s, ti, doi, dfi) :- 
@@ -1273,7 +1274,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
 		s is in.StateDecl,
 		QualName2CStr(s.name, sname),
-		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner.name, strJoin("_", sname)))),
+		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner, strJoin("_", sname)))),
 		doArrSize = 0, doArr = out.Ident("NULL"),
 		transArrSize = count({ t  | t is in.TransDecl, t.src = s }),
 		doArrSize = count({ do | do is in.DoDecl, do.src = s, do.action != DEFER }). 
@@ -1282,20 +1283,20 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 		s is in.StateDecl,
 		QualName2CStr(s.name, sname),
 		transArrSize = 0, transArr = out.Ident("NULL"),
-		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner.name, strJoin("_", sname)))),
+		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner, strJoin("_", sname)))),
 		transArrSize = count({ t  | t is in.TransDecl, t.src = s }),
 		doArrSize = count({ do | do is in.DoDecl, do.src = s, do.action != DEFER }). 
 
 	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
 		s is in.StateDecl,
 		QualName2CStr(s.name, sname),
-		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner.name, strJoin("_", sname)))),
-		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner.name, strJoin("_", sname)))),
+		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner, strJoin("_", sname)))),
+		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner, strJoin("_", sname)))),
 		transArrSize = count({ t | t is in.TransDecl, t.src = s }),
 		doArrSize = count({ do | do is in.DoDecl, do.src = s, do.action != DEFER }). 
     
 	//// Base case
-	StateDeclConcat(c, m, NIL) :- m is in.MachineDecl, c = count({s | s is in.StateDecl, s.owner = m}).
+	StateDeclConcat(c, name, NIL) :- in.MachineDecl(name, _), c = count({s | s is in.StateDecl, s.owner = name}).
 
     //// Build every variable array in reverse order
 	StateDeclConcat(m, d.owner, arr) :- 
@@ -1326,7 +1327,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_STATEDECL"), NIL), 
-								  strJoin("P_GEND_STATES_", mach.name), 
+								  strJoin("P_GEND_STATES_", mach), 
 								  Init(arr)).
 
     /*************************************************************/
@@ -1334,44 +1335,44 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
     /*************************************************************/	
 	MachineDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
 
-	MachVarArr ::= (decl: in.MachineDecl, size: Natural, arr: out.Ident).
-	MachVarArr(m, size, arr) :- m is in.MachineDecl,
-	                size = 0, arr = out.Ident("NULL"),
-	                size = count({ v | v is in.VarDecl, v.owner = m }).
+	MachVarArr ::= (mach: String, size: Natural, arr: out.Ident).
+	MachVarArr(name, size, arr) :- in.MachineDecl(name, _),
+	                               size = 0, arr = out.Ident("NULL"),
+	                               size = count({ v | v is in.VarDecl, v.owner = name }).
 
-	MachVarArr(m, size, arr) :- m is in.MachineDecl,
-	                size > 0, arr = out.Ident(strJoin("P_GEND_VARS_", m.name)),
-	                size = count({ v | v is in.VarDecl, v.owner = m }).
+	MachVarArr(name, size, arr) :- in.MachineDecl(name, _),
+	                size > 0, arr = out.Ident(strJoin("P_GEND_VARS_", name)),
+	                size = count({ v | v is in.VarDecl, v.owner = name }).
 
-	MachStateArr ::= (decl: in.MachineDecl, size: Natural, arr: out.Ident).
-	MachStateArr(m, size, arr) :- m is in.MachineDecl,
-	                size > 0, arr = out.Ident(strJoin("P_GEND_STATES_", m.name)),
-	                size = count({ s | s is in.StateDecl, s.owner = m }).
+	MachStateArr ::= (mach: String, size: Natural, arr: out.Ident).
+	MachStateArr(name, size, arr) :- in.MachineDecl(name, _),
+	                                 size > 0, arr = out.Ident(strJoin("P_GEND_STATES_", name)),
+	                                 size = count({ s | s is in.StateDecl, s.owner = name }).
 
-	MachFunArr ::= (decl: in.MachineDecl, size: Natural, arr: out.Ident).
-	MachFunArr(m, size, arr) :- m is in.MachineDecl,
-	                arr = out.Ident(strJoin("P_GEND_FUNS_", m.name)),
-	                size = count({ f | f is AnonOrNamedFun, f.owner = m }).
+	MachFunArr ::= (mach: String, size: Natural, arr: out.Ident).
+	MachFunArr(name, size, arr) :- in.MachineDecl(name, _),
+	                               arr = out.Ident(strJoin("P_GEND_FUNS_", name)),
+	                               size = count({ f | f is AnonOrNamedFun, f.owner = name }).
 
-	MachQueueSize ::= (decl: in.MachineDecl, size: Natural).
-	MachQueueSize(m, size) :- m is in.MachineDecl, m.card = NIL, size = 4294967295. 
-	MachQueueSize(m, size) :- m is in.MachineDecl, size = m.card.bound.
+	MachQueueSize ::= (mach: String, size: Natural).
+	MachQueueSize(name, size) :- in.MachineCard(name, card), size = card.bound.
+	MachQueueSize(name, size) :- in.MachineDecl(name, _), no in.MachineCard(name, _), size = 4294967295. 
 
-	COut(13, def) :- 		d is in.MachineDecl, MachineName(d, machineName),
+	COut(13, def) :- 		MachineName(name, machineName),
 							machineStructName = strJoin(machineName, "_STRUCT"),
-							MachVarArr(d, varArrSize, varArrName),
-							MachStateArr(d, stateArrSize, stateArrName),
-							MachFunArr(d, funArrSize, funArrName),
-							MachQueueSize(d, queueSize),
-							QualName2CStr(d.start, sname), 
+							MachVarArr(name, varArrSize, varArrName),
+							MachStateArr(name, stateArrSize, stateArrName),
+							MachFunArr(name, funArrSize, funArrName),
+							MachQueueSize(name, queueSize),
+							in.MachineStart(name, start), QualName2CStr(start, sname), 
 	                        init = Init(
 							   Args(IntLit(0, DEC, U),
-							   Args(StringLit(d.name, NIL),
+							   Args(StringLit(name, NIL),
 							   Args(IntLit(varArrSize, DEC, NIL),
 							   Args(IntLit(stateArrSize, DEC, NIL),
 							   Args(IntLit(funArrSize, DEC, NIL),
 							   Args(IntLit(queueSize, DEC, NIL),
-							   Args(Ident(strJoin("P_STATE_", strJoin(d.name, strJoin("_", sname)))),
+							   Args(Ident(strJoin("P_STATE_", strJoin(name, strJoin("_", sname)))),
 							   Args(varArrName,
 							   Args(stateArrName,
 							   Args(funArrName,
@@ -2194,7 +2195,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	RhsMaxOrder(s, i, k) :- LhsPath(s, g, i), g = in.BinApp(IDX, _, e, _), RhsEvalOrder(s, i, e, k).
 
 	//// Caches the cnames of global variables in LhsPaths
-    LhsGlobalVar ::= (lp: LhsPath, owner: in.MachineDecl, cname: String).
+    LhsGlobalVar ::= (lp: LhsPath, owner: String, cname: String).
     LhsGlobalVar(lp, m, varName) :- lp is LhsPath(s, in.Name(n, _), _), DeclId(varDecl, _, varName), 
 	                                varDecl : in.VarDecl, varDecl.name = n, m = varDecl.owner.
 

@@ -156,6 +156,24 @@
             private set;
         }
 
+        public List<P_Root.MachineKind> MachineKinds
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineCard> MachineCards
+        {
+            get;
+            private set;
+        }
+
+        public List<P_Root.MachineStart> MachineStarts
+        {
+            get;
+            private set;
+        }
+
         public bool IgnoreDecl;
 
         public void Add(object item)
@@ -236,6 +254,18 @@
             {
                 Machines.Add(item as P_Root.MachineDecl);
             }
+            else if (item is P_Root.MachineCard)
+            {
+                MachineCards.Add(item as P_Root.MachineCard);
+            }
+            else if (item is P_Root.MachineKind)
+            {
+                MachineKinds.Add(item as P_Root.MachineKind);
+            }
+            else if (item is P_Root.MachineStart)
+            {
+                MachineStarts.Add(item as P_Root.MachineStart);
+            }
             else if (item is P_Root.EventDecl)
             {
                 Events.Add(item as P_Root.EventDecl);
@@ -296,6 +326,21 @@
                 }
 
                 foreach (var md in Machines)
+                {
+                    yield return md;
+                }
+
+                foreach (var md in MachineCards)
+                {
+                    yield return md;
+                }
+
+                foreach (var md in MachineKinds)
+                {
+                    yield return md;
+                }
+
+                foreach (var md in MachineStarts)
                 {
                     yield return md;
                 }
@@ -368,7 +413,6 @@
                 foreach (var mp in MachineProtoDecls)
                 {
                     yield return mp;
-
                 }
 
                 foreach (var mr in MachineReceives)
@@ -380,10 +424,12 @@
                 {
                     yield return ms;
                 }
+
                 foreach(var fp in FunProtoCreates)
                 {
                     yield return fp;
                 }
+
                 foreach (var d in DependsOn)
                 {
                     yield return d;
@@ -398,6 +444,9 @@
             ModelTypes = new List<P_Root.ModelType>();
             Events = new List<P_Root.EventDecl>();
             Machines = new List<P_Root.MachineDecl>();
+            MachineKinds = new List<P_Root.MachineKind>();
+            MachineCards = new List<P_Root.MachineCard>();
+            MachineStarts = new List<P_Root.MachineStart>();
             States = new List<P_Root.StateDecl>();
             Variables = new List<P_Root.VarDecl>();
             Transitions = new List<P_Root.TransDecl>();

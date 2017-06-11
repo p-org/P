@@ -217,7 +217,7 @@ machine OSRDriver {
 		on eOperationSuccess goto sWaitingForSwitchStatusChangeDriver;
 	}
 	
-	model fun CompleteDStateTransition() { }
+	 fun CompleteDStateTransition() { }
 	
 	state sWaitingForSwitchStatusChangeDriver {
 		ignore eD0Entry;
@@ -237,28 +237,28 @@ machine OSRDriver {
 		on eOperationSuccess goto sDxDriver;
 	}
 	
-	model fun StoreSwitchAndEnableSwitchStatusChange() { }
+	 fun StoreSwitchAndEnableSwitchStatusChange() { }
 	
-	model fun CheckIfSwitchStatusChanged() : bool {
+	 fun CheckIfSwitchStatusChanged() : bool {
 		if($)
 			return true;
 		else
 			return false;
 	}
 	
-	model fun UpdateBarGraphStateUsingControlTransfer () {
+	 fun UpdateBarGraphStateUsingControlTransfer () {
 		send LEDV, eUpdateBarGraphStateUsingControlTransfer;
 	}
 	
-	model fun SetLedStateToStableUsingControlTransfer() {
+	 fun SetLedStateToStableUsingControlTransfer() {
 		send LEDV, eSetLedStateToStableUsingControlTransfer;
 	}
 	
-	model fun SetLedStateToUnstableUsingControlTransfer() {
+	 fun SetLedStateToUnstableUsingControlTransfer() {
 		send LEDV, eSetLedStateToUnstableUsingControlTransfer;
 	}
 	
-	model fun StartDebounceTimer() {
+	 fun StartDebounceTimer() {
 		send TimerV, eStartDebounceTimer;
 	}
 	

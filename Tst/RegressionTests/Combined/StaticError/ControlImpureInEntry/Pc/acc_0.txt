@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: ControlImpureInEntry.p (26, 6): Function not defined
-OUT: ControlImpureInEntry.p (30, 14): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: ControlImpureInEntry.p (32, 8): Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: ControlImpureInEntry.p(26,6,26,14): error PC1001: Function not defined
+OUT: ControlImpureInEntry.p(30,14,30,21): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: ControlImpureInEntry.p(32,8,32,15): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
 OUT: Compilation failed
 EXIT: -1

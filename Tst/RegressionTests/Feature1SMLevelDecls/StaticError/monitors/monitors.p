@@ -26,7 +26,7 @@ spec M observes a {
 		}
 		on a goto next;
 	}
-	model fun goo () {
+	fun goo () {
 	
 	}
 	

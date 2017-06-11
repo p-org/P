@@ -1,5 +1,5 @@
-model type float = int;
-model type tyfloat = (float, float);
+type float = int;
+type tyfloat = (float, float);
 
 machine Main {
    var x : float;
@@ -20,14 +20,14 @@ machine Main {
    		assert(z.0 != z.1);
    }
 
-   model fun foo(x: float, y: float) : (float, float)
+   fun foo(x: float, y: float) : (float, float)
    {
    		var x1 : (int, int);
    		x1 = (x, y);
    		return x1;
    }
 
-   model fun def() : float
+   fun def() : float
    {
    		return 1;
    }

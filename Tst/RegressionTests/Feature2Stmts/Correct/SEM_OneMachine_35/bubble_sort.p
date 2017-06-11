@@ -4,7 +4,7 @@ machine Main {
     var i, t, s:int;
     var swapped, b:bool;
 
-    model fun reverse(l:seq[int]):seq[int] {
+    fun reverse(l:seq[int]):seq[int] {
         i = 0;
         s = sizeof(l);
         while (i < s) {
@@ -17,7 +17,7 @@ machine Main {
         return l;
     }
 
-    model fun BubbleSort(l:seq[int]):seq[int] {
+    fun BubbleSort(l:seq[int]):seq[int] {
         swapped = true;
         while (swapped) {
             i = 0;
@@ -36,7 +36,7 @@ machine Main {
         return l;
     }
 
-    model fun IsSorted(l:seq[int]):bool {
+    fun IsSorted(l:seq[int]):bool {
         i = 0;
         while (i < sizeof(l) - 1) {
             if (l[i] > l[i+1])

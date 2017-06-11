@@ -388,7 +388,7 @@ namespace Microsoft.Pc
                     string typingContextKind = ((Id)typingContext.Function).Name;
                     if (typingContextKind == "FunDecl")
                     {
-                        string ownerName = GetOwnerName(typingContext, 1, 0);
+                        string ownerName = GetOwnerName(typingContext, 1);
                         string funName = GetName(typingContext, 0);
                         if (ownerName == null)
                         {
@@ -402,7 +402,7 @@ namespace Microsoft.Pc
                     else
                     {
                         // typingContextKind == "AnonFunDecl"
-                        string ownerName = GetOwnerName(typingContext, 0, 0);
+                        string ownerName = GetOwnerName(typingContext, 0);
                         string funName = anonFunToName[typingContextAlias];
                         if (ownerName == null)
                         {

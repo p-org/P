@@ -157,19 +157,18 @@ ReceivesSendsList
 	: ReceivesSends ReceivesSendsList
 	|
 	;
-
 	
 SpecMachineDecl
 	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); ResetProgramIgnore(); } 
 	;
 
 ImplMachineNameDecl
-	: MACHINE ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); }
-	| MODEL { SetProgramIgnore(); } ID MachCardOrNone	{ SetMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); }
+	: MACHINE ID { SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); } MachCardOrNone
+	| MODEL { SetProgramIgnore(); } ID { SetMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); } MachCardOrNone
 	;
 
 SpecMachineNameDecl
-	: SPEC { SetProgramIgnore(); } ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $3.str, ToSpan(@3), ToSpan(@1)); }
+	: SPEC ID ObservesList		{ SetMachine(P_Root.UserCnstKind.SPEC, $2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 	
 ObservesList

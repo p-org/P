@@ -19,4 +19,4 @@ Trace-Log 0:
 Error:
 P Assertion failed:
 Expression: assert(tmpVar_41.bl,)
-Comment: nonAtomicDataTypes.p (65, 5): Assert failed
+Comment: nonAtomicDataTypes.p(65,5,65,11): error PC1001: Assert failed

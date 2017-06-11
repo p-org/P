@@ -13,7 +13,7 @@ REM %pc% /generate:C# /shared ..\SMR\StateMachineReplicationHeader.p ..\SMR\Stat
 
 REM if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /shared /t:datastructure.4ml .\DataStrucuturesHeader.p .\DataStrucuturesClient.p .\List.p .\HashSet.p .\TestDrivers.p .\DataStrucuturesSpec.p /r:..\SMR\SMRAbs.4ml /r:..\CommonUtilities\Timer.4ml /profile
+%pc% /generate:C# /shared /t:datastructure.4ml .\DataStructuresHeader.p .\DataStructuresClient.p .\List.p .\HashSet.p .\TestDrivers.p .\DataStructuresSpec.p /r:..\SMR\SMRAbs.4ml /r:..\CommonUtilities\Timer.4ml /profile
 
 if NOT errorlevel 0 goto :eof
 %pc% /generate:C# /shared /link TestScript.p /r:datastructure.4ml /r:..\SMR\SMRAbs.4ml /r:..\CommonUtilities\Timer.4ml /profile

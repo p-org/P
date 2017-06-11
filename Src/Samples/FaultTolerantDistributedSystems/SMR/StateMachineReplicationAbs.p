@@ -18,7 +18,7 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 			replicatedSM = new SMRReplicatedMachineInterface((client = payload.client, val = (payload.val as int, true)));
 			
 			//for the specification case send the current 
-			send client, eSMRLeaderUpdated, (myId, this as SMRServerInterface);
+			SendSMRServerUpdate(client, (myId, this as SMRServerInterface));
 			
 			if(doReordering)
 				goto DoReOrdering;
@@ -34,7 +34,7 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 		entry {
 			while(sizeof(pending) >0)
 			{
-				send replicatedSM, eSMRReplicatedMachineOperation, pending[0];
+				SendSMRRepMachineOperation(replicatedSM, eSMRReplicatedMachineOperation, pending[0]);
 				pending -= 0;
 				if($)
 					return;
@@ -61,7 +61,7 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 	
 	state DoNoReOrdering {
 		on eSMROperation do (payload: SMROperationType){
-			send replicatedSM, eSMRReplicatedMachineOperation, payload;
+			SendSMRRepMachineOperation(replicatedSM, eSMRReplicatedMachineOperation, payload);
 		}
 	}
 }

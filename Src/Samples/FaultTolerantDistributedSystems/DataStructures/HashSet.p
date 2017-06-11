@@ -8,10 +8,21 @@ machine HashSetMachine: SMRReplicatedMachineInterface
 {
     var localStore: map[data, bool];
     var lastRecvOperation: DSOperationType;
+    var client : SMRClientInterface;
     start state Init {
         entry {
-
+            raise local;
         }
+        //install common handler
+        on eSMRReplicatedMachineOperation do (payload:SMROperationType){
+            client = payload.source;
+            raise payload.operation, payload.val;
+        }
+
+        on local push WaitForOperationReq;
+    }
+    state WaitForOperationReq {
+
         on eDSOperation do (payload: DSOperationType) {
             if(payload.opId <= lastRecvOperation)
             {
@@ -22,18 +33,23 @@ machine HashSetMachine: SMRReplicatedMachineInterface
                 if(payload.op == ADD)
                 {
                     localStore[payload.val as data] = true;
-                    send payload.source, eDSOperationResp, (opId = payload.opId, val = true);
+                    send , eDSOperationResp, (opId = payload.opId, val = true);
                 }
                 else if(payload.op == REMOVE)
                 {
-                    assert((payload.val as data) in localStore);
-                    localStore -= (payload.val as data);
-                    send payload.source, eDSOperationResp, (opId = payload.opId, val = true);
+                    if((payload.val as data) in localStore)
+                    {
+                        localStore -= (payload.val as data);
+                        send payload.source, eDSOperationResp, (opId = payload.opId, val = true);
+                    }
+                    else
+                    {
+                        send payload.source, eDSOperationResp, (opId = payload.opId, val = false);
+                    }
                 }
                 else if(payload.op == READ)
                 {
-                    var value = (payload.val as data)
-                    if(value in localStore)
+                    if((payload.val as data) in localStore)
                     {
                         send payload.source, eDSOperationResp, (opId = payload.opId, val = true);
                     }

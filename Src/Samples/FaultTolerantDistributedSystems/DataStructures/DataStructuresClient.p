@@ -11,10 +11,37 @@ machine DSClientMachine : SMRClientInterface
     start state Init {
         entry (payload: int){
             numOfOperations = payload;
-            repDS = new SMRServerInterface(client = this as SMRClientInterface, reorder = false, id = 0);
+            repDS = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, val = 0));
             goto StartPumpingRequests;
         }
     }
+
+    fun ChooseOp() : DSOperation {
+        if($) {
+            return ADD;
+        } else if ($) {
+            return REMOVE;
+        } else {
+            return READ;
+        }
+    }
+
+    fun ChooseVal() : int {
+        // return a random value between 0 - 10
+        var index : int;
+        index = 0;
+        while(index < 10)
+        {
+            if($)
+            {
+                return index;
+            }
+            index = index + 1;
+        }
+
+        return index;
+    }
+
     state StartPumpingRequests {
         entry {
             if(numOfOperations == 0)
@@ -23,7 +50,7 @@ machine DSClientMachine : SMRClientInterface
             }
             else
             {
-                
+                //perform random operation
             }
         }
     }     

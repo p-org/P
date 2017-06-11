@@ -33,29 +33,29 @@ machine ListMachine: SMRReplicatedMachineInterface
                 if(payload.op == ADD)
                 {
                     localStore += (sizeof(localStore), payload.val as data);
-                    send payload.source, eDSOperationResp, (opId = payload.opId, val = true);
+                    SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = true));
                 }
                 else if(payload.op == REMOVE)
                 {
                     if((payload.val as int) < sizeof(localStore))
                     {
                         localStore -= (payload.val as int);
-                        send payload.source, eDSOperationResp, (opId = payload.opId, val = true);
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = true));
                     }
                     else
                     {
-                        send payload.source, eDSOperationResp, (opId = payload.opId, val = false);
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = false));
                     }
                     
                 }
                 else if(payload.op == READ)
                 {
                     if((payload.val as int) < sizeof(payload)) {
-                        send payload.source, eDSOperationResp, (opId = payload.opId, val = localStore[value]);
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = localStore[value]));
                     }
                     else
                     {
-                        send payload.source, eDSOperationResp, (opId = payload.opId, val = false);
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = false));
                     }
                     
                 }

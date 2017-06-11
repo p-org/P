@@ -8,12 +8,24 @@ machine DSClientMachine : SMRClientInterface
 {
     var numOfOperations : int;
     var repDS : SMRServerInterface;
+    var operationId : int;
     start state Init {
         entry (payload: int){
             numOfOperations = payload;
             repDS = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, val = 0));
-            goto StartPumpingRequests;
+            raise local;
         }
+
+        //install the common handler
+		on eSMRResponse do (payload: SMRResponseType){
+			raise payload.response, payload.val;
+		} 
+
+		on eSMRLeaderUpdated do (payload: (int, SMRServerInterface)) {
+			repDS = payload.1;
+		}
+        
+        on local push StartPumpingRequests;
     }
 
     fun ChooseOp() : DSOperation {
@@ -44,6 +56,8 @@ machine DSClientMachine : SMRClientInterface
 
     state StartPumpingRequests {
         entry {
+            var operation : DSOperation;
+            var val : int;
             if(numOfOperations == 0)
             {
                 raise halt;
@@ -51,7 +65,25 @@ machine DSClientMachine : SMRClientInterface
             else
             {
                 //perform random operation
+                operation = ChooseOp();
+                val = ChooseVal();
+                //send the operation to replicated data-structure
+                SendSMROperation(repDS, eDSOperation, (opId = operationId, op = operation, val = val));
+
+                print "Performed operation {0}({1}) with operation id = {2}", operation, val, operationId;
             }
         }
+
+        on eDSOperationResp do (payload: DSOperationRespType) {
+            if(payload.val as bool == false)
+            {
+                print "operation id : {0} failed", payload.opId, payload.val;
+            }
+            else
+            {
+                print "operation id : {0} successful, response = {1}", payload.opId, payload.val;
+            }
+        }
+
     }     
 }

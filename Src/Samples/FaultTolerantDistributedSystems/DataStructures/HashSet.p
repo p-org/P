@@ -33,29 +33,29 @@ machine HashSetMachine: SMRReplicatedMachineInterface
                 if(payload.op == ADD)
                 {
                     localStore[payload.val as data] = true;
-                    send , eDSOperationResp, (opId = payload.opId, val = true);
+                    SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = true));
                 }
                 else if(payload.op == REMOVE)
                 {
                     if((payload.val as data) in localStore)
                     {
                         localStore -= (payload.val as data);
-                        send payload.source, eDSOperationResp, (opId = payload.opId, val = true);
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = true));
                     }
                     else
                     {
-                        send payload.source, eDSOperationResp, (opId = payload.opId, val = false);
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = false));
                     }
                 }
                 else if(payload.op == READ)
                 {
                     if((payload.val as data) in localStore)
                     {
-                        send payload.source, eDSOperationResp, (opId = payload.opId, val = true);
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = true));
                     }
                     else
                     {
-                        send payload.source, eDSOperationResp, (opId = payload.opId, val = false);
+                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = false));
                     }
                     
                 }

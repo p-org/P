@@ -1,7 +1,6 @@
 machine OSRDriverMachine : OSRDriverInterface
 sends eUpdateBarGraphStateUsingControlTransfer, eSetLedStateToStableUsingControlTransfer, 
 eSetLedStateToUnstableUsingControlTransfer, eStartDebounceTimer, eStopTimer;
-creates TimerInterface, LEDInterface, SwitchInterface;
 {
 	
 	var TimerV: machine;

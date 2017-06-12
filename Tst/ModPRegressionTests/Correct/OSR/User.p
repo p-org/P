@@ -1,6 +1,5 @@
 machine UserMachine 
 sends eD0Entry, eD0Exit;
-creates;
 {
   var Driver: machine;
     

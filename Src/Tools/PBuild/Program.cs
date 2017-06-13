@@ -329,7 +329,8 @@ namespace PBuild
             //parse the solution file
             if (!File.Exists(p.Options.solutionXML))
             {
-                WriteError("The solution file does not exist: {0}", p.Options.solutionXML);
+                WriteError("Please provide a solution file: {0}", p.Options.solutionXML);
+                PrintUsage();
                 return;
             }
             else
@@ -337,16 +338,34 @@ namespace PBuild
                 p.ParseSolution();
             }
 
-            //check if the parsed solution is correct
-            //p.currentSolution.Check(p.Options.projectName);
-
             //print information
             p.currentSolution.PrintInfo();
 
             if(p.Options.projectName != "")
             {
                 //compile only one project
+                //compile the entire solution
+                var compileProject = p.currentSolution.projects.Where(x => x.name == p.Options.projectName).First();
+                var nodes = compileProject.depends.ToList();
+                nodes.Add(compileProject.name);
+                var edges = new List<Tuple<string, string>>();
+                
+                foreach (var dep in compileProject.depends)
+                {
+                    if (compileProject.name != dep)
+                    {
+                        edges.Add(new Tuple<string, string>(dep.ToLower(), compileProject.name));
+                    }
+                }
 
+                var orderedProjects = TopologicalSortFiles<string>(nodes, edges);
+                foreach (var project in orderedProjects)
+                {
+                    //compile each project and then link it
+                    var projectInfo = p.currentSolution.projects.Where(x => x.name == project).First();
+                    //if(p.CheckIfCompileProject(projectInfo))
+                    p.CompileProject(projectInfo);
+                }
             }
             else
             {

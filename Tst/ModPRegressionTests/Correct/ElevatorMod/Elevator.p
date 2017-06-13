@@ -27,7 +27,6 @@ type DoorInterface(machine) = { eSendCommandToOpenDoor, eSendCommandToCloseDoor,
 
 machine Elevator : ElevatorInterface
 sends eSendCommandToResetDoor, eSendCommandToOpenDoor, eStartDoorCloseTimer, eSendCommandToCloseDoor, eSendCommandToStopDoor, eStopDoorCloseTimer;
-creates DoorInterface, TimerInterface;
 {
     var TimerV: TimerInterface;
     var DoorV: machine;
@@ -139,7 +138,6 @@ creates DoorInterface, TimerInterface;
 
 machine Main 
 sends eOpenDoor, eCloseDoor;
-creates ElevatorInterface;
 {
     var ElevatorV : ElevatorInterface;
 
@@ -168,7 +166,6 @@ creates ElevatorInterface;
 
 machine Door : DoorInterface
 sends eDoorOpened, eObjectDetected, eDoorClosed, eDoorStopped;
-creates;
 {
     var ElevatorV : ElevatorInterface;
 
@@ -244,7 +241,6 @@ creates;
 
 machine Timer : TimerInterface
 sends eTimerFired, eOperationFailure, eOperationSuccess;
-creates;
 {
     var ElevatorV : ElevatorInterface;
 

@@ -1,6 +1,5 @@
 machine SwitchMachine : SwitchInterface
 sends eSwitchStatusChange; 
-creates;
 {
 	var Driver: OSRDriverInterface;
     start state _Init {
@@ -26,7 +25,6 @@ creates;
 
 machine LEDMachine : LEDInterface
 sends eTransferSuccess, eTransferFailure;
-creates;
 {
 	var Driver: OSRDriverInterface;
   start state _Init {
@@ -76,7 +74,6 @@ creates;
 
 machine TimerMachine: TimerInterface
 sends eTimerFired, eStoppingFailure, eStoppingSuccess;
-creates;
 {
 	var Driver : OSRDriverInterface;
 	

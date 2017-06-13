@@ -11,7 +11,7 @@
       <Include>./SMR/PSrc/StateMachineReplicationHeader.p</Include>
     </Source>
   </PProject>
-  <PProject name= "ds" outputdir= "./DataStructures/PGenerated">
+  <PProject name= "datastructures" outputdir= "./DataStructures/PGenerated">
     <Source>
       <Include>./DataStructures/PSrc/DataStructuresClient.p</Include>
       <Include>./DataStructures/PSrc/DataStructuresHeader.p</Include>
@@ -36,6 +36,15 @@
     <Link>
       <Include>./TwoPhaseCommit/Test/TestScript.p</Include>
     </Link>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
+  </PProject>
+  <PProject name= "chainreplication" outputdir ="./ChainReplication/PGenerated">
+    <Source>
+      <Include>./ChainReplication/PSrc/ChainReplicationMasterAndFaultDetector.p</Include>
+      <Include>./ChainReplication/PSrc/ChainReplicationNodes.p</Include>
+      <Include>./ChainReplication/PSrc/ChainReplicationHeader.p</Include>
+    </Source>
     <Depends>timer</Depends>
     <Depends>smrabs</Depends>
   </PProject>

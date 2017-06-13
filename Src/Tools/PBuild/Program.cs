@@ -19,11 +19,13 @@ namespace PBuild
             public bool rebuild;
             public CompilerOutput output;
             public string projectName;
+            public bool relink;
 
             public InputOptions()
             {
                 solutionXML = "";
                 rebuild = false;
+                relink = false;
                 output = CompilerOutput.CSharp;
                 projectName = "";
             }
@@ -58,6 +60,9 @@ namespace PBuild
                             break;
                         case "rebuild":
                             Options.rebuild = true;
+                            break;
+                        case "relink":
+                            Options.relink = true;
                             break;
                         case "generate":
                             switch (option)
@@ -104,10 +109,11 @@ namespace PBuild
         {
             Console.WriteLine("USAGE: PBuild.exe  [options]");
             Console.WriteLine("Options:");
-            Console.WriteLine("    /rebuild - force rebuild of the entire solution");
+            Console.WriteLine("    /rebuild - force rebuild");
             Console.WriteLine("    /sln:<path> - path to the solution xml file");
             Console.WriteLine("    /generate:<C/C#/Zing> - specify the type of output to generate");
             Console.WriteLine("    /project:<name> - compile a particular project");
+            Console.WriteLine("    /relink - force re-link");
         }
 
         public class PSolutionInfo {
@@ -239,12 +245,20 @@ namespace PBuild
             compileArgs.profile = true;
 
             bool compileResult = false;
-
-            // use separate process that contains pre-compiled P compiler.
-            Console.WriteLine("==============================================================");
-            Console.WriteLine("=== Compiling project {0} ===", project.name);
             CompilerServiceClient svc = new CompilerServiceClient();
-            compileResult = svc.Compile(compileArgs, Console.Out);
+            if (Options.relink && !Options.rebuild)
+            {
+                compileResult = true;
+            }
+            else
+            {
+                // use separate process that contains pre-compiled P compiler.
+                Console.WriteLine("==============================================================");
+                Console.WriteLine("=== Compiling project {0} ===", project.name);
+                
+                compileResult = svc.Compile(compileArgs, Console.Out);
+            }
+            
             if (compileResult && project.testscripts.Count > 0)
             {
                 Console.WriteLine("=== Linking project {0} ===", project.name);
@@ -385,7 +399,7 @@ namespace PBuild
                     //compile each project and then link it
                     var projectInfo = p.currentSolution.projects.Where(x => x.name == project).First();
                     rebuild = p.CheckIfCompileProject(projectInfo) || rebuild;
-                    if (rebuild || p.Options.rebuild)
+                    if (rebuild || p.Options.rebuild || p.Options.relink)
                     {
                         p.CompileProject(projectInfo);
                     }
@@ -421,7 +435,7 @@ namespace PBuild
                     //compile each project and then link it
                     var projectInfo = p.currentSolution.projects.Where(x => x.name == project).First();
                     rebuild = p.CheckIfCompileProject(projectInfo) || rebuild;
-                    if (rebuild || p.Options.rebuild)
+                    if (rebuild || p.Options.rebuild || p.Options.relink)
                     {
                         p.CompileProject(projectInfo);
                     }

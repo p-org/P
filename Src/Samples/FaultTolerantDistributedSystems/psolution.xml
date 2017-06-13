@@ -15,7 +15,6 @@
     <Source>
       <Include>./DataStructures/PSrc/DataStructuresClient.p</Include>
       <Include>./DataStructures/PSrc/DataStructuresHeader.p</Include>
-      <Include>./DataStructures/PSrc/DataStructuresSpec.p</Include>
       <Include>./DataStructures/PSrc/HashSet.p</Include>
       <Include>./DataStructures/PSrc/List.p</Include>
       <Include>./DataStructures/Test/TestDrivers.p</Include>

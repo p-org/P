@@ -177,7 +177,7 @@ namespace PBuild
                 {
                     PProjectInfo projectInfo = new PProjectInfo();
                     projectInfo.name = project.Attributes.GetNamedItem("name").Value.ToLower();
-                    projectInfo.outputDir = project.Attributes.GetNamedItem("outputdir").Value;
+                    projectInfo.outputDir = Path.GetFullPath(project.Attributes.GetNamedItem("outputdir").Value);
                     var psources = project["Source"].ChildNodes;
                     foreach(XmlNode pfile in psources)
                     {
@@ -232,7 +232,7 @@ namespace PBuild
             }
             compileArgs.dependencies = new List<string>(depFiles);
             compileArgs.shortFileNames = true;
-            compileArgs.outputDir = Path.GetFullPath(project.outputDir);
+            compileArgs.outputDir = project.outputDir;
             compileArgs.unitName = project.name + ".4ml";
             compileArgs.liveness = LivenessOption.None;
             compileArgs.compilerOutput = Options.output;
@@ -260,7 +260,7 @@ namespace PBuild
         public bool CheckIfCompileProject(PProjectInfo project)
         {
             bool returnVal = false;
-            var summaryFile = Path.Combine(Path.GetFullPath(project.outputDir), project.name + ".4ml");
+            var summaryFile = Path.Combine(project.outputDir, project.name + ".4ml");
             var allPSources = new List<string>(project.psources.Select(x => Path.GetFullPath(x)).ToList());
             var summaryFileWriteTime = File.GetLastWriteTime(summaryFile);
             foreach(var pfile in allPSources)

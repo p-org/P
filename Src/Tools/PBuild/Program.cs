@@ -249,12 +249,29 @@ namespace PBuild
             {
                 Console.WriteLine("=== Linking project {0} ===", project.name);
                 //start linking the project
-                compileArgs.inputFileNames =  new List<string>(project.testscripts);
+                compileArgs.inputFileNames =  new List<string>(project.testscripts.Select(x => Path.GetFullPath(x)).ToList());
                 //populate all summary files
                 compileArgs.dependencies.Add(Path.Combine(project.outputDir, project.name + ".4ml"));
                 compileResult = svc.Link(compileArgs, Console.Out);
             }
             Console.WriteLine("==============================================================");
+        }
+
+        public bool CheckIfCompileProject(PProjectInfo project)
+        {
+            bool returnVal = false;
+            var summaryFile = Path.Combine(Path.GetFullPath(project.outputDir), project.name + ".4ml");
+            var allPSources = new List<string>(project.psources.Select(x => Path.GetFullPath(x)).ToList());
+            var summaryFileWriteTime = File.GetLastWriteTime(summaryFile);
+            foreach(var pfile in allPSources)
+            {
+                if(DateTime.Compare(summaryFileWriteTime, File.GetLastWriteTime(pfile)) <= 0)
+                {
+                    returnVal = returnVal | true;
+                }
+            }
+
+            return returnVal;
         }
         #region Topological Sorting Dependencies
         /// <summary>
@@ -362,12 +379,23 @@ namespace PBuild
                 }
 
                 var orderedProjects = TopologicalSortFiles<string>(nodes, edges);
+                bool rebuild = false;
                 foreach (var project in orderedProjects)
                 {
                     //compile each project and then link it
                     var projectInfo = p.currentSolution.projects.Where(x => x.name == project).First();
-                    //if(p.CheckIfCompileProject(projectInfo))
-                    p.CompileProject(projectInfo);
+                    rebuild = p.CheckIfCompileProject(projectInfo) || rebuild;
+                    if (rebuild || p.Options.rebuild)
+                    {
+                        p.CompileProject(projectInfo);
+                    }
+                    else
+                    {
+                        Console.WriteLine("==============================================================");
+                        Console.WriteLine("Ignoring compilation of project {0}, to recompile use option /rebuild");
+                        Console.WriteLine("==============================================================");
+                    }
+                    
                 }
             }
             else
@@ -387,12 +415,23 @@ namespace PBuild
                 }
 
                 var orderedProjects = TopologicalSortFiles<string>(nodes, edges);
+                bool rebuild = false;
                 foreach(var project in orderedProjects)
                 {
                     //compile each project and then link it
                     var projectInfo = p.currentSolution.projects.Where(x => x.name == project).First();
-                    //if(p.CheckIfCompileProject(projectInfo))
-                    p.CompileProject(projectInfo);
+                    rebuild = p.CheckIfCompileProject(projectInfo) || rebuild;
+                    if (rebuild || p.Options.rebuild)
+                    {
+                        p.CompileProject(projectInfo);
+                    }
+                    else
+                    {
+                        Console.WriteLine("==============================================================");
+                        Console.WriteLine("Ignoring compilation of project {0}, to recompile use option /rebuild");
+                        Console.WriteLine("==============================================================");
+                    }
+
                 }
             }
 

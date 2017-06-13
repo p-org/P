@@ -112,6 +112,7 @@ namespace PBuild
 
         public class PSolutionInfo {
             public string name;
+            public string solutionDir;
             public List<PProjectInfo> projects;
             public PSolutionInfo()
             {
@@ -197,11 +198,10 @@ namespace PBuild
                         }
                     }
                     
-
-                    currentSolution.name = solName;
                     currentSolution.projects.Add(projectInfo);
                 }
-                
+                currentSolution.name = solName;
+                currentSolution.solutionDir = Path.GetDirectoryName(Path.GetFullPath(Options.solutionXML));
             }
             catch (Exception ex)
             {
@@ -222,18 +222,17 @@ namespace PBuild
         {
             
             var compileArgs = new CommandLineOptions();
-            compileArgs.inputFileNames = new List<string>(project.psources);
+            compileArgs.inputFileNames = new List<string>(project.psources.Select(x => Path.GetFullPath(x)).ToList());
             //populate all dependencies
             var depFiles = new List<string>();
             foreach(var depFile in project.depends)
             {
-                var outDir = currentSolution.projects.Where(x => x.name == depFile).First().outputDir;
+                var outDir = Path.GetFullPath(currentSolution.projects.Where(x => x.name == depFile).First().outputDir);
                 depFiles.Add(Path.Combine(outDir, depFile + ".4ml"));
             }
             compileArgs.dependencies = new List<string>(depFiles);
             compileArgs.shortFileNames = true;
-            compileArgs.outputDir = project.outputDir;
-            compileArgs.shortFileNames = true;
+            compileArgs.outputDir = Path.GetFullPath(project.outputDir);
             compileArgs.unitName = project.name + ".4ml";
             compileArgs.liveness = LivenessOption.None;
             compileArgs.compilerOutput = Options.output;
@@ -340,6 +339,10 @@ namespace PBuild
 
             //print information
             p.currentSolution.PrintInfo();
+
+            //setting current directory
+            Directory.SetCurrentDirectory(p.currentSolution.solutionDir);
+            Console.WriteLine("Set current Directory: {0}", Directory.GetCurrentDirectory());
 
             if(p.Options.projectName != "")
             {

@@ -205,7 +205,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 		on local push WaitForPrepare;
 	}
 	
-	fun SendToCoordinator(ev: event, payload: any)
+	fun SendToCoordinator(ev: event, payload: data)
 	{
 		if(isReplicated)
 		{

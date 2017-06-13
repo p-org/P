@@ -392,7 +392,7 @@ namespace PBuild
                     else
                     {
                         Console.WriteLine("==============================================================");
-                        Console.WriteLine("Ignoring compilation of project {0}, to recompile use option /rebuild");
+                        Console.WriteLine("Ignoring compilation of project {0}, to recompile use option /rebuild", projectInfo.name);
                         Console.WriteLine("==============================================================");
                     }
                     
@@ -428,7 +428,7 @@ namespace PBuild
                     else
                     {
                         Console.WriteLine("==============================================================");
-                        Console.WriteLine("Ignoring compilation of project {0}, to recompile use option /rebuild");
+                        Console.WriteLine("Ignoring compilation of project {0}, to recompile use option /rebuild", projectInfo.name);
                         Console.WriteLine("==============================================================");
                     }
 

@@ -1,15 +1,30 @@
-<PSolution name = "FaultTolerantSystems">
-  <PProject name= "timer" outputdir ="./CommonUtilities/PGenerated">
+<PSolution name= "FaultTolerantSystems">
+  <PProject name= "timer" outputdir="./CommonUtilities/PGenerated">
     <Source>
       <Include>./CommonUtilities/PSrc/Timer.p</Include>
       <Include>./CommonUtilities/PSrc/TimerHeader.p</Include>
     </Source>
   </PProject>
-  <PProject name= "smrabs" outputdir ="./SMR/PGenerated">
+  <PProject name= "smrabs" outputdir="./SMR/PGenerated">
     <Source>
       <Include>./SMR/PSrc/StateMachineReplicationAbs.p</Include>
       <Include>./SMR/PSrc/StateMachineReplicationHeader.p</Include>
     </Source>
+  </PProject>
+  <PProject name= "ds" outputdir= "./DataStructures/PGenerated">
+    <Source>
+      <Include>./DataStructures/PSrc/DataStructuresClient.p</Include>
+      <Include>./DataStructures/PSrc/DataStructuresHeader.p</Include>
+      <Include>./DataStructures/PSrc/DataStructuresSpec.p</Include>
+      <Include>./DataStructures/PSrc/HashSet.p</Include>
+      <Include>./DataStructures/PSrc/List.p</Include>
+      <Include>./DataStructures/Test/TestDrivers.p</Include>
+    </Source>
+    <Link>
+      <Include>./DataStructures/Test/TestScript.p</Include>
+    </Link>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
   </PProject>
   <PProject name= "tpc" outputdir ="./TwoPhaseCommit/PGenerated">
     <Source>

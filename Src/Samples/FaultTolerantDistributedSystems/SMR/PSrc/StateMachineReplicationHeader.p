@@ -18,23 +18,23 @@ type SMRServerInterface((client: SMRClientInterface, reorder: bool, val: data)) 
 Helper Functions
 ********************/
 
-fun SendSMRResponse(target: machine, ev: event, val: data)
+fun SendSMRResponse(target: any, ev: event, val: data)
 {
     send target as SMRClientInterface, eSMRResponse, (response = ev, val = val);
 }
 
-fun SendSMROperation(target: machine, ev: event, val: data, src: machine)
+fun SendSMROperation(target: any, ev: event, val: data, src: machine)
 {
     send target as SMRServerInterface, eSMROperation, (source = src as SMRClientInterface, operation = ev, val = val);
 }
 
-fun SendSMRRepMachineOperation(target: machine, operation: SMROperationType) 
+fun SendSMRRepMachineOperation(target: any, operation: SMROperationType) 
 {
     send target as SMRReplicatedMachineInterface, eSMRReplicatedMachineOperation, operation;
 }
 
-fun SendSMRServerUpdate(target: machine, val: (int, SMRServerInterface))
+fun SendSMRServerUpdate(target: any, val: (int, SMRServerInterface))
 {
-    send target, eSMRLeaderUpdated, val;
+    send target as machine, eSMRLeaderUpdated, val;
 }
 

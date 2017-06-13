@@ -369,7 +369,7 @@ namespace PBuild
                 {
                     //compile each project and then link it
                     var projectInfo = p.currentSolution.projects.Where(x => x.name == project).First();
-                    if(p.CheckIfCompileProject(projectInfo))
+                    //if(p.CheckIfCompileProject(projectInfo))
                     p.CompileProject(projectInfo);
                 }
             }

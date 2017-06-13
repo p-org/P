@@ -1,0 +1,24 @@
+<PSolution>
+  <PProject name= "timer" location ="./CommonUtilities" outputdir ="./CommonUtilities/PGenerated">
+    <Include>./PSrc/Timer.p</Include>
+    <Include>./PSrc/TimerHeader.p</Include>
+  </PProject>
+  <PProject name= "smrabs" location ="./SMR" outputdir ="./SMR/PGenerated">
+    <Include>./PSrc/StateMachineReplicationAbs.p</Include>
+    <Include>./PSrc/StateMachineReplicationHeader.p</Include>
+  </PProject>
+  <PProject name= "tpc" location ="TwoPhaseCommit" outputdir ="./TwoPhaseCommit/PGenerated">
+    <Source>
+      <Include>./PSrc/TwoPhaseCommitClient.p</Include>
+      <Include>./PSrc/TwoPhaseCommitHeader.p</Include>
+      <Include>./PSrc/TwoPhaseCommitSpec.p</Include>
+      <Include>./PSrc/TwoPhaseCommit.p</Include>
+      <Include>./Test/TestDrivers.p</Include>
+    </Source>
+    <Link>
+      <Include>./Test/TestScript.p</Include>
+    </Link>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
+  </PProject>
+</PSolution>

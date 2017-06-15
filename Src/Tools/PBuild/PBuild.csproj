@@ -43,7 +43,7 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>..\..\..\Bld\Drops\Release\x86\Binaries\</OutputPath>
+    <OutputPath>..\..\..\Bld\Drops\Release\x64\Binaries\</OutputPath>
     <DefineConstants>TRACE</DefineConstants>
     <Optimize>true</Optimize>
     <DebugType>pdbonly</DebugType>

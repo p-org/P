@@ -19,11 +19,13 @@ namespace PBuild
             public bool rebuild;
             public CompilerOutput output;
             public string projectName;
+            public bool relink;
 
             public InputOptions()
             {
                 solutionXML = "";
                 rebuild = false;
+                relink = false;
                 output = CompilerOutput.CSharp;
                 projectName = "";
             }
@@ -58,6 +60,9 @@ namespace PBuild
                             break;
                         case "rebuild":
                             Options.rebuild = true;
+                            break;
+                        case "relink":
+                            Options.relink = true;
                             break;
                         case "generate":
                             switch (option)
@@ -104,14 +109,16 @@ namespace PBuild
         {
             Console.WriteLine("USAGE: PBuild.exe  [options]");
             Console.WriteLine("Options:");
-            Console.WriteLine("    /rebuild - force rebuild of the entire solution");
+            Console.WriteLine("    /rebuild - force rebuild");
             Console.WriteLine("    /sln:<path> - path to the solution xml file");
             Console.WriteLine("    /generate:<C/C#/Zing> - specify the type of output to generate");
             Console.WriteLine("    /project:<name> - compile a particular project");
+            Console.WriteLine("    /relink - force re-link");
         }
 
         public class PSolutionInfo {
             public string name;
+            public string solutionDir;
             public List<PProjectInfo> projects;
             public PSolutionInfo()
             {
@@ -176,7 +183,7 @@ namespace PBuild
                 {
                     PProjectInfo projectInfo = new PProjectInfo();
                     projectInfo.name = project.Attributes.GetNamedItem("name").Value.ToLower();
-                    projectInfo.outputDir = project.Attributes.GetNamedItem("outputdir").Value;
+                    projectInfo.outputDir = Path.GetFullPath(project.Attributes.GetNamedItem("outputdir").Value);
                     var psources = project["Source"].ChildNodes;
                     foreach(XmlNode pfile in psources)
                     {
@@ -197,11 +204,10 @@ namespace PBuild
                         }
                     }
                     
-
-                    currentSolution.name = solName;
                     currentSolution.projects.Add(projectInfo);
                 }
-                
+                currentSolution.name = solName;
+                currentSolution.solutionDir = Path.GetDirectoryName(Path.GetFullPath(Options.solutionXML));
             }
             catch (Exception ex)
             {
@@ -222,40 +228,64 @@ namespace PBuild
         {
             
             var compileArgs = new CommandLineOptions();
-            compileArgs.inputFileNames = new List<string>(project.psources);
+            compileArgs.inputFileNames = new List<string>(project.psources.Select(x => Path.GetFullPath(x)).ToList());
             //populate all dependencies
             var depFiles = new List<string>();
             foreach(var depFile in project.depends)
             {
-                var outDir = currentSolution.projects.Where(x => x.name == depFile).First().outputDir;
+                var outDir = Path.GetFullPath(currentSolution.projects.Where(x => x.name == depFile).First().outputDir);
                 depFiles.Add(Path.Combine(outDir, depFile + ".4ml"));
             }
             compileArgs.dependencies = new List<string>(depFiles);
             compileArgs.shortFileNames = true;
             compileArgs.outputDir = project.outputDir;
-            compileArgs.shortFileNames = true;
             compileArgs.unitName = project.name + ".4ml";
             compileArgs.liveness = LivenessOption.None;
             compileArgs.compilerOutput = Options.output;
             compileArgs.profile = true;
 
             bool compileResult = false;
-
-            // use separate process that contains pre-compiled P compiler.
-            Console.WriteLine("==============================================================");
-            Console.WriteLine("=== Compiling project {0} ===", project.name);
             CompilerServiceClient svc = new CompilerServiceClient();
-            compileResult = svc.Compile(compileArgs, Console.Out);
+            if (Options.relink && !Options.rebuild)
+            {
+                compileResult = true;
+            }
+            else
+            {
+                // use separate process that contains pre-compiled P compiler.
+                Console.WriteLine("==============================================================");
+                Console.WriteLine("=== Compiling project {0} ===", project.name);
+                
+                compileResult = svc.Compile(compileArgs, Console.Out);
+            }
+            
             if (compileResult && project.testscripts.Count > 0)
             {
                 Console.WriteLine("=== Linking project {0} ===", project.name);
                 //start linking the project
-                compileArgs.inputFileNames =  new List<string>(project.testscripts);
+                compileArgs.inputFileNames =  new List<string>(project.testscripts.Select(x => Path.GetFullPath(x)).ToList());
                 //populate all summary files
                 compileArgs.dependencies.Add(Path.Combine(project.outputDir, project.name + ".4ml"));
                 compileResult = svc.Link(compileArgs, Console.Out);
             }
             Console.WriteLine("==============================================================");
+        }
+
+        public bool CheckIfCompileProject(PProjectInfo project)
+        {
+            bool returnVal = false;
+            var summaryFile = Path.Combine(project.outputDir, project.name + ".4ml");
+            var allPSources = new List<string>(project.psources.Select(x => Path.GetFullPath(x)).ToList());
+            var summaryFileWriteTime = File.GetLastWriteTime(summaryFile);
+            foreach(var pfile in allPSources)
+            {
+                if(DateTime.Compare(summaryFileWriteTime, File.GetLastWriteTime(pfile)) <= 0)
+                {
+                    returnVal = returnVal | true;
+                }
+            }
+
+            return returnVal;
         }
         #region Topological Sorting Dependencies
         /// <summary>
@@ -329,7 +359,8 @@ namespace PBuild
             //parse the solution file
             if (!File.Exists(p.Options.solutionXML))
             {
-                WriteError("The solution file does not exist: {0}", p.Options.solutionXML);
+                WriteError("Please provide a solution file: {0}", p.Options.solutionXML);
+                PrintUsage();
                 return;
             }
             else
@@ -337,16 +368,49 @@ namespace PBuild
                 p.ParseSolution();
             }
 
-            //check if the parsed solution is correct
-            //p.currentSolution.Check(p.Options.projectName);
-
             //print information
             p.currentSolution.PrintInfo();
+
+            //setting current directory
+            Directory.SetCurrentDirectory(p.currentSolution.solutionDir);
+            Console.WriteLine("Set current Directory: {0}", Directory.GetCurrentDirectory());
 
             if(p.Options.projectName != "")
             {
                 //compile only one project
+                //compile the entire solution
+                var compileProject = p.currentSolution.projects.Where(x => x.name == p.Options.projectName).First();
+                var nodes = compileProject.depends.ToList();
+                nodes.Add(compileProject.name);
+                var edges = new List<Tuple<string, string>>();
+                
+                foreach (var dep in compileProject.depends)
+                {
+                    if (compileProject.name != dep)
+                    {
+                        edges.Add(new Tuple<string, string>(dep.ToLower(), compileProject.name));
+                    }
+                }
 
+                var orderedProjects = TopologicalSortFiles<string>(nodes, edges);
+                bool rebuild = false;
+                foreach (var project in orderedProjects)
+                {
+                    //compile each project and then link it
+                    var projectInfo = p.currentSolution.projects.Where(x => x.name == project).First();
+                    rebuild = p.CheckIfCompileProject(projectInfo) || rebuild;
+                    if (rebuild || p.Options.rebuild || p.Options.relink)
+                    {
+                        p.CompileProject(projectInfo);
+                    }
+                    else
+                    {
+                        Console.WriteLine("==============================================================");
+                        Console.WriteLine("Ignoring compilation of project {0}, to recompile use option /rebuild", projectInfo.name);
+                        Console.WriteLine("==============================================================");
+                    }
+                    
+                }
             }
             else
             {
@@ -365,12 +429,23 @@ namespace PBuild
                 }
 
                 var orderedProjects = TopologicalSortFiles<string>(nodes, edges);
+                bool rebuild = false;
                 foreach(var project in orderedProjects)
                 {
                     //compile each project and then link it
                     var projectInfo = p.currentSolution.projects.Where(x => x.name == project).First();
-                    if(p.CheckIfCompileProject(projectInfo))
-                    p.CompileProject(projectInfo);
+                    rebuild = p.CheckIfCompileProject(projectInfo) || rebuild;
+                    if (rebuild || p.Options.rebuild || p.Options.relink)
+                    {
+                        p.CompileProject(projectInfo);
+                    }
+                    else
+                    {
+                        Console.WriteLine("==============================================================");
+                        Console.WriteLine("Ignoring compilation of project {0}, to recompile use option /rebuild", projectInfo.name);
+                        Console.WriteLine("==============================================================");
+                    }
+
                 }
             }
 

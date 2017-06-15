@@ -163,10 +163,12 @@ namespace UnitTests
 
             foreach (KeyValuePair<TestType, TestConfig> kv in testConfigs.OrderBy(kv => kv.Key))
             {
+                TestType testType = kv.Key;
                 TestConfig config = kv.Value;
-                Debug.WriteLine($"*********** Checking {config.Description} ***********");
 
-                string activeDirectory = Path.Combine(workDirectory.FullName, kv.Key.ToString());
+                Console.WriteLine($"*********** Checking {config.Description} ***********");
+
+                string activeDirectory = Path.Combine(workDirectory.FullName, testType.ToString());
                 foreach (string toDelete in config.Deletes)
                 {
                     var fileToDelete = new FileInfo(Path.Combine(activeDirectory, toDelete));
@@ -181,7 +183,7 @@ namespace UnitTests
                 {
                     try
                     {
-                        switch (kv.Key)
+                        switch (testType)
                         {
                             case TestType.Pc:
                                 TestPc(config, tmpWriter, workDirectory, activeDirectory);

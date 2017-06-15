@@ -20,4 +20,4 @@ if NOT errorlevel 0 goto :eof
 goto :eof
 :noP
 echo please run ..\..\bld\build release x64
-exit 1
+exit /b 1

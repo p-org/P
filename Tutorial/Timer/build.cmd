@@ -8,4 +8,4 @@ if not exist "%pc%" goto :noP
 goto :eof
 :noP
 echo please run ..\..\bld\build release x64
-exit 1
+exit /b 1

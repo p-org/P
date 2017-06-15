@@ -41,6 +41,7 @@ receives eQueryStateResponse;
             send service, eDoOpI;
             PossiblyRaiseHalt();
             send reliableStorage, eUpdateToState1;
+            goto State1;
         }
     }
 
@@ -49,6 +50,7 @@ receives eQueryStateResponse;
             send service, eDoOpJ; 
             PossiblyRaiseHalt();
             send reliableStorage, eUpdateToState0;
+            goto State0;
         }
     }
 

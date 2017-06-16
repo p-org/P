@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using Microsoft.Pc;
 using NUnit.Framework;
 
@@ -59,14 +60,18 @@ namespace UnitTests
         private static void DeepCopy(DirectoryInfo src, string target)
         {
             Directory.CreateDirectory(target);
-            foreach (FileInfo file in src.GetFiles())
-            {
-                File.Copy(file.FullName, Path.Combine(target, file.Name), true);
-            }
-
+            CopyFiles(src, target);
             foreach (DirectoryInfo dir in src.GetDirectories())
             {
                 DeepCopy(dir, Path.Combine(target, dir.Name));
+            }
+        }
+
+        private static void CopyFiles(DirectoryInfo src, string target)
+        {
+            foreach (FileInfo file in src.GetFiles())
+            {
+                File.Copy(file.FullName, Path.Combine(target, file.Name), true);
             }
         }
 
@@ -84,10 +89,7 @@ namespace UnitTests
                 }
             }
 
-            // Print handy header
-            tmpWriter.WriteLine("=================================");
-            tmpWriter.WriteLine("         Console output          ");
-            tmpWriter.WriteLine("=================================");
+            WriteHeader(tmpWriter);
 
             List<string> pFiles = workDirectory.EnumerateFiles("*.p").Select(pFile => pFile.FullName).ToList();
             if (!pFiles.Any())
@@ -154,9 +156,117 @@ namespace UnitTests
             tmpWriter.WriteLine("EXIT: 0");
         }
 
+        private static void WriteHeader(TextWriter tmpWriter)
+        {
+            tmpWriter.WriteLine("=================================");
+            tmpWriter.WriteLine("         Console output          ");
+            tmpWriter.WriteLine("=================================");
+        }
+
+        private void TestZing(TestConfig config, StringWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
+        {
+            Debug.WriteLine("TODO: Zing not implemented");
+        }
+
+        private void TestPrt(TestConfig config, StringWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
+        {
+            // copy PrtTester to the work directory
+            var testerDir = new DirectoryInfo(Path.Combine(TestDirectory, "PrtTester"));
+            CopyFiles(testerDir, workDirectory.FullName);
+
+            string testerExeDir = Path.Combine(workDirectory.FullName, BuildSettings.Configuration, BuildSettings.Platform);
+            string testerExePath = Path.Combine(testerExeDir, "tester.exe");
+            string prtTesterProj = Path.Combine(workDirectory.FullName, "Tester.vcxproj");
+
+            // build the Pc output with the test harness
+            using (PCompiler.Profiler.Start("build prttester", workDirectory.FullName))
+            {
+                BuildTester(prtTesterProj, activeDirectory, true);
+                BuildTester(prtTesterProj, activeDirectory, false);
+            }
+
+            // run the harness
+            using (PCompiler.Profiler.Start("run prttester", workDirectory.FullName))
+            {
+                var psi = new ProcessStartInfo
+                {
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardInput = true,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    WorkingDirectory = activeDirectory,
+                    Arguments = string.Join(" ", config.Arguments),
+                    FileName = testerExePath
+                };
+
+                WriteHeader(tmpWriter);
+
+                string stdout, stderr;
+                int exitCode = RunWithOutput(psi, out stdout, out stderr);
+                tmpWriter.Write(stdout);
+                tmpWriter.Write(stderr);
+                tmpWriter.WriteLine($"EXIT: {exitCode}");
+            }
+        }
+
+        private void BuildTester(string prtTesterProj, string activeDirectory, bool clean)
+        {
+            var startInfo = new ProcessStartInfo("msbuild.exe")
+            {
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardError = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                WorkingDirectory = activeDirectory,
+                Arguments = string.Join(" ", prtTesterProj, clean ? "/t:Clean" : "/t:Build",
+                                        $"/p:Configuration={BuildSettings.Configuration}", $"/p:Platform={BuildSettings.Platform}",
+                                        "/nologo")
+            };
+
+            string stdout, stderr;
+            if (RunWithOutput(startInfo, out stdout, out stderr) != 0)
+            {
+                throw new Exception($"Failed to build {prtTesterProj}\nOutput:\n{stdout}\n\nErrors:\n{stderr}\n");
+            }
+        }
+
+        private static int RunWithOutput(ProcessStartInfo startInfo, out string stdout, out string stderr)
+        {
+            string m_stdout = "", m_stderr = "";
+
+            var proc = new Process {StartInfo = startInfo};
+            proc.OutputDataReceived += (s, e) =>
+            {
+                string line = $"OUT: {e.Data}\n";
+                Debug.WriteLine(line);
+                m_stdout += line;
+            };
+
+            proc.ErrorDataReceived += (s, e) =>
+            {
+                if (string.IsNullOrWhiteSpace(e.Data))
+                {
+                    return;
+                }
+                string line = $"ERROR: {e.Data}\n";
+                Debug.WriteLine(line);
+                m_stderr += line;
+            };
+
+            proc.Start();
+            proc.BeginErrorReadLine();
+            proc.BeginOutputReadLine();
+            proc.WaitForExit();
+            stdout = m_stdout;
+            stderr = m_stderr;
+            return proc.ExitCode;
+        }
+
         [Test]
         [TestCaseSource(nameof(TestCases))]
-        public bool TestProgramAndBackends(DirectoryInfo origTestDir, Dictionary<TestType, TestConfig> testConfigs)
+        public void TestProgramAndBackends(DirectoryInfo origTestDir, Dictionary<TestType, TestConfig> testConfigs)
         {
             // First step: clone test folder to new spot
             DirectoryInfo workDirectory = PrepareTestDir(origTestDir);
@@ -166,61 +276,43 @@ namespace UnitTests
                 TestType testType = kv.Key;
                 TestConfig config = kv.Value;
 
-                Console.WriteLine($"*********** Checking {config.Description} ***********");
+                Debug.WriteLine($"*** {config.Description}");
 
                 string activeDirectory = Path.Combine(workDirectory.FullName, testType.ToString());
-                foreach (string toDelete in config.Deletes)
+
+                // Delete temp files as specified by test configuration.
+                IEnumerable<FileInfo> toDelete = config
+                    .Deletes.Select(file => new FileInfo(Path.Combine(activeDirectory, file))).Where(file => file.Exists);
+                foreach (FileInfo fileInfo in toDelete)
                 {
-                    var fileToDelete = new FileInfo(Path.Combine(activeDirectory, toDelete));
-                    if (fileToDelete.Exists)
-                    {
-                        fileToDelete.Delete();
-                    }
+                    fileInfo.Delete();
                 }
 
                 var sb = new StringBuilder();
                 using (var tmpWriter = new StringWriter(sb))
                 {
-                    try
+                    switch (testType)
                     {
-                        switch (testType)
-                        {
-                            case TestType.Pc:
-                                TestPc(config, tmpWriter, workDirectory, activeDirectory);
-                                break;
-                            case TestType.Prt:
-                                return true;
-                            case TestType.Zing:
-                                return true;
-                            default:
-                                throw new ArgumentOutOfRangeException();
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        Console.WriteLine("************** CAUGHT EXCEPTION **************");
-                        Console.WriteLine(e);
-                        Console.WriteLine();
+                        case TestType.Pc:
+                            TestPc(config, tmpWriter, workDirectory, activeDirectory);
+                            break;
+                        case TestType.Prt:
+                            TestPrt(config, tmpWriter, workDirectory, activeDirectory);
+                            break;
+                        case TestType.Zing:
+                            return;
+                        default:
+                            throw new ArgumentOutOfRangeException();
                     }
                 }
 
                 string correctText = File.ReadAllText(Path.Combine(activeDirectory, "acc_0.txt"));
+                correctText = Regex.Replace(correctText, @"\r\n|\n\r|\n|\r", "\n");
                 string actualText = sb.ToString();
-                if (!correctText.Equals(actualText))
-                {
-                    Console.WriteLine("************** INCORRECT OUTPUT FOLLOWS **************");
-                    Console.WriteLine(actualText);
-                    Console.WriteLine();
-                    Console.WriteLine("************** EXPECTED OUTPUT FOLLOWS **************");
-                    Console.WriteLine(correctText);
-                    Console.WriteLine();
-                    return false;
-                }
-
-                Console.Write(actualText);
+                actualText = Regex.Replace(actualText, @"\r\n|\n\r|\n|\r", "\n");
+                Assert.AreEqual(correctText, actualText);
+                Debug.WriteLine(actualText);
             }
-
-            return true;
         }
     }
 }

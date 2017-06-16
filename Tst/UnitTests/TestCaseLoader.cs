@@ -34,8 +34,7 @@ namespace UnitTests
 
             return new TestCaseData(dir, testConfigs)
                 .SetName(dir.Name)
-                .SetCategory(GetCategory(dir, testRoot))
-                .Returns(true);
+                .SetCategory(GetCategory(dir, testRoot));
         }
 
         private static Dictionary<string, string> GetVariables(DirectoryInfo testRoot)

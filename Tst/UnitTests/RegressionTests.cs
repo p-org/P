@@ -40,6 +40,8 @@ namespace UnitTests
             throw new FileNotFoundException();
         });
 
+        private const string NewLinePattern = @"\r\n|\n\r|\n|\r";
+
         private static string TestDirectory => Path.Combine(SolutionDirectory.Value, "Tst");
 
         private static Lazy<string> TestResultsDirectory { get; } =
@@ -53,6 +55,10 @@ namespace UnitTests
             var curTest = new Uri(testDir.FullName);
             Uri relativePath = testRoot.MakeRelativeUri(curTest);
             string destinationDir = Path.GetFullPath(Path.Combine(TestResultsDirectory.Value, relativePath.OriginalString));
+            if (Directory.Exists(destinationDir))
+            {
+                Directory.Delete(destinationDir, true);
+            }
             DeepCopy(testDir, destinationDir);
             return new DirectoryInfo(destinationDir);
         }
@@ -79,16 +85,6 @@ namespace UnitTests
 
         private void TestPc(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
-            // Clean up any remaining generated files
-            foreach (FileInfo file in workDirectory.EnumerateFiles())
-            {
-                if (file.Extension == ".c" || file.Extension == ".h" || file.Extension == ".4ml" || file.Extension == ".zing" ||
-                    file.Extension == ".dll")
-                {
-                    file.Delete();
-                }
-            }
-
             WriteHeader(tmpWriter);
 
             List<string> pFiles = workDirectory.EnumerateFiles("*.p").Select(pFile => pFile.FullName).ToList();
@@ -146,14 +142,9 @@ namespace UnitTests
             }
             using (PCompiler.Profiler.Start("compile zing", inputFileName))
             {
-                if (!PCompiler.Compile(compilerOutput, compileArgs))
-                {
-                    tmpWriter.WriteLine("EXIT: -1");
-                    return;
-                }
+                int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
+                tmpWriter.WriteLine($"EXIT: {zingResult}");
             }
-
-            tmpWriter.WriteLine("EXIT: 0");
         }
 
         private static void WriteHeader(TextWriter tmpWriter)
@@ -165,7 +156,53 @@ namespace UnitTests
 
         private void TestZing(TestConfig config, StringWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
-            Debug.WriteLine("TODO: Zing not implemented");
+            // Find Zing tool
+            string zingFilePath = Path.Combine(SolutionDirectory.Value, "Bld", "Drops", BuildSettings.Configuration,
+                                               BuildSettings.Platform, "Binaries", "zinger.exe");
+
+            // Find DLL input to Zing
+            string zingDllName = (from fileName in workDirectory.EnumerateFiles()
+                                  where fileName.Extension == ".dll" && !fileName.Name.Contains("linker")
+                                  select fileName.FullName).FirstOrDefault();
+            if (zingDllName == null)
+            {
+                throw new Exception("Could not find Zinger input.");
+            }
+
+            // Run Zing tool
+            var arguments = new List<string>(config.Arguments) {zingDllName};
+            string stdout, stderr;
+            int exitCode = RunWithOutput(zingFilePath, activeDirectory, arguments, out stdout, out stderr);
+            tmpWriter.Write(stdout);
+            tmpWriter.Write(stderr);
+            tmpWriter.WriteLine($"EXIT: {exitCode}");
+
+            // Append includes
+            foreach (string include in config.Includes)
+            {
+                tmpWriter.WriteLine();
+                tmpWriter.WriteLine("=================================");
+                tmpWriter.WriteLine(include);
+                tmpWriter.WriteLine("=================================");
+
+                try
+                {
+                    using (var sr = new StreamReader(Path.Combine(activeDirectory, include)))
+                    {
+                        while (!sr.EndOfStream)
+                        {
+                            tmpWriter.WriteLine(sr.ReadLine());
+                        }
+                    }
+                }
+                catch (FileNotFoundException)
+                {
+                    if (!include.EndsWith("trace"))
+                    {
+                        throw;
+                    }
+                }
+            }
         }
 
         private void TestPrt(TestConfig config, StringWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
@@ -188,22 +225,9 @@ namespace UnitTests
             // run the harness
             using (PCompiler.Profiler.Start("run prttester", workDirectory.FullName))
             {
-                var psi = new ProcessStartInfo
-                {
-                    CreateNoWindow = true,
-                    UseShellExecute = false,
-                    RedirectStandardInput = true,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    WorkingDirectory = activeDirectory,
-                    Arguments = string.Join(" ", config.Arguments),
-                    FileName = testerExePath
-                };
-
                 WriteHeader(tmpWriter);
-
                 string stdout, stderr;
-                int exitCode = RunWithOutput(psi, out stdout, out stderr);
+                int exitCode = RunWithOutput(testerExePath, activeDirectory, config.Arguments, out stdout, out stderr);
                 tmpWriter.Write(stdout);
                 tmpWriter.Write(stderr);
                 tmpWriter.WriteLine($"EXIT: {exitCode}");
@@ -212,7 +236,24 @@ namespace UnitTests
 
         private void BuildTester(string prtTesterProj, string activeDirectory, bool clean)
         {
-            var startInfo = new ProcessStartInfo("msbuild.exe")
+            var argumentList = new[]
+            {
+                prtTesterProj, clean ? "/t:Clean" : "/t:Build",
+                $"/p:Configuration={BuildSettings.Configuration}", $"/p:Platform={BuildSettings.Platform}",
+                "/nologo"
+            };
+
+            string stdout, stderr;
+            if (RunWithOutput("msbuild.exe", activeDirectory, argumentList, out stdout, out stderr) != 0)
+            {
+                throw new Exception($"Failed to build {prtTesterProj}\nOutput:\n{stdout}\n\nErrors:\n{stderr}\n");
+            }
+        }
+
+        private static int RunWithOutput(string exeName, string activeDirectory, IEnumerable<string> argumentList, out string stdout,
+                                         out string stderr)
+        {
+            var psi = new ProcessStartInfo(exeName)
             {
                 CreateNoWindow = true,
                 UseShellExecute = false,
@@ -220,28 +261,17 @@ namespace UnitTests
                 RedirectStandardInput = true,
                 RedirectStandardOutput = true,
                 WorkingDirectory = activeDirectory,
-                Arguments = string.Join(" ", prtTesterProj, clean ? "/t:Clean" : "/t:Build",
-                                        $"/p:Configuration={BuildSettings.Configuration}", $"/p:Platform={BuildSettings.Platform}",
-                                        "/nologo")
+                Arguments = string.Join(" ", argumentList)
             };
 
-            string stdout, stderr;
-            if (RunWithOutput(startInfo, out stdout, out stderr) != 0)
-            {
-                throw new Exception($"Failed to build {prtTesterProj}\nOutput:\n{stdout}\n\nErrors:\n{stderr}\n");
-            }
-        }
+            string mStdout = "", mStderr = "";
 
-        private static int RunWithOutput(ProcessStartInfo startInfo, out string stdout, out string stderr)
-        {
-            string m_stdout = "", m_stderr = "";
-
-            var proc = new Process {StartInfo = startInfo};
+            var proc = new Process {StartInfo = psi};
             proc.OutputDataReceived += (s, e) =>
             {
                 string line = $"OUT: {e.Data}\n";
                 Debug.WriteLine(line);
-                m_stdout += line;
+                mStdout += line;
             };
 
             proc.ErrorDataReceived += (s, e) =>
@@ -252,15 +282,15 @@ namespace UnitTests
                 }
                 string line = $"ERROR: {e.Data}\n";
                 Debug.WriteLine(line);
-                m_stderr += line;
+                mStderr += line;
             };
 
             proc.Start();
             proc.BeginErrorReadLine();
             proc.BeginOutputReadLine();
             proc.WaitForExit();
-            stdout = m_stdout;
-            stderr = m_stderr;
+            stdout = mStdout;
+            stderr = mStderr;
             return proc.ExitCode;
         }
 
@@ -300,16 +330,18 @@ namespace UnitTests
                             TestPrt(config, tmpWriter, workDirectory, activeDirectory);
                             break;
                         case TestType.Zing:
+                            TestZing(config, tmpWriter, workDirectory, activeDirectory);
                             return;
                         default:
                             throw new ArgumentOutOfRangeException();
                     }
                 }
 
-                string correctText = File.ReadAllText(Path.Combine(activeDirectory, "acc_0.txt"));
-                correctText = Regex.Replace(correctText, @"\r\n|\n\r|\n|\r", "\n");
+                string correctOutputPath = Path.Combine(activeDirectory, "acc_0.txt");
+                string correctText = File.ReadAllText(correctOutputPath);
+                correctText = Regex.Replace(correctText, NewLinePattern, Environment.NewLine);
                 string actualText = sb.ToString();
-                actualText = Regex.Replace(actualText, @"\r\n|\n\r|\n|\r", "\n");
+                actualText = Regex.Replace(actualText, NewLinePattern, Environment.NewLine);
                 Assert.AreEqual(correctText, actualText);
                 Debug.WriteLine(actualText);
             }

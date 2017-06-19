@@ -115,7 +115,7 @@ namespace UnitTests
             // Replaces variables that use a syntax like $(VarName). Inner capture group gets the name.
             return Regex.Replace(value, @"\$\(([^)]+)\)", match =>
             {
-                string variableName = match.Groups[0].Value;
+                string variableName = match.Groups[1].Value.ToLowerInvariant();
                 string variableValue;
                 return variables.TryGetValue(variableName, out variableValue) ? variableValue : match.Value;
             });

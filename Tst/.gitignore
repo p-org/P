@@ -15,3 +15,6 @@ program.c
 program.h
 trace
 *.trace
+!UnitTests/**/*
+UnitTests/bin/**/*
+UnitTests/obj/**/*

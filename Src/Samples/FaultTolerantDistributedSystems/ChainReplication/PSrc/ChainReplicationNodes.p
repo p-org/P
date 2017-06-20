@@ -4,7 +4,7 @@
 *******************************************************************/
 
 machine ChainReplicationNodeMachine : ChainReplicationNodeInterface, SMRServerInterface
-sends eBackwardAck, eForwardUpdate, eCRPong;
+sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged;
  {
 	var nextSeqId : int;
 	var repSM : SMRReplicatedMachineInterface;

@@ -1,11 +1,3 @@
-/*
-The client machine checks that for a configuration of 3 nodes 
-An update(k,v) is followed by a successful query(k) == v
-Also a random query is performed in the end.
-
-*/
-
-
 machine Client {
 	var next : int;
 	var headNode: machine;
@@ -120,22 +112,19 @@ main machine TheGodMachine {
 	start state Init {
 		entry {
 
-			temp = new ChainReplicationServer((isHead = false, isTail = true, smid = 2));
-			servers += (0, temp);
-			temp = new ChainReplicationServer((isHead = true, isTail = false, smid = 1));
+			temp = new ChainReplicationServer((isHead = true, isTail = true, smid = 1));
 			servers += (0, temp);
 			
-			//Global Monitor
+			//Global Monitor for Safety
 			new Update_Propagation_Invariant(servers);
 			new UpdateResponse_QueryResponse_Seq(servers);
 			
-			send servers[1], predSucc, (pred = servers[0], succ = servers[1]);
-			send servers[0], predSucc, (pred = servers[0], succ = servers[1]);
 			
+			send servers[0], predSucc, (pred = servers[0], succ = servers[0]);
 			//create the client and start the game
-			temp = new Client((head = servers[0], tail = servers[1], startIn = 1));
+			temp = new Client((head = servers[0], tail = servers[0], startIn = 1));
 			clients += ( 0, temp);
-			temp = new Client((head = servers[0], tail = servers[1], startIn = 100));
+			temp = new Client((head = servers[0], tail = servers[0], startIn = 100));
 			clients += ( 0, temp);
 			
 			new ChainReplicationMaster((clients = clients, servers = servers));

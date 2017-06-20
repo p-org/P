@@ -1,6 +1,6 @@
 machine LinearizabilityAbs : SMRServerInterface
 receives eSMROperation;
-sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
+sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated, eSMRReplicatedLeader;
 {
 	var replicatedSM : SMRReplicatedMachineInterface;
 	var doReordering : bool;
@@ -17,6 +17,7 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
 			myId = payload.val as int;
 			replicatedSM = new SMRReplicatedMachineInterface((client = payload.client, val = (payload.val as int, true)));
 			
+			send replicatedSM, eSMRReplicatedLeader;
 			//for the specification case send the current 
 			SendSMRServerUpdate(client, (myId, this as SMRServerInterface));
 			

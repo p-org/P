@@ -42,7 +42,8 @@
   <PProject name= "chainreplication" outputdir ="./ChainReplication/PGenerated">
     <Source>
       <Include>./ChainReplication/PSrc/ChainReplicationHeader.p</Include>
-      <Include>./ChainReplication/PSrc/ChainReplicationNodes.p</Include>  
+      <Include>./ChainReplication/PSrc/ChainReplicationNodes.p</Include>
+      <Include>./ChainReplication/PSrc/ChainReplicationMasterAndFaultDetector.p</Include>   
     </Source>
     <Depends>timer</Depends>
     <Depends>smrabs</Depends>

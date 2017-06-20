@@ -13,17 +13,38 @@ sends eBackwardAck, eForwardUpdate, eCRPong;
 	var succ : ChainReplicationNodeInterface; 
 	var pred : ChainReplicationNodeInterface; 
 	var sent : seq[(seqId: int, smrop: SMROperationType)];
-	
+	var client : SMRClientInterface;
 
 	start state Init {
 		defer eBackwardAck, eForwardUpdate, eCRPing;
-		entry (payload: (nType: NodeType)){
-			nodeT = payload.nType;
+		entry (payload: (client: SMRClientInterface, reorder: bool, isRoot : bool, val: data)){
+
+			client = payload.client;
+
+			//create the replicated node 
+			repSM = new SMRReplicatedMachineInterface((client = payload.client, val = payload.val));
+
+			if(payload.isRoot)
+			{
+				//create the rest of nodes
+				SetUp();
+				nodeT = HEAD;
+			}
+			else
+			{
+				nodeT = (payload.val as (NodeType, data)).0;
+			}
+			
+			if(nodeT == TAIL)
+			{
+				//tell the replicated machine that it is the leader now
+				send repSM, eSMRReplicatedLeader;
+			}
 			nextSeqId = 0;
 			receive {
-				case ePredSucc: (payload: (pred: ChainReplicationNodeInterface, succ: ChainReplicationNodeInterface)) {
-					pred = payload.pred;
-					succ = payload.pred;
+				case ePredSucc: (payload1: (pred: ChainReplicationNodeInterface, succ: ChainReplicationNodeInterface)) {
+					pred = payload1.pred;
+					succ = payload1.pred;
 				}
 			}
 			raise local;
@@ -37,8 +58,20 @@ sends eBackwardAck, eForwardUpdate, eCRPong;
 	
 	}
 
-	fun updateSuccessor() {
-		tempIndex = -1; //some large number
+	fun SetUp() {
+		//create all the nodes and send the ePredSucc events
+		var nodes : seq[ChainReplicationNodeInterface];
+		nodes += (0, this as ChainReplicationNodeInterface);
+		//creates nodes depending on the fault tolerance factor
+		
+		new ChainReplicationMasterInterface((client = client, nodes = nodes));
+	}
+
+	fun UpdateSuccessor(payload: (succ : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface, lastUpdateRec: int, lastAckSent: int))
+	{
+		var tempIndex : int;
+		var iter: int;
+		tempIndex = -1;
 		succ = payload.succ;
 		if(sizeof(sent) > 0)
 		{
@@ -47,7 +80,7 @@ sends eBackwardAck, eForwardUpdate, eCRPong;
 			while(iter < sizeof(sent))
 			{
 				if(sent[iter].seqId > payload.lastUpdateRec)
-					send succ, forwardUpdate, (mess = sent[iter], pred = this);
+					send succ, eForwardUpdate, (msg = sent[iter], pred = this as ChainReplicationNodeInterface);
 				
 				iter = iter + 1;
 			}
@@ -65,13 +98,13 @@ sends eBackwardAck, eForwardUpdate, eCRPong;
 			iter = 0;
 			while(iter < tempIndex)
 			{
-				send pred, backwardAck, (seqId = sent[0].seqId, );
+				send pred, eBackwardAck, (seqId = sent[0].seqId, );
 				sent -= (0);
 				iter = iter + 1;
 			}
 		}
 		
-		send payload.master, success;
+		send payload.master, eSuccess;
 	}
 	
 	state WaitForRequest {
@@ -79,9 +112,10 @@ sends eBackwardAck, eForwardUpdate, eCRPong;
 			send payload, eCRPong;
 		}
 
-		on becomeTail do (payload: ChainReplicationMasterInterface){
+		on eBecomeTail do (payload: ChainReplicationMasterInterface){
+			var iter : int;
 			nodeT = TAIL;
-			succ = this;
+			succ = this as ChainReplicationNodeInterface;
 			//send all the events in sent to both client and the predecessor
 			iter = 0;
 			while(iter < sizeof(sent))
@@ -91,80 +125,67 @@ sends eBackwardAck, eForwardUpdate, eCRPong;
 				
 				//invoke livenessUpdatetoResponse(monitor_responseLiveness, (reqId = sent[iter].seqId, ));
 				
-				
-				//TODO: Tell the replicated machine that it has become leader.
-				//send the response to client
-				//send sent[iter].client, responsetoupdate;
+				//tell the replicated machine that it is the leader now
+				send repSM, eSMRReplicatedLeader;
+
 				
 				// the backward ack to the pred
 				send pred, eBackwardAck, (seqId = sent[iter].seqId, );
 				iter = iter + 1;
 			}
-			send payload, tailChanged;
+			send payload, eTailChanged;
 		}
 
-		on becomeHead do (payload: ChainReplicationMasterInterface){
+		on eBecomeHead do (payload: ChainReplicationMasterInterface){
 			nodeT = HEAD;
-			pred = this;
-			send payload, headChanged;
+			pred = this as ChainReplicationNodeInterface;
+			send payload, eHeadChanged;
 		}
 
-		on newPredecessor do {
+		on eNewPredecessor do (payload: (pred : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface)){
 			pred = payload.pred;
 			if(sizeof(history) > 0)
 			{
 				if(sizeof(sent) > 0)
-					send payload.master, newSuccInfo , (lastUpdateRec = history[sizeof(history) - 1], lastAckSent = sent[0].seqId);
+					send payload.master, eNewSuccInfo , (lastUpdateRec = history[sizeof(history) - 1], lastAckSent = sent[0].seqId);
 				else
-					send payload.master, newSuccInfo , (lastUpdateRec = history[sizeof(history) - 1], lastAckSent = history[sizeof(history) - 1]);
+					send payload.master, eNewSuccInfo , (lastUpdateRec = history[sizeof(history) - 1], lastAckSent = history[sizeof(history) - 1]);
 			}
 		}
-		on newSuccessor do updateSuccessor;
+		on eNewSuccessor do (payload: (succ : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface, lastUpdateRec: int, lastAckSent: int)) {
+			UpdateSuccessor(payload);
+		}
 	
 		
-		on update goto ProcessUpdate with 
+		on eUpdate goto ProcessUpdate with 
 		{
 			nextSeqId = nextSeqId + 1;
-			assert(isHead);
+			assert(nodeT == HEAD);
 			//new livenessUpdatetoResponse(nextSeqId);
 			//invoke livenessUpdatetoResponse(monitor_updateLiveness, (reqId = nextSeqId));
-		};
+		}
 		
-		on query goto WaitForRequest with
-		{
-			assert(isTail);
-			if(payload.key in keyvalue)
-			{
-				//Invoke the monitor
-				monitor UpdateResponse_QueryResponse_Seq, monitor_responsetoquery, (tail = this, key = payload.key, value = keyvalue[payload.key]);
-				
-				send payload.client, responsetoquery, (client = payload.client,value = keyvalue[payload.key]);
-			}
-			else
-			{
-				send payload.client, responsetoquery, (client = payload.client, value = -1);
-			}
-		};
 		on eForwardUpdate goto ProcessFwdUpdate;
 		on eBackwardAck goto ProcessBackwardAck;
 	}
-
+	
 	state ProcessUpdate {
-		entry {	
-			//Add the update message to keyvalue store
-			keyvalue[payload.kv.key] = payload.kv.value;
-		
+		entry (payload: SMROperationType){	
+			
+			//Send the operation to the replicated SM
+			SendSMRRepMachineOperation(repSM, payload);
+
 			//add it to the history seq (represents the successfully serviced requests)
 			history += (sizeof(history), nextSeqId);
 			//invoke the monitor
-			monitor Update_Propagation_Invariant, monitor_history_update, (smid = this, history = history);
+			//monitor Update_Propagation_Invariant, monitor_history_update, (smid = this, history = history);
 			
 			//Add the update request to sent seq
-			sent += (sizeof(sent), (seqId = nextSeqId, client = payload.client, kv = (key = payload.kv.key, value = payload.kv.value)));
+			sent += (sizeof(sent), (seqId = nextSeqId, smrop = payload));
 			//call the monitor
-			monitor Update_Propagation_Invariant, monitor_sent_update, (smid = this, sent = sent);
+			//monitor Update_Propagation_Invariant, monitor_sent_update, (smid = this, sent = sent);
 			//forward the update to the succ
-			send succ, forwardUpdate, (mess = (seqId = nextSeqId, client = payload.client, kv = payload.kv), pred = this);
+			send succ, eForwardUpdate, (msg = (seqId = nextSeqId, smrop = payload), pred = this as ChainReplicationNodeInterface);
 	
 			raise(local);
 		}
@@ -176,49 +197,44 @@ sends eBackwardAck, eForwardUpdate, eCRPong;
 			if(payload.pred == pred)
 			{
 				//update my nextSeqId
-				nextSeqId = payload.mess.seqId;
+				nextSeqId = payload.msg.seqId;
 				
 				//Send the operation to the replicated SM
 				SendSMRRepMachineOperation(repSM, payload.msg.smrop);
 
-				if(!isTail)
+				if(nodeT != TAIL)
 				{
 					//add it to the history seq (represents the successfully serviced requests)
-					history += (sizeof(history), payload.mess.seqId);
+					history += (sizeof(history), payload.msg.seqId);
 					//invoke the monitor
-					annouce Update_Propagation_Invariant, monitor_history_update, (smid = this, history = history);
+					//annouce Update_Propagation_Invariant, monitor_history_update, (smid = this, history = history);
 					//Add the update request to sent seq
-					sent += (sizeof(sent), (seqId = payload.mess.seqId, client = payload.mess.client, kv = (key = payload.mess.kv.key, value = payload.mess.kv.value)));
+					sent += (sizeof(sent), payload.msg);
 					//call the monitor
-					annouce Update_Propagation_Invariant, monitor_sent_update, (smid = this, sent = sent);
+					//annouce Update_Propagation_Invariant, monitor_sent_update, (smid = this, sent = sent);
 					//forward the update to the succ
-					send succ, forwardUpdate, (mess = (seqId = payload.mess.seqId, client = payload.mess.client, kv = payload.mess.kv), pred = this);
+					send succ, eForwardUpdate, (msg = payload.msg, pred = this as ChainReplicationNodeInterface);
 				}
 				else
 				{
-					if(!isHead)
+					if(nodeT != HEAD)
 					{
 						//add it to the history seq (represents the successfully serviced requests)
-						history += (sizeof(history), payload.mess.seqId);
+						history += (sizeof(history), payload.msg.seqId);
 					}
 					
 					//invoke the monitor
-					monitor UpdateResponse_QueryResponse_Seq, monitor_reponsetoupdate, (tail = this, key = payload.mess.kv.key, value = payload.mess.kv.value);
+					//monitor UpdateResponse_QueryResponse_Seq, monitor_reponsetoupdate, (tail = this, key = payload.mess.kv.key, value = payload.mess.kv.value);
 					
 					//invoke livenessUpdatetoResponse(monitor_responseLiveness, (reqId =payload.mess.seqId));
 					
-					
-					//send the response to client
-					send payload.mess.client, responsetoupdate;
-					
 					//send ack to the pred
-					send pred, backwardAck, (seqId = payload.mess.seqId, );
+					send pred, eBackwardAck, (seqId = payload.msg.seqId, );
 
 				}
 			}
-			raise(local);
+			goto WaitForRequest;
 		}
-		on local goto WaitForRequest;
 	}
 	
 	state ProcessBackwardAck
@@ -243,15 +259,13 @@ sends eBackwardAck, eForwardUpdate, eCRPong;
 		{
 			if(req == sent[iter].seqId)
 			{
-				if(removeIndex != -1)
-				{
-					sent -= iter;
-					return;
-				}
+				sent -= iter;
+				return;
 			}
 			iter = iter - 1;
 		}
 	}
+	
 }
 
 

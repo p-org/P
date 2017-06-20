@@ -1,261 +1,175 @@
-event CR_Ping  assume 1 :machine;
-event CR_Pong assume 1;
-event faultCorrected : (newconfig:seq[machine]);
-event faultDetected : machine;
-event startTimer;
-event cancelTimer;
-event cancelTimerSuccess;
-event serverFailed;
-event headFailed;
-event headChanged;
-event tailChanged;
-event tailFailed;
-event success;
-event timeout;
-event becomeHead : machine;
-event becomeTail : machine;
-event newPredecessor : (pred : machine, master : machine);
-event newSuccessor : (succ : machine, master : machine, lastUpdateRec: int, lastAckSent: int);
-event updateHeadTail : (head : machine, tail : machine);
-event newSuccInfo : (lastUpdateRec : int, lastAckSent : int);
-
-machine ChainReplicationMaster {
-	var clients : seq[machine];
+machine ChainReplicationMasterMachine : ChainReplicationMasterInterface
+sends eBecomeHead, eBecomeTail;
+{
+	var client : SMRClientInterface;
 	// note that in this seq the first node is the head node and the last node is the tail node
-	var servers : seq[machine]; 
-	var faultMonitor : machine;
-	var head : machine;
-	var tail : machine;
-	var iter : int;
+	var nodes : seq[ChainReplicationNodeInterface]; 
+	var faultMonitor : ChainReplicationFaultDetectorInterface;
+	var head : ChainReplicationNodeInterface;
+	var tail : ChainReplicationNodeInterface;
 	var faultyNodeIndex : int;
-	var lastUpdateReceivedSucc : int;
-	var lastAckSent : int;
+
 	start state Init {
-		entry {
-			clients = (payload as (clients:seq[machine], servers: seq[machine])).clients;
-			servers = (payload as (clients:seq[machine], servers: seq[machine])).servers;
-			faultMonitor = new ChainReplicationFaultDetection((master = this, servers = servers));
-			
-			head = servers[0];
-			tail = servers[sizeof(servers) - 1];
-			raise(local);
+		entry (payload: (client: SMRClientInterface, nodes: seq[ChainReplicationNodeInterface])){
+			client = payload.client;
+			nodes = payload.nodes;
+			faultMonitor = new ChainReplicationFaultDetectorInterface((master = this as ChainReplicationMasterInterface, nodes = nodes));
+			head = nodes[0];
+			tail = nodes[sizeof(nodes) - 1];
+			goto WaitforFault;
 		}
-		on local goto WaitforFault;
 	}
 	
 	state WaitforFault {
-		entry {
-			
-		}
-		on faultDetected do CheckWhichNodeFailed;
-		on headFailed goto CorrectHeadFailure;
-		on tailFailed goto CorrectTailFailure;
-		on serverFailed goto CorrectServerFailure;
-	}
-	
-	fun Return (){
-		return;
-	}
-	
-	fun CheckWhichNodeFailed (){
-		if(sizeof(servers) == 1)
-		{
-			assert(false); // all nodes have failed
-		}
-		else
-		{
-			if(head == payload)
+
+		on eFaultDetected do (payload: ChainReplicationNodeInterface) {
+			var iter : int;
+			if(sizeof(nodes) == 1)
 			{
-				raise(headFailed);
-			}
-			else if(tail == payload)
-			{
-				
-				raise(tailFailed);
+				assert(false); // all nodes have failed
 			}
 			else
 			{
-				iter = sizeof(servers) - 1;
-				while(iter >= 0)
+				if(head == payload)
 				{
-					if(servers[iter] == payload)
-					{
-						faultyNodeIndex = iter;
-					}
-					iter = iter - 1;
+					goto CorrectHeadFailure;
 				}
-				raise(serverFailed);
+				else if(tail == payload)
+				{
+					
+					goto CorrectTailFailure;
+				}
+				else
+				{
+					iter = sizeof(nodes) - 1;
+					while(iter >= 0)
+					{
+						if(nodes[iter] == payload)
+						{
+							faultyNodeIndex = iter;
+						}
+						iter = iter - 1;
+					}
+					goto CorrectServerFailure;
+				}
 			}
 		}
 	}
+
 	
 	state CorrectHeadFailure {
 		entry {
 			//make successor the head node
-			servers -= (0);
+			nodes -= (0);
 			//Update the monitor
-			monitor Update_Propagation_Invariant, monitor_update_servers, (servers = servers, );
-			monitor UpdateResponse_QueryResponse_Seq, monitor_update_servers, (servers = servers, );
+			//monitor Update_Propagation_Invariant, monitor_update_servers, (servers = servers, );
+			//monitor UpdateResponse_QueryResponse_Seq, monitor_update_servers, (servers = servers, );
 			
-			head = servers[0];
-			send head, becomeHead, this;
+			head = nodes[0];
+			send head, eBecomeHead, this as ChainReplicationMasterInterface;
 		}
-		on headChanged do UpdateClients;
-		on done goto WaitforFault with
+		on eHeadChanged goto WaitforFault with
 		{
-			send faultMonitor, faultCorrected, (newconfig = servers, );
-		};
+			send client, eUpdateHeadTail, (head = head, tail = tail);
+			send faultMonitor, eFaultCorrected, (newconfig = nodes, );
+		}
 	}
 	
 	state CorrectTailFailure {
 		entry {
 			
 			//make successor the head node
-			servers -= (sizeof(servers) - 1);
+			nodes -= (sizeof(nodes) - 1);
 			//Update the monitor
-			monitor Update_Propagation_Invariant, monitor_update_servers, (servers = servers,);
-			monitor UpdateResponse_QueryResponse_Seq, monitor_update_servers, (servers = servers,);
+			//monitor Update_Propagation_Invariant, monitor_update_servers, (servers = servers,);
+			//monitor UpdateResponse_QueryResponse_Seq, monitor_update_servers, (servers = servers,);
 			
 			
-			tail = servers[sizeof(servers) - 1];
-			send tail, becomeTail, this;
+			tail = nodes[sizeof(nodes) - 1];
+			send tail, eBecomeTail, this as ChainReplicationMasterInterface;
 		}
-		on tailChanged do UpdateClients;
-		on done goto WaitforFault with 
+		on eTailChanged goto WaitforFault with 
 		{
-			send faultMonitor, faultCorrected, (newconfig = servers, );
-		};
-		
+			send client, eUpdateHeadTail, (head = head, tail = tail);
+			send faultMonitor, eFaultCorrected, (newconfig = nodes, );
+		}
 	}
 	
 	state CorrectServerFailure {
 		entry {
-				servers -= (faultyNodeIndex);
+				var lastUpdateReceivedSucc : int;
+				var lastAckSent : int;
+				nodes -= (faultyNodeIndex);
 				//Update the monitor
-				monitor Update_Propagation_Invariant, monitor_update_servers, (servers = servers, );
-				monitor UpdateResponse_QueryResponse_Seq, monitor_update_servers, (servers = servers, );
+				//monitor Update_Propagation_Invariant, monitor_update_servers, (servers = servers, );
+				//monitor UpdateResponse_QueryResponse_Seq, monitor_update_servers, (servers = servers, );
 		
-				push FixSuccessor;
-				push FixPredecessor;
+				send nodes[faultyNodeIndex], eNewPredecessor, (pred = nodes[faultyNodeIndex - 1], master = this as ChainReplicationMasterInterface);
+				receive {
+					case eNewSuccInfo: (payload: (lastUpdateRec : int, lastAckSent : int)) {
+						lastUpdateReceivedSucc = payload.lastUpdateRec;
+						lastAckSent = payload.lastAckSent;
+					}
+				}
 				
-				raise(done);
-			}
-			on done goto WaitforFault with
-			{
-				send faultMonitor, faultCorrected, (newconfig = servers, );
-			};
-		
-	}
-	fun SetLastUpdateAndReturn (){
-		
-		lastUpdateReceivedSucc = payload.lastUpdateRec;
-		lastAckSent = payload.lastAckSent;
-		pop;
-		
-	}
-	
-	state FixSuccessor {
-		entry {
-			send servers[faultyNodeIndex], newPredecessor, (pred = servers[faultyNodeIndex - 1], master = this);
-		}
-		on newSuccInfo do SetLastUpdateAndReturn;
-	}
-	
-	state FixPredecessor {
-		entry {
-			send servers[faultyNodeIndex - 1], newSuccessor, (succ = servers[faultyNodeIndex], master = this, lastUpdateRec = lastUpdateReceivedSucc, lastAckSent = lastAckSent);
-		}
-		on success do Return;
-	}
-	
-	
-	fun UpdateClients (){
-		iter = 0;
-		while(iter < sizeof(clients)) {
-			send clients[iter], updateHeadTail, (head = head, tail = tail);
-			iter = iter + 1;
-		}
-		raise(done);
-	}
+				send nodes[faultyNodeIndex - 1], eNewSuccessor, (succ = nodes[faultyNodeIndex], master = this as ChainReplicationMasterInterface, lastUpdateRec = lastUpdateReceivedSucc, lastAckSent = lastAckSent);
+				
+				send faultMonitor, eFaultCorrected, (newconfig = nodes, );
 
+				goto WaitforFault;
+			}
+	}
 }
 
-machine ChainReplicationFaultDetection {
-	var servers : seq[machine];
-	var master : machine;
+
+machine ChainReplicationFaultDetectionMachine : ChainReplicationFaultDetectorInterface
+receives eTimeOut, eCancelSuccess, eCancelFailure;
+{
+	var nodes : seq[ChainReplicationNodeInterface]; 
+	var master : ChainReplicationMasterInterface;
 	var checkNode : int;
-	var timerM : machine;
+	var timer : TimerPtr;
 	start state Init{
-		entry {
+		entry (payload: (master: ChainReplicationMasterInterface, nodes: seq[ChainReplicationNodeInterface])){
 			checkNode = 0;
-			//timerM = new Timer(this);  //1
-			master = (payload as (master: machine, servers : seq[machine])).master;
-			servers = (payload as (master: machine, servers : seq[machine])).servers;
-			raise(local);
-		}
-		on local goto StartMonitoring;
-	}
-	
-	model fun BoundedFailureInjection () {
-		if(sizeof(servers) > 1)
-		{
-			if($)
-			{
-				send this, timeout;
-			}
-			else
-			{
-				send this, CR_Pong;
-			}
-		}
-		else
-		{
-			send this, CR_Pong;
+			//create timer
+			timer = CreateTimer(this as ITimerClient);
+			master = payload.master;
+			nodes = payload.nodes;
+			goto StartMonitoring;
 		}
 	}
 	
 	state StartMonitoring {
 		entry {
-			//start Timer
-			//send(timerM, startTimer); //2
-			//send(servers[checkNode], CR_Ping, this); //3
-			BoundedFailureInjection ();
+			//start timer 
+			StartTimer(timer, 100);
+			send nodes[checkNode], eCRPing, this as ChainReplicationFaultDetectorInterface;
 		}
-		on CR_Pong goto StartMonitoring with
+		on eCRPong goto StartMonitoring with
 		{
 			//stop timer
-			//call(CancelTimer); //4
+			CancelTimer(timer);
 			checkNode = checkNode + 1;
-			if(checkNode == sizeof(servers))
+			if(checkNode == sizeof(nodes))
 			{
 				checkNode = 0;
 			}
-		};
-		on timeout goto HandleFailure;
-	}
-	
-	state CancelTimer {
-		entry {
-			send timerM, cancelTimer;
 		}
-		on timeout do Return;
-		on cancelTimerSuccess do Return;
-	}
-	
-	fun Return (){
-		pop;
+		on eTimeOut goto HandleFailure;
 	}
 	
 	state HandleFailure {
-		ignore CR_Pong;
+		ignore eCRPong;
 		entry {
-			send master, faultDetected, servers[checkNode];
+			send master, eFaultDetected, nodes[checkNode];
 		}
-		on faultCorrected goto StartMonitoring with {
+		on eFaultCorrected goto StartMonitoring with (payload: (newconfig: seq[ChainReplicationNodeInterface])) {
 			checkNode = 0;
-			servers = payload.newconfig;
-		};
+			nodes = payload.newconfig;
+		}
 	}
+	
 }
 
 

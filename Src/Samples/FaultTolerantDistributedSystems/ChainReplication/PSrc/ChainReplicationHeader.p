@@ -35,12 +35,20 @@ event eCRPing assume 1 : ChainReplicationFaultDetectorInterface;
 event eCRPong assume 1;
 
 //event sent by Master to Fault detector
-event eFaultCorrected: (newConfid: seq[ChainReplicationNodeInterface]);
+event eFaultCorrected: (newconfig: seq[ChainReplicationNodeInterface]);
 
 //event sent ny fault detector to Master
 event eFaultDetected: ChainReplicationNodeInterface;
 
-
+event eBecomeHead : ChainReplicationMasterInterface;
+event eBecomeTail : ChainReplicationMasterInterface;
+event eNewPredecessor : (pred : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface);
+event eNewSuccessor : (succ : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface, lastUpdateRec: int, lastAckSent: int);
+event eUpdateHeadTail : (head : ChainReplicationNodeInterface, tail : ChainReplicationNodeInterface);
+event eNewSuccInfo : (lastUpdateRec : int, lastAckSent : int);
+event eSuccess;
+event eHeadChanged;
+event eTailChanged;
 //local events
 event local;
 
@@ -53,9 +61,9 @@ enum NodeType {
 }
 
 // All the interfaces
-type ChainReplicationNodeInterface((nType: NodeType)) = { eBackwardAck, eForwardUpdate, ePredSucc, eCRPing };
+type ChainReplicationNodeInterface((client: SMRClientInterface, reorder: bool, isRoot : bool, val: data)) = { eBackwardAck, eForwardUpdate, ePredSucc, eCRPing };
 
 type ChainReplicationFaultDetectorInterface ((master: ChainReplicationMasterInterface, nodes: seq[ChainReplicationNodeInterface])) = 
 { eCRPong };
 
-type ChainReplicationMasterInterface() = { eFaultDetected };
+type ChainReplicationMasterInterface((client: SMRClientInterface, nodes: seq[ChainReplicationNodeInterface])) = { eFaultDetected };

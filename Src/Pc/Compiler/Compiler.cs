@@ -1567,7 +1567,7 @@
                     NodePredFactory.Instance.MkPredicate(NodeKind.Config)
                 });
 
-            var myDir = System.IO.Path.GetDirectoryName(System.Reflection.Assembly.GetEntryAssembly().Location);
+            var myDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             conf = Factory.Instance.AddSetting(
                 conf,
                 Factory.Instance.MkId("parsers.Zing"),

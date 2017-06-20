@@ -7,10 +7,11 @@ event eSMROperation : SMROperationType;
 event eSMRResponse : SMRResponseType;
 event eSMRReplicatedMachineOperation : SMROperationType;
 event eSMRLeaderUpdated : (int, SMRServerInterface);
+event eSMRReplicatedLeader;
 
 //Interfaces used by clients of State Machine Replication (SMR)
 type SMRClientInterface(data)  = {eSMRResponse, eSMRLeaderUpdated};
-type SMRReplicatedMachineInterface((client:SMRClientInterface, val: data)) =  { eSMRReplicatedMachineOperation };
+type SMRReplicatedMachineInterface((client:SMRClientInterface, val: data)) =  { eSMRReplicatedMachineOperation, eSMRReplicatedLeader };
 type SMRServerInterface((client: SMRClientInterface, reorder: bool, val: data)) = { eSMROperation };
 
 
@@ -18,9 +19,10 @@ type SMRServerInterface((client: SMRClientInterface, reorder: bool, val: data)) 
 Helper Functions
 ********************/
 
-fun SendSMRResponse(target: any, ev: event, val: data)
+fun SendSMRResponse(target: any, ev: event, val: data, isLeader: bool)
 {
-    send target as SMRClientInterface, eSMRResponse, (response = ev, val = val);
+    if(isLeader)
+        send target as SMRClientInterface, eSMRResponse, (response = ev, val = val);
 }
 
 fun SendSMROperation(target: any, ev: event, val: data, src: machine)

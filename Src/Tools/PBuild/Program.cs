@@ -173,7 +173,12 @@ namespace PBuild
                 compileResult = svc.Compile(compileArgs, Console.Out);
             }
 
-            if (compileResult && project.testscripts.Count > 0)
+            if (!compileResult)
+            {
+                Environment.Exit(-1);
+            }
+
+            if (project.testscripts.Count > 0)
             {
                 Console.WriteLine("=== Linking project {0} ===", project.Name);
                 //start linking the project

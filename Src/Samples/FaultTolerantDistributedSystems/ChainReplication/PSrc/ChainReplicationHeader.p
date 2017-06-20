@@ -20,10 +20,42 @@ event eResponseToQuery: (val: data);
 event eResponseToUpdate;
 
 //event to send backward acknowledgement to the predecessor after responding to the client.
-event eBackwardAck: (SeqId: int);
+event eBackwardAck: (seqId: int);
 
 //event to forward the update operation towards the tail of the chain.
 event eForwardUpdate: (msg: (seqId: int, smrop: SMROperationType), pred: ChainReplicationNodeInterface);
 
+
+//// Events used by Fault Detector and the Master Node
+
+//event sent by Fault detector to all nodes periodically
+event eCRPing assume 1 : ChainReplicationFaultDetectorInterface;
+
+//event sent by all nodes in response to Ping
+event eCRPong assume 1;
+
+//event sent by Master to Fault detector
+event eFaultCorrected: (newConfid: seq[ChainReplicationNodeInterface]);
+
+//event sent ny fault detector to Master
+event eFaultDetected: ChainReplicationNodeInterface;
+
+
 //local events
 event local;
+
+
+// Types
+enum NodeType {
+	HEAD,
+	TAIL,
+	INTERNAL
+}
+
+// All the interfaces
+type ChainReplicationNodeInterface((nType: NodeType)) = { eBackwardAck, eForwardUpdate, ePredSucc, eCRPing };
+
+type ChainReplicationFaultDetectorInterface ((master: ChainReplicationMasterInterface, nodes: seq[ChainReplicationNodeInterface])) = 
+{ eCRPong };
+
+type ChainReplicationMasterInterface() = { eFaultDetected };

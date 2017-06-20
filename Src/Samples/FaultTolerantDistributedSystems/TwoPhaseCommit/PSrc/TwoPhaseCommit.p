@@ -186,6 +186,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	var coordinator: any<esCoordinatorEvents>;
 	var repData: data;
 	var isReplicated: bool;
+	var isLeader: bool;
 	start state Init {
 		entry (payload: (client: any<esCoordinatorEvents>, val: data)){
 			var payVal: (int, bool);
@@ -193,6 +194,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 			myId = payVal.0;
 			coordinator = payload.client;
 			isReplicated = payVal.1;
+			isLeader = false;
 			raise local;
 		}
 
@@ -202,6 +204,9 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 			raise payload.operation, payload.val;
 		}
 
+		on eSMRReplicatedLeader do {
+			isLeader = true;
+		}
 		on local push WaitForPrepare;
 	}
 	
@@ -209,7 +214,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	{
 		if(isReplicated)
 		{
-			SendSMRResponse(coordinator, ev, payload as data); 
+			SendSMRResponse(coordinator, ev, payload as data, isLeader); 
 		}
 		else
 		{

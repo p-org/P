@@ -43,8 +43,12 @@
     <Source>
       <Include>./ChainReplication/PSrc/ChainReplicationHeader.p</Include>
       <Include>./ChainReplication/PSrc/ChainReplicationNodes.p</Include>
-      <Include>./ChainReplication/PSrc/ChainReplicationMasterAndFaultDetector.p</Include>   
+      <Include>./ChainReplication/PSrc/ChainReplicationMasterAndFaultDetector.p</Include>
+      <Include>./ChainReplication/Test/TestDrivers.p</Include>   
     </Source>
+    <Link>
+      <Include>./ChainReplication/Test/TestScript.p</Include>
+    </Link>
     <Depends>timer</Depends>
     <Depends>smrabs</Depends>
   </PProject>

@@ -61,7 +61,7 @@ enum NodeType {
 }
 
 // All the interfaces
-type ChainReplicationNodeInterface((client: SMRClientInterface, reorder: bool, isRoot : bool, val: data)) = { eBackwardAck, eForwardUpdate, ePredSucc, eCRPing, eBecomeTail, eBecomeHead, eNewPredecessor, eNewSuccessor };
+type ChainReplicationNodeInterface((client: SMRClientInterface, reorder: bool, isRoot : bool, ft : FaultTolerance, val: data)) = { eBackwardAck, eForwardUpdate, ePredSucc, eCRPing, eBecomeTail, eBecomeHead, eNewPredecessor, eNewSuccessor };
 
 type ChainReplicationFaultDetectorInterface ((master: ChainReplicationMasterInterface, nodes: seq[ChainReplicationNodeInterface])) = 
 { eCRPong, eFaultCorrected };

@@ -14,27 +14,35 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 	var pred : ChainReplicationNodeInterface; 
 	var sent : seq[(seqId: int, smrop: SMROperationType)];
 	var client : SMRClientInterface;
+	var FT : FaultTolerance;
 
 	start state Init {
 		defer eBackwardAck, eForwardUpdate, eCRPing;
-		entry (payload: (client: SMRClientInterface, reorder: bool, isRoot : bool, val: data)){
-
+		entry (payload: (client: SMRClientInterface, reorder: bool, isRoot : bool, ft : FaultTolerance, val: data)){
+			var repSMConstArg : data;
+			
 			client = payload.client;
+			FT = payload.ft;
 
-			//create the replicated node 
-			repSM = new SMRReplicatedMachineInterface((client = payload.client, val = payload.val));
+			
 
 			if(payload.isRoot)
 			{
-				//create the rest of nodes
-				SetUp();
+				
 				nodeT = HEAD;
+				repSMConstArg = payload.val;
+				//create the rest of nodes
+				SetUp(repSMConstArg);
 			}
 			else
 			{
 				nodeT = (payload.val as (NodeType, data)).0;
+				repSMConstArg = (payload.val as (NodeType, data)).1;
 			}
 			
+			//create the replicated node 
+			repSM = new SMRReplicatedMachineInterface((client = payload.client, val = repSMConstArg));
+
 			if(nodeT == TAIL)
 			{
 				//tell the replicated machine that it is the leader now
@@ -58,12 +66,49 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 	
 	}
 
-	fun SetUp() {
-		//create all the nodes and send the ePredSucc events
+	fun SetUp(repSMConstArg: data) {
+		var numOfNodes : int;
 		var nodes : seq[ChainReplicationNodeInterface];
+		var tempNode: ChainReplicationNodeInterface;
+		var index : int;
+		if(FT == FT1)
+			numOfNodes = 2;
+		else if (FT == FT2)
+			numOfNodes = 3;
+		else
+			assert(false);
+
+		//create all the nodes
+		//first add the current node itself as head
 		nodes += (0, this as ChainReplicationNodeInterface);
-		//creates nodes depending on the fault tolerance factor
 		
+		//create internal nodes
+		index = 0;
+		while(index < numOfNodes - 2)
+		{
+			tempNode = new ChainReplicationNodeInterface((client = client, reorder = false, isRoot = false, ft = FT, val = (INTERNAL, repSMConstArg)));
+			nodes += (sizeof(nodes), tempNode);
+			index = index + 1;
+		}
+
+		//create tail
+		tempNode = new ChainReplicationNodeInterface((client = client, reorder = false, isRoot = false, ft = FT, val = (TAIL, repSMConstArg)));
+		nodes += (sizeof(nodes), tempNode);
+		
+		//send pred and succ to all
+		//head
+		send nodes[0], ePredSucc, (pred = nodes[0], succ = nodes[1]);
+		//tail
+		send nodes[sizeof(nodes)], ePredSucc, (pred = nodes[sizeof(nodes)-1], succ = nodes[sizeof(nodes)]);
+		//internal nodes
+		index = 0;
+		while(index < numOfNodes - 2)
+		{
+			send nodes[index], ePredSucc, (pred = nodes[index-1], succ = nodes[index + 1]);
+			index = index + 1;
+		}
+
+		//create the master node.
 		new ChainReplicationMasterInterface((client = client, nodes = nodes));
 	}
 

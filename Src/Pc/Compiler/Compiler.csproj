@@ -10,7 +10,7 @@
     <ProjectGuid>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Pc</RootNamespace>
+    <RootNamespace>Microsoft.Pc</RootNamespace>
     <AssemblyName>Compiler</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <TargetFrameworkProfile>
@@ -199,6 +199,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Compiler.cs" />
+    <Compile Include="CompilerOutput.cs" />
+    <Compile Include="CompilerOutputStream.cs" />
+    <Compile Include="ConsoleProfiler.cs" />
+    <Compile Include="CSharpHelper.cs" />
     <Compile Include="Domains\P.4ml.g.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -210,18 +214,41 @@
       <DependentUpon>PLink.4ml</DependentUpon>
     </Compile>
     <Compile Include="CommandLineOptions.cs" />
+    <Compile Include="ErrorReporter.cs" />
+    <Compile Include="EventInfo.cs" />
+    <Compile Include="FunInfo.cs" />
     <Compile Include="ICompilerOutput.cs" />
+    <Compile Include="IProfiler.cs" />
+    <Compile Include="LivenessOption.cs" />
+    <Compile Include="LocalVariableInfo.cs" />
     <Compile Include="LProgram.cs" />
+    <Compile Include="MachineInfo.cs" />
+    <Compile Include="PToCSharpCompiler.MkFunctionDecl.cs" />
+    <Compile Include="PToCSharpCompiler.MkMachineClass.cs" />
+    <Compile Include="NullProfiler.cs" />
     <Compile Include="Parser\LParser.cs" />
     <Compile Include="Parser\PParser.cs" />
     <Compile Include="Parser\ShiftReduceParserCode.cs" />
     <Compile Include="PData.cs" />
     <Compile Include="PProgram.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PToCSharp.cs" />
+    <Compile Include="PToCSharpCompiler.cs" />
+    <Compile Include="PToCSharpLinker.cs" />
     <Compile Include="PToZing.cs" />
+    <Compile Include="PToZing.TypeTranslationContext.cs" />
+    <Compile Include="PToZing.ZingFoldContext.cs" />
     <Compile Include="PTranslation.cs" />
+    <Compile Include="SourceInfo.cs" />
+    <Compile Include="SpecType.cs" />
+    <Compile Include="StandardOutput.cs" />
+    <Compile Include="PToCSharpCompiler.TypeTranslationContext.cs" />
+    <Compile Include="StateInfo.cs" />
+    <Compile Include="StateTemperature.cs" />
+    <Compile Include="TransitionInfo.cs" />
+    <Compile Include="VariableInfo.cs" />
+    <Compile Include="XmlProfiler.cs" />
     <Compile Include="ZingData.cs" />
+    <Compile Include="ZingTranslationInfo.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

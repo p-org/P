@@ -121,6 +121,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>../../Prt/WinUser/;../../Prt/IDL/;../../Prt/Core/;../../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>$(StandardPDefinitions);</PreprocessorDefinitions>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -140,6 +141,9 @@
       <HeaderFileName>$(PSdkFolder)\Headers\%(Filename)_h.h</HeaderFileName>
       <OutputDirectory>$(PSdkFolder)\Headers\</OutputDirectory>
     </Midl>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -221,7 +225,7 @@
     <None Include="PrtDistIDL.acf" />
   </ItemGroup>
   <ItemGroup>
-    <Midl Include="NodeManager.idl"/>
+    <Midl Include="NodeManager.idl" />
     <Midl Include="PrtDistIDL.idl" />
   </ItemGroup>
   <ItemGroup>

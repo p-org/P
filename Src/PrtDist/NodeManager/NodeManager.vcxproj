@@ -108,12 +108,16 @@
       <SDLCheck>false</SDLCheck>
       <AdditionalIncludeDirectories>../../../Prt/API;../../../Prt/Core;../../../Prt/WinUser/;$(PSdkFolder)/Headers</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>$(StandardPDefinitions);_CRT_SECURE_NO_WARNINGS;</PreprocessorDefinitions>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(PSdkFolder)\Lib</AdditionalLibraryDirectories>
       <AdditionalDependencies>rpcrt4.lib;ntdsapi.lib;secur32.lib;netapi32.lib;PrtDist.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

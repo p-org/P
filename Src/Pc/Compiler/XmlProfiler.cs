@@ -6,32 +6,31 @@ namespace Microsoft.Pc
 {
     public class XmlProfiler : IProfiler
     {
-        XDocument data;
-        XElement current;
+        private XElement current;
 
         public XmlProfiler()
         {
-            data = new XDocument(new XElement("data"));
+            Data = new XDocument(new XElement("data"));
         }
 
-        public XDocument Data { get { return this.data; } }
+        public XDocument Data { get; }
 
         public IDisposable Start(string operation, string message)
         {
-            XElement e = new XElement("operation", new XAttribute("name", operation), new XAttribute("description", message));
+            var e = new XElement("operation", new XAttribute("name", operation), new XAttribute("description", message));
             if (current == null)
             {
-                data.Root.Add(e);
+                Data.Root.Add(e);
             }
             else
             {
                 current.Add(e);
             }
             current = e;
-            return new XmlProfileWatcher(this, e, operation, message);
+            return new XmlProfileWatcher(this, e);
         }
 
-        private void Finish(XElement e, DateTime timestamp, TimeSpan elapsed)
+        private void Finish(XContainer e, DateTime timestamp, TimeSpan elapsed)
         {
             e.Add(new XAttribute("timestsamp", timestamp));
             e.Add(new XAttribute("elapsed", elapsed));
@@ -41,22 +40,19 @@ namespace Microsoft.Pc
             }
         }
 
-        class XmlProfileWatcher : IDisposable
+        private class XmlProfileWatcher : IDisposable
         {
-            XmlProfiler owner;
-            XElement e;
-            Stopwatch watch = new Stopwatch();
-            string operation;
-            string message;
+            private readonly XElement e;
+            private readonly XmlProfiler owner;
+            private readonly Stopwatch watch = new Stopwatch();
 
-            public XmlProfileWatcher(XmlProfiler owner, XElement e, string operation, string message)
+            public XmlProfileWatcher(XmlProfiler owner, XElement e)
             {
                 this.e = e;
                 this.owner = owner;
-                this.operation = operation;
-                this.message = message;
                 watch.Start();
             }
+
             public void Dispose()
             {
                 watch.Stop();

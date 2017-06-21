@@ -396,15 +396,15 @@
                     try
                     {
                         var asm = Assembly.GetExecutingAssembly();
-                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Pc.Zing.Prt.zing")))
+                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Microsoft.Pc.Zing.Prt.zing")))
                         {
                             sw.Write(sr.ReadToEnd());
                         }
-                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Pc.Zing.PrtTypes.zing")))
+                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Microsoft.Pc.Zing.PrtTypes.zing")))
                         {
                             sw.Write(sr.ReadToEnd());
                         }
-                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Pc.Zing.PrtValues.zing")))
+                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Microsoft.Pc.Zing.PrtValues.zing")))
                         {
                             sw.Write(sr.ReadToEnd());
                         }
@@ -540,7 +540,7 @@
 
         private void LoadManifestProgram(string programName)
         {
-            string manifestName = "Pc.Domains." + programName;
+            string manifestName = "Microsoft.Pc.Domains." + programName;
             lock (LoadedManifestPrograms)
             {
                 InstallResult result;

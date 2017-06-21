@@ -1,12 +1,12 @@
-
-machine MultiPaxosNode
-receives SMR_OPERATION, update, chosen, goPropose, accepted, reject, agree, accept, prepare, CANCEL_SUCCESS, CANCEL_FAIL, TIMEOUT
+machine MultiPaxosNodeMachine : MultiPaxosNodeInterface, SMRServerInterface
+receives eTimeOut, eCancelSuccess, eCancelFailure;
 sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTimer;
 {
 
 	var currentLeader : (rank:int, server : machine);
 	var leaderElectionService : machine;
-/********************** Proposer **************************************************/
+
+// Proposer 
 	var acceptors : seq[machine];
 	var commitValue : int;
 	var proposeVal : int;
@@ -22,10 +22,10 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	var tempVal : int;
 	var timer: machine;
 	var nextSlotForProposer : int;
-/*************************** Acceptor **********************************************/
+//Acceptor 
 	var acceptorSlots : map[int, (proposal : (round: int, servermachine : int), value : int)];
 	
-/**************************** Learner **************************************/
+//Learner 
 	var learnerSlots : map[int, (proposal : (round: int, servermachine : int), value : int)];
 	var lastExecutedSlot:int;
 	var learner : SMR_REPLICATED_MACHINE_IN;
@@ -50,7 +50,7 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 		majority = (sizeof(acceptors))/2 + 1;
 		assert(majority == 2);
 		//Also start the leader election service;
-		//leaderElectionService = new LeaderElection_Machine((servers = acceptors, parentServer = this, rank = myRank));
+		leaderElectionService = new LeaderElection_Machine((servers = acceptors, parentServer = this, rank = myRank));
 		
 		raise(local);
 	}
@@ -71,18 +71,18 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	state PerformOperation {
 		ignore agree, accepted, timeout, reject;
 		
-		/***** proposer ******/
+		// proposer
 		on update do CheckIfLeader;
 		on goPropose push ProposeValuePhase1;
 		
-		/***** acceptor ****/
+		//acceptor
 		on prepare do prepareAction;
 		on accept do acceptAction;
 		
-		/**** leaner ****/
+		// leaner
 		on chosen push RunLearner;
 		
-		/*****leader election ****/
+		//leader election
 		on Ping do ForwardToLE;
 		on newLeader do UpdateLeader;
 	}
@@ -163,7 +163,7 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	
 	}
 	
-	/**************************** Proposer **********************************************************/
+
 	
 	fun BroadCastAcceptors(mess: event, pay : any) {
 		iter = 0;
@@ -269,7 +269,7 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 		
 	}
 	
-	/**************************** Learner *******************************************/
+	
 	fun RunReplicatedMachine() {
 		while(true)
 		{
@@ -307,4 +307,4 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	
 	}
 }
-}
+

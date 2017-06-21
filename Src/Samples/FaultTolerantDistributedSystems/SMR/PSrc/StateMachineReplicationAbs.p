@@ -8,7 +8,7 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated, eSMRReplicatedLeader;
 	var client : SMRClientInterface;
 	
 	start state Init {
-		entry (payload: (client: SMRClientInterface, reorder: bool, isRoot : bool, ft: FaultTolerance, val: data)){
+		entry (payload: SMRServerConstrutorType){
 			var i : int;
 			i = 0;
 			client = payload.client;

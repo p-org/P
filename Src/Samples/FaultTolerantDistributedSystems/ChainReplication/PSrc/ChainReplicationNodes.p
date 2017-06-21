@@ -4,7 +4,7 @@
 *******************************************************************/
 
 machine ChainReplicationNodeMachine : ChainReplicationNodeInterface, SMRServerInterface
-sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged;
+sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged, eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
  {
 	var nextSeqId : int;
 	var repSM : SMRReplicatedMachineInterface;
@@ -18,13 +18,11 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 
 	start state Init {
 		defer eBackwardAck, eForwardUpdate, eCRPing;
-		entry (payload: (client: SMRClientInterface, reorder: bool, isRoot : bool, ft : FaultTolerance, val: data)){
+		entry (payload: SMRServerConstrutorType){
 			var repSMConstArg : data;
 			
 			client = payload.client;
 			FT = payload.ft;
-
-			
 
 			if(payload.isRoot)
 			{
@@ -40,6 +38,9 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 				repSMConstArg = (payload.val as (NodeType, data)).1;
 			}
 			
+			//update the client about leader
+			SendSMRServerUpdate(client, (0, this as SMRServerInterface));
+
 			//create the replicated node 
 			repSM = new SMRReplicatedMachineInterface((client = payload.client, val = repSMConstArg));
 
@@ -185,6 +186,8 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 			nodeT = HEAD;
 			pred = this as ChainReplicationNodeInterface;
 			send payload, eHeadChanged;
+			//update the client about leader
+			SendSMRServerUpdate(client, (0, this as SMRServerInterface));
 		}
 
 		on eNewPredecessor do (payload: (pred : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface)){

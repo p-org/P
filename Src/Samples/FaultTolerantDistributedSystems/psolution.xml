@@ -52,4 +52,14 @@
     <Depends>timer</Depends>
     <Depends>smrabs</Depends>
   </PProject>
+    <PProject name= "multipaxos" outputdir ="./MultiPaxos/PGenerated">
+    <Source>
+      <Include>./MultiPaxos/PSrc/MultiPaxosHeader.p</Include>
+      <Include>./MultiPaxos/PSrc/MultiPaxos.p</Include>
+      <Include>./MultiPaxos/PSrc/LeaderElection.p</Include>
+      <Include>./ChainReplication/Test/TestDrivers.p</Include>   
+    </Source>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
+  </PProject>
 </PSolution>

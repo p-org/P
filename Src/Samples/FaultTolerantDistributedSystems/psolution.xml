@@ -43,7 +43,21 @@
     <Source>
       <Include>./ChainReplication/PSrc/ChainReplicationHeader.p</Include>
       <Include>./ChainReplication/PSrc/ChainReplicationNodes.p</Include>
-      <Include>./ChainReplication/PSrc/ChainReplicationMasterAndFaultDetector.p</Include>   
+      <Include>./ChainReplication/PSrc/ChainReplicationMasterAndFaultDetector.p</Include>
+      <Include>./ChainReplication/Test/TestDrivers.p</Include>   
+    </Source>
+    <Link>
+      <Include>./ChainReplication/Test/TestScript.p</Include>
+    </Link>
+    <Depends>timer</Depends>
+    <Depends>smrabs</Depends>
+  </PProject>
+    <PProject name= "multipaxos" outputdir ="./MultiPaxos/PGenerated">
+    <Source>
+      <Include>./MultiPaxos/PSrc/MultiPaxosHeader.p</Include>
+      <Include>./MultiPaxos/PSrc/MultiPaxos.p</Include>
+      <Include>./MultiPaxos/PSrc/LeaderElection.p</Include>
+      <Include>./ChainReplication/Test/TestDrivers.p</Include>   
     </Source>
     <Depends>timer</Depends>
     <Depends>smrabs</Depends>

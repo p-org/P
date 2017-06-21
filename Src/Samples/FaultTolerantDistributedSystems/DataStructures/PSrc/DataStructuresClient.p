@@ -13,7 +13,7 @@ sends eSMROperation, eDSOperation;
     start state Init {
         entry (payload: data){
             numOfOperations = payload as int;
-            repDS = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, isRoot = true, val = 0));
+            repDS = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, isRoot = true, ft = FT1, val = 0));
             raise local;
         }
 

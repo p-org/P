@@ -25,7 +25,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 				index = 0;
 				while(index < NumOfParticipants)
 				{
-					temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, isRoot = true, id = index));
+					temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, isRoot = true, ft = FT1, id = index));
 					participants[index] = temp;
 					index = index + 1;
 				}

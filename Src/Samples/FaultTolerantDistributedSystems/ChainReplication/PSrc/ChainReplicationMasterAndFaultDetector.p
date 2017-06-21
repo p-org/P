@@ -1,5 +1,5 @@
 machine ChainReplicationMasterMachine : ChainReplicationMasterInterface
-sends eBecomeHead, eBecomeTail;
+sends eBecomeHead, eBecomeTail, eUpdateHeadTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
 {
 	var client : SMRClientInterface;
 	// note that in this seq the first node is the head node and the last node is the tail node
@@ -21,7 +21,6 @@ sends eBecomeHead, eBecomeTail;
 	}
 	
 	state WaitforFault {
-
 		on eFaultDetected do (payload: ChainReplicationNodeInterface) {
 			var iter : int;
 			if(sizeof(nodes) == 1)
@@ -36,7 +35,6 @@ sends eBecomeHead, eBecomeTail;
 				}
 				else if(tail == payload)
 				{
-					
 					goto CorrectTailFailure;
 				}
 				else
@@ -114,6 +112,10 @@ sends eBecomeHead, eBecomeTail;
 				
 				send nodes[faultyNodeIndex - 1], eNewSuccessor, (succ = nodes[faultyNodeIndex], master = this as ChainReplicationMasterInterface, lastUpdateRec = lastUpdateReceivedSucc, lastAckSent = lastAckSent);
 				
+				receive {
+					case eSuccess: {}
+				}
+				
 				send faultMonitor, eFaultCorrected, (newconfig = nodes, );
 
 				goto WaitforFault;
@@ -124,6 +126,7 @@ sends eBecomeHead, eBecomeTail;
 
 machine ChainReplicationFaultDetectionMachine : ChainReplicationFaultDetectorInterface
 receives eTimeOut, eCancelSuccess, eCancelFailure;
+sends eCRPing, eFaultDetected,  eStartTimer, eCancelTimer;
 {
 	var nodes : seq[ChainReplicationNodeInterface]; 
 	var master : ChainReplicationMasterInterface;

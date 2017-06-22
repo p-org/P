@@ -1,5 +1,5 @@
 machine ChainReplicationMasterMachine : ChainReplicationMasterInterface
-sends eBecomeHead, eBecomeTail, eUpdateHeadTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
+sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
 {
 	var client : SMRClientInterface;
 	// note that in this seq the first node is the head node and the last node is the tail node
@@ -25,7 +25,7 @@ sends eBecomeHead, eBecomeTail, eUpdateHeadTail, eFaultCorrected, eNewPredecesso
 			var iter : int;
 			if(sizeof(nodes) == 1)
 			{
-				assert(false); // all nodes have failed
+				//assert(false); // all nodes have failed
 			}
 			else
 			{
@@ -68,7 +68,6 @@ sends eBecomeHead, eBecomeTail, eUpdateHeadTail, eFaultCorrected, eNewPredecesso
 		}
 		on eHeadChanged goto WaitforFault with
 		{
-			send client, eUpdateHeadTail, (head = head, tail = tail);
 			send faultMonitor, eFaultCorrected, (newconfig = nodes, );
 		}
 	}
@@ -88,7 +87,6 @@ sends eBecomeHead, eBecomeTail, eUpdateHeadTail, eFaultCorrected, eNewPredecesso
 		}
 		on eTailChanged goto WaitforFault with 
 		{
-			send client, eUpdateHeadTail, (head = head, tail = tail);
 			send faultMonitor, eFaultCorrected, (newconfig = nodes, );
 		}
 	}

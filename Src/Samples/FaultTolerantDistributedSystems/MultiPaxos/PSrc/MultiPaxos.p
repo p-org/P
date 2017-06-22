@@ -3,35 +3,35 @@ receives eTimeOut, eCancelSuccess, eCancelFailure;
 sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTimer;
 {
 
-	var currentLeader : (rank:int, server : machine);
-	var leaderElectionService : machine;
+// leader election
+	var currentLeader : (rank:int, server : MultiPaxosNodeInterface);
+	var leaderElectionService : LeaderElectionInterface;
 
 // Proposer 
-	var acceptors : seq[machine];
-	var commitValue : int;
-	var proposeVal : int;
+	var acceptors : seq[MultiPaxosNodeInterface];
+	var commitVal : SMROperationType;
+	var proposeVal : SMROperationType;
 	var majority : int;
 	var roundNum : int;
 	var myRank : int;
-	var nextProposal: (round: int, servermachine : int);
-	var receivedAgree : (proposal : (round: int, servermachine : int), value : int);
-	var iter : int ;
+	var nextProposal: ProposalIdType;
+	var receivedAgree : (proposal : ProposalIdType, smrop : SMROperationType);
 	var maxRound : int;
 	var countAccept : int;
 	var countAgree : int;
-	var tempVal : int;
-	var timer: machine;
+	var timer : TimerPtr;
 	var nextSlotForProposer : int;
 //Acceptor 
-	var acceptorSlots : map[int, (proposal : (round: int, servermachine : int), value : int)];
+	var acceptorSlots : map[int, (proposal : ProposalIdType, smrop : SMROperationType)];
 	
 //Learner 
-	var learnerSlots : map[int, (proposal : (round: int, servermachine : int), value : int)];
+	var learnerSlots : map[int, (proposal : ProposalIdType, smrop : SMROperationType)];
 	var lastExecutedSlot:int;
-	var learner : SMR_REPLICATED_MACHINE_IN;
+	var learner : SMRReplicatedMachineInterface;
+
 	start state Init {
-		defer Ping;
-		entry {
+		defer ePing;
+		entry (payload: SMRServerConstrutorType) {
 			myRank = (payload as (rank:int)).rank;
 			currentLeader = (rank = myRank, server = this);
 			roundNum = 0;
@@ -204,11 +204,11 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 				maxRound = payload.proposal.round;
 				
 			send timer, CANCELTIMER;
-		};
+		}
 		on success goto ProposeValuePhase2 with 
 		{
 			send timer, CANCELTIMER;
-		};
+		}
 		on TIMEOUT goto ProposeValuePhase1;
 	}
 	
@@ -264,7 +264,7 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 				maxRound = payload.proposal.round;
 				
 			send timer, CANCELTIMER;
-		};
+		}
 		on timeout goto ProposeValuePhase1;
 		
 	}

@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -16,45 +15,30 @@ namespace UnitTests
     //[Parallelizable(ParallelScope.Children)]
     public class RegressionTests
     {
-        private readonly Lazy<Compiler> compiler = new Lazy<Compiler>(() =>
-        {
-            var compiler = new Compiler(true);
-            var xmlProfiler = new XmlProfiler();
-            compiler.Profiler = xmlProfiler;
-            xmlProfiler.Data.Save(Path.Combine(Environment.CurrentDirectory, "TestProfile.xml"));
-            return compiler;
-        });
+        private Compiler PCompiler => compiler.Value;
 
-        private static readonly Lazy<string> SolutionDirectory = new Lazy<string>(() =>
-        {
-            string assemblyPath = AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
-            string assemblyDirectory = Path.GetDirectoryName(assemblyPath);
-            Contract.Assert(assemblyDirectory != null);
-            for (var dir = new DirectoryInfo(assemblyDirectory); dir != null; dir = dir.Parent)
+        private readonly Lazy<Compiler> compiler = new Lazy<Compiler>(
+            () =>
             {
-                if (File.Exists(Path.Combine(dir.FullName, "P.sln")))
-                {
-                    return dir.FullName;
-                }
-            }
-            throw new FileNotFoundException();
-        });
+                var compiler = new Compiler(true);
+                var xmlProfiler = new XmlProfiler();
+                compiler.Profiler = xmlProfiler;
+                xmlProfiler.Data.Save(Path.Combine(Environment.CurrentDirectory, Constants.XmlProfileFileName));
+                return compiler;
+            });
 
-        private const string NewLinePattern = @"\r\n|\n\r|\n|\r";
+        private static string TestResultsDirectory { get; } = Path.Combine(
+            Constants.TestDirectory,
+            $"TestResult_{Constants.Configuration}_{Constants.Platform}");
 
-        private static string TestDirectory => Path.Combine(SolutionDirectory.Value, "Tst");
-
-        private static Lazy<string> TestResultsDirectory { get; } =
-            new Lazy<string>(() => Path.Combine(TestDirectory, $"TestResult_{BuildSettings.Configuration}_{BuildSettings.Platform}"));
-
-        public static IEnumerable<TestCaseData> TestCases => TestCaseLoader.FindTestCasesInDirectory(TestDirectory);
+        public static IEnumerable<TestCaseData> TestCases => TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
 
         private static DirectoryInfo PrepareTestDir(DirectoryInfo testDir)
         {
-            var testRoot = new Uri(TestDirectory + Path.DirectorySeparatorChar);
+            var testRoot = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar);
             var curTest = new Uri(testDir.FullName);
             Uri relativePath = testRoot.MakeRelativeUri(curTest);
-            string destinationDir = Path.GetFullPath(Path.Combine(TestResultsDirectory.Value, relativePath.OriginalString));
+            string destinationDir = Path.GetFullPath(Path.Combine(TestResultsDirectory, relativePath.OriginalString));
             if (Directory.Exists(destinationDir))
             {
                 Directory.Delete(destinationDir, true);
@@ -80,8 +64,6 @@ namespace UnitTests
                 File.Copy(file.FullName, Path.Combine(target, file.Name), true);
             }
         }
-
-        private Compiler PCompiler => compiler.Value;
 
         private void TestPc(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
@@ -152,11 +134,17 @@ namespace UnitTests
             tmpWriter.WriteLine("=================================");
         }
 
-        private void TestZing(TestConfig config, StringWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
+        private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
             // Find Zing tool
-            string zingFilePath = Path.Combine(SolutionDirectory.Value, "Bld", "Drops", BuildSettings.Configuration,
-                                               BuildSettings.Platform, "Binaries", "zinger.exe");
+            string zingFilePath = Path.Combine(
+                Constants.SolutionDirectory,
+                "Bld",
+                "Drops",
+                Constants.Configuration,
+                Constants.Platform,
+                "Binaries",
+                "zinger.exe");
 
             // Find DLL input to Zing
             string zingDllName = (from fileName in workDirectory.EnumerateFiles()
@@ -203,15 +191,15 @@ namespace UnitTests
             }
         }
 
-        private void TestPrt(TestConfig config, StringWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
+        private void TestPrt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
             // copy PrtTester to the work directory
-            var testerDir = new DirectoryInfo(Path.Combine(TestDirectory, "PrtTester"));
+            var testerDir = new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
             CopyFiles(testerDir, workDirectory.FullName);
 
-            string testerExeDir = Path.Combine(workDirectory.FullName, BuildSettings.Configuration, BuildSettings.Platform);
-            string testerExePath = Path.Combine(testerExeDir, "tester.exe");
-            string prtTesterProj = Path.Combine(workDirectory.FullName, "Tester.vcxproj");
+            string testerExeDir = Path.Combine(workDirectory.FullName, Constants.Configuration, Constants.Platform);
+            string testerExePath = Path.Combine(testerExeDir, Constants.CTesterExecutableName);
+            string prtTesterProj = Path.Combine(workDirectory.FullName, Constants.CTesterVsProjectName);
 
             // build the Pc output with the test harness
             using (PCompiler.Profiler.Start("build prttester", workDirectory.FullName))
@@ -231,13 +219,12 @@ namespace UnitTests
             }
         }
 
-        private void BuildTester(string prtTesterProj, string activeDirectory, bool clean)
+        private static void BuildTester(string prtTesterProj, string activeDirectory, bool clean)
         {
             var argumentList = new[]
             {
-                prtTesterProj, clean ? "/t:Clean" : "/t:Build",
-                $"/p:Configuration={BuildSettings.Configuration}", $"/p:Platform={BuildSettings.Platform}",
-                "/nologo"
+                prtTesterProj, clean ? "/t:Clean" : "/t:Build", $"/p:Configuration={Constants.Configuration}",
+                $"/p:Platform={Constants.Platform}", "/nologo"
             };
 
             string stdout, stderr;
@@ -247,8 +234,12 @@ namespace UnitTests
             }
         }
 
-        private static int RunWithOutput(string exeName, string activeDirectory, IEnumerable<string> argumentList, out string stdout,
-                                         out string stderr)
+        private static int RunWithOutput(
+            string exeName,
+            string activeDirectory,
+            IEnumerable<string> argumentList,
+            out string stdout,
+            out string stderr)
         {
             var psi = new ProcessStartInfo(exeName)
             {
@@ -264,11 +255,7 @@ namespace UnitTests
             string mStdout = "", mStderr = "";
 
             var proc = new Process {StartInfo = psi};
-            proc.OutputDataReceived += (s, e) =>
-            {
-                mStdout += $"OUT: {e.Data}\n";
-            };
-
+            proc.OutputDataReceived += (s, e) => { mStdout += $"OUT: {e.Data}\n"; };
             proc.ErrorDataReceived += (s, e) =>
             {
                 if (!string.IsNullOrWhiteSpace(e.Data))
@@ -325,16 +312,20 @@ namespace UnitTests
                         case TestType.Zing:
                             TestZing(config, tmpWriter, workDirectory, activeDirectory);
                             break;
-                        default:
-                            throw new ArgumentOutOfRangeException();
+                        default: throw new ArgumentOutOfRangeException();
                     }
                 }
 
-                string correctOutputPath = Path.Combine(activeDirectory, "acc_0.txt");
+                /* TODO: Add test case freezing code here. 
+                 * Check for a FREEZE_P_TESTS environment variable, and if present, overwrite the contents of
+                 * Path.Combine(origTestDir.FullName, testType.ToString(), Constants.CorrectOutputFileName)
+                 * with the value in actualText and, of course, skip the assertion.
+                 */
+                string correctOutputPath = Path.Combine(activeDirectory, Constants.CorrectOutputFileName);
                 string correctText = File.ReadAllText(correctOutputPath);
-                correctText = Regex.Replace(correctText, NewLinePattern, Environment.NewLine);
+                correctText = Regex.Replace(correctText, Constants.NewLinePattern, Environment.NewLine);
                 string actualText = sb.ToString();
-                actualText = Regex.Replace(actualText, NewLinePattern, Environment.NewLine);
+                actualText = Regex.Replace(actualText, Constants.NewLinePattern, Environment.NewLine);
                 Assert.AreEqual(correctText, actualText);
                 Console.WriteLine(actualText);
             }

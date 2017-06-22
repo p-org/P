@@ -1,8 +1,5 @@
 /*******************************************************************************
 We create test driver to create the SMR protocol with FT 1
-and use a simple test harness that performs (add, substract and read).
-The test driver and the refinement check tests that the SMR protocol satisfies the 
-linearizability property in the presence of failures.
 *******************************************************************************/
 event dummyOp;
 event dummyResp : int;
@@ -12,6 +9,7 @@ sends eSMROperation;
 	var SMRLeader : SMRServerInterface;
 	var totalOperations : int;
 	start state Init {
+		
 		entry {
 			//create a SMR implementation with FT = 1
 			var args: SMRServerConstrutorType;
@@ -33,21 +31,21 @@ sends eSMROperation;
 			SMRLeader = payload.1;
 		}
 
-
-		state StartPumpingOperations {
-			entry {
-
-				if(totalOperations == 0)
-					raise halt;
-				
-				SendSMROperation(SMRLeader, dummyOp, $, this);
-				totalOperations = totalOperations - 1;
-			}
-
-			on null goto StartPumpingOperations;
-			on 
-		}
 	}
+	state StartPumpingOperations {
+		entry {
+
+			if(totalOperations == 0)
+				raise halt;
+			
+			SendSMROperation(SMRLeader, dummyOp, true, this);
+			totalOperations = totalOperations - 1;
+		}
+
+		on null goto StartPumpingOperations;
+		
+	}
+	
 }
 
 machine SMRReplicatedMachine : SMRReplicatedMachineInterface 

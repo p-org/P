@@ -6,11 +6,12 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated, eSMRReplicatedLeader;
 	var doReordering : bool;
 	var myId: int;
 	var client : SMRClientInterface;
-	
+	var respId : int;
 	start state Init {
 		entry (payload: SMRServerConstrutorType){
 			var i : int;
 			i = 0;
+			respId = 0;
 			client = payload.client;
 			//create the replicated machine
 			doReordering = payload.reorder;
@@ -35,8 +36,9 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated, eSMRReplicatedLeader;
 		entry {
 			while(sizeof(pending) >0)
 			{
-				SendSMRRepMachineOperation(replicatedSM, pending[0]);
+				SendSMRRepMachineOperation(replicatedSM, pending[0], respId);
 				pending -= 0;
+				respId = respId + 1;
 				if($)
 					return;
 			}
@@ -62,7 +64,8 @@ sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated, eSMRReplicatedLeader;
 	
 	state DoNoReOrdering {
 		on eSMROperation do (payload: SMROperationType){
-			SendSMRRepMachineOperation(replicatedSM, payload);
+			SendSMRRepMachineOperation(replicatedSM, payload, respId);
+			respId = respId + 1;
 		}
 	}
 }

@@ -8,18 +8,22 @@ machine ListMachine: SMRReplicatedMachineInterface
 sends eSMRResponse;
 {
     var localStore: seq[data];
-    var lastRecvOperation: DSOperationType;
+    var lastRecvOperation: int;
     var client : SMRClientInterface;
     var isLeader : bool;
+    var currClientOpId : int;
+    var currRespId: int;
     start state Init {
         entry {
             isLeader = false;
             raise local;
         }
         //install common handler
-        on eSMRReplicatedMachineOperation do (payload:SMROperationType){
-            client = payload.source;
-            raise payload.operation, payload.val;
+        on eSMRReplicatedMachineOperation do (payload:SMRRepMachOperationType){
+            currRespId = payload.respId;
+            currClientOpId = payload.smrop.clientOpId;
+            client = payload.smrop.source;
+            raise payload.smrop.operation, payload.smrop.val;
         }
 
         on eSMRReplicatedLeader do {
@@ -31,7 +35,7 @@ sends eSMRResponse;
     state WaitForOperationReq {
         
         on eDSOperation do (payload: DSOperationType) {
-            if(payload.opId <= lastRecvOperation.opId)
+            if(currClientOpId <= lastRecvOperation)
             {
                 return;
             }
@@ -40,33 +44,33 @@ sends eSMRResponse;
                 if(payload.op == ADD)
                 {
                     localStore += (sizeof(localStore), payload.val as data);
-                    SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = true), isLeader);
+                    SendSMRResponse(client, eDSOperationResp, (val = true, ), currClientOpId, currRespId, isLeader);
                 }
                 else if(payload.op == REMOVE)
                 {
                     if((payload.val as int) < sizeof(localStore))
                     {
                         localStore -= (payload.val as int);
-                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = true), isLeader);
+                        SendSMRResponse(client, eDSOperationResp, (val = true, ), currClientOpId, currRespId, isLeader);
                     }
                     else
                     {
-                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = false), isLeader);
+                        SendSMRResponse(client, eDSOperationResp, (val = false, ), currClientOpId, currRespId, isLeader);
                     }
                     
                 }
                 else if(payload.op == READ)
                 {
                     if((payload.val as int) < sizeof(localStore)) {
-                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = localStore[payload.val as int]), isLeader);
+                        SendSMRResponse(client, eDSOperationResp, (val = localStore[payload.val as int], ), currClientOpId, currRespId, isLeader);
                     }
                     else
                     {
-                        SendSMRResponse(client, eDSOperationResp, (opId = payload.opId, val = false), isLeader);
+                        SendSMRResponse(client, eDSOperationResp, (val = false, ), currClientOpId, currRespId, isLeader);
                     }
                     
                 }
-                lastRecvOperation = payload;
+                lastRecvOperation = currClientOpId;
             }
         
         }

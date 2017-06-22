@@ -1,11 +1,13 @@
 //Types
-type SMROperationType = (source: SMRClientInterface, operation: event, val: data);
-type SMRResponseType = (response: event, val: data);
+type SMROperationType = (source: SMRClientInterface, clientOpId: int, operation: event, val: data);
+type SMRResponseType = (clientOpId: int, respId: int, response: event, val: data);
+
+type SMRRepMachOperationType = (respId: int, smrop: SMROperationType);
 
 //Events used to interact with the State Machine Replication (SMR) Protocols
 event eSMROperation : SMROperationType;
 event eSMRResponse : SMRResponseType;
-event eSMRReplicatedMachineOperation : SMROperationType;
+event eSMRReplicatedMachineOperation : SMRRepMachOperationType;
 event eSMRLeaderUpdated : (int, SMRServerInterface);
 event eSMRReplicatedLeader;
 
@@ -25,20 +27,20 @@ enum FaultTolerance {
 Helper Functions
 ********************/
 
-fun SendSMRResponse(target: any, ev: event, val: data, isLeader: bool)
+fun SendSMRResponse(target: any, ev: event, val: data, cOpId: int, rId: int, isLeader: bool)
 {
     if(isLeader)
-        send target as SMRClientInterface, eSMRResponse, (response = ev, val = val);
+        send target as SMRClientInterface, eSMRResponse, (clientOpId = cOpId, respId = rId, response = ev, val = val);
 }
 
-fun SendSMROperation(target: any, ev: event, val: data, src: machine)
+fun SendSMROperation(cOpId: int, target: any, ev: event, val: data, src: machine)
 {
-    send target as SMRServerInterface, eSMROperation, (source = src as SMRClientInterface, operation = ev, val = val);
+    send target as SMRServerInterface, eSMROperation, (source = src as SMRClientInterface, clientOpId = cOpId, operation = ev, val = val);
 }
 
-fun SendSMRRepMachineOperation(target: any, operation: SMROperationType) 
+fun SendSMRRepMachineOperation(target: any, operation: SMROperationType, rId : int) 
 {
-    send target as SMRReplicatedMachineInterface, eSMRReplicatedMachineOperation, operation;
+    send target as SMRReplicatedMachineInterface, eSMRReplicatedMachineOperation, (respId = rId, smrop = operation);
 }
 
 fun SendSMRServerUpdate(target: any, val: (int, SMRServerInterface))

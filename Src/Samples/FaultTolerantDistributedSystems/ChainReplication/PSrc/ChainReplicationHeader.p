@@ -44,7 +44,6 @@ event eBecomeHead : ChainReplicationMasterInterface;
 event eBecomeTail : ChainReplicationMasterInterface;
 event eNewPredecessor : (pred : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface);
 event eNewSuccessor : (succ : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface, lastUpdateRec: int, lastAckSent: int);
-event eUpdateHeadTail : (head : ChainReplicationNodeInterface, tail : ChainReplicationNodeInterface);
 event eNewSuccInfo : (lastUpdateRec : int, lastAckSent : int);
 event eSuccess;
 event eHeadChanged;

@@ -15,14 +15,17 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	var timer : TimerPtr;
 	var currentTransaction: TransactionType;
 	var isFaultTolerant : bool;
+	var smrOpId: int;
 	start state Init {
 		entry (payload: (isfaultTolerant: bool)){
 			var temp : machine;
 			var index : int;
 			isFaultTolerant = payload.isfaultTolerant;
+			smrOpId = 0;
 			if(isFaultTolerant)
 			{
 				index = 0;
+				
 				while(index < NumOfParticipants)
 				{
 					temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, isRoot = true, ft = FT1, id = index));
@@ -63,7 +66,8 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	fun SendToParticipant(part: machine, ev: event, payload: data) {
 		if(isFaultTolerant)
 		{
-			SendSMROperation(part, ev, payload, this as SMRClientInterface);
+			SendSMROperation(smrOpId, part, ev, payload, this as SMRClientInterface);
+			smrOpId = smrOpId + 1;
 		}
 		else
 		{
@@ -187,6 +191,8 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	var repData: data;
 	var isReplicated: bool;
 	var isLeader: bool;
+	var currRespId: int;
+	var currOpId : int;
 	start state Init {
 		entry (payload: (client: any<esCoordinatorEvents>, val: data)){
 			var payVal: (int, bool);
@@ -199,9 +205,11 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 		}
 
 		//install common handler
-		on eSMRReplicatedMachineOperation do (payload:SMROperationType){
-			coordinator = payload.source;
-			raise payload.operation, payload.val;
+		on eSMRReplicatedMachineOperation do (payload:SMRRepMachOperationType){
+			currOpId = payload.smrop.clientOpId;
+			currRespId = payload.respId;
+			coordinator = payload.smrop.source;
+			raise payload.smrop.operation, payload.smrop.val;
 		}
 
 		on eSMRReplicatedLeader do {
@@ -214,7 +222,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	{
 		if(isReplicated)
 		{
-			SendSMRResponse(coordinator, ev, payload as data, isLeader); 
+			SendSMRResponse(coordinator, ev, payload as data, currOpId, currRespId, isLeader); 
 		}
 		else
 		{

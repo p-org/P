@@ -4,7 +4,7 @@
 *******************************************************************/
 
 machine ChainReplicationNodeMachine : ChainReplicationNodeInterface, SMRServerInterface
-sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged, eSMRReplicatedMachineOperation, eSMRLeaderUpdated;
+sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged, eSMRReplicatedMachineOperation, eSMRLeaderUpdated, ePredSucc;
  {
 	var nextSeqId : int;
 	var repSM : SMRReplicatedMachineInterface;
@@ -15,7 +15,7 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 	var sent : seq[(seqId: int, smrop: SMROperationType)];
 	var client : SMRClientInterface;
 	var FT : FaultTolerance;
-
+	var commitId : int;
 	start state Init {
 		defer eBackwardAck, eForwardUpdate, eCRPing;
 		entry (payload: SMRServerConstrutorType){
@@ -26,7 +26,8 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 
 			if(payload.isRoot)
 			{
-				
+				//update the client about leader
+				SendSMRServerUpdate(client, (0, this as SMRServerInterface));
 				nodeT = HEAD;
 				repSMConstArg = payload.val;
 				//create the rest of nodes
@@ -38,8 +39,7 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 				repSMConstArg = (payload.val as (NodeType, data)).1;
 			}
 			
-			//update the client about leader
-			SendSMRServerUpdate(client, (0, this as SMRServerInterface));
+			
 
 			//create the replicated node 
 			repSM = new SMRReplicatedMachineInterface((client = payload.client, val = repSMConstArg));
@@ -56,6 +56,8 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 					succ = payload1.pred;
 				}
 			}
+
+			commitId = 0;
 			raise local;
 		}
 		on local push WaitForRequest;
@@ -100,7 +102,7 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 		//head
 		send nodes[0], ePredSucc, (pred = nodes[0], succ = nodes[1]);
 		//tail
-		send nodes[sizeof(nodes)], ePredSucc, (pred = nodes[sizeof(nodes)-1], succ = nodes[sizeof(nodes)]);
+		send nodes[sizeof(nodes)-1], ePredSucc, (pred = nodes[sizeof(nodes)-2], succ = nodes[sizeof(nodes)-1]);
 		//internal nodes
 		index = 0;
 		while(index < numOfNodes - 2)
@@ -208,7 +210,7 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 		on eUpdate goto ProcessUpdate with 
 		{
 			nextSeqId = nextSeqId + 1;
-			assert(nodeT == HEAD);
+			assert(nodeT == HEAD || (nodeT == TAIL && pred == this));
 			//new livenessUpdatetoResponse(nextSeqId);
 			//invoke livenessUpdatetoResponse(monitor_updateLiveness, (reqId = nextSeqId));
 		}
@@ -221,7 +223,8 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 		entry (payload: SMROperationType){	
 			
 			//Send the operation to the replicated SM
-			SendSMRRepMachineOperation(repSM, payload);
+			SendSMRRepMachineOperation(repSM, payload, commitId);
+			commitId = commitId + 1;
 
 			//add it to the history seq (represents the successfully serviced requests)
 			history += (sizeof(history), nextSeqId);
@@ -248,7 +251,8 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 				nextSeqId = payload.msg.seqId;
 				
 				//Send the operation to the replicated SM
-				SendSMRRepMachineOperation(repSM, payload.msg.smrop);
+				SendSMRRepMachineOperation(repSM, payload.msg.smrop, commitId);
+				commitId = commitId + 1;
 
 				if(nodeT != TAIL)
 				{

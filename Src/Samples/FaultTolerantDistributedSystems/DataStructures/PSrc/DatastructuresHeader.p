@@ -4,8 +4,8 @@ enum DSOperation {
     READ
 }
 
-type DSOperationType = (opId: int, op: DSOperation, val: data);
-type DSOperationRespType = (opId: int, val: data);
+type DSOperationType = (op: DSOperation, val: data);
+type DSOperationRespType = (val: data);
 
 event eDSOperation : DSOperationType;
 event eDSOperationResp : DSOperationRespType;

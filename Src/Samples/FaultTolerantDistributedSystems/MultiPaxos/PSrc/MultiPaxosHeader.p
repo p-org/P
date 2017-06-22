@@ -12,6 +12,7 @@ event eNewLeader : (rank:int, server : MultiPaxosNodeInterface);
 /*********************************************
 The multi-paxos events. 
 *********************************************/
+event eUpdate : SMROperationType;
 event ePrepare assume 3: (proposer: MultiPaxosNodeInterface, slot : int, proposal : ProposalIdType);
 event eAccept  assume 3: (proposer: MultiPaxosNodeInterface, slot: int, proposal : ProposalIdType, smrop : SMROperationType);
 event eAgree assume 6: (slot:int, proposal : ProposalIdType, smrop : SMROperationType) ;
@@ -19,7 +20,8 @@ event eReject  assume 6: (slot: int, proposal : ProposalIdType);
 event eAccepted  assume 6: (slot:int, proposal : ProposalIdType, smrop : SMROperationType);
 event eSuccess;
 event eGoPropose;
-event eChosen : (slot:int, proposal : (round: int, servermachine : int), smrop : SMROperationType);
+event eChosen : (slot:int, proposal : ProposalIdType, smrop : SMROperationType);
+event eAllNodes : seq[MultiPaxosNodeInterface];
 
 /*********************************************
 Types

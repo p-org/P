@@ -1,84 +1,7 @@
-event monitor_success : any;
 
-// This is a simple monitor which checks that a update(x, y) followed immediately by a query for query(x) should return y;
-// This monitor is created one per client, and can be used to check update-query sequences
-
-monitor Update_Query_Seq
-{
-	var kv :(key:int, value:int);
-	var myid : machine;
-	start state Init {
-		entry {
-			myid = payload as machine;
-			raise(local);
-		}
-		on local goto Wait;
-		
-	}
-	
-	fun assertcheck() {
-		if(trigger == update)
-		{
-			if((payload as (client:machine, kv: (key:int, value:int))).client == myid)
-			{
-				assert(false);
-			}
-		}
-		else if(trigger == responsetoquery)
-		{
-			if((payload as (client: machine, value : int)).client == myid)
-			{
-				assert(false);
-			}
-		}
-	}
-	state Wait {
-		entry{
-			
-		}
-		on responsetoquery do assertcheck;
-		on update do CheckOperation;
-		on monitor_success goto UpdateReq;
-	}
-	
-	fun CheckOperation() {
-		if(trigger == update)
-		{
-			if((payload as (client:machine, kv: (key:int, value:int))).client == myid)
-			{
-				raise monitor_success, payload;
-			}
-		}
-		else if(trigger == responsetoquery)
-		{
-			if((payload as (client: machine, value : int)).client == myid)
-			{
-				raise monitor_success, payload;
-			}
-		}
-		else
-		{
-			assert(false);
-		}
-	}
-	
-	
-	state UpdateReq {
-		entry {
-			kv.key = (payload as (client:machine, kv: (key:int, value:int))).kv.key;
-			kv.value = (payload as (client:machine, kv: (key:int, value:int))).kv.value;
-		}
-		on update do assertcheck;
-		on responsetoquery do CheckOperation;
-		on monitor_success goto Wait with {
-			assert((payload as (client: machine, value : int)).value == kv.value);
-		};
-	}
-}
-
-/*************************************************************************************
+/***************************************************
 * Invariants described in the paper
-*************************************************************************************/
+***************************************************/
 
 // This monitor checks the Update Propagation Invariant 
 // Histj <= Histi forall i<=j --- Invariant 1
@@ -274,60 +197,52 @@ monitor Update_Propagation_Invariant {
 }
 
 /*
-A more generic monitor that checks the Update_Query_Seq in the presence of failure of nodes including the
-tail node.
-
-It is a global monitor !
-
+We will check liveness properties 
+1 -> In the absence of failures all client update request should be followed eventually by a response.
+2 -> In the presence of n nodes and n-1 failures and the head node does not fail then all client requests should be followed eventually by a response.
 */
-event monitor_reponsetoupdate : (tail:machine, key :int, value: int);
-event monitor_responsetoquery : (tail: machine, key : int, value : int);
 
-monitor UpdateResponse_QueryResponse_Seq {
-	var lastUpdateReponse : map[int, int];
-	var servers : seq[machine];
-	var iter : int;
-	var returnVal : bool;
-	
+event monitor_updateLiveness : (reqId : int);
+event monitor_responseLiveness : (reqId : int);
+
+monitor livenessUpdatetoResponse {
+	var myRequestId : int;
 	start state Init {
 		entry {
+			myRequestId = (int) payload;
 			raise(local);
 		}
-		on local goto Wait;
+		on local goto WaitForUpdateRequest;
+	}
+	fun checkIfMine (){
+		if(payload.reqId == myRequestId)
+			raise(monitor_success);
 	}
 	
-	fun UpdateServers() {
-		servers = payload.servers;
+	fun assertNotMine (){
+		assert(myRequestId != payload.reqId);
 	}
-	
-	fun Contains(s: seq[machine], item:machine){
-		iter = 0;
-		while(iter < sizeof(servers))
-		{
-			if(s[iter] == item)
-			{
-				returnVal = true;
-			}
-			iter = iter + 1;
+	hot state WaitForUpdateRequest {
+		entry {
+			
 		}
-		returnVal = false;
+		on monitor_updateLiveness do checkIfMine;
+		on monitor_responseLiveness do assertNotMine;
+		on monitor_success goto WaitForResponse;
 	}
 	
-	state Wait {
-		on monitor_update_servers do UpdateServers;
-		on monitor_reponsetoupdate goto Wait with {
-			Contains(servers, payload.tail);
-			if(returnVal)
-			{
-				lastUpdateReponse[payload.key] = payload.value;
-			}
-		}; 
-		on monitor_responsetoquery goto Wait with {
-			Contains(servers, payload.tail);
-			if(returnVal)
-			{
-				assert(payload.value == lastUpdateReponse[payload.key]);
-			}
-		};
+	hot state WaitForResponse {
+		entry {
+		
+		}
+		on monitor_updateLiveness do assertNotMine;
+		on monitor_responseLiveness do checkIfMine;
+		on monitor_success goto DoneMoveToStableState;
 	}
+	
+	state DoneMoveToStableState {
+		ignore monitor_updateLiveness, monitor_responseLiveness;
+	}
+	
+	
 }

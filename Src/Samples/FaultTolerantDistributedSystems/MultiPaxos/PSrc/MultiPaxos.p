@@ -36,24 +36,30 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 			currentLeader = (rank = myRank, server = this);
 			roundNum = 0;
 			maxRound = 0;
-			timer = new Timer_Machine(this as TIMER_CLIENT_IN);
+			timer = CreateTimer(this as ITimerClient);
 			lastExecutedSlot = -1;
 			nextSlotForProposer = 0;
-			learner = new SMR_REPLICATED_MACHINE_IN(myRank);
+			learner = new SMRReplicatedMachineInterface((client = payload.client, val = 0));
+
+			receive {
+				case eAllNodes : (nodes: seq[MultiPaxosNodeInterface]) {
+					acceptors = nodes;
+					majority = (sizeof(acceptors))/2 + 1;
+					//Also start the leader election service;
+					leaderElectionService = new LeaderElectionInterface((servers = acceptors, parentServer = this, rank = myRank));
+				}
+			}
+			
+			raise local;
 		}
-		on allNodes do UpdateAcceptors;
-		on local goto PerformOperation;
+		on local push PerformOperation;
+
+		on eSMROperation do (payload: SMROperationType){
+			//all operations are considered as update operations.
+			raise eUpdate, payload;
+		}
 	}
 	
-	fun UpdateAcceptors(nodes : seq[machines]) {
-		acceptors = nodes;
-		majority = (sizeof(acceptors))/2 + 1;
-		assert(majority == 2);
-		//Also start the leader election service;
-		leaderElectionService = new LeaderElection_Machine((servers = acceptors, parentServer = this, rank = myRank));
-		
-		raise(local);
-	}
 	
 	fun CheckIfLeader() {
 		if(currentLeader.rank == myRank) {
@@ -72,27 +78,37 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 		ignore agree, accepted, timeout, reject;
 		
 		// proposer
-		on update do CheckIfLeader;
-		on goPropose push ProposeValuePhase1;
+		on eUpdate do (payload: SMROperationType) {
+			if(currentLeader.rank == myRank) {
+				// I am the leader 
+				commitValue = payload;
+				proposeVal = commitValue;
+				goto ProposeValuePhase1;
+			}
+			else
+			{
+				//forward it to the leader
+				send currentLeader.server, eSMROperation, payload;
+			}
+			
+		}
 		
 		//acceptor
-		on prepare do prepareAction;
-		on accept do acceptAction;
+		on ePrepare do prepareAction;
+		on eAccept do acceptAction;
 		
-		// leaner
-		on chosen push RunLearner;
+		// learner
+		on eChosen push RunLearner;
 		
 		//leader election
-		on Ping do ForwardToLE;
-		on newLeader do UpdateLeader;
-	}
-	
-	fun ForwardToLE() {
-		//send leaderElectionService, Ping, payload;
-	}
-	
-	fun UpdateLeader() {
-		currentLeader = payload;
+		on ePing do (payload: (rank:int, server : MultiPaxosNodeInterface)){ 
+			// forward to LE machine
+			send leaderElectionService, ePing, payload;
+		}
+		on eNewLeader do (payload: (rank:int, server : MultiPaxosNodeInterface)){
+			//TODO: Leader has changed send it to client
+			currentLeader = payload;
+		}
 	}
 	
 	fun prepareAction() {

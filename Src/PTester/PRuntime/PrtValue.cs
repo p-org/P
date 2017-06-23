@@ -360,7 +360,7 @@ namespace P.Runtime
 
         public override string ToString()
         {
-            return String.Format("{0}({1})", mach.Name, mach.instanceNumber);
+            return String.Format("{0}({1})", mach.renamedName, mach.instanceNumber);
         }
 
     }

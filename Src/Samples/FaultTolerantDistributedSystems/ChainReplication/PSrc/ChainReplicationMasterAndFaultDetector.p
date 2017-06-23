@@ -167,8 +167,8 @@ sends eCRPing, eFaultDetected,  eStartTimer, eCancelTimer, halt;
 	state HandleFailure {
 		ignore eCRPong;
 		entry {
-			send nodes[checkNode], halt;
-			send master, eFaultDetected, nodes[checkNode];
+			//send nodes[checkNode], halt;
+			//send master, eFaultDetected, nodes[checkNode];
 		}
 		on eFaultCorrected goto StartMonitoring with (payload: (newconfig: seq[ChainReplicationNodeInterface])) {
 			checkNode = 0;

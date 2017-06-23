@@ -1,5 +1,5 @@
 machine ChainReplicationMasterMachine : ChainReplicationMasterInterface
-sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
+sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor, eMonitorUpdateNodes;
 {
 	var client : SMRClientInterface;
 	// note that in this seq the first node is the head node and the last node is the tail node
@@ -16,6 +16,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
 			faultMonitor = new ChainReplicationFaultDetectorInterface((master = this as ChainReplicationMasterInterface, nodes = nodes));
 			head = nodes[0];
 			tail = nodes[sizeof(nodes) - 1];
+			announce eMonitorUpdateNodes, (nodes = nodes,);
 			goto WaitforFault;
 		}
 	}
@@ -69,6 +70,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
 		on eHeadChanged goto WaitforFault with
 		{
 			send faultMonitor, eFaultCorrected, (newconfig = nodes, );
+			announce eMonitorUpdateNodes, (nodes = nodes,);
 		}
 	}
 	
@@ -88,6 +90,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
 		on eTailChanged goto WaitforFault with 
 		{
 			send faultMonitor, eFaultCorrected, (newconfig = nodes, );
+			announce eMonitorUpdateNodes, (nodes = nodes,);
 		}
 	}
 	
@@ -115,6 +118,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
 				}
 				
 				send faultMonitor, eFaultCorrected, (newconfig = nodes, );
+				announce eMonitorUpdateNodes, (nodes = nodes,);
 
 				goto WaitforFault;
 			}
@@ -124,7 +128,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor;
 
 machine ChainReplicationFaultDetectionMachine : ChainReplicationFaultDetectorInterface
 receives eTimeOut, eCancelSuccess, eCancelFailure;
-sends eCRPing, eFaultDetected,  eStartTimer, eCancelTimer;
+sends eCRPing, eFaultDetected,  eStartTimer, eCancelTimer, halt;
 {
 	var nodes : seq[ChainReplicationNodeInterface]; 
 	var master : ChainReplicationMasterInterface;
@@ -163,6 +167,7 @@ sends eCRPing, eFaultDetected,  eStartTimer, eCancelTimer;
 	state HandleFailure {
 		ignore eCRPong;
 		entry {
+			send nodes[checkNode], halt;
 			send master, eFaultDetected, nodes[checkNode];
 		}
 		on eFaultCorrected goto StartMonitoring with (payload: (newconfig: seq[ChainReplicationNodeInterface])) {

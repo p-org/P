@@ -114,6 +114,7 @@ spec UpdatePropagationInvariants observes eMonitorHistoryUpdate, eMonitorSentUpd
 			ret += (0, s[iter].seqId);
 			iter = iter - 1;
 		}
+		print "In Extract: {0}\n", ret;
 		IsSorted(ret);
 		return ret;
 	}
@@ -164,6 +165,7 @@ spec UpdatePropagationInvariants observes eMonitorHistoryUpdate, eMonitorSentUpd
 		var iter: int;
         iter = 0;
         while (iter < sizeof(l) - 1) {
+		   print "In IsSorted: {0}\n", l;
            assert(l[iter] < l[iter+1]);
             iter = iter + 1;
         }
@@ -176,8 +178,8 @@ We will check liveness properties
 2 -> In the presence of n nodes and n-1 failures and the head node does not fail then all client requests should be followed eventually by a response.
 */
 
-event eMonitorUpdateForLiveness : (reqId : int);
-event eMonitorResponseForLiveness : (reqId : int, commitid: int);
+event eMonitorUpdateForLiveness : (seqId : int);
+event eMonitorResponseForLiveness : (seqId : int, commitId: int);
 
 spec ProgressUpdateHasResponse observes eMonitorUpdateForLiveness, eMonitorResponseForLiveness {
 	var ReqtoResp : map[int, int];
@@ -185,9 +187,9 @@ spec ProgressUpdateHasResponse observes eMonitorUpdateForLiveness, eMonitorRespo
 		entry {
 			
 		}
-		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (reqId : int)) {
-			assert(!(payload.reqId in ReqtoResp));
-			ReqtoResp[payload.reqId] = -1;
+		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (seqId : int)) {
+			assert(!(payload.seqId in ReqtoResp));
+			ReqtoResp[payload.seqId] = -1;
 		}
 	}
 
@@ -198,6 +200,8 @@ spec ProgressUpdateHasResponse observes eMonitorUpdateForLiveness, eMonitorRespo
 			iter = 0;
 			
 			ks = keys(ReqtoResp);
+			print "In WaitForAllResponses\n";
+			print ":: {0}\n", ReqtoResp;
 			while(iter < sizeof(ks))
 			{
 				if(ReqtoResp[ks[iter]] == -1)
@@ -206,27 +210,32 @@ spec ProgressUpdateHasResponse observes eMonitorUpdateForLiveness, eMonitorRespo
 			}
 			goto AllResponded;
 		}
-		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (reqId : int)) {
-			assert(!(payload.reqId in ReqtoResp));
-			ReqtoResp[payload.reqId] = -1;
+		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (seqId : int)) {
+			assert(!(payload.seqId in ReqtoResp));
+			ReqtoResp[payload.seqId] = -1;
 		}
-		on eMonitorResponseForLiveness goto WaitForAllResponses with (payload: (reqId : int, commitid: int)) {
-			if(payload.reqId in ReqtoResp)
-			{
-				assert(ReqtoResp[payload.reqId] == payload.commitid);
-			}
-			else
-			{
-				ReqtoResp[payload.reqId] = payload.commitid;
-			}
+		on eMonitorResponseForLiveness goto WaitForAllResponses with (payload: (seqId : int, commitId: int)) {
+			assert(ReqtoResp[payload.seqId] == -1 || ReqtoResp[payload.seqId] == payload.commitId);
+			ReqtoResp[payload.seqId] = payload.commitId;
 		}
 	}
 	
 	cold state AllResponded {
-		ignore eMonitorResponseForLiveness;
-		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (reqId : int)) {
-			assert(!(payload.reqId in ReqtoResp));
-			ReqtoResp[payload.reqId] = -1;
+		on eMonitorResponseForLiveness goto WaitForAllResponses with (payload: (seqId : int, commitId: int)) {
+			if(payload.seqId in ReqtoResp)
+			{
+				
+				assert(ReqtoResp[payload.seqId] == -1 || ReqtoResp[payload.seqId] == payload.commitId);
+			}
+			else
+			{
+				ReqtoResp[payload.seqId] = payload.commitId;
+			}
+		}
+
+		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (seqId : int)) {
+			assert(!(payload.seqId in ReqtoResp));
+			ReqtoResp[payload.seqId] = -1;
 		}
 	}
 }

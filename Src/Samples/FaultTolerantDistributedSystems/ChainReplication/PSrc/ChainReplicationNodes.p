@@ -5,7 +5,7 @@
 
 machine ChainReplicationNodeMachine : ChainReplicationNodeInterface, SMRServerInterface
 sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged, eSMRReplicatedMachineOperation, eSMRLeaderUpdated, ePredSucc,
-eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateForLiveness, eMonitorResponseForLiveness;
+eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorResponseForLiveness;
  {
 	var nextSeqId : int;
 	var repSM : SMRReplicatedMachineInterface;
@@ -54,7 +54,7 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateFo
 			receive {
 				case ePredSucc: (payload1: (pred: ChainReplicationNodeInterface, succ: ChainReplicationNodeInterface)) {
 					pred = payload1.pred;
-					succ = payload1.pred;
+					succ = payload1.succ;
 				}
 			}
 
@@ -163,17 +163,13 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateFo
 
 		on eBecomeTail do (payload: ChainReplicationMasterInterface){
 			var iter : int;
-			nodeT = TAIL;
+			if(nodeT != HEAD)
+				nodeT = TAIL;
 			succ = this as ChainReplicationNodeInterface;
 			//send all the events in sent to both client and the predecessor
 			iter = 0;
 			while(iter < sizeof(sent))
-			{
-				//invoke the monitor
-				//monitor UpdateResponse_QueryResponse_Seq, monitor_reponsetoupdate, (tail = this, key = sent[iter].kv.key, value = sent[iter].kv.value);
-				
-				//invoke livenessUpdatetoResponse(monitor_responseLiveness, (reqId = sent[iter].seqId, ));
-				
+			{				
 				//tell the replicated machine that it is the leader now
 				send repSM, eSMRReplicatedLeader;
 
@@ -212,8 +208,7 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateFo
 		{
 			nextSeqId = nextSeqId + 1;
 			assert(nodeT == HEAD || (nodeT == TAIL && pred == this));
-			//new livenessUpdatetoResponse(nextSeqId);
-			//invoke livenessUpdatetoResponse(monitor_updateLiveness, (reqId = nextSeqId));
+			announce eMonitorUpdateForLiveness, (seqId = nextSeqId, );
 		}
 		
 		on eForwardUpdate goto ProcessFwdUpdate;
@@ -229,13 +224,16 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateFo
 
 			//add it to the history seq (represents the successfully serviced requests)
 			history += (sizeof(history), nextSeqId);
+			print "Process Update";
+			IsSorted(history);
 			//invoke the monitor
-			//monitor Update_Propagation_Invariant, monitor_history_update, (smid = this, history = history);
+			announce eMonitorHistoryUpdate, (node = this as ChainReplicationNodeInterface, history = history);
 			
 			//Add the update request to sent seq
 			sent += (sizeof(sent), (seqId = nextSeqId, smrop = payload));
+			
 			//call the monitor
-			//monitor Update_Propagation_Invariant, monitor_sent_update, (smid = this, sent = sent);
+			announce eMonitorSentUpdate, (node = this as ChainReplicationNodeInterface, sent = sent);
 			//forward the update to the succ
 			send succ, eForwardUpdate, (msg = (seqId = nextSeqId, smrop = payload), pred = this as ChainReplicationNodeInterface);
 	
@@ -248,23 +246,23 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateFo
 		entry (payload: (msg: (seqId: int, smrop: SMROperationType), pred: ChainReplicationNodeInterface)){
 			if(payload.pred == pred)
 			{
-				//update my nextSeqId
-				nextSeqId = payload.msg.seqId;
-				
-				//Send the operation to the replicated SM
-				SendSMRRepMachineOperation(repSM, payload.msg.smrop, commitId);
-				commitId = commitId + 1;
-
-				if(nodeT != TAIL)
+				if(nodeT == INTERNAL)
 				{
+					//update my nextSeqId
+					nextSeqId = payload.msg.seqId;
+					//Send the operation to the replicated SM
+					SendSMRRepMachineOperation(repSM, payload.msg.smrop, commitId);
+					commitId = commitId + 1;
+
 					//add it to the history seq (represents the successfully serviced requests)
 					history += (sizeof(history), payload.msg.seqId);
+					IsSorted(history);
 					//invoke the monitor
-					//annouce Update_Propagation_Invariant, monitor_history_update, (smid = this, history = history);
+					announce eMonitorHistoryUpdate, (node = this as ChainReplicationNodeInterface, history = history);
 					//Add the update request to sent seq
 					sent += (sizeof(sent), payload.msg);
 					//call the monitor
-					//annouce Update_Propagation_Invariant, monitor_sent_update, (smid = this, sent = sent);
+					announce eMonitorSentUpdate, (node = this as ChainReplicationNodeInterface, sent = sent);
 					//forward the update to the succ
 					send succ, eForwardUpdate, (msg = payload.msg, pred = this as ChainReplicationNodeInterface);
 				}
@@ -274,13 +272,19 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateFo
 					{
 						//add it to the history seq (represents the successfully serviced requests)
 						history += (sizeof(history), payload.msg.seqId);
+						IsSorted(history);
+						//update my nextSeqId
+						nextSeqId = payload.msg.seqId;
+						
+						//invoke the monitor
+						announce eMonitorResponseForLiveness, (seqId = nextSeqId, commitId = commitId);
+						
+						//Send the operation to the replicated SM
+						SendSMRRepMachineOperation(repSM, payload.msg.smrop, commitId);
+
+						commitId = commitId + 1;
+
 					}
-					
-					//invoke the monitor
-					//monitor UpdateResponse_QueryResponse_Seq, monitor_reponsetoupdate, (tail = this, key = payload.mess.kv.key, value = payload.mess.kv.value);
-					
-					//invoke livenessUpdatetoResponse(monitor_responseLiveness, (reqId =payload.mess.seqId));
-					
 					//send ack to the pred
 					send pred, eBackwardAck, (seqId = payload.msg.seqId, );
 
@@ -290,6 +294,17 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateFo
 		}
 	}
 	
+	fun IsSorted(l:seq[int]){
+		var iter: int;
+        iter = 0;
+        while (iter < sizeof(l) - 1) {
+		   print "History: {0}\n", l;
+           assert(l[iter] < l[iter+1]);
+            iter = iter + 1;
+        }
+	}
+
+
 	state ProcessBackwardAck
 	{
 		entry (payload: (seqId: int)){

@@ -4,7 +4,8 @@
 *******************************************************************/
 
 machine ChainReplicationNodeMachine : ChainReplicationNodeInterface, SMRServerInterface
-sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged, eSMRReplicatedMachineOperation, eSMRLeaderUpdated, ePredSucc;
+sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged, eSMRReplicatedMachineOperation, eSMRLeaderUpdated, ePredSucc,
+eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes, eMonitorUpdateForLiveness, eMonitorResponseForLiveness;
  {
 	var nextSeqId : int;
 	var repSM : SMRReplicatedMachineInterface;
@@ -104,8 +105,8 @@ sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader,
 		//tail
 		send nodes[sizeof(nodes)-1], ePredSucc, (pred = nodes[sizeof(nodes)-2], succ = nodes[sizeof(nodes)-1]);
 		//internal nodes
-		index = 0;
-		while(index < numOfNodes - 2)
+		index = 1;
+		while(index < numOfNodes - 1)
 		{
 			send nodes[index], ePredSucc, (pred = nodes[index-1], succ = nodes[index + 1]);
 			index = index + 1;

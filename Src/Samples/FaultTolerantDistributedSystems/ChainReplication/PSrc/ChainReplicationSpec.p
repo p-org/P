@@ -4,195 +4,169 @@
 ***************************************************/
 
 // This monitor checks the Update Propagation Invariant 
-// Histj <= Histi forall i<=j --- Invariant 1
-// Histi = Histj + Senti -- Invariant 2
-//This is a global monitor
+// Hist_j <= Hist_i forall i<=j --- Invariant 1
+// Hist_i = Hist_j + Sent_i -- Invariant 2
 
-event monitor_history_update: (smid : machine, history: seq[int]);
-event monitor_sent_update: (smid : machine, sent : seq[(seqmachine:int, client : machine, kv: (key:int, value:int))]);
-event monitor_update_servers : (servers: seq[machine]);
 
-monitor Update_Propagation_Invariant {
-	var servers : seq[machine];
-	var histMap : map[machine, seq[int]];
-	var sentMap : map[machine, seq[int]];
-	var tempSeq : seq[int];
-	var next : machine;
-	var prev : machine;
-	var iter1 :int;
-	var iter2 :int;
-	start state Init {
-		entry {
-			servers = payload as seq[machine];
-			raise(local);
+event eMonitorHistoryUpdate: (node : ChainReplicationNodeInterface, history: seq[int]);
+event eMonitorSentUpdate: (node : ChainReplicationNodeInterface, sent : seq[(seqId: int, smrop: SMROperationType)]);
+event eMonitorUpdateNodes : (nodes: seq[ChainReplicationNodeInterface]);
+
+spec UpdatePropagationInvariants observes eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateNodes {
+	var nodes : seq[ChainReplicationNodeInterface];
+	var histMap : map[ChainReplicationNodeInterface, seq[int]];
+	var sentMap : map[ChainReplicationNodeInterface, seq[int]];
+	
+	start state WaitForMessages {
+		on eMonitorSentUpdate do (payload: (node : ChainReplicationNodeInterface, sent : seq[(seqId: int, smrop: SMROperationType)])) {
+			var sentSeqIds: seq[int];
+			var mergedSeq : seq[int];
+			var next : ChainReplicationNodeInterface;
+			var prev : ChainReplicationNodeInterface;
+			//update the sent map
+			sentSeqIds = ExtractSeqId(payload.sent);
+			sentMap[payload.node] = sentSeqIds;
+			
+			next = GetNextNode(payload.node);
+			//hist(node) = hist(node+1) + sent(node)
+			if(next in histMap)
+			{
+				mergedSeq = MergeSeq(histMap[next], sentMap[payload.node]);
+				CheckEqual(histMap[payload.node], mergedSeq);
+			}
+					
+			prev = GetPrevNode(payload.node);
+			//hist(node-1) = hist(node) + sent(node-1)	
+			if(prev in sentMap)
+			{
+				mergedSeq = MergeSeq(histMap[payload.node], sentMap[prev]);
+				CheckEqual(histMap[prev], mergedSeq);
+			}
 		}
-		on local goto WaitForUpdateMessage;
-		
+		on eMonitorHistoryUpdate do (payload: (node : ChainReplicationNodeInterface, history: seq[int])){
+			var next : ChainReplicationNodeInterface;
+			var prev : ChainReplicationNodeInterface;
+			IsSorted(payload.history);
+			//update the history
+			histMap[payload.node] = payload.history;
+			
+			//hist(node+1) <= hist(node)
+			next = GetNextNode(payload.node);
+			if(next in histMap) {
+				CheckIsPrefix(histMap[next], histMap[payload.node]);
+			}
+			
+			//hist(node) <= hist(node-1)
+			prev = GetPrevNode(payload.node);
+			if(prev in histMap) {
+				CheckIsPrefix(histMap[payload.node], histMap[prev]);
+			}
+		}
+		on eMonitorUpdateNodes do (payload: (nodes: seq[ChainReplicationNodeInterface])) { nodes = payload.nodes; } 
 	}
-	
-	fun UpdateServers() {
-		servers = payload.servers;
-	}
-	
-	state WaitForUpdateMessage {
-		
-		on monitor_sent_update do CheckInvariant_2;
-		on monitor_history_update do CheckInvariant_1;
-		on monitor_update_servers do UpdateServers;
-	}
-	
-	fun checklessthan(s1 : seq[int], s2 : seq[int]) {
+
+	fun CheckIsPrefix(s1 : seq[int], s2 : seq[int]) {
+		var iter: int;
 		IsSorted(s1);
 		IsSorted(s2);
 		assert(sizeof(s1) <= sizeof(s2));
-		iter2 = sizeof(s1) - 1;
-		while(iter2 >= 0)
+		iter = sizeof(s1) - 1;
+		while(iter >= 0)
 		{
-			assert(s1[iter2] == s2[iter2]);
-			iter2 = iter2 - 1;
+			assert(s1[iter] == s2[iter]);
+			iter = iter - 1;
 		}
 	}
-	fun GetNext(curr:machine){
-		next = null;
-		iter1 = 1;
-		while(iter1 < sizeof(servers) - 1)
+
+	fun GetNextNode(curr: ChainReplicationNodeInterface) : ChainReplicationNodeInterface {
+		var iter : int;
+		iter = 1;
+		while(iter < sizeof(nodes) - 1)
 		{
-			if(servers[iter1 - 1] == curr)
-				next = servers[iter1];
+			if(nodes[iter - 1] == curr)
+				return nodes[iter];
 				
-			iter1 = iter1 + 1;
+			iter = iter + 1;
 		}
+
+		return null;
 	}
 	
-	fun GetPrev(curr:machine) {
-		prev = null;
-		iter1 = 1;
-		while(iter1 < sizeof(servers) - 1)
+	fun GetPrevNode(curr:ChainReplicationNodeInterface) : ChainReplicationNodeInterface {
+		var iter : int;
+		iter = 1;
+		while(iter < sizeof(nodes) - 1)
 		{
-			if(servers[iter1] == curr)
-				prev = servers[iter1 - 1];
+			if(nodes[iter] == curr)
+				return nodes[iter - 1];
 				
-			iter1 = iter1 + 1;
+			iter = iter + 1;
 		}
+		return null;
 	}
 	
-	fun CheckInvariant_1() {
-		IsSorted(payload.history);
-		//update the history
-		histMap[payload.smid] = payload.history;
-		
-		//histsmid+1 <= histsmid
-		GetNext(payload.smid);
-		if(next in histMap) {
-			checklessthan(histMap[next], histMap[payload.smid]);
-		}
-		
-		//histsmid <= histsmid-1
-		GetPrev(payload.smid);
-		if(prev in histMap) {
-			checklessthan(histMap[payload.smid], histMap[prev]);
-		}
-	}
-	
-	
-	fun extractSeqmachine(s : seq[(seqmachine:int, client : machine, kv: (key:int, value:int))]) {
-		clearTempSeq();
-		iter1 = sizeof(s) - 1;
-		while(iter1 >= 0)
+	fun ExtractSeqId(s : seq[(seqId: int, smrop: SMROperationType)]) : seq[int] {
+		var ret: seq[int];
+		var iter: int;
+		iter = sizeof(s) - 1;
+		while(iter >= 0)
 		{
-			tempSeq += (0, s[iter1].seqmachine);
-			iter1 = iter1 - 1;
+			ret += (0, s[iter].seqId);
+			iter = iter - 1;
 		}
-		IsSorted(tempSeq);
+		IsSorted(ret);
+		return ret;
 	}
 	
-	fun mergeSeq(s1 : seq[int], s2 : seq[int])
+	fun MergeSeq(s1 : seq[int], s2 : seq[int]) : seq[int]
 	{
-		clearTempSeq();
+		var iter : int;
+		var mergedSeq: seq[int];
 		IsSorted(s1);
-		iter1 = 0;
+		IsSorted(s2);
+		iter = 0;
 		if(sizeof(s1) == 0)
-			tempSeq = s2;
+			mergedSeq = s2;
 		else if(sizeof(s2) == 0)
-			tempSeq = s1;
+			mergedSeq = s1;
 			
-		while(iter1 <= sizeof(s1) - 1)
+		while(iter <= sizeof(s1) - 1)
 		{
-			if(s1[iter1] < s2[0])
+			if(s1[iter] < s2[0])
 			{
-				tempSeq += (sizeof(tempSeq), s1[iter1]);
+				mergedSeq += (sizeof(mergedSeq), s1[iter]);
 			}	
-			iter1 = iter1 + 1;
+			iter = iter + 1;
 		}
-		iter1 = 0;
-		while(iter1 <= sizeof(s2) - 1)
+		iter = 0;
+		while(iter <= sizeof(s2) - 1)
 		{
-			tempSeq += (sizeof(tempSeq), s2[iter1]);
-			iter1 = iter1 + 1;
+			mergedSeq += (sizeof(mergedSeq), s2[iter]);
+			iter = iter + 1;
 		}
-		IsSorted(tempSeq);
+		IsSorted(mergedSeq);
+
+		return mergedSeq;
 	}
 	
-	fun checkequal(s1 : seq[int], s2 : seq[int]) {
-	
+	fun CheckEqual(s1 : seq[int], s2 : seq[int]) {
+		var iter: int;
 		assert(sizeof(s1) == sizeof(s2));
-		iter2 = sizeof(s1) - 1;
-		while(iter2 >= 0)
+		iter = sizeof(s1) - 1;
+		while(iter >= 0)
 		{
-			assert(s1[iter2] == s2[iter2]);
-			iter2 = iter2 - 1;
+			assert(s1[iter] == s2[iter]);
+			iter = iter - 1;
 		}
-	
-	}
-	fun clearTempSeq()  {
-		//clear tempSeq
-		assert(sizeof(tempSeq) <= 6);
-		iter1 = sizeof(tempSeq) - 1;
-		while(iter1 >= 0)
-		{
-			tempSeq -= (iter1);
-			iter1 = iter1 - 1;
-		}
-		assert(sizeof(tempSeq) == 0);
 	}
 	
 	fun IsSorted(l:seq[int]){
-        iter1 = 0;
-        while (iter1 < sizeof(l) - 1) {
-           assert(l[iter1] < l[iter1+1]);
-            iter1 = iter1 + 1;
+		var iter: int;
+        iter = 0;
+        while (iter < sizeof(l) - 1) {
+           assert(l[iter] < l[iter+1]);
+            iter = iter + 1;
         }
-	}
-	
-	fun CheckInvariant_2 (){
-	
-		clearTempSeq();
-		
-		//update the sent map
-		extractSeqmachine(payload.sent);
-		sentMap[payload.smid] = tempSeq;
-		clearTempSeq();
-		
-		GetNext(payload.smid);
-		//histsmid = hist(smid+1) + sentsmid
-		if(next in histMap)
-		{
-			mergeSeq(histMap[next], sentMap[payload.smid]);
-			checkequal(histMap[payload.smid], tempSeq);
-		}
-		
-		clearTempSeq();
-		
-		GetPrev(payload.smid);
-		//histsmid-1 = hist(smid) + sentsmid-1	
-		if(prev in sentMap)
-		{
-			mergeSeq(histMap[payload.smid], sentMap[prev]);
-			checkequal(histMap[prev], tempSeq);
-		}
-		
-		clearTempSeq();
-		
 	}
 }
 
@@ -202,47 +176,57 @@ We will check liveness properties
 2 -> In the presence of n nodes and n-1 failures and the head node does not fail then all client requests should be followed eventually by a response.
 */
 
-event monitor_updateLiveness : (reqId : int);
-event monitor_responseLiveness : (reqId : int);
+event eMonitorUpdateForLiveness : (reqId : int);
+event eMonitorResponseForLiveness : (reqId : int, commitid: int);
 
-monitor livenessUpdatetoResponse {
-	var myRequestId : int;
+spec ProgressUpdateHasResponse observes eMonitorUpdateForLiveness, eMonitorResponseForLiveness {
+	var ReqtoResp : map[int, int];
 	start state Init {
-		entry {
-			myRequestId = (int) payload;
-			raise(local);
-		}
-		on local goto WaitForUpdateRequest;
-	}
-	fun checkIfMine (){
-		if(payload.reqId == myRequestId)
-			raise(monitor_success);
-	}
-	
-	fun assertNotMine (){
-		assert(myRequestId != payload.reqId);
-	}
-	hot state WaitForUpdateRequest {
 		entry {
 			
 		}
-		on monitor_updateLiveness do checkIfMine;
-		on monitor_responseLiveness do assertNotMine;
-		on monitor_success goto WaitForResponse;
-	}
-	
-	hot state WaitForResponse {
-		entry {
-		
+		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (reqId : int)) {
+			assert(!(payload.reqId in ReqtoResp));
+			ReqtoResp[payload.reqId] = -1;
 		}
-		on monitor_updateLiveness do assertNotMine;
-		on monitor_responseLiveness do checkIfMine;
-		on monitor_success goto DoneMoveToStableState;
+	}
+
+	hot state WaitForAllResponses {
+		entry {
+			var iter : int;
+			var ks : seq[int];
+			iter = 0;
+			
+			ks = keys(ReqtoResp);
+			while(iter < sizeof(ks))
+			{
+				if(ReqtoResp[ks[iter]] == -1)
+					return;
+				iter = iter + 1;
+			}
+			goto AllResponded;
+		}
+		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (reqId : int)) {
+			assert(!(payload.reqId in ReqtoResp));
+			ReqtoResp[payload.reqId] = -1;
+		}
+		on eMonitorResponseForLiveness goto WaitForAllResponses with (payload: (reqId : int, commitid: int)) {
+			if(payload.reqId in ReqtoResp)
+			{
+				assert(ReqtoResp[payload.reqId] == payload.commitid);
+			}
+			else
+			{
+				ReqtoResp[payload.reqId] = payload.commitid;
+			}
+		}
 	}
 	
-	state DoneMoveToStableState {
-		ignore monitor_updateLiveness, monitor_responseLiveness;
+	cold state AllResponded {
+		ignore eMonitorResponseForLiveness;
+		on eMonitorUpdateForLiveness goto WaitForAllResponses with (payload: (reqId : int)) {
+			assert(!(payload.reqId in ReqtoResp));
+			ReqtoResp[payload.reqId] = -1;
+		}
 	}
-	
-	
 }

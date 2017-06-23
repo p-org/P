@@ -27,7 +27,7 @@ namespace UnitTests
             Dictionary<string, string> variables = GetVariables(testRoot);
             Dictionary<TestType, TestConfig> testConfigs =
                 (from type in Enum.GetValues(typeof(TestType)).Cast<TestType>()
-                 let configPath = Path.Combine(dir.FullName, type.ToString(), "testconfig.txt")
+                 let configPath = Path.Combine(dir.FullName, type.ToString(), Constants.TestConfigFileName)
                  where File.Exists(configPath)
                  select new { type, config = ParseTestConfig(configPath, variables) })
                 .ToDictionary(kv => kv.type, kv => kv.config);
@@ -39,18 +39,12 @@ namespace UnitTests
 
         private static Dictionary<string, string> GetVariables(DirectoryInfo testRoot)
         {
-            string solutionDir = testRoot.Parent?.Parent?.FullName;
-            if (solutionDir == null)
-            {
-                throw new FileNotFoundException();
-            }
-
-            string binDir = Path.Combine(solutionDir, "bld", "drops", BuildSettings.Configuration, BuildSettings.Platform, "binaries");
+            string binDir = Path.Combine(Constants.SolutionDirectory, "bld", "drops", Constants.Configuration, Constants.Platform, "binaries");
             var variables = new Dictionary<string, string>
             {
-                {"platform", BuildSettings.Platform},
+                {"platform", Constants.Platform},
                 {"testroot", testRoot.FullName},
-                {"configuration", BuildSettings.Configuration},
+                {"configuration", Constants.Configuration},
                 {"testbinaries", binDir}
             };
             return variables;

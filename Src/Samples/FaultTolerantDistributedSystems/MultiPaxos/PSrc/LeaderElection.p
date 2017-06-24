@@ -5,9 +5,9 @@ machine LeaderElectionMachine : LeaderElectionInterface
 receives eTimeOut, eCancelSuccess, eCancelFailure;
 sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 {
-	var servers : seq[any<MultiPaxosEvents>];
-	var parentServer : any<MultiPaxosEvents>;
-	var currentLeader : (rank:int, server : any<MultiPaxosEvents>);
+	var servers : seq[any<MultiPaxosLEEvents>];
+	var parentServer : any<MultiPaxosLEEvents>;
+	var currentLeader : (rank:int, server : any<MultiPaxosLEEvents>);
 	var myRank : int;
 	var CommunicateLeaderTimeout : TimerPtr;
 	var BroadCastTimeout : TimerPtr;
@@ -39,7 +39,7 @@ sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 			BroadCast(eFwdPing, (rank = myRank, server = parentServer));
 			StartTimer(BroadCastTimeout, 100);
 		}
-		on ePing do (payload : (rank:int, server : any<MultiPaxosEvents>))
+		on ePing do (payload : (rank:int, server : any<MultiPaxosLEEvents>))
 		{
 			if(payload.rank < myRank)
 			{
@@ -67,8 +67,8 @@ sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 machine LeaderElectionAbsMachine : LeaderElectionInterface
 sends eNewLeader;
 {
-	var servers : seq[any<MultiPaxosEvents>];
-	var parentServer : any<MultiPaxosEvents>;
+	var servers : seq[any<MultiPaxosLEEvents>];
+	var parentServer : any<MultiPaxosLEEvents>;
 	var myRank : int;
 	
 	start state Init {
@@ -81,10 +81,11 @@ sends eNewLeader;
 	
 	state SendLeader {
 		entry {
-			var currentLeader : (rank:int, server : any<MultiPaxosEvents>);
+			var currentLeader : (rank:int, server : any<MultiPaxosLEEvents>);
 			currentLeader = GetNewLeader();
 			send parentServer as LeaderElectionClientInterface , eNewLeader, currentLeader;
 		}
+		on null goto SendLeader;
 	}
 	
 	fun ChooseInt(min: int, max: int) : int {
@@ -100,7 +101,7 @@ sends eNewLeader;
 		return max;
 	}
 
-	model fun GetNewLeader() : (rank:int, server : any<MultiPaxosEvents>) {
+	model fun GetNewLeader() : (rank:int, server : any<MultiPaxosLEEvents>) {
 		var chooseLeader : int;
 		chooseLeader = ChooseInt(1, sizeof(servers));
 		return (rank = chooseLeader, server = servers[chooseLeader - 1]);
@@ -138,7 +139,7 @@ sends ePing;
 			}
 		}
 
-		on eFwdPing do (payload: (rank:int, server : any<MultiPaxosEvents>)){
+		on eFwdPing do (payload: (rank:int, server : any<MultiPaxosLEEvents>)){
 			var iter : int;
 			iter = 0;
 			while(iter < numOfNodes)

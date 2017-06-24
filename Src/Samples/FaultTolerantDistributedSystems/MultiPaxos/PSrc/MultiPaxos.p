@@ -1,10 +1,14 @@
-/*machine MultiPaxosNodeMachine : MultiPaxosNodeInterface, SMRServerInterface
+machine MultiPaxosNodeMachine : MultiPaxosNodeInterface, SMRServerInterface
 receives eTimeOut, eCancelSuccess, eCancelFailure;
 sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTimer;
 {
 
+	var client: SMRClientInterface;
+	var FT : FaultTolerance;
+	var commitId : int;
+
 // leader election
-	var currentLeader : (rank:int, server : MultiPaxosNodeInterface);
+	var currentLeader : (rank:int, server : SMRServerInterface);
 	var leaderElectionService : LeaderElectionInterface;
 
 // Proposer 
@@ -32,14 +36,30 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	start state Init {
 		defer ePing;
 		entry (payload: SMRServerConstrutorType) {
-			myRank = (payload as (rank:int)).rank;
-			currentLeader = (rank = myRank, server = this);
+			var repSMConstArg : data;
+			client = payload.client;
+			if(payload.isRoot)
+			{
+				myRank = 0;
+				//update the client about leader
+				SendSMRServerUpdate(client, (0, this as SMRServerInterface));
+				repSMConstArg = payload.val;
+				//create the rest of nodes
+				SetUp(repSMConstArg);
+			}
+			else
+			{
+				myRank = (payload.val as (int, data)).0;
+				repSMConstArg = (payload.val as (int, data)).1;
+			}
+
+			currentLeader = (rank = myRank, server = this as SMRServerInterface);
 			roundNum = 0;
 			maxRound = 0;
 			timer = CreateTimer(this as ITimerClient);
 			lastExecutedSlot = -1;
 			nextSlotForProposer = 0;
-			learner = new SMRReplicatedMachineInterface((client = payload.client, val = 0));
+			learner = new SMRReplicatedMachineInterface((client = payload.client, val = repSMConstArg));
 
 			receive {
 				case eAllNodes : (nodes: seq[MultiPaxosNodeInterface]) {
@@ -60,88 +80,86 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 		}
 	}
 	
-	
-	fun CheckIfLeader() {
-		if(currentLeader.rank == myRank) {
-			// I am the leader 
-			commitValue = payload.command;
-			proposeVal = commitValue;
-			raise(goPropose);
-		}
-		else
-		{
-			//forward it to the leader
-			SEND(currentLeader.server, update, payload);
-		}
+	fun SetUp (arg : data)
+	{
+		//create all the nodes and then send eAllNodes.
 	}
+
 	state PerformOperation {
-		ignore agree, accepted, timeout, reject;
+		ignore eAgree, eAccepted, eTimeOut, eReject;
 		
 		// proposer
 		on eUpdate do (payload: SMROperationType) {
 			if(currentLeader.rank == myRank) {
 				// I am the leader 
-				commitValue = payload;
-				proposeVal = commitValue;
+				commitVal = payload;
+				proposeVal = commitVal;
 				goto ProposeValuePhase1;
 			}
 			else
 			{
 				//forward it to the leader
-				send currentLeader.server, eSMROperation, payload;
+				SEND(currentLeader.server, eSMROperation, payload);
 			}
-			
 		}
 		
 		//acceptor
-		on ePrepare do prepareAction;
-		on eAccept do acceptAction;
+		on ePrepare do (payload: (proposer: MultiPaxosNodeInterface, slot : int, proposal : ProposalIdType)) 
+		{ PrepareAction(payload); }
+		on eAccept do (payload: (proposer: MultiPaxosNodeInterface, slot: int, proposal : ProposalIdType, smrop : SMROperationType)) { AcceptAction(payload); }
 		
 		// learner
 		on eChosen push RunLearner;
 		
 		//leader election
-		on ePing do (payload: (rank:int, server : MultiPaxosNodeInterface)){ 
+		on eFwdPing do (payload: (rank:int, server : any<MultiPaxosLEEvents>)){ 
 			// forward to LE machine
 			send leaderElectionService, ePing, payload;
 		}
-		on eNewLeader do (payload: (rank:int, server : MultiPaxosNodeInterface)){
-			//TODO: Leader has changed send it to client
-			currentLeader = payload;
+		on eNewLeader do (payload: (rank:int, server : any<MultiPaxosLEEvents>)){
+			currentLeader = payload as (rank:int, server : SMRServerInterface);
+			if(currentLeader.server == this)
+			{
+				//tell the replicated machine that it is the leader now
+				send learner, eSMRReplicatedLeader;
+				//update the client about leader
+				SendSMRServerUpdate(client, (0, currentLeader.server as SMRServerInterface));
+			}
+			
 		}
 	}
 	
-	fun prepareAction() {
+	fun PrepareAction(payload: (proposer: MultiPaxosNodeInterface, slot : int, proposal : ProposalIdType)) {
 		
 		if(!(payload.slot in acceptorSlots))
 		{
-			SEND(payload.proposer, agree, (slot = payload.slot, proposal = (round = -1, servermachine = -1), value = -1));
-			acceptorSlots[payload.slot] = (proposal = payload.proposal, value = -1);
+			SEND(payload.proposer, eAgree, (slot = payload.slot, proposal = default(ProposalIdType), smrop = default(SMROperationType)));
+			acceptorSlots[payload.slot] = (proposal = payload.proposal, smrop = default(SMROperationType));
 			return;
 		}
 
-		if(lessThan(payload.proposal, acceptorSlots[payload.slot].proposal))
+		if(LessThan(payload.proposal, acceptorSlots[payload.slot].proposal))
 		{
-			SEND(payload.proposer, reject, (slot = payload.slot, proposal = acceptorSlots[payload.slot].proposal));
+			SEND(payload.proposer, eReject, (slot = payload.slot, proposal = acceptorSlots[payload.slot].proposal));
 		}
 		else 
 		{
-			SEND(payload.proposer, agree, (slot = payload.slot, proposal = acceptorSlots[payload.slot].proposal, value = acceptorSlots[payload.slot].value));
-			acceptorSlots[payload.slot] = (proposal = payload.proposal, value = -1);
+			SEND(payload.proposer, eAgree, (slot = payload.slot, proposal = acceptorSlots[payload.slot].proposal, smrop = acceptorSlots[payload.slot].smrop));
+			acceptorSlots[payload.slot] = (proposal = payload.proposal, smrop = default(SMROperationType));
 		}
 	}
 	
-	fun acceptAction (){
+	fun AcceptAction (payload: (proposer: MultiPaxosNodeInterface, slot: int, proposal : ProposalIdType, smrop : SMROperationType)){
 		if(payload.slot in acceptorSlots)
 		{
-			if(!equal(payload.proposal, acceptorSlots[payload.slot].proposal))
+			if(!Equal(payload.proposal, acceptorSlots[payload.slot].proposal))
 			{
-				SEND(payload.proposer, reject, (slot = payload.slot, proposal = acceptorSlots[payload.slot].proposal));
+				SEND(payload.proposer, eReject, (slot = payload.slot, proposal = acceptorSlots[payload.slot].proposal));
 			}
 			else
 			{
-				acceptorSlots[payload.slot] = (proposal = payload.proposal, value = payload.value);
-				SEND(payload.proposer, accepted, (slot = payload.slot, proposal = payload.proposal, value = payload.value));
+				acceptorSlots[payload.slot] = (proposal = payload.proposal, smrop = payload.smrop);
+				SEND(payload.proposer, eAccepted, (slot = payload.slot, proposal = payload.proposal, smrop = payload.smrop));
 			}
 		}
 	}
@@ -149,25 +167,25 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	
 	
 	
-	fun GetNextProposal(maxRound : int) : (round: int, servermachine : int) {
-		return (round = maxRound + 1, servermachine = myRank);
+	fun GetNextProposal(maxRound : int) : ProposalIdType {
+		return (roundId = maxRound + 1, serverId = myRank);
 	}
 	
-	fun equal (p1 : (round: int, servermachine : int), p2 : (round: int, servermachine : int)) : bool {
-		if(p1.round == p2.round && p1.servermachine == p2.servermachine)
+	fun Equal (p1 : ProposalIdType, p2 : ProposalIdType) : bool {
+		if(p1.roundId == p2.roundId && p1.serverId == p2.serverId)
 			return true;
 		else
 			return false;
 	}
 	
-	fun lessThan (p1 : (round: int, servermachine : int), p2 : (round: int, servermachine : int)) : bool {
-		if(p1.round < p2.round)
+	fun LessThan (p1 : ProposalIdType, p2 : ProposalIdType) : bool {
+		if(p1.roundId < p2.roundId)
 		{
 			return true;
 		}
-		else if(p1.round == p2.round)
+		else if(p1.roundId == p2.roundId)
 		{
-			if(p1.servermachine < p2.servermachine)
+			if(p1.serverId < p2.serverId)
 				return true;
 			else
 				return false;
@@ -181,7 +199,8 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	
 
 	
-	fun BroadCastAcceptors(mess: event, pay : any) {
+	fun BroadCastToAcceptors(mess: event, pay : any) {
+		var iter: int;
 		iter = 0;
 		while(iter < sizeof(acceptors))
 		{
@@ -190,98 +209,87 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 		}
 	}
 	
-	fun CountAgree() {
-		if(payload.slot == nextSlotForProposer)
-		{
-			countAgree = countAgree + 1;
-			if(lessThan(receivedAgree.proposal, payload.proposal))
-			{
-				receivedAgree.proposal = payload.proposal;
-				receivedAgree.value = payload.value;
-			}
-			if(countAgree == majority)
-				raise(success);
-		}
-		
-	}
 	state ProposeValuePhase1 {
-		ignore accepted;
+		ignore eAccepted;
 		entry {
 			countAgree = 0;
 			nextProposal = GetNextProposal(maxRound);
-			receivedAgree = (proposal = (round = -1, servermachine = -1), value = -1);
-			BroadCastAcceptors(prepare, (proposer = this, slot = nextSlotForProposer, proposal = (round = nextProposal.round, servermachine = myRank)));
-			send timer, STARTTIMER;
+			receivedAgree = (proposal = default(ProposalIdType), smrop = default(SMROperationType));
+			BroadCastToAcceptors(ePrepare, (proposer = this, slot = nextSlotForProposer, proposal = (roundId = nextProposal.roundId, serverId = myRank)));
+			StartTimer(timer, 100);
 		}
 		
-		on agree do CountAgree;
-		on reject goto ProposeValuePhase1 with {
-			if(nextProposal.round <= payload.proposal.round)
-				maxRound = payload.proposal.round;
+		on eAgree do (payload: (slot:int, proposal : ProposalIdType, smrop : SMROperationType)){
+			if(payload.slot == nextSlotForProposer)
+			{
+				countAgree = countAgree + 1;
+				if(LessThan(receivedAgree.proposal, payload.proposal))
+				{
+					receivedAgree.proposal = payload.proposal;
+					receivedAgree.smrop = payload.smrop;
+				}
+				if(countAgree == majority)
+					raise(eSuccess);
+			}
+		}
+		on eReject goto ProposeValuePhase1 with (payload:(slot: int, proposal : ProposalIdType)){
+			if(nextProposal.roundId <= payload.proposal.roundId)
+				maxRound = payload.proposal.roundId;
 				
-			send timer, CANCELTIMER;
+			CancelTimer(timer);
 		}
-		on success goto ProposeValuePhase2 with 
+		on eSuccess goto ProposeValuePhase2 with 
 		{
-			send timer, CANCELTIMER;
+			CancelTimer(timer);
 		}
-		on TIMEOUT goto ProposeValuePhase1;
+		on eTimeOut goto ProposeValuePhase1;
 	}
 	
-	fun CountAccepted (){
-		if(payload.slot == nextSlotForProposer)
+	fun GetHighestProposedValue() : SMROperationType {
+		if(receivedAgree.smrop != default(SMROperationType))
 		{
-			if(equal(payload.proposal, nextProposal))
-			{
-				countAccept = countAccept + 1;
-			}
-			if(countAccept == majority)
-			{
-				raise chosen, payload;
-			}
-		}
-	
-	}
-	
-	fun getHighestProposedValue() : int {
-		if(receivedAgree.value != -1)
-		{
-			return receivedAgree.value;
+			return receivedAgree.smrop;
 		}
 		else
 		{
-			return commitValue;
+			return commitVal;
 		}
 	}
 	
 	state ProposeValuePhase2 {
-		ignore agree;
+		ignore eAgree;
 		entry {
-		
 			countAccept = 0;
-			proposeVal = getHighestProposedValue();
-			
-			BroadCastAcceptors(accept, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, value = proposeVal));
-			send timer, STARTTIMER;
+			proposeVal = GetHighestProposedValue();
+			BroadCastToAcceptors(eAccept, (proposer = this, slot = nextSlotForProposer, proposal = nextProposal, smrop = proposeVal));
+			StartTimer(timer, 100);
 		}
 		
-		exit {
-			if(trigger == chosen)
+		
+		on eAccepted do (payload: (slot:int, proposal : ProposalIdType, smrop : SMROperationType)){
+			if(payload.slot == nextSlotForProposer)
 			{
-				send timer, CANCELTIMER;
-
-				//increment the nextSlotForProposer
-				nextSlotForProposer = nextSlotForProposer + 1;
+				if(Equal(payload.proposal, nextProposal))
+				{
+					countAccept = countAccept + 1;
+				}
+				if(countAccept == majority)
+				{
+					CancelTimer(timer);
+					//increment the nextSlotForProposer
+					nextSlotForProposer = nextSlotForProposer + 1;
+					raise eChosen, payload;
+				}
 			}
 		}
-		on accepted do CountAccepted;
-		on reject goto ProposeValuePhase1 with {
-			if(nextProposal.round <= payload.proposal.round)
-				maxRound = payload.proposal.round;
+
+		on eReject goto ProposeValuePhase1 with (payload: (slot: int, proposal : ProposalIdType)){
+			if(nextProposal.roundId <= payload.proposal.roundId)
+				maxRound = payload.proposal.roundId;
 				
-			send timer, CANCELTIMER;
+			CancelTimer(timer);
 		}
-		on timeout goto ProposeValuePhase1;
+		on eTimeOut goto ProposeValuePhase1;
 		
 	}
 	
@@ -293,8 +301,11 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 			{
 				//run the machine
 				if(currentLeader.rank == myRank)
-					send learner, SMR_RM_OPERATION, payload;
-				lastExecutedSlot = lastExecutedSlot + 1;
+				{
+					SendSMRRepMachineOperation(learner, learnerSlots[(lastExecutedSlot + 1)].smrop, commitId);
+					commitId = commitId + 1;
+					lastExecutedSlot = lastExecutedSlot + 1;
+				}
 			}
 			else
 			{
@@ -304,23 +315,22 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	
 	}
 	
-
 	state RunLearner {
-		ignore agree, accepted, TIMEOUT, prepare, reject, accept;
-		entry {
-			learnerSlots[payload.slot] = (proposal = payload.proposal, value = payload.value);
+		ignore eAgree, eAccepted, eTimeOut, ePrepare, eReject, eAccept;
+		entry (payload: (slot:int, proposal : ProposalIdType, smrop : SMROperationType)) {
+			learnerSlots[payload.slot] = (proposal = payload.proposal, smrop = payload.smrop);
 			RunReplicatedMachine();
-			if(commitValue == payload.value)
+			if(commitVal == payload.smrop)
 			{
 				pop;
 			}
 			else
 			{
-				proposeVal = commitValue;
-				raise(goPropose);
+				//try proposing again
+				proposeVal = commitVal;
+				goto ProposeValuePhase1;
 			}
 		}
 	
 	}
 }
-*/

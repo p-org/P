@@ -5,9 +5,9 @@
 // Events exchanged between multipaxos nodes and leader election node
 
 //event sent by multipaxos to leader election nodes
-event ePing  assume 3 : (rank:int, server : any<MultiPaxosEvents>);
-event eFwdPing  assume 3 : (rank:int, server : any<MultiPaxosEvents>);
-event eNewLeader : (rank:int, server : any<MultiPaxosEvents>);
+event ePing  assume 3 : (rank:int, server : any<MultiPaxosLEEvents>);
+event eFwdPing  assume 3 : (rank:int, server : any<MultiPaxosLEEvents>);
+event eNewLeader : (rank:int, server : any<MultiPaxosLEEvents>);
 
 /*********************************************
 The multi-paxos events. 
@@ -28,12 +28,12 @@ event local;
 Types
 *********************************************/
 type ProposalIdType = (roundId: int, serverId : int);
-type LEContructorType = (servers: seq[any<MultiPaxosEvents>], parentServer:any<MultiPaxosEvents>, rank : int);
+type LEContructorType = (servers: seq[any<MultiPaxosLEEvents>], parentServer:any<MultiPaxosLEEvents>, rank : int);
 
 /*********************************************
 Interface types
 **********************************************/
-eventset MultiPaxosEvents = { eChosen, eGoPropose, eAccepted, eSuccess, eReject, eAgree, eAccept, ePrepare, eNewLeader, eFwdPing};
+eventset MultiPaxosLEEvents = { eSMROperation,  eNewLeader, eFwdPing };
 type LeaderElectionClientInterface() = { eNewLeader, eFwdPing };
 type LeaderElectionInterface(LEContructorType) = { ePing };
-type MultiPaxosNodeInterface(SMRServerConstrutorType) = MultiPaxosEvents;
+type MultiPaxosNodeInterface(SMRServerConstrutorType) = { eChosen, eGoPropose, eAccepted, eSuccess, eReject, eAgree, eAccept, ePrepare, eNewLeader, eFwdPing };

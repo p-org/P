@@ -58,6 +58,9 @@ sends eSMROperation;
 	
 }
 
+/*******************************************************************************
+We create test driver to create the SMR protocol with FT 2
+*******************************************************************************/
 machine TestDriver2 : SMRClientInterface
 sends eSMROperation;
 {
@@ -129,3 +132,4 @@ sends eSMRResponse;
 		}
 	}
 }
+

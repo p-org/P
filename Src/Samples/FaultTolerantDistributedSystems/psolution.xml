@@ -59,8 +59,11 @@
       <Include>./MultiPaxos/PSrc/MultiPaxosHeader.p</Include>
       <Include>./MultiPaxos/PSrc/MultiPaxos.p</Include>
       <Include>./MultiPaxos/PSrc/LeaderElection.p</Include>
-      <Include>./ChainReplication/Test/TestDrivers.p</Include>   
+      <Include>./MultiPaxos/Test/TestDrivers.p</Include>   
     </Source>
+    <Link>
+      <Include>./MultiPaxos/Test/TestScript.p</Include>
+    </Link>
     <Depends>timer</Depends>
     <Depends>smrabs</Depends>
   </PProject>

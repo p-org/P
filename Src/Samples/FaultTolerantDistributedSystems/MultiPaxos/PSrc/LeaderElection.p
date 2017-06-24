@@ -3,11 +3,11 @@ The leader election protocol for multi-paxos, the protocol is based on broadcast
 */
 machine LeaderElectionMachine : LeaderElectionInterface
 receives eTimeOut, eCancelSuccess, eCancelFailure;
-sends eNewLeader, eStartTimer, eCancelTimer;
+sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 {
-	var servers : seq[MultiPaxosNodeInterface];
-	var parentServer : MultiPaxosNodeInterface;
-	var currentLeader : (rank:int, server : MultiPaxosNodeInterface);
+	var servers : seq[any<MultiPaxosEvents>];
+	var parentServer : any<MultiPaxosEvents>;
+	var currentLeader : (rank:int, server : any<MultiPaxosEvents>);
 	var myRank : int;
 	var CommunicateLeaderTimeout : TimerPtr;
 	var BroadCastTimeout : TimerPtr;
@@ -17,7 +17,7 @@ sends eNewLeader, eStartTimer, eCancelTimer;
 			servers = payload.servers;
 			parentServer = payload.parentServer;
 			myRank = payload.rank;
-			currentLeader = (rank = myRank, server = parentServer as MultiPaxosNodeInterface);
+			currentLeader = (rank = myRank, server = parentServer);
 			CommunicateLeaderTimeout = CreateTimer(this as ITimerClient);
 			BroadCastTimeout = CreateTimer(this as ITimerClient);
 			goto ProcessPings;
@@ -29,17 +29,17 @@ sends eNewLeader, eStartTimer, eCancelTimer;
 		iter = 0;
 		while(iter < sizeof(servers))
 		{
-			send servers[iter], ev, pd;
+			send servers[iter] as LeaderElectionClientInterface, ev, pd;
 			iter = iter + 1;
 		}
 	}
 
 	state ProcessPings {
 		entry {
-			BroadCast(ePing, (rank = myRank, server = parentServer));
+			BroadCast(eFwdPing, (rank = myRank, server = parentServer));
 			StartTimer(BroadCastTimeout, 100);
 		}
-		on ePing do (payload : (rank:int, server : MultiPaxosNodeInterface))
+		on ePing do (payload : (rank:int, server : any<MultiPaxosEvents>))
 		{
 			if(payload.rank < myRank)
 			{
@@ -51,46 +51,104 @@ sends eNewLeader, eStartTimer, eCancelTimer;
 			if(payload == CommunicateLeaderTimeout)
 			{
 				assert(currentLeader.rank <= myRank);
-				send parentServer, eNewLeader, currentLeader;
+				send parentServer as LeaderElectionClientInterface, eNewLeader, currentLeader;
 				//reset
 				currentLeader = (rank = myRank, server = parentServer);
 				StartTimer(CommunicateLeaderTimeout, 100);
-				CancelTimer(BroadCastTimeout);
 			}
-			goto ProcessPings;
+			else {
+				goto ProcessPings;
+			}
+			
 		}
 	}
 }
 
 machine LeaderElectionAbsMachine : LeaderElectionInterface
-receives eTimeOut, eCancelSuccess, eCancelFailure;
-sends eNewLeader, eStartTimer, eCancelTimer;
+sends eNewLeader;
 {
-	var servers : seq[MultiPaxosNodeInterface];
-	var parentServer : MultiPaxosNodeInterface;
-	var currentLeader : (rank:int, server : MultiPaxosNodeInterface);
+	var servers : seq[any<MultiPaxosEvents>];
+	var parentServer : any<MultiPaxosEvents>;
 	var myRank : int;
 	
 	start state Init {
 		entry (payload: LEContructorType) {
 			servers = payload.servers;
 			parentServer = payload.parentServer;
-			myRank = payload.rank;
-			currentLeader = (rank = myRank, server = parentServer);
 			goto SendLeader;
 		}
 	}
 	
 	state SendLeader {
 		entry {
+			var currentLeader : (rank:int, server : any<MultiPaxosEvents>);
 			currentLeader = GetNewLeader();
-			assert(currentLeader.rank <= myRank);
-			send parentServer, eNewLeader, currentLeader;
+			send parentServer as LeaderElectionClientInterface , eNewLeader, currentLeader;
 		}
 	}
 	
-	model fun GetNewLeader() : (rank:int, server : MultiPaxosNodeInterface) {
-			return (rank = 1, server = servers[0]);
+	fun ChooseInt(min: int, max: int) : int {
+		var iter: int;
+		iter = min;
+		while (iter < max)
+		{
+			if($)
+				return iter;
+			else
+				iter = iter + 1;
+		}
+		return max;
+	}
+
+	model fun GetNewLeader() : (rank:int, server : any<MultiPaxosEvents>) {
+		var chooseLeader : int;
+		chooseLeader = ChooseInt(1, sizeof(servers));
+		return (rank = chooseLeader, server = servers[chooseLeader - 1]);
+	}
+}
+
+machine MultiPaxosLEAbsMachine
+receives eNewLeader, eFwdPing;
+sends ePing;
+{
+	var allLE : seq[LeaderElectionInterface];
+	var numOfNodes : int;
+	start state Init {
+		entry
+		{
+			
+			var iter: int;
+			var allNodes: seq[LeaderElectionClientInterface];
+			var temp : LeaderElectionInterface;
+			
+			numOfNodes = 3;
+
+			while(iter < numOfNodes)
+			{
+				allNodes += (iter, this);
+				iter = iter + 1;
+			}
+
+			iter = 0;
+			while(iter < numOfNodes)
+			{
+				temp = new LeaderElectionInterface((servers = allNodes, parentServer = this, rank = iter + 1));
+				allLE += (iter, temp);
+				iter = iter + 1;
+			}
+		}
+
+		on eFwdPing do (payload: (rank:int, server : any<MultiPaxosEvents>)){
+			var iter : int;
+			iter = 0;
+			while(iter < numOfNodes)
+			{
+				send allLE[iter], ePing, payload;
+				iter = iter + 1;
+			}
+		}
+
+		ignore eNewLeader;
 	}
 
 }

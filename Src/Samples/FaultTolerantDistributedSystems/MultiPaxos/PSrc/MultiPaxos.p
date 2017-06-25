@@ -82,7 +82,28 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 	
 	fun SetUp (arg : data)
 	{
+		var nodes : seq[MultiPaxosNodeInterface];
+		var iter : int;
+		var temp: MultiPaxosNodeInterface; 
+		iter = 1;
+
 		//create all the nodes and then send eAllNodes.
+		nodes += (0, this as MultiPaxosNodeInterface);
+		while(iter < 2*FT + 1)
+		{
+			temp = new MultiPaxosNodeInterface((client = client, reorder = false, isRoot = false, ft = FT, val = (iter, arg)));
+		
+			nodes += (iter, temp);
+			iter = iter + 1;
+		}
+		
+		//send to all
+		iter = 0;
+		while(iter < sizeof(nodes))
+		{
+			send nodes[iter], eAllNodes,  nodes;
+			iter = iter + 1;
+		}
 	}
 
 	state PerformOperation {

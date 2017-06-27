@@ -5,7 +5,7 @@ namespace Microsoft.Pc
 {
     public class CompilerOutputStream : ICompilerOutput
     {
-        TextWriter writer;
+        private readonly TextWriter writer;
 
         public CompilerOutputStream(TextWriter writer)
         {
@@ -14,7 +14,7 @@ namespace Microsoft.Pc
 
         public void WriteMessage(string msg, SeverityKind severity)
         {
-            this.writer.WriteLine(msg);
+            writer.WriteLine(msg);
         }
     }
 }

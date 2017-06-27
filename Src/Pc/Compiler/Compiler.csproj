@@ -131,6 +131,18 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Antlr3.Runtime, Version=3.5.0.2, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\Antlr3.Runtime.3.5.1\lib\net40-client\Antlr3.Runtime.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Antlr4.StringTemplate, Version=4.0.7.0, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\StringTemplate4.4.0.8\lib\net35-client\Antlr4.StringTemplate.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Antlr4.StringTemplate.Visualizer, Version=4.0.7.0, Culture=neutral, PublicKeyToken=eb42632606e9261f, processorArchitecture=MSIL">
+      <HintPath>..\..\..\packages\StringTemplate4.Visualizer.4.0.8\lib\net35-client\Antlr4.StringTemplate.Visualizer.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.CodeAnalysis, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\..\packages\Microsoft.CodeAnalysis.Common.1.1.0\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
@@ -217,6 +229,7 @@
     <Compile Include="ErrorReporter.cs" />
     <Compile Include="EventInfo.cs" />
     <Compile Include="FunInfo.cs" />
+    <Compile Include="ICompiler.cs" />
     <Compile Include="ICompilerOutput.cs" />
     <Compile Include="IProfiler.cs" />
     <Compile Include="LivenessOption.cs" />
@@ -234,6 +247,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PToCSharpCompiler.cs" />
     <Compile Include="PToCSharpLinker.cs" />
+    <Compile Include="PToPSharpCompiler.cs" />
     <Compile Include="PToZing.cs" />
     <Compile Include="PToZing.TypeTranslationContext.cs" />
     <Compile Include="PToZing.ZingFoldContext.cs" />

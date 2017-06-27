@@ -8,7 +8,7 @@
     <ProjectGuid>{48B4C337-CD13-4826-B6A1-DA97CE71511B}</ProjectGuid>
     <OutputType>Exe</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Pc</RootNamespace>
+    <RootNamespace>Microsoft.Pc</RootNamespace>
     <AssemblyName>Pc</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>

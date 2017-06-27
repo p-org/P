@@ -10,31 +10,26 @@ using Microsoft.Formula.API.Nodes;
 
 namespace Microsoft.Pc
 {
-    partial class PToCSharpCompiler
+    internal partial class PToCSharpCompiler
     {
-        internal partial class MkFunctionDecl
+        internal class MkFunctionDecl
         {
-            public string funName;
+            public string FunName;
             public FunInfo funInfo;
-            public MkMachineClass owner;  // null if global function
-            private PToCSharpCompiler pToCSharp;
-            public Stack<bool> lhsStack;
+            public MkMachineClass Owner;  // null if global function
+            private readonly PToCSharpCompiler pToCSharp;
+            public Stack<bool> LhsStack = new Stack<bool>();
             private int labelCount; // labels are used for "continuations" in send, new, nondet, receive, function calls
 
             public MkFunctionDecl(string funName, FunInfo funInfo, MkMachineClass owner, PToCSharpCompiler pToCSharp)
             {
-                this.funName = funName;
+                FunName = funName;
                 this.funInfo = funInfo;
-                this.owner = owner;
+                Owner = owner;
                 this.pToCSharp = pToCSharp;
-                this.lhsStack = new Stack<bool>();
-                this.labelCount = 0;
             }
 
-            public string funClassName
-            {
-                get { return funName + "_Class"; }
-            }
+            public string FunClassName => $"{FunName}_Class";
 
             public int GetFreshLabelId()
             {
@@ -44,7 +39,7 @@ namespace Microsoft.Pc
 
             public string GetLabelFromLabelId(int i)
             {
-                return string.Format("{0}_{1}", funName, i);
+                return string.Format("{0}_{1}", FunName, i);
             }
 
             public SwitchStatementSyntax EmitLabelPrelude()
@@ -66,6 +61,7 @@ namespace Microsoft.Pc
                 //return entityInfo.typeInfo[Factory.Instance.ToAST(node)];
                 return funInfo.typeInfo[Factory.Instance.ToAST(node)];
             }
+
             #region FoldUnfold
             private IEnumerable<Node> Unfold(Node n)
             {
@@ -74,23 +70,22 @@ namespace Microsoft.Pc
                     yield break;
                 }
 
-                var ft = (FuncTerm)n;
-                var funName = ((Id)ft.Function).Name;
+                var ft = (FuncTerm) n;
+                string funName = ((Id) ft.Function).Name;
                 if (funName == PData.Con_New.Node.Name)
                 {
                     Debug.Assert(false, "New expr in ZingUnfold");
-                    yield break;
                 }
                 else if (funName == PData.Con_Print.Node.Name)
                 {
-                    foreach (var a in Unfold(GetArgByIndex(ft, 2)))
+                    foreach (Node a in Unfold(GetArgByIndex(ft, 2)))
                     {
                         yield return a;
                     }
                 }
                 else if (funName == PData.Con_Goto.Node.Name)
                 {
-                    foreach (var a in Unfold(GetArgByIndex(ft, 1)))
+                    foreach (Node a in Unfold(GetArgByIndex(ft, 1)))
                     {
                         yield return a;
                     }
@@ -98,7 +93,8 @@ namespace Microsoft.Pc
                 else if (funName == PData.Con_Announce.Node.Name || funName == PData.Con_Raise.Node.Name)
                 {
                     yield return GetArgByIndex(ft, 0);
-                    foreach (var a in Unfold(GetArgByIndex(ft, 1)))
+
+                    foreach (Node a in Unfold(GetArgByIndex(ft, 1)))
                     {
                         yield return a;
                     }
@@ -107,29 +103,28 @@ namespace Microsoft.Pc
                 {
                     yield return GetArgByIndex(ft, 0);
                     yield return GetArgByIndex(ft, 1);
-                    foreach (var a in Unfold(GetArgByIndex(ft, 2)))
+
+                    foreach (Node a in Unfold(GetArgByIndex(ft, 2)))
                     {
                         yield return a;
                     }
                 }
-                else if (funName == PData.Con_Receive.Node.Name)
-                {
-                    yield break;
-                }
+                else if (funName == PData.Con_Receive.Node.Name) { }
                 else if (funName == PData.Con_FunApp.Node.Name)
                 {
-                    foreach (var a in Unfold(GetArgByIndex(ft, 1)))
+                    foreach (Node a in Unfold(GetArgByIndex(ft, 1)))
                     {
                         yield return a;
                     }
                 }
                 else if (funName == PData.Con_FunStmt.Node.Name || funName == PData.Con_NewStmt.Node.Name)
                 {
-                    foreach (var a in Unfold(GetArgByIndex(ft, 1)))
+                    foreach (Node a in Unfold(GetArgByIndex(ft, 1)))
                     {
                         yield return a;
                     }
-                    var node = GetArgByIndex(ft, 2);
+
+                    Node node = GetArgByIndex(ft, 2);
                     if (node.NodeKind != NodeKind.Id)
                     {
                         yield return node;
@@ -137,15 +132,17 @@ namespace Microsoft.Pc
                 }
                 else if (funName == PData.Con_BinApp.Node.Name)
                 {
-                    var opName = ((Id)GetArgByIndex(ft, 0)).Name;
-                    if (opName == PData.Cnst_Idx.Node.Name && lhsStack.Count > 0 && lhsStack.Peek())
+                    string opName = ((Id) GetArgByIndex(ft, 0)).Name;
+                    if (opName == PData.Cnst_Idx.Node.Name && LhsStack.Count > 0 && LhsStack.Peek())
                     {
-                        lhsStack.Push(true);
+                        LhsStack.Push(true);
                         yield return GetArgByIndex(ft, 1);
-                        lhsStack.Pop();
-                        lhsStack.Push(false);
+
+                        LhsStack.Pop();
+                        LhsStack.Push(false);
                         yield return GetArgByIndex(ft, 2);
-                        lhsStack.Pop();
+
+                        LhsStack.Pop();
                     }
                     else
                     {
@@ -153,20 +150,19 @@ namespace Microsoft.Pc
                         yield return GetArgByIndex(ft, 2);
                     }
                 }
-                else if (funName == PData.Con_Name.Node.Name ||
-                         funName == PData.Con_NulApp.Node.Name ||
-                         funName == PData.Con_UnApp.Node.Name ||
-                         funName == PData.Con_Default.Node.Name ||
-                         funName == PData.Con_NulStmt.Node.Name)
+                else if (funName == PData.Con_Name.Node.Name || funName == PData.Con_NulApp.Node.Name
+                         || funName == PData.Con_UnApp.Node.Name || funName == PData.Con_Default.Node.Name
+                         || funName == PData.Con_NulStmt.Node.Name)
                 {
                     var first = true;
-                    foreach (var t in ft.Args)
+                    foreach (Node t in ft.Args)
                     {
                         if (first)
                         {
                             first = false;
                             continue;
                         }
+
                         yield return t;
                     }
                 }
@@ -177,52 +173,57 @@ namespace Microsoft.Pc
                 else if (funName == PData.Con_BinStmt.Node.Name)
                 {
                     yield return GetArgByIndex(ft, 3);
-                    var op = ((Id)GetArgByIndex(ft, 0)).Name;
+
+                    string op = ((Id) GetArgByIndex(ft, 0)).Name;
                     if (op == PData.Cnst_Assign.Node.Name)
                     {
-                        var lhs = (FuncTerm)GetArgByIndex(ft, 1);
-                        var lhsName = ((Id)lhs.Function).Name;
-                        if (lhsName == PData.Con_BinApp.Node.Name && ((Id)GetArgByIndex(lhs, 0)).Name == PData.Cnst_Idx.Node.Name)
+                        var lhs = (FuncTerm) GetArgByIndex(ft, 1);
+                        string lhsName = ((Id) lhs.Function).Name;
+                        if (lhsName == PData.Con_BinApp.Node.Name && ((Id) GetArgByIndex(lhs, 0)).Name == PData.Cnst_Idx.Node.Name)
                         {
-                            lhsStack.Push(true);
+                            LhsStack.Push(true);
                             yield return GetArgByIndex(lhs, 1);
-                            lhsStack.Pop();
+
+                            LhsStack.Pop();
                             yield return GetArgByIndex(lhs, 2);
                         }
                         else if (lhsName == PData.Con_Field.Node.Name)
                         {
-                            lhsStack.Push(true);
+                            LhsStack.Push(true);
                             yield return GetArgByIndex(lhs, 0);
-                            lhsStack.Pop();
+
+                            LhsStack.Pop();
                         }
                         else
                         {
-                            lhsStack.Push(true);
+                            LhsStack.Push(true);
                             yield return lhs;
-                            lhsStack.Pop();
+
+                            LhsStack.Pop();
                         }
                     }
                     else
                     {
-                        lhsStack.Push(true);
+                        LhsStack.Push(true);
                         yield return GetArgByIndex(ft, 1);
-                        lhsStack.Pop();
+
+                        LhsStack.Pop();
                     }
                 }
                 else if (funName == PData.Con_Field.Node.Name || funName == PData.Con_Cast.Node.Name)
                 {
-                    yield return ft.Args.First<Node>();
+                    yield return ft.Args.First();
                 }
                 else if (funName == PData.Con_Tuple.Node.Name)
                 {
-                    foreach (var a in Unfold(GetArgByIndex(ft, 0)))
+                    foreach (Node a in Unfold(GetArgByIndex(ft, 0)))
                     {
                         yield return a;
                     }
                 }
                 else if (funName == PData.Con_NamedTuple.Node.Name)
                 {
-                    foreach (var a in Unfold(GetArgByIndex(ft, 0)))
+                    foreach (Node a in Unfold(GetArgByIndex(ft, 0)))
                     {
                         yield return a;
                     }
@@ -232,59 +233,64 @@ namespace Microsoft.Pc
                     do
                     {
                         yield return GetArgByIndex(ft, 1);
+
                         ft = GetArgByIndex(ft, 2) as FuncTerm;
-                    }
-                    while (ft != null);
+                    } while (ft != null);
                 }
                 else if (funName == PData.Con_NamedExprs.Node.Name)
                 {
                     do
                     {
                         yield return GetArgByIndex(ft, 1);
+
                         ft = GetArgByIndex(ft, 2) as FuncTerm;
-                    }
-                    while (ft != null);
+                    } while (ft != null);
                 }
                 else if (funName == PData.Con_Seq.Node.Name)
                 {
-                    using (var it = ft.Args.GetEnumerator())
+                    using (IEnumerator<Node> it = ft.Args.GetEnumerator())
                     {
                         it.MoveNext();
                         yield return it.Current;
+
                         it.MoveNext();
                         yield return it.Current;
                     }
                 }
                 else if (funName == PData.Con_Ite.Node.Name)
                 {
-                    using (var it = ft.Args.GetEnumerator())
+                    using (IEnumerator<Node> it = ft.Args.GetEnumerator())
                     {
                         it.MoveNext();
                         yield return it.Current;
+
                         it.MoveNext();
                         yield return it.Current;
+
                         it.MoveNext();
                         yield return it.Current;
                     }
                 }
                 else if (funName == PData.Con_While.Node.Name)
                 {
-                    using (var it = ft.Args.GetEnumerator())
+                    using (IEnumerator<Node> it = ft.Args.GetEnumerator())
                     {
                         it.MoveNext();
                         yield return it.Current;
+
                         it.MoveNext();
                         yield return it.Current;
                     }
                 }
                 else
                 {
-                    foreach (var t in ft.Args)
+                    foreach (Node t in ft.Args)
                     {
                         yield return t;
                     }
                 }
             }
+
             private SyntaxNode Fold(Node n, List<SyntaxNode> children)
             {
                 if (n.NodeKind == NodeKind.Id || n.NodeKind == NodeKind.Cnst)
@@ -297,114 +303,137 @@ namespace Microsoft.Pc
 
                 if (funName == PData.Con_Name.Node.Name)
                 {
-                    return (SyntaxNode)FoldName(ft, children);
+                    return FoldName(ft);
                 }
-                else if (funName == PData.Con_Receive.Node.Name)
+
+                if (funName == PData.Con_Receive.Node.Name)
                 {
-                    return FoldReceive(ft, children);
+                    return FoldReceive(ft);
                 }
-                else if (funName == PData.Con_FunApp.Node.Name)
+
+                if (funName == PData.Con_FunApp.Node.Name)
                 {
                     return FoldFunApp(ft, children);
                 }
-                else if (funName == PData.Con_NulApp.Node.Name)
+
+                if (funName == PData.Con_NulApp.Node.Name)
                 {
-                    return FoldNulApp(ft, children);
+                    return FoldNulApp(ft);
                 }
-                else if (funName == PData.Con_UnApp.Node.Name)
+
+                if (funName == PData.Con_UnApp.Node.Name)
                 {
                     return FoldUnApp(ft, children);
                 }
-                else if (funName == PData.Con_BinApp.Node.Name)
+
+                if (funName == PData.Con_BinApp.Node.Name)
                 {
                     return FoldBinApp(ft, children);
                 }
-                else if (funName == PData.Con_Field.Node.Name)
+
+                if (funName == PData.Con_Field.Node.Name)
                 {
                     return FoldField(ft, children);
                 }
-                else if (funName == PData.Con_Default.Node.Name)
+
+                if (funName == PData.Con_Default.Node.Name)
                 {
-                    return FoldDefault(ft, children);
+                    return FoldDefault(ft);
                 }
-                else if (funName == PData.Con_Cast.Node.Name)
+
+                if (funName == PData.Con_Cast.Node.Name)
                 {
                     return FoldCast(ft, children);
                 }
-                else if (funName == PData.Con_Tuple.Node.Name)
+
+                if (funName == PData.Con_Tuple.Node.Name)
                 {
-                    return FoldTuple(ft, children);
+                    return FoldTuple(children);
                 }
-                else if (funName == PData.Con_NamedTuple.Node.Name)
+
+                if (funName == PData.Con_NamedTuple.Node.Name)
                 {
                     return FoldNamedTuple(ft, children);
                 }
-                else if (funName == PData.Con_NewStmt.Node.Name)
+
+                if (funName == PData.Con_NewStmt.Node.Name)
                 {
                     return FoldNewStmt(ft, children);
                 }
-                else if (funName == PData.Con_Goto.Node.Name)
+
+                if (funName == PData.Con_Goto.Node.Name)
                 {
                     return FoldGoto(ft, children);
                 }
-                else if (funName == PData.Con_Raise.Node.Name)
+
+                if (funName == PData.Con_Raise.Node.Name)
                 {
                     return FoldRaise(ft, children);
                 }
-                else if (funName == PData.Con_Send.Node.Name)
+
+                if (funName == PData.Con_Send.Node.Name)
                 {
-                    return FoldSend(ft, children);
+                    return FoldSend(children);
                 }
-                else if (funName == PData.Con_Announce.Node.Name)
+
+                if (funName == PData.Con_Announce.Node.Name)
                 {
-                    return FoldAnnounce(ft, children);
+                    return FoldAnnounce(children);
                 }
-                else if (funName == PData.Con_FunStmt.Node.Name)
+
+                if (funName == PData.Con_FunStmt.Node.Name)
                 {
                     return FoldFunStmt(ft, children);
                 }
-                else if (funName == PData.Con_NulStmt.Node.Name)
+
+                if (funName == PData.Con_NulStmt.Node.Name)
                 {
-                    return FoldNulStmt(ft, children);
+                    return FoldNulStmt(ft);
                 }
-                else if (funName == PData.Con_Assert.Node.Name)
+
+                if (funName == PData.Con_Assert.Node.Name)
                 {
                     return FoldAssert(ft, children);
                 }
-                else if (funName == PData.Con_Print.Node.Name)
+
+                if (funName == PData.Con_Print.Node.Name)
                 {
                     return FoldPrint(ft, children);
                 }
-                else if (funName == PData.Con_BinStmt.Node.Name)
+
+                if (funName == PData.Con_BinStmt.Node.Name)
                 {
                     return FoldBinStmt(ft, children);
                 }
-                else if (funName == PData.Con_Return.Node.Name)
+
+                if (funName == PData.Con_Return.Node.Name)
                 {
-                    return FoldReturn(ft, children);
+                    return FoldReturn(children);
                 }
-                else if (funName == PData.Con_While.Node.Name)
+
+                if (funName == PData.Con_While.Node.Name)
                 {
-                    return FoldWhile(ft, children);
+                    return FoldWhile(children);
                 }
-                else if (funName == PData.Con_Ite.Node.Name)
+
+                if (funName == PData.Con_Ite.Node.Name)
                 {
-                    return FoldIte(ft, children);
+                    return FoldIte(children);
                 }
-                else if (funName == PData.Con_Seq.Node.Name)
+
+                if (funName == PData.Con_Seq.Node.Name)
                 {
-                    return FoldSeq(ft, children);
+                    return FoldSeq(children);
                 }
-                else if (funName == PData.Con_IdList.Node.Name)
+
+                if (funName == PData.Con_IdList.Node.Name)
                 {
                     //return ZingData.Cnst_Nil;
                     return SyntaxFactory.IdentifierName("NIL");
                 }
-                else
-                {
-                    Console.WriteLine("Unknown term name: " + funName);
-                    throw new NotImplementedException();
-                }
+
+                Console.WriteLine("Unknown term name: " + funName);
+                throw new NotImplementedException();
             }
 
             private List<StatementSyntax> CaseFunCallHelper(List<string> eventNames, List<string> funNames, string afterAfterLabel)
@@ -418,7 +447,7 @@ namespace Microsoft.Pc
                     var beforeLabel = GetLabelFromLabelId(beforeLabelId);
                     var eventName = eventNames[i];
                     var funName = funNames[i];
-                    var calleeInfo = pToCSharp.allGlobalFuns.ContainsKey(funName) ? pToCSharp.allGlobalFuns[funName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[funName];
+                    var calleeInfo = pToCSharp.allGlobalFuns.ContainsKey(funName) ? pToCSharp.allGlobalFuns[funName] : pToCSharp.allMachines[Owner.machineName].funNameToFunInfo[funName];
                     Debug.Assert(calleeInfo.isAnonymous);
                     List<StatementSyntax> ifStmts = new List<StatementSyntax>();
                     ifStmts.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
@@ -452,7 +481,7 @@ namespace Microsoft.Pc
                 return stmts;
             }
 
-            SyntaxNode FoldReceive(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldReceive(FuncTerm ft)
             {
                 List<StatementSyntax> stmts = new List<StatementSyntax>();
                 List<string> eventNames = new List<string>();
@@ -500,7 +529,7 @@ namespace Microsoft.Pc
                 return SyntaxFactory.Block(stmts);
             }
 
-            SyntaxNode FoldName(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldName(FuncTerm ft)
             {
                 var name = GetName(ft, 0);
                 if (funInfo != null && funInfo.localNameToInfo.ContainsKey(name))
@@ -508,30 +537,26 @@ namespace Microsoft.Pc
                     //local var of a function:
                     return CSharpHelper.MkCSharpDot("currFun", VarName(name));
                 }
-                else if (owner != null && pToCSharp.allMachines[owner.machineName].localVariableToVarInfo.ContainsKey(name))
+
+                if (Owner != null && pToCSharp.allMachines[Owner.machineName].localVariableToVarInfo.ContainsKey(name))
                 {
                     return CSharpHelper.MkCSharpDot("parent", VarName(name));
                 }
-                else
+
+                var type = LookupType(ft);
+                if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
                 {
-                    var type = LookupType(ft);
-                    if (PTypeEvent.Equals(Factory.Instance.ToAST(type)))
-                    {
-                        return pToCSharp.GetEventVar(name);
-                    }
-                    else
-                    {
-                        // enum constant
-                        var enumTypeName = (GetArgByIndex(type, 0) as Cnst).GetStringValue();
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtEnumValue"),
-                            CSharpHelper.MkCSharpStringLiteralExpression(name),
-                            CSharpHelper.MkCSharpNumericLiteralExpression(pToCSharp.allEnums[enumTypeName][name]));
-                    }
+                    return pToCSharp.GetEventVar(name);
                 }
+                // enum constant
+                var enumTypeName = (GetArgByIndex(type, 0) as Cnst).GetStringValue();
+                return CSharpHelper.MkCSharpObjectCreationExpression(
+                    SyntaxFactory.IdentifierName("PrtEnumValue"),
+                    CSharpHelper.MkCSharpStringLiteralExpression(name),
+                    CSharpHelper.MkCSharpNumericLiteralExpression(pToCSharp.allEnums[enumTypeName][name]));
             }
 
-            SyntaxNode FoldNewStmt(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldNewStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 SyntaxNode aout = null;
                 if (GetArgByIndex(ft, 2).NodeKind != NodeKind.Id)
@@ -562,7 +587,7 @@ namespace Microsoft.Pc
                 return SyntaxFactory.Block(stmtList);
             }
 
-            SyntaxNode FoldFunApp(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldFunApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 string calleeName = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
                 var paramList = new List<ExpressionSyntax>();
@@ -572,7 +597,7 @@ namespace Microsoft.Pc
                 return CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(calleeName, "ExecuteToCompletion"), paramList.ToArray());
             }
 
-            SyntaxNode FoldNulApp(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldNulApp(FuncTerm ft)
             {
                 //No children
                 var n = GetArgByIndex(ft, 0);
@@ -590,16 +615,19 @@ namespace Microsoft.Pc
                     return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtBoolValue"),
                                                                          CSharpHelper.MkCSharpTrueLiteralExpression());
                 }
-                else if (op == PData.Cnst_False.Node.Name)
+
+                if (op == PData.Cnst_False.Node.Name)
                 {
                     return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtBoolValue"),
                                                                          CSharpHelper.MkCSharpFalseLiteralExpression());
                 }
-                else if (op == PData.Cnst_This.Node.Name)
+
+                if (op == PData.Cnst_This.Node.Name)
                 {
                     return SyntaxFactory.MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, SyntaxFactory.IdentifierName("parent"), SyntaxFactory.IdentifierName("self"));
                 }
-                else if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
+
+                if (op == PData.Cnst_Nondet.Node.Name || op == PData.Cnst_FairNondet.Node.Name)
                 {
                     return CSharpHelper.MkCSharpObjectCreationExpression(
                         SyntaxFactory.IdentifierName("PrtBoolValue"), 
@@ -607,18 +635,16 @@ namespace Microsoft.Pc
                             CSharpHelper.MkCSharpDot("application", "GetSelectedChoiceValue"),
                             CSharpHelper.MkCSharpCastExpression("PrtImplMachine", SyntaxFactory.IdentifierName("parent"))));
                 }
-                else if (op == PData.Cnst_Null.Node.Name)
+
+                if (op == PData.Cnst_Null.Node.Name)
                 {
                     return pToCSharp.GetEventVar(NullEvent);
                 }
-                else
-                {
-                    //op == PData.Cnst_Halt.Node.Name
-                    return pToCSharp.GetEventVar(HaltEvent);
-                }
+                //op == PData.Cnst_Halt.Node.Name
+                return pToCSharp.GetEventVar(HaltEvent);
             }
 
-            SyntaxNode FoldUnApp(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldUnApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 using (var it = children.GetEnumerator())
@@ -631,31 +657,31 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg), "bl")));
                     }
-                    else if (op == PData.Cnst_Neg.Node.Name)
+
+                    if (op == PData.Cnst_Neg.Node.Name)
                     {
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtIntValue"),
                             SyntaxFactory.PrefixUnaryExpression(SyntaxKind.UnaryMinusExpression, CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg), "nt")));
                     }
-                    else if (op == PData.Cnst_Keys.Node.Name)
+
+                    if (op == PData.Cnst_Keys.Node.Name)
                     {
                         return CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", arg), "Keys"));
                     }
-                    else if (op == PData.Cnst_Values.Node.Name)
+
+                    if (op == PData.Cnst_Values.Node.Name)
                     {
                         return CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", arg), "Values"));
                     }
-                    else
-                    {
-                        //  op == PData.Cnst_Sizeof.Node.Name
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtIntValue"),
-                            CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot((ExpressionSyntax)arg, "Size")));
-                    }
+                    //  op == PData.Cnst_Sizeof.Node.Name
+                    return CSharpHelper.MkCSharpObjectCreationExpression(
+                        SyntaxFactory.IdentifierName("PrtIntValue"),
+                        CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot((ExpressionSyntax)arg, "Size")));
                 }
             }
 
-            SyntaxNode FoldBinApp(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldBinApp(FuncTerm ft, List<SyntaxNode> children)
             {
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 using (var it = children.GetEnumerator())
@@ -673,7 +699,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtIntValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.AddExpression, arg1Int, arg2Int));
                     }
-                    else if (op == PData.Cnst_Sub.Node.Name)
+
+                    if (op == PData.Cnst_Sub.Node.Name)
                     {
                         var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                         var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
@@ -681,7 +708,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtIntValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.SubtractExpression, arg1Int, arg2Int));
                     }
-                    else if (op == PData.Cnst_Mul.Node.Name)
+
+                    if (op == PData.Cnst_Mul.Node.Name)
                     {
                         var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                         var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
@@ -689,7 +717,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtIntValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.MultiplyExpression, arg1Int, arg2Int));
                     }
-                    else if (op == PData.Cnst_IntDiv.Node.Name)
+
+                    if (op == PData.Cnst_IntDiv.Node.Name)
                     {
                         var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                         var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
@@ -697,7 +726,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtIntValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.DivideExpression, arg1Int, arg2Int));
                     }
-                    else if (op == PData.Cnst_And.Node.Name)
+
+                    if (op == PData.Cnst_And.Node.Name)
                     {
                         var arg1Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
                         var arg2Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
@@ -705,7 +735,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.LogicalAndExpression, arg1Bool, arg2Bool));
                     }
-                    else if (op == PData.Cnst_Or.Node.Name)
+
+                    if (op == PData.Cnst_Or.Node.Name)
                     {
                         var arg1Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
                         var arg2Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
@@ -713,19 +744,22 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.LogicalOrExpression, arg1Bool, arg2Bool));
                     }
-                    else if (op == PData.Cnst_Eq.Node.Name)
+
+                    if (op == PData.Cnst_Eq.Node.Name)
                     {
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(arg1, "Equals"), arg2));
                     }
-                    else if (op == PData.Cnst_NEq.Node.Name)
+
+                    if (op == PData.Cnst_NEq.Node.Name)
                     {
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(arg1, "Equals"), arg2)));
                     }
-                    else if (op == PData.Cnst_Lt.Node.Name)
+
+                    if (op == PData.Cnst_Lt.Node.Name)
                     {
                         var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                         var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
@@ -733,7 +767,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.LessThanExpression, arg1Int, arg2Int));
                     }
-                    else if (op == PData.Cnst_Le.Node.Name)
+
+                    if (op == PData.Cnst_Le.Node.Name)
                     {
                         var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                         var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
@@ -741,7 +776,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.LessThanOrEqualExpression, arg1Int, arg2Int));
                     }
-                    else if (op == PData.Cnst_Gt.Node.Name)
+
+                    if (op == PData.Cnst_Gt.Node.Name)
                     {
                         var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                         var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
@@ -749,7 +785,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.GreaterThanExpression, arg1Int, arg2Int));
                     }
-                    else if (op == PData.Cnst_Ge.Node.Name)
+
+                    if (op == PData.Cnst_Ge.Node.Name)
                     {
                         var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                         var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
@@ -757,7 +794,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, arg1Int, arg2Int));
                     }
-                    else if (op == PData.Cnst_Idx.Node.Name)
+
+                    if (op == PData.Cnst_Idx.Node.Name)
                     {
                         var type = LookupType(GetArgByIndex(ft, 1));
                         var typeOp = ((Id)type.Function).Name;
@@ -771,22 +809,16 @@ namespace Microsoft.Pc
                             arg1 = CSharpHelper.MkCSharpCastExpression("PrtMapValue", arg1);
                         }
                         var lookupExpr = CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(arg1, "Lookup"), arg2);
-                        if (lhsStack.Count > 0 && lhsStack.Peek())
+                        if (LhsStack.Count > 0 && LhsStack.Peek())
                         {
                             return lookupExpr;
                         }
-                        else
-                        {
-                            return CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(lookupExpr, "Clone"));
-                        }
 
+                        return CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(lookupExpr, "Clone"));
                     }
-                    else
-                    {
-                        // op == PData.Cnst_In.Node.Name
-                        return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtBoolValue"),
-                                                                             CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", arg2), "Contains"), arg1));
-                    }
+                    // op == PData.Cnst_In.Node.Name
+                    return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtBoolValue"),
+                                                                         CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", arg2), "Contains"), arg1));
                 }
             }
             private int GetFieldIndex(string fieldName, FuncTerm nmdTupType)
@@ -805,7 +837,7 @@ namespace Microsoft.Pc
                 return 0;
             }
 
-            SyntaxNode FoldField(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldField(FuncTerm ft, List<SyntaxNode> children)
             {
                 var expr = GetArgByIndex(ft, 0);
                 var field = (Cnst)GetArgByIndex(ft, 1);
@@ -823,18 +855,16 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var arg = (ExpressionSyntax)it.Current;
                     var accessExpr = CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", arg), "fieldValues"), fieldIndex);
-                    if (lhsStack.Count > 0 && lhsStack.Peek())
+                    if (LhsStack.Count > 0 && LhsStack.Peek())
                     {
                         return accessExpr;
                     }
-                    else
-                    {
-                        return CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(accessExpr, "Clone"));
-                    }
+
+                    return CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(accessExpr, "Clone"));
                 }
             }
 
-            SyntaxNode FoldDefault(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldDefault(FuncTerm ft)
             {
                 var typeArg = (FuncTerm)GetArgByIndex(ft, 0);
                 return CSharpHelper.MkCSharpInvocationExpression(
@@ -845,7 +875,7 @@ namespace Microsoft.Pc
                     pToCSharp.typeContext.PTypeToCSharpExpr(typeArg));
             }
 
-            SyntaxNode FoldCast(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldCast(FuncTerm ft, List<SyntaxNode> children)
             {
                 var typeArg = (FuncTerm)GetArgByIndex(ft, 1);
                 using (var it = children.GetEnumerator())
@@ -862,12 +892,12 @@ namespace Microsoft.Pc
                 }
             }
 
-            SyntaxNode FoldTuple(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldTuple(List<SyntaxNode> children)
             {
                 return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtTupleValue"), children.ToArray());
             }
 
-            SyntaxNode FoldNamedTuple(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldNamedTuple(FuncTerm ft, List<SyntaxNode> children)
             {
                 var tupType = LookupType(ft);
                 children.Insert(0, pToCSharp.typeContext.PTypeToCSharpExpr(tupType));
@@ -880,28 +910,27 @@ namespace Microsoft.Pc
                 {
                     return pToCSharp.GetEventVar(NullEvent);
                 }
-                else if (args.Count == 1)
+
+                if (args.Count == 1)
                 {
                     return (ExpressionSyntax)args[0];
                 }
-                else
-                {
-                    return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtTupleValue"), args.ToArray());
-                }
+
+                return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtTupleValue"), args.ToArray());
             }
 
-            SyntaxNode FoldGoto(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldGoto(FuncTerm ft, List<SyntaxNode> children)
             {
                 var qualifiedStateName = (FuncTerm)GetArgByIndex(ft, 0);
-                var stateName = GetNameFromQualifiedName(owner.machineName, qualifiedStateName);
+                var stateName = GetNameFromQualifiedName(Owner.machineName, qualifiedStateName);
                 var stateExpr = SyntaxFactory.IdentifierName(stateName);
-                MachineInfo machineInfo = pToCSharp.allMachines[owner.machineName];
+                MachineInfo machineInfo = pToCSharp.allMachines[Owner.machineName];
                 string stateEntryActionName = machineInfo.stateNameToStateInfo[stateName].entryActionName;
                 FunInfo entryFunInfo = pToCSharp.allGlobalFuns.ContainsKey(stateEntryActionName)
                     ? pToCSharp.allGlobalFuns[stateEntryActionName]
                     : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(children);
-                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<GotoLog> Machine {{0}}-{{1}} goes to {{2}}"), 
+                var traceStmt = CSharpHelper.MkCSharpTrace("<GotoLog> Machine {0}-{1} goes to {2}", 
                                                            CSharpHelper.MkCSharpDot("parent", "Name"), 
                                                            CSharpHelper.MkCSharpDot("parent", "instanceNumber"), 
                                                            CSharpHelper.MkCSharpDot(stateExpr, "name"));
@@ -912,14 +941,14 @@ namespace Microsoft.Pc
                 return SyntaxFactory.Block(traceStmt, assignStmt1, assignStmt2, assignStmt3, createRetCtxt, SyntaxFactory.ReturnStatement());
             }
 
-            SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldRaise(FuncTerm ft, List<SyntaxNode> children)
             {
                 var eventExpr = (ExpressionSyntax)children[0];
                 children.RemoveAt(0);
                 var payloadVar = MkPayload(children);
                 var equalsExpr = CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(eventExpr, "Equals"), pToCSharp.GetEventVar(NullEvent));
                 var assertStmt = CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
-                var traceStmt = CSharpHelper.MkCSharpTrace(string.Format("<RaiseLog> Machine {{0}}-{{1}} raised Event {{2}}"), 
+                var traceStmt = CSharpHelper.MkCSharpTrace("<RaiseLog> Machine {0}-{1} raised Event {2}", 
                                                            CSharpHelper.MkCSharpDot("parent", "Name"), 
                                                            CSharpHelper.MkCSharpDot("parent", "instanceNumber"), 
                                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));
@@ -929,7 +958,7 @@ namespace Microsoft.Pc
                 return SyntaxFactory.Block(assertStmt, traceStmt, assignStmt1, assignStmt2, returnStmt, SyntaxFactory.ReturnStatement());
             }
 
-            SyntaxNode FoldSend(FuncTerm ft, List<SyntaxNode> args)
+            private SyntaxNode FoldSend(List<SyntaxNode> args)
             {
                 var targetExpr = CSharpHelper.MkCSharpCastExpression("PrtMachineValue", args[0]);
                 ExpressionSyntax eventExpr = CSharpHelper.MkCSharpCastExpression("PrtEventValue", args[1]);
@@ -949,21 +978,21 @@ namespace Microsoft.Pc
                 return SyntaxFactory.Block(enqueueEventStmt, contStmt, SyntaxFactory.ReturnStatement(), afterStmt);
             }
 
-            SyntaxNode FoldAnnounce(FuncTerm ft, List<SyntaxNode> args)
+            private SyntaxNode FoldAnnounce(List<SyntaxNode> args)
             {
-                ExpressionSyntax eventExpr = (ExpressionSyntax)CSharpHelper.MkCSharpCastExpression("PrtEventValue", args[0]);
+                ExpressionSyntax eventExpr = CSharpHelper.MkCSharpCastExpression("PrtEventValue", args[0]);
                 args.RemoveAt(0);
-                ExpressionSyntax payloadExpr = (ExpressionSyntax)MkPayload(args);
-                var invocationArgs = new ExpressionSyntax[]
+                ExpressionSyntax payloadExpr = MkPayload(args);
+                var invocationArgs = new[]
                 {
-                    eventExpr, payloadExpr, (ExpressionSyntax)SyntaxFactory.IdentifierName("parent")
+                    eventExpr, payloadExpr, SyntaxFactory.IdentifierName("parent")
                 };
                 StatementSyntax announceEventStmt = SyntaxFactory.ExpressionStatement(
                     CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("application", "Announce"), invocationArgs));
                 return announceEventStmt;
             }
 
-            SyntaxNode FoldAssert(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldAssert(FuncTerm ft, List<SyntaxNode> children)
             {
                 Cnst msgCnst = GetArgByIndex(ft, 1) as Cnst;
                 using (var it = children.GetEnumerator())
@@ -982,7 +1011,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            SyntaxNode FoldFunStmt(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldFunStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 List<bool> isSwapParameter = new List<bool>();
                 var exprs = GetArgByIndex(ft, 1) as FuncTerm;
@@ -994,7 +1023,7 @@ namespace Microsoft.Pc
                 }
 
                 var calleeName = GetName(ft, 0);
-                var calleeInfo = pToCSharp.allGlobalFuns.ContainsKey(calleeName) ? pToCSharp.allGlobalFuns[calleeName] : pToCSharp.allMachines[owner.machineName].funNameToFunInfo[calleeName];
+                var calleeInfo = pToCSharp.allGlobalFuns.ContainsKey(calleeName) ? pToCSharp.allGlobalFuns[calleeName] : pToCSharp.allMachines[Owner.machineName].funNameToFunInfo[calleeName];
 
                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
                 List<ExpressionSyntax> paramList = new List<ExpressionSyntax>();
@@ -1042,7 +1071,7 @@ namespace Microsoft.Pc
                 return SyntaxFactory.Block(stmtList);
             }
 
-            SyntaxNode FoldNulStmt(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldNulStmt(FuncTerm ft)
             {
                 List<StatementSyntax> stmtList = new List<StatementSyntax>();
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
@@ -1056,7 +1085,7 @@ namespace Microsoft.Pc
                 return SyntaxFactory.Block(stmtList);
             }
 
-            SyntaxNode FoldPrint(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldPrint(FuncTerm ft, List<SyntaxNode> children)
             {
                 string msg = (GetArgByIndex(ft, 0) as Cnst).GetStringValue();
                 FuncTerm seg = GetArgByIndex(ft, 1) as FuncTerm;
@@ -1073,20 +1102,19 @@ namespace Microsoft.Pc
                 return CSharpHelper.MkCSharpPrint(msg, exprs);
             }
 
-            SyntaxNode FoldBinStmt(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldBinStmt(FuncTerm ft, List<SyntaxNode> children)
             {
                 var op = ((Id)GetArgByIndex(ft, 0)).Name;
                 var lhs = (FuncTerm)GetArgByIndex(ft, 1);
                 var type = LookupType(lhs);
                 var typeName = ((Id)type.Function).Name;
-                ExpressionSyntax src = null, dest = null;
                 using (var it = children.GetEnumerator())
                 {
                     ExpressionSyntax index = null;
                     it.MoveNext();
-                    src = (ExpressionSyntax)it.Current;
+                    var src = (ExpressionSyntax)it.Current;
                     it.MoveNext();
-                    dest = (ExpressionSyntax)it.Current;
+                    var dest = (ExpressionSyntax)it.Current;
                     if (it.MoveNext())
                     {
                         index = (ExpressionSyntax)it.Current;
@@ -1115,7 +1143,8 @@ namespace Microsoft.Pc
                                         CSharpHelper.MkCSharpNumericLiteralExpression(fieldIndex),
                                         CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(src, "Clone"))));
                             }
-                            else if (assignType == "MOVE")
+
+                            if (assignType == "MOVE")
                             {
                                 return SyntaxFactory.ExpressionStatement(
                                     CSharpHelper.MkCSharpInvocationExpression(
@@ -1123,18 +1152,16 @@ namespace Microsoft.Pc
                                         CSharpHelper.MkCSharpNumericLiteralExpression(fieldIndex),
                                         src));
                             }
-                            else
-                            {
-                                // assignType = "SWAP" 
-                                return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
-                                    src,
-                                    CSharpHelper.MkCSharpInvocationExpression(
-                                        CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", dest), "UpdateAndReturnOldValue"),
-                                        CSharpHelper.MkCSharpNumericLiteralExpression(fieldIndex),
-                                        src));
-                            }
+                            // assignType = "SWAP" 
+                            return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                                src,
+                                CSharpHelper.MkCSharpInvocationExpression(
+                                    CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", dest), "UpdateAndReturnOldValue"),
+                                    CSharpHelper.MkCSharpNumericLiteralExpression(fieldIndex),
+                                    src));
                         }
-                        else if (index == null)
+
+                        if (index == null)
                         {
                             if (assignType == "NONE")
                             {
@@ -1143,109 +1170,94 @@ namespace Microsoft.Pc
                                 stmtList.Add(CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(dest, CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(src, "Clone"))));
                                 return SyntaxFactory.Block(stmtList);
                             }
-                            else if (assignType == "MOVE")
+
+                            if (assignType == "MOVE")
                             {
                                 return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(dest, src);
                             }
-                            else
-                            {
-                                // assignType == "SWAP"
-                                return SyntaxFactory.Block(
-                                    CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(SyntaxFactory.IdentifierName("swap"), dest),
-                                    CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(dest, src),
-                                    CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(src, SyntaxFactory.IdentifierName("swap")));
-                            }
+                            // assignType == "SWAP"
+                            return SyntaxFactory.Block(
+                                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(SyntaxFactory.IdentifierName("swap"), dest),
+                                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(dest, src),
+                                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(src, SyntaxFactory.IdentifierName("swap")));
                         }
-                        else
+
+                        lhs = (FuncTerm)GetArgByIndex(lhs, 1);
+                        type = LookupType(lhs);
+                        typeName = ((Id)type.Function).Name;
+                        if (typeName == PData.Con_SeqType.Node.Name)
                         {
-                            lhs = (FuncTerm)GetArgByIndex(lhs, 1);
-                            type = LookupType(lhs);
-                            typeName = ((Id)type.Function).Name;
-                            if (typeName == PData.Con_SeqType.Node.Name)
+                            if (assignType == "NONE")
                             {
-                                if (assignType == "NONE")
-                                {
-                                    return SyntaxFactory.ExpressionStatement(
-                                        CSharpHelper.MkCSharpInvocationExpression(
-                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
-                                            index,
-                                            CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(src, "Clone"))));
-                                }
-                                else if (assignType == "MOVE")
-                                {
-                                    return SyntaxFactory.ExpressionStatement(
-                                        CSharpHelper.MkCSharpInvocationExpression(
-                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
-                                            index,
-                                            src));
-                                }
-                                else
-                                {
-                                    // assignType == "SWAP"
-                                    return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
-                                        src,
-                                        CSharpHelper.MkCSharpInvocationExpression(
-                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "UpdateAndReturnOldValue"),
-                                            index,
-                                            src));
-                                }
+                                return SyntaxFactory.ExpressionStatement(
+                                    CSharpHelper.MkCSharpInvocationExpression(
+                                        CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
+                                        index,
+                                        CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(src, "Clone"))));
                             }
-                            else
+
+                            if (assignType == "MOVE")
                             {
-                                // type is PMapType
-                                if (assignType == "NONE")
-                                {
-                                    return SyntaxFactory.ExpressionStatement(
-                                        CSharpHelper.MkCSharpInvocationExpression(
-                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "Update"),
-                                            index,
-                                            CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(src, "Clone"))));
-                                }
-                                else if (assignType == "MOVE")
-                                {
-                                    return SyntaxFactory.ExpressionStatement(
-                                        CSharpHelper.MkCSharpInvocationExpression(
-                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "Update"),
-                                            index,
-                                            src));
-                                }
-                                else
-                                {
-                                    // assignType == "SWAP"
-                                    return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
-                                        src,
-                                        CSharpHelper.MkCSharpInvocationExpression(
-                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "UpdateAndReturnOldValue"),
-                                            index,
-                                            src));
-                                }
+                                return SyntaxFactory.ExpressionStatement(
+                                    CSharpHelper.MkCSharpInvocationExpression(
+                                        CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "Update"),
+                                        index,
+                                        src));
                             }
+                            // assignType == "SWAP"
+                            return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                                src,
+                                CSharpHelper.MkCSharpInvocationExpression(
+                                    CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "UpdateAndReturnOldValue"),
+                                    index,
+                                    src));
                         }
+                        // type is PMapType
+                        if (assignType == "NONE")
+                        {
+                            return SyntaxFactory.ExpressionStatement(
+                                CSharpHelper.MkCSharpInvocationExpression(
+                                    CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "Update"),
+                                    index,
+                                    CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(src, "Clone"))));
+                        }
+
+                        if (assignType == "MOVE")
+                        {
+                            return SyntaxFactory.ExpressionStatement(
+                                CSharpHelper.MkCSharpInvocationExpression(
+                                    CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "Update"),
+                                    index,
+                                    src));
+                        }
+                        // assignType == "SWAP"
+                        return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                            src,
+                            CSharpHelper.MkCSharpInvocationExpression(
+                                CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "UpdateAndReturnOldValue"),
+                                index,
+                                src));
                     }
-                    else if (op == PData.Cnst_Remove.Node.Name)
+
+                    if (op == PData.Cnst_Remove.Node.Name)
                     {
                         if (typeName == PData.Con_SeqType.Node.Name)
                         {
                             return SyntaxFactory.ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "Remove"), src));
                         }
-                        else
-                        {
-                            return SyntaxFactory.ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "Remove"), src));
-                        }
+
+                        return SyntaxFactory.ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "Remove"), src));
                     }
-                    else
-                    {
-                        // op == PData.Cnst_Insert.Node.Name
-                        return SyntaxFactory.ExpressionStatement(
-                            CSharpHelper.MkCSharpInvocationExpression(
-                                CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "Insert"),
-                                CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
-                                CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 1)));
-                    }
+                    // op == PData.Cnst_Insert.Node.Name
+                    return SyntaxFactory.ExpressionStatement(
+                        CSharpHelper.MkCSharpInvocationExpression(
+                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "Insert"),
+                            CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 0),
+                            CSharpHelper.MkCSharpElementAccessExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", src), "fieldValues"), 1)));
                 }
             }
 
-            SyntaxNode FoldReturn(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldReturn(List<SyntaxNode> children)
             {
                 AST<FuncTerm> returnType = PTypeNull;
                 if (funInfo != null)
@@ -1270,7 +1282,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            SyntaxNode FoldWhile(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldWhile(List<SyntaxNode> children)
             {
                 using (var it = children.GetEnumerator())
                 {
@@ -1278,8 +1290,8 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var condExpr = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", TranslatePossibleNondet(it.Current, stmtList)), "bl");
                     it.MoveNext();
-                    var loopStart = pToCSharp.GetUnique(funName + "_loop_start");
-                    var loopEnd = pToCSharp.GetUnique(funName + "_loop_end");
+                    var loopStart = pToCSharp.GetUnique(FunName + "_loop_start");
+                    var loopEnd = pToCSharp.GetUnique(FunName + "_loop_end");
                     var body = it.Current;
                     stmtList.Add(CSharpHelper.MkCSharpEmptyLabeledStatement(loopStart));
                     stmtList.Add(SyntaxFactory.IfStatement(SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), CSharpHelper.MkCSharpGoto(loopEnd)));
@@ -1290,7 +1302,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            SyntaxNode FoldIte(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldIte(List<SyntaxNode> children)
             {
                 using (var it = children.GetEnumerator())
                 {
@@ -1302,7 +1314,7 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var elseStmt = it.Current;
 
-                    var ifName = pToCSharp.GetUnique(funName + "_if");
+                    var ifName = pToCSharp.GetUnique(FunName + "_if");
                     var elseLabel = ifName + "_else";
                     var afterLabel = ifName + "_end";
                     stmtList.Add(SyntaxFactory.IfStatement(SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, condExpr), CSharpHelper.MkCSharpGoto(elseLabel)));
@@ -1315,7 +1327,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            SyntaxNode FoldSeq(FuncTerm ft, List<SyntaxNode> children)
+            private SyntaxNode FoldSeq(List<SyntaxNode> children)
             {
                 using (var it = children.GetEnumerator())
                 {
@@ -1327,7 +1339,7 @@ namespace Microsoft.Pc
                 }
             }
 
-            SyntaxNode TranslatePossibleNondet(SyntaxNode expr, List<StatementSyntax> stmtList)
+            private SyntaxNode TranslatePossibleNondet(SyntaxNode expr, List<StatementSyntax> stmtList)
             {
                 var id = expr as IdentifierNameSyntax;
                 if (id == null) return expr;
@@ -1348,7 +1360,7 @@ namespace Microsoft.Pc
             public SyntaxNode MkFunStackFrameClass()
             {
                 SyntaxList<MemberDeclarationSyntax> members = new SyntaxList<MemberDeclarationSyntax>();
-                string frameClassName = StackFrameClassName(funName);
+                string frameClassName = StackFrameClassName(FunName);
                 //public F1_Class_StackFrame(PrtFun fun, List<PrtValue> _locals) : base(fun, _locals) {}
                 var pars = new List<SyntaxNode> { CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("locals"), CSharpHelper.MkCSharpGenericListType(SyntaxFactory.IdentifierName("PrtValue"))),
                     CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("retLoc"), SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword))) };
@@ -1356,8 +1368,9 @@ namespace Microsoft.Pc
                 modifiers = modifiers.Add(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
                 members = members.Add(CSharpHelper.MkCSharpConstructor(SyntaxFactory.Identifier(frameClassName),
                                                                        modifiers,
-                                                                       new List<SyntaxNode>() {
-                                                                           CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("fun"), (TypeSyntax) SyntaxFactory.IdentifierName("PrtFun")),
+                                                                       new List<SyntaxNode>
+                                                                       {
+                                                                           CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("fun"), SyntaxFactory.IdentifierName("PrtFun")),
                                                                            CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("_locals"), CSharpHelper.MkCSharpGenericListType(SyntaxFactory.IdentifierName("PrtValue"))) },
                                                                        CSharpHelper.MkCSharpConstructorInitializer(SyntaxKind.BaseConstructorInitializer,
                                                                                                                    CSharpHelper.MkCSharpArgumentList(SyntaxFactory.IdentifierName("fun"), SyntaxFactory.IdentifierName("_locals"))),
@@ -1366,8 +1379,9 @@ namespace Microsoft.Pc
                 //public F2_Class_StackFrame(PrtFun fun, List<PrtValue> _locals, int retLocation): base(fun, _locals, retLocation) {}
                 members = members.Add(CSharpHelper.MkCSharpConstructor(SyntaxFactory.Identifier(frameClassName),
                                                                        modifiers,
-                                                                       new List<SyntaxNode>() {
-                                                                           CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("fun"), (TypeSyntax) SyntaxFactory.IdentifierName("PrtFun")),
+                                                                       new List<SyntaxNode>
+                                                                       {
+                                                                           CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("fun"), SyntaxFactory.IdentifierName("PrtFun")),
                                                                            CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("_locals"), CSharpHelper.MkCSharpGenericListType(SyntaxFactory.IdentifierName("PrtValue"))),
                                                                            CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("retLocation"), SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword))) },
                                                                        CSharpHelper.MkCSharpConstructorInitializer(SyntaxKind.BaseConstructorInitializer,
@@ -1403,14 +1417,13 @@ namespace Microsoft.Pc
                     modifiers = new SyntaxTokenList();
                     modifiers = modifiers.Add(SyntaxFactory.Token(SyntaxKind.PublicKeyword));
                     var getBody = SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.ReturnStatement(
-                                                                     (ExpressionSyntax)CSharpHelper.MkCSharpElementAccessExpression(
+                                                                     CSharpHelper.MkCSharpElementAccessExpression(
                                                                          SyntaxFactory.IdentifierName("locals"), ind)));
-                    var setBody = SyntaxFactory.SingletonList<StatementSyntax>((StatementSyntax)CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
-                                                                     (ExpressionSyntax)CSharpHelper.MkCSharpElementAccessExpression(
+                    var setBody = SyntaxFactory.SingletonList((StatementSyntax)CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                                                                     CSharpHelper.MkCSharpElementAccessExpression(
                                                                          SyntaxFactory.IdentifierName("locals"), ind),
                                                                      SyntaxFactory.IdentifierName("value")));
-                    AccessorDeclarationSyntax[] accessorList = new AccessorDeclarationSyntax[]
-                        { CSharpHelper.MkCSharpAccessor("get", getBody), CSharpHelper.MkCSharpAccessor("set", setBody)};
+                    AccessorDeclarationSyntax[] accessorList = { CSharpHelper.MkCSharpAccessor("get", getBody), CSharpHelper.MkCSharpAccessor("set", setBody)};
                     members = members.Add((MemberDeclarationSyntax)CSharpHelper.MkCSharpPropertyDecl("PrtValue", varName,
                                                                                                      modifiers,
                                                                                                      accessorList));
@@ -1446,29 +1459,29 @@ namespace Microsoft.Pc
                 List<StatementSyntax> funStmts = new List<StatementSyntax>();
                 //Line below is a template:
                 //PrtFunStackFrame currFun = parent.PrtPopFunStackFrame();
-                if (owner != null)
+                if (Owner != null)
                 {
                     funStmts.Add(
                         SyntaxFactory.LocalDeclarationStatement(
                                 SyntaxFactory.VariableDeclaration(
-                                        SyntaxFactory.IdentifierName(owner.machineName))
+                                        SyntaxFactory.IdentifierName(Owner.machineName))
                                     .WithVariables(
-                                        SyntaxFactory.SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                        SyntaxFactory.SingletonSeparatedList(
                                             SyntaxFactory.VariableDeclarator(
                                                     SyntaxFactory.Identifier("parent"))
                                                 .WithInitializer(
                                                     SyntaxFactory.EqualsValueClause(
-                                                        CSharpHelper.MkCSharpCastExpression(owner.machineName, SyntaxFactory.IdentifierName("_parent")))))))
+                                                        CSharpHelper.MkCSharpCastExpression(Owner.machineName, SyntaxFactory.IdentifierName("_parent")))))))
                             .NormalizeWhitespace());
                 }
-                string stackFrameClassName = StackFrameClassName(funName);
+                string stackFrameClassName = StackFrameClassName(FunName);
                 
                 funStmts.Add(
                     SyntaxFactory.LocalDeclarationStatement(
                             SyntaxFactory.VariableDeclaration(
                                     SyntaxFactory.IdentifierName(stackFrameClassName))
                                 .WithVariables(
-                                    SyntaxFactory.SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                    SyntaxFactory.SingletonSeparatedList(
                                         SyntaxFactory.VariableDeclarator(
                                                 SyntaxFactory.Identifier("currFun"))
                                             .WithInitializer(
@@ -1487,7 +1500,7 @@ namespace Microsoft.Pc
                             SyntaxFactory.VariableDeclaration(
                                     SyntaxFactory.IdentifierName("PrtValue"))
                                 .WithVariables(
-                                    SyntaxFactory.SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                    SyntaxFactory.SingletonSeparatedList(
                                         SyntaxFactory.VariableDeclarator(
                                             SyntaxFactory.Identifier("swap")))))
                         .NormalizeWhitespace());
@@ -1512,7 +1525,7 @@ namespace Microsoft.Pc
                                         SyntaxFactory.IdentifierName("PrtFunContReturn")))
                                 .WithArgumentList(
                                     SyntaxFactory.ArgumentList(
-                                        SyntaxFactory.SingletonSeparatedList<ArgumentSyntax>(
+                                        SyntaxFactory.SingletonSeparatedList(
                                             SyntaxFactory.Argument(
                                                 CSharpHelper.MkCSharpDot("currFun", "locals"))))))
                         .NormalizeWhitespace());
@@ -1524,9 +1537,8 @@ namespace Microsoft.Pc
                             SyntaxFactory.Identifier("Execute"))
                         .WithModifiers(
                             SyntaxFactory.TokenList(
-                                new[]{
-                                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword)}))
+                                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                                SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
                         .WithParameterList(
                             SyntaxFactory.ParameterList(
                                 SyntaxFactory.SeparatedList<ParameterSyntax>(
@@ -1537,7 +1549,7 @@ namespace Microsoft.Pc
                                                 SyntaxFactory.IdentifierName("StateImpl")),
                                         SyntaxFactory.Token(SyntaxKind.CommaToken),
                                         SyntaxFactory.Parameter(
-                                                owner == null ? SyntaxFactory.Identifier("parent") : SyntaxFactory.Identifier("_parent"))
+                                                Owner == null ? SyntaxFactory.Identifier("parent") : SyntaxFactory.Identifier("_parent"))
                                             .WithType(
                                                 SyntaxFactory.IdentifierName("PrtMachine"))})))
                         .WithBody(
@@ -1557,7 +1569,7 @@ namespace Microsoft.Pc
                             SyntaxFactory.VariableDeclaration(
                                     SyntaxFactory.IdentifierName("var"))
                                 .WithVariables(
-                                    SyntaxFactory.SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                    SyntaxFactory.SingletonSeparatedList(
                                         SyntaxFactory.VariableDeclarator(
                                                 SyntaxFactory.Identifier("locals"))
                                             .WithInitializer(
@@ -1589,7 +1601,7 @@ namespace Microsoft.Pc
                                                     SyntaxFactory.IdentifierName("Add")))
                                             .WithArgumentList(
                                                 SyntaxFactory.ArgumentList(
-                                                    SyntaxFactory.SingletonSeparatedList<ArgumentSyntax>(
+                                                    SyntaxFactory.SingletonSeparatedList(
                                                         SyntaxFactory.Argument(
                                                             SyntaxFactory.InvocationExpression(
                                                                 SyntaxFactory.MemberAccessExpression(
@@ -1629,12 +1641,11 @@ namespace Microsoft.Pc
                             SyntaxFactory.Identifier("CreateLocals"))
                         .WithModifiers(
                             SyntaxFactory.TokenList(
-                                new[]{
-                                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword)}))
+                                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                                SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
                         .WithParameterList(
                             SyntaxFactory.ParameterList(
-                                SyntaxFactory.SingletonSeparatedList<ParameterSyntax>(
+                                SyntaxFactory.SingletonSeparatedList(
                                     SyntaxFactory.Parameter(
                                             SyntaxFactory.Identifier("args"))
                                         .WithModifiers(
@@ -1644,7 +1655,7 @@ namespace Microsoft.Pc
                                             SyntaxFactory.ArrayType(
                                                     SyntaxFactory.IdentifierName("PrtValue"))
                                                 .WithRankSpecifiers(
-                                                    SyntaxFactory.SingletonList<ArrayRankSpecifierSyntax>(
+                                                    SyntaxFactory.SingletonList(
                                                         SyntaxFactory.ArrayRankSpecifier(
                                                             SyntaxFactory.SingletonSeparatedList<ExpressionSyntax>(
                                                                 SyntaxFactory.OmittedArraySizeExpression()))))))))
@@ -1656,8 +1667,8 @@ namespace Microsoft.Pc
             }
             public SyntaxNode MkFunToStringMethod()
             {
-                var body = SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.ReturnStatement(CSharpHelper.MkCSharpStringLiteralExpression(funName)));
-                var pars = new List<SyntaxNode> { };
+                var body = SyntaxFactory.SingletonList<StatementSyntax>(SyntaxFactory.ReturnStatement(CSharpHelper.MkCSharpStringLiteralExpression(FunName)));
+                var pars = new List<SyntaxNode>();
                 return CSharpHelper.MkCSharpMethodDeclaration(SyntaxFactory.IdentifierName("string"), SyntaxFactory.Identifier("ToString"),
                                                               new[] { SyntaxFactory.Token(SyntaxKind.PublicKeyword), SyntaxFactory.Token(SyntaxKind.OverrideKeyword) },
                                                               body,
@@ -1666,9 +1677,11 @@ namespace Microsoft.Pc
             public SyntaxNode MkCreateFunStackFrameMethod()
             {
                 var body = SyntaxFactory.SingletonList<StatementSyntax>(
-                    SyntaxFactory.ReturnStatement((ExpressionSyntax)CSharpHelper.MkCSharpObjectCreationExpression(
-                                        SyntaxFactory.IdentifierName(StackFrameClassName(funName)),
-                                        new SyntaxNode[] { SyntaxFactory.ThisExpression(), SyntaxFactory.IdentifierName("locals"), SyntaxFactory.IdentifierName("retLoc") })));
+                    SyntaxFactory.ReturnStatement(CSharpHelper.MkCSharpObjectCreationExpression(
+                                                      SyntaxFactory.IdentifierName(StackFrameClassName(FunName)),
+                                                      SyntaxFactory.ThisExpression(),
+                                                      SyntaxFactory.IdentifierName("locals"),
+                                                      SyntaxFactory.IdentifierName("retLoc"))));
                 var pars = new List<SyntaxNode> { CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("locals"), CSharpHelper.MkCSharpGenericListType(SyntaxFactory.IdentifierName("PrtValue"))),
                     CSharpHelper.MkCSharpParameter(SyntaxFactory.Identifier("retLoc"), SyntaxFactory.PredefinedType(SyntaxFactory.Token(SyntaxKind.IntKeyword))) };
                 return CSharpHelper.MkCSharpMethodDeclaration(SyntaxFactory.IdentifierName("PrtFunStackFrame"), SyntaxFactory.Identifier("CreateFunStackFrame"),
@@ -1682,7 +1695,7 @@ namespace Microsoft.Pc
 
                 //IsAnonFun property for anon functions only (getter only):
                 PropertyDeclarationSyntax isAnonProperty;
-                if (funName.StartsWith("AnonFun"))
+                if (FunName.StartsWith("AnonFun"))
                 {
                     isAnonProperty =
                         SyntaxFactory.PropertyDeclaration(
@@ -1691,12 +1704,11 @@ namespace Microsoft.Pc
                                 SyntaxFactory.Identifier("IsAnonFun"))
                             .WithModifiers(
                                 SyntaxFactory.TokenList(
-                                    new[]{
-                                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                                        SyntaxFactory.Token(SyntaxKind.OverrideKeyword)}))
+                                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
                             .WithAccessorList(
                                 SyntaxFactory.AccessorList(
-                                    SyntaxFactory.SingletonList<AccessorDeclarationSyntax>(
+                                    SyntaxFactory.SingletonList(
                                         SyntaxFactory.AccessorDeclaration(
                                             SyntaxKind.GetAccessorDeclaration,
                                             SyntaxFactory.Block(
@@ -1715,12 +1727,11 @@ namespace Microsoft.Pc
                                 SyntaxFactory.Identifier("IsAnonFun"))
                             .WithModifiers(
                                 SyntaxFactory.TokenList(
-                                    new[]{
-                                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                                        SyntaxFactory.Token(SyntaxKind.OverrideKeyword)}))
+                                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
                             .WithAccessorList(
                                 SyntaxFactory.AccessorList(
-                                    SyntaxFactory.SingletonList<AccessorDeclarationSyntax>(
+                                    SyntaxFactory.SingletonList(
                                         SyntaxFactory.AccessorDeclaration(
                                             SyntaxKind.GetAccessorDeclaration,
                                             SyntaxFactory.Block(
@@ -1737,7 +1748,7 @@ namespace Microsoft.Pc
                 funMembers = funMembers.Add((MemberDeclarationSyntax)MkCreateFunStackFrameMethod());
                 funMembers = funMembers.Add((MemberDeclarationSyntax)MkFunToStringMethod());
                 var funClassDecl =
-                    SyntaxFactory.ClassDeclaration(funClassName)
+                    SyntaxFactory.ClassDeclaration(FunClassName)
                         .WithModifiers(
                             SyntaxFactory.TokenList(
                                 SyntaxFactory.Token(SyntaxKind.PublicKeyword)))
@@ -1757,11 +1768,10 @@ namespace Microsoft.Pc
                 //Function class declaration should be generated in two cases:
                 //1. For all global static functions
                 //2. For other functions: if this function name was not already encountered
-                if (owner == null || !(owner == null) && !owner.processedFuns.Contains(funName))
+                if (Owner == null || !(Owner == null) && !Owner.processedFuns.Contains(FunName))
                 {
                     //Class declaration:
-                    List<SyntaxNode> whereToAdd;
-                    whereToAdd = (this.owner == null) ? pToCSharp.members : owner.machineMembers;
+                    List<SyntaxNode> whereToAdd = (Owner == null) ? pToCSharp.members : Owner.machineMembers;
 
                     whereToAdd.Add(MkFuncClass());
 
@@ -1769,22 +1779,18 @@ namespace Microsoft.Pc
                     whereToAdd.Add(
                         SyntaxFactory.FieldDeclaration(
                                 SyntaxFactory.VariableDeclaration(
-                                        SyntaxFactory.IdentifierName(funClassName))
+                                        SyntaxFactory.IdentifierName(FunClassName))
                                     .WithVariables(
-                                        SyntaxFactory.SingletonSeparatedList<VariableDeclaratorSyntax>(
+                                        SyntaxFactory.SingletonSeparatedList(
                                             SyntaxFactory.VariableDeclarator(
-                                                SyntaxFactory.Identifier(funName)).WithInitializer(SyntaxFactory.EqualsValueClause(CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName(funClassName)))))))
+                                                SyntaxFactory.Identifier(FunName)).WithInitializer(SyntaxFactory.EqualsValueClause(CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName(FunClassName)))))))
                             .WithModifiers(
                                 SyntaxFactory.TokenList(
-                                    new[]{
-                                        SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                                        SyntaxFactory.Token(SyntaxKind.StaticKeyword)}))
+                                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                                    SyntaxFactory.Token(SyntaxKind.StaticKeyword)))
                             .NormalizeWhitespace());
 
-                    if (!(owner == null))
-                    {
-                        owner.processedFuns.Add(funName);
-                    }
+                    Owner?.processedFuns.Add(FunName);
                 }
             }
         }

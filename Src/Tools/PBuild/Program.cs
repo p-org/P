@@ -170,7 +170,7 @@ namespace PBuild
                 Console.WriteLine("==============================================================");
                 Console.WriteLine("=== Compiling project {0} ===", project.Name);
 
-                compileResult = svc.Compile(compileArgs, Console.Out);
+                compileResult = svc.Compile(new StandardOutput(), compileArgs);
             }
 
             if (!compileResult)
@@ -186,7 +186,7 @@ namespace PBuild
                     new List<string>(project.testscripts.Select(Path.GetFullPath).ToList());
                 //populate all summary files
                 compileArgs.dependencies.Add(Path.Combine(project.outputDir, project.Name + ".4ml"));
-                svc.Link(compileArgs, Console.Out);
+                svc.Link(new StandardOutput(), compileArgs);
             }
             Console.WriteLine("==============================================================");
         }

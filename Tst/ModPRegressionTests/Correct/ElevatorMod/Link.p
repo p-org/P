@@ -1,5 +1,4 @@
-module Elevator 
-private;
+module Elevator
 {
   Elevator,
   Door,
@@ -7,7 +6,6 @@ private;
 }
 
 module User 
-private;
 {
   Main
 }

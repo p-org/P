@@ -3,6 +3,7 @@
     <Source>
       <Include>./CommonUtilities/PSrc/Timer.p</Include>
       <Include>./CommonUtilities/PSrc/TimerHeader.p</Include>
+      <Include>./CommonUtilities/PSrc/Helper.p</Include>
     </Source>
   </PProject>
   <PProject name= "smrabs" outputdir="./SMR/PGenerated">
@@ -43,6 +44,7 @@
     <Source>
       <Include>./ChainReplication/PSrc/ChainReplicationHeader.p</Include>
       <Include>./ChainReplication/PSrc/ChainReplicationNodes.p</Include>
+      <Include>./ChainReplication/PSrc/ChainReplicationSpec.p</Include>
       <Include>./ChainReplication/PSrc/ChainReplicationMasterAndFaultDetector.p</Include>
       <Include>./ChainReplication/Test/TestDrivers.p</Include>   
     </Source>
@@ -57,8 +59,11 @@
       <Include>./MultiPaxos/PSrc/MultiPaxosHeader.p</Include>
       <Include>./MultiPaxos/PSrc/MultiPaxos.p</Include>
       <Include>./MultiPaxos/PSrc/LeaderElection.p</Include>
-      <Include>./ChainReplication/Test/TestDrivers.p</Include>   
+      <Include>./MultiPaxos/Test/TestDrivers.p</Include>   
     </Source>
+    <Link>
+      <Include>./MultiPaxos/Test/TestScript.p</Include>
+    </Link>
     <Depends>timer</Depends>
     <Depends>smrabs</Depends>
   </PProject>

@@ -16,7 +16,7 @@ namespace P.Tester
         string RHSModel;
 
         int maxLengthOfExecution = 1000;
-        int maxRHSSchedules = 100000;
+        int maxRHSSchedules = 10000;
         int maxLHSSchedules = 100;
         List<VisibleTrace> allTracesRHS;
         public void AddTrace(VisibleTrace tc)

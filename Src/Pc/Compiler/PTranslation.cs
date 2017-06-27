@@ -40,19 +40,23 @@ namespace Microsoft.Pc
             Factory.Instance.MkFuncTerm(Factory.Instance.MkId("BaseType")),
             Factory.Instance.MkId("ANY"));
 
-        public Dictionary<AST<Node>, FuncTerm> aliasToTerm;
-        public Dictionary<string, Dictionary<string, int>> allEnums;
-        public Dictionary<string, EventInfo> allEvents;
-        public Dictionary<string, FunInfo> allGlobalFuns;
-        public Dictionary<string, MachineInfo> allMachines;
-        public Dictionary<AST<Node>, string> anonFunToName;
+        public Dictionary<AST<Node>, FuncTerm> aliasToTerm = new Dictionary<AST<Node>, FuncTerm>();
+        public Dictionary<string, Dictionary<string, int>> allEnums = new Dictionary<string, Dictionary<string, int>>();
+        public Dictionary<string, EventInfo> allEvents = new Dictionary<string, EventInfo>
+        {
+            [HaltEvent] = new EventInfo(1, false, PTypeNull.Node),
+            [NullEvent] = new EventInfo(1, false, PTypeNull.Node)
+        };
+        public Dictionary<string, FunInfo> allGlobalFuns = new Dictionary<string, FunInfo>();
+        public Dictionary<string, MachineInfo> allMachines = new Dictionary<string, MachineInfo>();
+        public Dictionary<AST<Node>, string> anonFunToName = new Dictionary<AST<Node>, string>();
 
         public Compiler compiler;
-        public HashSet<string> exportedEvents;
-        public Dictionary<string, LinkedList<AST<FuncTerm>>> factBins;
-        public Dictionary<AST<Node>, string> funToFileName;
+        public HashSet<string> exportedEvents = new HashSet<string>();
+        public Dictionary<string, LinkedList<AST<FuncTerm>>> factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
+        public Dictionary<AST<Node>, string> funToFileName = new Dictionary<AST<Node>, string>();
         public Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo;
-        public Dictionary<AST<FuncTerm>, Node> termToAlias;
+        public Dictionary<AST<FuncTerm>, Node> termToAlias = new Dictionary<AST<FuncTerm>, Node>();
 
         private readonly Dictionary<string, int> uniqIDCounters = new Dictionary<string, int>();
 
@@ -60,9 +64,7 @@ namespace Microsoft.Pc
         {
             this.compiler = compiler;
             this.idToSourceInfo = idToSourceInfo;
-            factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
-            aliasToTerm = new Dictionary<AST<Node>, FuncTerm>();
-            termToAlias = new Dictionary<AST<FuncTerm>, Node>();
+
             model.FindAll(
                 new NodePred[] {NodePredFactory.Instance.Star, NodePredFactory.Instance.MkPredicate(NodeKind.ModelFact)},
                 (path, n) =>
@@ -80,6 +82,7 @@ namespace Microsoft.Pc
                     }
                     GetBin(factBins, matchName).AddLast(matchAst);
                 });
+
             GenerateProgramData();
         }
 
@@ -201,15 +204,6 @@ namespace Microsoft.Pc
 
         private void GenerateProgramData()
         {
-            funToFileName = new Dictionary<AST<Node>, string>();
-            allEvents = new Dictionary<string, EventInfo>();
-            exportedEvents = new HashSet<string>();
-            allEnums = new Dictionary<string, Dictionary<string, int>>();
-            allEvents[HaltEvent] = new EventInfo(1, false, PTypeNull.Node);
-            allEvents[NullEvent] = new EventInfo(1, false, PTypeNull.Node);
-            allMachines = new Dictionary<string, MachineInfo>();
-            allGlobalFuns = new Dictionary<string, FunInfo>();
-
             LinkedList<AST<FuncTerm>> terms = GetBin(factBins, "FileInfo");
             foreach (AST<FuncTerm> term in terms)
             {
@@ -503,7 +497,6 @@ namespace Microsoft.Pc
                 }
             }
 
-            anonFunToName = new Dictionary<AST<Node>, string>();
             var anonFunCounter = new Dictionary<string, int>();
             var anonFunCounterStatic = 0;
             foreach (string x in allMachines.Keys)
@@ -652,15 +645,7 @@ namespace Microsoft.Pc
                     if (it.Current.NodeKind == NodeKind.Id)
                     {
                         string name = ((Id) it.Current).Name;
-                        if (name == "NULL")
-                        {
-                            eventName = NullEvent;
-                        }
-                        else
-                        {
-                            // name == "HALT"
-                            eventName = HaltEvent;
-                        }
+                        eventName = name == "NULL" ? NullEvent : HaltEvent;
                     }
                     else
                     {
@@ -844,7 +829,7 @@ namespace Microsoft.Pc
             }
         }
 
-        private HashSet<string> ComputeGotoTargets(string machineName, Node node)
+        private static IEnumerable<string> ComputeGotoTargets(string machineName, Node node)
         {
             var targets = new HashSet<string>();
             var searchStack = new Stack<Node>();
@@ -893,7 +878,7 @@ namespace Microsoft.Pc
             return targets;
         }
 
-        private HashSet<string> ComputeGotoTargets(string machineName, MachineInfo machineInfo, StateInfo stateInfo)
+        private static IEnumerable<string> ComputeGotoTargets(string machineName, MachineInfo machineInfo, StateInfo stateInfo)
         {
             var targets = new HashSet<string>();
             targets.UnionWith(ComputeGotoTargets(machineName, machineInfo.funNameToFunInfo[stateInfo.entryActionName].body));
@@ -905,7 +890,7 @@ namespace Microsoft.Pc
             return targets;
         }
 
-        private HashSet<string> ComputeReachableStates(string machineName, MachineInfo machineInfo, IEnumerable<string> initialSet)
+        private static IEnumerable<string> ComputeReachableStates(string machineName, MachineInfo machineInfo, IEnumerable<string> initialSet)
         {
             var dfsStack = new Stack<string>();
             var visitedStates = new HashSet<string>();

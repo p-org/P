@@ -1,31 +1,28 @@
-﻿using Microsoft.Formula.API;
-using Microsoft.Pc;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using System.Xml.Serialization;
+using Microsoft.Formula.API;
 
 namespace Microsoft.Pc
 {
-    class Program
+    internal class Program
     {
-        const string ServerPipeName = "63642A12-F751-41E3-A9D3-279EE34A0EDB-CompilerService";
-        bool doMoreWork;
-        int busyCount;
-        int maxCompilers = 1;
-        object compilerlock = new object();
-        Dictionary<string, Compiler> compilerFree = new Dictionary<string, Compiler>();
-        Dictionary<string, Compiler> compilerBusy = new Dictionary<string, Compiler>();
+        private const string ServerPipeName = "63642A12-F751-41E3-A9D3-279EE34A0EDB-CompilerService";
+        private int busyCount;
+        private readonly Dictionary<string, Compiler> compilerBusy = new Dictionary<string, Compiler>();
+        private readonly Dictionary<string, Compiler> compilerFree = new Dictionary<string, Compiler>();
+        private readonly object compilerlock = new object();
+        private bool doMoreWork;
+        private int maxCompilers = 1;
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
-            Program p = new Program();
+            var p = new Program();
             p.maxCompilers = Environment.ProcessorCount - 1; // leave 1 core for the user :-) 
             try
             {
@@ -37,7 +34,7 @@ namespace Microsoft.Pc
             }
         }
 
-        private void OnContractFailed(object sender, System.Diagnostics.Contracts.ContractFailedEventArgs e)
+        private void OnContractFailed(object sender, ContractFailedEventArgs e)
         {
             // compiler might be in a weird state, start over.
             // but which compiler is it?
@@ -53,17 +50,17 @@ namespace Microsoft.Pc
             throw new Exception(reason);
         }
 
-        void Run()
+        private void Run()
         {
-            System.Diagnostics.Contracts.Contract.ContractFailed += OnContractFailed;
+            Contract.ContractFailed += OnContractFailed;
             Console.WriteLine("Starting compiler service, listening to named pipe");
 
             // start the server.
-            NamedPipe pipe = new NamedPipe(ServerPipeName);
+            var pipe = new NamedPipe(ServerPipeName);
             pipe.ClientConnected += OnClientConnected;
 
             // we should never use more than Environment.ProcessorCount, the * 2 provides some slop for pipe cleanup from previous jobs.
-            pipe.StartServer(Environment.ProcessorCount * 2); 
+            pipe.StartServer(Environment.ProcessorCount * 2);
 
             doMoreWork = true;
 
@@ -103,13 +100,13 @@ namespace Microsoft.Pc
                     try
                     {
                         doMoreWork = true;
-                        SerializedOutput output = new SerializedOutput(pipe);
+                        var output = new SerializedOutput(pipe);
 
                         bool result = ProcessJob(msg, output);
 
                         // now make sure client gets the JobFinishedMessage message!
-                        output.WriteMessage(CompilerServiceClient.JobFinishedMessage + result.ToString(), SeverityKind.Info);
-                        output.Flush();                        
+                        output.WriteMessage(CompilerServiceClient.JobFinishedMessage + result, SeverityKind.Info);
+                        output.Flush();
                     }
                     catch (Exception)
                     {
@@ -117,12 +114,13 @@ namespace Microsoft.Pc
                     }
                 }
             }
+
             pipe.Close();
         }
 
         private void HandleLockMessage(NamedPipe pipe)
         {
-            var pair = GetFreeCompiler();
+            Tuple<string, Compiler> pair = GetFreeCompiler();
             // send the id to the client for use in subsequent jobs.
             pipe.WriteMessage(pair.Item1);
         }
@@ -133,7 +131,7 @@ namespace Microsoft.Pc
             if (parts.Length == 2 && compilerBusy.ContainsKey(parts[1]))
             {
                 string id = parts[1];
-                string result = "";
+                var result = "";
                 lock (compilerBusy)
                 {
                     if (compilerBusy.ContainsKey(id))
@@ -145,7 +143,7 @@ namespace Microsoft.Pc
                     }
                     else
                     {
-                        result = string.Format("Error: '<free>guid', specified compiler not found with id='{0}'", id);
+                        result = $"Error: '<free>guid', specified compiler not found with id='{id}'";
                     }
                 }
                 pipe.WriteMessage(result);
@@ -156,7 +154,7 @@ namespace Microsoft.Pc
             }
         }
 
-        private Tuple<string,Compiler> GetFreeCompiler()
+        private Tuple<string, Compiler> GetFreeCompiler()
         {
             Tuple<string, Compiler> result = null;
             while (result == null)
@@ -165,7 +163,7 @@ namespace Microsoft.Pc
                 {
                     if (compilerFree.Count > 0)
                     {
-                        var pair = compilerFree.First();
+                        KeyValuePair<string, Compiler> pair = compilerFree.First();
                         compilerFree.Remove(pair.Key);
                         compilerBusy[pair.Key] = pair.Value;
                         result = new Tuple<string, Compiler>(pair.Key, pair.Value);
@@ -173,7 +171,7 @@ namespace Microsoft.Pc
                     else if (compilerBusy.Count < maxCompilers)
                     {
                         var compiler = new Compiler(false);
-                        var id = Guid.NewGuid().ToString();
+                        string id = Guid.NewGuid().ToString();
                         compilerBusy[id] = compiler;
                         result = new Tuple<string, Compiler>(id, compiler);
                     }
@@ -184,6 +182,7 @@ namespace Microsoft.Pc
                     Thread.Sleep(1000);
                 }
             }
+
             Interlocked.Increment(ref busyCount);
             return result;
         }
@@ -202,7 +201,7 @@ namespace Microsoft.Pc
         {
             lock (compilerlock)
             {
-                Compiler newCompiler = new Compiler(false);                
+                var newCompiler = new Compiler(false);
                 compilerBusy[id] = newCompiler;
                 return newCompiler;
             }
@@ -210,30 +209,30 @@ namespace Microsoft.Pc
 
         private static void DebugWriteLine(string msg)
         {
-            Debug.WriteLine("(" + System.Threading.Thread.CurrentThread.ManagedThreadId + ") " + msg);
+            Debug.WriteLine("(" + Thread.CurrentThread.ManagedThreadId + ") " + msg);
         }
 
         private bool ProcessJob(string msg, ICompilerOutput output)
         {
-            bool result = false;
+            var result = false;
             Compiler compiler = null;
             CommandLineOptions options = null;
-            bool freeCompiler = false;
+            var freeCompiler = false;
             string compilerId = null;
 
             try
             {
-                XmlSerializer s = new XmlSerializer(typeof(CommandLineOptions));
-                options = (CommandLineOptions)s.Deserialize(new StringReader(msg));
+                var s = new XmlSerializer(typeof(CommandLineOptions));
+                options = (CommandLineOptions) s.Deserialize(new StringReader(msg));
 
-                bool retry = true;
-                bool masterCreated = false;
+                var retry = true;
+                var masterCreated = false;
 
                 if (options.compilerId == null)
                 {
-                    var pair = GetFreeCompiler();
+                    Tuple<string, Compiler> pair = GetFreeCompiler();
                     compiler = pair.Item2;
-                    compilerId = pair.Item1 ;
+                    compilerId = pair.Item1;
                     freeCompiler = true;
                 }
                 else
@@ -245,7 +244,7 @@ namespace Microsoft.Pc
                         compiler = compilerBusy[options.compilerId];
                     }
                 }
-                
+
                 while (retry)
                 {
                     retry = false;
@@ -280,7 +279,7 @@ namespace Microsoft.Pc
                         }
                         else
                         {
-                            output.WriteMessage("Compile failed: " + ex.ToString(), SeverityKind.Error);
+                            output.WriteMessage("Compile failed: " + ex, SeverityKind.Error);
                         }
                     }
                 }
@@ -290,7 +289,7 @@ namespace Microsoft.Pc
                 result = false;
                 if (output != null)
                 {
-                    output.WriteMessage("internal error: " + ex.ToString(), SeverityKind.Error);
+                    output.WriteMessage("internal error: " + ex, SeverityKind.Error);
                 }
             }
             finally
@@ -308,19 +307,20 @@ namespace Microsoft.Pc
             {
                 if (options != null)
                 {
-                    DebugWriteLine("Finished: " + options.compilerOutput + ", " + string.Join(", ", options.inputFileNames) + ", result=" + result);
-                }                
+                    DebugWriteLine(
+                        "Finished: " + options.compilerOutput + ", " + string.Join(", ", options.inputFileNames) + ", result=" + result);
+                }
             }
             catch (Exception ex)
             {
-                DebugWriteLine("Internal Error: " + ex.ToString());
+                DebugWriteLine("Internal Error: " + ex);
             }
             return result;
         }
 
         public class SerializedOutput : ICompilerOutput
         {
-            NamedPipe pipe;
+            private readonly NamedPipe pipe;
 
             public SerializedOutput(NamedPipe pipe)
             {
@@ -330,12 +330,13 @@ namespace Microsoft.Pc
             public void WriteMessage(string msg, SeverityKind severity)
             {
                 // send this back to the command line process that invoked this compiler.
-                Program.DebugWriteLine("WriteMessage: " + msg);
-                this.pipe.WriteMessage(severity + ": " + msg);
+                DebugWriteLine("WriteMessage: " + msg);
+                pipe.WriteMessage(severity + ": " + msg);
             }
+
             public void Flush()
             {
-                this.pipe.Flush();
+                pipe.Flush();
             }
         }
     }

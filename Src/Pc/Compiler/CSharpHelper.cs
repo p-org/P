@@ -340,5 +340,22 @@ namespace Microsoft.Pc
                 SyntaxFactory.Identifier(label),
                 SyntaxFactory.EmptyStatement());
         }
+
+        public static IEnumerable<TSeq> Intersperse<TSeq>(IEnumerable<TSeq> seq, TSeq elem)
+        {
+            using (IEnumerator<TSeq> iter = seq.GetEnumerator())
+            {
+                if (iter.MoveNext())
+                {
+                    yield return iter.Current;
+
+                    while (iter.MoveNext())
+                    {
+                        yield return elem;
+                        yield return iter.Current;
+                    }
+                }
+            }
+        }
     }
 }

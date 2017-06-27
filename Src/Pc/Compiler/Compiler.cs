@@ -23,7 +23,7 @@
     using System.Windows.Forms;
 
 
-    public class Compiler
+    public class Compiler : ICompiler
     {
         private const string PDomain = "P";
         private const string PLinkDomain = "PLink";
@@ -39,13 +39,15 @@
 
         void InitManifestPrograms()
         {
-            ReservedModuleToLocation = new Dictionary<string, string>();
-            ReservedModuleToLocation.Add(PDomain, "P.4ml");
-            ReservedModuleToLocation.Add(PLinkDomain, "PLink.4ml");
-            ReservedModuleToLocation.Add(CDomain, "C.4ml");
-            ReservedModuleToLocation.Add(ZingDomain, "Zing.4ml");
-            ReservedModuleToLocation.Add(P2InfTypesTransform, "PWithInferredTypes.4ml");
-            ReservedModuleToLocation.Add(P2CTransform, "P2CProgram.4ml");
+            ReservedModuleToLocation = new Dictionary<string, string>
+            {
+                {PDomain, "P.4ml"},
+                {PLinkDomain, "PLink.4ml"},
+                {CDomain, "C.4ml"},
+                {ZingDomain, "Zing.4ml"},
+                {P2InfTypesTransform, "PWithInferredTypes.4ml"},
+                {P2CTransform, "P2CProgram.4ml"}
+            };
 
             LoadedManifestPrograms = new HashSet<string>();
         }
@@ -130,8 +132,7 @@
                     parsedProgram.Terms,
                     out unitModel,
                     null,
-                    MkReservedModuleLocation(PDomain),
-                    ComposeKind.None);
+                    MkReservedModuleLocation(PDomain));
                 Contract.Assert(mkModelResult);
 
                 var PUnitTerm = Factory.Instance.MkFuncTerm(Factory.Instance.MkId("PUnit"));
@@ -209,15 +210,7 @@
             return rc;
         }
 
-        private static bool isFileSystemCaseInsensitive;
-
-        public static bool IsFileSystemCaseInsensitive
-        {
-            get
-            {
-                return isFileSystemCaseInsensitive;
-            }
-        }
+        public static bool IsFileSystemCaseInsensitive { get; }
 
         static Compiler()
         {
@@ -228,7 +221,7 @@
                 File.Delete(fileUpperCase);
             }
             File.CreateText(fileLowerCase).Close();
-            isFileSystemCaseInsensitive = File.Exists(fileUpperCase);
+            IsFileSystemCaseInsensitive = File.Exists(fileUpperCase);
             File.Delete(fileLowerCase);
         }
 
@@ -254,7 +247,7 @@
                         new Flag(
                             SeverityKind.Error,
                             default(Span),
-                            Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                            Constants.BadFile.ToString($"{inputFileName} : {e.Message}"),
                             Constants.BadFile.Code));
                 }
             }
@@ -279,11 +272,11 @@
 
         public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
-            ProgramName RootProgramNameWithTypes;
-            AST<Model> RootModelWithTypes;
+            AST<Model> rootModelWithTypes;
             using (this.Profiler.Start("Compiler generating model with types", Path.GetFileName(RootModel.Node.Name)))
             {
-                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out RootProgramNameWithTypes, out RootModelWithTypes))
+                ProgramName rootProgramNameWithTypes;
+                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out rootProgramNameWithTypes, out rootModelWithTypes))
                 {
                     return false;
                 }
@@ -301,7 +294,7 @@
                 LoadManifestProgram("Zing.4ml");
 
                 zingModel = MkZingOutputModel();
-                var pToZing = new PToZing(this, RootModelWithTypes, idToSourceInfo);
+                var pToZing = new PToZing(this, rootModelWithTypes, idToSourceInfo);
                 bool success = pToZing.GenerateZing(zingFileName, ref zingModel);
                 if (!success)
                 {
@@ -325,11 +318,11 @@
                 }
                 var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(zingCompiler);
                 string zingFileNameFull = Path.Combine(Options.outputDir, zingFileName);
-                zcProcessInfo.Arguments = string.Format("/nowarn:292 \"/out:{0}\\{1}\" \"{2}\"", Options.outputDir, dllFileName, zingFileNameFull);
+                zcProcessInfo.Arguments = $"/nowarn:292 \"/out:{Options.outputDir}\\{dllFileName}\" \"{zingFileNameFull}\"";
                 zcProcessInfo.UseShellExecute = false;
                 zcProcessInfo.CreateNoWindow = true;
                 zcProcessInfo.RedirectStandardOutput = true;
-                Log.WriteMessage(string.Format("Compiling {0} to {1} ...", zingFileName, dllFileName), SeverityKind.Info);
+                Log.WriteMessage($"Compiling {zingFileName} to {dllFileName} ...", SeverityKind.Info);
                 zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
                 zcProcess.WaitForExit();
             }
@@ -382,7 +375,7 @@
                 it.MoveNext();
                 fileBody = (Quote)it.Current;
             }
-            Log.WriteMessage(string.Format("Writing {0} ...", fileName), SeverityKind.Info);
+            Log.WriteMessage($"Writing {fileName} ...", SeverityKind.Info);
 
             try
             {
@@ -417,7 +410,7 @@
             }
             catch (Exception e)
             {
-                Log.WriteMessage(string.Format("Could not save file {0} - {1}", fileName, e.Message), SeverityKind.Error);
+                Log.WriteMessage($"Could not save file {fileName} - {e.Message}", SeverityKind.Error);
                 return false;
             }
 
@@ -432,13 +425,8 @@
                 {
                     continue;
                 }
-                Log.WriteMessage(string.Format(
-                    "{0} ({1}, {2}): {3} - {4}",
-                    f.Item1.Node.Name,
-                    f.Item2.Span.StartLine,
-                    f.Item2.Span.StartCol,
-                    f.Item2.Severity,
-                    f.Item2.Message), SeverityKind.Error);
+                Log.WriteMessage(
+                    $"{f.Item1.Node.Name} ({f.Item2.Span.StartLine}, {f.Item2.Span.StartCol}): {f.Item2.Severity} - {f.Item2.Message}", SeverityKind.Error);
             }
         }
 
@@ -468,11 +456,10 @@
             CompilerEnv.Apply(transStep, false, false, out applyFlags, out apply, out stats);
             apply.RunSynchronously();
             RootProgramNameWithTypes = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_WithTypes.4ml"));
-            Func<Symbol, string> aliasPrefixFunc = (x => AliasFunc(x));
             var extractTask = apply.Result.GetOutputModel(
                 RootModuleWithTypes,
                 RootProgramNameWithTypes,
-                aliasPrefixFunc);
+                AliasFunc);
             extractTask.Wait();
             RootModelWithTypes = (AST<Model>)extractTask.Result.FindAny(
                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
@@ -703,24 +690,31 @@
 
             //// Extract the inferred types model
             var iprogName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_InfModel.4ml"));
-            Func<Symbol, string> aliasPrefixFunc = (x => AliasFunc(x));
-            var iExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_InfModel", iprogName, aliasPrefixFunc);
+            var iExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_InfModel", iprogName, AliasFunc);
             iExtractTask.Wait();
             var iProgram = iExtractTask.Result;
             Contract.Assert(iProgram != null);
             if (!AddCompilerErrorFlags(iProgram))
                 return false;
 
-            if (Options.compilerOutput == CompilerOutput.CSharp)
+            if (Options.compilerOutput != CompilerOutput.C)
             {
                 var iModel = (AST<Model>)iProgram.FindAny(
                                         new NodePred[] {
                                             NodePredFactory.Instance.MkPredicate(NodeKind.Program),
                                             NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
                 Contract.Assert(iModel != null);
-                string csharpFileName = fileName + ".cs";
-                var pToCSharp = new PToCSharpCompiler(this, iModel, idToSourceInfo, csharpFileName);
-                pToCSharp.GenerateCSharp();
+                switch (Options.compilerOutput) {
+                    case CompilerOutput.CSharp:
+                        string csharpFileName = fileName + ".cs";
+                        var pToCSharp = new PToCSharpCompiler(this, iModel, idToSourceInfo, csharpFileName);
+                        pToCSharp.GenerateCSharp();
+                        break;
+                    case CompilerOutput.PSharp:
+                        break;
+                    case CompilerOutput.PThree:
+                        throw new Exception("P3 not yet implemented");
+                }
             }
             else
             {
@@ -736,15 +730,14 @@
 
             //// Extract the link model
             var linkProgName = new ProgramName(Path.Combine(Environment.CurrentDirectory, RootModel.Node.Name + "_LinkModel.4ml"));
-            string linkerAliasPrefix = null;
-            var linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, linkerAliasPrefix);
+            Task<AST<Program>> linkExtractTask = apply.Result.GetOutputModel(RootModel.Node.Name + "_LinkModel", linkProgName, (string) null);
             linkExtractTask.Wait();
-            var linkModel = linkExtractTask.Result.FindAny(
+            AST<Node> linkModel = linkExtractTask.Result.FindAny(
                                 new NodePred[] { NodePredFactory.Instance.MkPredicate(NodeKind.Program), NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
             Contract.Assert(linkModel != null);
             string linkFileName = Path.ChangeExtension(fileName, ".4ml");
-            Log.WriteMessage(string.Format("Writing {0} ...", linkFileName), SeverityKind.Info);
-            StreamWriter wr = new StreamWriter(File.Create(Path.Combine(Options.outputDir, linkFileName)));
+            Log.WriteMessage($"Writing {linkFileName} ...", SeverityKind.Info);
+            var wr = new StreamWriter(File.Create(Path.Combine(Options.outputDir, linkFileName)));
             linkModel.Print(wr);
             wr.Close();
 
@@ -862,7 +855,7 @@
                     new Flag(
                         SeverityKind.Error,
                         default(Span),
-                        Constants.BadFile.ToString(string.Format("{0} : {1}", inputFileName, e.Message)),
+                        Constants.BadFile.ToString($"{inputFileName} : {e.Message}"),
                         Constants.BadFile.Code));
                 RootProgramName = null;
                 return false;
@@ -1199,7 +1192,7 @@
                 fileBody = (Quote)it.Current;
             }
 
-            Log.WriteMessage(string.Format("Writing {0} ...", shortFileName), SeverityKind.Info);
+            Log.WriteMessage($"Writing {shortFileName} ...", SeverityKind.Info);
 
             try
             {
@@ -1217,7 +1210,7 @@
                     new Flag(
                         SeverityKind.Error,
                         default(Span),
-                        string.Format("Could not save file {0} - {1}", fileName, e.Message),
+                        $"Could not save file {fileName} - {e.Message}",
                         1));
                 return false;
             }

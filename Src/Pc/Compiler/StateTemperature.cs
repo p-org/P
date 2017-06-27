@@ -1,4 +1,9 @@
 namespace Microsoft.Pc
 {
-    enum StateTemperature { COLD, WARM, HOT }
+    internal enum StateTemperature
+    {
+        COLD,
+        WARM,
+        HOT
+    }
 }

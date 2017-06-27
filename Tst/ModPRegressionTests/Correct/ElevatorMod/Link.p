@@ -10,8 +10,7 @@ module User
   Main
 }
 
-implementation Elevator || User;
+implementation (compose Elevator, User);
 
 //keep adding test cases here
-test testcase1: Elevator || User;
-test testcase2: User;
+test testcase1: (compose Elevator, User);

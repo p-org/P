@@ -13,5 +13,10 @@ namespace Microsoft.Pc
         {
             
         }
+
+        public string GenerateCode()
+        {
+            return string.Empty;
+        }
     }
 }

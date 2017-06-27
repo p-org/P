@@ -704,13 +704,16 @@
                                             NodePredFactory.Instance.MkPredicate(NodeKind.Program),
                                             NodePredFactory.Instance.MkPredicate(NodeKind.Model) });
                 Contract.Assert(iModel != null);
+                string csharpFileName = fileName + ".cs";
                 switch (Options.compilerOutput) {
                     case CompilerOutput.CSharp:
-                        string csharpFileName = fileName + ".cs";
                         var pToCSharp = new PToCSharpCompiler(this, iModel, idToSourceInfo, csharpFileName);
                         pToCSharp.GenerateCSharp();
                         break;
                     case CompilerOutput.PSharp:
+                        var pToPSharp = new PToPSharpCompiler(this, iModel, idToSourceInfo);
+                        string code = pToPSharp.GenerateCode();
+                        File.WriteAllText(csharpFileName, code);
                         break;
                     case CompilerOutput.PThree:
                         throw new Exception("P3 not yet implemented");

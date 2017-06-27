@@ -284,7 +284,9 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Domains\P2CProgram.4ml" />
     <EmbeddedResource Include="Domains\PWithInferredTypes.4ml" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <MPLexCompile Include="Parser\Lexer.lex" />

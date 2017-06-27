@@ -114,12 +114,12 @@ namespace Microsoft.Pc
                 // add declaration and initialization
                 if (typeKind == "BaseType")
                 {
-                    string primitiveType = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(((Id) GetArgByIndex(type, 0)).Name);
+                    string primitiveType = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(((Id) GetArgByIndex(type, 0)).Name.ToLowerInvariant());
 
                     Debug.Assert(
                         primitiveType == "Any" || primitiveType == "Null" || primitiveType == "Bool" || primitiveType == "Int"
                         || primitiveType == "Event" || primitiveType == "Machine",
-                        "Illegal BaseType");
+                        $"Illegal BaseType: {primitiveType}");
 
                     if (primitiveType != "Any")
                     {

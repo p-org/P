@@ -4,6 +4,7 @@
     {
         Pc,
         Prt,
+        Pt,
         Zing
     }
 }

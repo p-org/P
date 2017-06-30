@@ -116,6 +116,9 @@ namespace UnitTests.CBackend
             tmpWriter.WriteLine("=================================");
         }
 
+        private static void TestPt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
+        {
+        }
         private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
             // Find Zing tool
@@ -223,6 +226,15 @@ namespace UnitTests.CBackend
             // First step: clone test folder to new spot
             DirectoryInfo workDirectory = PrepareTestDir(origTestDir);
 
+            //TODO(after /reset option is implemented): opening of the diffing file
+            //only happens when !reset
+            //SafeDelete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
+            //StreamWriter displayDiffsWriter = null;
+            //if (!OpenSummaryStreamWriter(Constants.DisplayDiffsFile, out displayDiffsWriter))
+            //{
+            //    throw new Exception("Cannot open display-diffs.bat for writing");
+            //}
+            var sbd = new StringBuilder();
             foreach (KeyValuePair<TestType, TestConfig> kv in testConfigs.OrderBy(kv => kv.Key))
             {
                 TestType testType = kv.Key;
@@ -252,6 +264,9 @@ namespace UnitTests.CBackend
                         case TestType.Prt:
                             TestPrt(config, tmpWriter, workDirectory, activeDirectory);
                             break;
+                        case TestType.Pt:
+                            TestPt(config, tmpWriter, workDirectory, activeDirectory);
+                            break;
                         case TestType.Zing:
                             TestZing(config, tmpWriter, workDirectory, activeDirectory);
                             break;
@@ -269,9 +284,21 @@ namespace UnitTests.CBackend
                 correctText = Regex.Replace(correctText, Constants.NewLinePattern, Environment.NewLine);
                 string actualText = sb.ToString();
                 actualText = Regex.Replace(actualText, Constants.NewLinePattern, Environment.NewLine);
+                File.WriteAllText(Path.Combine(activeDirectory, Constants.ActualOutputFileName), actualText);
+                if (!actualText.Equals(correctText))
+                {
+                    //add diffing command to "display-diffs.bat":
+                    //displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\{2}", Constants.DiffTool,
+                    //    activeDirectory, Constants.ActualOutputFileName);
+                }
+
                 Assert.AreEqual(correctText, actualText);
                 Console.WriteLine(actualText);
             }
+            //if (!CloseSummaryStreamWriter(Constants.DisplayDiffsFile, displayDiffsWriter))
+            //{
+            //    throw new Exception("Cannot close display-diffs.bat");
+            //}
         }
     }
 }

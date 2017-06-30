@@ -11,6 +11,8 @@ namespace UnitTests.CBackend
     internal class TestCaseLoader
     {
         private static readonly List<string> TestDirs = new List<string> { "RegressionTests", "ModPRegressionTests" };
+        //TODO(debug only):
+        //private static readonly List<string> TestDirs = new List<string> { "Temp-PtTests" };
 
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName)
         {

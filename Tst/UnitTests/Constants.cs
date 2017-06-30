@@ -15,6 +15,9 @@ namespace UnitTests
         internal const string CTesterVsProjectName = "Tester.vcxproj";
         internal const string CorrectOutputFileName = "acc_0.txt";
         internal const string TestConfigFileName = "testconfig.txt";
+        internal const string DiffTool = "kdiff3";
+        internal const string DisplayDiffsFile = "display-diffs.bat";
+        internal const string ActualOutputFileName = "check-output.log";
 #if DEBUG
         internal const string Configuration = "Debug";
 #else

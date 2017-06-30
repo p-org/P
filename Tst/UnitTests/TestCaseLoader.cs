@@ -17,8 +17,7 @@ namespace UnitTests
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName)
         {
             return from testDir in TestDirs
-                   select new DirectoryInfo(Path.Combine(directoryName, testDir))
-                   into baseDirectory
+                   let baseDirectory = new DirectoryInfo(Path.Combine(directoryName, testDir))
                    from testCaseDir in baseDirectory.EnumerateDirectories("*.*", SearchOption.AllDirectories)
                    where testCaseDir.GetDirectories().Any(info => Enum.GetNames(typeof(TestType)).Contains(info.Name))
                    select DirectoryToTestCase(testCaseDir, baseDirectory);
@@ -34,9 +33,10 @@ namespace UnitTests
                  select new { type, config = ParseTestConfig(configPath, variables) })
                 .ToDictionary(kv => kv.type, kv => kv.config);
 
+            string category = testRoot.Name + Constants.CategorySeparator + GetCategory(dir, testRoot);
             return new TestCaseData(dir, testConfigs)
-                .SetName(dir.Name)
-                .SetCategory(GetCategory(dir, testRoot));
+                .SetName(category + Constants.CategorySeparator + dir.Name)
+                .SetCategory(category);
         }
 
         private static Dictionary<string, string> GetVariables(DirectoryInfo testRoot)
@@ -61,7 +61,7 @@ namespace UnitTests
             {
                 category = $"{category}{sep}{dir.Name}";
                 dir = dir.Parent;
-                sep = "/";
+                sep = Constants.CategorySeparator;
             }
             return category;
         }

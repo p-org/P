@@ -5,27 +5,19 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Microsoft.Pc;
 using NUnit.Framework;
 
 namespace UnitTests
 {
     [TestFixture]
-    //TODO: Why can't we run the compiler in parallel?
-    //[Parallelizable(ParallelScope.Children)]
+    [Parallelizable(ParallelScope.Children)]
     public class RegressionTests
     {
         private Compiler PCompiler => compiler.Value;
 
-        private readonly Lazy<Compiler> compiler = new Lazy<Compiler>(
-            () =>
-            {
-                var compiler = new Compiler(true);
-                var xmlProfiler = new XmlProfiler();
-                compiler.Profiler = xmlProfiler;
-                xmlProfiler.Data.Save(Path.Combine(Environment.CurrentDirectory, Constants.XmlProfileFileName));
-                return compiler;
-            });
+        private readonly ThreadLocal<Compiler> compiler = new ThreadLocal<Compiler>(() => new Compiler(true));
 
         private static string TestResultsDirectory { get; } = Path.Combine(
             Constants.TestDirectory,
@@ -67,11 +59,12 @@ namespace UnitTests
 
         private static void WriteError(string format, params object[] args)
         {
-            var saved = Console.ForegroundColor;
+            ConsoleColor saved = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(format, args);
             Console.ForegroundColor = saved;
         }
+
         private static bool OpenSummaryStreamWriter(string fileName, out StreamWriter wr)
         {
             wr = null;
@@ -81,15 +74,13 @@ namespace UnitTests
             }
             catch (Exception e)
             {
-                WriteError(
-                    "ERROR: Could not open summary file {0} - {1}",
-                    fileName,
-                    e.Message);
+                WriteError("ERROR: Could not open summary file {0} - {1}", fileName, e.Message);
                 return false;
             }
 
             return true;
         }
+
         private static bool CloseSummaryStreamWriter(string fileName, StreamWriter wr)
         {
             try
@@ -98,15 +89,13 @@ namespace UnitTests
             }
             catch (Exception e)
             {
-                WriteError(
-                    "ERROR: Could not close summary file {0} - {1}",
-                    fileName,
-                    e.Message);
+                WriteError("ERROR: Could not close summary file {0} - {1}", fileName, e.Message);
                 return false;
             }
 
             return true;
         }
+
         private void SafeDelete(string filePath)
         {
             if (File.Exists(filePath))
@@ -137,29 +126,26 @@ namespace UnitTests
                 compilerOutput = CompilerOutput.C
             };
 
-            using (PCompiler.Profiler.Start("compile and link", inputFileName))
+            // Compile
+            if (!PCompiler.Compile(compilerOutput, compileArgs))
             {
-                // Compile
-                if (!PCompiler.Compile(compilerOutput, compileArgs))
-                {
-                    tmpWriter.WriteLine("EXIT: -1");
-                    return;
-                }
+                tmpWriter.WriteLine("EXIT: -1");
+                return;
+            }
 
-                // Link
-                compileArgs.dependencies.Add(linkFileName);
-                compileArgs.inputFileNames.Clear();
+            // Link
+            compileArgs.dependencies.Add(linkFileName);
+            compileArgs.inputFileNames.Clear();
 
-                if (config.Link != null)
-                {
-                    compileArgs.inputFileNames.Add(Path.Combine(activeDirectory, config.Link));
-                }
+            if (config.Link != null)
+            {
+                compileArgs.inputFileNames.Add(Path.Combine(activeDirectory, config.Link));
+            }
 
-                if (!PCompiler.Link(compilerOutput, compileArgs))
-                {
-                    tmpWriter.WriteLine("EXIT: -1");
-                    return;
-                }
+            if (!PCompiler.Link(compilerOutput, compileArgs))
+            {
+                tmpWriter.WriteLine("EXIT: -1");
+                return;
             }
 
             // compile *.p again, this time with Zing option.
@@ -170,11 +156,9 @@ namespace UnitTests
             {
                 compileArgs.liveness = LivenessOption.Standard;
             }
-            using (PCompiler.Profiler.Start("compile zing", inputFileName))
-            {
-                int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
-                tmpWriter.WriteLine($"EXIT: {zingResult}");
-            }
+
+            int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
+            tmpWriter.WriteLine($"EXIT: {zingResult}");
         }
 
         private static void WriteHeader(TextWriter tmpWriter)
@@ -184,9 +168,8 @@ namespace UnitTests
             tmpWriter.WriteLine("=================================");
         }
 
-        private static void TestPt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
-        {
-        }
+        private static void TestPt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory) { }
+
         private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
             // Find Zing tool
@@ -255,21 +238,17 @@ namespace UnitTests
             string prtTesterProj = Path.Combine(workDirectory.FullName, Constants.CTesterVsProjectName);
 
             // build the Pc output with the test harness
-            using (PCompiler.Profiler.Start("build prttester", workDirectory.FullName))
-            {
-                BuildTester(prtTesterProj, activeDirectory, true);
-                BuildTester(prtTesterProj, activeDirectory, false);
-            }
+
+            BuildTester(prtTesterProj, activeDirectory, true);
+            BuildTester(prtTesterProj, activeDirectory, false);
 
             // run the harness
-            using (PCompiler.Profiler.Start("run prttester", workDirectory.FullName))
-            {
-                string stdout, stderr;
-                int exitCode = RunWithOutput(testerExePath, activeDirectory, config.Arguments, out stdout, out stderr);
-                tmpWriter.Write(stdout);
-                tmpWriter.Write(stderr);
-                tmpWriter.WriteLine($"EXIT: {exitCode}");
-            }
+
+            string stdout, stderr;
+            int exitCode = RunWithOutput(testerExePath, activeDirectory, config.Arguments, out stdout, out stderr);
+            tmpWriter.Write(stdout);
+            tmpWriter.Write(stderr);
+            tmpWriter.WriteLine($"EXIT: {exitCode}");
         }
 
         private static void BuildTester(string prtTesterProj, string activeDirectory, bool clean)

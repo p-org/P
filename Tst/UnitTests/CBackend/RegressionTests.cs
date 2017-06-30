@@ -1,31 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using Microsoft.Pc;
 using NUnit.Framework;
 
 namespace UnitTests.CBackend
 {
     [TestFixture]
-    //TODO: Why can't we run the compiler in parallel?
-    //[Parallelizable(ParallelScope.Children)]
+    [Parallelizable(ParallelScope.Children)]
     public class RegressionTests
     {
-        private Compiler PCompiler => compiler.Value;
-
-        private readonly Lazy<Compiler> compiler = new Lazy<Compiler>(
-            () =>
-            {
-                var compiler = new Compiler(true);
-                var xmlProfiler = new XmlProfiler();
-                compiler.Profiler = xmlProfiler;
-                xmlProfiler.Data.Save(Path.Combine(Environment.CurrentDirectory, Constants.XmlProfileFileName));
-                return compiler;
-            });
+        private ThreadLocal<Compiler> PCompiler { get; } = new ThreadLocal<Compiler>(() => new Compiler(true));
 
         private static string TestResultsDirectory { get; } = Path.Combine(
             Constants.TestDirectory,
@@ -69,29 +58,26 @@ namespace UnitTests.CBackend
                 compilerOutput = CompilerOutput.C
             };
 
-            using (PCompiler.Profiler.Start("compile and link", inputFileName))
+            // Compile
+            if (!PCompiler.Value.Compile(compilerOutput, compileArgs))
             {
-                // Compile
-                if (!PCompiler.Compile(compilerOutput, compileArgs))
-                {
-                    tmpWriter.WriteLine("EXIT: -1");
-                    return;
-                }
+                tmpWriter.WriteLine("EXIT: -1");
+                return;
+            }
 
-                // Link
-                compileArgs.dependencies.Add(linkFileName);
-                compileArgs.inputFileNames.Clear();
+            // Link
+            compileArgs.dependencies.Add(linkFileName);
+            compileArgs.inputFileNames.Clear();
 
-                if (config.Link != null)
-                {
-                    compileArgs.inputFileNames.Add(Path.Combine(activeDirectory, config.Link));
-                }
+            if (config.Link != null)
+            {
+                compileArgs.inputFileNames.Add(Path.Combine(activeDirectory, config.Link));
+            }
 
-                if (!PCompiler.Link(compilerOutput, compileArgs))
-                {
-                    tmpWriter.WriteLine("EXIT: -1");
-                    return;
-                }
+            if (!PCompiler.Value.Link(compilerOutput, compileArgs))
+            {
+                tmpWriter.WriteLine("EXIT: -1");
+                return;
             }
 
             // compile *.p again, this time with Zing option.
@@ -102,11 +88,10 @@ namespace UnitTests.CBackend
             {
                 compileArgs.liveness = LivenessOption.Standard;
             }
-            using (PCompiler.Profiler.Start("compile zing", inputFileName))
-            {
-                int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
-                tmpWriter.WriteLine($"EXIT: {zingResult}");
-            }
+
+            // Compile Zing
+            int zingResult = PCompiler.Value.Compile(compilerOutput, compileArgs) ? 0 : -1;
+            tmpWriter.WriteLine($"EXIT: {zingResult}");
         }
 
         private static void WriteHeader(TextWriter tmpWriter)
@@ -116,9 +101,8 @@ namespace UnitTests.CBackend
             tmpWriter.WriteLine("=================================");
         }
 
-        private static void TestPt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
-        {
-        }
+        private static void TestPt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory) { }
+
         private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
             // Find Zing tool
@@ -187,21 +171,16 @@ namespace UnitTests.CBackend
             string prtTesterProj = Path.Combine(workDirectory.FullName, Constants.CTesterVsProjectName);
 
             // build the Pc output with the test harness
-            using (PCompiler.Profiler.Start("build prttester", workDirectory.FullName))
-            {
-                BuildTester(prtTesterProj, activeDirectory, true);
-                BuildTester(prtTesterProj, activeDirectory, false);
-            }
+
+            BuildTester(prtTesterProj, activeDirectory, true);
+            BuildTester(prtTesterProj, activeDirectory, false);
 
             // run the harness
-            using (PCompiler.Profiler.Start("run prttester", workDirectory.FullName))
-            {
-                string stdout, stderr;
-                int exitCode = ProcessHelper.RunWithOutput(testerExePath, activeDirectory, config.Arguments, out stdout, out stderr);
-                tmpWriter.Write(stdout);
-                tmpWriter.Write(stderr);
-                tmpWriter.WriteLine($"EXIT: {exitCode}");
-            }
+            string stdout, stderr;
+            int exitCode = ProcessHelper.RunWithOutput(testerExePath, activeDirectory, config.Arguments, out stdout, out stderr);
+            tmpWriter.Write(stdout);
+            tmpWriter.Write(stderr);
+            tmpWriter.WriteLine($"EXIT: {exitCode}");
         }
 
         private static void BuildTester(string prtTesterProj, string activeDirectory, bool clean)
@@ -234,7 +213,6 @@ namespace UnitTests.CBackend
             //{
             //    throw new Exception("Cannot open display-diffs.bat for writing");
             //}
-            var sbd = new StringBuilder();
             foreach (KeyValuePair<TestType, TestConfig> kv in testConfigs.OrderBy(kv => kv.Key))
             {
                 TestType testType = kv.Key;
@@ -292,8 +270,8 @@ namespace UnitTests.CBackend
                     //    activeDirectory, Constants.ActualOutputFileName);
                 }
 
-                Assert.AreEqual(correctText, actualText);
                 Console.WriteLine(actualText);
+                Assert.AreEqual(correctText, actualText);
             }
             //if (!CloseSummaryStreamWriter(Constants.DisplayDiffsFile, displayDiffsWriter))
             //{

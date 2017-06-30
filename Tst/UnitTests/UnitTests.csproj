@@ -73,6 +73,15 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Compiler">
+      <HintPath>..\..\Bld\Drops\Debug\x86\Binaries\Compiler.dll</HintPath>
+    </Reference>
+    <Reference Include="Core">
+      <HintPath>..\..\Bld\Drops\Debug\x86\Binaries\Core.dll</HintPath>
+    </Reference>
+    <Reference Include="CParser">
+      <HintPath>..\..\Bld\Drops\Debug\x86\Binaries\CParser.dll</HintPath>
+    </Reference>
     <Reference Include="Microsoft.CodeAnalysis, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Microsoft.CodeAnalysis.Common.1.1.0\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
@@ -117,20 +126,6 @@
     <Compile Include="TestCaseLoader.cs" />
     <Compile Include="TestConfig.cs" />
     <Compile Include="TestType.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\Ext\Formula\Src\Core\Core.csproj">
-      <Project>{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Src\Parsers\CParser\CParser.csproj">
-      <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
-      <Name>CParser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Src\Pc\Compiler\Compiler.csproj">
-      <Project>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</Project>
-      <Name>Compiler</Name>
-    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

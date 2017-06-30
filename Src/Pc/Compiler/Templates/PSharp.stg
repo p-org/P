@@ -1,0 +1,27 @@
+﻿delimiters "%", "%"
+topLevel(pgm) ::= <<
+using System;
+using System.Collections.Generic;
+
+namespace %pgm.Namespace%
+{
+    %pgm.Events:eventDecl();separator="\n\n"%
+}
+>>
+eventDecl(evt) ::= <<
+internal class %evt.Name% : Event
+{
+%if(evt.PayloadTypes)%
+    %evt.PayloadTypes,evt.PayloadNames:{t,n|public %t% %n% { get; set; \}};separator="\n"%
+
+%endif%
+    public %evt.Name%(%argumentList(evt.PayloadTypes, evt.PayloadNames)%)
+	    : base(%evt.Assert%, %evt.Assume%)
+	{
+	    %evt.PayloadNames:{name|this.%name% = %name%;};separator="\n"%
+	}
+}
+>>
+argumentList(types,names) ::= <%
+%types,names:{t,n|%t% %n%}; separator=", "%
+%>

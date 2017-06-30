@@ -8,7 +8,7 @@ using System.Text.RegularExpressions;
 using Microsoft.Pc;
 using NUnit.Framework;
 
-namespace UnitTests
+namespace UnitTests.CBackend
 {
     [TestFixture]
     //TODO: Why can't we run the compiler in parallel?
@@ -43,26 +43,8 @@ namespace UnitTests
             {
                 Directory.Delete(destinationDir, true);
             }
-            DeepCopy(testDir, destinationDir);
+            FileHelper.DeepCopy(testDir, destinationDir);
             return new DirectoryInfo(destinationDir);
-        }
-
-        private static void DeepCopy(DirectoryInfo src, string target)
-        {
-            Directory.CreateDirectory(target);
-            CopyFiles(src, target);
-            foreach (DirectoryInfo dir in src.GetDirectories())
-            {
-                DeepCopy(dir, Path.Combine(target, dir.Name));
-            }
-        }
-
-        private static void CopyFiles(DirectoryInfo src, string target)
-        {
-            foreach (FileInfo file in src.GetFiles())
-            {
-                File.Copy(file.FullName, Path.Combine(target, file.Name), true);
-            }
         }
 
         private void TestPc(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
@@ -158,7 +140,7 @@ namespace UnitTests
             // Run Zing tool
             var arguments = new List<string>(config.Arguments) {zingDllName};
             string stdout, stderr;
-            int exitCode = RunWithOutput(zingFilePath, activeDirectory, arguments, out stdout, out stderr);
+            int exitCode = ProcessHelper.RunWithOutput(zingFilePath, activeDirectory, arguments, out stdout, out stderr);
             tmpWriter.Write(stdout);
             tmpWriter.Write(stderr);
             tmpWriter.WriteLine($"EXIT: {exitCode}");
@@ -195,7 +177,7 @@ namespace UnitTests
         {
             // copy PrtTester to the work directory
             var testerDir = new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
-            CopyFiles(testerDir, workDirectory.FullName);
+            FileHelper.CopyFiles(testerDir, workDirectory.FullName);
 
             string testerExeDir = Path.Combine(workDirectory.FullName, Constants.Configuration, Constants.Platform);
             string testerExePath = Path.Combine(testerExeDir, Constants.CTesterExecutableName);
@@ -212,7 +194,7 @@ namespace UnitTests
             using (PCompiler.Profiler.Start("run prttester", workDirectory.FullName))
             {
                 string stdout, stderr;
-                int exitCode = RunWithOutput(testerExePath, activeDirectory, config.Arguments, out stdout, out stderr);
+                int exitCode = ProcessHelper.RunWithOutput(testerExePath, activeDirectory, config.Arguments, out stdout, out stderr);
                 tmpWriter.Write(stdout);
                 tmpWriter.Write(stderr);
                 tmpWriter.WriteLine($"EXIT: {exitCode}");
@@ -228,49 +210,10 @@ namespace UnitTests
             };
 
             string stdout, stderr;
-            if (RunWithOutput("msbuild.exe", activeDirectory, argumentList, out stdout, out stderr) != 0)
+            if (ProcessHelper.RunWithOutput("msbuild.exe", activeDirectory, argumentList, out stdout, out stderr) != 0)
             {
                 throw new Exception($"Failed to build {prtTesterProj}\nOutput:\n{stdout}\n\nErrors:\n{stderr}\n");
             }
-        }
-
-        private static int RunWithOutput(
-            string exeName,
-            string activeDirectory,
-            IEnumerable<string> argumentList,
-            out string stdout,
-            out string stderr)
-        {
-            var psi = new ProcessStartInfo(exeName)
-            {
-                CreateNoWindow = true,
-                UseShellExecute = false,
-                RedirectStandardError = true,
-                RedirectStandardInput = true,
-                RedirectStandardOutput = true,
-                WorkingDirectory = activeDirectory,
-                Arguments = string.Join(" ", argumentList)
-            };
-
-            string mStdout = "", mStderr = "";
-
-            var proc = new Process {StartInfo = psi};
-            proc.OutputDataReceived += (s, e) => { mStdout += $"OUT: {e.Data}\n"; };
-            proc.ErrorDataReceived += (s, e) =>
-            {
-                if (!string.IsNullOrWhiteSpace(e.Data))
-                {
-                    mStderr += $"ERROR: {e.Data}\n";
-                }
-            };
-
-            proc.Start();
-            proc.BeginErrorReadLine();
-            proc.BeginOutputReadLine();
-            proc.WaitForExit();
-            stdout = mStdout;
-            stderr = mStderr;
-            return proc.ExitCode;
         }
 
         [Test]

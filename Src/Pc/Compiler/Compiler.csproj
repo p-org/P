@@ -287,6 +287,7 @@
     <None Include="packages.config">
       <SubType>Designer</SubType>
     </None>
+    <EmbeddedResource Include="Templates\PSharp.stg" />
   </ItemGroup>
   <ItemGroup>
     <MPLexCompile Include="Parser\Lexer.lex" />

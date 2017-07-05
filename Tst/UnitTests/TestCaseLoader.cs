@@ -59,7 +59,8 @@ namespace UnitTests
             dir = dir.Parent;
             while (dir != null && dir.FullName != baseDirectory.FullName)
             {
-                category = $"{category}{sep}{dir.Name}";
+                //category = $"{category}{sep}{dir.Name}";
+                category = $"{dir.Name}{sep}{category}";
                 dir = dir.Parent;
                 sep = Constants.CategorySeparator;
             }

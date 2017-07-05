@@ -6,6 +6,7 @@ namespace UnitTests
 {
     internal static class Constants
     {
+        internal const string CategorySeparator = " | ";
         internal const string CRuntimeTesterDirectoryName = "PrtTester";
         internal const string NewLinePattern = @"\r\n|\n\r|\n|\r";
         internal const string XmlProfileFileName = "TestProfile.xml";

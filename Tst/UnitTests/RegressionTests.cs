@@ -31,10 +31,18 @@ namespace UnitTests
             var curTest = new Uri(testDir.FullName);
             Uri relativePath = testRoot.MakeRelativeUri(curTest);
             string destinationDir = Path.GetFullPath(Path.Combine(TestResultsDirectory, relativePath.OriginalString));
-            if (Directory.Exists(destinationDir))
+            try
             {
-                Directory.Delete(destinationDir, true);
+                if (Directory.Exists(destinationDir))
+                {
+                    Directory.Delete(destinationDir, true);
+                }
             }
+            catch (Exception e)
+            {
+                WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
+            }
+            
             DeepCopy(testDir, destinationDir);
             return new DirectoryInfo(destinationDir);
         }
@@ -104,7 +112,7 @@ namespace UnitTests
             }
         }
 
-        private void TestPc(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
+        private int TestPc(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory, CompilerOutput outputLanguage)
         {
             List<string> pFiles = workDirectory.EnumerateFiles("*.p").Select(pFile => pFile.FullName).ToList();
             if (!pFiles.Any())
@@ -122,15 +130,17 @@ namespace UnitTests
                 shortFileNames = true,
                 outputDir = workDirectory.FullName,
                 unitName = linkFileName,
-                liveness = LivenessOption.None,
-                compilerOutput = CompilerOutput.C
+                //liveness = LivenessOption.None,
+                liveness = (outputLanguage == CompilerOutput.Zing && config.Arguments.Contains("/liveness")) ? LivenessOption.Standard
+                            : LivenessOption.None,
+                compilerOutput = outputLanguage
             };
 
             // Compile
             if (!PCompiler.Compile(compilerOutput, compileArgs))
             {
                 tmpWriter.WriteLine("EXIT: -1");
-                return;
+                return -1;
             }
 
             // Link
@@ -145,20 +155,41 @@ namespace UnitTests
             if (!PCompiler.Link(compilerOutput, compileArgs))
             {
                 tmpWriter.WriteLine("EXIT: -1");
-                return;
+                return -1;
             }
-
-            // compile *.p again, this time with Zing option.
-            compileArgs.inputFileNames = new List<string>(pFiles);
-            compileArgs.dependencies.Clear();
-            compileArgs.compilerOutput = CompilerOutput.Zing;
-            if (config.Arguments.Contains("/liveness"))
+            //pc.exe with Zing option is called when outputLanguage is C;
+            //pc.exe with CSharp option is called when outputLanguage is CSharp; 
+            if (outputLanguage == CompilerOutput.C)
             {
-                compileArgs.liveness = LivenessOption.Standard;
+                // compile *.p again, this time with Zing option:
+                compileArgs.compilerOutput = CompilerOutput.Zing;
+                compileArgs.inputFileNames = new List<string>(pFiles);
+                compileArgs.dependencies.Clear();
+                int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
+                tmpWriter.WriteLine($"EXIT: {zingResult}");
+                if (!(zingResult == 0))
+                { 
+                    return -1;
+                }
+            }
+            if (outputLanguage == CompilerOutput.CSharp)
+            {
+                // compile *.p again, this time with CSharp option:
+                compileArgs.compilerOutput = CompilerOutput.CSharp;
+                compileArgs.inputFileNames = new List<string>(pFiles);
+                compileArgs.dependencies.Clear();
+                if (!PCompiler.Compile(compilerOutput, compileArgs))
+                {
+                    tmpWriter.WriteLine("EXIT: -1");
+                    return -1;
+                }
+                else
+                {
+                    tmpWriter.WriteLine("EXIT: 0");
+                }
             }
 
-            int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
-            tmpWriter.WriteLine($"EXIT: {zingResult}");
+            return 0;
         }
 
         private static void WriteHeader(TextWriter tmpWriter)
@@ -168,7 +199,20 @@ namespace UnitTests
             tmpWriter.WriteLine("=================================");
         }
 
-        private static void TestPt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory) { }
+        private static void TestPt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory, DirectoryInfo origTestDir)
+        {
+            //Delete generated files from previous PTester run:
+            //<test>.cs,  <test>.dll, <test>.pdb
+            foreach (var file in workDirectory.EnumerateFiles())
+            {
+                if (file.Extension == ".cs" || ((file.Extension == ".dll" || file.Extension == ".pdb") && file.Name == origTestDir.Name))
+                {
+                    file.Delete();
+                }
+
+            }
+
+        }
 
         private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
@@ -312,15 +356,8 @@ namespace UnitTests
             // First step: clone test folder to new spot
             DirectoryInfo workDirectory = PrepareTestDir(origTestDir);
 
-            //TODO(after /reset option is implemented): opening of the diffing file
-            //only happens when !reset
-            SafeDelete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
-            StreamWriter displayDiffsWriter = null;
-            if (!OpenSummaryStreamWriter(Constants.DisplayDiffsFile, out displayDiffsWriter))
-            {
-                throw new Exception("Cannot open display-diffs.bat for writing");
-            }
-            displayDiffsWriter.AutoFlush = true;
+            File.Delete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
+
             var sbd = new StringBuilder();
             foreach (KeyValuePair<TestType, TestConfig> kv in testConfigs.OrderBy(kv => kv.Key))
             {
@@ -340,19 +377,24 @@ namespace UnitTests
                 }
 
                 var sb = new StringBuilder();
+                int pcResult;
                 using (var tmpWriter = new StringWriter(sb))
                 {
                     WriteHeader(tmpWriter);
                     switch (testType)
                     {
                         case TestType.Pc:
-                            TestPc(config, tmpWriter, workDirectory, activeDirectory);
+                            TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.C);
                             break;
                         case TestType.Prt:
                             TestPrt(config, tmpWriter, workDirectory, activeDirectory);
                             break;
                         case TestType.Pt:
-                            TestPt(config, tmpWriter, workDirectory, activeDirectory);
+                            pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.CSharp);
+                            if (pcResult == 0)
+                            {
+                                TestPt(config, tmpWriter, workDirectory, activeDirectory, origTestDir);
+                            }
                             break;
                         case TestType.Zing:
                             TestZing(config, tmpWriter, workDirectory, activeDirectory);
@@ -371,20 +413,26 @@ namespace UnitTests
                 correctText = Regex.Replace(correctText, Constants.NewLinePattern, Environment.NewLine);
                 string actualText = sb.ToString();
                 actualText = Regex.Replace(actualText, Constants.NewLinePattern, Environment.NewLine);
-                File.WriteAllText(Path.Combine(activeDirectory, Constants.ActualOutputFileName), actualText);
                 if (!actualText.Equals(correctText))
                 {
-                    //add diffing command to "display-diffs.bat":
-                    displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\{2}", Constants.DiffTool,
-                        activeDirectory, Constants.ActualOutputFileName);
+                    try
+                    {
+                        //Save actual test output:
+                        File.WriteAllText(Path.Combine(activeDirectory, Constants.ActualOutputFileName), actualText);
+                        //add diffing command to "display-diffs.bat":
+                        string diffCmd = string.Format("{0} {1}\\acc_0.txt {1}\\{2}", Constants.DiffTool,
+                            activeDirectory, Constants.ActualOutputFileName);
+                        File.AppendAllText(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile), diffCmd);
+                    }
+                    catch (Exception e)
+                    {
+                        WriteError("ERROR: exception: {0}", e.Message);
+                    }
+
                 }
 
                 Assert.AreEqual(correctText, actualText);
                 Console.WriteLine(actualText);
-            }
-            if (!CloseSummaryStreamWriter(Constants.DisplayDiffsFile, displayDiffsWriter))
-            {
-                throw new Exception("Cannot close display-diffs.bat");
             }
         }
     }

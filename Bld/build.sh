@@ -26,7 +26,7 @@ echo Using $MSBUILD to build solutions
 echo ============= Building P SDK ===============
 
 Configuration=Release
-Platform=x64
+Platform=x86
 if [ $# -ne 2 ]; then
     echo "No configuration supplied. Falling back on default: Release,x64"
 else

@@ -18,14 +18,14 @@ echo ============= Building P SDK on %COMPUTERNAME% ===============
 Bld\nuget restore -configfile NuGet.config P.sln
 
 set MSBuildPath=
-for /F "usebackq tokens=1,2* delims= " %%i in (`reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0 -v MSBuildToolsPath`) do (
+for /F "usebackq tokens=1,2* delims= " %%i in (`reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\4.0 -v MSBuildToolsPath`) do (
    if "%%i" == "MSBuildToolsPath" set MSBuildPath=%%k
 )
 
 if not "%MSBuildPath%"=="" goto :step2
 
-echo MSBUILD 14.0 does not appear to be installed.
-echo No info found in HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\14.0
+echo MSBUILD 4.0 does not appear to be installed.
+echo No info found in HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\4.0
 goto :eof
 
 :step2

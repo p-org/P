@@ -18,21 +18,23 @@ echo ============= Building P SDK on %COMPUTERNAME% ===============
 Bld\nuget restore -configfile NuGet.config P.sln
 
 set MSBuildPath=
-for /F "usebackq tokens=1,2* delims= " %%i in (`reg query HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\4.0 -v MSBuildToolsPath`) do (
-   if "%%i" == "MSBuildToolsPath" set MSBuildPath=%%k
+for /F "usebackq tokens=1* delims=" %%i in (`where msbuild`) do (
+   if "%MSBuildPath%"=="" set MSBuildPath=%%i
+)
+echo Found MSBuild here: %MSBuildPath%
+
+for /F "usebackq tokens=1* delims=: " %%i in (`corflags %MSBuildPath%`) do (
+   if "%%i"=="32BITREQ" set MSBuild32Bit=%%j
 )
 
 if not "%MSBuildPath%"=="" goto :step2
 
-echo MSBUILD 4.0 does not appear to be installed.
-echo No info found in HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\MSBuild\ToolsVersions\4.0
+echo MSBUILD does not appear to be installed.
 goto :eof
 
 :step2
-set TAIL=%MSBuildPath:~-6%
-set Build64=0
-if "[%TAIL%]" == "[amd64\]" set Build64=1
-set PATH=%MSBuildPath%;%PATH%
+set MsBuild64=1
+if "%MSBuild32Bit%" == "1" set MsBuild64=0
 set Configuration=Debug
 set Platform=x86
 set NoSync=
@@ -140,7 +142,7 @@ msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
 :build
 
 set FormulaCodeGeneratorTaskPlatform=x86
-if "%Build64%"=="1" set FormulaCodeGeneratorTaskPlatform=x64
+if "%MsBuild64%"=="1" set FormulaCodeGeneratorTaskPlatform=x64
 echo msbuild FormulaCodeGeneratorTask /p:Platform=%FormulaCodeGeneratorTaskPlatform% /p:Configuration=%Configuration%
 msbuild  ext\Formula\src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj /p:Platform=%FormulaCodeGeneratorTaskPlatform% /p:Configuration=%Configuration%
 

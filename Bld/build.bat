@@ -1,5 +1,5 @@
 @echo off
-setlocal
+SETLOCAL ENABLEDELAYEDEXPANSION 
 pushd %~dp0
 cd ..
 goto :start
@@ -17,11 +17,11 @@ echo ============= Building P SDK on %COMPUTERNAME% ===============
 
 set MSBuildPath=
 for /F "usebackq tokens=1* delims=" %%i in (`where msbuild`) do (
-   if "%MSBuildPath%"=="" set MSBuildPath=%%i
+   if "!MSBuildPath!"=="" set MSBuildPath=%%i
 )
-echo Found MSBuild here: %MSBuildPath%
+echo Found MSBuild here: "%MSBuildPath%"
 
-for /F "usebackq tokens=1* delims=: " %%i in (`corflags %MSBuildPath%`) do (
+for /F "usebackq tokens=1* delims=: " %%i in (`corflags "%MSBuildPath%"`) do (
    if "%%i"=="32BITREQ" set MSBuild32Bit=%%j
 )
 

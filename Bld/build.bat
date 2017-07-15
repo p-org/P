@@ -19,18 +19,19 @@ set MSBuildPath=
 for /F "usebackq tokens=1* delims=" %%i in (`where msbuild`) do (
    if "!MSBuildPath!"=="" set MSBuildPath=%%i
 )
-echo Found MSBuild here: "%MSBuildPath%"
+
+if not "%MSBuildPath%"=="" goto :step2
+
+echo msbuild does not appear to be installed.
+goto :eof
+
+:step2
+echo Found msbuild here: "%MSBuildPath%"
 
 for /F "usebackq tokens=1* delims=: " %%i in (`corflags "%MSBuildPath%"`) do (
    if "%%i"=="32BITREQ" set MSBuild32Bit=%%j
 )
 
-if not "%MSBuildPath%"=="" goto :step2
-
-echo MSBUILD does not appear to be installed.
-goto :eof
-
-:step2
 set MsBuild64=1
 if "%MSBuild32Bit%" == "1" set MsBuild64=0
 set PBuildConfiguration=Debug

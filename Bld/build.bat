@@ -15,8 +15,6 @@ goto :exit
 :start
 echo ============= Building P SDK on %COMPUTERNAME% ===============
 
-Bld\nuget restore -configfile NuGet.config P.sln
-
 set MSBuildPath=
 for /F "usebackq tokens=1* delims=" %%i in (`where msbuild`) do (
    if "%MSBuildPath%"=="" set MSBuildPath=%%i
@@ -35,18 +33,18 @@ goto :eof
 :step2
 set MsBuild64=1
 if "%MSBuild32Bit%" == "1" set MsBuild64=0
-set Configuration=Debug
-set Platform=x86
+set PBuildConfiguration=Debug
+set PBuildPlatform=x86
 set NoSync=
 set CleanOnly=
 set NoClean=
 set SubmoduleOutOfDate=false
 
 :parseargs
-if /I "%1"=="debug" set Configuration=Debug
-if /I "%1"=="release" set Configuration=Release
-if /I "%1"=="x86" set Platform=x86
-if /I "%1"=="x64" set Platform=x64
+if /I "%1"=="debug" set PBuildConfiguration=Debug
+if /I "%1"=="release" set PBuildConfiguration=Release
+if /I "%1"=="x86" set PBuildPlatform=x86
+if /I "%1"=="x64" set PBuildPlatform=x64
 if /I "%1"=="nosync" set NoSync=true
 if /I "%1"=="clean" set CleanOnly=true
 if /I "%1"=="noclean" set NoClean=true
@@ -59,6 +57,7 @@ shift
 goto :parseargs
 
 :initsub
+
 if exist "Ext\PSharp\README.md" (
     if exist "Ext\Formula\README.md" (
         if exist "EXT\Zing\README.md" (
@@ -96,60 +95,67 @@ git submodule update --init --recursive
 goto :nosync
 
 :nosync
+
 cd ext\zing
 
-echo msbuild  Zing.sln /p:Platform=%Platform% /p:Configuration=Release
-msbuild  Zing.sln /p:Platform=%Platform% /p:Configuration=Release
+echo msbuild  Zing.sln /p:Platform=%PBuildPlatform% /p:Configuration=Release
+msbuild  Zing.sln /p:Platform=%PBuildPlatform% /p:Configuration=Release
 if ERRORLEVEL 1 goto :exit
 
-set BinaryDrop=..\..\Bld\Drops\%Configuration%\%Platform%\Binaries
+set BinaryDrop=..\..\Bld\Drops\%PBuildConfiguration%\%PBuildPlatform%\Binaries
 if NOT exist %BinaryDrop% mkdir %BinaryDrop%
 
-for %%i in (zc\bin\%Platform%\Release\zc.exe
-             ZingExplorer\bin\%Platform%\Release\ZingExplorer.dll
-             Zinger\bin\%Platform%\Release\Zinger.exe
-             Microsoft.Zing\bin\%Platform%\Release\Microsoft.Zing.dll
-             Microsoft.Zing.Runtime\bin\%Platform%\Release\Microsoft.Zing.Runtime.dll
-             Microsoft.Zing\bin\%Platform%\Release\Microsoft.Comega.dll
-             Microsoft.Zing\bin\%Platform%\Release\Microsoft.Comega.Runtime.dll
+for %%i in (zc\bin\%PBuildPlatform%\Release\zc.exe
+             ZingExplorer\bin\%PBuildPlatform%\Release\ZingExplorer.dll
+             Zinger\bin\%PBuildPlatform%\Release\Zinger.exe
+             Microsoft.Zing\bin\%PBuildPlatform%\Release\Microsoft.Zing.dll
+             Microsoft.Zing.Runtime\bin\%PBuildPlatform%\Release\Microsoft.Zing.Runtime.dll
+             Microsoft.Zing\bin\%PBuildPlatform%\Release\Microsoft.Comega.dll
+             Microsoft.Zing\bin\%PBuildPlatform%\Release\Microsoft.Comega.Runtime.dll
              Resources\external\CCI\System.Compiler.dll
              Resources\external\CCI\System.Compiler.Framework.dll
              Resources\external\CCI\System.Compiler.Runtime.dll
-             DelayingSchedulers\CustomDelayingScheduler\bin\%Platform%\Release\CustomDelayingScheduler.dll
-             DelayingSchedulers\RandomDelayingScheduler\bin\%Platform%\Release\RandomDelayingScheduler.dll
-             DelayingSchedulers\RoundRobinDelayingScheduler\bin\%Platform%\Release\RoundRobinDelayingScheduler.dll
-             DelayingSchedulers\RunToCompletionDelayingScheduler\bin\%Platform%\Release\RunToCompletionDelayingScheduler.dll
-	     DelayingSchedulers\SealingScheduler\bin\%Platform%\Release\SealingScheduler.dll) do (
+             DelayingSchedulers\CustomDelayingScheduler\bin\%PBuildPlatform%\Release\CustomDelayingScheduler.dll
+             DelayingSchedulers\RandomDelayingScheduler\bin\%PBuildPlatform%\Release\RandomDelayingScheduler.dll
+             DelayingSchedulers\RoundRobinDelayingScheduler\bin\%PBuildPlatform%\Release\RoundRobinDelayingScheduler.dll
+             DelayingSchedulers\RunToCompletionDelayingScheduler\bin\%PBuildPlatform%\Release\RunToCompletionDelayingScheduler.dll
+	     DelayingSchedulers\SealingScheduler\bin\%PBuildPlatform%\Release\SealingScheduler.dll) do (
              
     copy %%i %BinaryDrop%
 )
    
 cd ..\..
 
+if "%NoClean%"=="true" goto :build
+echo msbuild P.sln /p:Platform=%PBuildPlatform% /p:Configuration=%PBuildConfiguration%  /t:Clean
+msbuild  P.sln /p:Platform=%PBuildPlatform% /p:Configuration=%PBuildConfiguration% /t:Clean
+msbuild  Ext\PSharp\PSharp.sln /p:Platform="Any CPU" /p:Configuration=%PBuildConfiguration% /t:Clean
+
+if "%CleanOnly%"=="true" goto :exit
+
+:PSharp
 REM Build PSharp
 cd ext\PSharp
 ..\..\Bld\nuget restore -configfile NuGet.config PSharp.sln
-echo msbuild PSharp.sln /p:Platform="Any CPU" /p:Configuration=%Configuration%
-msbuild  PSharp.sln /p:Platform="Any CPU" /p:Configuration=%Configuration%
+echo msbuild PSharp.sln /p:Platform="Any CPU" /p:Configuration=%PBuildConfiguration%
+msbuild  PSharp.sln /p:Platform="Any CPU" /p:Configuration=%PBuildConfiguration%
 if ERRORLEVEL 1 goto :exit
 
 cd ..\..
-
-if "%NoClean%"=="true" goto :build
-echo msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration%  /t:Clean
-msbuild  P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /t:Clean
 
 :build
 
 set FormulaCodeGeneratorTaskPlatform=x86
 if "%MsBuild64%"=="1" set FormulaCodeGeneratorTaskPlatform=x64
-echo msbuild FormulaCodeGeneratorTask /p:Platform=%FormulaCodeGeneratorTaskPlatform% /p:Configuration=%Configuration%
-msbuild  ext\Formula\src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj /p:Platform=%FormulaCodeGeneratorTaskPlatform% /p:Configuration=%Configuration%
+echo msbuild FormulaCodeGeneratorTask /p:Platform=%FormulaCodeGeneratorTaskPlatform% /p:Configuration=%PBuildConfiguration%
+msbuild  ext\Formula\src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj /p:Platform=%FormulaCodeGeneratorTaskPlatform% /p:Configuration=%PBuildConfiguration%
 
-if "%CleanOnly%"=="true" goto :exit
 
 call :StartTimer
-msbuild P.sln /p:Platform=%Platform% /p:Configuration=%Configuration% /p:SOLVER=NOSOLVER
+
+Bld\nuget restore -configfile NuGet.config P.sln
+
+msbuild P.sln /p:Platform=%PBuildPlatform% /p:Configuration=%PBuildConfiguration% /p:SOLVER=NOSOLVER
 call :StopTimer
 call :DisplayTimerResult
 

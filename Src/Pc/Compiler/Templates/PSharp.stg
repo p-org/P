@@ -2,26 +2,74 @@
 topLevel(pgm) ::= <<
 using System;
 using System.Collections.Generic;
+using System.Linq;
+using Microsoft.PSharp;
 
 namespace %pgm.Namespace%
 {
+    %pgm.Machines:machineDecl();separator="\n\n"%
+
     %pgm.Events:eventDecl();separator="\n\n"%
 }
 >>
 eventDecl(evt) ::= <<
 internal class %evt.Name% : Event
 {
-%if(evt.PayloadTypes)%
-    %evt.PayloadTypes,evt.PayloadNames:{t,n|public %t% %n% { get; set; \}};separator="\n"%
+%if(evt.PayloadType)%
+    public %evt.PayloadType% Payload { get; set; }
 
 %endif%
-    public %evt.Name%(%argumentList(evt.PayloadTypes, evt.PayloadNames)%)
-	    : base(%evt.Assert%, %evt.Assume%)
-	{
-	    %evt.PayloadNames:{name|this.%name% = %name%;};separator="\n"%
-	}
+    public %evt.Name%(%if(evt.PayloadType)%%evt.PayloadType% payload%endif%)
+        : base(%evt.Assert%, %evt.Assume%)
+    {
+    %if(evt.PayloadType)%
+        this.Payload = payload;
+    %endif%
+    }
 }
 >>
 argumentList(types,names) ::= <%
 %types,names:{t,n|%t% %n%}; separator=", "%
+%>
+machineDecl(machine) ::= <<
+internal class %machine.Name% : Machine
+{
+    %machine.States:stateDecl();separator="\n\n"%
+}
+>>
+stateDecl(state) ::= <%
+%if(state.IsStart)%
+[Start]%\n%
+%endif%
+%if(state.IsHot)%
+[Hot]%\n%
+%elseif(state.IsCold)%
+[Cold]%\n%
+%endif%
+%if(state.EntryFun)%
+[OnEntry(nameof(%state.EntryFun%))]%\n%
+%endif%
+%if(state.ExitFun)%
+[OnExit(nameof(%state.ExitFun%))]%\n%
+%endif%
+%if(state.IgnoredEvents)%
+[IgnoreEvents(%state.IgnoredEvents:{evt|typeof(%evt%)};wrap,anchor,separator=", "%)]%\n%
+%endif%
+%if(state.DeferredEvents)%
+[DeferEvents(%state.DeferredEvents:{evt|typeof(%evt%)};wrap,anchor,separator=", "%)]%\n%
+%endif%
+%state.Transitions:stateTransition();separator="\n"%
+%if(state.Transitions)%%\n%%endif%
+class %state.Name% : MachineState {}
+%>
+stateTransition(t) ::= <%
+%if(t.Target)%
+%if(t.IsPush)%
+[OnEventPushState(typeof(%t.OnEvent%), typeof(%t.Target%))]
+%else%
+[OnEventGotoState(typeof(%t.OnEvent%), typeof(%t.Target%)%if(t.Function)%, nameof(%t.Function%)%endif%)]
+%endif%
+%else%
+[OnEventDoAction(typeof(%t.OnEvent%), nameof(%t.Function%))]
+%endif%
 %>

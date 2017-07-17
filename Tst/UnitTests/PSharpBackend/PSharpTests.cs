@@ -18,9 +18,7 @@ namespace UnitTests.PSharpBackend
         [Test]
         public void TestBasic()
         {
-            string pFilePath = Path.Combine(
-                Constants.TestDirectory,
-                @"RegressionTests\Integration\Correct\Multi_Paxos_4\Multi_Paxos_4.p");
+            string pFilePath = Path.Combine(Constants.TestDirectory, @"RegressionTests\Integration\Correct\Multi_Paxos_4\Multi_Paxos_4.p");
             string outputDir = Path.Combine(Constants.SolutionDirectory, "tmp");
             Directory.CreateDirectory(outputDir);
             var compiler = new Compiler(true);

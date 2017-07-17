@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
 using Antlr4.StringTemplate;
+using Antlr4.StringTemplate.Visualizer.Extensions;
 using Microsoft.Formula.API;
 using Microsoft.Formula.API.Nodes;
 
@@ -16,7 +18,8 @@ namespace Microsoft.Pc
         private const string BaseNamespace = nameof(Microsoft) + "." + nameof(Pc) + "." + TemplatesNamespace;
         private const string TemplateFileName = "PSharp.stg";
         private const string PSharpResourceName = BaseNamespace + "." + TemplateFileName;
-        private const string EventPayloadFieldName = "Payload";
+        private const string PTranslationIgnoredActionName = "ignore";
+        private const int LineWidth = 100;
 
         private readonly Lazy<TemplateGroup> pSharpTemplates = new Lazy<TemplateGroup>(
             () =>
@@ -39,9 +42,18 @@ namespace Microsoft.Pc
         {
             TemplateGroup templateGroup = pSharpTemplates.Value;
             Template t = templateGroup.GetInstanceOf("topLevel");
-            
-            t.Add("pgm", new {Namespace = "Test", Events = GenerateEvents()});
-            string generatedCode = t.Render();
+
+            IEnumerable<EventDecl> events = GenerateEvents();
+            IEnumerable<MachineDecl> machines = GenerateMachines();
+
+            t.Add("pgm", new {Namespace = "Test", Events = events, Machines = machines});
+#if DEBUG
+            var thread = new Thread(() => t.Visualize(LineWidth));
+            thread.SetApartmentState(ApartmentState.STA);
+            thread.Start();
+            thread.Join();
+#endif
+            string generatedCode = t.Render(LineWidth);
             Console.WriteLine(generatedCode);
             return generatedCode;
         }
@@ -51,18 +63,70 @@ namespace Microsoft.Pc
             return allEvents.Select(
                 kv =>
                 {
-                    PSharpType[] types;
-                    string[] names;
-                    TypeToEventArgumentsList(kv.Value.payloadType, out types, out names);
+                    PSharpType payloadType = PTypeToPSharpType(kv.Value.payloadType);
+                    if (payloadType == PSharpBaseType.Null)
+                    {
+                        payloadType = null;
+                    }
                     return new EventDecl
                     {
                         Name = kv.Key,
                         Assert = kv.Value.maxInstances == -1 || kv.Value.maxInstancesAssumed ? -1 : kv.Value.maxInstances,
                         Assume = kv.Value.maxInstances == -1 || !kv.Value.maxInstancesAssumed ? -1 : kv.Value.maxInstances,
-                        PayloadTypes = types,
-                        PayloadNames = names
+                        PayloadType = payloadType
                     };
                 });
+        }
+
+        private IEnumerable<MachineDecl> GenerateMachines()
+        {
+            return allMachines.Select(
+                kv =>
+                {
+                    var decl = new MachineDecl {Name = kv.Key, States = GenerateStates(kv.Value, kv.Value.stateNameToStateInfo)};
+                    return decl;
+                });
+        }
+
+        private IEnumerable<StateDecl> GenerateStates(MachineInfo nameToStateInfo, Dictionary<string, StateInfo> stateNameToStateInfo)
+        {
+            //TODO: what about null transitions? how are those expressed in P#?
+            return stateNameToStateInfo.Select(
+                kv =>
+                {
+                    IEnumerable<KeyValuePair<string, string>> ignoredEvents = kv.Value.dos.Where(evt => evt.Value == PTranslationIgnoredActionName);
+                    IEnumerable<KeyValuePair<string, string>> actionOnlyEvents = kv.Value.dos.Where(evt => evt.Value != PTranslationIgnoredActionName);
+                    return new StateDecl
+                    {
+                        Name = kv.Value.printedName,
+                        IsHot = kv.Value.IsHot,
+                        IsCold = kv.Value.IsCold,
+                        IsWarm = kv.Value.IsWarm,
+                        IsStart = kv.Key.Equals(nameToStateInfo.initStateName),
+                        EntryFun = kv.Value.entryActionName,
+                        ExitFun = kv.Value.exitFunName,
+                        Transitions = GenerateStateEventHandlers(kv.Value.transitions, actionOnlyEvents, stateNameToStateInfo),
+                        IgnoredEvents = ignoredEvents.Select(evt => evt.Key).ToList(),
+                        DeferredEvents = kv.Value.deferredEvents
+                    };
+                });
+        }
+
+        private IEnumerable<StateEventHandler> GenerateStateEventHandlers(
+            Dictionary<string, TransitionInfo> transitions,
+            IEnumerable<KeyValuePair<string, string>> valueDos,
+            IReadOnlyDictionary<string, StateInfo> stateNameToStateInfo)
+        {
+            return transitions
+                .Select(
+                    kv => new StateEventHandler
+                    {
+                        OnEvent = kv.Key,
+                        IsPush = kv.Value.IsPush,
+                        Target = stateNameToStateInfo[kv.Value.target].printedName,
+                        Function = kv.Value.transFunName
+                    }).Concat(
+                    valueDos.Select(kv => new StateEventHandler {OnEvent = kv.Key, IsPush = false, Target = null, Function = kv.Value}));
         }
 
         private PSharpType PTypeToPSharpType(FuncTerm type)
@@ -88,11 +152,13 @@ namespace Microsoft.Pc
                     FuncTerm curTerm = type;
                     do
                     {
+                        // Get the NmdTupTypeField out
                         var field = (FuncTerm) curTerm.Args.ElementAt(0);
                         Node[] args = field.Args.ToArray();
                         names.Add(((Cnst) args[0]).GetStringValue());
                         types.Add(PTypeToPSharpType((FuncTerm) args[1]));
 
+                        // Advance to the next FuncTerm (terminated by IdTerm)
                         curTerm = curTerm.Args.ElementAt(1) as FuncTerm;
                     } while (curTerm != null);
 
@@ -104,24 +170,34 @@ namespace Microsoft.Pc
 
             return null;
         }
+    }
 
-        private void TypeToEventArgumentsList(FuncTerm payloadType, out PSharpType[] types, out string[] names)
-        {
-            PSharpType type = PTypeToPSharpType(payloadType);
-            // Null (unit) type results in no fields.
-            if (type == PSharpBaseType.Null)
-            {
-                types = new PSharpType[] { };
-                names = new string[] { };
-                return;
-            }
+    internal class StateEventHandler
+    {
+        public string OnEvent { get; set; }
+        public bool IsPush { get; set; }
+        public string Target { get; set; }
+        public string Function { get; set; }
+    }
 
-            // Named tuples become fields of events (saves an allocation)
-            // other types are assigned to a single "Payload" field
-            var namedTuple = type as PSharpNamedTuple;
-            types = namedTuple?.Types.ToArray() ?? new[] {type};
-            names = namedTuple?.Names.ToArray() ?? new[] {EventPayloadFieldName};
-        }
+    internal class StateDecl
+    {
+        public string Name { get; set; }
+        public bool IsHot { get; set; }
+        public bool IsCold { get; set; }
+        public bool IsWarm { get; set; }
+        public bool IsStart { get; set; }
+        public IEnumerable<StateEventHandler> Transitions { get; set; }
+        public string EntryFun { get; set; }
+        public string ExitFun { get; set; }
+        public List<string> IgnoredEvents { get; set; }
+        public List<string> DeferredEvents { get; set; }
+    }
+
+    internal class MachineDecl
+    {
+        public string Name { get; set; }
+        public IEnumerable<StateDecl> States { get; set; }
     }
 
     internal class PSharpSeqType : PSharpType
@@ -138,6 +214,13 @@ namespace Microsoft.Pc
     {
         public IEnumerable<PSharpType> Types { get; set; }
         public IEnumerable<string> Names { get; set; }
+
+        public string TypeName { get; set; } = "dynamic";
+
+        public override string ToString()
+        {
+            return TypeName;
+        }
     }
 
     internal class EventDecl
@@ -145,8 +228,7 @@ namespace Microsoft.Pc
         public string Name { get; set; }
         public int Assert { get; set; }
         public int Assume { get; set; }
-        public IEnumerable<PSharpType> PayloadTypes { get; set; }
-        public IEnumerable<string> PayloadNames { get; set; }
+        public PSharpType PayloadType { get; set; }
     }
 
     internal class PSharpType { }

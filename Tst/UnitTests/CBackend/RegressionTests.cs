@@ -271,6 +271,7 @@ namespace UnitTests.CBackend
                 }
 
                 Console.WriteLine(actualText);
+                Console.WriteLine($"Test completed at {DateTime.Now}");
                 Assert.AreEqual(correctText, actualText);
             }
             //if (!CloseSummaryStreamWriter(Constants.DisplayDiffsFile, displayDiffsWriter))

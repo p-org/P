@@ -236,6 +236,7 @@
     <Compile Include="LocalVariableInfo.cs" />
     <Compile Include="LProgram.cs" />
     <Compile Include="MachineInfo.cs" />
+    <Compile Include="PSharpTypeFactory.cs" />
     <Compile Include="PToCSharpCompiler.MkFunctionDecl.cs" />
     <Compile Include="PToCSharpCompiler.MkMachineClass.cs" />
     <Compile Include="NullProfiler.cs" />

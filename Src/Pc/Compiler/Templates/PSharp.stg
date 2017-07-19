@@ -1,4 +1,9 @@
 ﻿delimiters "%", "%"
+decl_(kind) ::= "decl_%kind%"
+decltype(ty) ::= "%(decl_(ty.TypeKind))(ty)%"
+decl_base(ty) ::= "%ty.TypeName%"
+decl_sequence(ty) ::= "List<%decltype(ty.ElementType)%>"
+decl_namedtuple(ty) ::= "%ty.TypeName%"
 topLevel(pgm) ::= <<
 using System;
 using System.Collections.Generic;
@@ -16,10 +21,10 @@ eventDecl(evt) ::= <<
 internal class %evt.Name% : Event
 {
 %if(evt.PayloadType)%
-    public %evt.PayloadType% Payload { get; set; }
+    public %decltype(evt.PayloadType)% Payload { get; set; }
 
 %endif%
-    public %evt.Name%(%if(evt.PayloadType)%%evt.PayloadType% payload%endif%)
+    public %evt.Name%(%if(evt.PayloadType)%%decltype(evt.PayloadType)% payload%endif%)
         : base(%evt.Assert%, %evt.Assume%)
     {
     %if(evt.PayloadType)%

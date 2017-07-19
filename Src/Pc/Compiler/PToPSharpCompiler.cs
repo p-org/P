@@ -33,6 +33,8 @@ namespace Microsoft.Pc
                 }
             });
 
+        private readonly PSharpTypeFactory typeFactory = new PSharpTypeFactory();
+
         public PToPSharpCompiler(
             Compiler compiler,
             AST<Model> model,
@@ -63,17 +65,13 @@ namespace Microsoft.Pc
             return allEvents.Select(
                 kv =>
                 {
-                    PSharpType payloadType = PTypeToPSharpType(kv.Value.payloadType);
-                    if (payloadType == PSharpBaseType.Null)
-                    {
-                        payloadType = null;
-                    }
+                    PSharpType payloadType = typeFactory.MakePSharpType(kv.Value.payloadType);
                     return new EventDecl
                     {
                         Name = kv.Key,
                         Assert = kv.Value.maxInstances == -1 || kv.Value.maxInstancesAssumed ? -1 : kv.Value.maxInstances,
                         Assume = kv.Value.maxInstances == -1 || !kv.Value.maxInstancesAssumed ? -1 : kv.Value.maxInstances,
-                        PayloadType = payloadType
+                        PayloadType = payloadType == PSharpBaseType.Null ? null : payloadType
                     };
                 });
         }
@@ -94,8 +92,10 @@ namespace Microsoft.Pc
             return stateNameToStateInfo.Select(
                 kv =>
                 {
-                    IEnumerable<KeyValuePair<string, string>> ignoredEvents = kv.Value.dos.Where(evt => evt.Value == PTranslationIgnoredActionName);
-                    IEnumerable<KeyValuePair<string, string>> actionOnlyEvents = kv.Value.dos.Where(evt => evt.Value != PTranslationIgnoredActionName);
+                    IEnumerable<KeyValuePair<string, string>> ignoredEvents =
+                        kv.Value.dos.Where(evt => evt.Value == PTranslationIgnoredActionName);
+                    IEnumerable<KeyValuePair<string, string>> actionOnlyEvents =
+                        kv.Value.dos.Where(evt => evt.Value != PTranslationIgnoredActionName);
                     return new StateDecl
                     {
                         Name = kv.Value.printedName,
@@ -128,48 +128,6 @@ namespace Microsoft.Pc
                     }).Concat(
                     valueDos.Select(kv => new StateEventHandler {OnEvent = kv.Key, IsPush = false, Target = null, Function = kv.Value}));
         }
-
-        private PSharpType PTypeToPSharpType(FuncTerm type)
-        {
-            string caseType = (type.Function as Id)?.Name;
-            switch (caseType)
-            {
-                case "BaseType":
-                    string actualType = ((Id) type.Args.First()).Name;
-                    switch (actualType)
-                    {
-                        case "NULL": return PSharpBaseType.Null;
-                        case "BOOL": return PSharpBaseType.Bool;
-                        case "INT": return PSharpBaseType.Int;
-                        case "EVENT": return PSharpBaseType.Event;
-                        case "MACHINE": return PSharpBaseType.Machine;
-                    }
-
-                    break;
-                case "NmdTupType":
-                    var names = new List<string>();
-                    var types = new List<PSharpType>();
-                    FuncTerm curTerm = type;
-                    do
-                    {
-                        // Get the NmdTupTypeField out
-                        var field = (FuncTerm) curTerm.Args.ElementAt(0);
-                        Node[] args = field.Args.ToArray();
-                        names.Add(((Cnst) args[0]).GetStringValue());
-                        types.Add(PTypeToPSharpType((FuncTerm) args[1]));
-
-                        // Advance to the next FuncTerm (terminated by IdTerm)
-                        curTerm = curTerm.Args.ElementAt(1) as FuncTerm;
-                    } while (curTerm != null);
-
-                    return new PSharpNamedTuple {Types = types, Names = names};
-                case "SeqType": return new PSharpSeqType {ItemType = PTypeToPSharpType(type.Args.ElementAt(0) as FuncTerm)};
-                case null: throw new Exception("Invalid PType passed");
-                default: throw new ArgumentOutOfRangeException(nameof(type), $"{caseType} not yet implemented");
-            }
-
-            return null;
-        }
     }
 
     internal class StateEventHandler
@@ -200,57 +158,11 @@ namespace Microsoft.Pc
         public IEnumerable<StateDecl> States { get; set; }
     }
 
-    internal class PSharpSeqType : PSharpType
-    {
-        public PSharpType ItemType { get; set; }
-
-        public override string ToString()
-        {
-            return $"List<{ItemType}>";
-        }
-    }
-
-    internal class PSharpNamedTuple : PSharpType
-    {
-        public IEnumerable<PSharpType> Types { get; set; }
-        public IEnumerable<string> Names { get; set; }
-
-        public string TypeName { get; set; } = "dynamic";
-
-        public override string ToString()
-        {
-            return TypeName;
-        }
-    }
-
     internal class EventDecl
     {
         public string Name { get; set; }
         public int Assert { get; set; }
         public int Assume { get; set; }
         public PSharpType PayloadType { get; set; }
-    }
-
-    internal class PSharpType { }
-
-    internal class PSharpBaseType : PSharpType
-    {
-        public static PSharpBaseType Machine = new PSharpBaseType("Machine");
-        public static PSharpBaseType Event = new PSharpBaseType("Event");
-        public static PSharpBaseType Int = new PSharpBaseType("int");
-        public static PSharpBaseType Bool = new PSharpBaseType("bool");
-        public static PSharpBaseType Null = new PSharpBaseType("PUnitType");
-
-        private PSharpBaseType(string name)
-        {
-            Name = name;
-        }
-
-        public string Name { get; }
-
-        public override string ToString()
-        {
-            return Name;
-        }
     }
 }

@@ -10,12 +10,6 @@ namespace UnitTests.PSharpBackend
     public class PSharpTests
     {
         [Test]
-        public void EnvironmentVariableTest()
-        {
-            Console.WriteLine($"FOO = {{{Environment.GetEnvironmentVariable("FOO")}}}");
-        }
-
-        [Test]
         public void TestBasic()
         {
             string pFilePath = Path.Combine(Constants.TestDirectory, @"RegressionTests\Integration\Correct\Multi_Paxos_4\Multi_Paxos_4.p");

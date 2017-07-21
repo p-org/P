@@ -9,10 +9,13 @@ namespace UnitTests.PSharpBackend
     [TestFixture]
     public class PSharpTests
     {
+        //private const string PSourcePath = @"RegressionTests\Integration\Correct\Multi_Paxos_4\Multi_Paxos_4.p";
+        private const string PSourcePath = @"..\tmp\tupOrder.p";
+
         [Test]
         public void TestBasic()
         {
-            string pFilePath = Path.Combine(Constants.TestDirectory, @"RegressionTests\Integration\Correct\Multi_Paxos_4\Multi_Paxos_4.p");
+            string pFilePath = Path.Combine(Constants.TestDirectory, PSourcePath);
             string outputDir = Path.Combine(Constants.SolutionDirectory, "tmp");
             Directory.CreateDirectory(outputDir);
             var compiler = new Compiler(true);

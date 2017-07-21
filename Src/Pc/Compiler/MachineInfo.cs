@@ -5,6 +5,7 @@ namespace Microsoft.Pc
 {
     internal class MachineInfo
     {
+        // TODO: remove "ignore" - violates separation of concerns
         public Dictionary<string, FunInfo> funNameToFunInfo =
             new Dictionary<string, FunInfo>
             {

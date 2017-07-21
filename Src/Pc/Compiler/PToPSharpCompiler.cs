@@ -81,9 +81,23 @@ namespace Microsoft.Pc
             return allMachines.Select(
                 kv =>
                 {
-                    var decl = new MachineDecl {Name = kv.Key, States = GenerateStates(kv.Value, kv.Value.stateNameToStateInfo)};
-                    return decl;
+                    MachineInfo info = kv.Value;
+                    return new MachineDecl
+                    {
+                        Name = kv.Key,
+                        States = GenerateStates(info, info.stateNameToStateInfo),
+                        Methods = GenerateMethods(info.funNameToFunInfo, info)
+                    };
                 });
+        }
+
+        private IEnumerable<MethodDecl> GenerateMethods(IDictionary<string, FunInfo> infoFunNameToFunInfo, MachineInfo info)
+        {
+            infoFunNameToFunInfo.Remove("ignore");
+            return from kv in infoFunNameToFunInfo select new MethodDecl()
+            {
+                Name = kv.Key
+            };
         }
 
         private IEnumerable<StateDecl> GenerateStates(MachineInfo nameToStateInfo, Dictionary<string, StateInfo> stateNameToStateInfo)
@@ -130,6 +144,10 @@ namespace Microsoft.Pc
         }
     }
 
+    internal class MethodDecl {
+        public string Name { get; set; }
+    }
+
     internal class StateEventHandler
     {
         public string OnEvent { get; set; }
@@ -156,6 +174,7 @@ namespace Microsoft.Pc
     {
         public string Name { get; set; }
         public IEnumerable<StateDecl> States { get; set; }
+        public IEnumerable<MethodDecl> Methods { get; set; }
     }
 
     internal class EventDecl

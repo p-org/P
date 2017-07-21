@@ -4,6 +4,7 @@ decltype(ty) ::= "%(decl_(ty.TypeKind))(ty)%"
 decl_base(ty) ::= "%ty.TypeName%"
 decl_sequence(ty) ::= "List<%decltype(ty.ElementType)%>"
 decl_namedtuple(ty) ::= "%ty.TypeName%"
+
 topLevel(pgm) ::= <<
 using System;
 using System.Collections.Generic;
@@ -17,6 +18,7 @@ namespace %pgm.Namespace%
     %pgm.Events:eventDecl();separator="\n\n"%
 }
 >>
+
 eventDecl(evt) ::= <<
 internal class %evt.Name% : Event
 {
@@ -33,15 +35,18 @@ internal class %evt.Name% : Event
     }
 }
 >>
+
 argumentList(types,names) ::= <%
-%types,names:{t,n|%t% %n%}; separator=", "%
+%types,names:{t,n|%decltype(t)% %n%}; separator=", "%
 %>
+
 machineDecl(machine) ::= <<
 internal class %machine.Name% : Machine
 {
     %machine.States:stateDecl();separator="\n\n"%
 }
 >>
+
 stateDecl(state) ::= <%
 %if(state.IsStart)%
 [Start]%\n%
@@ -67,6 +72,7 @@ stateDecl(state) ::= <%
 %if(state.Transitions)%%\n%%endif%
 class %state.Name% : MachineState {}
 %>
+
 stateTransition(t) ::= <%
 %if(t.Target)%
 %if(t.IsPush)%

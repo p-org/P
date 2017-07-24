@@ -29,4 +29,4 @@ string PrtDistServiceNextNodeManagerPort();
 void PrtDistServiceCreateRPCServer();
 
 //For concatenating two strings
-void _CONCAT(char* dest, char* string1, char* string2);
+void NodeManagerConcat(char* dest, char* string1, char* string2);

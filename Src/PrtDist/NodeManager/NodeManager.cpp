@@ -96,7 +96,7 @@ DWORD WINAPI PrtDistNodeManagerCreateRPCServerAndWait(
 void s_PrtDistNMPing(handle_t mHandle, int server,  boolean* amAlive)
 {
 	char log[1000] = "";
-	_CONCAT(log, "Pinged by External Server :", ClusterConfiguration.ClusterMachines[server]);
+	NodeManagerConcat(log, "Pinged by External Server :", ClusterConfiguration.ClusterMachines[server]);
 	*amAlive = !(*amAlive);
 	PrtDistNodeManagerLog(log);
 }
@@ -195,8 +195,8 @@ void s_PrtDistCentralServerGetNodeId(handle_t handle, int server, int *nodeId)
 {
 	char log[1000] = "";
 	*nodeId = PrtDistCentralServerGetNextID();
-	_CONCAT(log, "Received Request for a new NodeId from ", ClusterConfiguration.ClusterMachines[server]);
-	_CONCAT(log, " and returned node ID : ", ClusterConfiguration.ClusterMachines[*nodeId]);
+	NodeManagerConcat(log, "Received Request for a new NodeId from ", ClusterConfiguration.ClusterMachines[server]);
+	NodeManagerConcat(log, " and returned node ID : ", ClusterConfiguration.ClusterMachines[*nodeId]);
 	PrtDistNodeManagerLog(log);
 }
 
@@ -216,7 +216,7 @@ MIDL_user_free(void* object)
 }
 
 
-void _CONCAT(char* dest, char* string1, char* string2)
+void NodeManagerConcat(char* dest, char* string1, char* string2)
 {
 	strcat(dest, string1);
 	strcat(dest, string2);

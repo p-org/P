@@ -2,8 +2,20 @@
 <SettingsFile xmlns="http://schemas.microsoft.com/VisualStudio/2004/01/settings" CurrentProfile="(Default)" GeneratedClassNamespace="UnitTests.Properties" GeneratedClassName="Settings">
   <Profiles />
   <Settings>
-    <Setting Name="ShouldFreezeTests" Type="System.Boolean" Scope="Application">
+    <Setting Name="Reset" Type="System.Boolean" Scope="Application">
       <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="RunPc" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">"runPc"</Value>
+    </Setting>
+    <Setting Name="RunPt" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">"runPt"</Value>
+    </Setting>
+    <Setting Name="RunPrt" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">"runPrt"</Value>
+    </Setting>
+    <Setting Name="RunZing" Type="System.String" Scope="Application">
+      <Value Profile="(Default)">"runZing"</Value>
     </Setting>
   </Settings>
 </SettingsFile>

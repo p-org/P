@@ -26,9 +26,45 @@ namespace UnitTests.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool ShouldFreezeTests {
+        public bool Reset {
             get {
-                return ((bool)(this["ShouldFreezeTests"]));
+                return ((bool)(this["Reset"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("\"runPc\"")]
+        public string RunPc {
+            get {
+                return ((string)(this["RunPc"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("\"runPt\"")]
+        public string RunPt {
+            get {
+                return ((string)(this["RunPt"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("\"runPrt\"")]
+        public string RunPrt {
+            get {
+                return ((string)(this["RunPrt"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("\"runZing\"")]
+        public string RunZing {
+            get {
+                return ((string)(this["RunZing"]));
             }
         }
     }

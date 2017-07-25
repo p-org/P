@@ -71,7 +71,7 @@ extern "C"{
 		union
 		{
 			PRT_BOOLEAN bl;                 /**< A boolean value            */
-			PRT_INT32   nt;                 /**< An integer value           */
+			PRT_INT   nt;                 /**< An integer value           */
 			PRT_UINT32  ev;                 /**< An event id value          */
 			struct PRT_MACHINEID *mid;      /**< A machine id value */
 			struct PRT_FOREIGNVALUE *frgn;	/**< A foreign value            */
@@ -169,7 +169,7 @@ extern "C"{
 	* @returns A proper int value. Caller is responsible for freeing.
 	* @see PrtFreeValue
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value);
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT value);
 
 	/** Makes null value.
 	* The types null, event, and machine all share the null value.
@@ -235,7 +235,7 @@ extern "C"{
 	* @param[in] prmVal A primitive int value.
 	* @returns An integer.
 	*/
-	PRT_API PRT_INT32 PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal);
+	PRT_API PRT_INT PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal);
 
 	/** Sets the value of an Machine.
 	* @param[in,out] prmVal A primitivemachinevalue to mutate.
@@ -397,7 +397,7 @@ extern "C"{
 	*/
 	PRT_API void PRT_CALL_CONV PrtSeqInsertExIntIndex(
 		_Inout_ PRT_VALUE *seq,
-		_In_ PRT_UINT32 index,
+		_In_ PRT_INT index,
 		_In_ PRT_VALUE* value,
 		_In_ PRT_BOOLEAN cloneValue);
 
@@ -408,7 +408,7 @@ extern "C"{
 	*/
 	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(
 		_In_ PRT_VALUE *seq,
-		_In_ PRT_UINT32 index);
+		_In_ PRT_INT index);
 
 	/** Removes the value at index from the sequence, and shortens the sequence by one.
 	* seq[index] must be defined. Removal causes:

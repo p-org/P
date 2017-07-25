@@ -131,7 +131,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;PRT_USE_THREADPOOL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_THREADPOOL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
       <BrowseInformation>true</BrowseInformation>
@@ -148,7 +148,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_IDL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -166,7 +166,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
@@ -182,7 +182,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>

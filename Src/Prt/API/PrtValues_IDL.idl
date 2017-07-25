@@ -57,7 +57,7 @@ interface PrtValues_IDL
 		{
 		case PRT_VALUE_KIND_NULL: PRT_UINT32 dummy_1;
 		case PRT_VALUE_KIND_BOOL: PRT_BOOLEAN bl;							/**< A boolean value            */
-		case PRT_VALUE_KIND_INT: PRT_INT32   nt;							/**< An integer value           */
+		case PRT_VALUE_KIND_INT: PRT_INT    nt;							/**< An integer value           */
 		case PRT_VALUE_KIND_EVENT: PRT_UINT32  ev;							/**< An event id value          */
 		case PRT_VALUE_KIND_MID: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
 		case PRT_VALUE_KIND_FOREIGN: [unique] struct PRT_FOREIGNVALUE *frgn;	/**< A foreign value            */

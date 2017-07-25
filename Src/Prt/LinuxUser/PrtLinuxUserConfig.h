@@ -89,6 +89,11 @@ extern "C"{
 		PRT_TRUE = 1    /**< 1 means true  */
 	} PRT_BOOLEAN;
 
+  #if __x86_64__ || __ppc64__
+    typedef int64_t  PRT_INT;
+  #else
+    typedef int32_t  PRT_INT;
+  #endif
 	/** PRT_UINT8 is always an 8-bit unsigned integer. */
 	typedef uint8_t  PRT_UINT8;
 	/** PRT_UINT16 is always a 16-bit unsigned integer. */

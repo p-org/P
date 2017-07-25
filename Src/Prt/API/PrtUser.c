@@ -39,11 +39,11 @@ static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_
 	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%llu", i);
 }
 
-static void PrtUserPrintInt32(_In_ PRT_INT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintInt(_In_ PRT_INT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_UINT32 written = *numCharsWritten;
 	ResizeBuffer(buffer, bufferSize, written, 32);
-	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%d", i);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%lld", i);
 }
 
 static void PrtUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
@@ -179,7 +179,7 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 		PrtUserPrintString(PrtPrimGetBool(value) == PRT_TRUE ? "true" : "false", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALUE_KIND_INT:
-		PrtUserPrintInt32(PrtPrimGetInt(value), buffer, bufferSize, numCharsWritten);
+		PrtUserPrintInt(PrtPrimGetInt(value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALUE_KIND_EVENT:
 		PrtUserPrintString("<", buffer, bufferSize, numCharsWritten);

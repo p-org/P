@@ -13,6 +13,9 @@ interface PrtBaseTypes_IDL
 		PRT_TRUE = 1    /**< 1 means true  */
 	} PRT_BOOLEAN;
 
+	/** PRT_INT is always a 64-bit signed integer. */
+	typedef signed long long PRT_INT;
+
 	/** PRT_UINT8 is always an 8-bit unsigned integer. */
 	typedef unsigned small  PRT_UINT8;
 	/** PRT_UINT16 is always a 16-bit unsigned integer. */

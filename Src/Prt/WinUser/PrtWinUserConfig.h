@@ -68,6 +68,13 @@ extern "C"{
 		PRT_TRUE = 1    /**< 1 means true  */
 	} PRT_BOOLEAN;
 
+	/** PRT_INT represents the primitive int type in P */	
+#if _WIN64
+	typedef signed __int64 PRT_INT;
+#else
+	typedef signed __int32 PRT_INT;
+#endif
+
 	/** PRT_UINT8 is always an 8-bit unsigned integer. */
 	typedef unsigned __int8  PRT_UINT8;
 	/** PRT_UINT16 is always a 16-bit unsigned integer. */

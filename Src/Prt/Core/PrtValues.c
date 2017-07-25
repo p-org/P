@@ -168,7 +168,7 @@ PRT_VALUE * PRT_CALL_CONV PrtMkEventValue(_In_ PRT_UINT32 value)
 	return retVal;
 }
 
-PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT32 value)
+PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT value)
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	retVal->discriminator = PRT_VALUE_KIND_INT;
@@ -353,7 +353,7 @@ void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT32 value
 	prmVal->valueUnion.nt = value;
 }
 
-PRT_INT32 PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal)
+PRT_INT PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_INT, "Invalid type on primitive get");
@@ -503,7 +503,7 @@ void PRT_CALL_CONV PrtSeqUpdate(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _
 	PrtSeqUpdateEx(seq, index, value, PRT_TRUE);
 }
 
-void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT32 index, _In_ PRT_VALUE* value, PRT_BOOLEAN cloneValue)
+void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_INT index, _In_ PRT_VALUE* value, PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
@@ -564,7 +564,7 @@ void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_UINT3
 
 
 
-PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(_In_ PRT_VALUE *seq, _In_ PRT_UINT32 index)
+PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(_In_ PRT_VALUE *seq, _In_ PRT_INT index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
@@ -592,7 +592,7 @@ void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
 	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt < seq->valueUnion.seq->size, "Invalid index");
 
-	PRT_UINT32 i;
+	PRT_INT i;
 	PRT_VALUE **values = seq->valueUnion.seq->values;
 	PRT_UINT32 seqSize = seq->valueUnion.seq->size;
 	PrtFreeValue(values[index->valueUnion.nt]);

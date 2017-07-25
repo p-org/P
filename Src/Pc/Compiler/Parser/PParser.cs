@@ -920,6 +920,32 @@
             valueExprStack.Push(nulExpr);
         }
 
+        private void PushFloatExpr(string first, string second, Span span)
+        {
+            double val;
+            if (!double.TryParse($"{first}.{second}", out val))
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 span,
+                                 Constants.BadSyntax.ToString($"Bad float constant {val}"),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+
+            var nulExpr = P_Root.MkNulApp(MkNumeric(val, span));
+            nulExpr.Span = span;
+            nulExpr.id = (P_Root.IArgType_NulApp__1)MkUniqueId(span);
+            valueExprStack.Push(nulExpr);
+        }
+
+        private void PushFloatExponentExpr(string first, string exp, Span span)
+        {
+            throw new NotImplementedException("Not supported yet");
+        }
+
         private void PushCast(Span span)
         {
             Contract.Assert(valueExprStack.Count > 0);
@@ -2463,6 +2489,13 @@
         }
 
         private P_Root.RealCnst MkNumeric(int i, Span span)
+        {
+            var num = P_Root.MkNumeric(i);
+            num.Span = span;
+            return num;
+        }
+
+        private P_Root.RealCnst MkNumeric(double i, Span span)
         {
             var num = P_Root.MkNumeric(i);
             num.Span = span;

@@ -30,7 +30,7 @@ domain PData
 	ModelType       ::= new (name: String, id: any Id).
 
 	NameType        ::= new (name: String).
-    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE}).
+    BaseType        ::= new ({ NULL, BOOL, INT, FLOAT, EVENT, MACHINE}).
     AnyType			::= new (perm: String + { NIL, DATA }).
 	AnyTypeDecl		::= new (perm: String, id: Id).	
 	TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
@@ -49,9 +49,9 @@ domain PData
     Name       ::= new (name: String, id: any Id).
     New        ::= new (name: String, args: any Exprs + { NIL }, id: any Id).
     FunApp     ::= new (name: String, args: any Exprs + { NIL }, label: Natural, id: any Id).
-    NulApp     ::= new (op: Integer + Boolean + { THIS, NONDET, FAIRNONDET, NULL, HALT }, id: any Id).
+    NulApp     ::= new (op: Integer + Boolean + Real + { THIS, NONDET, FAIRNONDET, NULL, HALT }, id: any Id).
     UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr, id: any Id).
-    BinApp     ::= new (op: { ADD, SUB, MUL, INTDIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr, id: any Id).
+    BinApp     ::= new (op: { ADD, SUB, MUL, DIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr, id: any Id).
     Field      ::= new (arg: any Expr, name: String + Natural, id: any Id).
     Default    ::= new (type: any TypeExpr, id: any Id). 
     Cast       ::= new (arg: any Expr, type: any TypeExpr, id: any Id). 
@@ -828,7 +828,7 @@ domain PStaticTyping extends PData, PError
 	OneIdError(e.id, "Operator expected a (named) tuple value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Field, toSymbol(t1) != #TupType, toSymbol(t1) != #NmdTupType.
     
-    PureIntOp ::= { ADD, SUB, MUL, INTDIV }.
+    PureIntOp ::= { ADD, SUB, MUL, DIV }.
     TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOp, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
 	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer (or enum constant) value"']
 	OneIdError(e.id, "Operator expected first argument to be an integer (or enum constant) value"),

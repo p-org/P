@@ -372,6 +372,7 @@ Type
 	: NULL                                  { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.NULL,    ToSpan(@1))); }
 	| BOOL                                  { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.BOOL,    ToSpan(@1))); }
 	| INT                                   { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.INT,     ToSpan(@1))); }
+	| FLOAT                                 { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.FLOAT,     ToSpan(@1))); }
 	| EVENT                                 { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.EVENT,   ToSpan(@1))); }
 	| MACHINE                               { PushTypeExpr(MkBaseType(P_Root.UserCnstKind.MACHINE, ToSpan(@1))); }	
 	| DATA									{ PushDataType(ToSpan(@1)); }
@@ -515,7 +516,7 @@ Exp_3
 
 Exp_2 
 	: Exp_2 MUL Exp_1  { PushBinExpr(P_Root.UserCnstKind.MUL,    ToSpan(@2)); }	
-	| Exp_2 DIV Exp_1  { PushBinExpr(P_Root.UserCnstKind.INTDIV, ToSpan(@2)); }
+	| Exp_2 DIV Exp_1  { PushBinExpr(P_Root.UserCnstKind.DIV, ToSpan(@2)); }
 	| Exp_1
 	;
 
@@ -534,6 +535,7 @@ Exp_0
     | NULL                                   { PushNulExpr(P_Root.UserCnstKind.NULL,       ToSpan(@1)); }
     | HALT                                   { PushNulExpr(P_Root.UserCnstKind.HALT,       ToSpan(@1)); }
 	| INT                                    { PushIntExpr($1.str,  ToSpan(@1));                        }
+	| Exp_float                              
     | ID                                     { PushName($1.str,     ToSpan(@1));                        }         
 	| Exp_0 DOT ID                           { PushField($3.str,    ToSpan(@3));                        }   
 	| Exp_0 DOT INT                          { PushFieldInt($3.str, ToSpan(@3));                        }   
@@ -552,6 +554,12 @@ Exp_0
 	| LPAREN ID ASSIGN Exp COMMA RPAREN      { PushNmdTupleExpr($2.str, ToSpan(@2), true);              }
 	| LPAREN ID ASSIGN Exp COMMA 
 	  NmdExprArgList       RPAREN            { PushNmdTupleExpr($2.str, ToSpan(@2), false);             }
+	;
+
+Exp_float
+	: DOT INT                                                  { PushFloatExpr("0", $2.str, ToSpan(@1));    }
+	| INT DOT INT					                           { PushFloatExpr($1.str, $3.str, ToSpan(@1));    }
+	| FLOAT LPAREN INT COMMA INT RPAREN                        { PushFloatExponentExpr($3.str, $5.str, ToSpan(@1));    }
 	;
 
 // An arg list that is always packed into an exprs.

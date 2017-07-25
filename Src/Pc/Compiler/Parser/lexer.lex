@@ -129,6 +129,7 @@
 			 keywords.Add("test", (int)PTokens.TEST);
 			 keywords.Add("refines", (int)PTokens.REFINES);
 			 keywords.Add("data", (int)PTokens.DATA);
+			 keywords.Add("float", (int)PTokens.FLOAT);
 		 }
 
          int GetIdToken(string txt)
@@ -177,6 +178,7 @@ Id              [A-Za-z_]([A-Za-z_0-9]*)
 
 [A-Za-z_][A-Za-z_0-9]*  			       { return GetIdToken(yytext);  }
 [0-9]+									   { return (int)PTokens.INT;     }
+
 [\"][^\"\n\r]*[\"]						   { return (int)PTokens.STR; }
 
 [\.]                                       { return (int)PTokens.DOT;     }

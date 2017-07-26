@@ -13,7 +13,7 @@ domain PLink
 	EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
 
 	NameType        ::= new (name: String).
-    BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE }).
+    BaseType        ::= new ({ NULL, BOOL, INT, FLOAT, EVENT, MACHINE }).
 	AnyType			::= new (perm: String + { NIL, DATA }).
     TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
     NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).

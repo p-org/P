@@ -2,7 +2,7 @@ machine Main {
 	start state S {
 		entry {
 			var x: float;
-			x = float(10);
+			x = 10.9;
 			assert x == 10;
 		}
 	}

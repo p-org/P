@@ -1568,7 +1568,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(MUL, getInt1, getInt2), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-							        e = in.BinApp(INTDIV, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+							        e = in.BinApp(DIV, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
 									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
 									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
 									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(DIV, getInt1, getInt2), NIL)).

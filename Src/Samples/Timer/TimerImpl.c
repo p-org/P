@@ -90,7 +90,7 @@ PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer,
 	BOOL success;
 
 	TimerContext *timerContext = (TimerContext *)PrtGetForeignValue(*timer);
-	int timeout_value = (*time)->valueUnion.nt;
+	int timeout_value = (int)(*time)->valueUnion.nt;
 	liDueTime.QuadPart = -10000 * timeout_value;
 	success = SetWaitableTimer(timerContext->timer, &liDueTime, 0, Callback, timerContext, FALSE);
 	timerContext->started = success;

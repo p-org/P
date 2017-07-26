@@ -163,170 +163,137 @@ domain PStructuralTyping extends PData, PError
     InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
                                        it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
 
-    [ rule_Classes = '"error, msg: Global function has the same name"']
     TwoIdError(f1.id, f2.id, "Multiple functions with same name"),
 	TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner != NIL.
 	
-	[ rule_Classes = '"error, msg: Another global function has the same name"']
 	TwoIdError(f1.id, f2.id, "Multiple functions with same name"),
     TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner = NIL.
 	
-	[ rule_Classes = '"error, msg: Multiple transitions over the same event"']
 	TwoIdError(t1.id, t2.id, "Multiple transitions over the same event"),
 	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
-	[ rule_Classes = '"error, msg: Multiple actions over the same event"']
+	
 	TwoIdError(a1.id, a2.id, "Multiple actions over the same event"),
 	TwoDeclError(a1, a2) :- a1 != a2, a1 is DoDecl, a2 is DoDecl, a1.src = a2.src, a1.trig = a2.trig.
-	[ rule_Classes = '"error, msg:  Action and transition over the same event"']
+	
 	TwoIdError(t.id, a.id, "Action and transition over the same event"),
 	TwoDeclError(t, a)   :- t is TransDecl, a is DoDecl, t.src = a.src, t.trig = a.trig.
 
-	[rule_Classes = '"error, msg: inconsistent partial annotations"']
 	TwoIdError(id, id', "Inconsistent partial annotations"),
 	TwoDeclError(m, m') :- m is MachineDecl(name, id), m' is MachineDecl(name, id'), id != id', Annotation(m, "partial", _, _), no Annotation(m', "partial", _, _).
 
-	[rule_Classes = '"error, msg: another machine with same name declared"']
 	TwoIdError(id, id', "Another machine with same name declared"),
 	TwoDeclError(m, m') :- m is MachineDecl(name, id), m' is MachineDecl(name, id'), id != id', no Annotation(m, "partial", _, _), no Annotation(m', "partial", _, _).
 
-	[rule_Classes = '"error, msg: no start state in machine"']
 	OneIdError(id, "No start state in machine"),
 	OneDeclError(m) :- m is MachineDecl(name, id), no MachineStart(name, _).
 
-	[rule_Classes = '"error, msg: multiple start states in machine"']
 	OneIdError(id, "Multiple start states in machine"),
 	OneDeclError(m) :- m is MachineDecl(name, id), MachineStart(name, s1), MachineStart(name, s2), s1 != s2.
 
-	[rule_Classes = '"error, msg: inconsistent machine kinds"']
 	OneIdError(id, "Inconsistent machine kinds"),
 	OneDeclError(m) :- m is MachineDecl(name, id), MachineKind(name, k1), MachineKind(name, k2), k1 != k2.
 
-	[rule_Classes = '"error, msg: multiple cardinality constraints in machine"']
 	OneIdError(id, "Multiple cardinality constraints in machine"),
 	OneDeclError(m) :- m is MachineDecl(name, id), MachineCard(name, c1), MachineCard(name, c2), c1 != c2.
 	
-	[rule_Classes = '"error, msg: another variable with same name declared"']
 	OneIdError(id1, "Another variable with same name declared"),
 	OneDeclError(m) :- m is VarDecl(name, owner, _, id1), VarDecl(name, owner, _, id2), id1 != id2.
 
-	[rule_Classes = '"error, msg: another state with same name declared"']
 	OneIdError(id1, "Another state with same name declared"),
 	OneDeclError(m) :- m is StateDecl(name, owner, _, _, _, id1), StateDecl(name, owner, _, _, _, id2), id1 != id2.
 
-	[rule_Classes = '"error, msg: another function with same name declared"']
 	OneIdError(id1, "Another function with same name declared"),
 	OneDeclError(m) :- m is FunDecl(name, owner, _, _, _, _, _, id1), FunDecl(name, owner, _, _, _, _, _, id2), owner != NIL, id1 != id2.
 
 	//Valid TransDecl
-	[rule_Classes = '"error, msg: transition on an undefined event"']
 	OneIdError(trns.id, "Transition on an undefined event"),
 	OneDeclError(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _, _), trns.trig != NULL, trns.trig != HALT.
-	[rule_Classes = '"error, msg: transition to an undefined state"']
+	
 	OneIdError(trns.id, "Transition to an undefined state"),
 	OneDeclError(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _, _).
 	
-	[rule_Classes = '"error, msg: transition function not defined"']
 	OneIdError(trns.id, "Transition function not defined"),
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, 
 	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
-	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneIdError(trns.id, "Function cannot take arguments"),
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
 	                      trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, NIL, _, p, _, _, _, _), p != NIL.
 	
 	//Valid DoDecl
-	[rule_Classes = '"error, msg: action on an undefined event"']
 	OneIdError(doD.id, "Action on an undefined event"),
 	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _, _), doD.trig != HALT, doD.trig != NULL.
 	
-	[rule_Classes = '"error, msg: function not defined"']
 	OneIdError(trns.id, "Function not defined"),
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, 
 	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
-	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneIdError(trns.id, "Function cannot take arguments"),
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String , FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
 	                      trns is DoDecl(_, _, act, _), act : String , FunDecl(act, NIL, _, p, _, _, _, _), p != NIL.
 	
 	//Entry Exit Functions
-	[rule_Classes = '"error, msg: undefined function for entry"']
 	OneIdError(s.id, "Undefined function for entry"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String, 
 	                       no FunDecl(eF, s.owner, _, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _, _). 
 
-	[rule_Classes = '"error, msg: undefined function for exit"']
 	OneIdError(s.id, "Undefined function for exit"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String, 
 	                       no FunDecl(eF, s.owner, _, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _, _).
 	
-	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneIdError(s.id, "Entry function cannot take arguments"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
 	                       s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
 	
-	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneIdError(s.id, "Exit function cannot take arguments"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
 	                       s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
 	
 	//cannot have null in spec machines
-	[rule_Classes = '"error, msg: null transitions not allowed in spec machine"']
 	OneIdError(t.id, "Transition on null event not allowed in spec machine"),
 	OneDeclError(t) :- t is TransDecl(s, NULL, _, _, _), m is MachineKind(s.owner, SPEC).
-	[rule_Classes = '"error, msg: push transitions not allowed in spec machine"']
+	
 	OneIdError(t.id, "Push transition not allowed in spec machine"),
 	OneDeclError(t) :- t is TransDecl(s, _, _, PUSH, _), m is MachineKind(s.owner, SPEC).
 
 	//no defer in Spec
-	[rule_Classes = '"error, msg: defer not allowed in spec machine"']
 	OneIdError(d.id, "Event cannot be deferred in spec machine"),
 	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), m is MachineKind(s.owner, SPEC).	
 
 	//event in spec is defined
-	[rule_Classes = '"error, msg: event in observes list is undefined"']
 	OneIdError(id, "Event in observes list is undefined"),
 	OneDeclError(decl) :- obs is ObservesDecl, decl is MachineDecl(obs.spec, id), MachineKind(obs.spec, SPEC), no EventDecl(obs.ev, _, _, _).	
 
 	//event in eventset not declared
-	[rule_Classes = '"error, msg: unknown event in eventset"']
 	OneIdError(eventset.id, "Unknown event in eventset"),
 	OneDeclError(eventset) :- EventSetContains(eventset, ev), ev != HALT, no EventDecl(ev, _, _, _).
 
 	//eventset not declared
-	[rule_Classes = '"error, msg: eventset not declared"']
 	OneIdError(atype.id, "eventset not declared"),
 	OneDeclError(atype) :- no EventSetDecl(es, _), atype is AnyTypeDecl, atype.perm = es.
 
 	//eventset in interface type
-	[rule_Classes = '"error, msg: unknown eventset in interface declaration"']
 	OneIdError(inter.id, "Unknown eventset in interface declaration"),
 	OneDeclError(inter) :- inter is InterfaceTypeDef(_, es, _, _), no EventSetDecl(es, _).
 
 	//interface declared in the exports
-	[rule_Classes = '"error, msg: interface in exports is not declared"']
 	OneIdError(id, "Interface in exports is not declared"),
 	OneDeclError(me) :- decl is MachineDecl(mach, id), me is MachineExports(mach, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
 
 	MemberOfStringList ::= sub (StringList, String).
 	//interfaces or machine names in the creates of a fun proto
-	[rule_Classes = '"error, msg: interface or machine in creates of extern fun is not declared"']
 	OneIdError(NIL, "Interface or machine in creates of extern fun is not declared"),
 	OneDeclError(fp) :- fp is FunProtoCreatesDecl(f, list), MemberOfStringList(list, name), no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _).
 
 	//events in sends
-	[rule_Classes = '"error, msg: event in sends list is not declared"']
 	OneIdError(id, "Event in sends list is not declared"),
 	OneDeclError(ms) :- decl is MachineDecl(mach, id), ms is MachineSends(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//events in receives
-	[rule_Classes = '"error, msg: event in receives list is not declared"']
 	OneIdError(id, "Event in receives list is not declared"),
 	OneDeclError(mr) :- decl is MachineDecl(mach, id), mr is MachineReceives(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//multiple declarations of the same event
-	[rule_Classes = '"error, msg: multiple declarations of the same event"']
 	TwoIdError(ev.id, ev'.id, "Multiple declarations of the same event"),
 	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
@@ -335,7 +302,6 @@ domain PStructuralTyping extends PData, PError
 	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
 
 	//multiple declarations of the same type
-	[rule_Classes = '"error, msg: multiple declarations of named types have same name"']
 	TwoIdError(td.id, td'.id, "Multiple declarations of named types have same name"),
 	OneDeclError(td) :- NamedTypes(td), NamedTypes(td'), td != td', td.name = td'.name.
 }
@@ -403,7 +369,6 @@ domain PStaticTyping extends PData, PError
 	InferredCreatesError ::= (m: FunDecl).
 
 	MemberOfStringList ::= sub (StringList, String).
-	[rule_Classes = '"error, msg: Creates list of the function prototype is not equal to the inferred creates list for the function"']
 	OneIdError(f.id, "Creates list of the function prototype is not a subset of the inferred creates list for the function"),
 	InferredCreatesError(f) :- f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm);
 							   f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, _), no FunProtoCreatesDecl(fd, _).
@@ -444,7 +409,6 @@ domain PStaticTyping extends PData, PError
 	CompTypeRel(t1, t2) :- MachineExports(name, i), InterfaceTypeDecl(i, _, t1', _), TypeExpansion(t1', t1), ConstructorType(name, _, t2).
 
 	ExportInterfaceError ::= (m: MachineDecl).
-	[rule_Classes = '"error, msg: the exported interface argument type is not a subtype of the constructor argument type"']
 	OneIdError(id, "the exported interface argument type is not a subtype of the constructor argument type"),
 	ExportInterfaceError(m) :- m is MachineDecl(name, id), MachineExports(name, i), ConstructorType(name, _, ct),
 	                           InterfaceTypeDecl(i, _, iargt, _), TypeExpansion(iargt, eargt), ct != eargt, TypeRel(eargt, ct, k), k != SUB. 						 
@@ -460,12 +424,10 @@ domain PStaticTyping extends PData, PError
 	AllTypeExprs ::= sub (TypeExpr).
 	TypeDefError ::= (name: String).
 
-	[rule_Classes = '"error, msg: undefined type"']
 	ZeroIdError(errorMsg),
 	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no ModelType(name, _), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
 						  errorMsg = strJoin("Undefined type: ", name).
 	
-	[rule_Classes = '"error, msg: multiple type definitions for a type name"']
 	TwoIdError(td1.id, td2.id, "Multiple type definitions for a type name"),
 	TypeDefError(name) :- td1 is TypeDef(name, type1, _), td2 is TypeDef(name, type2, _), type1 != type2;
 	                      td1 is EnumTypeDef(name, list1, _, _), td2 is EnumTypeDef(name, list2, _, _), list1 != list2;
@@ -476,7 +438,7 @@ domain PStaticTyping extends PData, PError
 	NameTypeDepends ::= (name1: String, name2: String).
 	NameTypeDepends(typeDef.name, type.name) :- TypeDefDepends(typeDef, type).
 	NameTypeDepends(name1, name3) :- NameTypeDepends(name1, name2), NameTypeDepends(name2, name3).
-	[rule_Classes = '"error, msg: type depends on itself"']
+	
 	OneIdError(td.id, "Type depends on itself"),
 	TypeDefError(name) :- NameTypeDepends(name, name), td is TypeDef(name, _, _).
 
@@ -485,16 +447,15 @@ domain PStaticTyping extends PData, PError
 	EnumTypeElem(d, list1, NIL) :- EnumTypeElem(d, StringList(_, list1), NIL), list1: StringList.
 	EnumTypeElem(d, list1, list2) :- EnumTypeElem(d, StringList(_, list1), IntegerList(_, list2)), list1: StringList.
 
-	[rule_Classes = '"error, msg: multiple enum elements with the same name"']
 	OneIdError(def.id, "Multiple enum elements with the same name"),
 	TypeDefError(name) :- EnumTypeElem(def, list1, _), EnumTypeElem(def, list2, _), list1 != list2, list1.hd = list2.hd, name = def.name.
-	[rule_Classes = '"error, msg: enum element names of different enum types must be disjoint"']
+	
 	TwoIdError(def1.id, def2.id, "Element names of different enum types must be disjoint"),
 	TypeDefError(name) :- EnumTypeElem(def1, list1, _), EnumTypeElem(def2, list2, _), def1 != def2, list1.hd = list2.hd, name = def1.name.
-	[rule_Classes = '"error, msg: enum element names must be disjoint from event names"']
+	
 	TwoIdError(ed.id, def.id, "Enum element names must be disjoint from event names"),
 	TypeDefError(name) :- ed is EventDecl(name, _, _, _), EnumTypeElem(def, StringList(name, _), _).
-	[rule_Classes = '"error, msg: at least one enum element should be numbered 0"']
+	
 	OneIdError(d.id, "At least one enum element should be numbered 0"),
 	TypeDefError(name) :- d is EnumTypeDef(name, _, _, _), no EnumTypeElemIndex(d, _, _, _, 0).
 
@@ -731,19 +692,17 @@ domain PStaticTyping extends PData, PError
 						SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, MachineReceives(c.owner, ALL), i = BaseType(MACHINE).
 
     // "this" is not allowed in global functions
-	[ rule_Classes = '"error, msg: "this" is not allowed in global functions"']
 	OneIdError(e.id, "Keyword this is not allowed in global functions"),
 	TypeOf(c, e, ERROR)  :- SubSE(c, e), e = NulApp(THIS, _), c.owner = NIL.
 
 	
-	//TypeOf(c, e, BaseType(MACHINE))  :- SubSE(c, e), e = NulApp(THIS, _).
-
 	TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET, _).
 
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET, _).
 	    
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v, _), v : Integer.
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v, _), v : Boolean.          
+	TypeOf(c, e, BaseType(FLOAT))  :- SubSE(c, e), e = NulApp(v, _), v : Real.
     
     //// (2) The types of unary expressions
     TypeOf(c, e, et)              :- SubSE(c, e), e = Default(t, _), TypeExpansion(t, et). 
@@ -774,33 +733,31 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n, _), IsEventCnst(c, n, _).
 	TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n, _), IsEnumCnst(c, n, t).
 
-	[ rule_Classes = '"error, msg: Undefined symbol"']
 	OneIdError(e.id, "Undefined symbol"),
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n, _), no EventDecl(n, _, _, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), no EnumTypeElem(_, StringList(n, _), _). 
     
     TypeOf(c, e, BaseType(BOOL))  :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _, _), t1 = BaseType(BOOL). 
-	[ rule_Classes = '"error, msg: Operator expected a boolean value"']
+	
 	OneIdError(e.id, "Operator expected a boolean value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _, _), t1 != BaseType(BOOL). 
     
     TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 = BaseType(INT). 
-	[ rule_Classes = '"error, msg: Operator expected an integer value"']
 	OneIdError(e.id, "Operator expected an integer value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 != BaseType(INT). 
     
     TypeOf(c, e, SeqType(dom))    :- TypeOfArg1(c, e, t1), e = UnApp(KEYS, _, _), t1 = MapType(dom, _). 
-	[ rule_Classes = '"error, msg: Operator expected a map value"']
+	
 	OneIdError(e.id, "Operator expected a map value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(KEYS, _, _), toSymbol(t1) != #MapType. 
 
     TypeOf(c, e, SeqType(cod))    :- TypeOfArg1(c, e, t1), e = UnApp(VALUES, _, _), t1 = MapType(_, cod). 
-	[ rule_Classes = '"error, msg: Operator expected a map value"']
+	
 	OneIdError(e.id, "Operator expected a map value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(VALUES, _, _), toSymbol(t1) != #MapType. 
 
     TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), t1 : MapType. 
     TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), t1 : SeqType. 
-	[ rule_Classes = '"error, msg: Operator expected a map or sequence value"']
+	
 	OneIdError(e.id, "Operator expected a map or sequence value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), toSymbol(t1) != #MapType, toSymbol(t1) != #SeqType. 
     
@@ -808,50 +765,53 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k != EMPTY.
 	//if the type is interface type then it acts as reduce, hence subset relation
 	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType.
-	[ rule_Classes = '"error, msg: Cast can never succeed"']
+	
 	OneIdError(e.id, "Cast can never succeed"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k = EMPTY.
 	
 	AllInterfaceTypes ::= sub(InterfaceType).
 	NotSubsetInterfaces ::= (InterfaceType, InterfaceType).
 	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), count({ ev | MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev) }) != 0.
-	[ rule_Classes = '"error, msg: reduce can never succeed"']
+	
 	OneIdError(e.id, "Reduce can never succeed"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
 									  TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, NotSubsetInterfaces(t2', t1).
 									  
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
-	[ rule_Classes = '"error, msg: Bad field name"']
+	
 	OneIdError(e.id, "Bad field name"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Field, t2 = ERROR.
-	[ rule_Classes = '"error, msg: Operator expected a (named) tuple value"']
+	
 	OneIdError(e.id, "Operator expected a (named) tuple value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Field, toSymbol(t1) != #TupType, toSymbol(t1) != #NmdTupType.
     
-    PureIntOp ::= { ADD, SUB, MUL, DIV }.
-    TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOp, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
-	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer (or enum constant) value"']
-	OneIdError(e.id, "Operator expected first argument to be an integer (or enum constant) value"),
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOp, t1 != BaseType(INT), toSymbol(t1) != #NameType.    
-	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer (or enum constant) value"']
-	OneIdError(e.id, "Operator expected second argument to be an integer (or enum constant) value"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), op : PureIntOp, TypeOf(c, e2, t2), t2 != BaseType(INT), toSymbol(t2) != #NameType.     
+    PureIntOrFloatOp ::= { ADD, SUB, MUL, DIV }.
+    TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, BaseType(INT), BaseType(INT)), e = BinApp(op, _, _, _), op : PureIntOrFloatOp.
+	TypeOf(c, e, BaseType(FLOAT))           :- TypeOfArg2(c, e, BaseType(FLOAT), t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t2, BaseType(FLOAT), SUB);
+											   TypeOfArg2(c, e, t1, BaseType(FLOAT)), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t1, BaseType(FLOAT), SUB).
+
+	
+	OneIdError(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType.    
+	
+	OneIdError(e.id, "Operator expected second argument to be an integer or float or enum constant value"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), op : PureIntOrFloatOp, TypeOf(c, e2, t2), t2 != BaseType(INT), t2 != BaseType(FLOAT), toSymbol(t2) != #NameType.     
     
-    PureIntRel ::= { LT, LE, GT, GE }.
-    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntRel, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
-	[ rule_Classes = '"error, msg: Operator expected first argument to be an integer (or enum constant) value"']
-	OneIdError(e.id, "Operator expected first argument to be an integer (or enum constant) value"),
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntRel, t1 != BaseType(INT), toSymbol(t1) != #NameType.    
-	[ rule_Classes = '"error, msg: Operator expected second argument to be an integer (or enum constant) value"']
-	OneIdError(e.id, "Operator expected second argument to be an integer (or enum constant) value"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureIntRel, t2 != BaseType(INT), toSymbol(t2) != #NameType.    
+    PureIntOrFloatRel ::= { LT, LE, GT, GE }.
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntOrFloatRel, TypeRel(t1, BaseType(FLOAT), SUB), TypeRel(t2, BaseType(FLOAT), SUB).
+
+	OneIdError(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOrFloatRel, t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType.    
+	
+	OneIdError(e.id, "Operator expected second argument to be an integer or float or enum constant value"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureIntOrFloatRel, t2 != BaseType(INT), t2 != BaseType(FLOAT), toSymbol(t2) != #NameType.    
     
     PureBoolOp ::= { AND, OR }.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureBoolOp, t1 = bbool, t2 = bbool, bbool = BaseType(BOOL).
-	[ rule_Classes = '"error, msg: Operator expected first argument to be a boolean value"']
+	
 	OneIdError(e.id, "Operator expected first argument to be a boolean value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureBoolOp, t1 != BaseType(BOOL).    
-	[ rule_Classes = '"error, msg: Operator expected second argument to be a boolean value"']
+	
 	OneIdError(e.id, "Operator expected second argument to be a boolean value"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureBoolOp, t2 != BaseType(BOOL).    
     
@@ -863,21 +823,21 @@ domain PStaticTyping extends PData, PError
     
     TypeOf(c, e, inner)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = SeqType(inner), TypeRel(t2, BaseType(INT), SUB).
     TypeOf(c, e, cod)              :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).
-	[ rule_Classes = '"error, msg: Indexer must be applied to a sequence or map"']
-    OneIdError(e.id, "Indexer must be applied to a sequence or map"),
+    
+	OneIdError(e.id, "Indexer must be applied to a sequence or map"),
 	TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(IDX, _, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
-	[ rule_Classes = '"error, msg: Index must be an integer"']
+	
 	OneIdError(e.id, "Index must be an integer"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 : SeqType, t2 != BaseType(INT), toSymbol(t2) != #NameType.
-	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
+	
 	OneIdError(e.id, "Index may not be in the domain of the map"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
     
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _, _), t2 = MapType(dom, _), TypeRel(t1, dom, k), k != EMPTY.        
-	[ rule_Classes = '"error, msg: Value can never be in the map"']
+	
 	OneIdError(e.id, "Value can never be in the map"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _, _),  t2 = MapType(dom, _), TypeRel(t1, dom, EMPTY).        
-	[ rule_Classes = '"error, msg: "in" expects a map"']
+	
 	OneIdError(e.id, "Operator in expects a map"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e2, _),  TypeOf(c, e2, t2), toSymbol(t2) != #MapType.
     
@@ -893,16 +853,15 @@ domain PStaticTyping extends PData, PError
 	TypeOf(c, e, et) :- SubSE(c, e), e = FunApp(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, et), et != NIL.
 	TypeOf(c, e, et) :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), et != NIL, TypeRel(t1, inpt, SUB).
 
-	[ rule_Classes = '"error, msg: function not defined"']
 	OneIdError(e.id, "Function not defined"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).
-	[ rule_Classes = '"error, msg: function does not return a value"']
+	
 	OneIdError(e.id, "Function does not return a value"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
-	[ rule_Classes = '"error, msg: function requires arguments"']
+	
 	OneIdError(e.id, "Function requires arguments"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
-	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
+	
 	OneIdError(e.id, "Function arguments have incorrect types"),
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	

@@ -943,7 +943,23 @@
 
         private void PushFloatExponentExpr(string first, string exp, Span span)
         {
-            throw new NotImplementedException("Not supported yet");
+            double val;
+            if (!double.TryParse($"{first}E{exp}", out val))
+            {
+                var errFlag = new Flag(
+                                 SeverityKind.Error,
+                                 span,
+                                 Constants.BadSyntax.ToString($"Bad float constant {val}"),
+                                 Constants.BadSyntax.Code,
+                                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+            }
+
+            var nulExpr = P_Root.MkNulApp(MkNumeric(val, span));
+            nulExpr.Span = span;
+            nulExpr.id = (P_Root.IArgType_NulApp__1)MkUniqueId(span);
+            valueExprStack.Push(nulExpr);
         }
 
         private void PushCast(Span span)

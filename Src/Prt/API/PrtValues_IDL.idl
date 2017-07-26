@@ -42,13 +42,14 @@ interface PrtValues_IDL
 		PRT_VALUE_KIND_NULL = 0,    /**< The kind of the null value in type null */
 		PRT_VALUE_KIND_BOOL = 1,    /**< The kind of bool values                 */
 		PRT_VALUE_KIND_INT = 2,    /**< The kind of int values                  */
-		PRT_VALUE_KIND_EVENT = 3,    /**< The kind of event id values             */
-		PRT_VALUE_KIND_MID = 4,    /**< The kind of (model) machine id values   */
-		PRT_VALUE_KIND_FOREIGN = 5,    /**< The kind of all foreign values          */
-		PRT_VALUE_KIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
-		PRT_VALUE_KIND_SEQ = 7,    /**< The kind of all sequence values         */
-		PRT_VALUE_KIND_MAP = 8,    /**< The kind of all map values              */
-		PRT_VALUE_KIND_COUNT = 9, /**< The number of value kinds               */
+		PRT_VALUE_KIND_FLOAT = 3,    /**< The kind of int values                  */
+		PRT_VALUE_KIND_EVENT = 4,    /**< The kind of event id values             */
+		PRT_VALUE_KIND_MID = 5,    /**< The kind of (model) machine id values   */
+		PRT_VALUE_KIND_FOREIGN = 6,    /**< The kind of all foreign values          */
+		PRT_VALUE_KIND_TUPLE = 7,    /**< The kind of all (named) tuple values    */
+		PRT_VALUE_KIND_SEQ = 8,    /**< The kind of all sequence values         */
+		PRT_VALUE_KIND_MAP = 9,    /**< The kind of all map values              */
+		PRT_VALUE_KIND_COUNT = 10, /**< The number of value kinds               */
 	} PRT_VALUE_KIND;
 
 	/** A Union type to discriminate the Prt value */
@@ -57,7 +58,8 @@ interface PrtValues_IDL
 		{
 		case PRT_VALUE_KIND_NULL: PRT_UINT32 dummy_1;
 		case PRT_VALUE_KIND_BOOL: PRT_BOOLEAN bl;							/**< A boolean value            */
-		case PRT_VALUE_KIND_INT: PRT_INT    nt;							/**< An integer value           */
+		case PRT_VALUE_KIND_INT: PRT_INT    nt;								/**< An integer value           */
+		case PRT_VALUE_KIND_FLOAT: PRT_FLOAT ft;							/**< A float value           */
 		case PRT_VALUE_KIND_EVENT: PRT_UINT32  ev;							/**< An event id value          */
 		case PRT_VALUE_KIND_MID: [unique] struct PRT_MACHINEID *mid;		/**< A (model) machine id value */
 		case PRT_VALUE_KIND_FOREIGN: [unique] struct PRT_FOREIGNVALUE *frgn;	/**< A foreign value            */

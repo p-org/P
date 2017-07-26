@@ -41,14 +41,23 @@ namespace P.Runtime
             return "INT";
         }
     }
+
+    public class PrtFloatType : PrtType
+    {
+        public override string ToString()
+        {
+            return "FLOAT";
+        }
+    }
+
     public class PrtEnumType : PrtType
     {
         public string name;
-        public Dictionary<int, string> enumConstants;
+        public Dictionary<Int64, string> enumConstants;
         public PrtEnumType(string typeName, params object[] args)
         {
             name = typeName;
-            enumConstants = new Dictionary<int, string>();
+            enumConstants = new Dictionary<Int64, string>();
             int i = 0;
             while (i < args.Count())
             {

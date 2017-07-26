@@ -1050,15 +1050,15 @@
         void AddCompilerErrorFlag(FuncTerm ft, ref int compileErrorCount)
         {
             string ftName = (ft.Function as Id).Name;
-            if (!(ftName == "ZeroIdError" || ftName == "OneIdError" || ftName == "TwoIdError")) return;
+            if (!(ftName == "ERROR0" || ftName == "ERROR1" || ftName == "ERROR2")) return;
             string errorMsg = (ft.Args.Last() as Cnst).GetStringValue();
             Span errorSpan1 = default(Span);
             Span errorSpan2 = default(Span);
-            if (ftName == "ZeroIdError")
+            if (ftName == "ERROR0")
             {
                 errorReporter.AddFlag(new Flag(SeverityKind.Error, errorSpan1, errorMsg, 1, errorSpan1.Program));
             }
-            else if (ftName == "OneIdError")
+            else if (ftName == "ERROR1")
             {
                 int id;
                 string file;
@@ -1069,7 +1069,7 @@
                 errorSpan1 = errorReporter.idToSourceInfo[file][id].entrySpan;
                 errorReporter.AddFlag(new Flag(SeverityKind.Error, errorSpan1, errorMsg, 1, errorSpan1.Program));
             }
-            else // (ftName == "TwoIdError")
+            else // (ftName == "ERROR2")
             {
                 int id;
                 string file;

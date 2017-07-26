@@ -176,6 +176,14 @@ PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT value)
 	return retVal;
 }
 
+PRT_VALUE * PRT_CALL_CONV PrtMkFloatValue(_In_ PRT_FLOAT value)
+{
+	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
+	retVal->discriminator = PRT_VALUE_KIND_FLOAT;
+	retVal->valueUnion.ft = value;
+	return retVal;
+}
+
 PRT_VALUE * PRT_CALL_CONV PrtMkNullValue()
 {
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
@@ -237,6 +245,8 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 		return PrtMkMachineValue(PrtNullMachineId);
 	case PRT_KIND_INT:
 		return PrtMkIntValue(0);
+	case PRT_KIND_FLOAT:
+		return PrtMkFloatValue(0);
 	case PRT_KIND_NULL:
 		return PrtMkNullValue();
 	case PRT_KIND_FOREIGN:
@@ -346,7 +356,7 @@ PRT_UINT32 PRT_CALL_CONV PrtPrimGetEvent(_In_ PRT_VALUE *prmVal)
 	return prmVal->valueUnion.ev;
 }
 
-void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT32 value)
+void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT value)
 {
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_INT, "Invalid type on primitive set");
@@ -358,6 +368,20 @@ PRT_INT PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal)
 	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
 	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_INT, "Invalid type on primitive get");
 	return prmVal->valueUnion.nt;
+}
+
+void PRT_CALL_CONV PrtPrimSetFloat(_Inout_ PRT_VALUE *prmVal, _In_ PRT_FLOAT value)
+{
+	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_FLOAT, "Invalid type on primitive set");
+	prmVal->valueUnion.ft = value;
+}
+
+PRT_FLOAT PRT_CALL_CONV PrtPrimGetFloat(_In_ PRT_VALUE *prmVal)
+{
+	PrtAssert(PrtIsValidValue(prmVal), "Invalid value expression.");
+	PrtAssert(prmVal->discriminator == PRT_VALUE_KIND_FLOAT, "Invalid type on primitive get");
+	return prmVal->valueUnion.ft;
 }
 
 void PRT_CALL_CONV PrtPrimSetMachine(_Inout_ PRT_VALUE *prmVal, _In_ PRT_MACHINEID value)
@@ -1423,7 +1447,19 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	case PRT_KIND_MACHINE:
 		return (vkind == PRT_VALUE_KIND_MID || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_INT:
-		return vkind == PRT_VALUE_KIND_INT ? PRT_TRUE : PRT_FALSE;
+		if (vkind == PRT_VALUE_KIND_FLOAT)
+		{
+			value->discriminator = PRT_VALUE_KIND_INT;
+			value->valueUnion.nt = (PRT_INT) value->valueUnion.ft;
+		}
+		return (vkind == PRT_VALUE_KIND_INT || vkind == PRT_VALUE_KIND_FLOAT) ? PRT_TRUE : PRT_FALSE;
+	case PRT_KIND_FLOAT:
+		if (vkind == PRT_VALUE_KIND_INT)
+		{
+			value->discriminator = PRT_VALUE_KIND_FLOAT;
+			value->valueUnion.ft = (PRT_FLOAT)value->valueUnion.nt;
+		}
+		return (vkind == PRT_VALUE_KIND_INT || vkind == PRT_VALUE_KIND_FLOAT) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FOREIGN:
 		return (vkind == PRT_VALUE_KIND_FOREIGN && value->valueUnion.frgn->typeTag == type->typeUnion.foreignType->declIndex) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MAP:
@@ -1634,6 +1670,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 		return value->discriminator == PRT_VALUE_KIND_MID;
 	case PRT_VALUE_KIND_INT:
 		return value->discriminator == PRT_VALUE_KIND_INT;
+	case PRT_VALUE_KIND_FLOAT:
+		return value->discriminator == PRT_VALUE_KIND_FLOAT;
 	case PRT_VALUE_KIND_NULL:
 		return value->discriminator == PRT_VALUE_KIND_NULL &&
 			value->valueUnion.ev == PRT_SPECIAL_EVENT_NULL;

@@ -56,13 +56,14 @@ extern "C"{
 		PRT_VALUE_KIND_NULL = 0,    /**< The kind of the null value in type null */
 		PRT_VALUE_KIND_BOOL = 1,    /**< The kind of bool values                 */
 		PRT_VALUE_KIND_INT = 2,    /**< The kind of int values                  */
-		PRT_VALUE_KIND_EVENT = 3,    /**< The kind of event id values             */
-		PRT_VALUE_KIND_MID = 4,    /**< The kind of machine id values   */
-		PRT_VALUE_KIND_FOREIGN = 5,    /**< The kind of all foreign values          */
-		PRT_VALUE_KIND_TUPLE = 6,    /**< The kind of all (named) tuple values    */
-		PRT_VALUE_KIND_SEQ = 7,    /**< The kind of all sequence values         */
-		PRT_VALUE_KIND_MAP = 8,    /**< The kind of all map values              */
-		PRT_VALUE_KIND_COUNT = 9, /**< The number of value kinds               */
+		PRT_VALUE_KIND_FLOAT = 3,    /**< The kind of int values                  */
+		PRT_VALUE_KIND_EVENT = 4,    /**< The kind of event id values             */
+		PRT_VALUE_KIND_MID = 5,    /**< The kind of machine id values   */
+		PRT_VALUE_KIND_FOREIGN = 6,    /**< The kind of all foreign values          */
+		PRT_VALUE_KIND_TUPLE = 7,    /**< The kind of all (named) tuple values    */
+		PRT_VALUE_KIND_SEQ = 8,    /**< The kind of all sequence values         */
+		PRT_VALUE_KIND_MAP = 9,    /**< The kind of all map values              */
+		PRT_VALUE_KIND_COUNT = 10, /**< The number of value kinds               */
 	} PRT_VALUE_KIND;
 
 	/** A Union type to discriminate the Prt value */
@@ -71,7 +72,8 @@ extern "C"{
 		union
 		{
 			PRT_BOOLEAN bl;                 /**< A boolean value            */
-			PRT_INT   nt;                 /**< An integer value           */
+			PRT_INT   nt;                   /**< An integer value           */
+			PRT_FLOAT ft;					/**< An float value           */
 			PRT_UINT32  ev;                 /**< An event id value          */
 			struct PRT_MACHINEID *mid;      /**< A machine id value */
 			struct PRT_FOREIGNVALUE *frgn;	/**< A foreign value            */
@@ -171,6 +173,13 @@ extern "C"{
 	*/
 	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkIntValue(_In_ PRT_INT value);
 
+	/** Makes an float value.
+	* @param[in] value A float value.
+	* @returns A proper float value. Caller is responsible for freeing.
+	* @see PrtFreeValue
+	*/
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtMkFloatValue(_In_ PRT_FLOAT value);
+
 	/** Makes null value.
 	* The types null, event, and machine all share the null value.
 	* The null value projected onto event is the id PRT_SPECIAL_EVENT_NULL.
@@ -229,13 +238,25 @@ extern "C"{
 	* @param[in,out] prmVal A primitive int value to mutate.
 	* @param[in]     value The value to set.
 	*/
-	PRT_API void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT32 value);
+	PRT_API void PRT_CALL_CONV PrtPrimSetInt(_Inout_ PRT_VALUE *prmVal, _In_ PRT_INT value);
 
 	/** Gets the value of an integer.
 	* @param[in] prmVal A primitive int value.
 	* @returns An integer.
 	*/
 	PRT_API PRT_INT PRT_CALL_CONV PrtPrimGetInt(_In_ PRT_VALUE *prmVal);
+
+	/** Sets the value of a float.
+	* @param[in,out] prmVal A primitive float value to mutate.
+	* @param[in]     value The value to set.
+	*/
+	PRT_API void PRT_CALL_CONV PrtPrimSetFloat(_Inout_ PRT_VALUE *prmVal, _In_ PRT_FLOAT value);
+
+	/** Gets the value of a float.
+	* @param[in] prmVal A primitive float value.
+	* @returns An integer.
+	*/
+	PRT_API PRT_FLOAT PRT_CALL_CONV PrtPrimGetFloat(_In_ PRT_VALUE *prmVal);
 
 	/** Sets the value of an Machine.
 	* @param[in,out] prmVal A primitivemachinevalue to mutate.

@@ -33,9 +33,9 @@ domain PWithInferredTypes extends PData
 	ImportedType ::= new (String, TypeExpr).
 	ExportedEvent ::= new (String).
 
-	ZeroIdError ::= new (String).
-	OneIdError  ::= new (Id, String).
-	TwoIdError  ::= new (Id, Id, String).
+	ERROR0 ::= new (String).
+	ERROR1  ::= new (Id, String).
+	ERROR2  ::= new (Id, Id, String).
 }
 
 transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
@@ -50,7 +50,7 @@ transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
 	out.ImportedType(n, t) :- in.ImportedType(n, t).
 	out.ExportedEvent(n) :- in.ExportedEvent(n).
 
-	out.ZeroIdError(s) :- in.ZeroIdError(s).
-	out.OneIdError(s, id) :- in.OneIdError(s, id).
-	out.TwoIdError(s, id, id') :- in.TwoIdError(s, id, id').
+	out.ERROR0(s) :- in.ERROR0(s).
+	out.ERROR1(s, id) :- in.ERROR1(s, id).
+	out.ERROR2(s, id, id') :- in.ERROR2(s, id, id').
 }

@@ -15,6 +15,8 @@ interface PrtBaseTypes_IDL
 
 	/** PRT_INT is always a 64-bit signed integer. */
 	typedef signed long long PRT_INT;
+	/** PRT_FLOAT is always a double. */
+	typedef double PRT_FLOAT;
 
 	/** PRT_UINT8 is always an 8-bit unsigned integer. */
 	typedef unsigned small  PRT_UINT8;

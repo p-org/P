@@ -5,9 +5,9 @@
 
 domain PError extends PData
 {
-	ZeroIdError ::= (String).
-	OneIdError  ::= (Id, String).
-	TwoIdError  ::= (Id, Id, String).
+	ERROR0 ::= (String).
+	ERROR1  ::= (Id, String).
+	ERROR2  ::= (Id, Id, String).
 }
 
 domain PData
@@ -163,138 +163,138 @@ domain PStructuralTyping extends PData, PError
     InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
                                        it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
 
-    TwoIdError(f1.id, f2.id, "Multiple functions with same name"),
+    ERROR2(f1.id, f2.id, "Multiple functions with same name"),
 	TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner != NIL.
 	
-	TwoIdError(f1.id, f2.id, "Multiple functions with same name"),
+	ERROR2(f1.id, f2.id, "Multiple functions with same name"),
     TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner = NIL.
 	
-	TwoIdError(t1.id, t2.id, "Multiple transitions over the same event"),
+	ERROR2(t1.id, t2.id, "Multiple transitions over the same event"),
 	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
 	
-	TwoIdError(a1.id, a2.id, "Multiple actions over the same event"),
+	ERROR2(a1.id, a2.id, "Multiple actions over the same event"),
 	TwoDeclError(a1, a2) :- a1 != a2, a1 is DoDecl, a2 is DoDecl, a1.src = a2.src, a1.trig = a2.trig.
 	
-	TwoIdError(t.id, a.id, "Action and transition over the same event"),
+	ERROR2(t.id, a.id, "Action and transition over the same event"),
 	TwoDeclError(t, a)   :- t is TransDecl, a is DoDecl, t.src = a.src, t.trig = a.trig.
 
-	TwoIdError(id, id', "Inconsistent partial annotations"),
+	ERROR2(id, id', "Inconsistent partial annotations"),
 	TwoDeclError(m, m') :- m is MachineDecl(name, id), m' is MachineDecl(name, id'), id != id', Annotation(m, "partial", _, _), no Annotation(m', "partial", _, _).
 
-	TwoIdError(id, id', "Another machine with same name declared"),
+	ERROR2(id, id', "Another machine with same name declared"),
 	TwoDeclError(m, m') :- m is MachineDecl(name, id), m' is MachineDecl(name, id'), id != id', no Annotation(m, "partial", _, _), no Annotation(m', "partial", _, _).
 
-	OneIdError(id, "No start state in machine"),
+	ERROR1(id, "No start state in machine"),
 	OneDeclError(m) :- m is MachineDecl(name, id), no MachineStart(name, _).
 
-	OneIdError(id, "Multiple start states in machine"),
+	ERROR1(id, "Multiple start states in machine"),
 	OneDeclError(m) :- m is MachineDecl(name, id), MachineStart(name, s1), MachineStart(name, s2), s1 != s2.
 
-	OneIdError(id, "Inconsistent machine kinds"),
+	ERROR1(id, "Inconsistent machine kinds"),
 	OneDeclError(m) :- m is MachineDecl(name, id), MachineKind(name, k1), MachineKind(name, k2), k1 != k2.
 
-	OneIdError(id, "Multiple cardinality constraints in machine"),
+	ERROR1(id, "Multiple cardinality constraints in machine"),
 	OneDeclError(m) :- m is MachineDecl(name, id), MachineCard(name, c1), MachineCard(name, c2), c1 != c2.
 	
-	OneIdError(id1, "Another variable with same name declared"),
+	ERROR1(id1, "Another variable with same name declared"),
 	OneDeclError(m) :- m is VarDecl(name, owner, _, id1), VarDecl(name, owner, _, id2), id1 != id2.
 
-	OneIdError(id1, "Another state with same name declared"),
+	ERROR1(id1, "Another state with same name declared"),
 	OneDeclError(m) :- m is StateDecl(name, owner, _, _, _, id1), StateDecl(name, owner, _, _, _, id2), id1 != id2.
 
-	OneIdError(id1, "Another function with same name declared"),
+	ERROR1(id1, "Another function with same name declared"),
 	OneDeclError(m) :- m is FunDecl(name, owner, _, _, _, _, _, id1), FunDecl(name, owner, _, _, _, _, _, id2), owner != NIL, id1 != id2.
 
 	//Valid TransDecl
-	OneIdError(trns.id, "Transition on an undefined event"),
+	ERROR1(trns.id, "Transition on an undefined event"),
 	OneDeclError(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _, _), trns.trig != NULL, trns.trig != HALT.
 	
-	OneIdError(trns.id, "Transition to an undefined state"),
+	ERROR1(trns.id, "Transition to an undefined state"),
 	OneDeclError(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _, _).
 	
-	OneIdError(trns.id, "Transition function not defined"),
+	ERROR1(trns.id, "Transition function not defined"),
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, 
 	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
-	OneIdError(trns.id, "Function cannot take arguments"),
+	ERROR1(trns.id, "Function cannot take arguments"),
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
 	                      trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, NIL, _, p, _, _, _, _), p != NIL.
 	
 	//Valid DoDecl
-	OneIdError(doD.id, "Action on an undefined event"),
+	ERROR1(doD.id, "Action on an undefined event"),
 	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _, _), doD.trig != HALT, doD.trig != NULL.
 	
-	OneIdError(trns.id, "Function not defined"),
+	ERROR1(trns.id, "Function not defined"),
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, 
 	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
-	OneIdError(trns.id, "Function cannot take arguments"),
+	ERROR1(trns.id, "Function cannot take arguments"),
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String , FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
 	                      trns is DoDecl(_, _, act, _), act : String , FunDecl(act, NIL, _, p, _, _, _, _), p != NIL.
 	
 	//Entry Exit Functions
-	OneIdError(s.id, "Undefined function for entry"),
+	ERROR1(s.id, "Undefined function for entry"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String, 
 	                       no FunDecl(eF, s.owner, _, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _, _). 
 
-	OneIdError(s.id, "Undefined function for exit"),
+	ERROR1(s.id, "Undefined function for exit"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String, 
 	                       no FunDecl(eF, s.owner, _, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _, _).
 	
-	OneIdError(s.id, "Entry function cannot take arguments"),
+	ERROR1(s.id, "Entry function cannot take arguments"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
 	                       s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
 	
-	OneIdError(s.id, "Exit function cannot take arguments"),
+	ERROR1(s.id, "Exit function cannot take arguments"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
 	                       s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
 	
 	//cannot have null in spec machines
-	OneIdError(t.id, "Transition on null event not allowed in spec machine"),
+	ERROR1(t.id, "Transition on null event not allowed in spec machine"),
 	OneDeclError(t) :- t is TransDecl(s, NULL, _, _, _), m is MachineKind(s.owner, SPEC).
 	
-	OneIdError(t.id, "Push transition not allowed in spec machine"),
+	ERROR1(t.id, "Push transition not allowed in spec machine"),
 	OneDeclError(t) :- t is TransDecl(s, _, _, PUSH, _), m is MachineKind(s.owner, SPEC).
 
 	//no defer in Spec
-	OneIdError(d.id, "Event cannot be deferred in spec machine"),
+	ERROR1(d.id, "Event cannot be deferred in spec machine"),
 	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), m is MachineKind(s.owner, SPEC).	
 
 	//event in spec is defined
-	OneIdError(id, "Event in observes list is undefined"),
+	ERROR1(id, "Event in observes list is undefined"),
 	OneDeclError(decl) :- obs is ObservesDecl, decl is MachineDecl(obs.spec, id), MachineKind(obs.spec, SPEC), no EventDecl(obs.ev, _, _, _).	
 
 	//event in eventset not declared
-	OneIdError(eventset.id, "Unknown event in eventset"),
+	ERROR1(eventset.id, "Unknown event in eventset"),
 	OneDeclError(eventset) :- EventSetContains(eventset, ev), ev != HALT, no EventDecl(ev, _, _, _).
 
 	//eventset not declared
-	OneIdError(atype.id, "eventset not declared"),
+	ERROR1(atype.id, "eventset not declared"),
 	OneDeclError(atype) :- no EventSetDecl(es, _), atype is AnyTypeDecl, atype.perm = es.
 
 	//eventset in interface type
-	OneIdError(inter.id, "Unknown eventset in interface declaration"),
+	ERROR1(inter.id, "Unknown eventset in interface declaration"),
 	OneDeclError(inter) :- inter is InterfaceTypeDef(_, es, _, _), no EventSetDecl(es, _).
 
 	//interface declared in the exports
-	OneIdError(id, "Interface in exports is not declared"),
+	ERROR1(id, "Interface in exports is not declared"),
 	OneDeclError(me) :- decl is MachineDecl(mach, id), me is MachineExports(mach, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
 
 	MemberOfStringList ::= sub (StringList, String).
 	//interfaces or machine names in the creates of a fun proto
-	OneIdError(NIL, "Interface or machine in creates of extern fun is not declared"),
+	ERROR1(NIL, "Interface or machine in creates of extern fun is not declared"),
 	OneDeclError(fp) :- fp is FunProtoCreatesDecl(f, list), MemberOfStringList(list, name), no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _).
 
 	//events in sends
-	OneIdError(id, "Event in sends list is not declared"),
+	ERROR1(id, "Event in sends list is not declared"),
 	OneDeclError(ms) :- decl is MachineDecl(mach, id), ms is MachineSends(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//events in receives
-	OneIdError(id, "Event in receives list is not declared"),
+	ERROR1(id, "Event in receives list is not declared"),
 	OneDeclError(mr) :- decl is MachineDecl(mach, id), mr is MachineReceives(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
 
 	//multiple declarations of the same event
-	TwoIdError(ev.id, ev'.id, "Multiple declarations of the same event"),
+	ERROR2(ev.id, ev'.id, "Multiple declarations of the same event"),
 	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
 	/* Rules for separate compilation checks */
@@ -302,7 +302,7 @@ domain PStructuralTyping extends PData, PError
 	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
 
 	//multiple declarations of the same type
-	TwoIdError(td.id, td'.id, "Multiple declarations of named types have same name"),
+	ERROR2(td.id, td'.id, "Multiple declarations of named types have same name"),
 	OneDeclError(td) :- NamedTypes(td), NamedTypes(td'), td != td', td.name = td'.name.
 }
 
@@ -369,7 +369,7 @@ domain PStaticTyping extends PData, PError
 	InferredCreatesError ::= (m: FunDecl).
 
 	MemberOfStringList ::= sub (StringList, String).
-	OneIdError(f.id, "Creates list of the function prototype is not a subset of the inferred creates list for the function"),
+	ERROR1(f.id, "Creates list of the function prototype is not a subset of the inferred creates list for the function"),
 	InferredCreatesError(f) :- f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm);
 							   f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, _), no FunProtoCreatesDecl(fd, _).
 
@@ -409,7 +409,7 @@ domain PStaticTyping extends PData, PError
 	CompTypeRel(t1, t2) :- MachineExports(name, i), InterfaceTypeDecl(i, _, t1', _), TypeExpansion(t1', t1), ConstructorType(name, _, t2).
 
 	ExportInterfaceError ::= (m: MachineDecl).
-	OneIdError(id, "the exported interface argument type is not a subtype of the constructor argument type"),
+	ERROR1(id, "the exported interface argument type is not a subtype of the constructor argument type"),
 	ExportInterfaceError(m) :- m is MachineDecl(name, id), MachineExports(name, i), ConstructorType(name, _, ct),
 	                           InterfaceTypeDecl(i, _, iargt, _), TypeExpansion(iargt, eargt), ct != eargt, TypeRel(eargt, ct, k), k != SUB. 						 
     
@@ -424,11 +424,11 @@ domain PStaticTyping extends PData, PError
 	AllTypeExprs ::= sub (TypeExpr).
 	TypeDefError ::= (name: String).
 
-	ZeroIdError(errorMsg),
+	ERROR0(errorMsg),
 	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no ModelType(name, _), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
 						  errorMsg = strJoin("Undefined type: ", name).
 	
-	TwoIdError(td1.id, td2.id, "Multiple type definitions for a type name"),
+	ERROR2(td1.id, td2.id, "Multiple type definitions for a type name"),
 	TypeDefError(name) :- td1 is TypeDef(name, type1, _), td2 is TypeDef(name, type2, _), type1 != type2;
 	                      td1 is EnumTypeDef(name, list1, _, _), td2 is EnumTypeDef(name, list2, _, _), list1 != list2;
 						  td1 is EnumTypeDef(name, _, list1, _), td2 is EnumTypeDef(name, _, list2, _), list1 != list2;
@@ -439,7 +439,7 @@ domain PStaticTyping extends PData, PError
 	NameTypeDepends(typeDef.name, type.name) :- TypeDefDepends(typeDef, type).
 	NameTypeDepends(name1, name3) :- NameTypeDepends(name1, name2), NameTypeDepends(name2, name3).
 	
-	OneIdError(td.id, "Type depends on itself"),
+	ERROR1(td.id, "Type depends on itself"),
 	TypeDefError(name) :- NameTypeDepends(name, name), td is TypeDef(name, _, _).
 
 	EnumTypeElem ::= (EnumTypeDef, StringList, IntegerList + { NIL }).
@@ -447,16 +447,16 @@ domain PStaticTyping extends PData, PError
 	EnumTypeElem(d, list1, NIL) :- EnumTypeElem(d, StringList(_, list1), NIL), list1: StringList.
 	EnumTypeElem(d, list1, list2) :- EnumTypeElem(d, StringList(_, list1), IntegerList(_, list2)), list1: StringList.
 
-	OneIdError(def.id, "Multiple enum elements with the same name"),
+	ERROR1(def.id, "Multiple enum elements with the same name"),
 	TypeDefError(name) :- EnumTypeElem(def, list1, _), EnumTypeElem(def, list2, _), list1 != list2, list1.hd = list2.hd, name = def.name.
 	
-	TwoIdError(def1.id, def2.id, "Element names of different enum types must be disjoint"),
+	ERROR2(def1.id, def2.id, "Element names of different enum types must be disjoint"),
 	TypeDefError(name) :- EnumTypeElem(def1, list1, _), EnumTypeElem(def2, list2, _), def1 != def2, list1.hd = list2.hd, name = def1.name.
 	
-	TwoIdError(ed.id, def.id, "Enum element names must be disjoint from event names"),
+	ERROR2(ed.id, def.id, "Enum element names must be disjoint from event names"),
 	TypeDefError(name) :- ed is EventDecl(name, _, _, _), EnumTypeElem(def, StringList(name, _), _).
 	
-	OneIdError(d.id, "At least one enum element should be numbered 0"),
+	ERROR1(d.id, "At least one enum element should be numbered 0"),
 	TypeDefError(name) :- d is EnumTypeDef(name, _, _, _), no EnumTypeElemIndex(d, _, _, _, 0).
 
 	EnumTypeElemIndex ::= (EnumTypeDef, StringList, IntegerList + { NIL }, String, Integer).
@@ -470,6 +470,7 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(BaseType(NULL), BaseType(NULL)).
 	TypeExpansion(BaseType(BOOL), BaseType(BOOL)).
 	TypeExpansion(BaseType(INT), BaseType(INT)).
+	TypeExpansion(BaseType(FLOAT), BaseType(FLOAT)).
 	TypeExpansion(BaseType(EVENT), BaseType(EVENT)).
 	TypeExpansion(BaseType(MACHINE), BaseType(MACHINE)).
 	
@@ -692,7 +693,7 @@ domain PStaticTyping extends PData, PError
 						SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, MachineReceives(c.owner, ALL), i = BaseType(MACHINE).
 
     // "this" is not allowed in global functions
-	OneIdError(e.id, "Keyword this is not allowed in global functions"),
+	ERROR1(e.id, "Keyword this is not allowed in global functions"),
 	TypeOf(c, e, ERROR)  :- SubSE(c, e), e = NulApp(THIS, _), c.owner = NIL.
 
 	
@@ -701,8 +702,8 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET, _).
 	    
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v, _), v : Integer.
-    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v, _), v : Boolean.          
-	TypeOf(c, e, BaseType(FLOAT))  :- SubSE(c, e), e = NulApp(v, _), v : Real.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v, _), v : Boolean.
+	TypeOf(c, e, BaseType(FLOAT))  :- SubSE(c, e), e = NulApp(v, _), v : Real, rflIsMember(v, #Integer) = FALSE.
     
     //// (2) The types of unary expressions
     TypeOf(c, e, et)              :- SubSE(c, e), e = Default(t, _), TypeExpansion(t, et). 
@@ -733,32 +734,34 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n, _), IsEventCnst(c, n, _).
 	TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n, _), IsEnumCnst(c, n, t).
 
-	OneIdError(e.id, "Undefined symbol"),
+	ERROR1(e.id, "Undefined symbol"),
     TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n, _), no EventDecl(n, _, _, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), no EnumTypeElem(_, StringList(n, _), _). 
     
     TypeOf(c, e, BaseType(BOOL))  :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _, _), t1 = BaseType(BOOL). 
 	
-	OneIdError(e.id, "Operator expected a boolean value"),
+	ERROR1(e.id, "Operator expected a boolean value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _, _), t1 != BaseType(BOOL). 
     
-    TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 = BaseType(INT). 
-	OneIdError(e.id, "Operator expected an integer value"),
-    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 != BaseType(INT). 
+    TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 = BaseType(INT).
+	TypeOf(c, e, BaseType(FLOAT))   :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 = BaseType(FLOAT).
+
+	ERROR1(e.id, "expected an integer or float value"),
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 != BaseType(INT), t1 != BaseType(FLOAT). 
     
     TypeOf(c, e, SeqType(dom))    :- TypeOfArg1(c, e, t1), e = UnApp(KEYS, _, _), t1 = MapType(dom, _). 
 	
-	OneIdError(e.id, "Operator expected a map value"),
+	ERROR1(e.id, "Operator expected a map value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(KEYS, _, _), toSymbol(t1) != #MapType. 
 
     TypeOf(c, e, SeqType(cod))    :- TypeOfArg1(c, e, t1), e = UnApp(VALUES, _, _), t1 = MapType(_, cod). 
 	
-	OneIdError(e.id, "Operator expected a map value"),
+	ERROR1(e.id, "Operator expected a map value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(VALUES, _, _), toSymbol(t1) != #MapType. 
 
     TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), t1 : MapType. 
     TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), t1 : SeqType. 
 	
-	OneIdError(e.id, "Operator expected a map or sequence value"),
+	ERROR1(e.id, "Operator expected a map or sequence value"),
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), toSymbol(t1) != #MapType, toSymbol(t1) != #SeqType. 
     
     //// (3) The types of binary expressions
@@ -766,23 +769,23 @@ domain PStaticTyping extends PData, PError
 	//if the type is interface type then it acts as reduce, hence subset relation
 	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType.
 	
-	OneIdError(e.id, "Cast can never succeed"),
+	ERROR1(e.id, "Cast can never succeed"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k = EMPTY.
 	
 	AllInterfaceTypes ::= sub(InterfaceType).
 	NotSubsetInterfaces ::= (InterfaceType, InterfaceType).
 	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), count({ ev | MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev) }) != 0.
 	
-	OneIdError(e.id, "Reduce can never succeed"),
+	ERROR1(e.id, "Reduce can never succeed"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
 									  TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, NotSubsetInterfaces(t2', t1).
 									  
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	
-	OneIdError(e.id, "Bad field name"),
+	ERROR1(e.id, "Bad field name"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Field, t2 = ERROR.
 	
-	OneIdError(e.id, "Operator expected a (named) tuple value"),
+	ERROR1(e.id, "Operator expected a (named) tuple value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Field, toSymbol(t1) != #TupType, toSymbol(t1) != #NmdTupType.
     
     PureIntOrFloatOp ::= { ADD, SUB, MUL, DIV }.
@@ -791,54 +794,54 @@ domain PStaticTyping extends PData, PError
 											   TypeOfArg2(c, e, t1, BaseType(FLOAT)), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t1, BaseType(FLOAT), SUB).
 
 	
-	OneIdError(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
+	ERROR1(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType.    
 	
-	OneIdError(e.id, "Operator expected second argument to be an integer or float or enum constant value"),
+	ERROR1(e.id, "Operator expected second argument to be an integer or float or enum constant value"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), op : PureIntOrFloatOp, TypeOf(c, e2, t2), t2 != BaseType(INT), t2 != BaseType(FLOAT), toSymbol(t2) != #NameType.     
     
     PureIntOrFloatRel ::= { LT, LE, GT, GE }.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntOrFloatRel, TypeRel(t1, BaseType(FLOAT), SUB), TypeRel(t2, BaseType(FLOAT), SUB).
 
-	OneIdError(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
+	ERROR1(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOrFloatRel, t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType.    
 	
-	OneIdError(e.id, "Operator expected second argument to be an integer or float or enum constant value"),
+	ERROR1(e.id, "Operator expected second argument to be an integer or float or enum constant value"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureIntOrFloatRel, t2 != BaseType(INT), t2 != BaseType(FLOAT), toSymbol(t2) != #NameType.    
     
     PureBoolOp ::= { AND, OR }.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureBoolOp, t1 = bbool, t2 = bbool, bbool = BaseType(BOOL).
 	
-	OneIdError(e.id, "Operator expected first argument to be a boolean value"),
+	ERROR1(e.id, "Operator expected first argument to be a boolean value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureBoolOp, t1 != BaseType(BOOL).    
 	
-	OneIdError(e.id, "Operator expected second argument to be a boolean value"),
+	ERROR1(e.id, "Operator expected second argument to be a boolean value"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureBoolOp, t2 != BaseType(BOOL).    
     
     PolyRel ::= { EQ, NEQ }.
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PolyRel, TypeRel(t1, t2, k), k != EMPTY.
-	[ rule_Classes = '"error, msg: Values cannot be compared because their types are incompatible"']
-	OneIdError(e.id, "Values cannot be compared because their types are incompatible"),
+	
+	ERROR1(e.id, "Values cannot be compared because their types are incompatible"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PolyRel, TypeRel(t1, t2, k), k = EMPTY.
     
     TypeOf(c, e, inner)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = SeqType(inner), TypeRel(t2, BaseType(INT), SUB).
     TypeOf(c, e, cod)              :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).
     
-	OneIdError(e.id, "Indexer must be applied to a sequence or map"),
+	ERROR1(e.id, "Indexer must be applied to a sequence or map"),
 	TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(IDX, _, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
 	
-	OneIdError(e.id, "Index must be an integer"),
+	ERROR1(e.id, "Index must be an integer"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 : SeqType, t2 != BaseType(INT), toSymbol(t2) != #NameType.
 	
-	OneIdError(e.id, "Index may not be in the domain of the map"),
+	ERROR1(e.id, "Index may not be in the domain of the map"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
     
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _, _), t2 = MapType(dom, _), TypeRel(t1, dom, k), k != EMPTY.        
 	
-	OneIdError(e.id, "Value can never be in the map"),
+	ERROR1(e.id, "Value can never be in the map"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _, _),  t2 = MapType(dom, _), TypeRel(t1, dom, EMPTY).        
 	
-	OneIdError(e.id, "Operator in expects a map"),
+	ERROR1(e.id, "Operator in expects a map"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e2, _),  TypeOf(c, e2, t2), toSymbol(t2) != #MapType.
     
 	///// (4) Exprs produces a tuple type
@@ -853,16 +856,16 @@ domain PStaticTyping extends PData, PError
 	TypeOf(c, e, et) :- SubSE(c, e), e = FunApp(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, et), et != NIL.
 	TypeOf(c, e, et) :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), et != NIL, TypeRel(t1, inpt, SUB).
 
-	OneIdError(e.id, "Function not defined"),
+	ERROR1(e.id, "Function not defined"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).
 	
-	OneIdError(e.id, "Function does not return a value"),
+	ERROR1(e.id, "Function does not return a value"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
 	
-	OneIdError(e.id, "Function requires arguments"),
+	ERROR1(e.id, "Function requires arguments"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
 	
-	OneIdError(e.id, "Function arguments have incorrect types"),
+	ERROR1(e.id, "Function arguments have incorrect types"),
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
 	
 
@@ -882,48 +885,37 @@ domain PStaticTyping extends PData, PError
 
 	QualifierError ::= (TypingContext, FunApp + FunStmt + NewStmt + Goto + Print + Announce + Raise + Send + BinStmt, Expr). 
 
-	[ rule_Classes = '"error, msg: argument should be a variable"']
-	OneIdError(e.id, "Argument should be a variable"),
+	ERROR1(e.id, "Argument should be a variable"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
-	[ rule_Classes = '"error, msg: argument should be a local variable"']
-	OneIdError(e.id, "Argument should be a local variable"),
+	ERROR1(e.id, "Argument should be a local variable"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
-	[ rule_Classes = '"error, msg: linear argument should be passed for exactly one parameter"']
-	OneIdError(e.id, "Linear argument should be passed for exactly one parameter"),
+	ERROR1(e.id, "Linear argument should be passed for exactly one parameter"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, Exprs(qual, expr, tl)), expr = Name(n, _), StmtArgs(c, e, Exprs(_, expr', tl')), expr' = Name(n, _), qual != NONE, tl != tl'.
-	[ rule_Classes = '"error, msg: move or swap not allowed"']
-	OneIdError(e.id, "Keywords move or swap not allowed"),
+	ERROR1(e.id, "Keywords move or swap not allowed"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: FunApp, exprs = Exprs(qual, expr, _), qual != NONE.
-	[ rule_Classes = '"error, msg: move or swap not allowed"']
-	OneIdError(e.id, "Keywords move or swap not allowed"),
+	ERROR1(e.id, "Keywords move or swap not allowed"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Announce, exprs = Exprs(qual, expr, _), qual != NONE.
-	[ rule_Classes = '"error, msg: move or swap not allowed"']
-	OneIdError(e.id, "Keywords move or swap not allowed"),
+	ERROR1(e.id, "Keywords move or swap not allowed"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Print, exprs = Exprs(qual, expr, _), qual != NONE.
-	[ rule_Classes = '"error, msg: swap not allowed"']
-	OneIdError(e.id, "Keyword swap not allowed"),
+	ERROR1(e.id, "Keyword swap not allowed"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: NewStmt, exprs = Exprs(qual, expr, _), qual = SWAP.
-	[ rule_Classes = '"error, msg: swap not allowed"']
-	OneIdError(e.id, "Keyword swap not allowed"),
+	ERROR1(e.id, "Keyword swap not allowed"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Goto, exprs = Exprs(qual, expr, _), qual = SWAP.
-	[ rule_Classes = '"error, msg: swap not allowed"']
-	OneIdError(e.id, "Keyword swap not allowed"),
+	ERROR1(e.id, "Keyword swap not allowed"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Raise, exprs = Exprs(qual, expr, _), qual = SWAP.
-	[ rule_Classes = '"error, msg: swap not allowed"']
-	OneIdError(e.id, "Keyword swap not allowed"),
+	ERROR1(e.id, "Keyword swap not allowed"),
 	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Send, exprs = Exprs(qual, expr, _), qual = SWAP.
 
-	[ rule_Classes = '"error, msg: argument should be a variable"']
-	OneIdError(e.id, "Argument should be a variable"),
+	ERROR1(e.id, "Argument should be a variable"),
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
-	[ rule_Classes = '"error, msg: argument should be a local variable"']
-	OneIdError(e.id, "Argument should be a local variable"),
+	
+	ERROR1(e.id, "Argument should be a local variable"),
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
-	[ rule_Classes = '"error, msg: move or swap not allowed"']
-	OneIdError(e.id, "Keywords move or swap not allowed"),
+	
+	ERROR1(e.id, "Keywords move or swap not allowed"),
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(REMOVE, _, qual, expr, _), qual != NONE.
-	[ rule_Classes = '"error, msg: move or swap not allowed"']
-	OneIdError(e.id, "Keywords move or swap not allowed"),
+	
+	ERROR1(e.id, "Keywords move or swap not allowed"),
 	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(INSERT, _, qual, expr, _), qual != NONE.
 
 	EnvVars ::= (AnonFunDecl, String, NmdTupType + { NIL }).
@@ -1008,8 +1000,7 @@ domain PStaticTyping extends PData, PError
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': NamedExprs, e = e'.tail.
 
 	UnavailableVarAccessError ::= (TypingContext, Stmt, String).
-	[rule_Classes = '"error, msg: variable is not available"']
-	TwoIdError(s.id, e.id, "Variable is not available"),
+	ERROR2(s.id, e.id, "Variable is not available"),
 	UnavailableVarAccessError(c, s, n) :- NeededBefore(c, s, e), e: Name, n = e.name, UnavailableBefore(c, s, n).
 
 	UnavailableAtReturn ::= (TypingContext, String).
@@ -1023,11 +1014,11 @@ domain PStaticTyping extends PData, PError
 	FunArgsParams(c, e, exprs, nmdTupType) :- FunArgsParams(c, e, exprs', nmdTupType'), exprs' = Exprs(_, _, exprs), nmdTupType' = NmdTupType(_, nmdTupType).
 							 
 	UnavailableParameterError ::= (TypingContext, String). 
- 	[rule_Classes = '"error, msg: payload parameter not available at return"']
-	TwoIdError(t.id, c.id, "Payload parameter not available at return"),
+	
+	ERROR2(t.id, c.id, "Payload parameter not available at return"),
 	UnavailableParameterError(c, n) :- t is TransDecl, PayloadVar(t, c, n, _), UnavailableAtReturn(c, n). 
- 	[rule_Classes = '"error, msg: swap parameter not available at callee return"'] 
-	TwoIdError(e.id, decl.id, "Parameter passed with swap not available at callee return"),
+ 	
+	ERROR2(e.id, decl.id, "Parameter passed with swap not available at callee return"),
 	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
 									   FunAvailable(decl, c.owner), e.name = decl.name, UnavailableAtReturn(decl, n).
 	
@@ -1065,17 +1056,17 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, _, NIL, _, _, _). 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c : AnonFunDecl.
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, SUB).
-	[ rule_Classes = '"error, msg: function must return a value"']
- 	OneIdError(e.id, "Function must return a value"),
+ 	
+	ERROR1(e.id, "Function must return a value"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, _, t, _, _, _), t != NIL. 
-	[ rule_Classes = '"error, msg: function cannot return a value"']
-	OneIdError(e.id, "Function cannot return a value"),
+	
+	ERROR1(e.id, "Function cannot return a value"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1, _), e1 != NIL, c = FunDecl(_, _, _, _, NIL, _, _, _). 
-	[ rule_Classes = '"error, msg: return value has incorrect type"' ]
-	OneIdError(e.id, "Return value has incorrect type"),
+	
+	ERROR1(e.id, "Return value has incorrect type"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, k), t1 != et, k != SUB.
-	[ rule_Classes = '"error, msg: anonymous function cannot return a value"']
-	OneIdError(e.id, "Anonymous function cannot return a value"),
+	
+	ERROR1(e.id, "Anonymous function cannot return a value"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1, _), c : AnonFunDecl, e1 != NIL. 
 
 	//// (3) Non-mutating statements
@@ -1084,42 +1075,38 @@ domain PStaticTyping extends PData, PError
 	TypeOf(c, e, NIL)              :- SubSE(c, e), e = Print(_, _, _, _).
 
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Assert(_, _, _), t1 = BaseType(BOOL).
-	[ rule_Classes = '"error, msg: "assert" expects a boolean value"']
-	OneIdError(e.id, "Boolean value expected"),
+	
+	ERROR1(e.id, "Boolean value expected"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Assert(_, _, _), t1 != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Ite, t1 = BaseType(BOOL).
-	[ rule_Classes = '"error, msg: "if (...)" expects a boolean value"']
-	OneIdError(e.id, "Boolean value expected"),
+	
+	ERROR1(e.id, "Boolean value expected"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Ite, t1 != BaseType(BOOL).
     
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : While, t1 = BaseType(BOOL).
-	[ rule_Classes = '"error, msg: "while (...)" expects a boolean value"']
-	OneIdError(e.id, "Boolean value expected"),
+	
+	ERROR1(e.id, "Boolean value expected"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
                
-	[ rule_Classes = '"error, msg: spec machine cannot be created"']
-	OneIdError(e.id, "Cannot create a spec machine"),
+	ERROR1(e.id, "Cannot create a spec machine"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineKind(n, SPEC).
 
-	[ rule_Classes = '"error, msg: Undefined machine or interface type"']
-	OneIdError(e.id, "Undefined machine or interface type"),
+	ERROR1(e.id, "Undefined machine or interface type"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
 									  no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineKind(n, kind), kind != SPEC,
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
-	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
-	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineKind(n, kind), kind != SPEC,
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
 	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), no MachineDecl(n, _),
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
-	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
-	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
 	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
@@ -1127,15 +1114,13 @@ domain PStaticTyping extends PData, PError
 									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 	
-	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
-	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
 	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
 									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
 	//// Error rules for pop.
-	[rule_Classes = '"error, msg: Global function must not use pop statement"']
-	OneIdError(e.id, "Global function must not use pop statement"),
+	ERROR1(e.id, "Global function must not use pop statement"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = NulStmt(POP, _), c.owner = NIL.
 
 	//// Rules for raise.
@@ -1146,20 +1131,17 @@ domain PStaticTyping extends PData, PError
 	                                  TypeOf(c, p, pt), TypeRel(pt, plt, SUB).                    ///// < and pt is a subtype of evt.
 
 	//// Error rules for raise.
-	[rule_Classes = '"error, msg: Global function must not use raise statement"']
-	OneIdError(e.id, "Global function must not use raise statement"),
+	ERROR1(e.id, "Global function must not use raise statement"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Raise(_, _, _), c.owner = NIL.
-	[ rule_Classes = '"error, msg: argument 1 of "raise" expects an event value"']
-	OneIdError(e.id, "Argument 1 of raise expects an event value"),
+	
+	ERROR1(e.id, "Argument 1 of raise expects an event value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Raise, t1 != BaseType(EVENT).
 	
-    [ rule_Classes = '"error, msg: invalid payload type in raise (cannot send null value)"']
-	OneIdError(e.id, "Invalid payload type in raise (cannot send null value)"),
+	ERROR1(e.id, "Invalid payload type in raise (cannot send null value)"),
     TypeOf(c, e, ERROR)            :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _), null = BaseType(NULL),  ///// < raise has NIL payload,
 									  TypeRel(null, plt, k), k != SUB, null != plt.                         ///// < and null not in event type.
 
-    [ rule_Classes = '"error, msg: invalid payload type in raise"']
-	OneIdError(e.id, "Invalid payload type in raise"),
+	ERROR1(e.id, "Invalid payload type in raise"),
     TypeOf(c, e, ERROR)            :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL,       ///// < p has non-NIL payload,             
 									  TypeOfArg2(c, e, _, pt), TypeRel(pt, plt, k), k != SUB, pt != plt. ///// < and pt is not a subtype of plt.
 
@@ -1173,36 +1155,31 @@ domain PStaticTyping extends PData, PError
 	                                  CommStmtPLType(c, e, plt), TypeRel(t3, evt, SUB).                   ///// < and t3 is a subtype of plt.
 
 	//// Error rules for send.
-	[ rule_Classes = '"error, msg: argument 1 of "send" expects a machine or interface type value"']
-	OneIdError(e.id, "Argument 1 of send expects a machine or interface type value"),
+	ERROR1(e.id, "Argument 1 of send expects a machine or interface type value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(MACHINE), toSymbol(t1) != #InterfaceType.
 
-	[ rule_Classes = '"error, msg: argument 2 of "send" expects an event value"']
-	OneIdError(e.id, "Argument 2 of send expects an event value"),
+	ERROR1(e.id, "Argument 2 of send expects an event value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Send, t2 != BaseType(EVENT).
 
 	//// Error rules for send with constant event expression. 	
-    [ rule_Classes = '"error, msg: invalid payload type in send (cannot send null value)"']
-	OneIdError(e.id, "Invalid payload type in send (cannot send null value)"),
+	ERROR1(e.id, "Invalid payload type in send (cannot send null value)"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, _, NIL, _), null = BaseType(NULL),   ///// < send has NIL payload,
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
 
-    [ rule_Classes = '"error, msg: invalid payload type in send"']
-	OneIdError(e.id, "Invalid payload type in send"),
+	ERROR1(e.id, "Invalid payload type in send"),
     TypeOf(c, e, ERROR)            :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                     ///// < p has non-NIL payload,             
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(t3, plt, k), k != SUB, t3 != plt.                   ///// < and pt is not a subtype of plt.
 
 	//// Error rules for goto.
-	[rule_Classes = '"error, msg: Global function must not use goto statement"']
-	OneIdError(e.id, "Global function must not use goto statement"),
+	ERROR1(e.id, "Global function must not use goto statement"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(_, _, _), c.owner = NIL.
-	[rule_Classes = '"error, msg: undefined state"']
-	OneIdError(e.id, "Undefined state"),
+	
+	ERROR1(e.id, "Undefined state"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(dst, _, _), c.owner != NIL, no StateDecl(dst, c.owner, _, _, _, _).
-	[rule_Classes = '"error, msg: invalid payload type in goto"']
-	OneIdError(e.id, "Invalid payload type in goto"),
+	
+	ERROR1(e.id, "Invalid payload type in goto"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(dst, _, _), c.owner != NIL, s = StateDecl(dst, c.owner, _, _, _, _), 
 						   PayloadVar(s, _, _, ft), TypeOfArg1(c, e, et), 
 						   TypeRel(et, ft, k), et != ft, k != SUB.
@@ -1216,74 +1193,69 @@ domain PStaticTyping extends PData, PError
 
 	//// Error rules for spec.
 
-	[ rule_Classes = '"error, msg: argument 1 of "announce" expects an event value"']
-	OneIdError(e.id, "Argument 1 of announce expects an event value"),
+	ERROR1(e.id, "Argument 1 of announce expects an event value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Announce, t1 != BaseType(EVENT).
 
 	//// Error rules for Announce. 	
-    [ rule_Classes = '"error, msg: invalid payload type in announce (cannot send null value)"']
-	OneIdError(e.id, "Invalid payload type in announce (cannot send null value)"),
+	ERROR1(e.id, "Invalid payload type in announce (cannot send null value)"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Announce(_, NIL, _), null = BaseType(NULL), ///// < Announce has NIL payload,
 	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
 									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
 
-    [ rule_Classes = '"error, msg: invalid payload type in announce"']
-	OneIdError(e.id, "Invalid payload type in announce"),
+	ERROR1(e.id, "Invalid payload type in announce"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e : Announce,    ///// < p has non-NIL payload,             
 	                                  CommStmtPLType(c, e, plt),                ///// < constant event expression
 									  TypeRel(t2, plt, k), k != SUB, t2 != plt. ///// < and pt is not a subtype of evt.
 
 	//// (4) Mutating statements		
 	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _, _, _), TypeRel(t2, t1, SUB).
-	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
-	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
 	TypeOf(c, e , ERROR)		   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _, _, _), TypeRel(t2, t1, k), k!= SUB, t1 != t2.
 		
 	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 : SeqType, t2 = BaseType(INT).
 	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).	
-	[ rule_Classes = '"error, msg: remove must be applied to a sequence or map"']
-	OneIdError(e.id, "Remove must be applied to a sequence or map"),
+	ERROR1(e.id, "Remove must be applied to a sequence or map"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinStmt(REMOVE, _, _, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
-    [ rule_Classes = '"error, msg: index must be an integer"']
-	OneIdError(e.id, "Index must be an integer"),
+    
+	ERROR1(e.id, "Index must be an integer"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 : SeqType, t2 != BaseType(INT).
-	[ rule_Classes = '"error, msg: Index may not be in the domain of the map"']
-	OneIdError(e.id, "Index may not be in the domain of the map"),
+	
+	ERROR1(e.id, "Index may not be in the domain of the map"),
     TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
 		
 	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(index, TupType(value, NIL)), TypeRel(index, BaseType(INT), SUB), TypeRel(value, inner, SUB).
-	[ rule_Classes = '"error, msg: insert must be applied to a sequence"']
-	OneIdError(e.id, "Insert must be applied to a sequence"),
+	
+	ERROR1(e.id, "Insert must be applied to a sequence"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinStmt(INSERT, _, _, _, _), toSymbol(t1) != #SeqType.
-	[ rule_Classes = '"error, msg: for insert right syntax is seq += (index value)"']
-	OneIdError(e.id, "Incorrect syntax: use seq += (index, value)"),
+	
+	ERROR1(e.id, "Incorrect syntax: use seq += (index, value)"),
 	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, _, _, arg2, _), TypeOf(c, arg2, t2), toSymbol(t2) != #TupType; 
 	                                  SubSE(c, e), e = BinStmt(INSERT, _, _, arg2, _), TypeOf(c, arg2, t2), t2 : TupType, lstLength(#TupType, t2) != 2.
-    [ rule_Classes = '"error, msg: key must be an integer"']
-	OneIdError(e.id, "Key must be an integer"),
+    
+	ERROR1(e.id, "Key must be an integer"),
     TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx != BaseType(INT), toSymbol(idx) != #NameType.	
-    [ rule_Classes = '"error, msg: value must be a subtype of sequence type"']
-	OneIdError(e.id, "Value must be a subtype of sequence type"),
+    
+	ERROR1(e.id, "Value must be a subtype of sequence type"),
     TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), TypeRel(value, inner, k), k != SUB, value != inner.
 	
 	//// (5) Function statements
 	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, _).
 	TypeOf(c, e, NIL)   :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
 	TypeOf(c, e, NIL)   :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), TypeRel(t1, inpt, SUB), TypeRel(et, t2, SUB).
-	[ rule_Classes = '"error, msg: function not defined"']
-	OneIdError(e.id, "Function not defined"),
+	
+	ERROR1(e.id, "Function not defined"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).	
-	[ rule_Classes = '"error, msg: function requires arguments"']
-	OneIdError(e.id, "Function requires arguments"),
+	
+	ERROR1(e.id, "Function requires arguments"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
-	[ rule_Classes = '"error, msg: function arguments have incorrect types"']
-	OneIdError(e.id, "Function arguments have incorrect types"),
+	
+	ERROR1(e.id, "Function arguments have incorrect types"),
 	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
-	[ rule_Classes = '"error, msg: function does not return a value"']
-	OneIdError(e.id, "Function does not return a value"),
+	
+	ERROR1(e.id, "Function does not return a value"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, x, _, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
-	[ rule_Classes = '"error, msg: invalid assignment. right hand side is not a subtype of left hand side"']
-	OneIdError(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+	
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
 	TypeOf(c, e, ERROR) :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, _, et), TypeRel(et, t2, k), k != SUB, et != t2.
 
 	//// (6) Receive statement
@@ -1291,9 +1263,9 @@ domain PStaticTyping extends PData, PError
 	ReceiveCases(c, receive, cases) :- SubSE(c, receive), receive = Receive(cases, _, _).
 	ReceiveCases(c, receive, cases) :- ReceiveCases(c, receive, Cases(_, _, cases, _)), cases : Cases.
 
-	[ rule_Classes = '"error, msg: two cases with the same event not allowed"']
-	OneIdError(e.id, "Two cases with the same event not allowed"),
+	ERROR1(e.id, "Two cases with the same event not allowed"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(c, e, case1), ReceiveCases(c, e, case2), case1 != case2, case1.trig = case2.trig.
+	
 	// This error is covered by one of the cases
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(c, e, cases), TypeOf(c, cases, ERROR).
 
@@ -1302,8 +1274,7 @@ domain PStaticTyping extends PData, PError
 	ValidCaseEvent(trig) :- trig = HALT.
 	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _, _).
 
-	[ rule_Classes = '"error, msg: event not defined"']
-	OneIdError(e.id, "Undefined event"),
+	ERROR1(e.id, "Undefined event"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _, _), trig: String, no EventDecl(trig, _, _, _).
 	
 	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, _, _, _), ValidCaseEvent(trig).
@@ -1444,8 +1415,7 @@ domain PStaticTyping extends PData, PError
     TypeOfLocalVarAux(cntxt, name, type, tl) :- TypeOfLocalVarAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
     TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.
 	
-	[ rule_Classes = '"error, msg: Variable with same name has been declared before"']
-	OneIdError(cntxt.id, "Multiple local variable declarations with same name"),
+	ERROR1(cntxt.id, "Multiple local variable declarations with same name"),
     TypeOfLocalVar(cntxt, name, ERROR) :- TypeOfLocalVarAux(cntxt, name, _, aux), TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux'.
 
     /*************************************************************/
@@ -1499,8 +1469,7 @@ domain PStaticTyping extends PData, PError
 	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl). 
 	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NamedExprs(name, _, tl). 
 
-    [ rule_Classes = '"error, msg: same name appears more than once in name tuple or named tuple type"']
-	ZeroIdError(errorMsg),
+	ERROR0(errorMsg),
 	DupNmdSubE(list, name, tl, tl') :- NmdSubNames(list, name, tl), NmdSubNames(list, name, tl'), tl != tl',
 									   errorMsg = strJoin("Name appears more than once in name tuple or named tuple type: ", name).
 
@@ -1520,8 +1489,7 @@ domain PStaticTyping extends PData, PError
     IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = Field(e', _, _), IsLValue(c, e', wg). 
     IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = BinApp(IDX, e', _, _), IsLValue(c, e', wg). 
 
-    [ rule_Classes = '"error, msg: invalid LHS; must have the form LHS ::= var | LHS[expr] | LHS.name"']
-	OneIdError(e.id, "Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name"),
+	ERROR1(e.id, "Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name"),
 	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _, _, _), no IsLValue(c, e', _).
 
     /*************************************************************/
@@ -1530,8 +1498,7 @@ domain PStaticTyping extends PData, PError
 
 	FunRetError ::= (cntxt: FunDecl).
 
-	[ rule_Classes = '"error, msg: function must return a value"']
-	OneIdError(f.id, "function must return a value"),
+	ERROR1(f.id, "function must return a value"),
 	FunRetError(f) :- f is FunDecl, f.kind = REAL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
 
     /*************************************************************/
@@ -1547,27 +1514,22 @@ domain PStaticTyping extends PData, PError
     ControlImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
 	ControlImpure(c) :- SubSE(c, e), e : Receive, ReceiveCases(c, e, cases), cases = Cases(_, act, _, _), ControlImpure(act).
 
-	[ rule_Classes = '"error, msg: Function is not pure"']
-    OneIdError(c.id, "Function is not pure"),
+    ERROR1(c.id, "Function is not pure"),
 	PurityError(c, n) :- c is FunDecl, Annotation(c, "pure", _, _), Impure(c), n = c.name.
 
-    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
-	OneIdError(c.id, "Exit function may cause a change in current state"),
+	ERROR1(c.id, "Exit function may cause a change in current state"),
     PurityError(c, n) :- 
 	       c is StateDecl(_, owner, _, n, _, _), called.name = n, FunAvailable(called, owner), ControlImpure(called).
 
-    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
-    OneIdError(c.id, "Exit function may cause a change in current state"),
+    ERROR1(c.id, "Exit function may cause a change in current state"),
 	PurityError(c, called) :- 
 	       c is StateDecl(_, owner, _, called, _, _), called = AnonFunDecl(_, _, _, _, _, _), ControlImpure(called).
 
-    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
-    OneIdError(c.id, "Transition function may cause a change in current state"),
+    ERROR1(c.id, "Transition function may cause a change in current state"),
 	PurityError(c, n) :- 
 	       c is TransDecl(src, _, _, n, _), called.name = n, FunAvailable(called, src.owner), ControlImpure(called).
 
-    [ rule_Classes = '"error, msg: function may cause a change in current state; this is not allowed here"']
-    OneIdError(c.id, "Transition function may cause a change in current state"),
+    ERROR1(c.id, "Transition function may cause a change in current state"),
 	PurityError(c, called) :- 
 	       c is TransDecl(src, _, _, called, _), called = AnonFunDecl(_, _, _, _, _, _), ControlImpure(called).
 
@@ -1591,35 +1553,29 @@ domain PStaticTyping extends PData, PError
 
 	SpecError ::= (cntxt: StateDecl + TransDecl + DoDecl, expr: String + AnonFunDecl).
 
-	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+	ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
     SpecError(c, n) :- 
 	       c is StateDecl(_, owner, n, _, _, _), decl is MachineKind(owner, SPEC), called.name = n, FunAvailable(called, owner), SpecImpure(called);
 		   c is StateDecl(_, owner, _, n, _, _), decl is MachineKind(owner, SPEC), called.name = n, FunAvailable(called, owner), SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+    ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
 	       c is StateDecl(_, owner, called, _, _, _), decl is MachineKind(owner, SPEC), called: AnonFunDecl, SpecImpure(called);
 		   c is StateDecl(_, owner, _, called, _, _), decl is MachineKind(owner, SPEC), called: AnonFunDecl, SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+    ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, n) :- 
 	       c is TransDecl(src, _, _, n, _), decl is MachineKind(src.owner, SPEC), called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-    OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+    ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
 	       c is TransDecl(src, _, _, called, _), decl is MachineKind(src.owner, SPEC), called: AnonFunDecl, SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+	ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, n) :-	
 		   c is DoDecl(src, _, n, _), decl is MachineKind(src.owner, SPEC), called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
 
-	[ rule_Classes = '"error, msg: spec may not use this keyword or perform nondeterministic choice or create machines or execute send, announce, receive and pop statements"']
-	OneIdError(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+	ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
 	SpecError(c, called) :- 
 		   c is DoDecl(src, _, called, _), decl is MachineKind(src.owner, SPEC), called: AnonFunDecl, SpecImpure(called).
 
@@ -1644,8 +1600,7 @@ domain PStaticTyping extends PData, PError
 	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Seq(s', _, _),    p' = TermPath(0, p).
 	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Seq(_, s', _),    p' = TermPath(1, p).
 
-    [ rule_Classes = '"error, msg: function contains bad labeling of Receive"']
-	OneIdError(c.id, "Function contains bad labeling of receive statements"),
+	ERROR1(c.id, "Function contains bad labeling of receive statements"),
 	BadLabelError(c) :-
 	    ReachedContinuation(c, s, p), ReachedContinuation(c, s', p'), s : Continuation, s' : Continuation, s.label = s'.label, p != p'.
 	
@@ -1671,8 +1626,7 @@ domain PStaticTyping extends PData, PError
 	Impure(c) :- SubSE0(c, e), c: FunDecl, ImpureFunStmt(c, e).
 	Impure(c) :- SubSE0(c, e), e: FunStmt, c : FunDecl, called.name = e.name, FunAvailable(called, c.owner), Impure(called).
 
-    [ rule_Classes = '"error, msg: this function must be pure. Impure functions can only be called like "foo(...);" or "x = foo(...);" "']
-	OneIdError(e'.id, "Function must be pure: impure functions can only be called like foo(...); or x = foo(...)"),
+	ERROR1(e'.id, "Function must be pure: impure functions can only be called like foo(...); or x = foo(...)"),
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         ImpureFunApp(c, e');
        SubSE0(c, e), e = BinApp(_, e', _, _),     ImpureFunApp(c, e');
@@ -1691,8 +1645,7 @@ domain PStaticTyping extends PData, PError
 	   SubSE0(c, e), e = Ite(e', _, _, _),        ImpureFunApp(c, e');
 	   SubSE0(c, e), e = Return(e', _),           ImpureFunApp(c, e').
 
-    [ rule_Classes = '"error, msg: new M(...) can only be called like "new M(...);" or "x = new M(...);" "']
-	OneIdError(e'.id, "Illegal machine creation: only new M(...); or x = new M(...) is allowed"),
+	ERROR1(e'.id, "Illegal machine creation: only new M(...); or x = new M(...) is allowed"),
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         e' : New;
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' : New;
@@ -1709,8 +1662,7 @@ domain PStaticTyping extends PData, PError
        SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' : New, toSymbol(e'') != #Name;
 	   SubSE0(c, e), e = Return(e', _),           e' : New.
 
-    [ rule_Classes = '"error, msg: $ can only be used like "x = $" or "if ($)" or "while ($)" or "return $;" "']
-	OneIdError(e'.id, "Illegal nondeterministic choice: only x = $ or if ($) or while ($) or return $ is allowed"),
+	ERROR1(e'.id, "Illegal nondeterministic choice: only x = $ or if ($) or while ($) or return $ is allowed"),
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         e' = NulApp(NONDET, _);
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(NONDET, _);
@@ -1726,8 +1678,7 @@ domain PStaticTyping extends PData, PError
        SubSE0(c, e), e = Assert(e', _, _),        e' = NulApp(NONDET, _);
        SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' = NulApp(NONDET, _), toSymbol(e'') != #Name.
 
-    [ rule_Classes = '"error, msg: $$ can only be used like "x = $$" or "if ($$)" or "while ($$)" or "return $$;" "']
-	OneIdError(e'.id, "Illegal fair nondeterministic choice: only x = $$ or if ($$) or while ($$) or return $$ is allowed"),
+	ERROR1(e'.id, "Illegal fair nondeterministic choice: only x = $$ or if ($$) or while ($$) or return $$ is allowed"),
     PurityError(c, e') :- 
        SubSE0(c, e), e = UnApp(_, e', _),         e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(FAIRNONDET, _);
@@ -1793,14 +1744,15 @@ domain PStaticTyping extends PData, PError
 	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType.
 	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType. 
 	
-	// Each enum type has empty intersection with all types except itself and ANY and INT
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT).
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT). 
+	// Each enum type has empty intersection with all types except itself and ANY and INT and FLOAT
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT), t != BaseType(FLOAT).
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT), t != BaseType(FLOAT). 
     
     // The NULL type has empty intersections with NonNullBase and complex types.
     NonNullBase ::= (TypeExpr).
 	NonNullBase(type) :- type = BaseType(BOOL).
 	NonNullBase(type) :- type = BaseType(INT).
+	NonNullBase(type) :- type = BaseType(FLOAT).
     ComplexType ::= TupType  + NmdTupType + SeqType + MapType.
     TypeRel(s, t, EMPTY)   :- CompTypeRel(s, t), NonNullBase(s), t = BaseType(NULL).
     TypeRel(t, s, EMPTY)   :- CompTypeRel(t, s), NonNullBase(s), t = BaseType(NULL).
@@ -1812,10 +1764,15 @@ domain PStaticTyping extends PData, PError
     TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(BOOL), s != t, toSymbol(t) != #AnyType.
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(BOOL), s != t, toSymbol(t) != #AnyType.
 
-	// BaseType(INT) has empty intersections with all types, except themselves and ANY.
+	// BaseType(INT) has empty intersections with all types, except themselves and ANY and FLOAT.
 	// Relationship to NameType(_) has been dealt with above.
-    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType, t != BaseType(FLOAT).
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType, t != BaseType(FLOAT).
+
+	// BaseType(FLOAT) has empty intersections with all types, except themselves, INT and ANY.
+	// Relationship to NameType(_) has been dealt with above.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(FLOAT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType, t != BaseType(INT).
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(FLOAT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType, t != BaseType(INT).
 
     // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
     NullBase    ::= (TypeExpr).
@@ -1942,6 +1899,10 @@ domain PStaticTyping extends PData, PError
 	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
 	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
 
+	// int types is a subtype of float
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), t = BaseType(FLOAT), s = BaseType(INT).
+	TypeRel(t, s, SUP) :- CompTypeRel(t, s), t = BaseType(FLOAT), s = BaseType(INT).
+
     // Sequences are subtype related if their inner types are subtype related.
     TypeRel(s, t, SUB)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 
     TypeRel(s, t, SUP)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUP). 
@@ -1984,53 +1945,48 @@ domain PStaticTyping extends PData, PError
 
     PayloadError ::= (TransDecl + DoDecl + StateDecl + Cases + New + NewStmt).
 
-	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of transition function;"']
-	OneIdError(t.id, "Payload type for event must be subtype of payload type of transition function"),
+	ERROR1(t.id, "Payload type for event must be subtype of payload type of transition function"),
 	PayloadError(t) :- t is TransDecl, EventPayloadType(t.trig, et), PayloadVar(t, _, _, ft),
 	                   TypeRel(et, ft, k), et != ft, k != SUB.
-	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of do function;"']
-	OneIdError(d.id, "Payload type for event must be subtype of payload type of do function"),
+	
+	ERROR1(d.id, "Payload type for event must be subtype of payload type of do function"),
 	PayloadError(d) :- d is DoDecl, EventPayloadType(d.trig, et), PayloadVar(d, _, _, ft),
 	                   TypeRel(et, ft, k), et != ft, k != SUB.
-	[ rule_Classes = '"error, msg: Payload type for event on incoming transition must be subtype of payload type of state entry function;"']
-	OneIdError(s.id, "Payload type for event on incoming transition must be subtype of payload type of state entry function"),
+	
+	ERROR1(s.id, "Payload type for event on incoming transition must be subtype of payload type of state entry function"),
 	PayloadError(s) :- t is TransDecl, EventPayloadType(t.trig, et), 
 					   s is StateDecl, s.name = t.dst, s.owner = t.src.owner, PayloadVar(s, _, _, ft),
 					   TypeRel(et, ft, k), et != ft, k != SUB.
-	[ rule_Classes = '"error, msg: Payload type for event must be subtype of payload type of case function;"']
-	OneIdError(cases.id, "Payload type for event must be subtype of payload type of case function"),
+	
+	ERROR1(cases.id, "Payload type for event must be subtype of payload type of case function"),
 	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), PayloadVar(cases, _, _, ft),
 						   TypeRel(et, ft, k), et != ft, k != SUB. 
 
 	// for creation of machines
-	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
-	OneIdError(n.id, "Entry function of start state expects an argument"),
+	ERROR1(n.id, "Entry function of start state expects an argument"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), ConstructorType(name, _, ft).
-	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
-	OneIdError(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
+	
+	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), ConstructorType(name, _, ft), TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 	
 	// for creation of machines proto
-	[ rule_Classes = '"error, msg: Entry function of start state expects an argument;"']
-	OneIdError(n.id, "Entry function of start state expects an argument"),
+	ERROR1(n.id, "Entry function of start state expects an argument"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _), ft != BaseType(NULL).
-	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of entry function of start state;"']
-	OneIdError(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
+	
+	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _), TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 					   			   
 	//for creation of interfaces
-	[ rule_Classes = '"error, msg: created interface expects an argument;"']
-	OneIdError(n.id, "Created interface expects an argument"),
+	ERROR1(n.id, "Created interface expects an argument"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
-	[ rule_Classes = '"error, msg: Payload type of constructor must be subtype of payload type of the created interface;"']
-	OneIdError(n.id, "Payload type of constructor must be subtype of payload type of the created interface"),
+	
+	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of the created interface"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
 	//Entry function of spec machine must have null constructor type
-	[ rule_Classes = '"error, msg: entry function of start state of a spec machine cannot have an argument;"']
-	OneIdError(id, "Entry function of start state of a spec machine cannot have an argument"),
+	ERROR1(id, "Entry function of start state of a spec machine cannot have an argument"),
 	PayloadError(s) :- ConstructorType(name, s, ft), MachineDecl(name, id), MachineKind(name, SPEC), ft != BaseType(NULL).
 }

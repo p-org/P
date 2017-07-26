@@ -117,7 +117,7 @@ namespace Microsoft.Pc
                     string primitiveType = CultureInfo.InvariantCulture.TextInfo.ToTitleCase(((Id) GetArgByIndex(type, 0)).Name.ToLowerInvariant());
 
                     Debug.Assert(
-                        primitiveType == "Any" || primitiveType == "Null" || primitiveType == "Bool" || primitiveType == "Int"
+                        primitiveType == "Any" || primitiveType == "Null" || primitiveType == "Bool" || primitiveType == "Int" || primitiveType == "Float"
                         || primitiveType == "Event" || primitiveType == "Machine",
                         $"Illegal BaseType: {primitiveType}");
 

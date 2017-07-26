@@ -37,6 +37,13 @@ namespace Microsoft.Pc
             return SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
                                      SyntaxFactory.Literal(arg));
         }
+
+        public static LiteralExpressionSyntax MkCSharpNumericLiteralExpression(double arg)
+        {
+            return SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression,
+                                     SyntaxFactory.Literal(arg));
+        }
+
         public static GotoStatementSyntax MkCSharpGoto(string label)
         {
             return SyntaxFactory.GotoStatement(SyntaxKind.GotoStatement, SyntaxFactory.IdentifierName(label));

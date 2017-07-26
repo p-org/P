@@ -2,8 +2,10 @@ machine Main {
 	start state S {
 		entry {
 			var x: float;
-			x = 10.9;
-			assert x == 10;
+      var y : map[int, float];
+      y[x as int] = 10.1;
+			//x = 10.9 as int;
+			//assert x == 10;
 		}
 	}
 }

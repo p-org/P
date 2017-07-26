@@ -604,9 +604,17 @@ namespace Microsoft.Pc
 
                 if (n.NodeKind == NodeKind.Cnst)
                 {
-                    int val = (int)((Cnst)n).GetNumericValue().Numerator;
-                    return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtIntValue"),
-                                                                         CSharpHelper.MkCSharpNumericLiteralExpression(val));
+                    var val = ((Cnst)n).GetNumericValue();
+                    if (val.IsInteger)
+                    {
+                        return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtIntValue"),
+                                                                         CSharpHelper.MkCSharpNumericLiteralExpression((Int64)val.Numerator));
+                    }
+                    else
+                    {
+                        return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtFloatValue"),
+                                                                         CSharpHelper.MkCSharpNumericLiteralExpression((Int64)val.Numerator/(Int64)val.Denominator));
+                    }
                 }
                 // n.NodeKind == NodeKind.Id
                 var op = ((Id)n).Name;

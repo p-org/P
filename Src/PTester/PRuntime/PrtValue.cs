@@ -85,7 +85,19 @@ namespace P.Runtime
             }
             else if (type is PrtIntType)
             {
+                if(value is PrtFloatValue)
+                {
+                    value = new PrtIntValue((int)(value as PrtFloatValue).ft);
+                }
                 return value is PrtIntValue;
+            }
+            else if (type is PrtFloatType)
+            {
+                if(value is PrtIntValue)
+                {
+                    value = new PrtFloatValue((value as PrtIntValue).nt);
+                }
+                return value is PrtFloatValue;
             }
             else if (type is PrtBoolType)
             {
@@ -213,14 +225,14 @@ namespace P.Runtime
     [Serializable]
     public class PrtIntValue : PrtValue
     {
-        public int nt;
+        public Int64 nt;
 
         public PrtIntValue()
         {
             nt = 0;
         }
 
-        public PrtIntValue(int val)
+        public PrtIntValue(Int64 val)
         {
             nt = val;
         }
@@ -244,6 +256,43 @@ namespace P.Runtime
         public override string ToString()
         {
             return nt.ToString();
+        }
+    }
+
+    [Serializable]
+    public class PrtFloatValue : PrtValue
+    {
+        public double ft;
+
+        public PrtFloatValue()
+        {
+            ft = 0;
+        }
+
+        public PrtFloatValue(double val)
+        {
+            ft = val;
+        }
+
+        public override PrtValue Clone()
+        {
+            return new PrtFloatValue(this.ft);
+        }
+
+        public override bool Equals(object val)
+        {
+            var intVal = val as PrtIntValue;
+            if (intVal == null) return false;
+            return this.ft == intVal.nt;
+        }
+
+        public override int GetHashCode()
+        {
+            return ft.GetHashCode();
+        }
+        public override string ToString()
+        {
+            return ft.ToString();
         }
     }
 
@@ -322,7 +371,7 @@ namespace P.Runtime
     {
         public string constName;
 
-        public PrtEnumValue(string name, int val) : base(val)
+        public PrtEnumValue(string name, Int64 val) : base(val)
         {
             constName = name;
         }
@@ -573,13 +622,13 @@ namespace P.Runtime
             return clone;
         }
 
-        public PrtValue Lookup(int index)
+        public PrtValue Lookup(Int64 index)
         {
             if (index < 0 || index >= elements.Count)
             {
                 throw new PrtAssertFailureException("Illegal index for Lookup");
             }
-            return elements[index];
+            return elements[(int)index];
         }
 
         public PrtValue Lookup(PrtValue index)
@@ -587,13 +636,13 @@ namespace P.Runtime
             return Lookup(((PrtIntValue)index).nt);
         }
 
-        public void Insert(int index, PrtValue val)
+        public void Insert(Int64 index, PrtValue val)
         {
             if (index < 0 || index > elements.Count)
             {
                 throw new PrtAssertFailureException("Illegal index for Insert");
             }
-            elements.Insert(index, val);
+            elements.Insert((int)index, val);
         }
 
         public void Insert(PrtValue index, PrtValue val)
@@ -619,7 +668,7 @@ namespace P.Runtime
 
         public void Update(PrtValue index, PrtValue val)
         {
-            Update(((PrtIntValue)index).nt, val);
+            Update((int)((PrtIntValue)index).nt, val);
         }
 
         public PrtValue UpdateAndReturnOldValue(PrtValue index, PrtValue val)
@@ -629,13 +678,13 @@ namespace P.Runtime
             return oldVal;
         }
 
-        public void Remove(int index)
+        public void Remove(Int64 index)
         {
             if (index < 0 || index >= elements.Count)
             {
                 throw new PrtAssertFailureException("Illegal index for Remove");
             }
-            elements.RemoveAt(index);
+            elements.RemoveAt((int)index);
         }
 
         public void Remove(PrtValue index)

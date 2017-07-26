@@ -25,9 +25,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	inf.ExportedType(n, t) :- in.ExportedType(n, t).
 	inf.ImportedType(n, t) :- in.ImportedType(n, t).
 	inf.ExportedEvent(n) :- in.ExportedEvent(n).
-   	inf.ZeroIdError(s) :- in.ZeroIdError(s).
-	inf.OneIdError(s, id) :- in.OneIdError(s, id).
-	inf.TwoIdError(s, id, id') :- in.TwoIdError(s, id, id').
+   	inf.ERROR0(s) :- in.ERROR0(s).
+	inf.ERROR1(s, id) :- in.ERROR1(s, id).
+	inf.ERROR2(s, id, id') :- in.ERROR2(s, id, id').
 
     /*************************************************************/
     /**********         Create PLink output            ***********/
@@ -567,10 +567,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	TypeConstant(NIL, -1, NIL, NIL).
 
 	//// Base types
-	BaseType2Kind ::= ({ NULL, BOOL, INT, EVENT, MACHINE, ANY }, String).
+	BaseType2Kind ::= ({ NULL, BOOL, INT, FLOAT, EVENT, MACHINE, ANY }, String).
 	BaseType2Kind(NULL, "PRT_KIND_NULL").
 	BaseType2Kind(BOOL, "PRT_KIND_BOOL").
 	BaseType2Kind(INT, "PRT_KIND_INT").
+	BaseType2Kind(FLOAT, "PRT_KIND_FLOAT").
 	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
 	BaseType2Kind(MACHINE, "PRT_KIND_MACHINE").
 	BaseType2Kind(ANY, "PRT_KIND_ANY").

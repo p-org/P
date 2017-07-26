@@ -71,8 +71,10 @@ extern "C"{
 	/** PRT_INT represents the primitive int type in P */	
 #if _WIN64
 	typedef signed __int64 PRT_INT;
+	typedef double PRT_FLOAT;
 #else
 	typedef signed __int32 PRT_INT;
+	typedef float PRT_FLOAT;
 #endif
 
 	/** PRT_UINT8 is always an 8-bit unsigned integer. */

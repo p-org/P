@@ -91,8 +91,10 @@ extern "C"{
 
   #if __x86_64__ || __ppc64__
     typedef int64_t  PRT_INT;
+    typedef double   PRT_FLOAT;
   #else
     typedef int32_t  PRT_INT;
+    typedef float   PRT_FLOAT;
   #endif
 	/** PRT_UINT8 is always an 8-bit unsigned integer. */
 	typedef uint8_t  PRT_UINT8;

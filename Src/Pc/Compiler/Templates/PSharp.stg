@@ -1,9 +1,52 @@
 ﻿delimiters "%", "%"
-decl_(kind) ::= "decl_%kind%"
-decltype(ty) ::= "%(decl_(ty.TypeKind))(ty)%"
-decl_base(ty) ::= "%ty.TypeName%"
+concat(a,b) ::= "%a%%b%"
+
+decltype(ty) ::= <%%(concat("decl_", ty.TypeKind))(ty)%%>
+decl_base(ty) ::= <%%(concat("decl_base_", ty.TypeName))()%%>
+decl_base_machine() ::= "Machine"
+decl_base_event() ::= "Event"
+decl_base_int() ::= "int"
+decl_base_bool() ::= "bool"
+decl_base_null() ::= "void"
 decl_sequence(ty) ::= "List<%decltype(ty.ElementType)%>"
 decl_namedtuple(ty) ::= "%ty.TypeName%"
+
+typeDfn(ty) ::= <%%(concat("ty_dfn_", ty.TypeKind))(ty)%%>
+ty_dfn_base(ty) ::= ""
+ty_dfn_sequence(ty) ::= ""
+ty_dfn_map(ty) ::= ""
+ty_dfn_tuple(ty) ::= ""
+ty_dfn_namedtuple(ty) ::= <<
+internal class %ty.TypeName% : IPMutableReadOnlyTuple<%ty.Types:decltype();separator=","%>
+{
+    public %ty.TypeName%() { }
+
+    public %ty.TypeName%(IPMutableReadOnlyTuple<%ty.Types:decltype();separator=","%> other)
+    {
+        // TODO: add deep copying code here
+        %ty.Fields:{f|this.Item%i% = other.Item%i%;};separator="\n"%
+    }
+
+    public %ty.TypeName%(Tuple<%ty.Types:decltype();separator=","%> other)
+    {
+        // TODO: add deep copying code here
+        %ty.Fields:{f|this.Item%i% = other.Item%i%;};separator="\n"%
+    }
+
+    %ty.Fields:{f|%ty_dfn_namedtuple_field(f,i)%};separator="\n\n"%
+
+    #region IPMutableReadOnlyTuple implementation
+    %ty.Types:{t|public %decltype(t)% Item%i% { get; set; \}};separator="\n"%
+    #endregion
+}
+>>
+ty_dfn_namedtuple_field(f,i) ::= <<
+public %decltype(f.Type)% %f.Name%
+{
+    get { return Item%i%; }
+    set { Item%i% = value; }
+}
+>>
 
 topLevel(pgm) ::= <<
 using System;
@@ -13,6 +56,8 @@ using Microsoft.PSharp;
 
 namespace %pgm.Namespace%
 {
+    %pgm.Types:typeDfn();separator="\n\n"%
+
     %pgm.Machines:machineDecl();separator="\n\n"%
 
     %pgm.Events:eventDecl();separator="\n\n"%
@@ -36,14 +81,12 @@ internal class %evt.Name% : Event
 }
 >>
 
-argumentList(types,names) ::= <%
-%types,names:{t,n|%decltype(t)% %n%}; separator=", "%
-%>
-
 machineDecl(machine) ::= <<
 internal class %machine.Name% : Machine
 {
     %machine.States:stateDecl();separator="\n\n"%
+
+	%machine.Methods:methodDecl();separator="\n\n"%
 }
 >>
 
@@ -84,3 +127,18 @@ stateTransition(t) ::= <%
 [OnEventDoAction(typeof(%t.OnEvent%), nameof(%t.Function%))]
 %endif%
 %>
+
+argumentList(vars) ::= <%
+%vars:{v|%decltype(v.Type)% %v.Name%}; separator=", "%
+%>
+
+methodDecl(m) ::= <<
+internal %decltype(m.ReturnType)% %m.Name%(%argumentList(m.Parameters)%)
+{
+    // variable declarations
+    %m.LocalVariables:{v|%decltype(v.Type)% %v.Name%;}; separator="\n"%
+
+    // function body
+    /* TODO */
+}
+>>

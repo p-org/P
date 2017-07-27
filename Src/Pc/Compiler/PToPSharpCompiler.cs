@@ -45,10 +45,10 @@ namespace Microsoft.Pc
             TemplateGroup templateGroup = pSharpTemplates.Value;
             Template t = templateGroup.GetInstanceOf("topLevel");
 
-            IEnumerable<EventDecl> events = GenerateEvents();
-            IEnumerable<MachineDecl> machines = GenerateMachines();
+            IList<EventDecl> events = GenerateEvents();
+            IList<MachineDecl> machines = GenerateMachines();
 
-            t.Add("pgm", new {Namespace = "Test", Events = events, Machines = machines});
+            t.Add("pgm", new {Namespace = "Test", Events = events, Machines = machines, Types = typeFactory.AllTypes});
 #if DEBUG
             var thread = new Thread(() => t.Visualize(LineWidth));
             thread.SetApartmentState(ApartmentState.STA);
@@ -60,7 +60,7 @@ namespace Microsoft.Pc
             return generatedCode;
         }
 
-        private IEnumerable<EventDecl> GenerateEvents()
+        private IList<EventDecl> GenerateEvents()
         {
             return allEvents.Select(
                 kv =>
@@ -73,10 +73,10 @@ namespace Microsoft.Pc
                         Assume = kv.Value.maxInstances == -1 || !kv.Value.maxInstancesAssumed ? -1 : kv.Value.maxInstances,
                         PayloadType = payloadType == PSharpBaseType.Null ? null : payloadType
                     };
-                });
+                }).ToList();
         }
 
-        private IEnumerable<MachineDecl> GenerateMachines()
+        private IList<MachineDecl> GenerateMachines()
         {
             return allMachines.Select(
                 kv =>
@@ -88,19 +88,41 @@ namespace Microsoft.Pc
                         States = GenerateStates(info, info.stateNameToStateInfo),
                         Methods = GenerateMethods(info.funNameToFunInfo, info)
                     };
-                });
+                }).ToList();
         }
 
-        private IEnumerable<MethodDecl> GenerateMethods(IDictionary<string, FunInfo> infoFunNameToFunInfo, MachineInfo info)
+        private IList<MethodDecl> GenerateMethods(IDictionary<string, FunInfo> infoFunNameToFunInfo, MachineInfo info)
         {
+            // this function is pointless
             infoFunNameToFunInfo.Remove("ignore");
-            return from kv in infoFunNameToFunInfo select new MethodDecl()
-            {
-                Name = kv.Key
-            };
+            return infoFunNameToFunInfo.Select(
+                kv =>
+                {
+                    string funName = kv.Key;
+                    FunInfo funInfo = kv.Value;
+                    List<TypedName> parameters = (from name in funInfo.parameterNames
+                                                  let type = typeFactory.MakePSharpType(funInfo.localNameToInfo[name].type)
+                                                  where !type.Equals(PSharpBaseType.Null)
+                                                  select new TypedName {Name = name, Type = type}).ToList();
+
+                    List<TypedName> locals = (from name in funInfo.localNames
+                                              let type = typeFactory.MakePSharpType(funInfo.localNameToInfo[name].type)
+                                              where !type.Equals(PSharpBaseType.Null)
+                                              select new TypedName {Name = name, Type = type}).ToList();
+
+                    Dictionary<string, TypedName> localSymbolTable = parameters.Concat(locals).ToDictionary(v => v.Name, v => v);
+
+                    return new MethodDecl
+                    {
+                        Name = funName,
+                        ReturnType = typeFactory.MakePSharpType(funInfo.returnType.Node),
+                        Parameters = parameters,
+                        LocalVariables = locals
+                    };
+                }).ToList();
         }
 
-        private IEnumerable<StateDecl> GenerateStates(MachineInfo nameToStateInfo, Dictionary<string, StateInfo> stateNameToStateInfo)
+        private IList<StateDecl> GenerateStates(MachineInfo nameToStateInfo, IReadOnlyDictionary<string, StateInfo> stateNameToStateInfo)
         {
             //TODO: what about null transitions? how are those expressed in P#?
             return stateNameToStateInfo.Select(
@@ -123,29 +145,42 @@ namespace Microsoft.Pc
                         IgnoredEvents = ignoredEvents.Select(evt => evt.Key).ToList(),
                         DeferredEvents = kv.Value.deferredEvents
                     };
-                });
+                }).ToList();
         }
 
-        private IEnumerable<StateEventHandler> GenerateStateEventHandlers(
+        private static IList<StateEventHandler> GenerateStateEventHandlers(
             Dictionary<string, TransitionInfo> transitions,
             IEnumerable<KeyValuePair<string, string>> valueDos,
             IReadOnlyDictionary<string, StateInfo> stateNameToStateInfo)
         {
-            return transitions
-                .Select(
+            IEnumerable<StateEventHandler> eventTransitions =
+                transitions.Select(
                     kv => new StateEventHandler
                     {
                         OnEvent = kv.Key,
                         IsPush = kv.Value.IsPush,
                         Target = stateNameToStateInfo[kv.Value.target].printedName,
                         Function = kv.Value.transFunName
-                    }).Concat(
-                    valueDos.Select(kv => new StateEventHandler {OnEvent = kv.Key, IsPush = false, Target = null, Function = kv.Value}));
+                    });
+            IEnumerable<StateEventHandler> eventActions =
+                valueDos.Select(kv => new StateEventHandler {OnEvent = kv.Key, IsPush = false, Target = null, Function = kv.Value});
+            return eventTransitions.Concat(eventActions).ToList();
         }
     }
 
-    internal class MethodDecl {
+    internal class TypedName
+    {
         public string Name { get; set; }
+
+        public PSharpType Type { get; set; }
+    }
+
+    internal class MethodDecl
+    {
+        public string Name { get; set; }
+        public PSharpType ReturnType { get; set; }
+        public List<TypedName> Parameters { get; set; }
+        public List<TypedName> LocalVariables { get; set; }
     }
 
     internal class StateEventHandler
@@ -163,7 +198,7 @@ namespace Microsoft.Pc
         public bool IsCold { get; set; }
         public bool IsWarm { get; set; }
         public bool IsStart { get; set; }
-        public IEnumerable<StateEventHandler> Transitions { get; set; }
+        public IList<StateEventHandler> Transitions { get; set; }
         public string EntryFun { get; set; }
         public string ExitFun { get; set; }
         public List<string> IgnoredEvents { get; set; }
@@ -173,8 +208,8 @@ namespace Microsoft.Pc
     internal class MachineDecl
     {
         public string Name { get; set; }
-        public IEnumerable<StateDecl> States { get; set; }
-        public IEnumerable<MethodDecl> Methods { get; set; }
+        public IList<StateDecl> States { get; set; }
+        public IList<MethodDecl> Methods { get; set; }
     }
 
     internal class EventDecl

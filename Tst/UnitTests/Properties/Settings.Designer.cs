@@ -12,7 +12,7 @@ namespace UnitTests.Properties {
     
     
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "14.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.Editors.SettingsDesigner.SettingsSingleFileGenerator", "15.1.0.0")]
     internal sealed partial class Settings : global::System.Configuration.ApplicationSettingsBase {
         
         private static Settings defaultInstance = ((Settings)(global::System.Configuration.ApplicationSettingsBase.Synchronized(new Settings())));
@@ -34,37 +34,46 @@ namespace UnitTests.Properties {
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("\"runPc\"")]
-        public string RunPc {
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool RunPc {
             get {
-                return ((string)(this["RunPc"]));
+                return ((bool)(this["RunPc"]));
             }
         }
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("\"runPt\"")]
-        public string RunPt {
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool RunPt {
             get {
-                return ((string)(this["RunPt"]));
+                return ((bool)(this["RunPt"]));
             }
         }
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("\"runPrt\"")]
-        public string RunPrt {
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool RunPrt {
             get {
-                return ((string)(this["RunPrt"]));
+                return ((bool)(this["RunPrt"]));
             }
         }
         
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
-        [global::System.Configuration.DefaultSettingValueAttribute("\"runZing\"")]
-        public string RunZing {
+        [global::System.Configuration.DefaultSettingValueAttribute("False")]
+        public bool RunZing {
             get {
-                return ((string)(this["RunZing"]));
+                return ((bool)(this["RunZing"]));
+            }
+        }
+        
+        [global::System.Configuration.ApplicationScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("True")]
+        public bool RunAll {
+            get {
+                return ((bool)(this["RunAll"]));
             }
         }
     }

@@ -5,17 +5,20 @@
     <Setting Name="Reset" Type="System.Boolean" Scope="Application">
       <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="RunPc" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">"runPc"</Value>
+    <Setting Name="RunPc" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="RunPt" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">"runPt"</Value>
+    <Setting Name="RunPt" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="RunPrt" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">"runPrt"</Value>
+    <Setting Name="RunPrt" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
     </Setting>
-    <Setting Name="RunZing" Type="System.String" Scope="Application">
-      <Value Profile="(Default)">"runZing"</Value>
+    <Setting Name="RunZing" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">False</Value>
+    </Setting>
+    <Setting Name="RunAll" Type="System.Boolean" Scope="Application">
+      <Value Profile="(Default)">True</Value>
     </Setting>
   </Settings>
 </SettingsFile>

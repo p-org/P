@@ -7,7 +7,7 @@ event M_PONG: machine;
 event REGISTER_CLIENT: machine;
 event UNREGISTER_CLIENT: machine;
 event NODE_DOWN: machine;
-event ROUND_DONE;
+event FD_START;
 
 machine FailureDetector {
 	var nodes: seq[machine];
@@ -22,11 +22,11 @@ machine FailureDetector {
   	        nodes = payload;
 			InitializeAliveSet();
 			timer = CreateTimer(this);
-			raise UNIT;   	   
+			raise FD_START;   	   
         }
 		on REGISTER_CLIENT do (payload: machine) { clients[payload] = true; }
 		on UNREGISTER_CLIENT do (payload: machine) { if (payload in clients) clients -= payload; }
-        on UNIT push SendPing;
+        on FD_START push SendPing;
     }
 
     state SendPing {
@@ -41,8 +41,7 @@ machine FailureDetector {
 				 if (sizeof(responses) == sizeof(alive)) {
 					timerCanceled = CancelLocalTimer();
 					if (timerCanceled) {
-						// goto SendPing
-						raise UNIT;
+						goto SendPing;
 					}
 			     }
 			}
@@ -50,16 +49,12 @@ machine FailureDetector {
 		on TIMEOUT do { 
 			attempts = attempts + 1;
 		    if (sizeof(responses) < sizeof(alive) && attempts < 2) {
-				// goto SendPing;
-				raise UNIT;
+				goto SendPing;
 			} else {
 				Notify();
-				// goto Reset;
-				raise ROUND_DONE;
+				goto Reset;
 			}
 		}
-		on UNIT goto SendPing;
-		on ROUND_DONE goto Reset;
      }
 	
 	 state Reset {

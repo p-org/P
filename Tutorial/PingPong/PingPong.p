@@ -40,11 +40,6 @@ sends PING;
       StopProgram();
     }
   }
-
-  model fun StopProgram()
-  {
-    
-  }
 }
 
 machine Server : IServer

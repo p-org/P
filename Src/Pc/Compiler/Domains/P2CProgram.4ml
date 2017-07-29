@@ -54,7 +54,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id).
 	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id), in.TypeExpansion(type, etype).
 
-	link.ModelType(name, id) :- in.ModelType(name, id).
+	link.TypeDef(name, NIL, id) :- in.TypeDef(name, NIL, id).
 	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), in.ExportedType(name, _), in.TypeExpansion(type, etype).
 	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
 	link.InterfaceTypeDecl(name, list, etype, id) :- in.InterfaceTypeDecl(name, list, type, id), in.TypeExpansion(type, etype).
@@ -65,13 +65,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	PermEmbeddedInConstType(name, perm) :- ConstructorType(name, _, ct), in.EmbeddedPermissionsInType(ct, perm).
 
 	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
-		c is in.FunDecl(name, NIL, _, params, return, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).
+		c is in.FunDecl(name, NIL, params, return, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).
 	link.FunDecl(name, NIL, ereturn, id), link.FunProtoDecl(name, NIL, ereturn) :- 
-		c is in.FunDecl(name, NIL, _, NIL, return, _, _, id), return != NIL, in.TypeExpansion(return, ereturn).
+		c is in.FunDecl(name, NIL, NIL, return, _, _, id), return != NIL, in.TypeExpansion(return, ereturn).
 	link.FunDecl(name, eparams, NIL, id), link.FunProtoDecl(name, eparams, NIL) :- 
-		c is in.FunDecl(name, NIL, _, params, NIL, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType.
+		c is in.FunDecl(name, NIL, params, NIL, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType.
 	link.FunDecl(name, NIL, NIL, id), link.FunProtoDecl(name, NIL, NIL) :- 
-		c is in.FunDecl(name, NIL, _, NIL, NIL, _, _, id).
+		c is in.FunDecl(name, NIL, NIL, NIL, _, _, id).
 	link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunProtoDecl(name, params, return), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).
 	link.FunProtoDecl(name, NIL, ereturn) :- 
@@ -184,7 +184,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	AnonOrNamedFunName ::= (decl: AnonOrNamedFun + in.FunProtoDecl, enumName: String).
 
 	AnonOrNamedFunName(d, en), link.AnonFunDecl(d.ownerFun, anonFunIndex) 
-					  :- d is in.AnonFunDecl, d.owner = NIL, AnonFunDeclGen(d),
+					  :- d is in.AnonFunDecl, d.owner = NIL,
 	                     anonFunIndex = toOrdinal(d, 0, { d' | d' is in.AnonFunDecl, d'.ownerFun = d.ownerFun }), 
 						 en = strJoin("P_FUN_", strJoin(d.ownerFun, strJoin("_ANON", toString(anonFunIndex)))).
 
@@ -193,13 +193,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	AnonOrNamedFunName(d, en) :- d is in.FunProtoDecl, en = strJoin("P_FUN_", d.name).
 
 	DeclId(d, id, en), AnonOrNamedFunName(d, en) :- 
-						 d is in.AnonFunDecl, d.owner != NULL, AnonFunDeclGen(d),
-	                     id = toOrdinal(d, 0, { d' | d' is in.AnonFunDecl, d'.owner = d.owner, AnonFunDeclGen(d') }),
+						 d is in.AnonFunDecl, d.owner != NULL,
+	                     id = toOrdinal(d, 0, { d' | d' is in.AnonFunDecl, d'.owner = d.owner }),
 						 en = strJoin("P_FUN_", strJoin(d.owner, strJoin("_ANON", toString(id)))).
 
 	DeclId(d, id, en), AnonOrNamedFunName(d, en) :- 
 						 d is in.FunDecl,
-	                     id = count({ d' | d' is in.AnonFunDecl, d'.owner = d.owner, AnonFunDeclGen(d') }) 
+	                     id = count({ d' | d' is in.AnonFunDecl, d'.owner = d.owner }) 
 						      + toOrdinal(d, 0, { d' | d' is in.FunDecl, d'.owner = d.owner }), 
 	                     en = strJoin("P_FUN_", strJoin(d.owner, strJoin("_", d.name))).
 
@@ -207,10 +207,10 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	   in.MachineDecl(name, _),
 	   enumName = strJoin("P_FUNS_", name),
 	   list = toList(#Elements, NIL, { enumMember | 
-									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = name, AnonFunDeclGen(d), x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = name, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
 									   DeclId(d, id, cn), d : in.FunDecl, d.owner = name, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(name, "_COUNT"))), 
-									   size = count({d | d is in.AnonFunDecl, d.owner = name, AnonFunDeclGen(d)}) 
+									   size = count({d | d is in.AnonFunDecl, d.owner = name}) 
 											  + count({d | d is in.FunDecl, d.owner = name}) }).
 
 	//// StateDecls - Start at Id 0. Need to encode qualified names.
@@ -228,10 +228,10 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	//// Prototypes for model functions
 	MakeParams ::= (in.FunDecl, in.NmdTupType + { NIL }, PrmTypes + { NIL }, Params + { NIL }).
-	MakeParams(f, type, NIL, NIL) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params).
+	MakeParams(f, type, NIL, NIL) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.body = NIL, type = lstReverse(in.#NmdTupType, f.params).
 	MakeParams(f, tl, prmTypes', params') :- MakeParams(f, in.NmdTupType(NmdTupTypeField(name, _), tl), prmTypes, params), prmTypes' = PrmTypes(PtrType(PtrType(NmdType(NIL, "PRT_VALUE"))), prmTypes), params' = Params(Param(NIL, name), params).
 
-	HOut(0, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
+	HOut(0, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.body = NIL,
 					MakeParams(f, NIL, prmTypes, params),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), prmTypes),
@@ -245,7 +245,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Extern declarations for defined types
 	HOut(0, def) :- in.TypeDef(name, _, _),	typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
 	HOut(0, def) :- in.EnumTypeDef(name, _, _, _),	typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
-	HOut(0, def) :- in.ModelType(name, _), typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
 	HOut(0, def) :- in.InterfaceTypeDecl(name, _, _, _), typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
 
 	//// Field names for exported named tuple types
@@ -263,13 +262,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
 
 	//// Extern declarations for foreign types
-	HOut(0, def) :- in.ModelType(name, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name),
+	HOut(0, def) :- in.TypeDef(name, NIL, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name),
 						def = out.VarDef(
 							      EXTERN, 
 								  NmdType(NIL, "PRT_UINT32"), 
 								  foreignTypeName, 
 								  NIL).
-	HOut(0, def) :- in.ModelType(name, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+	HOut(0, def) :- in.TypeDef(name, NIL, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
 						def = out.VarDef(
 							      EXTERN, 
 								  NmdType(NIL, "PRT_FOREIGNTYPEDECL"), 
@@ -277,7 +276,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								  NIL).
 
 	//// Extern declarations for foreign type functions
-	HOut(0, def) :- in.ModelType(name, _),
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
 	                params = NIL,
 				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
 					argTypes = PrmTypes(BaseType(VOID), NIL),					  
@@ -288,7 +287,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name, _),
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -299,7 +298,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name, _),
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(BaseType(VOID), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -310,7 +309,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name, _),
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -321,7 +320,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name, _),
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
 	                params = Params(Param(NIL, "frgnVal"), NIL),
 				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
 					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
@@ -332,7 +331,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  params,
 					  UNKNOWN).
 
-	HOut(0, def) :- in.ModelType(name, _),
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
 	                params = Params(Param(NIL, "frgnVal1"),
 					         Params(Param(NIL, "frgnVal2"), 
 							 NIL)),
@@ -605,7 +604,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	
 	//// Foreign types
 	TypeConstant(t, m, defs, def) :- 
-								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.NameType(name), in.ModelType(name, _),
+								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.NameType(name), in.TypeDef(name, NIL, _),
 								defs = out.Section(before, def),
 								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
 								foreignTypeName = strJoin("P_FOREIGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
@@ -1001,7 +1000,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	LocalVarsTable ::= (in.TypingContext, out.VarDef).
 	LocalVarsTable(c, tmpVar) :- LocalVarsIter(c, out.Defs(tmpVar, tl), _), tmpVar: out.VarDef.
 
-	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = REAL,
+	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.body != NIL,
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
@@ -1013,11 +1012,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  UNKNOWN).
 
 	MakeArgs ::= (in.FunDecl, in.NmdTupType + { NIL }, Args + { NIL }, Natural).
-	MakeArgs(f, type, NIL, n) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.kind = MODEL, type = lstReverse(in.#NmdTupType, f.params), n = lstLength(in.#NmdTupType, f.params).
+	MakeArgs(f, type, NIL, n) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.body = NIL, type = lstReverse(in.#NmdTupType, f.params), n = lstLength(in.#NmdTupType, f.params).
 	MakeArgs(f, tl, args', n') :- MakeArgs(f, in.NmdTupType(_, tl), args, n), n' = n - 1, n':  Natural, 
 	                              args' = Args(UnApp(ADDR, BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n', DEC, U))), args).
 
-	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = MODEL,
+	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.body = NIL,
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
 					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
@@ -1039,8 +1038,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	PatchReturn ::= (f: in.FunDecl + in.AnonFunDecl, e: out.Stmt).
 	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f: in.AnonFunDecl, cs = out.Return(Ident("p_tmp_ret")).
-	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, _, NIL, _, _, _), cs = out.Return(Ident("p_tmp_ret")).
-	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, _, type, _, _, _), type : in.TypeExpr, TypeToExpr(type, expr),  
+	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, NIL, _, _, _), cs = out.Return(Ident("p_tmp_ret")).
+	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, type, _, _, _), type : in.TypeExpr, TypeToExpr(type, expr),  
 						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
 									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL))),
 									   Return(Ident("p_tmp_ret"))).
@@ -1068,7 +1067,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					ContextSourceInfo(f, _, info, exitInfo),
 					body = out.Seq(header, Seq(trampoline, Seq(ctrans, footer))).
 				
-	COut(8, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.kind = REAL,
+	COut(8, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.body != NIL,
 				    tmpVars = toList(#Defs, NIL, { varDef | LocalVarsTable(f, varDef), ContextTransStmtExpr(f, out.Ident(varDef.name)) }),
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
@@ -1082,7 +1081,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  params,
 					  out.Seq(entryInfo, Block(tmpVars, body))).
 
-	COut(8, def) :- AnonOrNamedFunName(f, name), AnonFunDeclGen(f),
+	COut(8, def) :- AnonOrNamedFunName(f, name), f is in.AnonFunDecl,
 					tmpVars = toList(#Defs, NIL, { varDef | LocalVarsTable(f, varDef), ContextTransStmtExpr(f, out.Ident(varDef.name)) }),
 	                params = Params(Param(NIL, "context"), NIL),
 				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
@@ -1156,7 +1155,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	ReceiveDeclInit ::= (decl: AnonOrNamedFun, nReceives: Natural, receives: out.Expr).
 	ReceiveDeclInit(decl, 0, receives) :- decl is AnonOrNamedFun, ReceiveDeclConcat(0, decl, NIL), receives = Ident("NULL").
-	ReceiveDeclInit(decl, 0, receives) :- decl is in.FunDecl, decl.kind = MODEL, receives = Ident("NULL").
+	ReceiveDeclInit(decl, 0, receives) :- decl is in.FunDecl, decl.body = NIL, receives = Ident("NULL").
 	ReceiveDeclInit(decl, nReceives, receives) :- 
 				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args,
 				AnonOrNamedFunName(decl, declName), receives = Ident(strJoin("P_GEND_RECEIVE_", declName)).
@@ -1220,7 +1219,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	//// Base case
 	FunDeclConcat(c, name, NIL) :- in.MachineDecl(name, _),
-								c = count({d | d is in.AnonFunDecl, d.owner = name, AnonFunDeclGen(d)}) + count({d | d is in.FunDecl, d.owner = name}).
+								c = count({d | d is in.AnonFunDecl, d.owner = name}) + count({d | d is in.FunDecl, d.owner = name}).
 
     //// Build every fundecl array in reverse order
 	FunDeclConcat(m, d.owner, arr) :-  
@@ -1385,7 +1384,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								  machineStructName, 
 								  init).
 
-	COut(13, def) :- in.ModelType(name, _), in.ExportedType(name, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name),
+	COut(13, def) :- in.TypeDef(name, NIL, _), in.ExportedType(name, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name),
 					 foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
 	                        init = Init(
 							   Args(IntLit(0, DEC, U),

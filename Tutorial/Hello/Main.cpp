@@ -3,11 +3,11 @@ extern "C" {
 #include "PrtDist.h"
 #include "hello.h"
 #include "Prt.h"
+extern void EnvInitialize();
+extern void EnvWait();
 }
 #include <string>
 
-/* Global variables */
-HANDLE terminationEvent;
 
 /* Stubs */
 std::wstring ConvertToUnicode(const char* str)
@@ -129,7 +129,7 @@ ExceptionHandler(
 	exit(-1);
 }
 
-PRT_VALUE *P_FUN_Hello_Continue_FOREIGN(PRT_MACHINEINST *context)
+PRT_VALUE *P_FUN_Continue_FOREIGN(PRT_MACHINEINST *context)
 {
 	char input[2];
 	while (true)
@@ -154,18 +154,12 @@ PRT_VALUE *P_FUN_Hello_Continue_FOREIGN(PRT_MACHINEINST *context)
 	}
 }
 
-PRT_VALUE *P_FUN_Hello_StopProgram_FOREIGN(PRT_MACHINEINST *context)
-{
-	SetEvent(terminationEvent);
-	return NULL;
-}
-
 int main(int argc, char *argv[])
 {
 	PRT_PROCESS* ContainerProcess;
 	PRT_GUID processGuid;
 
-	terminationEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	EnvInitialize();
 	PrtInitialize(&P_GEND_PROGRAM);
     processGuid.data1 = 1;
     processGuid.data2 = 1; //nodeId
@@ -176,11 +170,7 @@ int main(int argc, char *argv[])
 	PRT_VALUE* payload = PrtMkNullValue();
     PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Hello, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
-	
-	WaitForSingleObject(terminationEvent, INFINITE);
 
-	PrtHaltMachine((PRT_MACHINEINST_PRIV*)machine);
 	PrtStopProcess(ContainerProcess);
-	
     return 0;
 }

@@ -91,7 +91,6 @@
 			 keywords.Add("start", (int)PTokens.START);
 			 keywords.Add("hot", (int)PTokens.HOT);
 			 keywords.Add("cold", (int)PTokens.COLD);
-			 keywords.Add("model", (int)PTokens.MODEL);
 			 keywords.Add("fun", (int)PTokens.FUN);
 			 keywords.Add("action", (int)PTokens.ACTION);
 			 keywords.Add("state", (int)PTokens.STATE);

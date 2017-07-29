@@ -3,11 +3,11 @@ extern "C" {
 #include "PrtDist.h"
 #include "PingPong.h"
 #include "Prt.h"
+extern void EnvInitialize();
+extern void EnvWait();
 }
 #include <string>
 
-/* Global variables */
-HANDLE terminationEvent;
 
 /* Stubs */
 std::wstring ConvertToUnicode(const char* str)
@@ -128,18 +128,12 @@ ExceptionHandler(
 	exit(-1);
 }
 
-PRT_VALUE *P_FUN_Client_StopProgram_FOREIGN(PRT_MACHINEINST *context)
-{
-	SetEvent(terminationEvent);
-	return NULL;
-}
-
 int main(int argc, char *argv[])
 {
 	PRT_PROCESS* ContainerProcess;
 	PRT_GUID processGuid;
 
-	terminationEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	EnvInitialize();
 	PrtInitialize(&P_GEND_PROGRAM);
     processGuid.data1 = 1;
     processGuid.data2 = 1; //nodeId
@@ -159,9 +153,7 @@ int main(int argc, char *argv[])
     PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
 	
-	WaitForSingleObject(terminationEvent, INFINITE);
-
-	PrtHaltMachine((PRT_MACHINEINST_PRIV*)machine);
+	EnvWait();
 	PrtStopProcess(ContainerProcess);
 	
     return 0;

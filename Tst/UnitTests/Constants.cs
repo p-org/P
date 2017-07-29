@@ -47,6 +47,6 @@ namespace UnitTests
 
         internal static string TestDirectory => Path.Combine(SolutionDirectory, TestDirectoryName);
 
-        internal static bool ShouldFreezeTests => Properties.Settings.Default.ShouldFreezeTests;
+        internal static bool Reset => Properties.Settings.Default.Reset;
     }
 }

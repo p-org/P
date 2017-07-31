@@ -57,6 +57,34 @@ static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeUInt32(_In_ PRT_UINT32 value)
 	return code;
 }
 
+static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodePrtInt(_In_ PRT_INT value)
+{
+	if (sizeof(PRT_INT) == 4)
+	{
+		return PrtGetHashCodeUInt32((PRT_UINT32)value);
+	}
+	else
+	{
+		return PrtGetHashCodeUInt32((PRT_UINT32)value) ^ PrtGetHashCodeUInt32((PRT_UINT32)value >> 32);
+	}
+}
+
+static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodePrtFloat(_In_ PRT_FLOAT value)
+{
+	if (value == 0) {
+		// Ensure that 0 and -0 have the same hash code 
+		return 0;
+	}
+	if (sizeof(PRT_FLOAT) == 4)
+	{
+		return PrtGetHashCodeUInt32((PRT_UINT32)value);
+	}
+	else
+	{
+		return PrtGetHashCodeUInt32((PRT_UINT32)value) ^ PrtGetHashCodeUInt32((PRT_UINT32)value >> 32);
+	}
+}
+
 static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeTwoUInt32(_In_ PRT_UINT32 value1, _In_ PRT_UINT32 value2)
 {
 	PRT_UINT32 i;
@@ -508,7 +536,7 @@ void PRT_CALL_CONV PrtSeqUpdateEx(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index,
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
-	PrtAssert(0 <= index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt <= seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(0 <= (PRT_UINT32)index->valueUnion.nt && (PRT_UINT32)index->valueUnion.nt <= seq->valueUnion.seq->size, "Invalid index");
 
 	if ((PRT_UINT32)index->valueUnion.nt == seq->valueUnion.seq->size)
 	{
@@ -532,7 +560,7 @@ void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_INT i
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
-	PrtAssert(0 <= index && index <= seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(0 <= index && (PRT_UINT32)index <= seq->valueUnion.seq->size, "Invalid index");
 
 	PRT_VALUE *clone;
 	clone = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
@@ -1077,7 +1105,9 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 	case PRT_VALUE_KIND_MID:
 		return PrtGetHashCodeUInt32(0x01000000 ^ PrtGetHashCodeMachineId(*inputValue->valueUnion.mid));
 	case PRT_VALUE_KIND_INT:
-		return PrtGetHashCodeUInt32(0x02000000 ^ ((PRT_UINT32)inputValue->valueUnion.nt));
+		return PrtGetHashCodePrtInt(0x02000000 ^ ((PRT_INT)inputValue->valueUnion.nt));
+	case PRT_VALUE_KIND_FLOAT:
+		return PrtGetHashCodePrtFloat((inputValue->valueUnion.ft));
 	case PRT_VALUE_KIND_FOREIGN:
 	{
 		return 0x08000000 ^ prtForeignTypeDecls[inputValue->valueUnion.frgn->typeTag]->hashFun(inputValue->valueUnion.frgn->value);
@@ -1204,6 +1234,9 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 	case PRT_VALUE_KIND_INT:
 		return
 			value1->valueUnion.nt == value2->valueUnion.nt ? PRT_TRUE : PRT_FALSE;
+	case PRT_VALUE_KIND_FLOAT:
+		return
+			value1->valueUnion.ft == value2->valueUnion.ft ? PRT_TRUE : PRT_FALSE;
 	case PRT_VALUE_KIND_FOREIGN:
 	{
 		PRT_FOREIGNVALUE *fVal1 = value1->valueUnion.frgn;
@@ -1298,6 +1331,8 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 		return PrtMkMachineValue(*value->valueUnion.mid);
 	case PRT_VALUE_KIND_INT:
 		return PrtMkIntValue(value->valueUnion.nt);
+	case PRT_VALUE_KIND_FLOAT:
+		return PrtMkFloatValue(value->valueUnion.ft);
 	case PRT_VALUE_KIND_FOREIGN:
 	{
 		PRT_VALUE *retVal = (PRT_VALUE *)PrtMalloc(sizeof(PRT_VALUE));
@@ -1404,6 +1439,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 	}
 	case PRT_VALUE_KIND_BOOL:
 	case PRT_VALUE_KIND_INT:
+	case PRT_VALUE_KIND_FLOAT:
 	case PRT_VALUE_KIND_FOREIGN:
 	case PRT_VALUE_KIND_MAP:
 	case PRT_VALUE_KIND_TUPLE:
@@ -1417,9 +1453,20 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 
 PRT_VALUE * PRT_CALL_CONV PrtConvertValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *type)
 {
-	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
-	PrtAssert(PrtIsValidType(type), "Invalid type expression.");
-	PrtAssert(PrtInhabitsType(value, type), "Invalid type cast");
+	PrtAssert(
+		value->discriminator == PRT_VALUE_KIND_FLOAT 
+		|| value->discriminator == PRT_VALUE_KIND_INT 
+		|| value->discriminator == PRT_VALUE_KIND_MID, "Invalid value expression.");
+	PrtAssert(
+		type->typeKind == PRT_KIND_INT
+		|| type->typeKind == PRT_KIND_FLOAT
+		|| type->typeKind == PRT_KIND_MACHINE, "Invalid type expression.");
+	
+	switch (type->typeKind)
+	{
+	case PRT_KIND_MACHINE:
+		return value;
+	}
 	return value;
 }
 
@@ -1571,6 +1618,7 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 	case PRT_VALUE_KIND_BOOL:
 	case PRT_VALUE_KIND_EVENT:
 	case PRT_VALUE_KIND_INT:
+	case PRT_VALUE_KIND_FLOAT:
 	case PRT_VALUE_KIND_NULL:
 	{
 		PrtFree(value);

@@ -39,11 +39,32 @@ static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_
 	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%llu", i);
 }
 
+static void PrtUserPrintFloat(_In_ PRT_FLOAT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	if (sizeof(PRT_FLOAT) == 4)
+	{
+		PRT_UINT32 written = *numCharsWritten;
+		ResizeBuffer(buffer, bufferSize, written, 32);
+		*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%f", i);
+	}
+	else
+	{
+		PRT_UINT32 written = *numCharsWritten;
+		ResizeBuffer(buffer, bufferSize, written, 64);
+		*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%lf", (double)i);
+	}
+}
+
 static void PrtUserPrintInt(_In_ PRT_INT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	PRT_UINT32 written = *numCharsWritten;
-	ResizeBuffer(buffer, bufferSize, written, 32);
-	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%lld", i);
+	if (sizeof(PRT_INT) == 4)
+	{
+		PrtUserPrintUint32(i, buffer, bufferSize, numCharsWritten);
+	}
+	else
+	{
+		PrtUserPrintUint64(i, buffer, bufferSize, numCharsWritten);
+	}
 }
 
 static void PrtUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
@@ -90,6 +111,9 @@ static void PrtUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_
 		break;
 	case PRT_KIND_INT:
 		PrtUserPrintString("int", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_FLOAT:
+		PrtUserPrintString("float", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_KIND_FOREIGN:
 		PrtUserPrintString("foreign", buffer, bufferSize, numCharsWritten);
@@ -180,6 +204,9 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 		break;
 	case PRT_VALUE_KIND_INT:
 		PrtUserPrintInt(PrtPrimGetInt(value), buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_VALUE_KIND_FLOAT:
+		PrtUserPrintFloat(PrtPrimGetFloat(value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALUE_KIND_EVENT:
 		PrtUserPrintString("<", buffer, bufferSize, numCharsWritten);

@@ -747,7 +747,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	ConstExpr ::= (e: in.Expr).
 	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Integer.
 	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Boolean.
-	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Float.
+	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: in.Float.
 	ConstExpr(in.Name(n, NIL)) :- EnumTypeElemIndex(_, StringList(n, _), _, _, _).
 
 	ConstId      ::= (id: Natural, const: in.Expr).
@@ -756,7 +756,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Base types
 	BaseConstant2Kind ::= (const: in.Expr, kind: String, value: out.Expr).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = in.NulApp(n, _), n: Integer.
-	BaseConstant2Kind(e, "PRT_VALUE_KIND_FLOAT", RealLit(n, DEC, U)) :- ConstExpr(e), e = in.NulApp(Float(n), _), n: Real.
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_FLOAT", RealLit(n, 20, DEC, F)) :- ConstExpr(e), e = in.NulApp(Float(n), _), n: Real.
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = in.NulApp(FALSE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = in.NulApp(TRUE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = in.Name(name, _), EnumTypeElemIndex(d, StringList(name, _), _, _, _),
@@ -1524,6 +1524,10 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.NulApp(HALT, _),
 									ec = out.UnApp(ADDR, Ident("P_GEND_VALUE_EVENT_HALT")). 
+	
+	GetFunctionIden ::= (type: in.TypeExpr, iden: Ident).
+	GetFunctionIden(in.BaseType(INT), Ident("PrtPrimGetInt")).
+	GetFunctionIden(in.BaseType(FLOAT), Ident("PrtPrimGetFloat")).
 
 	//// Unary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
@@ -1532,9 +1536,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(UnApp(LNOT, getBool), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-							        e = in.UnApp(NEG, e1, _), RhsEvalOrder(s, i, e1, tmp1),
+							        e = in.UnApp(NEG, e1, _), RhsEvalOrder(s, i, e1, tmp1), in.TypeOf(c, e, BaseType(INT)), 
 									getInt = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
 									ec = out.FunApp(Ident("PrtMkIntValue"), Args(UnApp(NEG, getInt), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.UnApp(NEG, e1, _), RhsEvalOrder(s, i, e1, tmp1), in.TypeOf(c, e, BaseType(FLOAT)),
+									getFloat = out.FunApp(Ident("PrtPrimGetFloat"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									ec = out.FunApp(Ident("PrtMkFloatValue"), Args(UnApp(NEG, getFloat), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.UnApp(KEYS, e1, _), RhsEvalOrder(s, i, e1, tmp1),
@@ -2053,7 +2062,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.NamedTuple.
 	DoFree(e, b) :- SubSE(_, e), e = in.Field(e', _, _), DoFree(e', b).
 	DoFree(e, FALSE) :- SubSE(_, e), e = in.Cast(_, _, _).
-	DoFree(e, FALSE) :- SubSE(_, e), e = in.Convert(_, _, _).
+	DoFree(e, TRUE) :- SubSE(_, e), e = in.Convert(_, _, _).
 
     /*************************************************************/
     /******            Expression dependencies              ******/

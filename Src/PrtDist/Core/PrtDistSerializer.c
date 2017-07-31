@@ -56,6 +56,7 @@ PrtDistSerializeValue(
 	case PRT_VALUE_KIND_EVENT:
 	case PRT_VALUE_KIND_MID:
 	case PRT_VALUE_KIND_INT:
+	case PRT_VALUE_KIND_FLOAT:
 		return PrtCloneValue(value);
 	case PRT_VALUE_KIND_FOREIGN:
 	{
@@ -154,6 +155,7 @@ PrtDistDeserializeValue(
 	case PRT_VALUE_KIND_EVENT:
 	case PRT_VALUE_KIND_MID:
 	case PRT_VALUE_KIND_INT:
+	case PRT_VALUE_KIND_FLOAT:
 		return PrtCloneValue(value);
 	case PRT_VALUE_KIND_FOREIGN:
 	{

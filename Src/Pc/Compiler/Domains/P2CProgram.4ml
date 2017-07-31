@@ -747,6 +747,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	ConstExpr ::= (e: in.Expr).
 	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Integer.
 	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Boolean.
+	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Float.
 	ConstExpr(in.Name(n, NIL)) :- EnumTypeElemIndex(_, StringList(n, _), _, _, _).
 
 	ConstId      ::= (id: Natural, const: in.Expr).
@@ -755,6 +756,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Base types
 	BaseConstant2Kind ::= (const: in.Expr, kind: String, value: out.Expr).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = in.NulApp(n, _), n: Integer.
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_FLOAT", RealLit(n, DEC, U)) :- ConstExpr(e), e = in.NulApp(Float(n), _), n: Real.
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = in.NulApp(FALSE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = in.NulApp(TRUE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = in.Name(name, _), EnumTypeElemIndex(d, StringList(name, _), _, _, _),
@@ -1489,7 +1491,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Nullary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.NulApp(n, _), n : Integer,
-									ConstId(m, in.NulApp(n, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+									ConstId(m, in.NulApp(n, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
+									
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.NulApp(Float(n), _), n : Real,
+									ConstId(m, in.NulApp(Float(n), NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.NulApp(FALSE, _), 
@@ -1669,6 +1675,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 									e = in.Cast(arg, type, _), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
 									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
 									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
+									e = in.Convert(arg, type, _), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
+									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									ec = out.FunApp(Ident("PrtConvertValue"), Args(getArg, Args(expr, NIL))).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.Tuple(es, _), in.TypeOf(c, e, type), TypeToExpr(type, expr),
@@ -2042,6 +2053,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	DoFree(e, TRUE) :- SubSE(_, e), e: in.NamedTuple.
 	DoFree(e, b) :- SubSE(_, e), e = in.Field(e', _, _), DoFree(e', b).
 	DoFree(e, FALSE) :- SubSE(_, e), e = in.Cast(_, _, _).
+	DoFree(e, FALSE) :- SubSE(_, e), e = in.Convert(_, _, _).
 
     /*************************************************************/
     /******            Expression dependencies              ******/
@@ -2063,7 +2075,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// These expressions have one depenency.
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.UnApp(_, e', _), ExprDepNum(j, e'), i = j + 1. 
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.Field(e', _, _), ExprDepNum(j, e'), i = j + 1. 
-	ExprDepNum(i, e) :- SubSE(_, e), e = in.Cast(e', _, _), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Cast(e', _, _), ExprDepNum(j, e'), i = j + 1.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Convert(e', _, _), ExprDepNum(j, e'), i = j + 1.
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.Tuple(e', _), ExprDepNum(j, e'), i = j + 1. 
 	ExprDepNum(i, e) :- SubSE(_, e), e = in.NamedTuple(e', _), ExprDepNum(j, e'), i = j + 1. 
 
@@ -2159,6 +2172,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e', _).
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Field(e', _, _).
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Cast(e', _, _).
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Convert(e', _, _).
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Tuple(e', _).
 	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.NamedTuple(e', _).
 	

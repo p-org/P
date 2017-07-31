@@ -623,7 +623,7 @@ namespace Microsoft.Pc
                     var num = GetArgByIndex((FuncTerm)n, 0);
                     var val = ((Cnst)num).GetNumericValue();
                     return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtFloatValue"),
-                                                                         CSharpHelper.MkCSharpNumericLiteralExpression((Int64)val.Numerator / (Int64)val.Denominator));
+                                                                         CSharpHelper.MkCSharpNumericLiteralExpression((double)val.Numerator / (double)val.Denominator));
                 }
 
                 // n.NodeKind == NodeKind.Id
@@ -678,11 +678,21 @@ namespace Microsoft.Pc
 
                     if (op == PData.Cnst_Neg.Node.Name)
                     {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
+                        var negType = LookupType(ft);
+                        var typeOp = ((Id)GetArgByIndex(negType, 0)).Name;
+                        if (typeOp == PData.Cnst_Int.Node.Name)
+                        {
+                            return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtIntValue"),
                             SyntaxFactory.PrefixUnaryExpression(SyntaxKind.UnaryMinusExpression, CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg), "nt")));
+                        }
+                        else
+                        {
+                            return CSharpHelper.MkCSharpObjectCreationExpression(
+                            SyntaxFactory.IdentifierName("PrtFloatValue"),
+                            SyntaxFactory.PrefixUnaryExpression(SyntaxKind.UnaryMinusExpression, CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg), "ft")));
+                        }
                     }
-
                     if (op == PData.Cnst_Keys.Node.Name)
                     {
                         return CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", arg), "Keys"));
@@ -709,46 +719,59 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var arg2 = (ExpressionSyntax)it.Current;
 
+                    ExpressionSyntax arg1Val, arg2Val;
+                    IdentifierNameSyntax returnType = null;
+                    var argType = LookupType(ft);
+
+                    var typeRet = ((Id)GetArgByIndex(argType, 0)).Name;
+                    if (typeRet == PData.Cnst_Int.Node.Name)
+                    {
+                        arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                        arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        returnType = SyntaxFactory.IdentifierName("PrtIntValue");
+                    }
+                    else
+                    {
+                        arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg1), "ft");
+                        arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg2), "ft");
+                        returnType = SyntaxFactory.IdentifierName("PrtFloatValue");
+                    }
+                    
                     if (op == PData.Cnst_Add.Node.Name)
                     {
-                        var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                       
                         return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtIntValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.AddExpression, arg1Int, arg2Int));
+                            returnType,
+                            SyntaxFactory.BinaryExpression(SyntaxKind.AddExpression, arg1Val, arg2Val));
                     }
 
                     if (op == PData.Cnst_Sub.Node.Name)
                     {
-                        var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
                         return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtIntValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.SubtractExpression, arg1Int, arg2Int));
+                            returnType,
+                            SyntaxFactory.BinaryExpression(SyntaxKind.SubtractExpression, arg1Val, arg2Val));
                     }
 
                     if (op == PData.Cnst_Mul.Node.Name)
                     {
-                        var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
                         return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtIntValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.MultiplyExpression, arg1Int, arg2Int));
+                            returnType,
+                            SyntaxFactory.BinaryExpression(SyntaxKind.MultiplyExpression, arg1Val, arg2Val));
                     }
 
                     if (op == PData.Cnst_IntDiv.Node.Name)
                     {
-                        var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
                         return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtIntValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.DivideExpression, arg1Int, arg2Int));
+                            returnType,
+                            SyntaxFactory.BinaryExpression(SyntaxKind.DivideExpression, arg1Val, arg2Val));
                     }
 
+                    //Boolean operations
+                    var arg1Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
+                    var arg2Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
                     if (op == PData.Cnst_And.Node.Name)
                     {
-                        var arg1Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
-                        var arg2Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
+                        
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.LogicalAndExpression, arg1Bool, arg2Bool));
@@ -756,8 +779,6 @@ namespace Microsoft.Pc
 
                     if (op == PData.Cnst_Or.Node.Name)
                     {
-                        var arg1Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
-                        var arg2Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
                             SyntaxFactory.BinaryExpression(SyntaxKind.LogicalOrExpression, arg1Bool, arg2Bool));
@@ -779,38 +800,31 @@ namespace Microsoft.Pc
 
                     if (op == PData.Cnst_Lt.Node.Name)
                     {
-                        var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                        
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.LessThanExpression, arg1Int, arg2Int));
+                            SyntaxFactory.BinaryExpression(SyntaxKind.LessThanExpression, arg1Val, arg2Val));
                     }
 
                     if (op == PData.Cnst_Le.Node.Name)
                     {
-                        var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.LessThanOrEqualExpression, arg1Int, arg2Int));
+                            SyntaxFactory.BinaryExpression(SyntaxKind.LessThanOrEqualExpression, arg1Val, arg2Val));
                     }
 
                     if (op == PData.Cnst_Gt.Node.Name)
                     {
-                        var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.GreaterThanExpression, arg1Int, arg2Int));
+                            SyntaxFactory.BinaryExpression(SyntaxKind.GreaterThanExpression, arg1Val, arg2Val));
                     }
 
                     if (op == PData.Cnst_Ge.Node.Name)
                     {
-                        var arg1Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        var arg2Int = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, arg1Int, arg2Int));
+                            SyntaxFactory.BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, arg1Val, arg2Val));
                     }
 
                     if (op == PData.Cnst_Idx.Node.Name)

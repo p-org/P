@@ -575,6 +575,15 @@ extern "C"{
 	*/
 	PRT_API PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE* value, _In_ PRT_TYPE *type);
 
+	/** Converts value to type.
+	* Caller must know that type convert will succeed.
+	* Method checks validity of type conversion and causes an assertion failure if the case is invalid.
+	* @param[in] value The value to convert (will be cloned).
+	* @param[in] type  The type to convert (will be cloned).
+	* @returns A converted value that is a subtype of type. Caller is responsible for freeing.
+	*/
+	PRT_API PRT_VALUE * PRT_CALL_CONV PrtConvertValue(_In_ PRT_VALUE* value, _In_ PRT_TYPE *type);
+
 	/** Returns a hash of this value.
 	* @param[in] value The value to hash.
 	* @returns The hash code.

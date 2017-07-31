@@ -1415,6 +1415,14 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsNullValue(_In_ PRT_VALUE *value)
 	}
 }
 
+PRT_VALUE * PRT_CALL_CONV PrtConvertValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *type)
+{
+	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
+	PrtAssert(PrtIsValidType(type), "Invalid type expression.");
+	PrtAssert(PrtInhabitsType(value, type), "Invalid type cast");
+	return value;
+}
+
 PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *type)
 {
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
@@ -1447,19 +1455,9 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	case PRT_KIND_MACHINE:
 		return (vkind == PRT_VALUE_KIND_MID || PrtIsNullValue(value)) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_INT:
-		if (vkind == PRT_VALUE_KIND_FLOAT)
-		{
-			value->discriminator = PRT_VALUE_KIND_INT;
-			value->valueUnion.nt = (PRT_INT) value->valueUnion.ft;
-		}
-		return (vkind == PRT_VALUE_KIND_INT || vkind == PRT_VALUE_KIND_FLOAT) ? PRT_TRUE : PRT_FALSE;
+		return vkind == PRT_VALUE_KIND_INT ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FLOAT:
-		if (vkind == PRT_VALUE_KIND_INT)
-		{
-			value->discriminator = PRT_VALUE_KIND_FLOAT;
-			value->valueUnion.ft = (PRT_FLOAT)value->valueUnion.nt;
-		}
-		return (vkind == PRT_VALUE_KIND_INT || vkind == PRT_VALUE_KIND_FLOAT) ? PRT_TRUE : PRT_FALSE;
+		return vkind == PRT_VALUE_KIND_FLOAT ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_FOREIGN:
 		return (vkind == PRT_VALUE_KIND_FOREIGN && value->valueUnion.frgn->typeTag == type->typeUnion.foreignType->declIndex) ? PRT_TRUE : PRT_FALSE;
 	case PRT_KIND_MAP:

@@ -610,17 +610,22 @@ namespace Microsoft.Pc
                 if (n.NodeKind == NodeKind.Cnst)
                 {
                     var val = ((Cnst)n).GetNumericValue();
-                    if (val.IsInteger)
-                    {
+                    
                         return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtIntValue"),
                                                                          CSharpHelper.MkCSharpNumericLiteralExpression((Int64)val.Numerator));
-                    }
-                    else
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtFloatValue"),
-                                                                         CSharpHelper.MkCSharpNumericLiteralExpression((Int64)val.Numerator/(Int64)val.Denominator));
-                    }
+                    
+                        
                 }
+
+                //is float
+                if (((Id)((FuncTerm)n).Function).Name == PData.Cnst_Float.Node.Name)
+                {
+                    var num = GetArgByIndex((FuncTerm)n, 0);
+                    var val = ((Cnst)num).GetNumericValue();
+                    return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtFloatValue"),
+                                                                         CSharpHelper.MkCSharpNumericLiteralExpression((Int64)val.Numerator / (Int64)val.Denominator));
+                }
+
                 // n.NodeKind == NodeKind.Id
                 var op = ((Id)n).Name;
                 if (op == PData.Cnst_True.Node.Name)

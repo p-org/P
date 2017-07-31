@@ -17,6 +17,7 @@ domain PData
 	DependsOn ::= new (thisUnitName: String, thatUnitName: String + { NIL }).
 	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
 	Id ::= { NIL } + Integer + String + IdList.
+	Float ::= new (val: Real).
 
     /*************************************************************/
     /****************          Type Language          ************/
@@ -48,7 +49,7 @@ domain PData
     Name       ::= new (name: String, id: any Id).
     New        ::= new (name: String, args: any Exprs + { NIL }, id: any Id).
     FunApp     ::= new (name: String, args: any Exprs + { NIL }, label: Natural, id: any Id).
-    NulApp     ::= new (op: Integer + Boolean + Real + { THIS, NONDET, FAIRNONDET, NULL, HALT }, id: any Id).
+    NulApp     ::= new (op: Integer + Boolean + Float + { THIS, NONDET, FAIRNONDET, NULL, HALT }, id: any Id).
     UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr, id: any Id).
     BinApp     ::= new (op: { ADD, SUB, MUL, DIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr, id: any Id).
     Field      ::= new (arg: any Expr, name: String + Natural, id: any Id).
@@ -702,7 +703,7 @@ domain PStaticTyping extends PData, PError
 	    
     TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v, _), v : Integer.
     TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v, _), v : Boolean.
-	TypeOf(c, e, BaseType(FLOAT))  :- SubSE(c, e), e = NulApp(v, _), v : Real, rflIsMember(v, #Integer) = FALSE.
+	TypeOf(c, e, BaseType(FLOAT))  :- SubSE(c, e), e = NulApp(v, _), v : Float.
     
     //// (2) The types of unary expressions
     TypeOf(c, e, et)              :- SubSE(c, e), e = Default(t, _), TypeExpansion(t, et). 
@@ -778,10 +779,8 @@ domain PStaticTyping extends PData, PError
 									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, NotSubsetInterfaces(t2', t1).
 	
 	ERROR1(e.id, "convert can never succeed"),
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), TypeRel(t1, BaseType(FLOAT), k), k = EMPTY;
-									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), TypeRel(t1, BaseType(INT), k), k = EMPTY;
-									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(FLOAT), TypeRel(t1, BaseType(FLOAT), k), k = EMPTY;
-									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(FLOAT), TypeRel(t1, BaseType(INT), k), k = EMPTY.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType;
+									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), t1 != BaseType(INT), t1 != BaseType(FLOAT).
 	
 	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2').
 									  								  
@@ -999,6 +998,7 @@ domain PStaticTyping extends PData, PError
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': BinApp, e = e'.arg2.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Field, e = e'.arg.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Cast, e = e'.arg.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Convert, e = e'.arg.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Tuple, e = e'.body.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': NamedTuple, e = e'.body.
 	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Exprs, e = e'.head.
@@ -1298,6 +1298,7 @@ domain PStaticTyping extends PData, PError
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunApp(_, e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnApp(_, e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Cast(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Convert(e1, _, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Tuple(e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedTuple(e1, _), TypeOf(c, e1, t1).
 	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1, _, _), ExprsToPayloadType(c, e1, t1).
@@ -1642,7 +1643,8 @@ domain PStaticTyping extends PData, PError
        SubSE0(c, e), e = BinApp(_, e', _, _),     ImpureFunApp(c, e');
        SubSE0(c, e), e = BinApp(_, _, e', _),     ImpureFunApp(c, e');    
        SubSE0(c, e), e = Field(e', _, _),         ImpureFunApp(c, e');
-       SubSE0(c, e), e = Cast(e', _, _),          ImpureFunApp(c, e');    
+       SubSE0(c, e), e = Cast(e', _, _),          ImpureFunApp(c, e');
+	   SubSE0(c, e), e = Convert(e', _, _),       ImpureFunApp(c, e');
        SubSE0(c, e), e = Exprs(_, e', _),         ImpureFunApp(c, e');              
        SubSE0(c, e), e = NamedExprs(_, e', _),    ImpureFunApp(c, e');
        SubSE0(c, e), e = Raise(e', _, _),         ImpureFunApp(c, e');
@@ -1661,7 +1663,8 @@ domain PStaticTyping extends PData, PError
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' : New;
        SubSE0(c, e), e = BinApp(_, _, e', _),     e' : New;    
        SubSE0(c, e), e = Field(e', _, _),         e' : New;
-       SubSE0(c, e), e = Cast(e', _, _),          e' : New;    
+       SubSE0(c, e), e = Cast(e', _, _),          e' : New;
+	   SubSE0(c, e), e = Convert(e', _, _),       e' : New;
        SubSE0(c, e), e = Exprs(_, e', _),         e' : New;              
        SubSE0(c, e), e = NamedExprs(_, e', _),    e' : New;
 	   SubSE0(c, e), e = Raise(e', _, _),         e' : New;
@@ -1678,7 +1681,8 @@ domain PStaticTyping extends PData, PError
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(NONDET, _);
        SubSE0(c, e), e = BinApp(_, _, e', _),     e' = NulApp(NONDET, _);    
        SubSE0(c, e), e = Field(e', _, _),         e' = NulApp(NONDET, _);
-       SubSE0(c, e), e = Cast(e', _, _),          e' = NulApp(NONDET, _);    
+       SubSE0(c, e), e = Cast(e', _, _),          e' = NulApp(NONDET, _);
+	   SubSE0(c, e), e = Convert(e', _, _),          e' = NulApp(NONDET, _);
        SubSE0(c, e), e = Exprs(_, e', _),         e' = NulApp(NONDET, _);              
        SubSE0(c, e), e = NamedExprs(_, e', _),    e' = NulApp(NONDET, _);
        SubSE0(c, e), e = Raise(e', _, _),         e' = NulApp(NONDET, _);
@@ -1694,7 +1698,8 @@ domain PStaticTyping extends PData, PError
        SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = BinApp(_, _, e', _),     e' = NulApp(FAIRNONDET, _);    
        SubSE0(c, e), e = Field(e', _, _),         e' = NulApp(FAIRNONDET, _);
-       SubSE0(c, e), e = Cast(e', _, _),          e' = NulApp(FAIRNONDET, _);    
+       SubSE0(c, e), e = Cast(e', _, _),          e' = NulApp(FAIRNONDET, _);
+	   SubSE0(c, e), e = Convert(e', _, _),          e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Exprs(_, e', _),         e' = NulApp(FAIRNONDET, _);              
        SubSE0(c, e), e = NamedExprs(_, e', _),    e' = NulApp(FAIRNONDET, _);
        SubSE0(c, e), e = Raise(e', _, _),         e' = NulApp(FAIRNONDET, _);
@@ -1715,6 +1720,7 @@ domain PStaticTyping extends PData, PError
     CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = NmdTupType(lfa, ra), tb = NmdTupType(lfb, rb), la = lfa.type, lb = lfb.type.
     
 	CompTypeRel(t1, t2')      :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2').
+	CompTypeRel(t1, t2')      :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2').
 	CompTypeRel(t2, et2')     :- TypeOfArg2(c, e, t1, t2), e = NewStmt(n, _, _, _), TypeExpansion(NameType(n), et2').
 	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PolyRel.
 	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, cod).

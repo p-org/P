@@ -935,7 +935,7 @@
                 parseFlags.Add(errFlag);
             }
 
-            var nulExpr = P_Root.MkNulApp(MkNumeric(val, span));
+            var nulExpr = P_Root.MkNulApp(P_Root.MkFloat(MkNumeric(val, span)));
             nulExpr.Span = span;
             nulExpr.id = (P_Root.IArgType_NulApp__1)MkUniqueId(span);
             valueExprStack.Push(nulExpr);
@@ -956,7 +956,7 @@
                 parseFlags.Add(errFlag);
             }
 
-            var nulExpr = P_Root.MkNulApp(MkNumeric(val, span));
+            var nulExpr = P_Root.MkNulApp(P_Root.MkFloat(MkNumeric(val, span)));
             nulExpr.Span = span;
             nulExpr.id = (P_Root.IArgType_NulApp__1)MkUniqueId(span);
             valueExprStack.Push(nulExpr);

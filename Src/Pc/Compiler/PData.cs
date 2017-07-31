@@ -44,7 +44,7 @@
         public static readonly AST<Id> Cnst_Remove = Factory.Instance.MkId("REMOVE");
         public static readonly AST<Id> Cnst_Update = Factory.Instance.MkId("UPDATE");
         public static readonly AST<Id> Cnst_Assign = Factory.Instance.MkId("ASSIGN");
-
+        public static readonly AST<Id> Cnst_Float = Factory.Instance.MkId("Float");
         /// <summary>
         /// Expressions
         /// </summary>
@@ -61,6 +61,7 @@
         public static readonly AST<Id> Con_Default = Factory.Instance.MkId("Default");
         public static readonly AST<Id> Con_Cast = Factory.Instance.MkId("Cast");
         public static readonly AST<Id> Con_Convert = Factory.Instance.MkId("Convert");
+        
         public static readonly AST<Id> Con_Tuple = Factory.Instance.MkId("Tuple");
         public static readonly AST<Id> Con_NamedTuple = Factory.Instance.MkId("NamedTuple");
 

@@ -24,6 +24,10 @@ namespace P.Runtime
             {
                 return new PrtIntValue();
             }
+            else if (type is PrtFloatType)
+            {
+                return new PrtFloatValue();
+            }
             else if (type is PrtEnumType)
             {
                 PrtEnumType enumType = type as PrtEnumType;
@@ -300,9 +304,9 @@ namespace P.Runtime
 
         public override bool Equals(object val)
         {
-            var intVal = val as PrtIntValue;
-            if (intVal == null) return false;
-            return this.ft == intVal.nt;
+            var ftVal = val as PrtFloatValue;
+            if (ftVal == null) return false;
+            return this.ft == ftVal.ft;
         }
 
         public override int GetHashCode()

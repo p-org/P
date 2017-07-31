@@ -210,7 +210,7 @@ namespace Microsoft.Pc
                         LhsStack.Pop();
                     }
                 }
-                else if (funName == PData.Con_Field.Node.Name || funName == PData.Con_Cast.Node.Name)
+                else if (funName == PData.Con_Field.Node.Name || funName == PData.Con_Cast.Node.Name || funName == PData.Con_Convert.Node.Name)
                 {
                     yield return ft.Args.First();
                 }
@@ -344,6 +344,11 @@ namespace Microsoft.Pc
                 if (funName == PData.Con_Cast.Node.Name)
                 {
                     return FoldCast(ft, children);
+                }
+
+                if (funName == PData.Con_Convert.Node.Name)
+                {
+                    return FoldConvert(ft, children);
                 }
 
                 if (funName == PData.Con_Tuple.Node.Name)
@@ -895,6 +900,23 @@ namespace Microsoft.Pc
                             SyntaxKind.SimpleMemberAccessExpression,
                             SyntaxFactory.IdentifierName("PrtValue"),
                             SyntaxFactory.IdentifierName("PrtCastValue")),
+                        (ExpressionSyntax)valueArg,
+                        pToCSharp.typeContext.PTypeToCSharpExpr(typeArg));
+                }
+            }
+
+            private SyntaxNode FoldConvert(FuncTerm ft, List<SyntaxNode> children)
+            {
+                var typeArg = (FuncTerm)GetArgByIndex(ft, 1);
+                using (var it = children.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var valueArg = it.Current;
+                    return CSharpHelper.MkCSharpInvocationExpression(
+                        SyntaxFactory.MemberAccessExpression(
+                            SyntaxKind.SimpleMemberAccessExpression,
+                            SyntaxFactory.IdentifierName("PrtValue"),
+                            SyntaxFactory.IdentifierName("PrtConvertValue")),
                         (ExpressionSyntax)valueArg,
                         pToCSharp.typeContext.PTypeToCSharpExpr(typeArg));
                 }

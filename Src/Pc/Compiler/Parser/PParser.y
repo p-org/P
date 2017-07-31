@@ -65,7 +65,7 @@ Annotation
 /******************* Type Declarations **********************/
 TypeDefDecl
 	: TYPE ID ASSIGN Type SEMICOLON			{ AddTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
-	| MODEL TYPE ID ASSIGN Type SEMICOLON   { AddModelTypeDef($3.str, ToSpan(@3), ToSpan(@1)); }
+	| TYPE ID SEMICOLON                     { AddForeignTypeDef($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 EnumTypeDefDecl
@@ -124,7 +124,7 @@ ConstTypeOrNone
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone Exports ReceivesSendsList LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@5), ToSpan(@7)); ResetProgramIgnore(); }
+	: ImplMachineNameDecl MachAnnotOrNone Exports ReceivesSendsList LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@5), ToSpan(@7)); }
 	;
 
 ImplMachineProtoDecl
@@ -159,12 +159,11 @@ ReceivesSendsList
 	;
 	
 SpecMachineDecl
-	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); ResetProgramIgnore(); } 
+	: SpecMachineNameDecl LCBRACE MachineBody RCBRACE	{ AddMachine(ToSpan(@1), ToSpan(@2), ToSpan(@4)); } 
 	;
 
 ImplMachineNameDecl
 	: MACHINE ID { SetMachine(P_Root.UserCnstKind.REAL, $2.str, ToSpan(@2), ToSpan(@1)); } MachCardOrNone
-	| MODEL { SetProgramIgnore(); } ID { SetMachine(P_Root.UserCnstKind.REAL, $3.str, ToSpan(@3), ToSpan(@1)); } MachCardOrNone
 	;
 
 SpecMachineNameDecl
@@ -235,7 +234,8 @@ PayloadNone
 
 /******************* Function Declarations *******************/
 FunDecl
-	: IsModel FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction(ToSpan(@1), ToSpan(@6), ToSpan(@8)); }
+	: FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone LCBRACE StmtBlock RCBRACE { AddFunction(ToSpan(@1), ToSpan(@5), ToSpan(@7)); }
+	| FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddForeignFunction(ToSpan(@1)); }
 	;
 
 FunProtoDecl
@@ -255,11 +255,6 @@ FunCreates
 	: CREATES CreatesList SEMICOLON					{ AddFunCreatesList(ToSpan(@1)); }
 	| CREATES SEMICOLON
 	|
-	;
-
-IsModel
-	: MODEL											{ SetFunKind(P_Root.UserCnstKind.MODEL, ToSpan(@1)); }
-	|												{ }
 	;
 
 FunAnnotOrNone
@@ -504,7 +499,8 @@ Exp_5
 	;
 
 Exp_4 
-	: Exp_4 AS Type { PushCast(ToSpan(@2)); }	
+	: Exp_4 AS Type { PushCast(ToSpan(@2)); }
+	| Exp_4 TO Type { PushConvert(ToSpan(@2)); }	
 	| Exp_3
 	;
 

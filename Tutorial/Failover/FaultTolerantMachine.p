@@ -54,15 +54,15 @@ receives eQueryStateResponse;
         }
     }
 
-    model fun PossiblyRaiseHalt()
+    fun PossiblyRaiseHalt()
     {
         receive {
-	        case halt: { raise halt; }
+	    case halt: { raise halt; }
             case null: { }
         }
     }
 }
-
+		       
 machine Service : IService
 {
     var i, j: int;

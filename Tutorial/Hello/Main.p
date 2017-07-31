@@ -33,14 +33,5 @@ machine Hello
       StopProgram();
     }
   }
-
-  model fun Continue() : bool
-  { 
-    return $;
-  }
-
-  model fun StopProgram()
-  {
-    
-  }
 }
+

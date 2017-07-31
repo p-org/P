@@ -88,7 +88,6 @@
             {
                 this.Profiler = new ConsoleProfiler(log);
             }
-            options.erase = options.compilerOutput == CompilerOutput.C;
             this.Log = log;
             this.Options = options;
             this.errorReporter = new ErrorReporter();
@@ -163,7 +162,6 @@
                                 ftName == "EventSet" ||
                                 ftName == "TypeDef" ||
                                 ftName == "EnumTypeDef" ||
-                                ftName == "ModelType" ||
                                 ftName == "InterfaceTypeDecl" ||
                                 ftName == "FunProtoDecl" ||
                                 ftName == "GlobalFunCreates" ||

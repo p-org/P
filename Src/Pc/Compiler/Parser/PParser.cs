@@ -974,6 +974,18 @@
             valueExprStack.Push(cast);
         }
 
+        private void PushConvert(Span span)
+        {
+            Contract.Assert(valueExprStack.Count > 0);
+            Contract.Assert(typeExprStack.Count > 0);
+            var convert = P_Root.MkConvert(
+                (P_Root.IArgType_Convert__0)valueExprStack.Pop(),
+                (P_Root.IArgType_Convert__1)typeExprStack.Pop());
+            convert.Span = span;
+            convert.id = (P_Root.IArgType_Convert__2)MkUniqueId(span);
+            valueExprStack.Push(convert);
+        }
+
         private void PushIte(bool hasElse, Span span)
         {
             Contract.Assert(valueExprStack.Count > 0);
@@ -1222,19 +1234,6 @@
 
         #endregion
 
-        public void SetProgramIgnore()
-        {
-            if (Options.erase)
-            {
-                parseProgram.IgnoreDecl = true;
-            }
-        }
-
-        public void ResetProgramIgnore()
-        {
-            parseProgram.IgnoreDecl = false;
-        }
-
         #region Node setters
         private void SetEventCard(string cardStr, bool isAssert, Span span)
         {
@@ -1444,15 +1443,6 @@
             machineProto.constType = (P_Root.IArgType_MachineProtoDecl__1)typeExprStack.Pop();
         }
 
-        private void SetFunKind(P_Root.UserCnstKind kind, Span span)
-        {
-            if (Options.erase)
-            {
-                var funDecl = GetCurrentFunDecl(span);
-                funDecl.kind = MkUserCnst(kind, span);
-            }
-        }
-
         private void SetFunName(string name, Span span)
         {
             if(isFunProtoDecl)
@@ -1500,7 +1490,7 @@
             {
                 Contract.Assert(typeExprStack.Count > 0);
                 var funDecl = GetCurrentFunDecl(span);
-                funDecl.@params = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
+                funDecl.@params = (P_Root.IArgType_FunDecl__2)typeExprStack.Pop();
                 localVarStack = new LocalVarStack(this, (P_Root.IArgType_NmdTupType__1)funDecl.@params);
             }
             
@@ -1518,26 +1508,23 @@
             {
                 Contract.Assert(typeExprStack.Count > 0);
                 var funDecl = GetCurrentFunDecl(span);
-                funDecl.@return = (P_Root.IArgType_FunDecl__4)typeExprStack.Pop();
+                funDecl.@return = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
             }
             
         }
         #endregion
 
         #region Adders
-        private void AddModelTypeDef(string name, Span nameSpan, Span typeDefSpan)
+        private void AddForeignTypeDef(string name, Span nameSpan, Span typeDefSpan)
         {
-            if (Options.erase)
+            if (IsValidName(PProgramTopDecl.TypeDef, name, nameSpan))
             {
-                var modelType = P_Root.MkModelType();
-                modelType.name = MkString(name, nameSpan);
-                modelType.id = (P_Root.IArgType_ModelType__1)MkUniqueId(nameSpan);
-                parseProgram.Add(modelType);
+                PPTopDeclNames.typeNames.Add(name);
             }
-            else
-            {
-                AddTypeDef(name, nameSpan, typeDefSpan);
-            }
+            var typeDef = P_Root.MkTypeDef(MkString(name, nameSpan), P_Root.MkUserCnst(P_Root.UserCnstKind.NIL));
+            typeDef.Span = typeDefSpan;
+            typeDef.id = (P_Root.IArgType_TypeDef__2)MkUniqueId(typeDefSpan);
+            parseProgram.Add(typeDef);
         }
 
         private void AddTypeDef(string name, Span nameSpan, Span typeDefSpan)
@@ -2314,12 +2301,42 @@
             funDecl.Span = span;
             funDecl.owner = isGlobal ? (P_Root.IArgType_FunDecl__1) MkUserCnst(P_Root.UserCnstKind.NIL, span) 
                                      : (P_Root.IArgType_FunDecl__1) GetCurrentMachineDecl(span).name;
-            funDecl.locals = (P_Root.IArgType_FunDecl__5)localVarStack.LocalVarDecl;
-            funDecl.body = (P_Root.IArgType_FunDecl__6)stmtStack.Pop();
-            funDecl.id = (P_Root.IArgType_FunDecl__7)MkUniqueId(entrySpan, exitSpan);
+            funDecl.locals = (P_Root.IArgType_FunDecl__4)localVarStack.LocalVarDecl;
+            funDecl.body = (P_Root.IArgType_FunDecl__5)stmtStack.Pop();
+            funDecl.id = (P_Root.IArgType_FunDecl__6)MkUniqueId(entrySpan, exitSpan);
             parseProgram.Add(funDecl);
             localVarStack = new LocalVarStack(this);
             crntFunDecl = null;
+        }
+
+        private void AddForeignFunction(Span span)
+        {
+            Contract.Assert(stmtStack.Count == 0);
+
+            if (crntMachDecl == null)
+            {
+                var funDecl = GetCurrentFunDecl(span);
+                funDecl.Span = span;
+                funDecl.owner = (P_Root.IArgType_FunDecl__1)MkUserCnst(P_Root.UserCnstKind.NIL, span);
+                funDecl.locals = (P_Root.IArgType_FunDecl__4)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                funDecl.body = (P_Root.IArgType_FunDecl__5)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+                funDecl.id = (P_Root.IArgType_FunDecl__6)MkUniqueId(span);
+                parseProgram.Add(funDecl);
+                localVarStack = new LocalVarStack(this);
+                crntFunDecl = null;
+            }
+            else
+            {
+                var errFlag = new Flag(
+                 SeverityKind.Error,
+                 span,
+                 Constants.BadSyntax.ToString("Foreign function not allowed inside a machine"),
+                 Constants.BadSyntax.Code,
+                 parseSource);
+                parseFailed = true;
+                parseFlags.Add(errFlag);
+                return;
+            }
         }
 
         private void AddFunProto(Span span)
@@ -2369,7 +2386,6 @@
             }
 
             crntFunDecl = P_Root.MkFunDecl();
-            crntFunDecl.kind = MkUserCnst(P_Root.UserCnstKind.REAL, span);
             crntFunDecl.@params = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             crntFunDecl.@return = MkUserCnst(P_Root.UserCnstKind.NIL, span);
             crntFunDecl.Span = span;

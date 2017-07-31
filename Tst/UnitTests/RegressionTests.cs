@@ -126,19 +126,19 @@ namespace UnitTests
             
             //pc.exe with Zing option is called when outputLanguage is C;
             //pc.exe with CSharp option is called when outputLanguage is CSharp; 
-            if (outputLanguage == CompilerOutput.C)
-            {
-                // compile *.p again, this time with Zing option:
-                compileArgs.compilerOutput = CompilerOutput.Zing;
-                compileArgs.inputFileNames = new List<string>(pFiles);
-                compileArgs.dependencies.Clear();
-                int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
-                tmpWriter.WriteLine($"EXIT: {zingResult}");
-                if (!(zingResult == 0))
-                { 
-                    return -1;
-                }
-            }
+            //if (outputLanguage == CompilerOutput.C)
+            //{
+            //    // compile *.p again, this time with Zing option:
+            //    compileArgs.compilerOutput = CompilerOutput.Zing;
+            //    compileArgs.inputFileNames = new List<string>(pFiles);
+            //    compileArgs.dependencies.Clear();
+            //    int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
+            //    tmpWriter.WriteLine($"EXIT: {zingResult}");
+            //    if (!(zingResult == 0))
+            //    { 
+            //        return -1;
+            //    }
+            //}
             //if (outputLanguage == CompilerOutput.CSharp)
             //{
             //    // compile *.p again, this time with CSharp option:
@@ -206,10 +206,14 @@ namespace UnitTests
             }
 
             // Find .cs input to pt.exe:
+            // pick up either .cs file with the name of origTestDir (if any), or
+            // any .cs file in the workDirectory (but not linker.cs):
             string csFileName = null;
             foreach (var fileName in workDirectory.EnumerateFiles())
             {
-                if (fileName.Extension == ".cs" && (Path.GetFileNameWithoutExtension(fileName.Name)).Equals(origTestDir.Name))
+                if ((fileName.Extension == ".cs" && ((Path.GetFileNameWithoutExtension(fileName.Name)).ToLower()).Equals((origTestDir.Name).ToLower())) || 
+                    (fileName.Extension == ".cs" && !((Path.GetFileNameWithoutExtension(fileName.Name)).Equals("linker")))
+                    )
                 {
                     csFileName = fileName.FullName;
                 }
@@ -376,7 +380,10 @@ namespace UnitTests
                 Constants.Platform,
                 "Binaries",
                 "zinger.exe");
-
+            if (!File.Exists(zingFilePath))
+            {
+                throw new Exception("Could not find zinger.exe");
+            }
             // Find DLL input to Zing
             string zingDllName = (from fileName in workDirectory.EnumerateFiles()
                                   where fileName.Extension == ".dll" && !fileName.Name.Contains("linker")
@@ -430,6 +437,11 @@ namespace UnitTests
 
             string testerExeDir = Path.Combine(workDirectory.FullName, Constants.Configuration, Constants.Platform);
             string testerExePath = Path.Combine(testerExeDir, Constants.CTesterExecutableName);
+            //if (!File.Exists(testerExePath))
+            //{
+            //    throw new Exception("Could not find tester.exe");
+            //}
+
             string prtTesterProj = Path.Combine(workDirectory.FullName, Constants.CTesterVsProjectName);
 
             // build the Pc output with the test harness
@@ -446,6 +458,20 @@ namespace UnitTests
             tmpWriter.WriteLine($"EXIT: {exitCode}");
         }
 
+        private static string FindTool(string name)
+        {
+            string path = Environment.GetEnvironmentVariable("PATH");
+            string[] dirs = path.Split(new char[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (string dir in dirs)
+            {
+                string toolPath = Path.Combine(dir, name);
+                if (File.Exists(toolPath))
+                {
+                    return toolPath;
+                }
+            }
+            return null;
+        }
         private static void BuildTester(string prtTesterProj, string activeDirectory, bool clean)
         {
             var argumentList = new[]
@@ -453,9 +479,30 @@ namespace UnitTests
                 prtTesterProj, clean ? "/t:Clean" : "/t:Build", $"/p:Configuration={Constants.Configuration}",
                 $"/p:Platform={Constants.Platform}", "/nologo"
             };
+            ////////////////////////////
+            //1. Define msbuildPath for msbuild.exe:
+            var msbuildPath = FindTool("MSBuild.exe");
+            if (msbuildPath == null)
+            {
+                string programFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+                if (string.IsNullOrEmpty(programFiles))
+                {
+                    programFiles = Environment.GetEnvironmentVariable("ProgramFiles");
+                }
+                msbuildPath = Path.Combine(programFiles, @"MSBuild\14.0\Bin\MSBuild.exe");
+                if (!File.Exists(msbuildPath))
+                {
+                    throw new Exception("msbuild.exe is not in your PATH.");
+                }
+            }
 
+            //////////////////////////
             string stdout, stderr;
-            if (RunWithOutput("msbuild.exe", activeDirectory, argumentList, out stdout, out stderr) != 0)
+            //if (!File.Exists("msbuild.exe"))
+            //{
+            //    throw new Exception("Could not find msbuild.exe");
+            //}
+            if (RunWithOutput(msbuildPath, activeDirectory, argumentList, out stdout, out stderr) != 0)
             {
                 throw new Exception($"Failed to build {prtTesterProj}\nOutput:\n{stdout}\n\nErrors:\n{stderr}\n");
             }
@@ -538,6 +585,7 @@ namespace UnitTests
                             TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.C);
                             break;
                         case TestType.Prt:
+                            //TODO: run pc.exe with CompilerOutput.C again?
                             TestPrt(config, tmpWriter, workDirectory, activeDirectory);
                             break;
                         case TestType.Pt:
@@ -548,7 +596,11 @@ namespace UnitTests
                             }
                             break;
                         case TestType.Zing:
-                            TestZing(config, tmpWriter, workDirectory, activeDirectory);
+                            pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.Zing);
+                            if (pcResult == 0)
+                            {
+                                TestZing(config, tmpWriter, workDirectory, activeDirectory);
+                            }
                             break;
                         default: throw new ArgumentOutOfRangeException();
                     }
@@ -564,8 +616,8 @@ namespace UnitTests
                 correctText = Regex.Replace(correctText, Constants.NewLinePattern, Environment.NewLine);
                 string actualText = sb.ToString();
                 actualText = Regex.Replace(actualText, Constants.NewLinePattern, Environment.NewLine);
-                //if (Constants.ShouldFreezeTests)
-                //{
+                if (!Constants.Reset)
+                {
                     if (!actualText.Equals(correctText))
                     {
                         try
@@ -582,9 +634,15 @@ namespace UnitTests
                             WriteError("ERROR: exception: {0}", e.Message);
                         }
                     }
-               // }
+                    Assert.AreEqual(correctText, actualText);
+                }
+                else
+                {
+                    // reset the acceptor or create a new one:
+                    //TODO: remove old acceptor if it exists?
+                    File.WriteAllText(Path.Combine(origTestDir.FullName, testType.ToString(), Constants.CorrectOutputFileName), actualText);
+                }
 
-                Assert.AreEqual(correctText, actualText);
                 Console.WriteLine(actualText);
             }
         }

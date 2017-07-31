@@ -26,8 +26,7 @@ domain PData
 	StringList		::= new (hd: String, tl: any StringList + { NIL }).
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
 	EnumTypeDef		::= new (name: String, elems: any StringList, values: any IntegerList + { NIL }, id: any Id).
-	TypeDef         ::= new (name: String, type: any TypeExpr, id: any Id).
-	ModelType       ::= new (name: String, id: any Id).
+	TypeDef         ::= new (name: String, type: any TypeExpr + { NIL }, id: any Id).
 
 	NameType        ::= new (name: String).
     BaseType        ::= new ({ NULL, BOOL, INT, FLOAT, EVENT, MACHINE}).
@@ -54,12 +53,13 @@ domain PData
     BinApp     ::= new (op: { ADD, SUB, MUL, DIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr, id: any Id).
     Field      ::= new (arg: any Expr, name: String + Natural, id: any Id).
     Default    ::= new (type: any TypeExpr, id: any Id). 
-    Cast       ::= new (arg: any Expr, type: any TypeExpr, id: any Id). 
+    Cast       ::= new (arg: any Expr, type: any TypeExpr, id: any Id).
+	Convert    ::= new (arg: any Expr, type: any TypeExpr, id: any Id).
     Tuple      ::= new (body: any Exprs, id: any Id).
     NamedTuple ::= new (body: any NamedExprs, id: any Id).
     Exprs      ::= new (qual: Qualifier, head: any Expr, tail: any Exprs + { NIL }).
     NamedExprs ::= new (field: String, exp: any Expr, tail: any NamedExprs + { NIL }).
-    Expr       ::= Name + New + FunApp + NulApp + UnApp + BinApp + Field + Default + Cast + Tuple + NamedTuple.
+    Expr       ::= Name + New + FunApp + NulApp + UnApp + BinApp + Field + Default + Cast + Convert + Tuple + NamedTuple.
     ExprsExt   ::= Expr + Exprs + NamedExprs.
 
     //// Statements
@@ -115,7 +115,7 @@ domain PData
 	// For FunDecl, the order of params is left to right.
 	// For AnonFunDecl, the order of envVars is left to right and top to bottom.
 	// Thus, the numbering of variables is consistent across nested scopes.
-    FunDecl        ::= fun (name: String, owner: String + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, id: any Id).
+    FunDecl        ::= fun (name: String, owner: String + { NIL } -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt + { NIL }, id: any Id).
     FunProtoDecl   ::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
 	FunProtoCreatesDecl ::= fun (fp: FunProtoDecl -> iormlist: StringList).
 	GlobalFunCreates ::= new (name: String, iorm: String).
@@ -126,7 +126,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + FunProtoCreatesDecl  + TypeDef + EnumTypeDef + ModelType.            
+    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + FunProtoCreatesDecl  + TypeDef + EnumTypeDef.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -203,7 +203,7 @@ domain PStructuralTyping extends PData, PError
 	OneDeclError(m) :- m is StateDecl(name, owner, _, _, _, id1), StateDecl(name, owner, _, _, _, id2), id1 != id2.
 
 	ERROR1(id1, "Another function with same name declared"),
-	OneDeclError(m) :- m is FunDecl(name, owner, _, _, _, _, _, id1), FunDecl(name, owner, _, _, _, _, _, id2), owner != NIL, id1 != id2.
+	OneDeclError(m) :- m is FunDecl(name, owner, _, _, _, _, id1), FunDecl(name, owner, _, _, _, _, id2), owner != NIL, id1 != id2.
 
 	//Valid TransDecl
 	ERROR1(trns.id, "Transition on an undefined event"),
@@ -214,11 +214,11 @@ domain PStructuralTyping extends PData, PError
 	
 	ERROR1(trns.id, "Transition function not defined"),
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, 
-	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
 	ERROR1(trns.id, "Function cannot take arguments"),
-	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
-	                      trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, NIL, _, p, _, _, _, _), p != NIL.
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, trns.src.owner, p, _, _, _, _), p != NIL;
+	                      trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, NIL, p, _, _, _, _), p != NIL.
 	
 	//Valid DoDecl
 	ERROR1(doD.id, "Action on an undefined event"),
@@ -226,28 +226,28 @@ domain PStructuralTyping extends PData, PError
 	
 	ERROR1(trns.id, "Function not defined"),
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, 
-	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
 	ERROR1(trns.id, "Function cannot take arguments"),
-	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String , FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
-	                      trns is DoDecl(_, _, act, _), act : String , FunDecl(act, NIL, _, p, _, _, _, _), p != NIL.
+	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String , FunDecl(act, trns.src.owner, p, _, _, _, _), p != NIL;
+	                      trns is DoDecl(_, _, act, _), act : String , FunDecl(act, NIL, p, _, _, _, _), p != NIL.
 	
 	//Entry Exit Functions
 	ERROR1(s.id, "Undefined function for entry"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String, 
-	                       no FunDecl(eF, s.owner, _, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _, _). 
+	                       no FunDecl(eF, s.owner, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _). 
 
 	ERROR1(s.id, "Undefined function for exit"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String, 
-	                       no FunDecl(eF, s.owner, _, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _, _).
+	                       no FunDecl(eF, s.owner, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _).
 	
 	ERROR1(s.id, "Entry function cannot take arguments"),
-	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
-	                       s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, s.owner, p, _, _, _, _), p != NIL;
+	                       s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, NIL, p, _, _, _, _), p != NIL.
 	
 	ERROR1(s.id, "Exit function cannot take arguments"),
-	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
-	                       s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, s.owner, p, _, _, _, _), p != NIL;
+	                       s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, NIL, p, _, _, _, _), p != NIL.
 	
 	//cannot have null in spec machines
 	ERROR1(t.id, "Transition on null event not allowed in spec machine"),
@@ -298,8 +298,8 @@ domain PStructuralTyping extends PData, PError
 	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
 	/* Rules for separate compilation checks */
-	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl + ModelType).
-	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
+	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl).
+	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl.
 
 	//multiple declarations of the same type
 	ERROR2(td.id, td'.id, "Multiple declarations of named types have same name"),
@@ -381,7 +381,7 @@ domain PStaticTyping extends PData, PError
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, NewStmt(iorm, _, _, _));
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunProtoDecl, no FunDecl(f.name, NIL, _, _, _, _, _, _), FunProtoCreatesDecl(f, list), MemberOfStringList(list, iorm).
+		f is FunProtoDecl, no FunDecl(f.name, NIL, _, _, _, _, _), FunProtoCreatesDecl(f, list), MemberOfStringList(list, iorm).
 
 	LocalFunCreates(f, iorm) :-
 		f is FunDecl, f.owner != NIL, SubSE(f, NewStmt(iorm, _, _, _));
@@ -425,7 +425,7 @@ domain PStaticTyping extends PData, PError
 	TypeDefError ::= (name: String).
 
 	ERROR0(errorMsg),
-	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no ModelType(name, _), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
 						  errorMsg = strJoin("Undefined type: ", name).
 	
 	ERROR2(td1.id, td2.id, "Multiple type definitions for a type name"),
@@ -476,7 +476,7 @@ domain PStaticTyping extends PData, PError
 	
 	TypeExpansion(type, type) :- AllTypeExprs(type), type : AnyType.
 	TypeExpansion(type, type)  :- AllTypeExprs(type), type : InterfaceType.
-	TypeExpansion(type, type)  :- ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName).
+	TypeExpansion(type, type)  :- TypeDef(typeName, NIL, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
@@ -502,13 +502,13 @@ domain PStaticTyping extends PData, PError
 
 	ExportedType ::= (String, TypeExpr).
 	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
-	ExportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
+	ExportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val = fileName.
 
 	ImportedType ::= (String, TypeExpr).
 	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
-	ImportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
+	ImportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 	ImportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
 
@@ -539,6 +539,7 @@ domain PStaticTyping extends PData, PError
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = NamedTuple(_, _), t : TypeExpr.
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Default(_, _), t: TypeExpr.
 	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Cast(_, _, _), t: TypeExpr.
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Convert(_, _, _), t: TypeExpr.
 	TranslatedTypeExpr(t) :- TranslatedTupType(TupType(t, _)).
 	TranslatedTypeExpr(t) :- TranslatedNmdTupType(NmdTupType(NmdTupTypeField(_, t), _)). 
 	TranslatedTypeExpr(k), TranslatedTypeExpr(v) :- TranslatedTypeExpr(t), NotImportedType(t), t = MapType(k, v). 
@@ -549,10 +550,6 @@ domain PStaticTyping extends PData, PError
 	                         f is FunDecl, f.owner = name.
 	FunAvailable(f, name) :- f is FunProtoDecl, m is MachineDecl(name, _);
 						     f is FunProtoDecl, name = NIL.
-
-	AnonFunDeclGen ::= (AnonFunDecl).
-	AnonFunDeclGen(f) :- SubCntxt(f), f: AnonFunDecl, f.ownerFun = NIL.
-	AnonFunDeclGen(f) :- SubCntxt(f), f: AnonFunDecl, f' is FunDecl, f'.kind = REAL, f.ownerFun = f'.name.
 
     //// The declarations that may contain expressions or statements that should be typed.
     TypingContext ::= FunDecl + AnonFunDecl.
@@ -567,8 +564,8 @@ domain PStaticTyping extends PData, PError
 	SubCntxt ::= sub (cntxt: TypingContext).
     
 	SubSE0 ::= (cntxt: TypingContext, typeable: Typeable).
-	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _, _), AnonFunDeclGen(cntxt).
-	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable, _), cntxt.kind = REAL.
+	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _, _).
+	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, typeable, _), typeable: Stmt.
 	SubSE0(c, e), SubSE0(c, s) :- SubSE0(c, While(e, s, _)).
 	SubSE0(c, e), SubSE0(c, s1), SubSE0(c, s2) :- SubSE0(c, Ite(e, s1, s2, _)).
 	SubSE0(c, s1), SubSE0(c, s2) :- SubSE0(c, Seq(s1, s2, _)).
@@ -595,6 +592,7 @@ domain PStaticTyping extends PData, PError
 	SubSE0(c, e1), SubSE0(c, e2) :- SubSE0(c, BinApp(_, e1, e2, _)).
 	SubSE0(c, e) :- SubSE0(c, Field(e, _, _)).
 	SubSE0(c, e) :- SubSE0(c, Cast(e, _, _)).
+	SubSE0(c, e) :- SubSE0(c, Convert(e, _, _)).
 	SubSE0(c, es) :- SubSE0(c, Tuple(es, _)).
 	SubSE0(c, es) :- SubSE0(c, NamedTuple(es, _)).
 	SubSE0(c, e) :- SubSE0(c, Exprs(_, e, _)).
@@ -668,6 +666,7 @@ domain PStaticTyping extends PData, PError
 	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, BinApp(_, e1, e2, _)).
 	SubSE(c, e) :- SubSE(c, Field(e, _, _)).
 	SubSE(c, e) :- SubSE(c, Cast(e, _, _)).
+	SubSE(c, e) :- SubSE(c, Convert(e, _, _)).
 	SubSE(c, es) :- SubSE(c, Tuple(es, _)).
 	SubSE(c, es) :- SubSE(c, NamedTuple(es, _)).
 	SubSE(c, e) :- SubSE(c, Exprs(_, e, _)).
@@ -765,21 +764,27 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), toSymbol(t1) != #MapType, toSymbol(t1) != #SeqType. 
     
     //// (3) The types of binary expressions
-    TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k != EMPTY.
-	//if the type is interface type then it acts as reduce, hence subset relation
-	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType.
+    TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k != EMPTY.
 	
 	ERROR1(e.id, "Cast can never succeed"),
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, TypeRel(t1, t2', k), k = EMPTY.
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
 	
 	AllInterfaceTypes ::= sub(InterfaceType).
 	NotSubsetInterfaces ::= (InterfaceType, InterfaceType).
 	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), count({ ev | MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev) }) != 0.
 	
-	ERROR1(e.id, "Reduce can never succeed"),
-    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
-									  TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, NotSubsetInterfaces(t2', t1).
-									  
+	ERROR1(e.id, "convert to interface can never succeed"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
+									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, NotSubsetInterfaces(t2', t1).
+	
+	ERROR1(e.id, "convert can never succeed"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), TypeRel(t1, BaseType(FLOAT), k), k = EMPTY;
+									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), TypeRel(t1, BaseType(INT), k), k = EMPTY;
+									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(FLOAT), TypeRel(t1, BaseType(FLOAT), k), k = EMPTY;
+									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(FLOAT), TypeRel(t1, BaseType(INT), k), k = EMPTY.
+	
+	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2').
+									  								  
     TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
 	
 	ERROR1(e.id, "Bad field name"),
@@ -789,11 +794,13 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Field, toSymbol(t1) != #TupType, toSymbol(t1) != #NmdTupType.
     
     PureIntOrFloatOp ::= { ADD, SUB, MUL, DIV }.
-    TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, BaseType(INT), BaseType(INT)), e = BinApp(op, _, _, _), op : PureIntOrFloatOp.
-	TypeOf(c, e, BaseType(FLOAT))           :- TypeOfArg2(c, e, BaseType(FLOAT), t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t2, BaseType(FLOAT), SUB);
-											   TypeOfArg2(c, e, t1, BaseType(FLOAT)), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t1, BaseType(FLOAT), SUB).
+    TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
+	TypeOf(c, e, BaseType(FLOAT))           :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t1, BaseType(FLOAT), SUB), TypeRel(t2, BaseType(FLOAT), SUB).
 
 	
+	ERROR1(e.id, "Operator expected both arguments to be of same type"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 != t2.
+
 	ERROR1(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType.    
 	
@@ -857,7 +864,7 @@ domain PStaticTyping extends PData, PError
 	TypeOf(c, e, et) :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), et != NIL, TypeRel(t1, inpt, SUB).
 
 	ERROR1(e.id, "Function not defined"),
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _), no FunProtoDecl(n, _, _).
 	
 	ERROR1(e.id, "Function does not return a value"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
@@ -1053,15 +1060,16 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP, _).
 
 	//// (2) Return statement
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, _, NIL, _, _, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, NIL, _, _, _). 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c : AnonFunDecl.
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, SUB).
+
  	
 	ERROR1(e.id, "Function must return a value"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, _, t, _, _, _), t != NIL. 
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, t, _, _, _), t != NIL. 
 	
 	ERROR1(e.id, "Function cannot return a value"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1, _), e1 != NIL, c = FunDecl(_, _, _, _, NIL, _, _, _). 
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1, _), e1 != NIL, c = FunDecl(_, _, _, NIL, _, _, _). 
 	
 	ERROR1(e.id, "Return value has incorrect type"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, k), t1 != et, k != SUB.
@@ -1242,9 +1250,10 @@ domain PStaticTyping extends PData, PError
 	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, _).
 	TypeOf(c, e, NIL)   :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
 	TypeOf(c, e, NIL)   :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), TypeRel(t1, inpt, SUB), TypeRel(et, t2, SUB).
+
 	
 	ERROR1(e.id, "Function not defined"),
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).	
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _), no FunProtoDecl(n, _, _).	
 	
 	ERROR1(e.id, "Function requires arguments"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
@@ -1398,10 +1407,10 @@ domain PStaticTyping extends PData, PError
 	MaxNumLocals(e, n) :- SubSE(c, e), e = Receive(cases, _, _), MaxNumLocals(cases, n). 
 	MaxNumLocals(a, n) :- a is AnonFunDecl, TranslatedBody(a, bodyTrans), MaxNumLocals(bodyTrans, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2 + 1.
 	MaxNumLocals(a, n) :- a is FunDecl, TranslatedBody(a, bodyTrans), MaxNumLocals(bodyTrans, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
-	MaxNumLocals(a, n) :- a is FunDecl, a.kind = MODEL, n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n2 + n3.
+	MaxNumLocals(a, n) :- a is FunDecl, a.body = NIL, n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n2 + n3.
 
     LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
-	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, _, params, _, locals, _, _), envVars = lstReverse(#NmdTupType, params).
+	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, params, _, locals, _, _), envVars = lstReverse(#NmdTupType, params).
 	LocalVarsAux(cntxt, envVars, locals) :- cntxt is AnonFunDecl(_, _, locals, _, envVars', _), envVars = lstReverse(#NmdTupType, envVars').
 	LocalVarsAux(cntxt, envVars, locals) :- LocalVarsAux(cntxt, envVars', locals'), locals' = NmdTupType(x, locals), envVars = NmdTupType(x, envVars').
 
@@ -1425,7 +1434,7 @@ domain PStaticTyping extends PData, PError
     FormalParam    ::= (cntxt: FunDecl, name: String).
     FormalParamAux ::= (cntxt: FunDecl, name: String, aux: NmdTupType + { NIL }).
     
-    FormalParamAux(cntxt, name, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(name, _), tl).  
+    FormalParamAux(cntxt, name, tl) :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(name, _), tl).  
     FormalParamAux(cntxt, name, tl) :- FormalParamAux(cntxt, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl).
     FormalParam(cntxt, name)  :- FormalParamAux(cntxt, name, _).
 
@@ -1433,8 +1442,8 @@ domain PStaticTyping extends PData, PError
 	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
 	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
 
-	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, _, params, _, _, _, _), params = NIL.
-	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
+	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NIL.
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
 	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, t').
 	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
 
@@ -1498,8 +1507,9 @@ domain PStaticTyping extends PData, PError
 
 	FunRetError ::= (cntxt: FunDecl).
 
+
 	ERROR1(f.id, "function must return a value"),
-	FunRetError(f) :- f is FunDecl, f.kind = REAL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
+	FunRetError(f) :- f is FunDecl, f.body != NIL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
 
     /*************************************************************/
     /*                      Control Impurity                     */
@@ -1609,7 +1619,7 @@ domain PStaticTyping extends PData, PError
     /*************************************************************/
 	Impure ::= (FunDecl + FunProtoDecl).
 	Impure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
-	Impure(c) :- c is FunDecl, c.kind = MODEL, no Annotation(c, "pure", _, _).
+	Impure(c) :- c is FunDecl, c.body = NIL, no Annotation(c, "pure", _, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(NONDET, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(FAIRNONDET, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Goto.
@@ -1741,12 +1751,12 @@ domain PStaticTyping extends PData, PError
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
 	
 	// Each model type has empty intersection with all types except itself and ANY
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType.
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType. 
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), TypeDef(name, NIL, _), t != s, toSymbol(t) != #AnyType.
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), TypeDef(name, NIL, _), t != s, toSymbol(t) != #AnyType. 
 	
-	// Each enum type has empty intersection with all types except itself and ANY and INT and FLOAT
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT), t != BaseType(FLOAT).
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT), t != BaseType(FLOAT). 
+	// Each enum type has empty intersection with all types except itself and ANY and INT
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT).
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT). 
     
     // The NULL type has empty intersections with NonNullBase and complex types.
     NonNullBase ::= (TypeExpr).
@@ -1764,15 +1774,15 @@ domain PStaticTyping extends PData, PError
     TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(BOOL), s != t, toSymbol(t) != #AnyType.
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(BOOL), s != t, toSymbol(t) != #AnyType.
 
-	// BaseType(INT) has empty intersections with all types, except themselves and ANY and FLOAT.
+	// BaseType(INT) has empty intersections with all types, except themselves and ANY.
 	// Relationship to NameType(_) has been dealt with above.
-    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType, t != BaseType(FLOAT).
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType, t != BaseType(FLOAT).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
 
-	// BaseType(FLOAT) has empty intersections with all types, except themselves, INT and ANY.
+	// BaseType(FLOAT) has empty intersections with all types, except themselves, and ANY.
 	// Relationship to NameType(_) has been dealt with above.
-    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(FLOAT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType, t != BaseType(INT).
-    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(FLOAT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType, t != BaseType(INT).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(FLOAT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(FLOAT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
 
     // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
     NullBase    ::= (TypeExpr).
@@ -1792,6 +1802,11 @@ domain PStaticTyping extends PData, PError
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, t = BaseType(kt), kt != NULL, kt != MACHINE.
 	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
+
+	//Interface Type has empty intersection with all interface types that are not equal.
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, t : InterfaceType, s != t.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, t : InterfaceType, s != t.
+
 
     // Complex types have empty intersections with all differing type kinds, except ANY.
     TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : ComplexType, toSymbol(s) != toSymbol(t), toSymbol(t) != #AnyType.
@@ -1898,10 +1913,6 @@ domain PStaticTyping extends PData, PError
 	// Enum types with values are a subtype of int
 	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
 	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
-
-	// int types is a subtype of float
-	TypeRel(s, t, SUB) :- CompTypeRel(s, t), t = BaseType(FLOAT), s = BaseType(INT).
-	TypeRel(t, s, SUP) :- CompTypeRel(t, s), t = BaseType(FLOAT), s = BaseType(INT).
 
     // Sequences are subtype related if their inner types are subtype related.
     TypeRel(s, t, SUB)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 

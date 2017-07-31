@@ -13,6 +13,7 @@ namespace P.Runtime
 
         public abstract PrtValue Clone();
 
+
         public static PrtValue PrtMkDefaultValue(PrtType type)
         {
             if (type is PrtAnyType || type is PrtNullType || type is PrtEventType || type is PrtMachineType || type is PrtInterfaceType)
@@ -85,18 +86,10 @@ namespace P.Runtime
             }
             else if (type is PrtIntType)
             {
-                if(value is PrtFloatValue)
-                {
-                    value = new PrtIntValue((int)(value as PrtFloatValue).ft);
-                }
                 return value is PrtIntValue;
             }
             else if (type is PrtFloatType)
             {
-                if(value is PrtIntValue)
-                {
-                    value = new PrtFloatValue((value as PrtIntValue).nt);
-                }
                 return value is PrtFloatValue;
             }
             else if (type is PrtBoolType)
@@ -206,19 +199,45 @@ namespace P.Runtime
             }
         }
 
-        public static PrtValue PrtCastValue(PrtValue value, PrtType type)
+        public static PrtValue PrtConvertValue(PrtValue value, PrtType type)
         {
             //cast for interface types is implemented as reduce.
             if (type is PrtInterfaceType)
             {
-                return (type as PrtInterfaceType).PrtReduceValue(value);   
+                return (type as PrtInterfaceType).PrtReduceValue(value);
+            }
+            else if (type is PrtIntType)
+            {
+                if(value is PrtIntValue)
+                {
+                    return (new PrtIntValue((value as PrtIntValue).nt));
+                }
+                else
+                {
+                    return (new PrtIntValue((Int64)(value as PrtFloatValue).ft));
+                }
+            }
+            else if (type is PrtFloatType)
+            {
+                if (value is PrtIntValue)
+                {
+                    return (new PrtFloatValue((value as PrtIntValue).nt));
+                }
+                else
+                {
+                    return (new PrtFloatValue((Int64)(value as PrtFloatValue).ft));
+                }
             }
             else
             {
-                if (!PrtInhabitsType(value, type))
-                    throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), type.ToString()));
-                return value.Clone();
+                throw new PrtInternalException("unexpected type in convert operation");
             }
+        }
+        public static PrtValue PrtCastValue(PrtValue value, PrtType type)
+        {
+            if (!PrtInhabitsType(value, type))
+                throw new PrtInhabitsTypeException(String.Format("value {0} is not a member of type {1}", value.ToString(), type.ToString()));
+            return value.Clone();
         }
     }
 

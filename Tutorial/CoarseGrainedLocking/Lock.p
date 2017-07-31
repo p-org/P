@@ -1,10 +1,10 @@
-model type LockPtr = machine;
+type LockPtr = machine;
 
 event ACQUIRE_REQ: machine;
 event ACQUIRE_RESP: any;
 event RELEASE: any;
 
-model Lock {
+machine Lock {
 	var val: any;
 
 	start state Unheld {
@@ -25,14 +25,14 @@ model Lock {
 	}
 }
 
-model fun CreateLock(val: any) : LockPtr
+fun CreateLock(val: any) : LockPtr
 {
 	var x: machine;
 	x = new Lock(val move);
 	return x;
 }
 
-model fun AcquireLock(l: LockPtr, client: machine) : any 
+fun AcquireLock(l: LockPtr, client: machine) : any 
 {
 	var val: any;
 	send l, ACQUIRE_REQ, client;
@@ -44,7 +44,7 @@ model fun AcquireLock(l: LockPtr, client: machine) : any
 	return val;
 }
 
-model fun ReleaseLock(l: LockPtr, val: any)
+fun ReleaseLock(l: LockPtr, val: any)
 {
 	send l, RELEASE, val move;
 }

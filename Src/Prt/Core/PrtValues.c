@@ -65,7 +65,7 @@ static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodePrtInt(_In_ PRT_INT value)
 	}
 	else
 	{
-		return PrtGetHashCodeUInt32((PRT_UINT32)value) ^ PrtGetHashCodeUInt32((PRT_UINT32)value >> 32);
+		return PrtGetHashCodeUInt32((PRT_UINT32)value) ^ PrtGetHashCodeUInt32((PRT_UINT64)value >> 32);
 	}
 }
 
@@ -81,7 +81,7 @@ static PRT_UINT32 PRT_CALL_CONV PrtGetHashCodePrtFloat(_In_ PRT_FLOAT value)
 	}
 	else
 	{
-		return PrtGetHashCodeUInt32((PRT_UINT32)value) ^ PrtGetHashCodeUInt32((PRT_UINT32)value >> 32);
+		return PrtGetHashCodeUInt32((PRT_UINT32)value) ^ PrtGetHashCodeUInt32((PRT_UINT64)value >> 32);
 	}
 }
 
@@ -572,7 +572,7 @@ void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_INT i
 	}
 	else if (seq->valueUnion.seq->size < seq->valueUnion.seq->capacity)
 	{
-		PRT_UINT32 i;
+		PRT_INT i;
 		PRT_VALUE **values = seq->valueUnion.seq->values;
 		if (seq->valueUnion.seq->size > 0)
 		{
@@ -590,11 +590,11 @@ void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_INT i
 	}
 	else
 	{
-		PRT_UINT32 i;
+		PRT_INT i;
 		PRT_VALUE **values;
 		seq->valueUnion.seq->capacity = 2 * seq->valueUnion.seq->capacity;
 		values = (PRT_VALUE **)PrtCalloc(seq->valueUnion.seq->capacity, sizeof(PRT_VALUE*));
-		for (i = 0; i < seq->valueUnion.seq->size; ++i)
+		for (i = 0; i < (PRT_INT)seq->valueUnion.seq->size; ++i)
 		{
 			if (i < index)
 			{
@@ -620,7 +620,7 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(_In_ PRT_VALUE *seq, _In_ PRT_INT 
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
-	PrtAssert(0 <= index && index < seq->valueUnion.seq->size, "Invalid index");
+	PrtAssert(0 <= index && (PRT_UINT32)index < seq->valueUnion.seq->size, "Invalid index");
 
 	return seq->valueUnion.seq->values[index];
 }
@@ -648,7 +648,7 @@ void PRT_CALL_CONV PrtSeqRemove(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 	PRT_VALUE **values = seq->valueUnion.seq->values;
 	PRT_UINT32 seqSize = seq->valueUnion.seq->size;
 	PrtFreeValue(values[index->valueUnion.nt]);
-	for (i = index->valueUnion.nt; i < seqSize - 1; ++i)
+	for (i = index->valueUnion.nt; i < (PRT_INT)seqSize - 1; ++i)
 	{
 		values[i] = values[i + 1];
 	}
@@ -1464,10 +1464,16 @@ PRT_VALUE * PRT_CALL_CONV PrtConvertValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 	
 	switch (type->typeKind)
 	{
-	case PRT_KIND_MACHINE:
-		return value;
+		case PRT_KIND_MACHINE:
+			return PrtCloneValue(value);
+		case PRT_KIND_INT:
+			return PrtMkIntValue((PRT_INT) value->discriminator == PRT_KIND_FLOAT ? value->valueUnion.ft : value->valueUnion.nt);
+		case PRT_KIND_FLOAT:
+			return PrtMkFloatValue(value->discriminator == PRT_KIND_FLOAT ? value->valueUnion.ft : value->valueUnion.nt);
+		default:
+			PrtAssert(PRT_FALSE, "Illegal convert invocation");
+			return NULL;
 	}
-	return value;
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtCastValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *type)

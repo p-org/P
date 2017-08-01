@@ -59,7 +59,7 @@ static void PrtUserPrintInt(_In_ PRT_INT i, _Inout_ char **buffer, _Inout_ PRT_U
 {
 	if (sizeof(PRT_INT) == 4)
 	{
-		PrtUserPrintUint32(i, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32((PRT_UINT32)i, buffer, bufferSize, numCharsWritten);
 	}
 	else
 	{

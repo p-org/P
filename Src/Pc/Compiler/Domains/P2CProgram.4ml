@@ -756,7 +756,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Base types
 	BaseConstant2Kind ::= (const: in.Expr, kind: String, value: out.Expr).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = in.NulApp(n, _), n: Integer.
-	BaseConstant2Kind(e, "PRT_VALUE_KIND_FLOAT", RealLit(n, 20, DEC, F)) :- ConstExpr(e), e = in.NulApp(Float(n), _), n: Real.
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_FLOAT", out.BinApp(ASN, Ident(".ft"), RealLit(n, 6, DEC, F))) :- ConstExpr(e), e = in.NulApp(Float(n), _), n: Real.
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = in.NulApp(FALSE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = in.NulApp(TRUE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = in.Name(name, _), EnumTypeElemIndex(d, StringList(name, _), _, _, _),

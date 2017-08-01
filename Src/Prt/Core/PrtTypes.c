@@ -17,6 +17,7 @@ PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 		case PRT_KIND_EVENT:
 		case PRT_KIND_MACHINE:
 		case PRT_KIND_INT:
+		case PRT_KIND_FLOAT:
 		case PRT_KIND_NULL:
 		{
 			type->typeKind = primType;
@@ -150,6 +151,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsSubtype(_In_ PRT_TYPE *subType, _In_ PRT_TYPE *su
 	}
 	case PRT_KIND_BOOL:
 	case PRT_KIND_INT:
+	case PRT_KIND_FLOAT:
 	case PRT_KIND_FOREIGN:
 	{
 		//// These types do not have any proper subtypes.
@@ -269,6 +271,7 @@ PRT_TYPE * PRT_CALL_CONV PrtCloneType(_In_ PRT_TYPE *type)
 	case PRT_KIND_EVENT:
 	case PRT_KIND_MACHINE:
 	case PRT_KIND_INT:
+	case PRT_KIND_FLOAT:
 	case PRT_KIND_NULL:
 	{
 		return PrtMkPrimitiveType(kind);
@@ -328,6 +331,7 @@ void PRT_CALL_CONV PrtFreeType(_Inout_ PRT_TYPE *type)
 	case PRT_KIND_EVENT:
 	case PRT_KIND_MACHINE:
 	case PRT_KIND_INT:
+	case PRT_KIND_FLOAT:
 	case PRT_KIND_FOREIGN:
 	case PRT_KIND_NULL:
 		type->typeKind = PRT_TYPE_KIND_CANARY;
@@ -405,6 +409,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE *type)
 		case PRT_KIND_EVENT:
 		case PRT_KIND_MACHINE:
 		case PRT_KIND_INT:
+		case PRT_KIND_FLOAT:
 		case PRT_KIND_NULL:
 			return PRT_TRUE;
 		case PRT_KIND_FOREIGN:

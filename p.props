@@ -13,10 +13,9 @@
     <ZCompiler>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zc.exe</ZCompiler>
     <Zinger>$(MSBuildThisFileDirectory)Bld\Drops\$(Configuration)\$(UnifiedPlatform)\Binaries\zinger.exe</Zinger>
     <PTargets>$(MSBuildThisFileDirectory)Bld\Targets</PTargets>
-    <StandardPDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_USE_IDL</StandardPDefinitions>
+    <StandardPDefinitions>PRT_STATIC;PRT_PLAT_WINUSER</StandardPDefinitions>
     <StandardPDefinitions Condition="'$(Configuration)'=='Debug'">PRT_DEBUG;$(StandardPDefinitions)</StandardPDefinitions>
     <StandardPLibraries>PrtWinUser.lib;</StandardPLibraries>
-    <StandardPDistLibraries>PrtWinUser.lib;PrtDist.lib;RpcRT4.lib;</StandardPDistLibraries>
   </PropertyGroup>
 
 </Project>

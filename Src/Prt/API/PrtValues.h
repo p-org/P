@@ -21,9 +21,6 @@
 extern "C"{
 #endif
 
-#ifdef PRT_USE_IDL
-#include "PrtValues_IDL.h"
-#else
 
 	/** Structure for representing a standard GUID */
 	typedef struct PRT_GUID
@@ -132,7 +129,7 @@ extern "C"{
 		PRT_UINT32            typeTag;    /**< The index of the foreign type. */
 		PRT_UINT64			  value;      /**< The foreign value. */
 	} PRT_FOREIGNVALUE;
-#endif
+
 
 	/** Makes a default value of an arbitrary type. The defaults (def) are as follows:
 	* 1.  def(null)                = `null : null`.

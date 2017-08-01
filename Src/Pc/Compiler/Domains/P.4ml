@@ -793,8 +793,8 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Field, toSymbol(t1) != #TupType, toSymbol(t1) != #NmdTupType.
     
     PureIntOrFloatOp ::= { ADD, SUB, MUL, DIV }.
-    TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
-	TypeOf(c, e, BaseType(FLOAT))           :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, TypeRel(t1, BaseType(FLOAT), SUB), TypeRel(t2, BaseType(FLOAT), SUB).
+    TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 = BaseType(INT), t2 = BaseType(INT).
+	TypeOf(c, e, BaseType(FLOAT))           :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 = BaseType(FLOAT), t2 = BaseType(FLOAT).
 
 	
 	ERROR1(e.id, "Operator expected both arguments to be of same type"),

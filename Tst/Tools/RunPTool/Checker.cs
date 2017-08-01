@@ -305,7 +305,7 @@ namespace CheckP
                             compileResult = compiler.Link(compilerOutput, compileArgs);
                         }
                     }
-                    
+                    /*
                     if (compileResult)
                     {
                         // compile *.p again, this time with Zing option.
@@ -321,7 +321,7 @@ namespace CheckP
                             compileResult = compiler.Compile(compilerOutput, compileArgs);
                         }
                     }
-
+                    */
                     if (compileResult)
                     {
                         tmpWriter.WriteLine("EXIT: 0");

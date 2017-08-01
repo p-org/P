@@ -1,11 +1,9 @@
-#include "PrtDist.h"
 #include "FailureDetector.h"
 #include "Prt.h"
 #include <stdio.h>
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;
-struct ClusterConfig ClusterConfiguration;
 PRT_INT64 sendMessageSeqNumber = 0;
 
 

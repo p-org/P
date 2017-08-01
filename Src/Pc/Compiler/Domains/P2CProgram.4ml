@@ -756,7 +756,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Base types
 	BaseConstant2Kind ::= (const: in.Expr, kind: String, value: out.Expr).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = in.NulApp(n, _), n: Integer.
-	BaseConstant2Kind(e, "PRT_VALUE_KIND_FLOAT", out.BinApp(ASN, Ident(".ft"), RealLit(n, 6, DEC, F))) :- ConstExpr(e), e = in.NulApp(Float(n), _), n: Real.
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_FLOAT", out.BinApp(ASN, Ident(".ft"), RealLit(n, 6, DEC, NIL))) :- ConstExpr(e), e = in.NulApp(Float(n), _), n: Real.
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = in.NulApp(FALSE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = in.NulApp(TRUE, _).
 	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = in.Name(name, _), EnumTypeElemIndex(d, StringList(name, _), _, _, _),
@@ -1528,6 +1528,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	GetFunctionIden ::= (type: in.TypeExpr, iden: Ident).
 	GetFunctionIden(in.BaseType(INT), Ident("PrtPrimGetInt")).
 	GetFunctionIden(in.BaseType(FLOAT), Ident("PrtPrimGetFloat")).
+	MkFunctionIden ::= (type: in.TypeExpr, iden: Ident).
+	MkFunctionIden(in.BaseType(INT), Ident("PrtMkIntValue")).
+	MkFunctionIden(in.BaseType(FLOAT), Ident("PrtMkFloatValue")).
 
 	//// Unary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
@@ -1536,14 +1539,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(UnApp(LNOT, getBool), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-							        e = in.UnApp(NEG, e1, _), RhsEvalOrder(s, i, e1, tmp1), in.TypeOf(c, e, BaseType(INT)), 
-									getInt = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									ec = out.FunApp(Ident("PrtMkIntValue"), Args(UnApp(NEG, getInt), NIL)).
-
-	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
-							        e = in.UnApp(NEG, e1, _), RhsEvalOrder(s, i, e1, tmp1), in.TypeOf(c, e, BaseType(FLOAT)),
-									getFloat = out.FunApp(Ident("PrtPrimGetFloat"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									ec = out.FunApp(Ident("PrtMkFloatValue"), Args(UnApp(NEG, getFloat), NIL)).
+							        e = in.UnApp(NEG, e1, _), RhsEvalOrder(s, i, e1, tmp1), in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									ec = out.FunApp(mkFun, Args(UnApp(NEG, getNum), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.UnApp(KEYS, e1, _), RhsEvalOrder(s, i, e1, tmp1),
@@ -1566,27 +1564,31 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Binary expressions
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(ADD, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
-									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
-									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(ADD, getInt1, getInt2), NIL)).
+									in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(mkFun, Args(BinApp(ADD, getNum1, getNum2), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(SUB, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
-									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
-									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(SUB, getInt1, getInt2), NIL)).
+									in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(mkFun, Args(BinApp(SUB, getNum1, getNum2), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(MUL, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
-									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
-									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(MUL, getInt1, getInt2), NIL)).
+									in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(mkFun, Args(BinApp(MUL, getNum1, getNum2), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(DIV, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
-									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
-									ec = out.FunApp(Ident("PrtMkIntValue"), Args(BinApp(DIV, getInt1, getInt2), NIL)).
+									in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(mkFun, Args(BinApp(DIV, getNum1, getNum2), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(AND, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
@@ -1612,27 +1614,31 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(LT, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
-									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
-									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LT, getInt1, getInt2), NIL)).
+									in.TypeOf(c, e1, t), GetFunctionIden(t, getFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LT, getNum1, getNum2), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(LE, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
-									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
-									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LE, getInt1, getInt2), NIL)).
+									in.TypeOf(c, e1, t), GetFunctionIden(t, getFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LE, getNum1, getNum2), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(GT, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
-									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
-									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GT, getInt1, getInt2), NIL)).
+									in.TypeOf(c, e1, t), GetFunctionIden(t, getFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GT, getNum1, getNum2), NIL)).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 							        e = in.BinApp(GE, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
-									getInt1 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
-									getInt2 = out.FunApp(Ident("PrtPrimGetInt"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
-									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GE, getInt1, getInt2), NIL)).
+									in.TypeOf(c, e1, t), GetFunctionIden(t, getFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GE, getNum1, getNum2), NIL)).
 
 	Accessor ::= (c: in.TypingContext, e: in.Expr, acc: out.Expr).
 	Accessor(c, e, acc)			 :- in.TypeOf(c, e, MapType(_, _)), DoFree(e, FALSE), acc = Ident("PrtMapGetNC").

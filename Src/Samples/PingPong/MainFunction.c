@@ -1,11 +1,9 @@
-#include "PrtDist.h"
 #include "PingPong.h"
 #include "Prt.h"
 #include <stdio.h>
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;
-struct ClusterConfig ClusterConfiguration;
 PRT_INT64 sendMessageSeqNumber = 0;
 
 
@@ -61,6 +59,7 @@ int main(int argc, char *argv[])
         return;
     }
 
+	/*
 	int createMain = atoi(argv[2]);
 	PrtAssert(createMain == 0 || createMain == 1, "CreateMain should be either 0 or 1");
 	int processId = atoi(argv[3]);
@@ -119,6 +118,8 @@ int main(int argc, char *argv[])
 		WaitForSingleObject(listener, INFINITE);
 
 		PrtStopProcess(ContainerProcess);
+		
 	}
 	PRT_DBG_END_MEM_BALANCED_REGION
+	*/
 }

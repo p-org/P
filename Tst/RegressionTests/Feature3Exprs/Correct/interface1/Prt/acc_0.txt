@@ -3,6 +3,5 @@
 =================================
 OUT: <CreateLog> Machine Main(1) is created
 OUT: <StateLog> Machine Main(1) entered state S
-OUT: 1093035648 == 10.000000
 OUT: 
 EXIT: 0

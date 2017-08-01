@@ -1,0 +1,5 @@
+arg: ..\interface1.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe, interface type

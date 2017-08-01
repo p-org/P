@@ -105,7 +105,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>$(StandardPDistLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(StandardPLibraries);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalLibraryDirectories>$(PSdkFolder)\Lib</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
     </Link>
@@ -129,7 +129,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(PSdkFolder)\Lib</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalDependencies>$(StandardPDistLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(StandardPLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <Bscmake>
       <PreserveSbr>true</PreserveSbr>
@@ -172,7 +172,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(PSdkFolder)\Lib</AdditionalLibraryDirectories>
       <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-      <AdditionalDependencies>$(StandardPDistLibraries);%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(StandardPLibraries);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

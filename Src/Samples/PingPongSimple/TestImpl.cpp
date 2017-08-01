@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include <stdio.h>
 extern "C" {
-#include "PrtDist.h"
 #include "PingPongSimple.h"
 #include "Prt.h"
 }
@@ -13,7 +12,6 @@ extern "C" {
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;
-struct ClusterConfig ClusterConfiguration;
 PRT_INT64 sendMessageSeqNumber = 0;
 DgmlGraphWriter dgmlMonitor;
 
@@ -105,9 +103,63 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 		break;
 	}
 
-	SleepEx(1, TRUE); // SleepEx allows the Win32 Timer to execute.
+	SleepEx(1, PRT_TRUE); // SleepEx allows the Win32 Timer to execute.
 }
 
+void
+PrtDistSMExceptionHandler(
+	__in PRT_STATUS exception,
+	__in PRT_MACHINEINST* vcontext
+)
+{
+	int log_size = 1000;
+	PRT_STRING MachineName = vcontext->process->program->machines[vcontext->instanceOf]->name;
+	PRT_UINT32 MachineId = vcontext->id->valueUnion.mid->machineId;
+
+
+	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
+
+	PRT_CHAR log[1000];
+
+	switch (exception)
+	{
+	case PRT_STATUS_EVENT_UNHANDLED:
+		sprintf_s(log,
+			log_size,
+			"<EXCEPTION> Machine %s(%d) : Unhandled Event Exception\n",
+			MachineName,
+			MachineId);
+		break;
+	case PRT_STATUS_EVENT_OVERFLOW:
+		sprintf_s(log,
+			log_size,
+			"<EXCEPTION> Machine %s(%d) : MaxInstance of Event Exceeded Exception\n",
+			MachineName,
+			MachineId);
+		break;
+	case PRT_STATUS_QUEUE_OVERFLOW:
+		sprintf_s(log,
+			log_size,
+			"<EXCEPTION> Queue Size Exceeded Max Limits in Machine %s(%d)\n",
+			MachineName,
+			MachineId);
+		break;
+	case PRT_STATUS_ILLEGAL_SEND:
+		sprintf_s(log,
+			log_size,
+			"<EXCEPTION> Machine %s(%d) : Illegal use of send for sending message across process (source and target machines are in different process) ",
+			MachineName,
+			MachineId);
+		break;
+	default:
+		sprintf_s(log,
+			log_size,
+			"<EXCEPTION> Machine %s(%d) : Unknown Exception\n",
+			MachineName,
+			MachineId);
+		break;
+	}
+}
 /**
 * The main function performs the following steps
 * 1) If the createMain option is true then it create the main machine.
@@ -178,7 +230,7 @@ int main(int argc, char *argv[])
 			PrtRunProcess(ContainerProcess);
 		}
 		else {
-			SleepEx(1000, TRUE); // SleepEx allows the Win32 Timer to execute.
+			SleepEx(1000, PRT_TRUE); // SleepEx allows the Win32 Timer to execute.
 		}
     }
 

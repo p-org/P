@@ -35,12 +35,6 @@
             private set;
         }
 
-        public List<P_Root.ModelType> ModelTypes
-        {
-            get;
-            private set;
-        }
-
         public List<P_Root.EventDecl> Events
         {
             get;
@@ -174,15 +168,9 @@
             private set;
         }
 
-        public bool IgnoreDecl;
-
         public void Add(object item)
         {
-            if (IgnoreDecl)
-            {
-                return;
-            }
-            else if (item is P_Root.AnyTypeDecl)
+            if (item is P_Root.AnyTypeDecl)
             {
                 AnyTypeDecl.Add(item as P_Root.AnyTypeDecl);
             }
@@ -270,10 +258,6 @@
             {
                 Events.Add(item as P_Root.EventDecl);
             }
-            else if (item is P_Root.ModelType)
-            {
-                ModelTypes.Add(item as P_Root.ModelType);
-            }
             else if (item is P_Root.EnumTypeDef)
             {
                 EnumTypeDefs.Add(item as P_Root.EnumTypeDef);
@@ -315,11 +299,6 @@
                     yield return etd;
                 }
 
-                foreach (var md in ModelTypes)
-                {
-                    yield return md;
-                }
-                
                 foreach (var ed in Events)
                 {
                     yield return ed;
@@ -441,7 +420,6 @@
         {
             TypeDefs = new List<P_Root.TypeDef>();
             EnumTypeDefs = new List<P_Root.EnumTypeDef>();
-            ModelTypes = new List<P_Root.ModelType>();
             Events = new List<P_Root.EventDecl>();
             Machines = new List<P_Root.MachineDecl>();
             MachineKinds = new List<P_Root.MachineKind>();
@@ -464,7 +442,6 @@
             MachineSends = new List<P_Root.MachineSends>();
             MachineReceives = new List<P_Root.MachineReceives>();
             DependsOn = new List<P_Root.DependsOn>();
-            IgnoreDecl = false;
             FunProtoCreates = new List<P_Root.FunProtoCreatesDecl>();
             AnyTypeDecl = new List<P_Root.AnyTypeDecl>();
         }

@@ -24,11 +24,6 @@ namespace Microsoft.Pc
         public string unitName { get; set; }
 
         /// <summary>
-        ///     set internally; if this field is set, then implementations of model types, functions, and machines are erased.
-        /// </summary>
-        public bool erase { get; set; }
-
-        /// <summary>
         ///     whether to use the compiler service.
         /// </summary>
         public bool compilerService { get; set; }

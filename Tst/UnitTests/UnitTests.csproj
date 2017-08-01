@@ -73,15 +73,6 @@
     <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Compiler">
-      <HintPath>..\..\Bld\Drops\Debug\x86\Binaries\Compiler.dll</HintPath>
-    </Reference>
-    <Reference Include="Core">
-      <HintPath>..\..\Bld\Drops\Debug\x86\Binaries\Core.dll</HintPath>
-    </Reference>
-    <Reference Include="CParser">
-      <HintPath>..\..\Bld\Drops\Debug\x86\Binaries\CParser.dll</HintPath>
-    </Reference>
     <Reference Include="Microsoft.CodeAnalysis, Version=1.1.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\..\packages\Microsoft.CodeAnalysis.Common.1.1.0\lib\net45\Microsoft.CodeAnalysis.dll</HintPath>
       <Private>True</Private>
@@ -124,6 +115,11 @@
   <ItemGroup>
     <Compile Include="CompilerTestOutputStream.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="Properties\Settings.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTimeSharedInput>True</DesignTimeSharedInput>
+      <DependentUpon>Settings.settings</DependentUpon>
+    </Compile>
     <Compile Include="CBackend\RegressionTests.cs" />
     <Compile Include="FileHelper.cs" />
     <Compile Include="ProcessHelper.cs" />
@@ -153,13 +149,33 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
-    <None Include="packages.config">
-      <SubType>Designer</SubType>
+    <None Include="packages.config" />
+    <None Include="Properties\Settings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+      <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <ItemGroup>
     <Analyzer Include="..\..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
     <Analyzer Include="..\..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Ext\Formula\Src\Core\Core.csproj">
+      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj">
+      <Project>{3b52b4f5-52f5-4e19-88cd-6a4a78ea0bf1}</Project>
+      <Name>FormulaCodeGeneratorTask</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Src\Parsers\CParser\CParser.csproj">
+      <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
+      <Name>CParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Src\Pc\Compiler\Compiler.csproj">
+      <Project>{ed76217f-2452-4a35-90f6-6eb6ccf2d882}</Project>
+      <Name>Compiler</Name>
+    </ProjectReference>
   </ItemGroup>
   <Choose>
     <When Condition="'$(VisualStudioVersion)' == '10.0' And '$(IsCodedUITest)' == 'True'">

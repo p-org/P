@@ -26,8 +26,7 @@ domain PData
 	StringList		::= new (hd: String, tl: any StringList + { NIL }).
 	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
 	EnumTypeDef		::= new (name: String, elems: any StringList, values: any IntegerList + { NIL }, id: any Id).
-	TypeDef         ::= new (name: String, type: any TypeExpr, id: any Id).
-	ModelType       ::= new (name: String, id: any Id).
+	TypeDef         ::= new (name: String, type: any TypeExpr + { NIL }, id: any Id).
 
 	NameType        ::= new (name: String).
     BaseType        ::= new ({ NULL, BOOL, INT, EVENT, MACHINE}).
@@ -115,7 +114,7 @@ domain PData
 	// For FunDecl, the order of params is left to right.
 	// For AnonFunDecl, the order of envVars is left to right and top to bottom.
 	// Thus, the numbering of variables is consistent across nested scopes.
-    FunDecl        ::= fun (name: String, owner: String + { NIL } -> kind: { REAL, MODEL }, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, id: any Id).
+    FunDecl        ::= fun (name: String, owner: String + { NIL } -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt + { NIL }, id: any Id).
     FunProtoDecl   ::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
 	FunProtoCreatesDecl ::= fun (fp: FunProtoDecl -> iormlist: StringList).
 	GlobalFunCreates ::= new (name: String, iorm: String).
@@ -126,7 +125,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + FunProtoCreatesDecl  + TypeDef + EnumTypeDef + ModelType.            
+    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + FunProtoCreatesDecl  + TypeDef + EnumTypeDef.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -215,7 +214,7 @@ domain PStructuralTyping extends PData, PError
 
 	[rule_Classes = '"error, msg: another function with same name declared"']
 	OneIdError(id1, "Another function with same name declared"),
-	OneDeclError(m) :- m is FunDecl(name, owner, _, _, _, _, _, id1), FunDecl(name, owner, _, _, _, _, _, id2), owner != NIL, id1 != id2.
+	OneDeclError(m) :- m is FunDecl(name, owner, _, _, _, _, id1), FunDecl(name, owner, _, _, _, _, id2), owner != NIL, id1 != id2.
 
 	//Valid TransDecl
 	[rule_Classes = '"error, msg: transition on an undefined event"']
@@ -228,12 +227,12 @@ domain PStructuralTyping extends PData, PError
 	[rule_Classes = '"error, msg: transition function not defined"']
 	OneIdError(trns.id, "Transition function not defined"),
 	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, 
-	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneIdError(trns.id, "Function cannot take arguments"),
-	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
-	                      trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, NIL, _, p, _, _, _, _), p != NIL.
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, trns.src.owner, p, _, _, _, _), p != NIL;
+	                      trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, NIL, p, _, _, _, _), p != NIL.
 	
 	//Valid DoDecl
 	[rule_Classes = '"error, msg: action on an undefined event"']
@@ -243,33 +242,33 @@ domain PStructuralTyping extends PData, PError
 	[rule_Classes = '"error, msg: function not defined"']
 	OneIdError(trns.id, "Function not defined"),
 	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, 
-	                      no FunDecl(act, trns.src.owner, _, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _, _), no FunProtoDecl(act, _, _).
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _), no FunProtoDecl(act, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneIdError(trns.id, "Function cannot take arguments"),
-	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String , FunDecl(act, trns.src.owner, _, p, _, _, _, _), p != NIL;
-	                      trns is DoDecl(_, _, act, _), act : String , FunDecl(act, NIL, _, p, _, _, _, _), p != NIL.
+	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, FunDecl(act, trns.src.owner, p, _, _, _, _), p != NIL;
+	                      trns is DoDecl(_, _, act, _), act : String, FunDecl(act, NIL, p, _, _, _, _), p != NIL.
 	
 	//Entry Exit Functions
 	[rule_Classes = '"error, msg: undefined function for entry"']
 	OneIdError(s.id, "Undefined function for entry"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String, 
-	                       no FunDecl(eF, s.owner, _, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _, _). 
+	                       no FunDecl(eF, s.owner, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _). 
 
 	[rule_Classes = '"error, msg: undefined function for exit"']
 	OneIdError(s.id, "Undefined function for exit"),
 	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String, 
-	                       no FunDecl(eF, s.owner, _, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _, _).
+	                       no FunDecl(eF, s.owner, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _).
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneIdError(s.id, "Entry function cannot take arguments"),
-	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
-	                       s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, s.owner, p, _, _, _, _), p != NIL;
+	                       s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, NIL, p, _, _, _, _), p != NIL.
 	
 	[rule_Classes = '"error, msg: function cannot take arguments"']
 	OneIdError(s.id, "Exit function cannot take arguments"),
-	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, s.owner, _, p, _, _, _, _), p != NIL;
-	                       s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, NIL, _, p, _, _, _, _), p != NIL.
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, s.owner, p, _, _, _, _), p != NIL;
+	                       s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, NIL, p, _, _, _, _), p != NIL.
 	
 	//cannot have null in spec machines
 	[rule_Classes = '"error, msg: null transitions not allowed in spec machine"']
@@ -331,8 +330,8 @@ domain PStructuralTyping extends PData, PError
 	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
 	/* Rules for separate compilation checks */
-	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl + ModelType).
-	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl; t is ModelType.
+	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl).
+	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl.
 
 	//multiple declarations of the same type
 	[rule_Classes = '"error, msg: multiple declarations of named types have same name"']
@@ -416,7 +415,7 @@ domain PStaticTyping extends PData, PError
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, NewStmt(iorm, _, _, _));
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunProtoDecl, no FunDecl(f.name, NIL, _, _, _, _, _, _), FunProtoCreatesDecl(f, list), MemberOfStringList(list, iorm).
+		f is FunProtoDecl, no FunDecl(f.name, NIL, _, _, _, _, _), FunProtoCreatesDecl(f, list), MemberOfStringList(list, iorm).
 
 	LocalFunCreates(f, iorm) :-
 		f is FunDecl, f.owner != NIL, SubSE(f, NewStmt(iorm, _, _, _));
@@ -462,7 +461,7 @@ domain PStaticTyping extends PData, PError
 
 	[rule_Classes = '"error, msg: undefined type"']
 	ZeroIdError(errorMsg),
-	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no ModelType(name, _), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
 						  errorMsg = strJoin("Undefined type: ", name).
 	
 	[rule_Classes = '"error, msg: multiple type definitions for a type name"']
@@ -514,7 +513,7 @@ domain PStaticTyping extends PData, PError
 	
 	TypeExpansion(type, type) :- AllTypeExprs(type), type : AnyType.
 	TypeExpansion(type, type)  :- AllTypeExprs(type), type : InterfaceType.
-	TypeExpansion(type, type)  :- ModelType(typeName, _), no TypeDefError(typeName), type = NameType(typeName).
+	TypeExpansion(type, type)  :- TypeDef(typeName, NIL, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
@@ -540,13 +539,13 @@ domain PStaticTyping extends PData, PError
 
 	ExportedType ::= (String, TypeExpr).
 	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
-	ExportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
+	ExportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val = fileName.
 
 	ImportedType ::= (String, TypeExpr).
 	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
-	ImportedType(name, eType) :- ModelType(name, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
+	ImportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 	ImportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
 
@@ -588,10 +587,6 @@ domain PStaticTyping extends PData, PError
 	FunAvailable(f, name) :- f is FunProtoDecl, m is MachineDecl(name, _);
 						     f is FunProtoDecl, name = NIL.
 
-	AnonFunDeclGen ::= (AnonFunDecl).
-	AnonFunDeclGen(f) :- SubCntxt(f), f: AnonFunDecl, f.ownerFun = NIL.
-	AnonFunDeclGen(f) :- SubCntxt(f), f: AnonFunDecl, f' is FunDecl, f'.kind = REAL, f.ownerFun = f'.name.
-
     //// The declarations that may contain expressions or statements that should be typed.
     TypingContext ::= FunDecl + AnonFunDecl.
     
@@ -605,8 +600,8 @@ domain PStaticTyping extends PData, PError
 	SubCntxt ::= sub (cntxt: TypingContext).
     
 	SubSE0 ::= (cntxt: TypingContext, typeable: Typeable).
-	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _, _), AnonFunDeclGen(cntxt).
-	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, _, typeable, _), cntxt.kind = REAL.
+	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _, _).
+	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, typeable, _), typeable: Stmt.
 	SubSE0(c, e), SubSE0(c, s) :- SubSE0(c, While(e, s, _)).
 	SubSE0(c, e), SubSE0(c, s1), SubSE0(c, s2) :- SubSE0(c, Ite(e, s1, s2, _)).
 	SubSE0(c, s1), SubSE0(c, s2) :- SubSE0(c, Seq(s1, s2, _)).
@@ -895,7 +890,7 @@ domain PStaticTyping extends PData, PError
 
 	[ rule_Classes = '"error, msg: function not defined"']
 	OneIdError(e.id, "Function not defined"),
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _), no FunProtoDecl(n, _, _).
 	[ rule_Classes = '"error, msg: function does not return a value"']
 	OneIdError(e.id, "Function does not return a value"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
@@ -1103,15 +1098,15 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP, _).
 
 	//// (2) Return statement
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, _, NIL, _, _, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, NIL, _, _, _). 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c : AnonFunDecl.
     TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, SUB).
 	[ rule_Classes = '"error, msg: function must return a value"']
  	OneIdError(e.id, "Function must return a value"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, _, t, _, _, _), t != NIL. 
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, t, _, _, _), t != NIL. 
 	[ rule_Classes = '"error, msg: function cannot return a value"']
 	OneIdError(e.id, "Function cannot return a value"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1, _), e1 != NIL, c = FunDecl(_, _, _, _, NIL, _, _, _). 
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1, _), e1 != NIL, c = FunDecl(_, _, _, NIL, _, _, _). 
 	[ rule_Classes = '"error, msg: return value has incorrect type"' ]
 	OneIdError(e.id, "Return value has incorrect type"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, k), t1 != et, k != SUB.
@@ -1313,7 +1308,7 @@ domain PStaticTyping extends PData, PError
 	TypeOf(c, e, NIL)   :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), TypeRel(t1, inpt, SUB), TypeRel(et, t2, SUB).
 	[ rule_Classes = '"error, msg: function not defined"']
 	OneIdError(e.id, "Function not defined"),
-	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _, _), no FunProtoDecl(n, _, _).	
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _), no FunProtoDecl(n, _, _).	
 	[ rule_Classes = '"error, msg: function requires arguments"']
 	OneIdError(e.id, "Function requires arguments"),
 	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
@@ -1468,10 +1463,10 @@ domain PStaticTyping extends PData, PError
 	MaxNumLocals(e, n) :- SubSE(c, e), e = Receive(cases, _, _), MaxNumLocals(cases, n). 
 	MaxNumLocals(a, n) :- a is AnonFunDecl, TranslatedBody(a, bodyTrans), MaxNumLocals(bodyTrans, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2 + 1.
 	MaxNumLocals(a, n) :- a is FunDecl, TranslatedBody(a, bodyTrans), MaxNumLocals(bodyTrans, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
-	MaxNumLocals(a, n) :- a is FunDecl, a.kind = MODEL, n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n2 + n3.
+	MaxNumLocals(a, n) :- a is FunDecl, a.body = NIL, n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n2 + n3.
 
     LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
-	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, _, params, _, locals, _, _), envVars = lstReverse(#NmdTupType, params).
+	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, params, _, locals, _, _), envVars = lstReverse(#NmdTupType, params).
 	LocalVarsAux(cntxt, envVars, locals) :- cntxt is AnonFunDecl(_, _, locals, _, envVars', _), envVars = lstReverse(#NmdTupType, envVars').
 	LocalVarsAux(cntxt, envVars, locals) :- LocalVarsAux(cntxt, envVars', locals'), locals' = NmdTupType(x, locals), envVars = NmdTupType(x, envVars').
 
@@ -1496,7 +1491,7 @@ domain PStaticTyping extends PData, PError
     FormalParam    ::= (cntxt: FunDecl, name: String).
     FormalParamAux ::= (cntxt: FunDecl, name: String, aux: NmdTupType + { NIL }).
     
-    FormalParamAux(cntxt, name, tl) :- cntxt is FunDecl(_, _, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(name, _), tl).  
+    FormalParamAux(cntxt, name, tl) :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(name, _), tl).  
     FormalParamAux(cntxt, name, tl) :- FormalParamAux(cntxt, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl).
     FormalParam(cntxt, name)  :- FormalParamAux(cntxt, name, _).
 
@@ -1504,8 +1499,8 @@ domain PStaticTyping extends PData, PError
 	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
 	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
 
-	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, _, params, _, _, _, _), params = NIL.
-	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
+	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NIL.
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
 	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, t').
 	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
 
@@ -1573,7 +1568,7 @@ domain PStaticTyping extends PData, PError
 
 	[ rule_Classes = '"error, msg: function must return a value"']
 	OneIdError(f.id, "function must return a value"),
-	FunRetError(f) :- f is FunDecl, f.kind = REAL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
+	FunRetError(f) :- f is FunDecl, f.body != NIL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
 
     /*************************************************************/
     /*                      Control Impurity                     */
@@ -1695,7 +1690,7 @@ domain PStaticTyping extends PData, PError
     /*************************************************************/
 	Impure ::= (FunDecl + FunProtoDecl).
 	Impure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
-	Impure(c) :- c is FunDecl, c.kind = MODEL, no Annotation(c, "pure", _, _).
+	Impure(c) :- c is FunDecl, c.body = NIL, no Annotation(c, "pure", _, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(NONDET, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(FAIRNONDET, _).
 	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Goto.
@@ -1831,8 +1826,8 @@ domain PStaticTyping extends PData, PError
     TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
 	
 	// Each model type has empty intersection with all types except itself and ANY
-	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType.
-	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), ModelType(name, _), t != s, toSymbol(t) != #AnyType. 
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), TypeDef(name, NIL, _), t != s, toSymbol(t) != #AnyType.
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), TypeDef(name, NIL, _), t != s, toSymbol(t) != #AnyType. 
 	
 	// Each enum type has empty intersection with all types except itself and ANY and INT
 	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT).

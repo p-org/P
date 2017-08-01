@@ -1,4 +1,4 @@
-model type StringType = int;
+type StringType;
 
 event sendback : (machine, any);
 event getback : any;
@@ -20,16 +20,6 @@ machine TestMachine
 			}
 		}
 	}
-
-	model fun GetPassword() : StringType
-	{
-		//return default(StringType);
-		if ($)
-			return 0;
-		else 
-			return 1;
-	}
-
 }
 
 machine ForwardingMachine {
@@ -40,3 +30,5 @@ machine ForwardingMachine {
 		}
 	}
 }
+
+fun GetPassword() : StringType;

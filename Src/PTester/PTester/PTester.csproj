@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003" ToolsVersion="12.0">
   <PropertyGroup>
     <ProjectType>Local</ProjectType>
@@ -141,13 +141,13 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Microsoft.PSharp, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c4566cf0a7f74012, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.PSharp">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Ext\PSharp\Binaries\Microsoft.PSharp.dll</HintPath>
+      <HintPath>..\..\..\Ext\PSharp\bin\net46\Microsoft.PSharp.dll</HintPath>
     </Reference>
-    <Reference Include="Microsoft.PSharp.TestingServices, Version=1.1.0.0, Culture=neutral, PublicKeyToken=c4566cf0a7f74012, processorArchitecture=MSIL">
+    <Reference Include="Microsoft.PSharp.TestingServices">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Ext\PSharp\Binaries\Microsoft.PSharp.TestingServices.dll</HintPath>
+      <HintPath>..\..\..\Ext\PSharp\bin\net46\Microsoft.PSharp.TestingServices.dll</HintPath>
     </Reference>
     <Reference Include="System">
       <Name>System</Name>

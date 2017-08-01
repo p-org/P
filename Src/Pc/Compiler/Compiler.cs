@@ -88,7 +88,6 @@
             {
                 this.Profiler = new ConsoleProfiler(log);
             }
-            options.erase = options.compilerOutput == CompilerOutput.C;
             this.Log = log;
             this.Options = options;
             this.errorReporter = new ErrorReporter();
@@ -163,7 +162,6 @@
                                 ftName == "EventSet" ||
                                 ftName == "TypeDef" ||
                                 ftName == "EnumTypeDef" ||
-                                ftName == "ModelType" ||
                                 ftName == "InterfaceTypeDecl" ||
                                 ftName == "FunProtoDecl" ||
                                 ftName == "GlobalFunCreates" ||
@@ -186,7 +184,7 @@
 
                 if (Options.outputFormula)
                 {
-                    StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.GetFileName(unitFileName) + ".4ml")));
+                    StreamWriter wr = new StreamWriter(File.Create(Path.Combine(outputDirName, Path.GetFileNameWithoutExtension(unitFileName) + "_model.4ml")));
                     unitModel.Print(wr);
                     wr.Close();
                 }

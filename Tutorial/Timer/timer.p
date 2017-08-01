@@ -1,4 +1,4 @@
-model type TimerPtr = machine;
+type TimerPtr = machine;
 
 // from client to timer
 event START: int;
@@ -6,20 +6,17 @@ event START: int;
 event TIMEOUT: TimerPtr;
 
 //Functions for interacting with the timer machine
-model fun CreateTimer(owner : machine): TimerPtr {
+fun CreateTimer(owner : machine): TimerPtr {
 	var m: machine;
 	m = new Timer(owner);
 	return m;
 }
 
-model fun StartTimer(timer: TimerPtr, time: int) {
+fun StartTimer(timer: TimerPtr, time: int) {
 	send timer, START, time;
 }
 
-// local event for control transfer within timer
-event UNIT; 
-
-model Timer
+machine Timer
 receives START;
 sends TIMEOUT;
 {
@@ -28,10 +25,8 @@ sends TIMEOUT;
   start state Init {
     entry (payload: machine) {
       client = payload;
-	  // goto WaitForReq
-      raise UNIT;
+      goto WaitForReq;
     }
-    on UNIT goto WaitForReq;
   }
 
   state WaitForReq {

@@ -64,9 +64,8 @@ spec Liveness observes NODE_DOWN {
 		on NODE_DOWN do (payload: machine) { 
 			nodes -= payload;
 			if (sizeof(nodes) == 0) 
-				raise UNIT;
+				goto Done;
 		}
-		on UNIT goto Done;
 	}
 	state Done {
 	}

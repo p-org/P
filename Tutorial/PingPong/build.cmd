@@ -11,11 +11,15 @@ msbuild /p:Platform=x64 /p:Configuration=Release PingPong.vcxproj
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /shared Main.p PingPong.p Safety.p Liveness.p /t:PingPong.4ml /r:..\Timer\timer.4ml
+%pc% /generate:C# /shared ..\Env\Env.p /t:Env.4ml /outputDir:..\Env
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /link /shared TestScript.p /r:PingPong.4ml /r:..\Timer\timer.4ml
+%pc% /generate:C# /shared Main.p PingPong.p Safety.p Liveness.p /t:PingPong.4ml /r:..\Timer\timer.4ml /r:..\Env\env.4ml
+
+if NOT errorlevel 0 goto :eof
+
+%pc% /generate:C# /link /shared TestScript.p /r:PingPong.4ml /r:..\Timer\timer.4ml /r:..\Env\env.4ml
 
 if NOT errorlevel 0 goto :eof
 

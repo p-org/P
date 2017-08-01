@@ -456,8 +456,6 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var owner = it.Current as Cnst;
                     it.MoveNext();
-                    bool isModel = ((Id) it.Current).Name == "MODEL";
-                    it.MoveNext();
                     var parameters = it.Current as FuncTerm;
                     it.MoveNext();
                     AST<FuncTerm> returnTypeName = it.Current is Id ? PTypeNull : (AST<FuncTerm>) Factory.Instance.ToAST(it.Current);

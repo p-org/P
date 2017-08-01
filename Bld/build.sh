@@ -25,10 +25,10 @@ echo Using $MSBUILD to build solutions
 
 echo ============= Building P SDK ===============
 
-Configuration=Debug
+Configuration=Release
 Platform=x86
 if [ $# -ne 2 ]; then
-    echo "No configuration supplied. Falling back on default: Debug,x86"
+    echo "No configuration supplied. Falling back on default: Release,x64"
 else
     Configuration=$1
     Configuration="$(tr '[:lower:]' '[:upper:]' <<< ${Configuration:0:1})${Configuration:1}"
@@ -40,45 +40,6 @@ echo Configuration is $Configuration, $Platform
 git submodule update --init --recursive --remote
 
 mono Bld/nuget.exe restore PLinux.sln
-
-cd Ext/Zing
-
-echo $MSBUILD Zing.sln /p:Platform=$Platform /p:Configuration=$Configuration
-$MSBUILD ZING.sln /p:Platform=$Platform /p:Configuration=$Configuration
-
-if [ $? -ne  0 ]; then
-    echo "Zing build failed. Exiting..."
-    popd
-    exit 2
-fi
-
-BinaryDrop=../../Bld/Drops/$Configuration/$Platform/Binaries
-
-if [ ! -f $BinaryDrop ]; then
-    mkdir -p $BinaryDrop
-fi
-
-filesToCopy="zc/bin/$Platform/$Configuration/zc.exe
-             ZingExplorer/bin/$Platform/$Configuration/ZingExplorer.dll
-             Zinger/bin/$Platform/$Configuration/Zinger.exe
-             Microsoft.Zing/bin/$Platform/$Configuration/Microsoft.Zing.dll
-             Microsoft.Zing.Runtime/bin/$Platform/$Configuration/Microsoft.Zing.Runtime.dll
-             Microsoft.Zing/bin/$Platform/$Configuration/Microsoft.Comega.dll
-             Microsoft.Zing/bin/$Platform/$Configuration/Microsoft.Comega.Runtime.dll
-             Resources/external/CCI/System.Compiler.dll
-             Resources/external/CCI/System.Compiler.Framework.dll
-             Resources/external/CCI/System.Compiler.Runtime.dll
-             DelayingSchedulers/CustomDelayingScheduler/bin/$Platform/$Configuration/CustomDelayingScheduler.dll
-             DelayingSchedulers/RandomDelayingScheduler/bin/$Platform/$Configuration/RandomDelayingScheduler.dll
-             DelayingSchedulers/RoundRobinDelayingScheduler/bin/$Platform/$Configuration/RoundRobinDelayingScheduler.dll
-             DelayingSchedulers/RunToCompletionDelayingScheduler/bin/$Platform/$Configuration/RunToCompletionDelayingScheduler.dll" 
-
-for i in $filesToCopy
-do
-    cp $i $BinaryDrop
-done
-
-cd ../..
 
 echo $MSBUILD ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration
 $MSBUILD ext/Formula/src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj /p:Platform=$Platform /p:Configuration=$Configuration

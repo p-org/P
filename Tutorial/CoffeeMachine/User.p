@@ -1,7 +1,7 @@
 event eDoorOpened;
 event eDoorClosed;
 
-model Door 
+machine Door 
 receives ;
 sends eDoorOpened, eDoorClosed;
 {
@@ -38,7 +38,7 @@ sends eDoorOpened, eDoorClosed;
     }
 }
 
-model EspressoButton 
+machine EspressoButton 
 receives ;
 sends eEspressoButtonPressed;
 {
@@ -68,7 +68,7 @@ sends eEspressoButtonPressed;
     }
 }
 
-model SteamerButton 
+machine SteamerButton 
 receives ;
 sends eSteamerButtonOn, eSteamerButtonOff;
 {

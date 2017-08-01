@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading;
@@ -28,10 +29,18 @@ namespace UnitTests.CBackend
             var curTest = new Uri(testDir.FullName);
             Uri relativePath = testRoot.MakeRelativeUri(curTest);
             string destinationDir = Path.GetFullPath(Path.Combine(TestResultsDirectory, relativePath.OriginalString));
-            if (Directory.Exists(destinationDir))
+            try
             {
-                Directory.Delete(destinationDir, true);
+                if (Directory.Exists(destinationDir))
+                {
+                    Directory.Delete(destinationDir, true);
+                }
             }
+            catch (Exception e)
+            {
+                WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
+            }
+
             FileHelper.DeepCopy(testDir, destinationDir);
             return new DirectoryInfo(destinationDir);
         }
@@ -44,38 +53,12 @@ namespace UnitTests.CBackend
             Console.ForegroundColor = saved;
         }
 
-        private static bool OpenSummaryStreamWriter(string fileName, out StreamWriter wr)
-        {
-            wr = null;
-            try
-            {
-                wr = new StreamWriter(Path.Combine(Constants.TestDirectory, fileName));
-            }
-            catch (Exception e)
-            {
-                WriteError("ERROR: Could not open summary file {0} - {1}", fileName, e.Message);
-                return false;
-            }
-
-            return true;
-        }
-
-        private static bool CloseSummaryStreamWriter(string fileName, StreamWriter wr)
-        {
-            try
-            {
-                wr.Close();
-            }
-            catch (Exception e)
-            {
-                WriteError("ERROR: Could not close summary file {0} - {1}", fileName, e.Message);
-                return false;
-            }
-
-            return true;
-        }
-
-        private void TestPc(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
+        private int TestPc(
+            TestConfig config,
+            TextWriter tmpWriter,
+            DirectoryInfo workDirectory,
+            string activeDirectory,
+            CompilerOutput outputLanguage)
         {
             List<string> pFiles = workDirectory.EnumerateFiles("*.p").Select(pFile => pFile.FullName).ToList();
             if (!pFiles.Any())
@@ -93,18 +76,24 @@ namespace UnitTests.CBackend
                 shortFileNames = true,
                 outputDir = workDirectory.FullName,
                 unitName = linkFileName,
-                liveness = LivenessOption.None,
-                compilerOutput = CompilerOutput.C
+                //liveness = LivenessOption.None,
+                liveness = outputLanguage == CompilerOutput.Zing && config.Arguments.Contains("/liveness")
+                    ? LivenessOption.Standard
+                    : LivenessOption.None,
+                compilerOutput = outputLanguage
             };
 
             // Compile
             if (!PCompiler.Value.Compile(compilerOutput, compileArgs))
             {
                 tmpWriter.WriteLine("EXIT: -1");
-                return;
+                return -1;
             }
 
+            //Skip the link step if outputLanguage == CompilerOutput.CSharp?
             // Link
+            //if (!(outputLanguage == CompilerOutput.CSharp))
+            //{
             compileArgs.dependencies.Add(linkFileName);
             compileArgs.inputFileNames.Clear();
 
@@ -116,21 +105,57 @@ namespace UnitTests.CBackend
             if (!PCompiler.Value.Link(compilerOutput, compileArgs))
             {
                 tmpWriter.WriteLine("EXIT: -1");
-                return;
+                return -1;
             }
+            //}
 
-            // compile *.p again, this time with Zing option.
-            compileArgs.inputFileNames = new List<string>(pFiles);
-            compileArgs.dependencies.Clear();
-            compileArgs.compilerOutput = CompilerOutput.Zing;
-            if (config.Arguments.Contains("/liveness"))
-            {
-                compileArgs.liveness = LivenessOption.Standard;
-            }
+            //pc.exe with Zing option is called when outputLanguage is C;
+            //pc.exe with CSharp option is called when outputLanguage is CSharp; 
+            //if (outputLanguage == CompilerOutput.C)
+            //{
+            //    // compile *.p again, this time with Zing option:
+            //    compileArgs.compilerOutput = CompilerOutput.Zing;
+            //    compileArgs.inputFileNames = new List<string>(pFiles);
+            //    compileArgs.dependencies.Clear();
+            //    int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
+            //    tmpWriter.WriteLine($"EXIT: {zingResult}");
+            //    if (!(zingResult == 0))
+            //    { 
+            //        return -1;
+            //    }
+            //}
+            //if (outputLanguage == CompilerOutput.CSharp)
+            //{
+            //    // compile *.p again, this time with CSharp option:
+            //    compileArgs.compilerOutput = CompilerOutput.CSharp;
+            //    compileArgs.inputFileNames = new List<string>(pFiles);
+            //    compileArgs.dependencies.Clear();
+            //    if (!PCompiler.Compile(compilerOutput, compileArgs))
+            //    {
+            //        tmpWriter.WriteLine("EXIT: -1");
+            //        return -1;
+            //    }
+            //    else
+            //    {
+            //        tmpWriter.WriteLine("EXIT: 0");
+            //    }
+            //    // Link
+            //    compileArgs.dependencies.Add(linkFileName);
+            //    compileArgs.inputFileNames.Clear();
 
-            // Compile Zing
-            int zingResult = PCompiler.Value.Compile(compilerOutput, compileArgs) ? 0 : -1;
-            tmpWriter.WriteLine($"EXIT: {zingResult}");
+            //    if (config.Link != null)
+            //    {
+            //        compileArgs.inputFileNames.Add(Path.Combine(activeDirectory, config.Link));
+            //    }
+
+            //    if (!PCompiler.Link(compilerOutput, compileArgs))
+            //    {
+            //        tmpWriter.WriteLine("EXIT: -1");
+            //        return -1;
+            //    }
+            //}
+
+            return 0;
         }
 
         private static void WriteHeader(TextWriter tmpWriter)
@@ -140,7 +165,207 @@ namespace UnitTests.CBackend
             tmpWriter.WriteLine("=================================");
         }
 
-        private static void TestPt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory) { }
+        private static void TestPt(
+            TestConfig config,
+            TextWriter tmpWriter,
+            DirectoryInfo workDirectory,
+            string activeDirectory,
+            DirectoryInfo origTestDir)
+        {
+            //Delete generated files from previous PTester run:
+            //<test>.cs,  <test>.dll, <test>.pdb
+            //foreach (var file in workDirectory.EnumerateFiles())
+            //{
+            //    if (file.Extension == ".cs" || ((file.Extension == ".dll" || file.Extension == ".pdb") && file.Name == origTestDir.Name))
+            //    {
+            //        file.Delete();
+            //    }
+
+            //}
+            //Run CSharp compiler on generated .cs:
+            // % 1: workDirectory
+            // % 2: (origTestDir (test name)
+            //csc.exe "%1\%2.cs" "%1\linker.cs" /debug /target:library /r:"D:\PLanguage\P\Bld\Drops\Debug\x86\Binaries\Prt.dll" /out:"%1\%2.dll"
+            //string cscFilePath = "csc.exe";
+
+            string frameworkPath = RuntimeEnvironment.GetRuntimeDirectory();
+            string cscFilePath = Path.Combine(frameworkPath, "csc.exe");
+            if (!File.Exists(cscFilePath))
+            {
+                throw new Exception("Could not find csc.exe");
+            }
+
+            // Find .cs input to pt.exe:
+            // pick up either .cs file with the name of origTestDir (if any), or
+            // any .cs file in the workDirectory (but not linker.cs):
+            string csFileName = null;
+            foreach (FileInfo fileName in workDirectory.EnumerateFiles())
+            {
+                if (fileName.Extension == ".cs" && Path
+                        .GetFileNameWithoutExtension(fileName.Name).ToLower().Equals(origTestDir.Name.ToLower())
+                    || fileName.Extension == ".cs" && !Path.GetFileNameWithoutExtension(fileName.Name).Equals("linker"))
+                {
+                    csFileName = fileName.FullName;
+                }
+            }
+            //string csFileName = (from fileName in workDirectory.EnumerateFiles()
+            //                     where fileName.Extension == ".cs" && (Path.GetFileNameWithoutExtension(fileName.Name)).Equals(origTestDir.Name))
+            //                     select fileName.FullName).FirstOrDefault();
+            //Debug:
+            //if (!(csFileName == null))
+            //
+            //    Console.WriteLine(".cs input for pt.exe: {}", csFileName);
+            //}
+
+            if (csFileName == null)
+            {
+                throw new Exception("Could not find .cs input for pt.exe");
+            }
+
+            // Find linker.cs:
+            string linkerFileName = (from fileName1 in workDirectory.EnumerateFiles()
+                                     where fileName1.Extension == ".cs" && Path.GetFileNameWithoutExtension(fileName1.Name).Equals("linker")
+                                     select fileName1.FullName).FirstOrDefault();
+            //Debug:
+            //if (!(linkerFileName == null))
+            //{
+            //    Console.WriteLine("linker.cs input for pt.exe: {}", linkerFileName);
+            //}
+            if (linkerFileName == null)
+            {
+                throw new Exception("Could not find linker.cs input for pt.exe");
+            }
+
+            // Find Prt.dll:
+            string prtDllPath = Path.Combine(
+                Constants.SolutionDirectory,
+                "Bld",
+                "Drops",
+                Constants.Configuration,
+                Constants.Platform,
+                "Binaries",
+                "Prt.dll");
+            //Debug:
+            //Console.WriteLine("Prt.dll input for pt.exe: {}", prtDLLPath);
+            if (!File.Exists(prtDllPath))
+            {
+                throw new Exception("Could not find Prt.dll");
+            }
+
+            // Output DLL file name:
+            string outputDllName = origTestDir.Name + ".dll";
+            string outputDllPath = Path.Combine(workDirectory.FullName, outputDllName);
+            //Debug:
+            //Console.WriteLine("output DLL for csc.exe: {}", outputDLLPath);
+
+            //Delete generated files from previous PTester run:
+            //<test>.cs,  <test>.dll, <test>.pdb, 
+            foreach (FileInfo file in workDirectory.EnumerateFiles())
+            {
+                if (file.Name == origTestDir.Name && (file.Extension == ".dll" || file.Extension == ".pdb"))
+                {
+                    file.Delete();
+                }
+            }
+            // Run C# compiler
+            //IMPORTANT: since there's no way to suppress all warnings, if warnings other than specified below are detected, those would have to be added
+            //Another option would be to not write csc.exe output into the acceptor at all
+            //var arguments = new List<string>(config.Arguments) { "/debug", "/nowarn:1692,168,162", "/nologo", "/target:library", "/r:" + prtDLLPath, "/out:" + outputDLLPath, csFileName, linkerFileName };
+            var arguments = new List<string>(config.Arguments)
+            {
+                "/debug",
+                "/target:library",
+                "/r:" + prtDllPath,
+                "/out:" + outputDllPath,
+                csFileName,
+                linkerFileName
+            };
+            string stdout, stderr;
+            int exitCode = ProcessHelper.RunWithOutput(cscFilePath, activeDirectory, arguments, out stdout, out stderr);
+            //tmpWriter.Write(stdout);
+            //tmpWriter.Write(stderr);
+            tmpWriter.WriteLine($"EXIT (csc.exe): {exitCode}");
+
+            // Append includes
+            foreach (string include in config.Includes)
+            {
+                tmpWriter.WriteLine();
+                tmpWriter.WriteLine("=================================");
+                tmpWriter.WriteLine(include);
+                tmpWriter.WriteLine("=================================");
+
+                try
+                {
+                    using (var sr = new StreamReader(Path.Combine(activeDirectory, include)))
+                    {
+                        while (!sr.EndOfStream)
+                        {
+                            tmpWriter.WriteLine(sr.ReadLine());
+                        }
+                    }
+                }
+                catch (FileNotFoundException)
+                {
+                    if (!include.EndsWith("trace"))
+                    {
+                        throw;
+                    }
+                }
+            }
+
+            //Run pt.exe: pt.exe "%1\%2.dll"
+            // Find pt.exe:
+            string ptExePath = Path.Combine(
+                Constants.SolutionDirectory,
+                "Bld",
+                "Drops",
+                Constants.Configuration,
+                Constants.Platform,
+                "Binaries",
+                "Pt.exe");
+            //Debug:
+            //Console.WriteLine("Pt.exe input for pt.exe: {}", ptExePath);
+            if (!File.Exists(ptExePath))
+            {
+                throw new Exception("Could not find pt.exe");
+            }
+
+            // input DLL file name: same as outputDLLPath
+
+            // Run pt.exe
+            arguments = new List<string>(config.Arguments) {outputDllPath};
+            int exitCode1 = ProcessHelper.RunWithOutput(ptExePath, activeDirectory, arguments, out stdout, out stderr);
+            tmpWriter.Write(stdout);
+            tmpWriter.Write(stderr);
+            tmpWriter.WriteLine($"EXIT: {exitCode1}");
+
+            // Append includes
+            foreach (string include in config.Includes)
+            {
+                tmpWriter.WriteLine();
+                tmpWriter.WriteLine("=================================");
+                tmpWriter.WriteLine(include);
+                tmpWriter.WriteLine("=================================");
+
+                try
+                {
+                    using (var sr = new StreamReader(Path.Combine(activeDirectory, include)))
+                    {
+                        while (!sr.EndOfStream)
+                        {
+                            tmpWriter.WriteLine(sr.ReadLine());
+                        }
+                    }
+                }
+                catch (FileNotFoundException)
+                {
+                    if (!include.EndsWith("trace"))
+                    {
+                        throw;
+                    }
+                }
+            }
+        }
 
         private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
@@ -153,7 +378,10 @@ namespace UnitTests.CBackend
                 Constants.Platform,
                 "Binaries",
                 "zinger.exe");
-
+            if (!File.Exists(zingFilePath))
+            {
+                throw new Exception("Could not find zinger.exe");
+            }
             // Find DLL input to Zing
             string zingDllName = (from fileName in workDirectory.EnumerateFiles()
                                   where fileName.Extension == ".dll" && !fileName.Name.Contains("linker")
@@ -207,6 +435,11 @@ namespace UnitTests.CBackend
 
             string testerExeDir = Path.Combine(workDirectory.FullName, Constants.Configuration, Constants.Platform);
             string testerExePath = Path.Combine(testerExeDir, Constants.CTesterExecutableName);
+            //if (!File.Exists(testerExePath))
+            //{
+            //    throw new Exception("Could not find tester.exe");
+            //}
+
             string prtTesterProj = Path.Combine(workDirectory.FullName, Constants.CTesterVsProjectName);
 
             // build the Pc output with the test harness
@@ -222,6 +455,13 @@ namespace UnitTests.CBackend
             tmpWriter.WriteLine($"EXIT: {exitCode}");
         }
 
+        private static string FindTool(string name)
+        {
+            string path = Environment.GetEnvironmentVariable("PATH");
+            string[] dirs = path?.Split(new[] {';'}, StringSplitOptions.RemoveEmptyEntries) ?? new string[0];
+            return dirs.Select(dir => Path.Combine(dir, name)).FirstOrDefault(File.Exists);
+        }
+
         private static void BuildTester(string prtTesterProj, string activeDirectory, bool clean)
         {
             var argumentList = new[]
@@ -229,12 +469,74 @@ namespace UnitTests.CBackend
                 prtTesterProj, clean ? "/t:Clean" : "/t:Build", $"/p:Configuration={Constants.Configuration}",
                 $"/p:Platform={Constants.Platform}", "/nologo"
             };
+            ////////////////////////////
+            //1. Define msbuildPath for msbuild.exe:
+            string msbuildPath = FindTool("MSBuild.exe");
+            if (msbuildPath == null)
+            {
+                string programFiles = Environment.GetEnvironmentVariable("ProgramFiles(x86)");
+                if (string.IsNullOrEmpty(programFiles))
+                {
+                    programFiles = Environment.GetEnvironmentVariable("ProgramFiles");
+                }
+                msbuildPath = Path.Combine(programFiles, @"MSBuild\14.0\Bin\MSBuild.exe");
+                if (!File.Exists(msbuildPath))
+                {
+                    throw new Exception("msbuild.exe is not in your PATH.");
+                }
+            }
 
+            //////////////////////////
             string stdout, stderr;
-            if (ProcessHelper.RunWithOutput("msbuild.exe", activeDirectory, argumentList, out stdout, out stderr) != 0)
+            //if (!File.Exists("msbuild.exe"))
+            //{
+            //    throw new Exception("Could not find msbuild.exe");
+            //}
+            if (ProcessHelper.RunWithOutput(msbuildPath, activeDirectory, argumentList, out stdout, out stderr) != 0)
             {
                 throw new Exception($"Failed to build {prtTesterProj}\nOutput:\n{stdout}\n\nErrors:\n{stderr}\n");
             }
+        }
+
+        public void CheckResult(string activeDirectory, DirectoryInfo origTestDir, TestType testType, StringBuilder sb, bool reset)
+        {
+            //var sb = new StringBuilder();
+            string correctOutputPath = Path.Combine(activeDirectory, Constants.CorrectOutputFileName);
+            string correctText = File.ReadAllText(correctOutputPath);
+            correctText = Regex.Replace(correctText, Constants.NewLinePattern, Environment.NewLine);
+            string actualText = sb.ToString();
+            actualText = Regex.Replace(actualText, Constants.NewLinePattern, Environment.NewLine);
+            if (!Constants.ResetTests)
+            {
+                if (!actualText.Equals(correctText))
+                {
+                    try
+                    {
+                        //Save actual test output:
+                        File.WriteAllText(Path.Combine(activeDirectory, Constants.ActualOutputFileName), actualText);
+                        //add diffing command to "display-diffs.bat":
+                        string diffCmd = string.Format(
+                            "{0} {1}\\acc_0.txt {1}\\{2}",
+                            Constants.DiffTool,
+                            activeDirectory,
+                            Constants.ActualOutputFileName);
+                        File.AppendAllText(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile), diffCmd);
+                    }
+                    catch (Exception e)
+                    {
+                        WriteError("ERROR: exception: {0}", e.Message);
+                    }
+                }
+                Assert.AreEqual(correctText, actualText);
+            }
+            else if (reset)
+            {
+                // if test type is the one for which reset is requested,
+                // reset the acceptor (if any), or create a new one:
+                File.WriteAllText(Path.Combine(origTestDir.FullName, testType.ToString(), Constants.CorrectOutputFileName), actualText);
+            }
+
+            Console.WriteLine(actualText);
         }
 
         [Test]
@@ -244,14 +546,8 @@ namespace UnitTests.CBackend
             // First step: clone test folder to new spot
             DirectoryInfo workDirectory = PrepareTestDir(origTestDir);
 
-            //TODO(after /reset option is implemented): opening of the diffing file
-            //only happens when !reset
-            //SafeDelete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
-            //StreamWriter displayDiffsWriter = null;
-            //if (!OpenSummaryStreamWriter(Constants.DisplayDiffsFile, out displayDiffsWriter))
-            //{
-            //    throw new Exception("Cannot open display-diffs.bat for writing");
-            //}
+            File.Delete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
+
             foreach (KeyValuePair<TestType, TestConfig> kv in testConfigs.OrderBy(kv => kv.Key))
             {
                 TestType testType = kv.Key;
@@ -272,51 +568,66 @@ namespace UnitTests.CBackend
                 var sb = new StringBuilder();
                 using (var tmpWriter = new StringWriter(sb))
                 {
-                    WriteHeader(tmpWriter);
+                    //WriteHeader(tmpWriter);
+                    int pcResult;
                     switch (testType)
                     {
                         case TestType.Pc:
-                            TestPc(config, tmpWriter, workDirectory, activeDirectory);
+                            //Console.WriteLine("RunPc option; Running TestPc");
+                            WriteHeader(tmpWriter);
+                            TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.C);
+                            if (Constants.RunPc || Constants.RunAll)
+                            {
+                                CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                            }
+                            else
+                            {
+                                CheckResult(activeDirectory, origTestDir, testType, sb, false);
+                            }
                             break;
                         case TestType.Prt:
-                            TestPrt(config, tmpWriter, workDirectory, activeDirectory);
+                            if (Constants.RunPrt || Constants.RunAll)
+                            {
+                                //Console.WriteLine("RunPrt option; Running TestPrt");
+                                WriteHeader(tmpWriter);
+                                TestPrt(config, tmpWriter, workDirectory, activeDirectory);
+                                CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                            }
                             break;
                         case TestType.Pt:
-                            TestPt(config, tmpWriter, workDirectory, activeDirectory);
+                            if (Constants.RunPt || Constants.RunAll)
+                            {
+                                //Console.WriteLine("RunPt option; Running TestPc and TestPt");
+                                WriteHeader(tmpWriter);
+                                pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.CSharp);
+                                //CheckResult(activeDirectory, origTestDir, testType, sb);
+                                if (pcResult == 0)
+                                {
+                                    WriteHeader(tmpWriter);
+                                    TestPt(config, tmpWriter, workDirectory, activeDirectory, origTestDir);
+                                    CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                                }
+                            }
                             break;
                         case TestType.Zing:
-                            TestZing(config, tmpWriter, workDirectory, activeDirectory);
+                            if (Constants.RunZing || Constants.RunAll)
+                            {
+                                //Console.WriteLine("RunZing option; Running TestPc andTestZing");
+                                WriteHeader(tmpWriter);
+                                pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.Zing);
+                                //CheckResult(activeDirectory, origTestDir, testType, sb);
+                                if (pcResult == 0)
+                                {
+                                    WriteHeader(tmpWriter);
+                                    TestZing(config, tmpWriter, workDirectory, activeDirectory);
+                                    CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                                }
+                            }
                             break;
                         default: throw new ArgumentOutOfRangeException();
                     }
                 }
-
-                /* TODO: Add test case freezing code here. 
-                 * Check for a FREEZE_P_TESTS environment variable, and if present, overwrite the contents of
-                 * Path.Combine(origTestDir.FullName, testType.ToString(), Constants.CorrectOutputFileName)
-                 * with the value in actualText and, of course, skip the assertion.
-                 */
-                string correctOutputPath = Path.Combine(activeDirectory, Constants.CorrectOutputFileName);
-                string correctText = File.ReadAllText(correctOutputPath);
-                correctText = Regex.Replace(correctText, Constants.NewLinePattern, Environment.NewLine);
-                string actualText = sb.ToString();
-                actualText = Regex.Replace(actualText, Constants.NewLinePattern, Environment.NewLine);
-                File.WriteAllText(Path.Combine(activeDirectory, Constants.ActualOutputFileName), actualText);
-                if (!actualText.Equals(correctText))
-                {
-                    //add diffing command to "display-diffs.bat":
-                    //displayDiffsWriter.WriteLine("{0} {1}\\acc_0.txt {1}\\{2}", Constants.DiffTool,
-                    //    activeDirectory, Constants.ActualOutputFileName);
-                }
-
-                Console.WriteLine(actualText);
-                Console.WriteLine($"Test completed at {DateTime.Now}");
-                Assert.AreEqual(correctText, actualText);
             }
-            //if (!CloseSummaryStreamWriter(Constants.DisplayDiffsFile, displayDiffsWriter))
-            //{
-            //    throw new Exception("Cannot close display-diffs.bat");
-            //}
         }
     }
 }

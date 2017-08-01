@@ -36,6 +36,45 @@ namespace UnitTests.CBackend
             return new DirectoryInfo(destinationDir);
         }
 
+        private static void WriteError(string format, params object[] args)
+        {
+            ConsoleColor saved = Console.ForegroundColor;
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine(format, args);
+            Console.ForegroundColor = saved;
+        }
+
+        private static bool OpenSummaryStreamWriter(string fileName, out StreamWriter wr)
+        {
+            wr = null;
+            try
+            {
+                wr = new StreamWriter(Path.Combine(Constants.TestDirectory, fileName));
+            }
+            catch (Exception e)
+            {
+                WriteError("ERROR: Could not open summary file {0} - {1}", fileName, e.Message);
+                return false;
+            }
+
+            return true;
+        }
+
+        private static bool CloseSummaryStreamWriter(string fileName, StreamWriter wr)
+        {
+            try
+            {
+                wr.Close();
+            }
+            catch (Exception e)
+            {
+                WriteError("ERROR: Could not close summary file {0} - {1}", fileName, e.Message);
+                return false;
+            }
+
+            return true;
+        }
+
         private void TestPc(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
             List<string> pFiles = workDirectory.EnumerateFiles("*.p").Select(pFile => pFile.FullName).ToList();

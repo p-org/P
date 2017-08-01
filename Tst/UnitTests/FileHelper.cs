@@ -21,5 +21,13 @@ namespace UnitTests
                 File.Copy(file.FullName, Path.Combine(target, file.Name), true);
             }
         }
+
+        public static void SafeDelete(string filePath)
+        {
+            if (File.Exists(filePath))
+            {
+                File.Delete(filePath);
+            }
+        }
     }
 }

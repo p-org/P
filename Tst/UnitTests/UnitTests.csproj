@@ -81,6 +81,7 @@
       <HintPath>..\..\packages\Microsoft.CodeAnalysis.CSharp.1.1.0\lib\net45\Microsoft.CodeAnalysis.CSharp.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="Microsoft.CSharp" />
     <Reference Include="nunit.framework, Version=3.7.1.0, Culture=neutral, PublicKeyToken=2638cd05610744eb, processorArchitecture=MSIL">
       <HintPath>..\..\packages\NUnit.3.7.1\lib\net45\nunit.framework.dll</HintPath>
       <Private>True</Private>
@@ -105,7 +106,9 @@
     </When>
     <Otherwise>
       <ItemGroup>
-        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework" />
+        <Reference Include="Microsoft.VisualStudio.QualityTools.UnitTestFramework">
+          <Private>False</Private>
+        </Reference>
       </ItemGroup>
     </Otherwise>
   </Choose>
@@ -117,11 +120,32 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="RegressionTests.cs" />
+    <Compile Include="CBackend\RegressionTests.cs" />
+    <Compile Include="FileHelper.cs" />
+    <Compile Include="ProcessHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TestCaseLoader.cs" />
-    <Compile Include="TestConfig.cs" />
-    <Compile Include="TestType.cs" />
+    <Compile Include="CBackend\TestCaseLoader.cs" />
+    <Compile Include="CBackend\TestConfig.cs" />
+    <Compile Include="CBackend\TestType.cs" />
+    <Compile Include="PSharpBackend\PSharpTests.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Ext\Formula\Src\Core\Core.csproj">
+      <Project>{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}</Project>
+      <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Src\Parsers\CParser\CParser.csproj">
+      <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
+      <Name>CParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Src\Pc\CompilerService\CompilerService.csproj">
+      <Project>{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}</Project>
+      <Name>CompilerService</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Src\Pc\Compiler\Compiler.csproj">
+      <Project>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</Project>
+      <Name>Compiler</Name>
+    </ProjectReference>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

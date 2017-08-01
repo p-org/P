@@ -547,6 +547,46 @@ namespace UnitTests
             return proc.ExitCode;
         }
 
+        public void CheckResult(string activeDirectory, DirectoryInfo origTestDir, TestType testType, StringBuilder sb, bool reset)
+        {
+            //var sb = new StringBuilder();
+            string correctOutputPath = Path.Combine(activeDirectory, Constants.CorrectOutputFileName);
+            string correctText = File.ReadAllText(correctOutputPath);
+            correctText = Regex.Replace(correctText, Constants.NewLinePattern, Environment.NewLine);
+            string actualText = sb.ToString();
+            actualText = Regex.Replace(actualText, Constants.NewLinePattern, Environment.NewLine);
+            if (!Constants.ResetTests)
+            {
+                if (!actualText.Equals(correctText))
+                {
+                    try
+                    {
+                        //Save actual test output:
+                        File.WriteAllText(Path.Combine(activeDirectory, Constants.ActualOutputFileName), actualText);
+                        //add diffing command to "display-diffs.bat":
+                        string diffCmd = string.Format("{0} {1}\\acc_0.txt {1}\\{2}", Constants.DiffTool,
+                            activeDirectory, Constants.ActualOutputFileName);
+                        File.AppendAllText(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile), diffCmd);
+                    }
+                    catch (Exception e)
+                    {
+                        WriteError("ERROR: exception: {0}", e.Message);
+                    }
+                }
+                Assert.AreEqual(correctText, actualText);
+            }
+            else
+            {
+                // if test type is the one for which reset is requested,
+                // reset the acceptor (if any), or create a new one:
+                if (reset)
+                {
+                    File.WriteAllText(Path.Combine(origTestDir.FullName, testType.ToString(), Constants.CorrectOutputFileName), actualText);
+                }   
+            }
+
+            Console.WriteLine(actualText);
+        }
         [Test]
         [TestCaseSource(nameof(TestCases))]
         public void TestProgramAndBackends(DirectoryInfo origTestDir, Dictionary<TestType, TestConfig> testConfigs)
@@ -578,72 +618,66 @@ namespace UnitTests
                 int pcResult;
                 using (var tmpWriter = new StringWriter(sb))
                 {
-                    WriteHeader(tmpWriter);
+                    //WriteHeader(tmpWriter);
                     switch (testType)
                     {
                         case TestType.Pc:
+ 
+                            //Console.WriteLine("RunPc option; Running TestPc");
+                            WriteHeader(tmpWriter);
                             TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.C);
+                            if (Constants.RunPc || Constants.RunAll)
+                            {
+                                CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                            }
+                            else
+                            {
+                                CheckResult(activeDirectory, origTestDir, testType, sb, false);
+                            }
                             break;
                         case TestType.Prt:
-                            //TODO: run pc.exe with CompilerOutput.C again?
-                            TestPrt(config, tmpWriter, workDirectory, activeDirectory);
+                            if (Constants.RunPrt || Constants.RunAll)
+                            {
+                                //Console.WriteLine("RunPrt option; Running TestPrt");
+                                WriteHeader(tmpWriter);
+                                TestPrt(config, tmpWriter, workDirectory, activeDirectory);
+                                CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                            }
                             break;
                         case TestType.Pt:
-                            pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.CSharp);
-                            if (pcResult == 0)
+                            if (Constants.RunPt || Constants.RunAll)
                             {
-                                TestPt(config, tmpWriter, workDirectory, activeDirectory, origTestDir);
+                                //Console.WriteLine("RunPt option; Running TestPc and TestPt");
+                                WriteHeader(tmpWriter);
+                                pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.CSharp);
+                                //CheckResult(activeDirectory, origTestDir, testType, sb);
+                                if (pcResult == 0)
+                                {
+                                    WriteHeader(tmpWriter);
+                                    TestPt(config, tmpWriter, workDirectory, activeDirectory, origTestDir);
+                                    CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                                }
+
                             }
                             break;
                         case TestType.Zing:
-                            pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.Zing);
-                            if (pcResult == 0)
+                            if (Constants.RunZing || Constants.RunAll)
                             {
-                                TestZing(config, tmpWriter, workDirectory, activeDirectory);
-                            }
+                                //Console.WriteLine("RunZing option; Running TestPc andTestZing");
+                                WriteHeader(tmpWriter);
+                                pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.Zing);
+                                //CheckResult(activeDirectory, origTestDir, testType, sb);
+                                if (pcResult == 0)
+                                {
+                                    WriteHeader(tmpWriter);
+                                    TestZing(config, tmpWriter, workDirectory, activeDirectory);
+                                    CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                                }
+                            }    
                             break;
                         default: throw new ArgumentOutOfRangeException();
                     }
                 }
-
-                /* TODO: Add test case freezing code here. 
-                    * Check for a FREEZE_P_TESTS environment variable, and if present, overwrite the contents of
-                    * Path.Combine(origTestDir.FullName, testType.ToString(), Constants.CorrectOutputFileName)
-                    * with the value in actualText and, of course, skip the assertion.
-                    */
-                string correctOutputPath = Path.Combine(activeDirectory, Constants.CorrectOutputFileName);
-                string correctText = File.ReadAllText(correctOutputPath);
-                correctText = Regex.Replace(correctText, Constants.NewLinePattern, Environment.NewLine);
-                string actualText = sb.ToString();
-                actualText = Regex.Replace(actualText, Constants.NewLinePattern, Environment.NewLine);
-                if (!Constants.Reset)
-                {
-                    if (!actualText.Equals(correctText))
-                    {
-                        try
-                        {
-                            //Save actual test output:
-                            File.WriteAllText(Path.Combine(activeDirectory, Constants.ActualOutputFileName), actualText);
-                            //add diffing command to "display-diffs.bat":
-                            string diffCmd = string.Format("{0} {1}\\acc_0.txt {1}\\{2}", Constants.DiffTool,
-                                activeDirectory, Constants.ActualOutputFileName);
-                            File.AppendAllText(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile), diffCmd);
-                        }
-                        catch (Exception e)
-                        {
-                            WriteError("ERROR: exception: {0}", e.Message);
-                        }
-                    }
-                    Assert.AreEqual(correctText, actualText);
-                }
-                else
-                {
-                    // reset the acceptor or create a new one:
-                    //TODO: remove old acceptor if it exists?
-                    File.WriteAllText(Path.Combine(origTestDir.FullName, testType.ToString(), Constants.CorrectOutputFileName), actualText);
-                }
-
-                Console.WriteLine(actualText);
             }
         }
     }

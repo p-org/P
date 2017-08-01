@@ -47,6 +47,12 @@ namespace UnitTests
 
         internal static string TestDirectory => Path.Combine(SolutionDirectory, TestDirectoryName);
 
-        internal static bool Reset => Properties.Settings.Default.Reset;
+        internal static bool ResetTests => Properties.Settings.Default.ResetTests;
+        internal static bool RunPc => Properties.Settings.Default.RunPc;
+        internal static bool RunPrt => Properties.Settings.Default.RunPrt;
+        internal static bool RunPt => Properties.Settings.Default.RunPt;
+        internal static bool RunZing => Properties.Settings.Default.RunZing;
+        internal static bool RunAll => Properties.Settings.Default.RunAll;
+
     }
 }

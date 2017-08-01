@@ -26,9 +26,9 @@ namespace UnitTests.Properties {
         [global::System.Configuration.ApplicationScopedSettingAttribute()]
         [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
         [global::System.Configuration.DefaultSettingValueAttribute("False")]
-        public bool Reset {
+        public bool ResetTests {
             get {
-                return ((bool)(this["Reset"]));
+                return ((bool)(this["ResetTests"]));
             }
         }
         

@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 
-namespace UnitTests
+namespace UnitTests.CBackend
 {
     internal class TestCaseLoader
     {

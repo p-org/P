@@ -14,20 +14,11 @@ namespace Microsoft.Pc
         public StateTemperature temperature;
         public string printedName;
 
-        public bool IsHot
-        {
-            get { return temperature == StateTemperature.HOT; }
-        }
+        public bool IsHot => temperature == StateTemperature.HOT;
 
-        public bool IsCold
-        {
-            get { return temperature == StateTemperature.COLD; }
-        }
+        public bool IsCold => temperature == StateTemperature.COLD;
 
-        public bool IsWarm
-        {
-            get { return temperature == StateTemperature.WARM; }
-        }
+        public bool IsWarm => temperature == StateTemperature.WARM;
 
         public StateInfo(string ownerName, string entryActionName, string exitFunName, StateTemperature temperature, string printedName)
         {

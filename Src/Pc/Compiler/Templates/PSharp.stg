@@ -1,0 +1,143 @@
+﻿delimiters "%", "%"
+concat(a,b) ::= "%a%%b%"
+topLevel(pgm) ::= <<
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.PSharp;
+
+namespace %pgm.Namespace%
+{
+    %pgm.Types:typeDfn();separator="\n\n"%
+
+    %pgm.Machines:machineDecl();separator="\n\n"%
+
+    %pgm.Events:eventDecl();separator="\n\n"%
+}
+>>
+
+decltype(ty) ::= <%%(concat("decl_", ty.TypeKind))(ty)%%>
+decl_base(ty) ::= <%%(concat("decl_base_", ty.TypeName))()%%>
+decl_base_machine() ::= "Machine"
+decl_base_event() ::= "Event"
+decl_base_int() ::= "int"
+decl_base_bool() ::= "bool"
+decl_base_null() ::= "void"
+decl_sequence(ty) ::= "List<%decltype(ty.ElementType)%>"
+decl_namedtuple(ty) ::= "%ty.TypeName%"
+
+typeDfn(ty) ::= <%%(concat("ty_dfn_", ty.TypeKind))(ty)%%>
+ty_dfn_base(ty) ::= ""
+ty_dfn_sequence(ty) ::= ""
+ty_dfn_map(ty) ::= ""
+ty_dfn_tuple(ty) ::= ""
+ty_dfn_namedtuple(ty) ::= <<
+internal class %ty.TypeName% : IPMutableReadOnlyTuple<%ty.Types:decltype();separator=","%>
+{
+    public %ty.TypeName%() { }
+
+    public %ty.TypeName%(IPMutableReadOnlyTuple<%ty.Types:decltype();separator=","%> other)
+    {
+        // TODO: add deep copying code here
+        %ty.Fields:{f|this.Item%i% = other.Item%i%;};separator="\n"%
+    }
+
+    public %ty.TypeName%(Tuple<%ty.Types:decltype();separator=","%> other)
+    {
+        // TODO: add deep copying code here
+        %ty.Fields:{f|this.Item%i% = other.Item%i%;};separator="\n"%
+    }
+
+    %ty.Fields:{f|%ty_dfn_namedtuple_field(f,i)%};separator="\n\n"%
+
+    #region IPMutableReadOnlyTuple implementation
+    %ty.Types:{t|[DebuggerBrowsable(DebuggerBrowsableState.Never)]%\n%public %decltype(t)% Item%i% { get; set; \}};separator="\n"%
+    #endregion
+}
+>>
+ty_dfn_namedtuple_field(f,i) ::= <<
+public %decltype(f.Type)% %f.Name%
+{
+    get { return Item%i%; }
+    set { Item%i% = value; }
+}
+>>
+
+eventDecl(evt) ::= <<
+internal class %evt.Name% : Event
+{
+%if(evt.PayloadType)%
+    public %decltype(evt.PayloadType)% Payload { get; set; }
+
+%endif%
+    public %evt.Name%(%if(evt.PayloadType)%%decltype(evt.PayloadType)% payload%endif%)
+        : base(%evt.Assert%, %evt.Assume%)
+    {
+    %if(evt.PayloadType)%
+        this.Payload = payload;
+    %endif%
+    }
+}
+>>
+
+machineDecl(machine) ::= <<
+internal class %machine.Name% : Machine
+{
+    %machine.States:stateDecl();separator="\n\n"%
+
+	%machine.Methods:methodDecl();separator="\n\n"%
+}
+>>
+
+stateDecl(state) ::= <%
+%if(state.IsStart)%
+[Start]%\n%
+%endif%
+%if(state.IsHot)%
+[Hot]%\n%
+%elseif(state.IsCold)%
+[Cold]%\n%
+%endif%
+%if(state.EntryFun)%
+[OnEntry(nameof(%state.EntryFun%))]%\n%
+%endif%
+%if(state.ExitFun)%
+[OnExit(nameof(%state.ExitFun%))]%\n%
+%endif%
+%if(state.IgnoredEvents)%
+[IgnoreEvents(%state.IgnoredEvents:{evt|typeof(%evt%)};wrap,anchor,separator=", "%)]%\n%
+%endif%
+%if(state.DeferredEvents)%
+[DeferEvents(%state.DeferredEvents:{evt|typeof(%evt%)};wrap,anchor,separator=", "%)]%\n%
+%endif%
+%state.Transitions:stateTransition();separator="\n"%
+%if(state.Transitions)%%\n%%endif%
+class %state.Name% : MachineState {}
+%>
+
+stateTransition(t) ::= <%
+%if(t.Target)%
+%if(t.IsPush)%
+[OnEventPushState(typeof(%t.OnEvent%), typeof(%t.Target%))]
+%else%
+[OnEventGotoState(typeof(%t.OnEvent%), typeof(%t.Target%)%if(t.Function)%, nameof(%t.Function%)%endif%)]
+%endif%
+%else%
+[OnEventDoAction(typeof(%t.OnEvent%), nameof(%t.Function%))]
+%endif%
+%>
+
+methodDecl(m) ::= <<
+internal %decltype(m.ReturnType)% %m.Name%(%argumentList(m.Parameters)%)
+{
+    // variable declarations
+    %m.LocalVariables:{v|%decltype(v.Type)% %v.Name%;}; separator="\n"%
+
+    // function body
+    /* TODO */
+}
+>>
+
+argumentList(vars) ::= <%
+%vars:{v|%decltype(v.Type)% %v.Name%}; separator=", "%
+%>

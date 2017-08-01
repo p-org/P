@@ -1467,9 +1467,9 @@ PRT_VALUE * PRT_CALL_CONV PrtConvertValue(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 		case PRT_KIND_MACHINE:
 			return PrtCloneValue(value);
 		case PRT_KIND_INT:
-			return PrtMkIntValue(value->discriminator == PRT_KIND_FLOAT ? (PRT_INT) value->valueUnion.ft : value->valueUnion.nt);
+			return PrtMkIntValue(value->discriminator == PRT_VALUE_KIND_FLOAT ? (PRT_INT) value->valueUnion.ft : value->valueUnion.nt);
 		case PRT_KIND_FLOAT:
-			return PrtMkFloatValue(value->discriminator == PRT_KIND_FLOAT ? value->valueUnion.ft : value->valueUnion.nt);
+			return PrtMkFloatValue(value->discriminator == PRT_VALUE_KIND_FLOAT ? value->valueUnion.ft : value->valueUnion.nt);
 		default:
 			PrtAssert(PRT_FALSE, "Illegal convert invocation");
 			return NULL;

@@ -1,7 +1,7 @@
 //Interfaces and model types
 type ITimer(ITimerClient) = { eStartTimer, eCancelTimer };
 type ITimerClient() = { eTimeOut, eCancelSuccess, eCancelFailure }; 
-model type TimerPtr = ITimer;
+type TimerPtr = ITimer;
 
 // events from client to timer
 event eStartTimer: int;

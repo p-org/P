@@ -618,12 +618,15 @@ namespace Microsoft.Pc
                 }
 
                 //is float
-                if (((Id)((FuncTerm)n).Function).Name == PData.Cnst_Float.Node.Name)
+                if(n is FuncTerm)
                 {
-                    var num = GetArgByIndex((FuncTerm)n, 0);
-                    var val = ((Cnst)num).GetNumericValue();
-                    return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtFloatValue"),
-                                                                         CSharpHelper.MkCSharpNumericLiteralExpression((double)val.Numerator / (double)val.Denominator));
+                    if (((Id)((FuncTerm)n).Function).Name == PData.Cnst_Float.Node.Name)
+                    {
+                        var num = GetArgByIndex((FuncTerm)n, 0);
+                        var val = ((Cnst)num).GetNumericValue();
+                        return CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtFloatValue"),
+                                                                             CSharpHelper.MkCSharpNumericLiteralExpression((double)val.Numerator / (double)val.Denominator));
+                    }
                 }
 
                 // n.NodeKind == NodeKind.Id

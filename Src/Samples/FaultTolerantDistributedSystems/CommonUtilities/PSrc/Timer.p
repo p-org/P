@@ -1,15 +1,15 @@
 //Functions for interacting with the timer machine
-model fun CreateTimer(owner : ITimerClient): TimerPtr {
+fun CreateTimer(owner : ITimerClient): TimerPtr {
 	var m: ITimer;
 	m = new ITimer(owner);
 	return m;
 }
 
-model fun StartTimer(timer: TimerPtr, time: int) {
+fun StartTimer(timer: TimerPtr, time: int) {
 	send timer, eStartTimer, 100;
 }
 
-model fun CancelTimer(timer: TimerPtr) {
+fun CancelTimer(timer: TimerPtr) {
 	send timer, eCancelTimer;
 	receive {
 		case eCancelSuccess: (payload: TimerPtr){}
@@ -17,7 +17,7 @@ model fun CancelTimer(timer: TimerPtr) {
 	}
 }
 
-model Timer : ITimer
+machine Timer : ITimer
 receives eStartTimer, eCancelTimer;
 sends eTimeOut, eCancelSuccess, eCancelFailure;
 {

@@ -1,10 +1,12 @@
-machine Main {
-	start state Entry {
+machine M {
+	start state S {
 		entry {
-			var x: (a: int, b: bool);
-			var y: (a: int, b: bool);
-			x = (a = 1, b = true);
-			y = x;
 		}
+	}
+
+	fun foo(x : int) : (a: int, b: bool) {
+	    var z : int;
+	    z = x + 1;
+		return (a = z, b = (z == 1));
 	}
 }

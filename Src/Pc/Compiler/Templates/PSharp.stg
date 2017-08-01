@@ -1,5 +1,20 @@
 ﻿delimiters "%", "%"
 concat(a,b) ::= "%a%%b%"
+topLevel(pgm) ::= <<
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.PSharp;
+
+namespace %pgm.Namespace%
+{
+    %pgm.Types:typeDfn();separator="\n\n"%
+
+    %pgm.Machines:machineDecl();separator="\n\n"%
+
+    %pgm.Events:eventDecl();separator="\n\n"%
+}
+>>
 
 decltype(ty) ::= <%%(concat("decl_", ty.TypeKind))(ty)%%>
 decl_base(ty) ::= <%%(concat("decl_base_", ty.TypeName))()%%>
@@ -36,7 +51,7 @@ internal class %ty.TypeName% : IPMutableReadOnlyTuple<%ty.Types:decltype();separ
     %ty.Fields:{f|%ty_dfn_namedtuple_field(f,i)%};separator="\n\n"%
 
     #region IPMutableReadOnlyTuple implementation
-    %ty.Types:{t|public %decltype(t)% Item%i% { get; set; \}};separator="\n"%
+    %ty.Types:{t|[DebuggerBrowsable(DebuggerBrowsableState.Never)]%\n%public %decltype(t)% Item%i% { get; set; \}};separator="\n"%
     #endregion
 }
 >>
@@ -45,22 +60,6 @@ public %decltype(f.Type)% %f.Name%
 {
     get { return Item%i%; }
     set { Item%i% = value; }
-}
->>
-
-topLevel(pgm) ::= <<
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.PSharp;
-
-namespace %pgm.Namespace%
-{
-    %pgm.Types:typeDfn();separator="\n\n"%
-
-    %pgm.Machines:machineDecl();separator="\n\n"%
-
-    %pgm.Events:eventDecl();separator="\n\n"%
 }
 >>
 
@@ -128,10 +127,6 @@ stateTransition(t) ::= <%
 %endif%
 %>
 
-argumentList(vars) ::= <%
-%vars:{v|%decltype(v.Type)% %v.Name%}; separator=", "%
-%>
-
 methodDecl(m) ::= <<
 internal %decltype(m.ReturnType)% %m.Name%(%argumentList(m.Parameters)%)
 {
@@ -142,3 +137,7 @@ internal %decltype(m.ReturnType)% %m.Name%(%argumentList(m.Parameters)%)
     /* TODO */
 }
 >>
+
+argumentList(vars) ::= <%
+%vars:{v|%decltype(v.Type)% %v.Name%}; separator=", "%
+%>

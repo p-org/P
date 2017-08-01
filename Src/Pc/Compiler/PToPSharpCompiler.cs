@@ -111,7 +111,7 @@ namespace Microsoft.Pc
                                               select new TypedName {Name = name, Type = type}).ToList();
 
                     Dictionary<string, TypedName> localSymbolTable = parameters.Concat(locals).ToDictionary(v => v.Name, v => v);
-
+                    
                     return new MethodDecl
                     {
                         Name = funName,

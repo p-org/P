@@ -2,7 +2,7 @@
     "name": "msr-vscode-p",
     "displayName": "p",
     "description": "The P programming language ",
-    "version": "0.0.5",
+    "version": "0.0.6",
     "publisher": "lovettchris",
 	"icon": "images/p-icon.png",
     "engines": {

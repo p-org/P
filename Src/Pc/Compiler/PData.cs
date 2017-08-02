@@ -26,7 +26,7 @@
         public static readonly AST<Id> Cnst_Add = Factory.Instance.MkId("ADD");
         public static readonly AST<Id> Cnst_Sub = Factory.Instance.MkId("SUB");
         public static readonly AST<Id> Cnst_Mul = Factory.Instance.MkId("MUL");
-        public static readonly AST<Id> Cnst_IntDiv = Factory.Instance.MkId("INTDIV");
+        public static readonly AST<Id> Cnst_Div = Factory.Instance.MkId("DIV");
         public static readonly AST<Id> Cnst_And = Factory.Instance.MkId("AND");
         public static readonly AST<Id> Cnst_Or = Factory.Instance.MkId("OR");
         public static readonly AST<Id> Cnst_Eq = Factory.Instance.MkId("EQ");

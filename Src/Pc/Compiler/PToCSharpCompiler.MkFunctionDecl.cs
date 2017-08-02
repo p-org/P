@@ -58,7 +58,6 @@ namespace Microsoft.Pc
 
             private FuncTerm LookupType(Node node)
             {
-                //return entityInfo.typeInfo[Factory.Instance.ToAST(node)];
                 return funInfo.typeInfo[Factory.Instance.ToAST(node)];
             }
 
@@ -724,111 +723,99 @@ namespace Microsoft.Pc
 
                     ExpressionSyntax arg1Val, arg2Val;
                     IdentifierNameSyntax returnType = null;
-                    var argType = LookupType(ft);
-
-                    var typeRet = ((Id)GetArgByIndex(argType, 0)).Name;
-                    if (typeRet == PData.Cnst_Int.Node.Name)
-                    {
-                        arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
-                        arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
-                        returnType = SyntaxFactory.IdentifierName("PrtIntValue");
-                    }
-                    else
-                    {
-                        arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg1), "ft");
-                        arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg2), "ft");
-                        returnType = SyntaxFactory.IdentifierName("PrtFloatValue");
-                    }
                     
-                    if (op == PData.Cnst_Add.Node.Name)
+                    Dictionary<string, SyntaxKind> IntOrFloatOpToSyntaxKind = new Dictionary<string, SyntaxKind>() {
+                        { "ADD", SyntaxKind.AddExpression },
+                        { "SUB", SyntaxKind.SubtractExpression },
+                        { "MUL", SyntaxKind.MultiplyExpression },
+                        { "DIV", SyntaxKind.DivideExpression }
+                    };
+
+                    Dictionary<string, SyntaxKind> BoolOpToSyntaxKind = new Dictionary<string, SyntaxKind>() {
+                        { "AND", SyntaxKind.LogicalAndExpression },
+                        { "OR", SyntaxKind.LogicalOrExpression }
+                    };
+                    Dictionary<string, SyntaxKind> CompOpToSyntaxKind = new Dictionary<string, SyntaxKind>() {
+                        { "LT", SyntaxKind.LessThanExpression },
+                        { "LE", SyntaxKind.LessThanOrEqualExpression },
+                        { "GT", SyntaxKind.GreaterThanExpression },
+                        { "GE", SyntaxKind.GreaterThanOrEqualExpression },
+                        { "EQ", SyntaxKind.EqualsExpression },
+                        { "NEQ", SyntaxKind.NotEqualsExpression }
+                    };
+
+                    if(IntOrFloatOpToSyntaxKind.ContainsKey(op))
                     {
-                       
+                        var argType = LookupType(ft);
+                        var typeRet = ((Id)GetArgByIndex(argType, 0)).Name;
+                        if (typeRet == PData.Cnst_Int.Node.Name)
+                        {
+                            arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                            arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                            returnType = SyntaxFactory.IdentifierName("PrtIntValue");
+                        }
+                        else
+                        {
+                            arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg1), "ft");
+                            arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg2), "ft");
+                            returnType = SyntaxFactory.IdentifierName("PrtFloatValue");
+                        }
+
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             returnType,
-                            SyntaxFactory.BinaryExpression(SyntaxKind.AddExpression, arg1Val, arg2Val));
+                            SyntaxFactory.BinaryExpression(IntOrFloatOpToSyntaxKind[op], arg1Val, arg2Val));
                     }
 
-                    if (op == PData.Cnst_Sub.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            returnType,
-                            SyntaxFactory.BinaryExpression(SyntaxKind.SubtractExpression, arg1Val, arg2Val));
-                    }
-
-                    if (op == PData.Cnst_Mul.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            returnType,
-                            SyntaxFactory.BinaryExpression(SyntaxKind.MultiplyExpression, arg1Val, arg2Val));
-                    }
-
-                    if (op == PData.Cnst_IntDiv.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            returnType,
-                            SyntaxFactory.BinaryExpression(SyntaxKind.DivideExpression, arg1Val, arg2Val));
-                    }
 
                     //Boolean operations
-                    var arg1Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
-                    var arg2Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
-                    if (op == PData.Cnst_And.Node.Name)
+                    if (BoolOpToSyntaxKind.ContainsKey(op))
                     {
+                        var arg1Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg1), "bl");
+                        var arg2Bool = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtBoolValue", arg2), "bl");
+     
+                        return CSharpHelper.MkCSharpObjectCreationExpression(
+                            SyntaxFactory.IdentifierName("PrtBoolValue"),
+                            SyntaxFactory.BinaryExpression(BoolOpToSyntaxKind[op], arg1Bool, arg2Bool));
+                    }
+
+                    //comparison operations
+                    if(CompOpToSyntaxKind.ContainsKey(op))
+                    {
+                        var argType = LookupType(GetArgByIndex(ft, 1));
+                        var typeRet = ((Id)GetArgByIndex(argType, 0)).Name;
+                        if (typeRet == PData.Cnst_Int.Node.Name)
+                        {
+                            arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
+                            arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
+                            returnType = SyntaxFactory.IdentifierName("PrtIntValue");
+                        }
+                        else
+                        {
+                            arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg1), "ft");
+                            arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtFloatValue", arg2), "ft");
+                            returnType = SyntaxFactory.IdentifierName("PrtFloatValue");
+                        }
+
+                        if (op == PData.Cnst_Eq.Node.Name)
+                        {
+                            return CSharpHelper.MkCSharpObjectCreationExpression(
+                                SyntaxFactory.IdentifierName("PrtBoolValue"),
+                                CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(arg1, "Equals"), arg2));
+                        }
+
+                        if (op == PData.Cnst_NEq.Node.Name)
+                        {
+                            return CSharpHelper.MkCSharpObjectCreationExpression(
+                                SyntaxFactory.IdentifierName("PrtBoolValue"),
+                                SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(arg1, "Equals"), arg2)));
+                        }
                         
                         return CSharpHelper.MkCSharpObjectCreationExpression(
                             SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.LogicalAndExpression, arg1Bool, arg2Bool));
-                    }
-
-                    if (op == PData.Cnst_Or.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.LogicalOrExpression, arg1Bool, arg2Bool));
-                    }
-
-                    if (op == PData.Cnst_Eq.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(arg1, "Equals"), arg2));
-                    }
-
-                    if (op == PData.Cnst_NEq.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(arg1, "Equals"), arg2)));
-                    }
-
-                    if (op == PData.Cnst_Lt.Node.Name)
-                    {
+                            SyntaxFactory.BinaryExpression(CompOpToSyntaxKind[op], arg1Val, arg2Val));
                         
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.LessThanExpression, arg1Val, arg2Val));
                     }
 
-                    if (op == PData.Cnst_Le.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.LessThanOrEqualExpression, arg1Val, arg2Val));
-                    }
-
-                    if (op == PData.Cnst_Gt.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.GreaterThanExpression, arg1Val, arg2Val));
-                    }
-
-                    if (op == PData.Cnst_Ge.Node.Name)
-                    {
-                        return CSharpHelper.MkCSharpObjectCreationExpression(
-                            SyntaxFactory.IdentifierName("PrtBoolValue"),
-                            SyntaxFactory.BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, arg1Val, arg2Val));
-                    }
 
                     if (op == PData.Cnst_Idx.Node.Name)
                     {

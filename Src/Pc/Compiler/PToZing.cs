@@ -1955,7 +1955,7 @@ namespace Microsoft.Pc
                     ctxt.AddSideEffect(MkZingCallStmt(MkZingCall(MkZingDot(PRT_VALUE, "PrtPrimSetInt"), tmpVar, MkZingApply(ZingData.Cnst_Mul, MkZingDot(arg1, "nt"), MkZingDot(arg2, "nt")))));
                     retVal = tmpVar;
                 }
-                else if (op == PData.Cnst_IntDiv.Node.Name)
+                else if (op == PData.Cnst_Div.Node.Name)
                 {
                     var tmpVar = ctxt.GetTmpVar(PrtValue, "tmpVar");
                     ctxt.AddSideEffect(MkZingAssign(tmpVar, MkZingCall(PrtMkDefaultValue, typeContext.PTypeToZingExpr(PTypeInt.Node))));

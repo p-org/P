@@ -1,10 +1,10 @@
-type float = int;
-type tyfloat = (float, float);
+type tFloat = int;
+type tytFloat = (tFloat, tFloat);
 
 machine Main {
-   var x : float;
-   var y : float;
-   var z : tyfloat;
+   var x : tFloat;
+   var y : tFloat;
+   var z : tytFloat;
    start state Init {
    	entry 
    	{
@@ -20,14 +20,14 @@ machine Main {
    		assert(z.0 != z.1);
    }
 
-   fun foo(x: float, y: float) : (float, float)
+   fun foo(x: tFloat, y: tFloat) : (tFloat, tFloat)
    {
    		var x1 : (int, int);
    		x1 = (x, y);
    		return x1;
    }
 
-   fun def() : float
+   fun def() : tFloat
    {
    		return 1;
    }

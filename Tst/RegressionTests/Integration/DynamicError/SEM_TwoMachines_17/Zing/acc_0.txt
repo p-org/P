@@ -44,5 +44,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_6.bl,)
+Expression: assert(tmp_40.bl,)
 Comment: EventExprSemantics.p(68,28,68,34): error PC1001: Assert failed

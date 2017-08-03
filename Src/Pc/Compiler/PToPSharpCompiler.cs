@@ -100,18 +100,21 @@ namespace Microsoft.Pc
                 {
                     string funName = kv.Key;
                     FunInfo funInfo = kv.Value;
-                    List<TypedName> parameters = (from name in funInfo.parameterNames
-                                                  let type = typeFactory.MakePSharpType(funInfo.localNameToInfo[name].type)
-                                                  where !type.Equals(PSharpBaseType.Null)
-                                                  select new TypedName {Name = name, Type = type}).ToList();
+                    List<TypedName> parameters =
+                    (from name in funInfo.parameterNames
+                     let type = typeFactory.MakePSharpType(funInfo.localNameToInfo[name].type)
+                     where !type.Equals(PSharpBaseType.Null)
+                     select new TypedName {Name = name, Type = type}).ToList();
 
-                    List<TypedName> locals = (from name in funInfo.localNames
-                                              let type = typeFactory.MakePSharpType(funInfo.localNameToInfo[name].type)
-                                              where !type.Equals(PSharpBaseType.Null)
-                                              select new TypedName {Name = name, Type = type}).ToList();
+                    List<TypedName> locals =
+                    (from name in funInfo.localNames
+                     let type = typeFactory.MakePSharpType(funInfo.localNameToInfo[name].type)
+                     where !type.Equals(PSharpBaseType.Null)
+                     select new TypedName {Name = name, Type = type}).ToList();
 
-                    Dictionary<string, TypedName> localSymbolTable = parameters.Concat(locals).ToDictionary(v => v.Name, v => v);
-                    
+                    Dictionary<string, TypedName> localSymbolTable =
+                        parameters.Concat(locals).ToDictionary(v => v.Name, v => v);
+
                     return new MethodDecl
                     {
                         Name = funName,
@@ -122,7 +125,9 @@ namespace Microsoft.Pc
                 }).ToList();
         }
 
-        private IList<StateDecl> GenerateStates(MachineInfo nameToStateInfo, IReadOnlyDictionary<string, StateInfo> stateNameToStateInfo)
+        private static IList<StateDecl> GenerateStates(
+            MachineInfo nameToStateInfo,
+            IReadOnlyDictionary<string, StateInfo> stateNameToStateInfo)
         {
             //TODO: what about null transitions? how are those expressed in P#?
             return stateNameToStateInfo.Select(
@@ -141,7 +146,10 @@ namespace Microsoft.Pc
                         IsStart = kv.Key.Equals(nameToStateInfo.initStateName),
                         EntryFun = kv.Value.entryActionName,
                         ExitFun = kv.Value.exitFunName,
-                        Transitions = GenerateStateEventHandlers(kv.Value.transitions, actionOnlyEvents, stateNameToStateInfo),
+                        Transitions = GenerateStateEventHandlers(
+                            kv.Value.transitions,
+                            actionOnlyEvents,
+                            stateNameToStateInfo),
                         IgnoredEvents = ignoredEvents.Select(evt => evt.Key).ToList(),
                         DeferredEvents = kv.Value.deferredEvents
                     };

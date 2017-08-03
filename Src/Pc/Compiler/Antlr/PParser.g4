@@ -3,18 +3,22 @@ options { tokenVocab=PLexer; }
 
 program : (topDecl | annotationSet)* ;
 
-type : BOOL | INT | FLOAT | EVENT | MACHINE | DATA | Iden
-     | ANY (LT eventSet=Iden GT)?
-     | SEQ LBRACK type RBRACK
-     | MAP LBRACK type COMMA type RBRACK
-     | LPAREN typeList RPAREN
-     | LPAREN idenTypeList RPAREN
+type : ANY LT eventSet=Iden GT    # BoundedType
+     | SEQ LBRACK type RBRACK     # SeqType
+     | MAP LBRACK keyType=type COMMA valueType=type RBRACK  # MapType
+     | LPAREN tupTypes+=type (COMMA tupTypes+=type)* RPAREN # TupleType
+     | LPAREN idenTypeList RPAREN # NamedTupleType
+     | BOOL    # PrimitiveType
+     | INT     # PrimitiveType
+     | FLOAT   # PrimitiveType
+     | EVENT   # PrimitiveType
+     | MACHINE # PrimitiveType
+     | DATA    # PrimitiveType
+     | ANY     # PrimitiveType
+     | Iden    # NamedType
      ;
 
-typeList : type (COMMA type)* ;
-
-idenTypeList : idenType (COMMA idenType)* ;
-idenType : Iden COLON type ;
+idenTypeList : names+=Iden COLON types+=type (COMMA names+=Iden COLON types+=type)* ;
 
 topDecl : typeDefDecl
         | enumTypeDefDecl
@@ -28,22 +32,22 @@ topDecl : typeDefDecl
         | funProtoDecl
         ;
 
-annotationSet : LBRACK annotationList? RBRACK;
-annotationList : annotation (',' annotation)* ;
-annotation : Iden ASSIGN NullLiteral
-           | Iden ASSIGN BoolLiteral
-           | Iden ASSIGN IntLiteral
-           | Iden ASSIGN Iden
+annotationSet : LBRACK (annotations+=annotation (',' annotations+=annotation)*)? RBRACK;
+annotation : name=Iden ASSIGN value=NullLiteral
+           | name=Iden ASSIGN value=BoolLiteral
+           | name=Iden ASSIGN value=IntLiteral
+           | name=Iden ASSIGN value=Iden
            ;
 
-typeDefDecl : TYPE Iden (ASSIGN type)? SEMI ;
+typeDefDecl : TYPE Iden SEMI # ForeignTypeDef
+            | TYPE Iden ASSIGN type SEMI # PTypeDef
+            ;
 
 enumTypeDefDecl : ENUM Iden LBRACE idenList RBRACE
                 | ENUM Iden LBRACE numberedEnumElemList RBRACE
                 ;
 idenList : Iden (COMMA Iden)* ;
-numberedEnumElemList : numberedEnumItem (COMMA numberedEnumItem)* ;
-numberedEnumItem : Iden ASSIGN IntLiteral ;
+numberedEnumElemList : names+=Iden ASSIGN values+=IntLiteral (COMMA names+=Iden ASSIGN values+=IntLiteral)* ;
 
 eventDecl : EVENT Iden cardinality? (COLON type)? annotationSet? SEMI;
 cardinality : ASSERT IntLiteral
@@ -56,19 +60,18 @@ interfaceDecl : TYPE Iden LPAREN type? RPAREN ASSIGN Iden SEMI
               | TYPE Iden LPAREN type? RPAREN ASSIGN LBRACE nonDefaultEventList RBRACE SEMI
               ;
 
-nonDefaultEventList : nonDefaultEventId (COMMA nonDefaultEventId)* ;
-nonDefaultEventId : HALT | Iden ;
+nonDefaultEventList : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 
-implMachineDecl : MACHINE Iden cardinality? annotationSet? (COLON idenList)? receivesSends* LBRACE machineBody RBRACE ;
+implMachineDecl : MACHINE Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
 receivesSends : RECEIVES nonDefaultEventList? SEMI
               | SENDS nonDefaultEventList? SEMI
               ;
 
 implMachineProtoDecl : EXTERN MACHINE Iden LPAREN type? RPAREN SEMI;
 
-specMachineDecl : SPEC Iden OBSERVES nonDefaultEventList LBRACE machineBody RBRACE ;
+specMachineDecl : SPEC Iden OBSERVES nonDefaultEventList machineBody ;
 
-machineBody : machineEntry*;
+machineBody : LBRACE machineEntry* RBRACE;
 machineEntry : varDecl
              | funDecl
              | group
@@ -86,44 +89,44 @@ groupItem : stateDecl
           | group
           ;
 
-stateDecl : START? (HOT | COLD)? STATE Iden annotationSet? LBRACE stateBodyItem* RBRACE ;
+stateDecl : START? temperature=(HOT | COLD)? STATE Iden annotationSet? LBRACE stateBodyItem* RBRACE ;
 
-stateBodyItem : ENTRY anonEventHandler
-              | ENTRY Iden SEMI
-              | EXIT statementBlock
-              | EXIT Iden SEMI
-              | DEFER nonDefaultEventList annotationSet? SEMI
-              | IGNORE nonDefaultEventList annotationSet? SEMI
-              | ON eventList DO Iden annotationSet? SEMI
-              | ON eventList DO annotationSet? anonEventHandler // allow optional SEMI here?
-              | ON eventList PUSH qualifiedName annotationSet? SEMI
-              | ON eventList GOTO qualifiedName annotationSet? SEMI
-              | ON eventList GOTO qualifiedName annotationSet? WITH anonEventHandler // allow optional SEMI here?
-              | ON eventList GOTO qualifiedName annotationSet? WITH Iden SEMI
+stateBodyItem : ENTRY anonEventHandler # StateEntry
+              | ENTRY Iden SEMI        # StateEntry
+              | EXIT statementBlock    # StateExit
+              | EXIT Iden SEMI         # StateExit
+              | DEFER nonDefaultEventList annotationSet? SEMI    # StateDefer
+              | IGNORE nonDefaultEventList annotationSet? SEMI   # StateIgnore
+              | ON eventList DO Iden annotationSet? SEMI # OnEventDoAction
+              | ON eventList DO annotationSet? anonEventHandler # OnEventDoAction
+              | ON eventList PUSH stateName annotationSet? SEMI # OnEventPushState
+              | ON eventList GOTO stateName annotationSet? SEMI # OnEventGotoState
+              | ON eventList GOTO stateName annotationSet? WITH anonEventHandler # OnEventGotoState
+              | ON eventList GOTO stateName annotationSet? WITH Iden SEMI        # OnEventGotoState
               ;
 
 eventList : eventId (COMMA eventId)* ;
 eventId : NullLiteral | HALT | Iden ;
 
-qualifiedName : Iden (DOT Iden)* ;
+stateName : Iden (DOT Iden)* ;
 
 statementBlock : LBRACE varDecl* statement* RBRACE ;
 statement : LBRACE statement* RBRACE
           | POP SEMI
           | ASSERT expr (COMMA StringLiteral)? SEMI
-          | PRINT StringLiteral (COMMA exprArgList)? SEMI
+          | PRINT StringLiteral (COMMA rvalueList)? SEMI
           | RETURN expr? SEMI
-          | lvalue ASSIGN exprArg SEMI
-          | lvalue INSERT exprArg SEMI
+          | lvalue ASSIGN rvalue SEMI
+          | lvalue INSERT rvalue SEMI
           | lvalue REMOVE expr SEMI
           | WHILE LPAREN expr RPAREN statement
           | IF LPAREN expr RPAREN statement (ELSE statement)?
-          | NEW Iden LPAREN exprArgList? RPAREN SEMI
-          | Iden LPAREN exprArgList? RPAREN SEMI
-          | RAISE expr (COMMA exprArgList)? SEMI
-          | SEND expr COMMA expr (COMMA exprArgList)? SEMI
-          | ANNOUNCE expr (COMMA exprArgList)? SEMI
-          | GOTO qualifiedName (COMMA exprArgList)? SEMI
+          | NEW Iden LPAREN rvalueList? RPAREN SEMI
+          | Iden LPAREN rvalueList? RPAREN SEMI
+          | RAISE expr (COMMA rvalueList)? SEMI
+          | SEND expr COMMA expr (COMMA rvalueList)? SEMI
+          | ANNOUNCE expr (COMMA rvalueList)? SEMI
+          | GOTO stateName (COMMA rvalueList)? SEMI
           | RECEIVE LBRACE recvCase+ RBRACE
           | SEMI
           ;
@@ -138,27 +141,27 @@ recvCase : CASE eventList COLON anonEventHandler ;
 anonEventHandler : payloadVarDecl? statementBlock ;
 payloadVarDecl : LPAREN Iden COLON type RPAREN ;
 
-expr : primitive
-     | LPAREN unnamedTupleBody RPAREN
-     | LPAREN namedTupleBody RPAREN
-     | LPAREN expr RPAREN
-     | expr DOT field=Iden
-     | expr DOT field=IntLiteral
-     | expr LBRACK expr RBRACK
-     | KEYS LPAREN expr RPAREN
-     | VALUES LPAREN expr RPAREN
-     | SIZEOF LPAREN expr RPAREN
-     | DEFAULT LPAREN type RPAREN
-     | NEW Iden LPAREN exprArgList? RPAREN
-     | funName=Iden LPAREN exprArgList? RPAREN
-     | unop=(SUB | LNOT) expr
-     | expr binop=(MUL | DIV) expr
-     | expr binop=(ADD | SUB) expr
-     | expr cast=(AS | TO) type
-     | expr binop=(LT | GT | GE | LE | IN) expr
-     | expr binop=(EQ | NE) expr
-     | expr binop=LAND expr
-     | expr binop=LOR expr
+expr : primitive # PrimitiveExpr
+     | LPAREN unnamedTupleBody RPAREN # UnnamedTupleExpr
+     | LPAREN namedTupleBody RPAREN # NamedTupleExpr
+     | LPAREN expr RPAREN # ParenExpr
+     | expr DOT field=Iden # TupleAccessExpr
+     | expr DOT field=IntLiteral # TupleAccessExpr
+     | expr LBRACK expr RBRACK # SeqAccessExpr
+     | fun=KEYS LPAREN expr RPAREN # KeywordExpr
+     | fun=VALUES LPAREN expr RPAREN # KeywordExpr
+     | fun=SIZEOF LPAREN expr RPAREN # KeywordExpr
+     | fun=DEFAULT LPAREN type RPAREN # KeywordExpr
+     | NEW Iden LPAREN rvalueList? RPAREN #CtorExpr
+     | Iden LPAREN rvalueList? RPAREN # FunCallExpr
+     | op=(SUB | LNOT) expr # UnaryExpr
+     | expr op=(MUL | DIV) expr # BinExpr
+     | expr op=(ADD | SUB) expr # BinExpr
+     | expr cast=(AS | TO) type # CastExpr
+     | expr op=(LT | GT | GE | LE | IN) expr # BinExpr
+     | expr op=(EQ | NE) expr # BinExpr
+     | expr op=LAND expr # BinExpr
+     | expr op=LOR expr # BinExpr
      ;
 
 primitive : Iden
@@ -172,22 +175,19 @@ primitive : Iden
           | THIS
           ;
 
-floatLiteral : IntLiteral DOT IntLiteral
-             | DOT IntLiteral
-             | FLOAT LPAREN IntLiteral COMMA IntLiteral RPAREN
+floatLiteral : pre=IntLiteral? DOT post=IntLiteral # DecimalFloat
+             | FLOAT LPAREN base=IntLiteral COMMA exp=IntLiteral RPAREN # ExpFloat
              ;
 
-unnamedTupleBody : exprArg COMMA
-                 | exprArg (COMMA exprArg)*
+unnamedTupleBody : fields+=rvalue COMMA
+                 | fields+=rvalue (COMMA fields+=rvalue)+
                  ;
 
-namedTupleBody : namedTupleField COMMA
-               | namedTupleField (COMMA namedTupleField)+
+namedTupleBody : names+=Iden ASSIGN values+=rvalue COMMA
+               | names+=Iden ASSIGN values+=rvalue (COMMA names+=Iden ASSIGN values+=rvalue)+
                ;
 
-namedTupleField : Iden ASSIGN exprArg ;
-
-exprArgList : exprArg (COMMA exprArg)* ;
-exprArg : Iden linear=(SWAP | MOVE)
-        | expr
-        ;
+rvalueList : rvalue (COMMA rvalue)* ;
+rvalue : Iden linear=(SWAP | MOVE)
+       | expr
+       ;

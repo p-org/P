@@ -747,8 +747,9 @@ namespace Microsoft.Pc
                     if(IntOrFloatOpToSyntaxKind.ContainsKey(op))
                     {
                         var argType = LookupType(ft);
-                        var typeRet = ((Id)GetArgByIndex(argType, 0)).Name;
-                        if (typeRet == PData.Cnst_Int.Node.Name)
+                        var typeRet = GetArgByIndex(argType, 0);
+                        var typeRetName = typeRet is Id ? ((Id)typeRet).Name : /*NameType*/ PData.Cnst_Int.Node.Name;
+                        if (typeRetName == PData.Cnst_Int.Node.Name)
                         {
                             arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                             arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");
@@ -782,8 +783,9 @@ namespace Microsoft.Pc
                     if(CompOpToSyntaxKind.ContainsKey(op))
                     {
                         var argType = LookupType(GetArgByIndex(ft, 1));
-                        var typeRet = ((Id)GetArgByIndex(argType, 0)).Name;
-                        if (typeRet == PData.Cnst_Int.Node.Name)
+                        var typeRet = GetArgByIndex(argType, 0);
+                        var typeRetName = typeRet is Id ? ((Id)typeRet).Name : /*NameType*/ PData.Cnst_Int.Node.Name;
+                        if (typeRetName == PData.Cnst_Int.Node.Name)
                         {
                             arg1Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg1), "nt");
                             arg2Val = CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtIntValue", arg2), "nt");

@@ -18,8 +18,8 @@ sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 			parentServer = payload.parentServer;
 			myRank = payload.rank;
 			currentLeader = (rank = myRank, server = parentServer);
-			CommunicateLeaderTimeout = CreateTimer(this as ITimerClient);
-			BroadCastTimeout = CreateTimer(this as ITimerClient);
+			CommunicateLeaderTimeout = CreateTimer(this to ITimerClient);
+			BroadCastTimeout = CreateTimer(this to ITimerClient);
 			goto ProcessPings;
 		}
 	}
@@ -29,7 +29,7 @@ sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 		iter = 0;
 		while(iter < sizeof(servers))
 		{
-			send servers[iter] as LeaderElectionClientInterface, ev, pd;
+			send servers[iter] to LeaderElectionClientInterface, ev, pd;
 			iter = iter + 1;
 		}
 	}
@@ -51,7 +51,7 @@ sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 			if(payload == CommunicateLeaderTimeout)
 			{
 				assert(currentLeader.rank <= myRank);
-				send parentServer as LeaderElectionClientInterface, eNewLeader, currentLeader;
+				send parentServer to LeaderElectionClientInterface, eNewLeader, currentLeader;
 				//reset
 				currentLeader = (rank = myRank, server = parentServer);
 				StartTimer(CommunicateLeaderTimeout, 100);
@@ -83,7 +83,7 @@ sends eNewLeader;
 		entry {
 			var currentLeader : (rank:int, server : any<MultiPaxosLEEvents>);
 			currentLeader = GetNewLeader();
-			send parentServer as LeaderElectionClientInterface , eNewLeader, currentLeader;
+			send parentServer to LeaderElectionClientInterface , eNewLeader, currentLeader;
 		}
 		on null goto SendLeader;
 	}
@@ -101,7 +101,7 @@ sends eNewLeader;
 		return max;
 	}
 
-	model fun GetNewLeader() : (rank:int, server : any<MultiPaxosLEEvents>) {
+	fun GetNewLeader() : (rank:int, server : any<MultiPaxosLEEvents>) {
 		var chooseLeader : int;
 		chooseLeader = ChooseInt(1, sizeof(servers));
 		return (rank = chooseLeader, server = servers[chooseLeader - 1]);

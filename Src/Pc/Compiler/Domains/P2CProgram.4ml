@@ -1527,9 +1527,12 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	
 	GetFunctionIden ::= (type: in.TypeExpr, iden: Ident).
 	GetFunctionIden(in.BaseType(INT), Ident("PrtPrimGetInt")).
+	AllNameType ::= sub(in.NameType).
+	GetFunctionIden(t, Ident("PrtPrimGetInt")) :- AllNameType(t).
 	GetFunctionIden(in.BaseType(FLOAT), Ident("PrtPrimGetFloat")).
 	MkFunctionIden ::= (type: in.TypeExpr, iden: Ident).
 	MkFunctionIden(in.BaseType(INT), Ident("PrtMkIntValue")).
+	MkFunctionIden(t, Ident("PrtMkIntValue")) :-AllNameType(t).
 	MkFunctionIden(in.BaseType(FLOAT), Ident("PrtMkFloatValue")).
 
 	//// Unary expressions

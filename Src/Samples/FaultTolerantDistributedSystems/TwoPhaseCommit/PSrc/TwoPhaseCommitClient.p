@@ -46,7 +46,7 @@ sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTi
         entry (payload: (CoorClientInterface, int)){
             coor = payload.0;
             numOfOperation = payload.1;
-            timer = CreateTimer(this as ITimerClient);
+            timer = CreateTimer(this to ITimerClient);
             //initially amount at participants is 100
             valueAtParticipant = 100;
             goto StartPumpingTransactions;
@@ -85,7 +85,7 @@ sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTi
             
             lastOperation = ChooseOp();
             
-            x =  this as ClientInterface;
+            x =  this to ClientInterface;
             announce eMonitorTransaction;
             send coor, eTransaction, (source = x, op = lastOperation);
             StartTimer(timer, 100);
@@ -105,7 +105,7 @@ sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTi
         entry {
                 var p: int;
                 if($) p = 0; else p = 1;
-                send coor, eReadPartStatus, (source = this as ClientInterface, part = p);
+                send coor, eReadPartStatus, (source = this to ClientInterface, part = p);
         }
         on eTransactionSuccess do UpdateValues;
         on eRespPartStatus goto StartPumpingTransactions with (payload: ParticipantStatusType){

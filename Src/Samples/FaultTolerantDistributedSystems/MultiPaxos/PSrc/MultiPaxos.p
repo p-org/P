@@ -42,7 +42,7 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 			{
 				myRank = 0;
 				//update the client about leader
-				SendSMRServerUpdate(client, (0, this as SMRServerInterface));
+				SendSMRServerUpdate(client, (0, this to SMRServerInterface));
 				repSMConstArg = payload.val;
 				//create the rest of nodes
 				SetUp(repSMConstArg);
@@ -53,10 +53,10 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 				repSMConstArg = (payload.val as (int, data)).1;
 			}
 
-			currentLeader = (rank = myRank, server = this as SMRServerInterface);
+			currentLeader = (rank = myRank, server = this to SMRServerInterface);
 			roundNum = 0;
 			maxRound = 0;
-			timer = CreateTimer(this as ITimerClient);
+			timer = CreateTimer(this to ITimerClient);
 			lastExecutedSlot = -1;
 			nextSlotForProposer = 0;
 			learner = new SMRReplicatedMachineInterface((client = payload.client, val = repSMConstArg));
@@ -75,7 +75,7 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 		on local push PerformOperation;
 
 		on eSMROperation do (payload: SMROperationType){
-			//all operations are considered as update operations.
+			//all operations are considered to update operations.
 			raise eUpdate, payload;
 		}
 	}
@@ -88,8 +88,8 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 		iter = 1;
 
 		//create all the nodes and then send eAllNodes.
-		nodes += (0, this as MultiPaxosNodeInterface);
-		while(iter < 2*FT + 1)
+		nodes += (0, this to MultiPaxosNodeInterface);
+		while(iter < 2*(FT to int) + 1)
 		{
 			temp = new MultiPaxosNodeInterface((client = client, reorder = false, isRoot = false, ft = FT, val = (iter, arg)));
 		
@@ -139,12 +139,12 @@ sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTim
 		}
 		on eNewLeader do (payload: (rank:int, server : any<MultiPaxosLEEvents>)){
 			currentLeader = payload as (rank:int, server : SMRServerInterface);
-			if(currentLeader.server == this)
+			if(currentLeader.server == this to SMRServerInterface)
 			{
 				//tell the replicated machine that it is the leader now
 				send learner, eSMRReplicatedLeader;
 				//update the client about leader
-				SendSMRServerUpdate(client, (0, currentLeader.server as SMRServerInterface));
+				SendSMRServerUpdate(client, (0, currentLeader.server to SMRServerInterface));
 			}
 			
 		}

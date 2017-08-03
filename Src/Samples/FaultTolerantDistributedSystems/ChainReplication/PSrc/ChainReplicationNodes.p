@@ -28,7 +28,7 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorRe
 			if(payload.isRoot)
 			{
 				//update the client about leader
-				SendSMRServerUpdate(client, (0, this as SMRServerInterface));
+				SendSMRServerUpdate(client, (0, this to SMRServerInterface));
 				nodeT = HEAD;
 				repSMConstArg = payload.val;
 				//create the rest of nodes
@@ -84,7 +84,7 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorRe
 
 		//create all the nodes
 		//first add the current node itself as head
-		nodes += (0, this as ChainReplicationNodeInterface);
+		nodes += (0, this to ChainReplicationNodeInterface);
 		
 		//create internal nodes
 		index = 0;
@@ -129,7 +129,7 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorRe
 			while(iter < sizeof(sent))
 			{
 				if(sent[iter].seqId > payload.lastUpdateRec)
-					send succ, eForwardUpdate, (msg = sent[iter], pred = this as ChainReplicationNodeInterface);
+					send succ, eForwardUpdate, (msg = sent[iter], pred = this to ChainReplicationNodeInterface);
 				
 				iter = iter + 1;
 			}
@@ -165,7 +165,7 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorRe
 			var iter : int;
 			if(nodeT != HEAD)
 				nodeT = TAIL;
-			succ = this as ChainReplicationNodeInterface;
+			succ = this to ChainReplicationNodeInterface;
 			//send all the events in sent to both client and the predecessor
 			iter = 0;
 			while(iter < sizeof(sent))
@@ -183,10 +183,10 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorRe
 
 		on eBecomeHead do (payload: ChainReplicationMasterInterface){
 			nodeT = HEAD;
-			pred = this as ChainReplicationNodeInterface;
+			pred = this to ChainReplicationNodeInterface;
 			send payload, eHeadChanged;
 			//update the client about leader
-			SendSMRServerUpdate(client, (0, this as SMRServerInterface));
+			SendSMRServerUpdate(client, (0, this to SMRServerInterface));
 		}
 
 		on eNewPredecessor do (payload: (pred : ChainReplicationNodeInterface, master : ChainReplicationMasterInterface)){
@@ -207,7 +207,7 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorRe
 		on eUpdate goto ProcessUpdate with 
 		{
 			nextSeqId = nextSeqId + 1;
-			assert(nodeT == HEAD || (nodeT == TAIL && pred == this));
+			assert(nodeT == HEAD || (nodeT == TAIL && pred == this to ChainReplicationNodeInterface));
 			announce eMonitorUpdateForLiveness, (seqId = nextSeqId, );
 		}
 		
@@ -227,15 +227,15 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorRe
 			print "Process Update";
 			IsSorted(history);
 			//invoke the monitor
-			announce eMonitorHistoryUpdate, (node = this as ChainReplicationNodeInterface, history = history);
+			announce eMonitorHistoryUpdate, (node = this to ChainReplicationNodeInterface, history = history);
 			
 			//Add the update request to sent seq
 			sent += (sizeof(sent), (seqId = nextSeqId, smrop = payload));
 			
 			//call the monitor
-			announce eMonitorSentUpdate, (node = this as ChainReplicationNodeInterface, sent = sent);
+			announce eMonitorSentUpdate, (node = this to ChainReplicationNodeInterface, sent = sent);
 			//forward the update to the succ
-			send succ, eForwardUpdate, (msg = (seqId = nextSeqId, smrop = payload), pred = this as ChainReplicationNodeInterface);
+			send succ, eForwardUpdate, (msg = (seqId = nextSeqId, smrop = payload), pred = this to ChainReplicationNodeInterface);
 	
 			raise(local);
 		}
@@ -258,13 +258,13 @@ eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorRe
 					history += (sizeof(history), payload.msg.seqId);
 					IsSorted(history);
 					//invoke the monitor
-					announce eMonitorHistoryUpdate, (node = this as ChainReplicationNodeInterface, history = history);
+					announce eMonitorHistoryUpdate, (node = this to ChainReplicationNodeInterface, history = history);
 					//Add the update request to sent seq
 					sent += (sizeof(sent), payload.msg);
 					//call the monitor
-					announce eMonitorSentUpdate, (node = this as ChainReplicationNodeInterface, sent = sent);
+					announce eMonitorSentUpdate, (node = this to ChainReplicationNodeInterface, sent = sent);
 					//forward the update to the succ
-					send succ, eForwardUpdate, (msg = payload.msg, pred = this as ChainReplicationNodeInterface);
+					send succ, eForwardUpdate, (msg = payload.msg, pred = this to ChainReplicationNodeInterface);
 				}
 				else
 				{

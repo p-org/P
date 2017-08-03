@@ -774,13 +774,16 @@ domain PStaticTyping extends PData, PError
 	NotSubsetInterfaces ::= (InterfaceType, InterfaceType).
 	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), count({ ev | MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev) }) != 0.
 	
+	ERROR1(e.id, "convert can be applied only to int, float or interface types"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, t2' != BaseType(INT), t2' != BaseType(FLOAT).
+
 	ERROR1(e.id, "convert to interface can never succeed"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
 									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, NotSubsetInterfaces(t2', t1).
 	
 	ERROR1(e.id, "convert can never succeed"),
     TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType;
-									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), t1 != BaseType(INT), t1 != BaseType(FLOAT).
+									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(FLOAT), t1 != BaseType(INT), t1 != BaseType(FLOAT).
 	
 	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2').
 									  								  
@@ -807,6 +810,7 @@ domain PStaticTyping extends PData, PError
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), op : PureIntOrFloatOp, TypeOf(c, e2, t2), t2 != BaseType(INT), t2 != BaseType(FLOAT), toSymbol(t2) != #NameType.     
     
     PureIntOrFloatRel ::= { LT, LE, GT, GE }.
+	TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntOrFloatRel, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
     TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntOrFloatRel, TypeRel(t1, BaseType(FLOAT), SUB), TypeRel(t2, BaseType(FLOAT), SUB).
 
 	ERROR1(e.id, "Operator expected first argument to be an integer or float or enum constant value"),

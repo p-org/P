@@ -28,7 +28,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 				
 				while(index < NumOfParticipants)
 				{
-					temp = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, isRoot = true, ft = FT1, id = index));
+					temp = new SMRServerInterface((client = this to SMRClientInterface, reorder = false, isRoot = true, ft = FT1, id = index));
 					participants[index] = temp;
 					index = index + 1;
 				}
@@ -38,7 +38,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 				index = 0;
 				while(index < NumOfParticipants)
 				{
-					temp = new ParticipantInterface((client = this as CoorParticipantInterface, val = (index, false)));
+					temp = new ParticipantInterface((client = this to CoorParticipantInterface, val = (index, false)));
 					participants[index] = temp;
 					index = index + 1;
 				}
@@ -46,7 +46,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 			
 			transId = 0;
 			//create timer
-			timer = CreateTimer(this as ITimerClient);
+			timer = CreateTimer(this to ITimerClient);
 
 			raise local;
 		}
@@ -66,7 +66,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 	fun SendToParticipant(part: machine, ev: event, payload: data) {
 		if(isFaultTolerant)
 		{
-			SendSMROperation(smrOpId, part, ev, payload, this as SMRClientInterface);
+			SendSMROperation(smrOpId, part, ev, payload, this to SMRClientInterface);
 			smrOpId = smrOpId + 1;
 		}
 		else
@@ -226,7 +226,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 		}
 		else
 		{
-			send coordinator as CoorParticipantInterface, ev, payload;
+			send coordinator to CoorParticipantInterface, ev, payload;
 		}
 	}
 	

@@ -555,7 +555,6 @@ Exp_0
 Exp_float
 	: DOT INT                                                  { PushFloatExpr("0", $2.str, ToSpan(@1));    }
 	| INT DOT INT					                           { PushFloatExpr($1.str, $3.str, ToSpan(@1));    }
-	| FLOAT LPAREN INT COMMA INT RPAREN                        { PushFloatExponentExpr($3.str, $5.str, ToSpan(@1));    }
 	;
 
 // An arg list that is always packed into an exprs.

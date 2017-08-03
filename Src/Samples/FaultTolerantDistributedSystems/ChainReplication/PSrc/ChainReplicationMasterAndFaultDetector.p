@@ -13,7 +13,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor,
 		entry (payload: (client: SMRClientInterface, nodes: seq[ChainReplicationNodeInterface])){
 			client = payload.client;
 			nodes = payload.nodes;
-			faultMonitor = new ChainReplicationFaultDetectorInterface((master = this as ChainReplicationMasterInterface, nodes = nodes));
+			faultMonitor = new ChainReplicationFaultDetectorInterface((master = this to ChainReplicationMasterInterface, nodes = nodes));
 			head = nodes[0];
 			tail = nodes[sizeof(nodes) - 1];
 			announce eMonitorUpdateNodes, (nodes = nodes,);
@@ -65,7 +65,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor,
 			//monitor UpdateResponse_QueryResponse_Seq, monitor_update_servers, (servers = servers, );
 			
 			head = nodes[0];
-			send head, eBecomeHead, this as ChainReplicationMasterInterface;
+			send head, eBecomeHead, this to ChainReplicationMasterInterface;
 		}
 		on eHeadChanged goto WaitforFault with
 		{
@@ -85,7 +85,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor,
 			
 			
 			tail = nodes[sizeof(nodes) - 1];
-			send tail, eBecomeTail, this as ChainReplicationMasterInterface;
+			send tail, eBecomeTail, this to ChainReplicationMasterInterface;
 		}
 		on eTailChanged goto WaitforFault with 
 		{
@@ -103,7 +103,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor,
 				//monitor Update_Propagation_Invariant, monitor_update_servers, (servers = servers, );
 				//monitor UpdateResponse_QueryResponse_Seq, monitor_update_servers, (servers = servers, );
 		
-				send nodes[faultyNodeIndex], eNewPredecessor, (pred = nodes[faultyNodeIndex - 1], master = this as ChainReplicationMasterInterface);
+				send nodes[faultyNodeIndex], eNewPredecessor, (pred = nodes[faultyNodeIndex - 1], master = this to ChainReplicationMasterInterface);
 				receive {
 					case eNewSuccInfo: (payload: (lastUpdateRec : int, lastAckSent : int)) {
 						lastUpdateReceivedSucc = payload.lastUpdateRec;
@@ -111,7 +111,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor,
 					}
 				}
 				
-				send nodes[faultyNodeIndex - 1], eNewSuccessor, (succ = nodes[faultyNodeIndex], master = this as ChainReplicationMasterInterface, lastUpdateRec = lastUpdateReceivedSucc, lastAckSent = lastAckSent);
+				send nodes[faultyNodeIndex - 1], eNewSuccessor, (succ = nodes[faultyNodeIndex], master = this to ChainReplicationMasterInterface, lastUpdateRec = lastUpdateReceivedSucc, lastAckSent = lastAckSent);
 				
 				receive {
 					case eSuccess: {}
@@ -138,7 +138,7 @@ sends eCRPing, eFaultDetected,  eStartTimer, eCancelTimer, halt;
 		entry (payload: (master: ChainReplicationMasterInterface, nodes: seq[ChainReplicationNodeInterface])){
 			checkNode = 0;
 			//create timer
-			timer = CreateTimer(this as ITimerClient);
+			timer = CreateTimer(this to ITimerClient);
 			master = payload.master;
 			nodes = payload.nodes;
 			goto StartMonitoring;
@@ -149,7 +149,7 @@ sends eCRPing, eFaultDetected,  eStartTimer, eCancelTimer, halt;
 		entry {
 			//start timer 
 			StartTimer(timer, 100);
-			send nodes[checkNode], eCRPing, this as ChainReplicationFaultDetectorInterface;
+			send nodes[checkNode], eCRPing, this to ChainReplicationFaultDetectorInterface;
 		}
 		on eCRPong goto StartMonitoring with
 		{

@@ -1546,44 +1546,54 @@ namespace Microsoft.Pc
                                             SyntaxFactory.Identifier("swap")))))
                         .NormalizeWhitespace());
 
-                // Compute the body before calculating the label prelude
-                SyntaxNode funBody = Factory.Instance.ToAST(funInfo.body).Compute<SyntaxNode>(
-                    x => Unfold(x),
-                    (x, ch) => Fold(x, ch.ToList()));
-
-                if (labelCount > 0)
+                if(funInfo.body == null)
                 {
-                    funStmts.Add(EmitLabelPrelude());
+                    var returnExpr = CSharpHelper.MkCSharpInvocationExpression(SyntaxFactory.IdentifierName($"Foreign_{FunName}"));
+                    funStmts.Add(SyntaxFactory.ExpressionStatement(
+                        CSharpHelper.MkCSharpInvocationExpression(
+                            CSharpHelper.MkCSharpDot("parent", "PrtFunContReturnVal"), returnExpr, CSharpHelper.MkCSharpDot("currFun", "locals"))));
                 }
-                funStmts.AddRange(Flatten((StatementSyntax)funBody));
+                else
+                {
+                    // Compute the body before calculating the label prelude
+                    SyntaxNode funBody = Factory.Instance.ToAST(funInfo.body).Compute<SyntaxNode>(
+                        x => Unfold(x),
+                        (x, ch) => Fold(x, ch.ToList()));
 
-                funStmts.Add(
-                    SyntaxFactory.ExpressionStatement(
-                            SyntaxFactory.InvocationExpression(
-                                    SyntaxFactory.MemberAccessExpression(
-                                        SyntaxKind.SimpleMemberAccessExpression,
-                                        SyntaxFactory.IdentifierName("parent"),
-                                        SyntaxFactory.IdentifierName("PrtFunContReturn")))
-                                .WithArgumentList(
-                                    SyntaxFactory.ArgumentList(
-                                        SyntaxFactory.SingletonSeparatedList(
-                                            SyntaxFactory.Argument(
-                                                CSharpHelper.MkCSharpDot("currFun", "locals"))))))
-                        .NormalizeWhitespace());
+                    if (labelCount > 0)
+                    {
+                        funStmts.Add(EmitLabelPrelude());
+                    }
+                    funStmts.AddRange(Flatten((StatementSyntax)funBody));
+
+                    funStmts.Add(
+                        SyntaxFactory.ExpressionStatement(
+                                SyntaxFactory.InvocationExpression(
+                                        SyntaxFactory.MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            SyntaxFactory.IdentifierName("parent"),
+                                            SyntaxFactory.IdentifierName("PrtFunContReturn")))
+                                    .WithArgumentList(
+                                        SyntaxFactory.ArgumentList(
+                                            SyntaxFactory.SingletonSeparatedList(
+                                                SyntaxFactory.Argument(
+                                                    CSharpHelper.MkCSharpDot("currFun", "locals"))))))
+                            .NormalizeWhitespace());
+                }
 
                 var executeMethodDecl =
-                    SyntaxFactory.MethodDeclaration(
-                            SyntaxFactory.PredefinedType(
-                                SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
-                            SyntaxFactory.Identifier("Execute"))
-                        .WithModifiers(
-                            SyntaxFactory.TokenList(
-                                SyntaxFactory.Token(SyntaxKind.PublicKeyword),
-                                SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
-                        .WithParameterList(
-                            SyntaxFactory.ParameterList(
-                                SyntaxFactory.SeparatedList<ParameterSyntax>(
-                                    new SyntaxNodeOrToken[]{
+                        SyntaxFactory.MethodDeclaration(
+                                SyntaxFactory.PredefinedType(
+                                    SyntaxFactory.Token(SyntaxKind.VoidKeyword)),
+                                SyntaxFactory.Identifier("Execute"))
+                            .WithModifiers(
+                                SyntaxFactory.TokenList(
+                                    SyntaxFactory.Token(SyntaxKind.PublicKeyword),
+                                    SyntaxFactory.Token(SyntaxKind.OverrideKeyword)))
+                            .WithParameterList(
+                                SyntaxFactory.ParameterList(
+                                    SyntaxFactory.SeparatedList<ParameterSyntax>(
+                                        new SyntaxNodeOrToken[]{
                                         SyntaxFactory.Parameter(
                                                 SyntaxFactory.Identifier("application"))
                                             .WithType(
@@ -1593,12 +1603,14 @@ namespace Microsoft.Pc
                                                 Owner == null ? SyntaxFactory.Identifier("parent") : SyntaxFactory.Identifier("_parent"))
                                             .WithType(
                                                 SyntaxFactory.IdentifierName("PrtMachine"))})))
-                        .WithBody(
-                            //Block(stmt1, stmt2, stmt3, stmt4))
-                            SyntaxFactory.Block(funStmts))
-                        .NormalizeWhitespace();
+                            .WithBody(
+                                //Block(stmt1, stmt2, stmt3, stmt4))
+                                SyntaxFactory.Block(funStmts))
+                            .NormalizeWhitespace();
 
                 return executeMethodDecl;
+
+
             }
             public SyntaxNode MkCreateLocalsMethod()
             {

@@ -158,7 +158,7 @@ namespace PBuild
             compileArgs.profile = true;
 
             var compileResult = false;
-            var svc = new CompilerServiceClient();
+            var svc = new Compiler(true);
             if (Options.Relink && !Options.Rebuild)
             {
                 compileResult = true;

@@ -2313,30 +2313,17 @@
         {
             Contract.Assert(stmtStack.Count == 0);
 
-            if (crntMachDecl == null)
-            {
-                var funDecl = GetCurrentFunDecl(span);
-                funDecl.Span = span;
-                funDecl.owner = (P_Root.IArgType_FunDecl__1)MkUserCnst(P_Root.UserCnstKind.NIL, span);
-                funDecl.locals = (P_Root.IArgType_FunDecl__4)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
-                funDecl.body = (P_Root.IArgType_FunDecl__5)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
-                funDecl.id = (P_Root.IArgType_FunDecl__6)MkUniqueId(span);
-                parseProgram.Add(funDecl);
-                localVarStack = new LocalVarStack(this);
-                crntFunDecl = null;
-            }
-            else
-            {
-                var errFlag = new Flag(
-                 SeverityKind.Error,
-                 span,
-                 Constants.BadSyntax.ToString("Foreign function not allowed inside a machine"),
-                 Constants.BadSyntax.Code,
-                 parseSource);
-                parseFailed = true;
-                parseFlags.Add(errFlag);
-                return;
-            }
+            bool isGlobal = crntMachDecl == null;
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.Span = span;
+            funDecl.owner = isGlobal ? (P_Root.IArgType_FunDecl__1)MkUserCnst(P_Root.UserCnstKind.NIL, span)
+                                     : (P_Root.IArgType_FunDecl__1)GetCurrentMachineDecl(span).name;
+            funDecl.locals = (P_Root.IArgType_FunDecl__4)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            funDecl.body = (P_Root.IArgType_FunDecl__5)P_Root.MkUserCnst(P_Root.UserCnstKind.NIL);
+            funDecl.id = (P_Root.IArgType_FunDecl__6)MkUniqueId(span);
+            parseProgram.Add(funDecl);
+            localVarStack = new LocalVarStack(this);
+            crntFunDecl = null;
         }
 
         private void AddFunProto(Span span)

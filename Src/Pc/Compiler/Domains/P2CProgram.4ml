@@ -226,7 +226,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 									   DeclId(d, id, cn), d : in.StateDecl, d.owner = name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
 									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(name, "_COUNT"))), size = count({d | d is in.StateDecl, d.owner = name}) }).  
 
-	//// Prototypes for model functions
+	//// Prototypes for foreign functions
 	MakeParams ::= (in.FunDecl, in.NmdTupType + { NIL }, PrmTypes + { NIL }, Params + { NIL }).
 	MakeParams(f, type, NIL, NIL) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.body = NIL, type = lstReverse(in.#NmdTupType, f.params).
 	MakeParams(f, tl, prmTypes', params') :- MakeParams(f, in.NmdTupType(NmdTupTypeField(name, _), tl), prmTypes, params), prmTypes' = PrmTypes(PtrType(PtrType(NmdType(NIL, "PRT_VALUE"))), prmTypes), params' = Params(Param(NIL, name), params).

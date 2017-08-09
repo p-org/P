@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing FunctionParMutated.zing ...
+OUT: Compiling FunctionParMutated.zing to FunctionParMutated.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

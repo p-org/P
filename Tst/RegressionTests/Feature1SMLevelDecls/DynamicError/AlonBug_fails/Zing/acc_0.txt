@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing AlonBug_fails.zing ...
+OUT: Compiling AlonBug_fails.zing to AlonBug_fails.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

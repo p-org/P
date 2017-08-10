@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing seq_tuple.zing ...
+OUT: Compiling seq_tuple.zing to seq_tuple.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing TopNullHandlerOverridesInherited.zing ...
+OUT: Compiling TopNullHandlerOverridesInherited.zing to TopNullHandlerOverridesInherited.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

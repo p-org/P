@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing SpinlockWithTypestate.zing ...
+OUT: Compiling SpinlockWithTypestate.zing to SpinlockWithTypestate.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

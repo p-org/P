@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing RaisedNullDetected.zing ...
+OUT: Compiling RaisedNullDetected.zing to RaisedNullDetected.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

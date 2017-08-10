@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing Actions_6.zing ...
+OUT: Compiling Actions_6.zing to Actions_6.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

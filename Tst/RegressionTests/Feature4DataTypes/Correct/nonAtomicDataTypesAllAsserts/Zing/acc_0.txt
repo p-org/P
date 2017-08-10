@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing nonAtomicDataTypesAllAsserts.zing ...
+OUT: Compiling nonAtomicDataTypesAllAsserts.zing to nonAtomicDataTypesAllAsserts.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

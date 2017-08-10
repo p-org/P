@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing ExplicitPopExit.zing ...
+OUT: Compiling ExplicitPopExit.zing to ExplicitPopExit.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

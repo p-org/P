@@ -1,0 +1,20 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state S
+OUT: <RaiseLog> Machine Main(1) raised event a with payload null
+OUT: <ExitLog> Machine Main(1) exiting state S
+OUT: <EnqueueLog> Enqueued event a with payload null on Machine Main(1)
+OUT: <EnqueueLog> Enqueued event b with payload null on Machine Main(1)
+OUT: <StateLog> Machine Main(1) entered state S1
+OUT: <EnqueueLog> Enqueued event a with payload null on Machine Main(1)
+OUT: <EnqueueLog> Enqueued event b with payload null on Machine Main(1)
+OUT: <DequeueLog> Dequeued event a with payload null by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state S1
+OUT: <DequeueLog> Dequeued event b with payload null by Machine Main(1)
+OUT: <DequeueLog> Dequeued event a with payload null by Machine Main(1)
+OUT: <DequeueLog> Dequeued event b with payload null by Machine Main(1)
+OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
+OUT: 
+EXIT: 1

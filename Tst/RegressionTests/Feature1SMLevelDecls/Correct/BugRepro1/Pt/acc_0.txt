@@ -1,0 +1,12 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Ping_Init
+OUT: <RaiseLog> Machine Main(1) raised event Success with payload null
+OUT: <ActionLog> Machine Main(1) executed action in state Ping_Init
+OUT: <EnqueueLog> Enqueued event Ping with payload 4 on Machine Main(1)
+OUT: <DequeueLog> Dequeued event Ping with payload 4 by Machine Main(1)
+OUT: <ActionLog> Machine Main(1) executed action in state Ping_Init
+OUT: 
+EXIT: 0

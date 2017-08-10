@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing nonAtomicDataTypes.zing ...
+OUT: Compiling nonAtomicDataTypes.zing to nonAtomicDataTypes.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing GotoTransInheritance.zing ...
+OUT: Compiling GotoTransInheritance.zing to GotoTransInheritance.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing SendInEntry.zing ...
+OUT: Compiling SendInEntry.zing to SendInEntry.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

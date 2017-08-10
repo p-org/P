@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing RaisedHalt_bugFound.zing ...
+OUT: Compiling RaisedHalt_bugFound.zing to RaisedHalt_bugFound.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

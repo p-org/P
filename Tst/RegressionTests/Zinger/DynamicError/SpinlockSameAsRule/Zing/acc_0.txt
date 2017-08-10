@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing SpinlockSameAsRule.zing ...
+OUT: Compiling SpinlockSameAsRule.zing to SpinlockSameAsRule.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

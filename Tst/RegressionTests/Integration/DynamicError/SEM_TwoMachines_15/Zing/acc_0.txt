@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing MonitorInvocationEventExprPayload.zing ...
+OUT: Compiling MonitorInvocationEventExprPayload.zing to MonitorInvocationEventExprPayload.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

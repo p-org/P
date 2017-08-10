@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing lvalues_runtimeError.zing ...
+OUT: Compiling lvalues_runtimeError.zing to lvalues_runtimeError.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

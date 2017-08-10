@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing EventExprSemantics2.zing ...
+OUT: Compiling EventExprSemantics2.zing to EventExprSemantics2.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

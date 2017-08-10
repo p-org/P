@@ -1,0 +1,12 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state S
+OUT: <RaiseLog> Machine Main(1) raised event x with payload (<2>, 3)
+OUT: <ActionLog> Machine Main(1) executed action in state S
+OUT: <RaiseLog> Machine Main(1) raised event a with payload 3
+OUT: <ExitLog> Machine Main(1) exiting state S
+OUT: exiting with PRT_STATUS_EVENT_UNHANDLED
+OUT: 
+EXIT: 1

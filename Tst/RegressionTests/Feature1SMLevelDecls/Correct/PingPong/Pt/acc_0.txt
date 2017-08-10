@@ -1,0 +1,53 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Init
+OUT: <CreateLog> Machine Container(2) is created
+OUT: <StateLog> Machine Container(2) entered state Init
+OUT: <CreateLog> Machine PONG(3) is created
+OUT: <StateLog> Machine PONG(3) entered state Init
+OUT: <CreateLog> Machine Container(4) is created
+OUT: <StateLog> Machine Container(4) entered state Init
+OUT: <CreateLog> Machine PONG(5) is created
+OUT: <StateLog> Machine PONG(5) entered state Init
+OUT: <CreateLog> Machine Container(6) is created
+OUT: <StateLog> Machine Container(6) entered state Init
+OUT: <CreateLog> Machine PING(7) is created
+OUT: <StateLog> Machine PING(7) entered state Init
+OUT: <RaiseLog> Machine PING(7) raised event Success with payload null
+OUT: <ExitLog> Machine PING(7) exiting state Init
+OUT: <StateLog> Machine PING(7) entered state SendPing
+OUT: <EnqueueLog> Enqueued event Ping with payload < (1, 0, 0, 0), 7> on Machine PONG(3)
+OUT: <DequeueLog> Dequeued event Ping with payload < (1, 0, 0, 0), 7> by Machine PONG(3)
+OUT: <ExitLog> Machine PONG(3) exiting state Init
+OUT: <StateLog> Machine PONG(3) entered state SendPong
+OUT: <EnqueueLog> Enqueued event Pong with payload < (1, 0, 0, 0), 3> on Machine PING(7)
+OUT: <RaiseLog> Machine PONG(3) raised event Success with payload null
+OUT: <ExitLog> Machine PONG(3) exiting state SendPong
+OUT: <StateLog> Machine PONG(3) entered state End
+OUT: <RaiseLog> Machine PONG(3) raised event halt with payload null
+OUT: <ExitLog> Machine PONG(3) exiting state End
+OUT: <HaltLog> Machine PONG(3) halted in state End
+OUT: <EnqueueLog> Enqueued event Ping with payload < (1, 0, 0, 0), 7> on Machine PONG(5)
+OUT: <DequeueLog> Dequeued event Ping with payload < (1, 0, 0, 0), 7> by Machine PONG(5)
+OUT: <ExitLog> Machine PONG(5) exiting state Init
+OUT: <StateLog> Machine PONG(5) entered state SendPong
+OUT: <EnqueueLog> Enqueued event Pong with payload < (1, 0, 0, 0), 5> on Machine PING(7)
+OUT: <RaiseLog> Machine PONG(5) raised event Success with payload null
+OUT: <ExitLog> Machine PONG(5) exiting state SendPong
+OUT: <StateLog> Machine PONG(5) entered state End
+OUT: <RaiseLog> Machine PONG(5) raised event halt with payload null
+OUT: <ExitLog> Machine PONG(5) exiting state End
+OUT: <HaltLog> Machine PONG(5) halted in state End
+OUT: <RaiseLog> Machine PING(7) raised event Success with payload null
+OUT: <ExitLog> Machine PING(7) exiting state SendPing
+OUT: <StateLog> Machine PING(7) entered state WaitPong_1
+OUT: <DequeueLog> Dequeued event Pong with payload < (1, 0, 0, 0), 3> by Machine PING(7)
+OUT: <ExitLog> Machine PING(7) exiting state WaitPong_1
+OUT: <StateLog> Machine PING(7) entered state WaitPong_2
+OUT: <DequeueLog> Dequeued event Pong with payload < (1, 0, 0, 0), 5> by Machine PING(7)
+OUT: <ExitLog> Machine PING(7) exiting state WaitPong_2
+OUT: <StateLog> Machine PING(7) entered state Done
+OUT: 
+EXIT: 0

@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing InfiniteLoopInAtomicBlock.zing ...
+OUT: Compiling InfiniteLoopInAtomicBlock.zing to InfiniteLoopInAtomicBlock.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: Program Runtime Error
 OUT: 
 OUT: Error:

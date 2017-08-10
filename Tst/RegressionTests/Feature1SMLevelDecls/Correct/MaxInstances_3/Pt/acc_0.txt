@@ -1,0 +1,10 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Real_Init
+OUT: <CreateLog> Machine Ghost(2) is created
+OUT: <StateLog> Machine Ghost(2) entered state _Init
+OUT: exiting with PRT_STATUS_EVENT_OVERFLOW
+OUT: 
+EXIT: 1

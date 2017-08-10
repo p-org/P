@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing HaltTrigger4Do.zing ...
+OUT: Compiling HaltTrigger4Do.zing to HaltTrigger4Do.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

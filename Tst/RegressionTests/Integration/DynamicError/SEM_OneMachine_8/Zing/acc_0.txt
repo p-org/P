@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing GotoToItself.zing ...
+OUT: Compiling GotoToItself.zing to GotoToItself.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

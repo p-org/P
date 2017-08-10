@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing nonDetFunctionInExpr_1.zing ...
+OUT: Compiling nonDetFunctionInExpr_1.zing to nonDetFunctionInExpr_1.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

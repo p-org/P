@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing linear3.zing ...
+OUT: Compiling linear3.zing to linear3.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

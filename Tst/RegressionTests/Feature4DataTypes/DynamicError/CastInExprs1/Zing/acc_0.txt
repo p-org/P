@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing CastInExprsDynError.zing ...
+OUT: Compiling CastInExprsDynError.zing to CastInExprsDynError.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

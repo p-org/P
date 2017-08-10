@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing PushImplicitPopWithRaise.zing ...
+OUT: Compiling PushImplicitPopWithRaise.zing to PushImplicitPopWithRaise.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

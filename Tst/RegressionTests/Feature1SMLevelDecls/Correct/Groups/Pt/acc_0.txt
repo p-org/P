@@ -1,0 +1,7 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state G1_S1
+OUT: 
+EXIT: 0

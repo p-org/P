@@ -1,0 +1,27 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Init
+OUT: <RaiseLog> Machine Main(1) raised event E with payload null
+OUT: <PushLog> Machine Main(1) pushed
+OUT: <StateLog> Machine Main(1) entered state Call
+OUT: <RaiseLog> Machine Main(1) raised event E with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Call
+OUT: <PopLog> Machine Main(1) popped with unhandled event E and reentered state Init
+OUT: <PushLog> Machine Main(1) pushed
+OUT: <StateLog> Machine Main(1) entered state Call
+OUT: <RaiseLog> Machine Main(1) raised event E with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Call
+OUT: <PopLog> Machine Main(1) popped with unhandled event E and reentered state Init
+OUT: <PushLog> Machine Main(1) pushed
+OUT: <StateLog> Machine Main(1) entered state Call
+OUT: <RaiseLog> Machine Main(1) raised event E with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Call
+OUT: <PopLog> Machine Main(1) popped with unhandled event E and reentered state Init
+OUT: <PushLog> Machine Main(1) pushed
+OUT: <StateLog> Machine Main(1) entered state Call
+OUT: <ExitLog> Machine Main(1) exiting state Call
+OUT: <PopLog> Machine Main(1) popped and reentered state Init
+OUT: 
+EXIT: 0

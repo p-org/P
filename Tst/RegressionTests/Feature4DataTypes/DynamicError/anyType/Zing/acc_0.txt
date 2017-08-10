@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing anyType.zing ...
+OUT: Compiling anyType.zing to anyType.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

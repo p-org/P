@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing enum1.zing ...
+OUT: Compiling enum1.zing to enum1.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

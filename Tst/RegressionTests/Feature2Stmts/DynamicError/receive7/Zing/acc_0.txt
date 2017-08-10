@@ -1,6 +1,13 @@
 =================================
          Console output          
 =================================
+OUT: Writing receive7.zing ...
+OUT: Compiling receive7.zing to receive7.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

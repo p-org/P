@@ -116,7 +116,6 @@
             }
             string unitFileName = Options.unitName;
             ProgramName unitProgramName = new ProgramName(unitFileName);
-            AST<Program> unitProgram;
             AST<Model> unitModel;
 
             using (this.Profiler.Start("Compiler installing", Path.GetFileName(unitFileName)))
@@ -177,7 +176,7 @@
                 }
 
                 InstallResult instResult;
-                unitProgram = MkProgWithSettings(unitProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
+                AST<Program> unitProgram = MkProgWithSettings(unitProgramName, new KeyValuePair<string, object>(Configuration.Proofs_KeepLineNumbersSetting, "TRUE"));
                 // CompilerEnv only expects one call to Install at a time.
                 bool progressed = CompilerEnv.Install(Factory.Instance.AddModule(unitProgram, unitModel), out instResult);
                 Contract.Assert(progressed && instResult.Succeeded, GetFirstMessage(from t in instResult.Flags select t.Item2));

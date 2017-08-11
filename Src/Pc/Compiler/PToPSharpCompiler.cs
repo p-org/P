@@ -9,6 +9,7 @@ using Antlr4.StringTemplate;
 using Antlr4.StringTemplate.Visualizer.Extensions;
 using Microsoft.Formula.API;
 using Microsoft.Formula.API.Nodes;
+using Microsoft.Pc.TypeChecker;
 
 namespace Microsoft.Pc
 {
@@ -33,7 +34,7 @@ namespace Microsoft.Pc
                 }
             });
 
-        private readonly PSharpTypeFactory typeFactory = new PSharpTypeFactory();
+        private readonly PTypeUniverse typeFactory = new PTypeUniverse();
 
         public PToPSharpCompiler(
             Compiler compiler,
@@ -45,7 +46,7 @@ namespace Microsoft.Pc
             TemplateGroup templateGroup = pSharpTemplates.Value;
             Template t = templateGroup.GetInstanceOf("topLevel");
 
-            IList<EventDecl> events = GenerateEvents();
+            IList<PEvent> events = GenerateEvents();
             IList<MachineDecl> machines = GenerateMachines();
 
             t.Add("pgm", new {Namespace = "Test", Events = events, Machines = machines, Types = typeFactory.AllTypes});
@@ -60,18 +61,17 @@ namespace Microsoft.Pc
             return generatedCode;
         }
 
-        private IList<EventDecl> GenerateEvents()
+        private IList<PEvent> GenerateEvents()
         {
             return allEvents.Select(
                 kv =>
                 {
-                    PSharpType payloadType = typeFactory.MakePSharpType(kv.Value.payloadType);
-                    return new EventDecl
+                    PLanguageType payloadType = typeFactory.FromFormulaTerm(kv.Value.payloadType);
+                    return new PEvent(null, kv.Key)
                     {
-                        Name = kv.Key,
                         Assert = kv.Value.maxInstances == -1 || kv.Value.maxInstancesAssumed ? -1 : kv.Value.maxInstances,
                         Assume = kv.Value.maxInstances == -1 || !kv.Value.maxInstancesAssumed ? -1 : kv.Value.maxInstances,
-                        PayloadType = payloadType == PSharpBaseType.Null ? null : payloadType
+                        PayloadType = payloadType == PrimitiveType.Null ? null : payloadType
                     };
                 }).ToList();
         }
@@ -102,14 +102,14 @@ namespace Microsoft.Pc
                     FunInfo funInfo = kv.Value;
                     List<TypedName> parameters =
                     (from name in funInfo.parameterNames
-                     let type = typeFactory.MakePSharpType(funInfo.localNameToInfo[name].type)
-                     where !type.Equals(PSharpBaseType.Null)
+                     let type = typeFactory.FromFormulaTerm(funInfo.localNameToInfo[name].type)
+                     where !type.Equals(PrimitiveType.Null)
                      select new TypedName {Name = name, Type = type}).ToList();
 
                     List<TypedName> locals =
                     (from name in funInfo.localNames
-                     let type = typeFactory.MakePSharpType(funInfo.localNameToInfo[name].type)
-                     where !type.Equals(PSharpBaseType.Null)
+                     let type = typeFactory.FromFormulaTerm(funInfo.localNameToInfo[name].type)
+                     where !type.Equals(PrimitiveType.Null)
                      select new TypedName {Name = name, Type = type}).ToList();
 
                     Dictionary<string, TypedName> localSymbolTable =
@@ -118,7 +118,7 @@ namespace Microsoft.Pc
                     return new MethodDecl
                     {
                         Name = funName,
-                        ReturnType = typeFactory.MakePSharpType(funInfo.returnType.Node),
+                        ReturnType = typeFactory.FromFormulaTerm(funInfo.returnType.Node),
                         Parameters = parameters,
                         LocalVariables = locals
                     };
@@ -176,22 +176,22 @@ namespace Microsoft.Pc
         }
     }
 
-    internal class TypedName
+    public class TypedName
     {
         public string Name { get; set; }
 
-        public PSharpType Type { get; set; }
+        public PLanguageType Type { get; set; }
     }
 
-    internal class MethodDecl
+    public class MethodDecl
     {
         public string Name { get; set; }
-        public PSharpType ReturnType { get; set; }
+        public PLanguageType ReturnType { get; set; }
         public List<TypedName> Parameters { get; set; }
         public List<TypedName> LocalVariables { get; set; }
     }
 
-    internal class StateEventHandler
+    public class StateEventHandler
     {
         public string OnEvent { get; set; }
         public bool IsPush { get; set; }
@@ -218,13 +218,5 @@ namespace Microsoft.Pc
         public string Name { get; set; }
         public IList<StateDecl> States { get; set; }
         public IList<MethodDecl> Methods { get; set; }
-    }
-
-    internal class EventDecl
-    {
-        public string Name { get; set; }
-        public int Assert { get; set; }
-        public int Assume { get; set; }
-        public PSharpType PayloadType { get; set; }
     }
 }

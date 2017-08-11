@@ -18,7 +18,8 @@ type : ANY LT eventSet=Iden GT    # BoundedType
      | Iden    # NamedType
      ;
 
-idenTypeList : names+=Iden COLON types+=type (COMMA names+=Iden COLON types+=type)* ;
+idenTypeList : idenType (COMMA idenType)* ;
+idenType : Iden COLON type ;
 
 topDecl : typeDefDecl
         | enumTypeDefDecl
@@ -39,37 +40,37 @@ annotation : name=Iden ASSIGN value=NullLiteral
            | name=Iden ASSIGN value=Iden
            ;
 
-typeDefDecl : TYPE Iden SEMI # ForeignTypeDef
-            | TYPE Iden ASSIGN type SEMI # PTypeDef
+typeDefDecl : TYPE name=Iden SEMI # ForeignTypeDef
+            | TYPE name=Iden ASSIGN type SEMI # PTypeDef
             ;
 
-enumTypeDefDecl : ENUM Iden LBRACE idenList RBRACE
-                | ENUM Iden LBRACE numberedEnumElemList RBRACE
+enumTypeDefDecl : ENUM name=Iden LBRACE idenList RBRACE
+                | ENUM name=Iden LBRACE numberedEnumElemList RBRACE
                 ;
 idenList : Iden (COMMA Iden)* ;
 numberedEnumElemList : names+=Iden ASSIGN values+=IntLiteral (COMMA names+=Iden ASSIGN values+=IntLiteral)* ;
 
-eventDecl : EVENT Iden cardinality? (COLON type)? annotationSet? SEMI;
+eventDecl : EVENT name=Iden cardinality? (COLON type)? annotationSet? SEMI;
 cardinality : ASSERT IntLiteral
             | ASSUME IntLiteral
             ;
 
-eventSetDecl : EVENTSET Iden ASSIGN LBRACE nonDefaultEventList RBRACE SEMI ;
+eventSetDecl : EVENTSET name=Iden ASSIGN LBRACE nonDefaultEventList RBRACE SEMI ;
 
-interfaceDecl : TYPE Iden LPAREN type? RPAREN ASSIGN Iden SEMI
-              | TYPE Iden LPAREN type? RPAREN ASSIGN LBRACE nonDefaultEventList RBRACE SEMI
+interfaceDecl : TYPE name=Iden LPAREN type? RPAREN ASSIGN Iden SEMI
+              | TYPE name=Iden LPAREN type? RPAREN ASSIGN LBRACE nonDefaultEventList RBRACE SEMI
               ;
 
 nonDefaultEventList : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 
-implMachineDecl : MACHINE Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
+implMachineDecl : MACHINE name=Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
 receivesSends : RECEIVES nonDefaultEventList? SEMI
               | SENDS nonDefaultEventList? SEMI
               ;
 
-implMachineProtoDecl : EXTERN MACHINE Iden LPAREN type? RPAREN SEMI;
+implMachineProtoDecl : EXTERN MACHINE name=Iden LPAREN type? RPAREN SEMI;
 
-specMachineDecl : SPEC Iden OBSERVES nonDefaultEventList machineBody ;
+specMachineDecl : SPEC name=Iden OBSERVES nonDefaultEventList machineBody ;
 
 machineBody : LBRACE machineEntry* RBRACE;
 machineEntry : varDecl
@@ -80,8 +81,8 @@ machineEntry : varDecl
 
 varDecl : VAR idenList COLON type annotationSet? SEMI ;
 
-funDecl : FUN Iden funParams (COLON type)? annotationSet? (SEMI | statementBlock) ;
-funProtoDecl : EXTERN FUN Iden (CREATES idenList? SEMI)? funParams (COLON type)? annotationSet? SEMI;
+funDecl : FUN name=Iden funParams (COLON type)? annotationSet? (SEMI | statementBlock) ;
+funProtoDecl : EXTERN FUN name=Iden (CREATES idenList? SEMI)? funParams (COLON type)? annotationSet? SEMI;
 funParams : LPAREN idenTypeList? RPAREN;
 
 group : GROUP Iden LBRACE groupItem* RBRACE ;
@@ -89,7 +90,7 @@ groupItem : stateDecl
           | group
           ;
 
-stateDecl : START? temperature=(HOT | COLD)? STATE Iden annotationSet? LBRACE stateBodyItem* RBRACE ;
+stateDecl : START? temperature=(HOT | COLD)? STATE name=Iden annotationSet? LBRACE stateBodyItem* RBRACE ;
 
 stateBodyItem : ENTRY anonEventHandler # StateEntry
               | ENTRY Iden SEMI        # StateEntry

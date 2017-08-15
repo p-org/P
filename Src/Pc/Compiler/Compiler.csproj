@@ -269,12 +269,11 @@
     <Compile Include="StateTemperature.cs" />
     <Compile Include="TransitionInfo.cs" />
     <Compile Include="TypeChecker\Analyzer.cs" />
+    <Compile Include="TypeChecker\DeclarationCollector.cs" />
     <Compile Include="TypeChecker\DeclarationTable.cs" />
     <Compile Include="TypeChecker\DictionaryExtensions.cs" />
     <Compile Include="TypeChecker\BoundedType.cs" />
     <Compile Include="TypeChecker\DuplicateDeclarationException.cs" />
-    <Compile Include="TypeChecker\PEvent.cs" />
-    <Compile Include="TypeChecker\EventSet.cs" />
     <Compile Include="TypeChecker\PrimitiveType.cs" />
     <Compile Include="TypeChecker\MapType.cs" />
     <Compile Include="TypeChecker\NamedTupleType.cs" />
@@ -282,10 +281,8 @@
     <Compile Include="TypeChecker\TupleType.cs" />
     <Compile Include="TypeChecker\PLanguageType.cs" />
     <Compile Include="TypeChecker\PTypeUniverse.cs" />
-    <Compile Include="TypeChecker\PTypeVisitor.cs" />
     <Compile Include="TypeChecker\TypeKind.cs" />
     <Compile Include="TypeChecker\TypeConstructionException.cs" />
-    <Compile Include="TypeChecker\TypedefType.cs" />
     <Compile Include="VariableInfo.cs" />
     <Compile Include="XmlProfiler.cs" />
     <Compile Include="ZingData.cs" />

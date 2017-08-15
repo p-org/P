@@ -8,18 +8,21 @@ type : ANY LT eventSet=Iden GT    # BoundedType
      | MAP LBRACK keyType=type COMMA valueType=type RBRACK  # MapType
      | LPAREN tupTypes+=type (COMMA tupTypes+=type)* RPAREN # TupleType
      | LPAREN idenTypeList RPAREN # NamedTupleType
-     | BOOL    # PrimitiveType
-     | INT     # PrimitiveType
-     | FLOAT   # PrimitiveType
-     | EVENT   # PrimitiveType
-     | MACHINE # PrimitiveType
-     | DATA    # PrimitiveType
-     | ANY     # PrimitiveType
-     | Iden    # NamedType
+     | BOOL      # PrimitiveType
+     | INT       # PrimitiveType
+     | FLOAT     # PrimitiveType
+     | EVENT     # PrimitiveType
+     | MACHINE   # PrimitiveType
+     | DATA      # PrimitiveType
+     | ANY       # PrimitiveType
+     | name=Iden # NamedType
      ;
 
 idenTypeList : idenType (COMMA idenType)* ;
-idenType : Iden COLON type ;
+idenType : name=Iden COLON type ;
+
+funParamList : funParam (COMMA funParam)* ;
+funParam : name=Iden COLON type ;
 
 topDecl : typeDefDecl
         | enumTypeDefDecl
@@ -33,7 +36,7 @@ topDecl : typeDefDecl
         | funProtoDecl
         ;
 
-annotationSet : LBRACK (annotations+=annotation (',' annotations+=annotation)*)? RBRACK;
+annotationSet : LBRACK (annotations+=annotation (COMMA annotations+=annotation)*)? RBRACK;
 annotation : name=Iden ASSIGN value=NullLiteral
            | name=Iden ASSIGN value=BoolLiteral
            | name=Iden ASSIGN value=IntLiteral
@@ -44,11 +47,13 @@ typeDefDecl : TYPE name=Iden SEMI # ForeignTypeDef
             | TYPE name=Iden ASSIGN type SEMI # PTypeDef
             ;
 
-enumTypeDefDecl : ENUM name=Iden LBRACE idenList RBRACE
+enumTypeDefDecl : ENUM name=Iden LBRACE enumElemList RBRACE
                 | ENUM name=Iden LBRACE numberedEnumElemList RBRACE
                 ;
-idenList : Iden (COMMA Iden)* ;
-numberedEnumElemList : names+=Iden ASSIGN values+=IntLiteral (COMMA names+=Iden ASSIGN values+=IntLiteral)* ;
+enumElemList : enumElem (COMMA enumElem)* ;
+enumElem : name=Iden ;
+numberedEnumElemList : numberedEnumElem (COMMA numberedEnumElem)* ;
+numberedEnumElem : name=Iden ASSIGN value=IntLiteral ;
 
 eventDecl : EVENT name=Iden cardinality? (COLON type)? annotationSet? SEMI;
 cardinality : ASSERT IntLiteral
@@ -57,13 +62,14 @@ cardinality : ASSERT IntLiteral
 
 eventSetDecl : EVENTSET name=Iden ASSIGN LBRACE nonDefaultEventList RBRACE SEMI ;
 
-interfaceDecl : TYPE name=Iden LPAREN type? RPAREN ASSIGN Iden SEMI
+interfaceDecl : TYPE name=Iden LPAREN type? RPAREN ASSIGN eventSet=Iden SEMI
               | TYPE name=Iden LPAREN type? RPAREN ASSIGN LBRACE nonDefaultEventList RBRACE SEMI
               ;
 
 nonDefaultEventList : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 
 implMachineDecl : MACHINE name=Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
+idenList : names+=Iden (COMMA names+=Iden)* ;
 receivesSends : RECEIVES nonDefaultEventList? SEMI
               | SENDS nonDefaultEventList? SEMI
               ;
@@ -81,35 +87,34 @@ machineEntry : varDecl
 
 varDecl : VAR idenList COLON type annotationSet? SEMI ;
 
-funDecl : FUN name=Iden funParams (COLON type)? annotationSet? (SEMI | statementBlock) ;
-funProtoDecl : EXTERN FUN name=Iden (CREATES idenList? SEMI)? funParams (COLON type)? annotationSet? SEMI;
-funParams : LPAREN idenTypeList? RPAREN;
+funDecl : FUN name=Iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? (SEMI | statementBlock) ;
+funProtoDecl : EXTERN FUN name=Iden (CREATES idenList? SEMI)? LPAREN funParamList? RPAREN (COLON type)? annotationSet? SEMI;
 
-group : GROUP Iden LBRACE groupItem* RBRACE ;
+group : GROUP name=Iden LBRACE groupItem* RBRACE ;
 groupItem : stateDecl
           | group
           ;
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=Iden annotationSet? LBRACE stateBodyItem* RBRACE ;
 
-stateBodyItem : ENTRY anonEventHandler # StateEntry
-              | ENTRY Iden SEMI        # StateEntry
-              | EXIT statementBlock    # StateExit
-              | EXIT Iden SEMI         # StateExit
+stateBodyItem : ENTRY anonEventHandler       # StateEntry
+              | ENTRY funName=Iden SEMI      # StateEntry
+              | EXIT noParamAnonEventHandler # StateExit
+              | EXIT funName=Iden SEMI       # StateExit
               | DEFER nonDefaultEventList annotationSet? SEMI    # StateDefer
               | IGNORE nonDefaultEventList annotationSet? SEMI   # StateIgnore
-              | ON eventList DO Iden annotationSet? SEMI # OnEventDoAction
-              | ON eventList DO annotationSet? anonEventHandler # OnEventDoAction
-              | ON eventList PUSH stateName annotationSet? SEMI # OnEventPushState
-              | ON eventList GOTO stateName annotationSet? SEMI # OnEventGotoState
-              | ON eventList GOTO stateName annotationSet? WITH anonEventHandler # OnEventGotoState
-              | ON eventList GOTO stateName annotationSet? WITH Iden SEMI        # OnEventGotoState
+              | ON eventList DO funName=Iden annotationSet? SEMI # OnEventDoAction
+              | ON eventList DO annotationSet? anonEventHandler  # OnEventDoAction
+              | ON eventList PUSH stateName annotationSet? SEMI  # OnEventPushState
+              | ON eventList GOTO stateName annotationSet? SEMI  # OnEventGotoState
+              | ON eventList GOTO stateName annotationSet? WITH anonEventHandler  # OnEventGotoState
+              | ON eventList GOTO stateName annotationSet? WITH funName=Iden SEMI # OnEventGotoState
               ;
 
 eventList : eventId (COMMA eventId)* ;
 eventId : NullLiteral | HALT | Iden ;
 
-stateName : Iden (DOT Iden)* ;
+stateName : Iden (DOT Iden)* ; // First few Idens are groups
 
 statementBlock : LBRACE varDecl* statement* RBRACE ;
 statement : LBRACE statement* RBRACE
@@ -140,7 +145,8 @@ lvalue : Iden
 
 recvCase : CASE eventList COLON anonEventHandler ;
 anonEventHandler : payloadVarDecl? statementBlock ;
-payloadVarDecl : LPAREN Iden COLON type RPAREN ;
+noParamAnonEventHandler : statementBlock;
+payloadVarDecl : LPAREN funParam RPAREN ;
 
 expr : primitive # PrimitiveExpr
      | LPAREN unnamedTupleBody RPAREN # UnnamedTupleExpr

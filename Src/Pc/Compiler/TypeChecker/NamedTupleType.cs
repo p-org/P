@@ -17,4 +17,10 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<string> Names => Fields.Select(f => f.Name);
         public IReadOnlyList<TypedName> Fields { get; }
     }
+
+    public class TypedName
+    {
+        public string Name { get; set; }
+        public PLanguageType Type { get; set; }
+    }
 }

@@ -708,11 +708,7 @@
                         pToCSharp.GenerateCSharp();
                         break;
                     case CompilerOutput.PSharp:
-                        var pToPSharp = new PToPSharpCompiler(this, iModel, idToSourceInfo);
-                        string code = pToPSharp.GenerateCode();
-                        File.WriteAllText(Path.Combine(Options.outputDir, csharpFileName), code);
-                        Log.WriteMessage($"Writing {csharpFileName} ...", SeverityKind.Info);
-                        break;
+                        throw new Exception("P# not yet implemented");
                     case CompilerOutput.PThree:
                         throw new Exception("P3 not yet implemented");
                 }

@@ -3,16 +3,16 @@ using Antlr4.Runtime;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    internal class DuplicateDeclarationException : Exception
+    public class DuplicateDeclarationException : Exception
     {
-        public DuplicateDeclarationException(ParserRuleContext conflictingNameNode, ParserRuleContext existingDeclarationNode)
+        public DuplicateDeclarationException(IPDecl conflictingNameNode, IPDecl existingDeclarationNode)
         {
             ConflictingNameNode = conflictingNameNode;
             ExistingDeclarationNode = existingDeclarationNode;
         }
 
-        public ParserRuleContext ConflictingNameNode { get; }
+        public IPDecl ConflictingNameNode { get; }
 
-        public ParserRuleContext ExistingDeclarationNode { get; }
+        public IPDecl ExistingDeclarationNode { get; }
     }
 }

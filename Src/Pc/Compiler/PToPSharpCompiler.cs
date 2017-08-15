@@ -11,6 +11,7 @@ using Microsoft.Formula.API;
 using Microsoft.Formula.API.Nodes;
 using Microsoft.Pc.TypeChecker;
 
+#if false
 namespace Microsoft.Pc
 {
     internal class PToPSharpCompiler : PTranslation
@@ -220,3 +221,4 @@ namespace Microsoft.Pc
         public IList<MethodDecl> Methods { get; set; }
     }
 }
+#endif

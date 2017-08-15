@@ -18,8 +18,6 @@ namespace Microsoft.Pc.TypeChecker
             };
 
         private readonly Dictionary<EventSet, BoundedType> boundedTypes = new Dictionary<EventSet, BoundedType>();
-
-        private readonly Dictionary<Machine, MachineType> machineTypes = new Dictionary<Machine, MachineType>();
         private readonly Dictionary<string, MapType> maps = new Dictionary<string, MapType>();
         private readonly Dictionary<string, NamedTupleType> namedTuples = new Dictionary<string, NamedTupleType>();
         private readonly Dictionary<string, SequenceType> sequences = new Dictionary<string, SequenceType>();
@@ -89,11 +87,6 @@ namespace Microsoft.Pc.TypeChecker
             return namedTuples.GetOrCreate(
                 namedTupleRepr,
                 () => new NamedTupleType($"NamedTuple{namedTuples.Count + 1}", fields, namedTupleRepr));
-        }
-
-        public PLanguageType GetOrCreateMachineType(Machine declaration)
-        {
-            return machineTypes.GetOrCreate(declaration, () => new MachineType(declaration));
         }
     }
 }

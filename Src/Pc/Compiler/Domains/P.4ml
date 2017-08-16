@@ -484,7 +484,7 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ev), ev: NonNullEventName, type = NameType(name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(name, ev), ev: NonNullEventName}), eType : InterfaceType.
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ALL), type = NameType(name), eType = BaseType(MACHINE).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineExports(name, iname), type = NameType(iname), InterfaceTypeDecl(iname, eType, _, _).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE), no MachineReceives(name, _).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).

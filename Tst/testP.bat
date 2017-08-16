@@ -2,8 +2,8 @@
 setlocal
 set SCRIPTDIR=%~dp0
 cd %SCRIPTDIR%
-set Configuration=Release
-set Platform=x86
+set PBuildConfiguration=Release
+set PBuildPlatform=x86
 set NoSync=true
 set Clean=
 set RunPArgs=
@@ -15,10 +15,10 @@ if /I "%1"=="/h" goto :help
 if /I "%1"=="/help" goto :help
 if /I "%1"=="help" goto :help
 if /I "%1"=="" goto :dobuild
-if /I "%1"=="debug" set Configuration=Debug&& goto :shift
-if /I "%1"=="release" set Configuration=Release&& goto :shift
-if /I "%1"=="x86" set Platform=x86&& goto :shift
-if /I "%1"=="x64" set Platform=x64&& goto :shift
+if /I "%1"=="debug" set PBuildConfiguration=Debug&& goto :shift
+if /I "%1"=="release" set PBuildConfiguration=Release&& goto :shift
+if /I "%1"=="x86" set PBuildPlatform=x86&& goto :shift
+if /I "%1"=="x64" set PBuildPlatform=x64&& goto :shift
 if /I "%1"=="nosync" set NoSync=nosync&& goto :shift
 if /I "%1"=="clean" set Clean=clean&& goto :shift
 if /I "%1"=="noclean" set Clean=noclean&& goto :shift
@@ -36,14 +36,14 @@ goto :eof
 if "%NoBuild%" == "1" goto :runtest
 
 cd ..\Bld
-call build.bat %Configuration% %Platform% %NoSync% %Clean%
+call build.bat %PBuildConfiguration% %PBuildPlatform% %NoSync% %Clean%
 
 :runtest
 cd %SCRIPTDIR%
 
-set RunPArgs=%RunPArgs% /Platform=%Platform% /Configuration=%Configuration%
-echo %SCRIPTDIR%..\Bld\Drops\%Configuration%\%Platform%\Binaries\RunPTool.exe %RunPArgs%
-"%SCRIPTDIR%..\Bld\Drops\%Configuration%\%Platform%\Binaries\RunPTool.exe" %RunPArgs%
+set RunPArgs=%RunPArgs% /Platform=%PBuildPlatform% /Configuration=%PBuildConfiguration%
+echo %SCRIPTDIR%..\Bld\Drops\%PBuildConfiguration%\%PBuildPlatform%\Binaries\RunPTool.exe %RunPArgs%
+"%SCRIPTDIR%..\Bld\Drops\%PBuildConfiguration%\%PBuildPlatform%\Binaries\RunPTool.exe" %RunPArgs%
 set result=0
 if %ERRORLEVEL% neq 0 (
   echo Tests failed.

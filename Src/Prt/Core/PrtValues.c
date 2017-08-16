@@ -431,7 +431,7 @@ PRT_MACHINEID PRT_CALL_CONV PrtPrimGetMachine(_In_ PRT_VALUE *prmVal)
 	return *prmVal->valueUnion.mid;
 }
 
-void PRT_CALL_CONV PrtTupleSetLinear(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_FUN_PARAM_STATUS status, _In_ PRT_VALUE **value)
+void PRT_CALL_CONV PrtTupleSetLinear(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 index, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
 {
 	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
@@ -453,6 +453,7 @@ void PRT_CALL_CONV PrtTupleSetLinear(_Inout_ PRT_VALUE *tuple, _In_ PRT_UINT32 i
 	else
 	{
 		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
 		tuple->valueUnion.tuple->values[index] = *value;
 		*value = oldValue;
 	}
@@ -493,7 +494,7 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 i
 	return tuple->valueUnion.tuple->values[index];
 }
 
-void PRT_CALL_CONV PrtSeqUpdateLinear(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_FUN_PARAM_STATUS status, _In_ PRT_VALUE **value)
+void PRT_CALL_CONV PrtSeqUpdateLinear(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *index, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
 {
 	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
@@ -504,7 +505,7 @@ void PRT_CALL_CONV PrtSeqUpdateLinear(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *in
 
 	if ((PRT_UINT32)index->valueUnion.nt == seq->valueUnion.seq->size)
 	{
-		PrtAssert(status == PRT_FUN_PARAM_MOVE, "old value is not valid");
+		PrtAssert(status == PRT_FUN_PARAM_MOVE, "lhs value is not valid");
 		PrtSeqInsertEx(seq, index, *value, PRT_FALSE);
 		*value = NULL;
 	}
@@ -523,7 +524,8 @@ void PRT_CALL_CONV PrtSeqUpdateLinear(_Inout_ PRT_VALUE *seq, _In_ PRT_VALUE *in
 		}
 		else
 		{
-			PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+			PrtAssert(PrtIsValidValue(oldValue), "lhs value is not valid");
+			PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
 			seq->valueUnion.seq->values[index->valueUnion.nt] = *value;
 			*value = oldValue;
 		}
@@ -796,7 +798,7 @@ PRT_VALUE *PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ 
 	return NULL;
 }
 
-void PRT_CALL_CONV PrtMapUpdateLinear(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_FUN_PARAM_STATUS status, _In_ PRT_VALUE **value)
+void PRT_CALL_CONV PrtMapUpdateLinear(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
 {
 	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
 	PRT_VALUE *oldValue = PrtMapUpdateHelper(map, key, cloneKey, *value, PRT_FALSE);
@@ -810,7 +812,8 @@ void PRT_CALL_CONV PrtMapUpdateLinear(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *ke
 	}
 	else 
 	{
-		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		PrtAssert(PrtIsValidValue(oldValue), "lhs value is not valid");
+		PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
 		*value = oldValue;
 	}
 }

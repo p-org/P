@@ -1032,6 +1032,11 @@ domain PStaticTyping extends PData, PError
 	ERROR2(e.id, decl.id, "Parameter passed with swap not available at callee return"),
 	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
 									   FunAvailable(decl, c.owner), e.name = decl.name, UnavailableAtReturn(decl, n).
+
+	ERROR2(e.id, decl.id, "Type of argument passed with swap must be identical to parameter type"),
+	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, arg, _), NmdTupType(NmdTupTypeField(n, paramType), _)), 
+									   FunAvailable(decl, c.owner), e.name = decl.name,
+	                                   TypeOf(c, arg, argType), argType: TypeExpr, TypeExpansion(paramType, eParamType), argType != eParamType.
 	
 	/*************************************************************/
     /*            Permissions Embedded in Types                  */

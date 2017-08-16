@@ -161,10 +161,11 @@ extern "C"{
 	/** Sets a global variable to variable
 	* @param[in,out] context The context to modify.
 	* @param[in] varIndex The index of the variable to modify.
-	* @param[in] status Indicates whether this operation is transfer or swap
-	* @param[in,out] value The pointer to the value to transfer or swap
+	* @param[in] status Indicates whether this operation is move or swap
+	* @param[in,out] value The pointer to the value to move or swap
+	* @param[in]     type The type of data pointed to by value
 	*/
-	PRT_API void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE ** value);
+	PRT_API void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE ** value, _In_ PRT_TYPE *type);
 
 	/** Sets a global variable to variable
 	* @param[in,out] context The context to modify.
@@ -186,7 +187,8 @@ extern "C"{
 		_Inout_ PRT_VALUE **locals,
 		_In_ PRT_UINT32 varIndex,
 		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value
+		_Inout_ PRT_VALUE **value,
+		_In_ PRT_TYPE *type
 	);
 
 	PRT_API void PRT_CALL_CONV PrtSetLocalVarEx(

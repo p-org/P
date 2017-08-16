@@ -2273,6 +2273,12 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								 ec = out.BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(localIndex, DEC, U)).
 
     //// ASSIGN / UPDATE
+	AssignSrcType ::= (in.TypingContext, in.BinStmt, out.Expr).
+	AssignSrcType(c, s, Ident("NULL")) :- SubSE(c, s), s = in.BinStmt(ASSIGN, dest, _, src, _), 
+	                                      in.TypeOf(c, dest, destType), in.TypeOf(c, src, srcType), srcType = destType.
+	AssignSrcType(c, s, expr) :- SubSE(c, s), s = in.BinStmt(ASSIGN, dest, _, src, _), 
+	                             in.TypeOf(c, dest, destType), in.TypeOf(c, src, srcType), srcType != destType, TypeToExpr(srcType, expr).
+
 	//// Case 1: Assign global variable
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Name(glbl, _), 
 	                       varDecl is in.VarDecl(glbl, c.owner, _, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, glbl, _),  
@@ -2293,13 +2299,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						   ContextLineInfo(c, s, info), 
 						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))), 
 						   RhsExpr(c, s, 0, _, doFree),
-						   QualToStatus(qual, status), TransLocalVar(c, src, ec),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr), 
 						   asgn = out.FunApp(Ident("PrtSetGlobalVarLinear"),
 						                     Args(Ident("p_tmp_mach_priv"),
 											 Args(Ident(varName),
 											 Args(Ident(status),
 											 Args(UnApp(ADDR, ec),
-											      NIL))))).
+											 Args(expr,
+											      NIL)))))).
 
 	//// Case 2: Assign a local variable
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Name(lcl, _), 
@@ -2321,13 +2328,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree),
-						   QualToStatus(qual, status), TransLocalVar(c, src, ec),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
 						   asgn = out.FunApp(Ident("PrtSetLocalVarLinear"),
 						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
 											 Args(IntLit(i, DEC, U),
 											 Args(Ident(status),
 											 Args(UnApp(ADDR, ec),
-											      NIL))))).
+											 Args(expr,
+											      NIL)))))).
 
 	//// Case 3: Assign a tuple by int index
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Field(getter, i, _), i : Natural, 	                       
@@ -2349,13 +2357,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree),
-						   QualToStatus(qual, status), TransLocalVar(c, src, ec),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
 						   asgn = out.FunApp(Ident("PrtTupleSetLinear"),
 						                     Args(egetter,
 											 Args(IntLit(i, DEC, U),
 											 Args(Ident(status),
 											 Args(UnApp(ADDR, ec),
-											      NIL))))).
+											 Args(expr,
+											      NIL)))))).
 
 	//// Case 4: Assign a tuple by name
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Field(getter, field, _), field : String, 	                       
@@ -2377,13 +2386,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree),
-						   QualToStatus(qual, status), TransLocalVar(c, src, ec),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
 						   asgn = out.FunApp(Ident("PrtTupleSetLinear"),
 						                     Args(egetter,
 											 Args(IntLit(i, DEC, U),
 											 Args(Ident(status),
 											 Args(UnApp(ADDR, ec),
-											      NIL))))).
+											 Args(expr,
+											      NIL)))))).
 
 	//// Case 5: Assign a sequence (rewrite the reading version of the translation)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.BinApp(IDX, _, _, _), 	                       
@@ -2407,13 +2417,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree),
-						   QualToStatus(qual, status), TransLocalVar(c, src, ec),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
 						   asgn = out.FunApp(Ident("PrtSeqUpdateLinear"),
 						                     Args(seq,
 											 Args(ndex,
 											 Args(Ident(status),
 											 Args(UnApp(ADDR, ec),
-											      NIL))))).
+											 Args(expr,
+											      NIL)))))).
 
 	//// Case 6: Assign a map (rewrite the reading version of the translation)
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.BinApp(IDX, _, _, _), 	                       
@@ -2438,14 +2449,15 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						   ContextLineInfo(c, s, info), 
 						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
 						   RhsExpr(c, s, 0, _, doFree),
-						   QualToStatus(qual, status), TransLocalVar(c, src, ec),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
 						   asgn = out.FunApp(Ident("PrtMapUpdateLinear"),
 						                     Args(map,
 											 Args(key,
 											 Args(Ident("PRT_TRUE"),
 											 Args(Ident(status),
 											 Args(UnApp(ADDR, ec),
-											      NIL)))))).
+											 Args(expr,
+											      NIL))))))).
 
     //// INSERT
 	//// Case 1: Insert into a sequence

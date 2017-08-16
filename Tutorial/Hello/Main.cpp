@@ -1,6 +1,6 @@
 #include <stdio.h>
 extern "C" {
-#include "PrtDist.h"
+#include "Prt.h"
 #include "hello.h"
 #include "Prt.h"
 extern void EnvInitialize();

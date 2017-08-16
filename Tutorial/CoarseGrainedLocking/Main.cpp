@@ -1,6 +1,6 @@
 #include <stdio.h>
 extern "C" {
-#include "PrtDist.h"
+#include "Prt.h"
 #include "CoarseGrainedLocking.h"
 }
 #include <string>
@@ -12,6 +12,40 @@ std::wstring ConvertToUnicode(const char* str)
 {
 	std::string temp(str == NULL ? "" : str);
 	return std::wstring(temp.begin(), temp.end());
+}
+
+static void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
+{
+	if (status == PRT_STATUS_ASSERT)
+	{
+		fprintf_s(stdout, "exiting with PRT_STATUS_ASSERT (assertion failure)\n");
+		exit(1);
+	}
+	else if (status == PRT_STATUS_EVENT_OVERFLOW)
+	{
+		fprintf_s(stdout, "exiting with PRT_STATUS_EVENT_OVERFLOW\n");
+		exit(1);
+	}
+	else if (status == PRT_STATUS_EVENT_UNHANDLED)
+	{
+		fprintf_s(stdout, "exiting with PRT_STATUS_EVENT_UNHANDLED\n");
+		exit(1);
+	}
+	else if (status == PRT_STATUS_QUEUE_OVERFLOW)
+	{
+		fprintf_s(stdout, "exiting with PRT_STATUS_QUEUE_OVERFLOW \n");
+		exit(1);
+	}
+	else if (status == PRT_STATUS_ILLEGAL_SEND)
+	{
+		fprintf_s(stdout, "exiting with PRT_STATUS_ILLEGAL_SEND \n");
+		exit(1);
+	}
+	else
+	{
+		fprintf_s(stdout, "unexpected PRT_STATUS in ErrorHandler: %d\n", status);
+		exit(2);
+	}
 }
 
 static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
@@ -92,7 +126,7 @@ int main(int argc, char *argv[])
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;
     processGuid.data4 = 0;
-    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, LogHandler);
+    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, LogHandler);
 
     //create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();

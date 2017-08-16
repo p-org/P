@@ -84,7 +84,7 @@ PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **owner
 PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer, PRT_VALUE **time)
 {
 	LARGE_INTEGER liDueTime;
-	int timeout_value = (*time)->valueUnion.nt;
+	PRT_INT timeout_value = (*time)->valueUnion.nt;
 	liDueTime.QuadPart = -10000 * timeout_value;
 	
 	FILETIME ftDueTime;

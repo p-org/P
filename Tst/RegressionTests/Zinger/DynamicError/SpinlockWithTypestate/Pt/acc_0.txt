@@ -1,0 +1,24 @@
+=================================
+         Console output          
+=================================
+OUT: Writing SpinlockWithTypestate.cs ...
+OUT: Writing SpinlockWithTypestate.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created spec Machine Spinlock
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Init
+OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
+OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
+OUT: <AnnounceLog> Enqueued Event <ACQ, 1> to Spec Machine Spinlock
+OUT: 
+OUT: ERROR: SpinlockWithTypestate.p(30,5,30,11): error PC1001: Assert failed
+OUT: 
+EXIT: -1

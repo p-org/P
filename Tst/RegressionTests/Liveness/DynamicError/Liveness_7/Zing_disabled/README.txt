@@ -1,0 +1,1 @@
+Zinger does not finish overnight

@@ -407,6 +407,7 @@
                 case PProgramTopDecl.Interface:
                 case PProgramTopDecl.Enum:
                 case PProgramTopDecl.TypeDef:
+                case PProgramTopDecl.Machine:
                     if (PPTopDeclNames.interfaceNames.Contains(name))
                     {
                         errorMessage = string.Format("A interface with name {0} already declared", name);
@@ -422,24 +423,31 @@
                         errorMessage = string.Format("An enum with name {0} already declared", name);
                         error = true;
                     }
-                    break;
-                case PProgramTopDecl.Machine:
-                    /*if (PPTopDeclNames.machineNames.Contains(name))
+                    else if (PPTopDeclNames.machineNames.Contains(name))
                     {
                         errorMessage = string.Format("A machine with name {0} already declared", name);
                         error = true;
                     }
-                    else*/ if(PPTopDeclNames.interfaceNames.Contains(name))
-                    {
-                        errorMessage = string.Format("A interface with name {0} already declared", name);
-                        error = true;
-                    }
                     break;
-
                 case PProgramTopDecl.MachineProto:
                     if (PPTopDeclNames.machineProto.Contains(name))
                     {
                         errorMessage = string.Format("A machine prototype with name {0} already declared", name);
+                        error = true;
+                    }
+                    if (PPTopDeclNames.interfaceNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A interface with name {0} already declared", name);
+                        error = true;
+                    }
+                    else if (PPTopDeclNames.typeNames.Contains(name))
+                    {
+                        errorMessage = string.Format("A typedef with name {0} already declared", name);
+                        error = true;
+                    }
+                    else if (PPTopDeclNames.enumNames.Contains(name))
+                    {
+                        errorMessage = string.Format("An enum with name {0} already declared", name);
                         error = true;
                     }
                     break;

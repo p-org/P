@@ -1,0 +1,31 @@
+=================================
+         Console output          
+=================================
+OUT: Writing DeferIgnore2.cs ...
+OUT: Writing DeferIgnore2.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
+OUT: <RaiseLog> Machine Main-1 raised Event unit
+OUT: <ActionLog> Machine Main-1 executing action for Event unit in State Main_Real1_Init
+OUT: <EnqueueLog> Enqueued Event <E1, null> in Main-1 by Main-1
+OUT: <EnqueueLog> Enqueued Event <E2, null> in Main-1 by Main-1
+OUT: <EnqueueLog> Enqueued Event <E3, null> in Main-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <E3, null> at Machine Main-1
+OUT: <DequeueLog> Dequeued Event <E1, null> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 ignoring Event E1 in State Main_Real1_Init
+OUT: <DequeueLog> Dequeued Event <E2, null> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 executing action for Event E2 in State Main_Real1_Init
+OUT: <FunctionLog> Machine Main-1 executing Function Action2
+OUT: 
+OUT: ERROR: DeferIgnore2.p(31,3,31,9): error PC1001: Assert failed
+OUT: 
+EXIT: -1

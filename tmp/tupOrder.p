@@ -1,9 +1,10 @@
+extern machine M();
+event e1 : seq[int];
+
 machine M {
-    group S {
-        start state S1 {
-        }
-    }
-    state S {
-        
+    start state S1 {}
+    fun foo(x: int) {
+        var y: bool;
+        y = true;
     }
 }

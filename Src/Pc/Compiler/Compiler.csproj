@@ -269,7 +269,8 @@
     <Compile Include="StateTemperature.cs" />
     <Compile Include="TransitionInfo.cs" />
     <Compile Include="TypeChecker\Analyzer.cs" />
-    <Compile Include="TypeChecker\DeclarationCollector.cs" />
+    <Compile Include="TypeChecker\DeclarationListener.cs" />
+    <Compile Include="TypeChecker\DeclarationStubListener.cs" />
     <Compile Include="TypeChecker\DeclarationTable.cs" />
     <Compile Include="TypeChecker\DictionaryExtensions.cs" />
     <Compile Include="TypeChecker\BoundedType.cs" />

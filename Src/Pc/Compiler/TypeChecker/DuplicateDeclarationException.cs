@@ -5,14 +5,14 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class DuplicateDeclarationException : Exception
     {
-        public DuplicateDeclarationException(IPDecl conflictingNameNode, IPDecl existingDeclarationNode)
+        public DuplicateDeclarationException(IPDecl conflicting, IPDecl existing)
         {
-            ConflictingNameNode = conflictingNameNode;
-            ExistingDeclarationNode = existingDeclarationNode;
+            Conflicting = conflicting;
+            Existing = existing;
         }
 
-        public IPDecl ConflictingNameNode { get; }
+        public IPDecl Conflicting { get; }
 
-        public IPDecl ExistingDeclarationNode { get; }
+        public IPDecl Existing { get; }
     }
 }

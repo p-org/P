@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker;
 using NUnit.Framework;
@@ -19,52 +21,84 @@ namespace UnitTests.PSharpBackend
             foreach (TestCaseData testCase in testCases)
             {
                 var testDir = (DirectoryInfo)testCase.Arguments[0];
-                Uri testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar).MakeRelativeUri(new Uri(testDir.FullName));
+                string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar).MakeRelativeUri(new Uri(testDir.FullName)).ToString();
+
+                RunTest(testName, testDir.GetFiles("*.p"));
+            }
+        }
+
+        [Test]
+        public void TestAnalyzeTemp()
+        {
+            RunTest("TEMP", SolutionPath("tmp", "tupOrder.p"), SolutionPath("tmp", "N.p"));
+        }
+
+        private static FileInfo SolutionPath(params string[] names)
+        {
+            return new FileInfo(Path.Combine(new [] {Constants.SolutionDirectory}.Concat(names).ToArray()));
+        }
+
+        private static void RunTest(string testName, params FileInfo[] inputFiles)
+        {
+            try
+            {
+                var trees = new PParser.ProgramContext[inputFiles.Length];
+                var originalFiles = new ParseTreeProperty<FileInfo>();
+
+                for (var i = 0; i < inputFiles.Length; i++)
+                {
+                    FileInfo inputFile = inputFiles[i];
+                    var fileStream = new AntlrFileStream(inputFile.FullName);
+                    var lexer = new PLexer(fileStream);
+                    var tokens = new CommonTokenStream(lexer);
+                    var parser = new PParser(tokens);
+                    parser.RemoveErrorListeners();
+
+                    trees[i] = parser.program();
+
+                    if (parser.NumberOfSyntaxErrors != 0)
+                    {
+                        throw new PParseException(inputFile.FullName);
+                    }
+
+                    originalFiles.Put(trees[i], inputFile);
+                }
 
                 try
                 {
-                    FileInfo[] inputFiles = testDir.GetFiles("*.p");
-                    var trees = new PParser.ProgramContext[inputFiles.Length];
-
-                    for (var i = 0; i < inputFiles.Length; i++)
-                    {
-                        FileInfo inputFile = inputFiles[i];
-                        var fileStream = new AntlrFileStream(inputFile.FullName);
-                        var lexer = new PLexer(fileStream);
-                        var tokens = new CommonTokenStream(lexer);
-                        var parser = new PParser(tokens);
-
-                        trees[i] = parser.program();
-
-                        if (parser.NumberOfSyntaxErrors != 0)
-                        {
-                            throw new PParseException(inputFile.FullName);
-                        }
-                    }
-
-                    try
-                    {
-                        Analyzer.Analyze(trees);
-                        Console.Error.WriteLine($"[{testName}] Success!");
-                    }
-                    catch (DuplicateDeclarationException e)
-                    {
-                        int badLine = e.ConflictingNameNode.SourceNode.Start.Line;
-                        int badCol = e.ConflictingNameNode.SourceNode.Start.Column;
-                        int goodLine = e.ExistingDeclarationNode.SourceNode.Start.Line;
-                        int goodCol = e.ExistingDeclarationNode.SourceNode.Start.Column;
-                        Console.Error.WriteLine($"[{testName}] Declaration at {goodLine}:{goodCol} conflicts with {badLine}:{badCol} ");
-                    }
+                    Analyzer.Analyze(trees);
                 }
-                catch (PParseException e)
+                catch (DuplicateDeclarationException e)
                 {
-                    Console.Error.WriteLine($"[{testName}] {e.Message}");
-                }
-                catch (Exception e)
-                {
-                    Console.Error.WriteLine($"[{testName}] UNEXPECTED ERROR: {e.Message}");
+                    int badLine = e.Conflicting.SourceNode.Start.Line;
+                    int badCol = e.Conflicting.SourceNode.Start.Column;
+                    string badFile = originalFiles.Get(GetRoot(e.Conflicting.SourceNode))?.Name;
+
+                    int goodLine = e.Existing.SourceNode.Start.Line;
+                    int goodCol = e.Existing.SourceNode.Start.Column;
+                    string goodFile = originalFiles.Get(GetRoot(e.Existing.SourceNode))?.Name;
+
+                    Console.Error.WriteLine($"[{testName}] Declaration of {e.Conflicting.Name} at {badFile}:{badLine},{badCol} duplicates the declaration at {goodFile}:{goodLine},{goodCol}");
                 }
             }
+            catch (PParseException e)
+            {
+                Console.Error.WriteLine($"[{testName}] {e.Message}");
+            }
+            catch (Exception e)
+            {
+                Console.Error.WriteLine($"[{testName}] UNEXPECTED ERROR: {e.Message}");
+            }
+        }
+
+        private static RuleContext GetRoot(RuleContext node)
+        {
+            while (node?.Parent != null)
+            {
+                node = node.Parent;
+            }
+
+            return node;
         }
     }
 

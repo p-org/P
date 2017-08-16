@@ -9,6 +9,7 @@ namespace Microsoft.Pc.TypeChecker
     // Not much is actually going on here, though.
     public class DeclarationTable
     {
+        private readonly HashSet<DeclarationTable> children = new HashSet<DeclarationTable>();
         private readonly IDictionary<string, EnumElem> enumElems = new Dictionary<string, EnumElem>();
         private readonly IDictionary<string, PEnum> enums = new Dictionary<string, PEnum>();
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
@@ -22,8 +23,7 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
-        private readonly HashSet<DeclarationTable> children = new HashSet<DeclarationTable>();
-        private DeclarationTable parent = null;
+        private DeclarationTable parent;
 
         public DeclarationTable Parent
         {
@@ -43,7 +43,7 @@ namespace Microsoft.Pc.TypeChecker
             .Concat(functions.Values).Concat(interfaces.Values).Concat(machineProtos.Values).Concat(machines.Values)
             .Concat(stateGroups.Values).Concat(states.Values).Concat(typedefs.Values).Concat(variables.Values);
 
-
+        #region Overloaded getters
         public bool Get(string name, out EnumElem tree)
         {
             return enumElems.TryGetValue(name, out tree);
@@ -108,7 +108,9 @@ namespace Microsoft.Pc.TypeChecker
         {
             return variables.TryGetValue(name, out tree);
         }
+        #endregion
 
+        #region Overloaded lookup methods
         public bool Lookup(string name, out EnumElem tree)
         {
             DeclarationTable current = this;
@@ -118,8 +120,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -133,8 +137,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -148,8 +154,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -163,8 +171,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -178,8 +188,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -193,8 +205,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -208,8 +222,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -223,8 +239,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -238,8 +256,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -253,8 +273,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -268,8 +290,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -283,8 +307,10 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
@@ -298,12 +324,16 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     return true;
                 }
+
                 current = current.Parent;
             }
+
             tree = null;
             return false;
         }
+        #endregion
 
+        #region Conflict-checking putters
         public void Put(string name, PParser.PTypeDefContext tree)
         {
             var typedef = new TypeDef(name, tree);
@@ -395,7 +425,7 @@ namespace Microsoft.Pc.TypeChecker
         public void Put(string name, PParser.GroupContext tree)
         {
             var group = new StateGroup(name, tree);
-            CheckConflicts(group, Namespace(stateGroups)); // TODO: also states?
+            CheckConflicts(group, Namespace(stateGroups));
             stateGroups.Add(name, group);
         }
 
@@ -433,6 +463,7 @@ namespace Microsoft.Pc.TypeChecker
             CheckConflicts(state, Namespace(states));
             states.Add(name, state);
         }
+        #endregion
 
         #region Conflict API
         // TODO: maybe optimize this?
@@ -614,11 +645,12 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
-        public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
         public int Assume { get; set; }
         public int Assert { get; set; }
         public PLanguageType PayloadType { get; set; }
+
+        public string Name { get; }
+        public ParserRuleContext SourceNode { get; }
     }
 
     public class Function : IPDecl

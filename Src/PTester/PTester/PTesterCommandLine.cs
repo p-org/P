@@ -265,7 +265,7 @@ namespace P.Tester
             }
 
             int maxNumOfSchedules = 10000;
-            int maxDepth = 1000;
+            int maxDepth = 5000;
             int numOfSchedules = 0;
             int numOfSteps = 0;
             var randomScheduler = new Random(DateTime.Now.Millisecond);

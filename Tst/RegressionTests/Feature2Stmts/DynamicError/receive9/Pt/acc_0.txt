@@ -1,0 +1,29 @@
+=================================
+         Console output          
+=================================
+OUT: Writing receive9.cs ...
+OUT: Writing receive9.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Init
+OUT: <RaiseLog> Machine Main-1 raised Event Unit
+OUT: <StateLog> Machine Main-1 exiting State Main_Init
+OUT: <StateLog> Machine Main-1 entering State Main_X
+OUT: <EnqueueLog> Enqueued Event <F, 10> in Main-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <F, 10> at Machine Main-1
+OUT: <EnqueueLog> Enqueued Event <G, ()> in Main-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <G, ()> at Machine Main-1
+OUT: <RaiseLog> Machine Main-1 raised Event E
+OUT: <StateLog> Machine Main-1 exiting State Main_X
+OUT: 
+OUT: ERROR: receive9.p(31,22,31,28): error PC1001: Assert failed
+OUT: 
+EXIT: -1

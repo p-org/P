@@ -1,0 +1,47 @@
+=================================
+         Console output          
+=================================
+OUT: Writing EventExprSemantics.cs ...
+OUT: Writing EventExprSemantics.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
+OUT: <CreateLog> Created Machine Real2-1
+OUT: <RaiseLog> Machine Main-1 raised Event E2
+OUT: <ActionLog> Machine Main-1 executing action for Event E2 in State Main_Real1_Init
+OUT: <FunctionLog> Machine Main-1 executing Function Action1
+OUT: <NullTransLog> Null transition taken by Machine Main-1
+OUT: <StateLog> Machine Main-1 exiting State Main_Real1_Init
+OUT: <EnqueueLog> Enqueued Event <E2, E1> in Real2-1 by Main-1
+OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_Init
+OUT: <DequeueLog> Dequeued Event <E2, E1> at Machine Real2-1
+OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_Init
+OUT: <NullTransLog> Null transition taken by Machine Real2-1
+OUT: <StateLog> Machine Real2-1 exiting State Real2_Real2_Init
+OUT: <EnqueueLog> Enqueued Event <E1, null> in Main-1 by Real2-1
+OUT: <EnqueueLog> Enqueued Event <E0, 100> in Real2-1 by Main-1
+OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_S1
+OUT: <DequeueLog> Dequeued Event <E0, 100> at Machine Real2-1
+OUT: <ActionLog> Machine Real2-1 executing action for Event E0 in State Real2_Real2_S1
+OUT: <EnqueueLog> Enqueued Event <E2, null> in Real2-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <E2, null> at Machine Real2-1
+OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_S1
+OUT: <EnqueueLog> Enqueued Event <E2, E0> in Real2-1 by Main-1
+OUT: <EnqueueLog> Enqueued Event <E2, E0> in Real2-1 by Main-1
+OUT: <EnqueueLog> Enqueued Event <E2, E0> in Real2-1 by Main-1
+OUT: <EnqueueLog> Enqueued Event <E3, True> in Real2-1 by Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Real1_S1
+OUT: <DequeueLog> Dequeued Event <E1, null> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 executing action for Event E1 in State Main_Real1_S1
+OUT: 
+OUT: ERROR: EventExprSemantics.p(68,28,68,34): error PC1001: Assert failed
+OUT: 
+EXIT: -1

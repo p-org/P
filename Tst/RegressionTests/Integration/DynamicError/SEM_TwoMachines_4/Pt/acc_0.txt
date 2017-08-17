@@ -1,0 +1,49 @@
+=================================
+         Console output          
+=================================
+OUT: Writing EventSentAfterSentHaltHandled_v.cs ...
+OUT: Writing EventSentAfterSentHaltHandled_v.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Ping_Init
+OUT: <CreateLog> Created Machine PONG-1
+OUT: <StateLog> Machine PONG-1 entering State PONG_Pong_WaitPing
+OUT: <RaiseLog> Machine Main-1 raised Event Success
+OUT: <StateLog> Machine Main-1 exiting State Main_Ping_Init
+OUT: <StateLog> Machine Main-1 entering State Main_Ping_SendPing
+OUT: <EnqueueLog> Enqueued Event <Ping, Main(1)> in PONG-1 by Main-1
+OUT: <RaiseLog> Machine Main-1 raised Event Success
+OUT: <StateLog> Machine Main-1 exiting State Main_Ping_SendPing
+OUT: <StateLog> Machine Main-1 entering State Main_Ping_WaitPong
+OUT: <DequeueLog> Dequeued Event <Ping, Main(1)> at Machine PONG-1
+OUT: <StateLog> Machine PONG-1 exiting State PONG_Pong_WaitPing
+OUT: <StateLog> Machine PONG-1 entering State PONG_Pong_SendPong
+OUT: <EnqueueLog> Enqueued Event <Pong, null> in Main-1 by PONG-1
+OUT: <DequeueLog> Dequeued Event <Pong, null> at Machine Main-1
+OUT: <StateLog> Machine Main-1 exiting State Main_Ping_WaitPong
+OUT: <StateLog> Machine Main-1 entering State Main_Ping_SendPing
+OUT: <EnqueueLog> Enqueued Event <halt, null> in PONG-1 by Main-1
+OUT: <EnqueueLog> Enqueued Event <PingIgnored, null> in PONG-1 by Main-1
+OUT: <RaiseLog> Machine Main-1 raised Event Success
+OUT: <StateLog> Machine Main-1 exiting State Main_Ping_SendPing
+OUT: <StateLog> Machine Main-1 entering State Main_Ping_WaitPong
+OUT: <RaiseLog> Machine PONG-1 raised Event Success
+OUT: <StateLog> Machine PONG-1 exiting State PONG_Pong_SendPong
+OUT: <StateLog> Machine PONG-1 entering State PONG_Pong_WaitPing
+OUT: <DequeueLog> Dequeued Event <halt, null> at Machine PONG-1
+OUT: <StateLog> Machine PONG-1 exiting State PONG_Pong_WaitPing
+OUT: <StateLog> Machine PONG-1 entering State PONG_Pong_Halt
+OUT: <DequeueLog> Dequeued Event <PingIgnored, null> at Machine PONG-1
+OUT: <ActionLog> Machine PONG-1 executing action for Event PingIgnored in State PONG_Pong_Halt
+OUT: 
+OUT: ERROR: EventSentAfterSentHaltHandled_v.p(59,23,59,29): error PC1001: Assert failed
+OUT: 
+EXIT: -1

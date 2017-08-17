@@ -1,0 +1,23 @@
+=================================
+         Console output          
+=================================
+OUT: Writing BugReproIdenticalTerms_workaround.cs ...
+OUT: Writing BugReproIdenticalTerms_workaround.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Init
+OUT: <RaiseLog> Machine Main-1 raised Event E
+OUT: <StateLog> Machine Main-1 entering State Main_Call
+OUT: <StateLog> Machine Main-1 exiting State Main_Call
+OUT: 
+OUT: ERROR: BugReproIdenticalTerms_workaround.p(18,11,18,17): error PC1001: Assert failed
+OUT: 
+EXIT: -1

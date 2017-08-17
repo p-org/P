@@ -39,7 +39,7 @@ PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 /* Initialize the function to default print fucntion*/
 PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
 
-void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value)
+void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
 {
 	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
 	PrtAssert(PrtIsValidValue(*value), "value is not valid");
@@ -57,7 +57,8 @@ void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV *context, 
 	}
 	else 
 	{
-		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		PrtAssert(PrtIsValidValue(oldValue), "lhs value is not valid");
+		PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
 		context->varValues[varIndex] = *value;
 		*value = oldValue;
 	}	
@@ -80,7 +81,7 @@ void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ P
 	PrtSetGlobalVarEx(context, varIndex, value, PRT_TRUE);
 }
 
-void PRT_CALL_CONV PrtSetLocalVarLinear(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value)
+void PRT_CALL_CONV PrtSetLocalVarLinear(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
 {
 	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
 	PrtAssert(PrtIsValidValue(*value), "value is not valid");
@@ -98,7 +99,8 @@ void PRT_CALL_CONV PrtSetLocalVarLinear(_Inout_ PRT_VALUE **locals, _In_ PRT_UIN
 	}
 	else
 	{
-		PrtAssert(PrtIsValidValue(oldValue), "old value is not valid");
+		PrtAssert(PrtIsValidValue(oldValue), "lhs value is not valid");
+		PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
 		locals[varIndex] = *value;
 		*value = oldValue;
 	}

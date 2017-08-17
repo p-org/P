@@ -1,0 +1,1 @@
+dsc: ptester, two machines, monitor invocation with null event

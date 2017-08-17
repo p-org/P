@@ -1,0 +1,29 @@
+=================================
+         Console output          
+=================================
+OUT: Writing NullEventHandler1.cs ...
+OUT: Writing NullEventHandler1.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
+OUT: <RaiseLog> Machine Main-1 raised Event unit
+OUT: <ActionLog> Machine Main-1 executing action for Event unit in State Main_Real1_Init
+OUT: <EnqueueLog> Enqueued Event <E1, null> in Main-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <E1, null> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 executing action for Event E1 in State Main_Real1_Init
+OUT: <FunctionLog> Machine Main-1 executing Function Action2
+OUT: <NullTransLog> Null transition taken by Machine Main-1
+OUT: <StateLog> Machine Main-1 exiting State Main_Real1_Init
+OUT: <StateLog> Machine Main-1 entering State Main_Real1_S2
+OUT: 
+OUT: ERROR: NullEventHandler1.p(20,11,20,17): error PC1001: Assert failed
+OUT: 
+EXIT: -1

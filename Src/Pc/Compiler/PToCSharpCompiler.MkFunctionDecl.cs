@@ -1149,6 +1149,8 @@ namespace Microsoft.Pc
                 var lhs = (FuncTerm)GetArgByIndex(ft, 1);
                 var type = LookupType(lhs);
                 var typeName = ((Id)type.Function).Name;
+                var rhs = (FuncTerm)GetArgByIndex(ft, 3);
+                var rhsTypeExpr = pToCSharp.typeContext.PTypeToCSharpExpr(LookupType(rhs));
                 using (var it = children.GetEnumerator())
                 {
                     ExpressionSyntax index = null;
@@ -1197,9 +1199,15 @@ namespace Microsoft.Pc
                             return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
                                 src,
                                 CSharpHelper.MkCSharpInvocationExpression(
-                                    CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", dest), "UpdateAndReturnOldValue"),
-                                    CSharpHelper.MkCSharpNumericLiteralExpression(fieldIndex),
-                                    src));
+                                    SyntaxFactory.MemberAccessExpression(
+                                        SyntaxKind.SimpleMemberAccessExpression, 
+                                        SyntaxFactory.IdentifierName("PrtValue"), 
+                                        SyntaxFactory.IdentifierName("PrtCastValue")),
+                                    CSharpHelper.MkCSharpInvocationExpression(
+                                        CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtTupleValue", dest), "UpdateAndReturnOldValue"),
+                                        CSharpHelper.MkCSharpNumericLiteralExpression(fieldIndex),
+                                        src),
+                                    rhsTypeExpr));
                         }
 
                         if (index == null)
@@ -1220,7 +1228,15 @@ namespace Microsoft.Pc
                             return SyntaxFactory.Block(
                                 CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(SyntaxFactory.IdentifierName("swap"), dest),
                                 CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(dest, src),
-                                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(src, SyntaxFactory.IdentifierName("swap")));
+                                CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
+                                    src,
+                                    CSharpHelper.MkCSharpInvocationExpression(
+                                        SyntaxFactory.MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            SyntaxFactory.IdentifierName("PrtValue"),
+                                            SyntaxFactory.IdentifierName("PrtCastValue")), 
+                                        SyntaxFactory.IdentifierName("swap"),
+                                        rhsTypeExpr)));
                         }
 
                         lhs = (FuncTerm)GetArgByIndex(lhs, 1);
@@ -1249,9 +1265,15 @@ namespace Microsoft.Pc
                             return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
                                 src,
                                 CSharpHelper.MkCSharpInvocationExpression(
-                                    CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "UpdateAndReturnOldValue"),
-                                    index,
-                                    src));
+                                        SyntaxFactory.MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            SyntaxFactory.IdentifierName("PrtValue"),
+                                            SyntaxFactory.IdentifierName("PrtCastValue")), 
+                                        CSharpHelper.MkCSharpInvocationExpression(
+                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtSeqValue", dest), "UpdateAndReturnOldValue"),
+                                            index,
+                                            src),
+                                        rhsTypeExpr));
                         }
                         // type is PMapType
                         if (assignType == "NONE")
@@ -1275,9 +1297,15 @@ namespace Microsoft.Pc
                         return CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(
                             src,
                             CSharpHelper.MkCSharpInvocationExpression(
-                                CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "UpdateAndReturnOldValue"),
-                                index,
-                                src));
+                                        SyntaxFactory.MemberAccessExpression(
+                                            SyntaxKind.SimpleMemberAccessExpression,
+                                            SyntaxFactory.IdentifierName("PrtValue"),
+                                            SyntaxFactory.IdentifierName("PrtCastValue")), 
+                                        CSharpHelper.MkCSharpInvocationExpression(
+                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtMapValue", dest), "UpdateAndReturnOldValue"),
+                                            index,
+                                            src),
+                                        rhsTypeExpr));
                     }
 
                     if (op == PData.Cnst_Remove.Node.Name)

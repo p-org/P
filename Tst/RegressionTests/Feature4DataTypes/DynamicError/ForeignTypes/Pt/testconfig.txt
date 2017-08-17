@@ -1,0 +1,1 @@
+dsc: ptester, test foreign type implementation

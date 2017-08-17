@@ -484,7 +484,7 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ev), ev: NonNullEventName, type = NameType(name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(name, ev), ev: NonNullEventName}), eType : InterfaceType.
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ALL), type = NameType(name), eType = BaseType(MACHINE).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineExports(name, iname), type = NameType(iname), InterfaceTypeDecl(iname, eType, _, _).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE), no MachineReceives(name, _).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).
@@ -1032,6 +1032,11 @@ domain PStaticTyping extends PData, PError
 	ERROR2(e.id, decl.id, "Parameter passed with swap not available at callee return"),
 	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
 									   FunAvailable(decl, c.owner), e.name = decl.name, UnavailableAtReturn(decl, n).
+
+	ERROR2(e.id, decl.id, "Type of argument passed with swap must be identical to parameter type"),
+	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, arg, _), NmdTupType(NmdTupTypeField(n, paramType), _)), 
+									   FunAvailable(decl, c.owner), e.name = decl.name,
+	                                   TypeOf(c, arg, argType), argType: TypeExpr, TypeExpansion(paramType, eParamType), argType != eParamType.
 	
 	/*************************************************************/
     /*            Permissions Embedded in Types                  */

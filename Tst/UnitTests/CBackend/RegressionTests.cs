@@ -333,7 +333,14 @@ namespace UnitTests.CBackend
             // input DLL file name: same as outputDLLPath
 
             // Run pt.exe
-            arguments = new List<string>(config.Arguments) {outputDllPath};
+            if (Constants.PtWithPSharp)
+            {
+                arguments = new List<string>(config.Arguments) { "/psharp", outputDllPath };
+            }
+            else
+            {
+                arguments = new List<string>(config.Arguments) { outputDllPath };
+            }
             int exitCode1 = ProcessHelper.RunWithOutput(ptExePath, activeDirectory, arguments, out stdout, out stderr);
             tmpWriter.Write(stdout);
             tmpWriter.Write(stderr);
@@ -479,7 +486,9 @@ namespace UnitTests.CBackend
                 {
                     programFiles = Environment.GetEnvironmentVariable("ProgramFiles");
                 }
-                msbuildPath = Path.Combine(programFiles, @"MSBuild\14.0\Bin\MSBuild.exe");
+                msbuildPath = Path.Combine(programFiles, @"MSBuild\15.0\Bin\MSBuild.exe");
+                //Debug:
+                //Console.WriteLine("path for msbuild.exe:", msbuildPath);
                 if (!File.Exists(msbuildPath))
                 {
                     throw new Exception("msbuild.exe is not in your PATH.");
@@ -520,6 +529,7 @@ namespace UnitTests.CBackend
                             Constants.DiffTool,
                             activeDirectory,
                             Constants.ActualOutputFileName);
+                        diffCmd = Environment.NewLine + diffCmd;
                         File.AppendAllText(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile), diffCmd);
                     }
                     catch (Exception e)

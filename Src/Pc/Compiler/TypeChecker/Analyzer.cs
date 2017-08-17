@@ -1,7 +1,4 @@
-using System;
-using System.Diagnostics;
-using System.Linq;
-using Antlr4.Runtime;
+using System.Collections.Generic;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 
@@ -18,9 +15,6 @@ namespace Microsoft.Pc.TypeChecker
              */
             var walker = new ParseTreeWalker();
             var stubListener = new DeclarationStubListener(programDeclarations, topLevelTable);
-            var types = new PTypeUniverse();
-            var typeVisitor = new TypeVisitor(types);
-            var declListener = new DeclarationListener(programDeclarations, typeVisitor);
 
             // Step 1: Create mapping of names to declaration stubs
             foreach (PParser.ProgramContext programUnit in programUnits)
@@ -28,50 +22,49 @@ namespace Microsoft.Pc.TypeChecker
                 walker.Walk(stubListener, programUnit);
             }
 
-#if DEBUG
-            // ASSERT: no declarations have ambiguous names.
-            // ASSERT: there is exactly one declaration object for each declaration.
-            // ASSERT: every declaration object is associated in both directions with its corresponding parse tree node.
-            // TODO: implement above assertions
-#endif
+            // NOW: no declarations have ambiguous names.
+            // NOW: there is exactly one declaration object for each declaration.
+            // NOW: every declaration object is associated in both directions with its corresponding parse tree node.
+            // NOW: enums and their elements are related to one another
 
-            // Step 2: Fill in declarations with types
+            // Step 4: Validate declarations and fill with types
+            ParseTreeProperty<IPDecl> nodesToDeclarations = BuildParseTreeRelation(topLevelTable);
+            var declListener = new DeclarationListener(programDeclarations, nodesToDeclarations);
             foreach (PParser.ProgramContext programUnit in programUnits)
             {
                 walker.Walk(declListener, programUnit);
             }
-        }
-    }
 
-    public class DeclPrinter : IParseTreeListener
-    {
-        private readonly ParseTreeProperty<DeclarationTable> programDeclarations;
-
-        public DeclPrinter(ParseTreeProperty<DeclarationTable> programDeclarations)
-        {
-            this.programDeclarations = programDeclarations;
+            // NOW: all enums are valid
+            // NOW: all event sets are valid
         }
 
-        public void VisitTerminal(ITerminalNode node) { }
-
-        public void VisitErrorNode(IErrorNode node)
+        private static ParseTreeProperty<IPDecl> BuildParseTreeRelation(DeclarationTable table)
         {
-            throw new NotImplementedException();
-        }
+            var prop = new ParseTreeProperty<IPDecl>();
 
-        public void EnterEveryRule(ParserRuleContext ctx)
-        {
-            string padding = "".PadLeft(ctx.Depth());
-            string output = ctx.GetType().Name;
-            DeclarationTable decls = programDeclarations.Get(ctx);
-            if (decls != null)
+            IEnumerable<IPDecl> WalkTable(DeclarationTable t)
             {
-                string declList = string.Join(", ", decls.AllDecls.Select(decl => $"{decl.Name}: {decl.GetType().Name}"));
-                output = $"{output} [{declList}]";
-            }
-            Console.WriteLine($"{padding}{output}");
-        }
+                foreach (IPDecl decl in t.AllDecls)
+                {
+                    yield return decl;
+                }
 
-        public void ExitEveryRule(ParserRuleContext ctx) { }
+                foreach (DeclarationTable child in t.Children)
+                {
+                    foreach (IPDecl decl in WalkTable(child))
+                    {
+                        yield return decl;
+                    }
+                }
+            }
+
+            foreach (IPDecl decl in WalkTable(table))
+            {
+                prop.Put(decl.SourceNode, decl);
+            }
+
+            return prop;
+        }
     }
 }

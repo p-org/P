@@ -8,9 +8,8 @@ namespace Microsoft.Pc.TypeChecker
         public static readonly TypeKind Tuple = new TypeKind("tuple");
         public static readonly TypeKind NamedTuple = new TypeKind("namedtuple");
         public static readonly TypeKind Foreign = new TypeKind("foreign");
-
-        public static readonly TypeKind Typedef = new TypeKind("typedef");
-        public static readonly TypeKind Machine = new TypeKind("machine");
+        public static readonly TypeKind Enum = new TypeKind("enum");
+        public static readonly TypeKind TypeDef = new TypeKind("typedef");
 
         private TypeKind(string name)
         {

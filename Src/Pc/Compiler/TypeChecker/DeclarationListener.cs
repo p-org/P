@@ -5,86 +5,58 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 
-namespace Microsoft.Pc.TypeChecker {
-    public class TypeVisitor : PParserBaseVisitor<PLanguageType>
-    {
-        private DeclarationTable declarations;
-        private readonly PTypeUniverse universe;
-
-        public TypeVisitor(PTypeUniverse universe)
-        {
-            this.universe = universe;
-        }
-
-        public PLanguageType ResolveType(ParserRuleContext context, DeclarationTable table)
-        {
-            declarations = table;
-            return context == null ? PrimitiveType.Null : Visit(context);
-        }
-
-        public override PLanguageType VisitBoundedType(PParser.BoundedTypeContext context)
-        {
-            return base.VisitBoundedType(context);
-        }
-
-        public override PLanguageType VisitSeqType(PParser.SeqTypeContext context)
-        {
-            PLanguageType elemType = Visit(context.type());
-            return universe.GetOrCreateSeqType(elemType);
-        }
-
-        public override PLanguageType VisitNamedType(PParser.NamedTypeContext context)
-        {
-            return base.VisitNamedType(context);
-        }
-
-        public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
-        {
-            return base.VisitTupleType(context);
-        }
-
-        public override PLanguageType VisitNamedTupleType(PParser.NamedTupleTypeContext context)
-        {
-            return base.VisitNamedTupleType(context);
-        }
-
-        public override PLanguageType VisitPrimitiveType(PParser.PrimitiveTypeContext context)
-        {
-            string name = context.GetText();
-            return universe.GetPrimitiveType(name);
-        }
-
-        public override PLanguageType VisitMapType(PParser.MapTypeContext context)
-        {
-            PLanguageType keyType = Visit(context.keyType);
-            PLanguageType valueType = Visit(context.valueType);
-            return universe.GetOrCreateMapType(keyType, valueType);
-        }
-    }
-
+namespace Microsoft.Pc.TypeChecker
+{
     public class DeclarationListener : PParserBaseListener
     {
         private readonly ParseTreeProperty<DeclarationTable> programDeclarations;
-        private readonly TypeVisitor typeVisitor;
+        private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
         private DeclarationTable table;
 
-        public DeclarationListener(ParseTreeProperty<DeclarationTable> programDeclarations, TypeVisitor typeVisitor)
+        public DeclarationListener(ParseTreeProperty<DeclarationTable> programDeclarations, ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             this.programDeclarations = programDeclarations;
-            this.typeVisitor = typeVisitor;
+            this.nodesToDeclarations = nodesToDeclarations;
+        }
+
+        public override void EnterPTypeDef(PParser.PTypeDefContext context)
+        {
+            var typedef = (TypeDef) nodesToDeclarations.Get(context);
+            typedef.Type = TypeResolver.ResolveType(context.type(), table);
         }
 
         public override void EnterEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
         {
-            base.EnterEnumTypeDefDecl(context);
+            var pEnum = (PEnum) nodesToDeclarations.Get(context);
+            if (pEnum.Values.All(elem => elem.Value != 0))
+            {
+                throw new EnumMissingDefaultException(pEnum);
+            }
+        }
+
+        public override void EnterEventSetDecl(PParser.EventSetDeclContext context)
+        {
+            var eventSet = (EventSet) nodesToDeclarations.Get(context);
+            foreach (IToken eventNameToken in context.nonDefaultEventList()._events)
+            {
+                string eventName = eventNameToken.Text;
+                if (eventName.Equals("halt"))
+                {
+                    throw new NotImplementedException("Halt event not implemented");
+                }
+
+                if (!table.Lookup(eventName, out PEvent evt))
+                {
+                    throw new MissingEventException(eventSet, eventName);
+                }
+
+                eventSet.Events.Add(evt);
+            }
         }
 
         public override void EnterEventDecl(PParser.EventDeclContext context)
         {
-            if (!table.Get(context.name.Text, out PEvent pEvent))
-            {
-                Debug.Assert(false, $"INTERNAL ERROR: somehow, the event {context.name.Text} was lost.");
-            }
+            var pEvent = (PEvent) nodesToDeclarations.Get(context);
 
             bool hasAssume = context.cardinality()?.ASSUME() != null;
             bool hasAssert = context.cardinality()?.ASSERT() != null;
@@ -92,7 +64,7 @@ namespace Microsoft.Pc.TypeChecker {
             pEvent.Assume = hasAssume ? cardinality : -1;
             pEvent.Assert = hasAssert ? cardinality : -1;
 
-            pEvent.PayloadType = typeVisitor.ResolveType(context.type(), table);
+            pEvent.PayloadType = TypeResolver.ResolveType(context.type(), table);
 
             if (context.annotationSet() != null)
             {

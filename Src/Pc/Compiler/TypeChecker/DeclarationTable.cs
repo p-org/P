@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
@@ -42,6 +44,20 @@ namespace Microsoft.Pc.TypeChecker
             .Values.Cast<IPDecl>().Concat(enums.Values).Concat(events.Values).Concat(eventSets.Values).Concat(functionProtos.Values)
             .Concat(functions.Values).Concat(interfaces.Values).Concat(machineProtos.Values).Concat(machines.Values)
             .Concat(stateGroups.Values).Concat(states.Values).Concat(typedefs.Values).Concat(variables.Values);
+
+        public IEnumerable<EnumElem> EnumElems => enumElems.Values;
+        public IEnumerable<PEnum> Enums => enums.Values;
+        public IEnumerable<PEvent> Events => events.Values;
+        public IEnumerable<EventSet> EventSets => eventSets.Values;
+        public IEnumerable<FunctionProto> FunctionProtos => functionProtos.Values;
+        public IEnumerable<Function> Functions => functions.Values;
+        public IEnumerable<Interface> Interfaces => interfaces.Values;
+        public IEnumerable<MachineProto> MachineProtos => machineProtos.Values;
+        public IEnumerable<Machine> Machines => machines.Values;
+        public IEnumerable<StateGroup> StateGroups => stateGroups.Values;
+        public IEnumerable<State> States => states.Values;
+        public IEnumerable<TypeDef> Typedefs => typedefs.Values;
+        public IEnumerable<Variable> Variables => variables.Values;
 
         #region Overloaded getters
         public bool Get(string name, out EnumElem tree)
@@ -347,7 +363,7 @@ namespace Microsoft.Pc.TypeChecker
             typedefs.Add(name, typedef);
         }
 
-        public void Put(string name, PParser.EnumTypeDefDeclContext tree)
+        public PEnum Put(string name, PParser.EnumTypeDefDeclContext tree)
         {
             var @enum = new PEnum(name, tree);
             CheckConflicts(
@@ -358,6 +374,7 @@ namespace Microsoft.Pc.TypeChecker
                 Namespace(machines),
                 Namespace(machineProtos));
             enums.Add(name, @enum);
+            return @enum;
         }
 
         public void Put(string name, PParser.EventDeclContext tree)
@@ -429,18 +446,20 @@ namespace Microsoft.Pc.TypeChecker
             stateGroups.Add(name, group);
         }
 
-        public void Put(string name, PParser.EnumElemContext tree)
+        public EnumElem Put(string name, PParser.EnumElemContext tree)
         {
             var enumElem = new EnumElem(name, tree);
             CheckConflicts(enumElem, Namespace(enumElems), Namespace(events));
             enumElems.Add(name, enumElem);
+            return enumElem;
         }
 
-        public void Put(string name, PParser.NumberedEnumElemContext tree)
+        public EnumElem Put(string name, PParser.NumberedEnumElemContext tree)
         {
             var enumElem = new EnumElem(name, tree);
             CheckConflicts(enumElem, Namespace(enumElems), Namespace(events));
             enumElems.Add(name, enumElem);
+            return enumElem;
         }
 
         public void Put(string name, PParser.VarDeclContext tree)
@@ -507,7 +526,7 @@ namespace Microsoft.Pc.TypeChecker
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
     }
-
+    
     public class EnumElem : IPDecl
     {
         public EnumElem(string name, PParser.EnumElemContext sourceNode)
@@ -524,6 +543,8 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public int Value { get; set; }
+        public PEnum ParentEnum { get; set; }
     }
 
     public class StateGroup : IPDecl
@@ -605,6 +626,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public PLanguageType Type { get; set; }
     }
 
     public class PEnum : IPDecl
@@ -617,6 +639,37 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public IEnumerable<EnumElem> Values => elements;
+        public int Count => elements.Count;
+
+        public bool AddElement(EnumElem elem)
+        {
+            if (elem.ParentEnum == this)
+            {
+                return false;
+            }
+
+            bool? success = elem.ParentEnum?.RemoveElement(elem);
+            Debug.Assert(success != false);
+            elem.ParentEnum = this;
+            elements.Add(elem);
+            return true;
+        }
+
+        public bool RemoveElement(EnumElem elem)
+        {
+            if (elem.ParentEnum != this)
+            {
+                return false;
+            }
+
+            bool success = elements.Remove(elem);
+            Debug.Assert(success);
+            elem.ParentEnum = null;
+            return true;
+        }
+
+        private readonly HashSet<EnumElem> elements = new HashSet<EnumElem>();
     }
 
     public interface IPDecl
@@ -635,6 +688,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public SortedSet<PEvent> Events { get; } = new SortedSet<PEvent>(Comparer<PEvent>.Create((ev1, ev2) => string.Compare(ev1.Name, ev2.Name, StringComparison.Ordinal)));
     }
 
     public class PEvent : IPDecl

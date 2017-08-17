@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 
@@ -44,22 +46,42 @@ namespace Microsoft.Pc.TypeChecker
             currentTable.Put(symbolName, context);
         }
 
+        public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
+        {
+            throw new NotImplementedException("TODO: foreign types");
+        }
+
+        private PEnum currentEnum;
+
         public override void EnterEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
         {
             string symbolName = context.name.Text;
-            currentTable.Put(symbolName, context);
+            currentEnum = currentTable.Put(symbolName, context);
+        }
+
+        public override void ExitEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
+        {
+            currentEnum = null;
         }
 
         public override void EnterEnumElem(PParser.EnumElemContext context)
         {
             string symbolName = context.name.Text;
-            currentTable.Put(symbolName, context);
+            EnumElem elem = currentTable.Put(symbolName, context);
+            elem.Value = currentEnum.Count;
+            Debug.Assert(currentEnum != null);
+            bool success = currentEnum.AddElement(elem);
+            Debug.Assert(success);
         }
 
         public override void EnterNumberedEnumElem(PParser.NumberedEnumElemContext context)
         {
             string symbolName = context.name.Text;
-            currentTable.Put(symbolName, context);
+            EnumElem elem = currentTable.Put(symbolName, context);
+            elem.Value = int.Parse(context.value.Text);
+            Debug.Assert(currentEnum != null);
+            bool success = currentEnum.AddElement(elem);
+            Debug.Assert(success);
         }
 
         public override void EnterEventDecl(PParser.EventDeclContext context)

@@ -1,10 +1,11 @@
-extern machine M();
-event e1 : seq[int];
+type T = any<ES>;
+eventset ES = {e1};
+event e1 : T;
 
 machine M {
-    start state S1 {}
-    fun foo(x: int) {
-        var y: bool;
-        y = true;
+    start state S {
+        entry {
+
+        }
     }
 }

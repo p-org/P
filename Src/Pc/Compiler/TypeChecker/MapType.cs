@@ -2,10 +2,7 @@ namespace Microsoft.Pc.TypeChecker
 {
     internal class MapType : PLanguageType
     {
-        public MapType(string name, PLanguageType keyType, PLanguageType valueType) : base(
-            name,
-            TypeKind.Map,
-            $"map[{keyType.OriginalRepresentation},{valueType.OriginalRepresentation}]")
+        public MapType(PLanguageType keyType, PLanguageType valueType) : base(TypeKind.Map)
         {
             KeyType = keyType;
             ValueType = valueType;
@@ -13,5 +10,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public PLanguageType KeyType { get; }
         public PLanguageType ValueType { get; }
+        public override string OriginalRepresentation => $"map[{KeyType.OriginalRepresentation},{ValueType.OriginalRepresentation}]";
+        public override string CanonicalRepresentation => $"map[{KeyType.CanonicalRepresentation},{ValueType.CanonicalRepresentation}]";
     }
 }

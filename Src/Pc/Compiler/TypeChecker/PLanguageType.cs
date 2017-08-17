@@ -1,18 +1,11 @@
 namespace Microsoft.Pc.TypeChecker
 {
-    public class PLanguageType
+    public abstract class PLanguageType
     {
-        public PLanguageType(string name, TypeKind kind, string repr)
+        public PLanguageType(TypeKind kind)
         {
-            TypeName = name;
             TypeKind = kind;
-            OriginalRepresentation = repr;
         }
-
-        /// <summary>
-        ///     Unique name for the type, optional to use in generated code.
-        /// </summary>
-        public string TypeName { get; set; }
 
         /// <summary>
         ///     The category of type this is (eg. sequence, map, base)
@@ -22,6 +15,11 @@ namespace Microsoft.Pc.TypeChecker
         /// <summary>
         ///     Original representation of the type in P.
         /// </summary>
-        public string OriginalRepresentation { get; set; }
+        public abstract string OriginalRepresentation { get; }
+
+        /// <summary>
+        ///     Representation of the type with typedefs and event sets expanded.
+        /// </summary>
+        public abstract string CanonicalRepresentation { get; }
     }
 }

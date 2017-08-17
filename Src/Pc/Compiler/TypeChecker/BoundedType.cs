@@ -1,12 +1,16 @@
-﻿namespace Microsoft.Pc.TypeChecker
+﻿using System.Linq;
+
+namespace Microsoft.Pc.TypeChecker
 {
     public class BoundedType : PLanguageType
     {
-        public BoundedType(string name, EventSet eventSet) : base(name, TypeKind.Base, $"any<{eventSet.Name}>")
+        public BoundedType(EventSet eventSet) : base(TypeKind.Base)
         {
             EventSet = eventSet;
         }
 
         public EventSet EventSet { get; }
+        public override string OriginalRepresentation => $"any<{EventSet.Name}>";
+        public override string CanonicalRepresentation => $"any<{{{string.Join(",", EventSet.Events.Select(ev => ev.Name))}}}>";
     }
 }

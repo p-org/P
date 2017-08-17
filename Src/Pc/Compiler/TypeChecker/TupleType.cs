@@ -4,14 +4,13 @@ namespace Microsoft.Pc.TypeChecker
 {
     internal class TupleType : PLanguageType
     {
-        public TupleType(string name, PLanguageType[] types) : base(
-            name,
-            TypeKind.Tuple,
-            $"({string.Join(",", types.Select(ty => ty.OriginalRepresentation))})")
+        public TupleType(PLanguageType[] types) : base(TypeKind.Tuple)
         {
             Types = types;
         }
 
         public PLanguageType[] Types { get; }
+        public override string OriginalRepresentation => $"({string.Join(",", Types.Select(type => type.OriginalRepresentation))})";
+        public override string CanonicalRepresentation => $"({string.Join(",", Types.Select(type => type.CanonicalRepresentation))})";
     }
 }

@@ -123,7 +123,7 @@ namespace P.Runtime
                 //TODO : Handle the spec machine case separately for the halt event
                 else if (!eventValue.Equals(PrtValue.halt))
                 {
-                    throw new PrtUnhandledEventException(string.Format("{0} failed to handle {1}", Name, eventValue.ToString()));
+                    throw new PrtUnhandledEventException(string.Format("{0} failed to handle event {1}", Name, eventValue.ToString()));
                 }
                 else
                 {

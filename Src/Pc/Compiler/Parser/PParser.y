@@ -35,11 +35,8 @@ TopDecl
 	| EnumTypeDefDecl
 	| EventDecl
 	| ImplMachineDecl
-	| ImplMachineProtoDecl
 	| SpecMachineDecl
-	| FunProtoDecl
 	| FunDecl
-	
 	;
 
 
@@ -125,15 +122,6 @@ ConstTypeOrNone
 /******************* Machine Declarations *******************/
 ImplMachineDecl
 	: ImplMachineNameDecl MachAnnotOrNone Exports ReceivesSendsList LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@5), ToSpan(@7)); }
-	;
-
-ImplMachineProtoDecl
-	: EXTERN MACHINE ID LPAREN MachineConstTypeOrNone RPAREN SEMICOLON { AddMachineProto($3.str, ToSpan(@3), ToSpan(@1)); }
-	;
-
-MachineConstTypeOrNone
-	: Type												{ SetMachineProtoConstType(ToSpan(@1)); }
-	|
 	;
 
 Exports
@@ -238,23 +226,8 @@ FunDecl
 	| FunNameDecl ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddForeignFunction(ToSpan(@1)); }
 	;
 
-FunProtoDecl
-	: EXTERN { isFunProtoDecl = true; } FunNameDecl FunCreates ParamsOrNone RetTypeOrNone FunAnnotOrNone SEMICOLON { AddFunProto(ToSpan(@1)); }
-	;
-
 FunNameDecl
 	: FUN ID { SetFunName($2.str, ToSpan(@2)); }
-	;
-
-CreatesList
-	: ID						{ AddToCreatesList($1.str, ToSpan(@1)); }									
-	| ID COMMA CreatesList		{ AddToCreatesList($1.str, ToSpan(@1)); }
-	;
-
-FunCreates
-	: CREATES CreatesList SEMICOLON					{ AddFunCreatesList(ToSpan(@1)); }
-	| CREATES SEMICOLON
-	|
 	;
 
 FunAnnotOrNone

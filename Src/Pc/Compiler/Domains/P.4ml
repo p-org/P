@@ -118,7 +118,6 @@ domain PData
 	// Thus, the numbering of variables is consistent across nested scopes.
     FunDecl        ::= fun (name: String, owner: String + { NIL } -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt + { NIL }, id: any Id).
     FunProtoDecl   ::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
-	FunProtoCreatesDecl ::= fun (fp: FunProtoDecl -> iormlist: StringList).
 	GlobalFunCreates ::= new (name: String, iorm: String).
 
 	AnonFunDecl    ::= new (owner: String + { NIL }, ownerFun: String + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType, id: any Id).
@@ -127,7 +126,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + FunProtoCreatesDecl  + TypeDef + EnumTypeDef.            
+    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives  + TypeDef + EnumTypeDef.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -282,10 +281,7 @@ domain PStructuralTyping extends PData, PError
 	OneDeclError(me) :- decl is MachineDecl(mach, id), me is MachineExports(mach, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
 
 	MemberOfStringList ::= sub (StringList, String).
-	//interfaces or machine names in the creates of a fun proto
-	ERROR1(NIL, "Interface or machine in creates of extern fun is not declared"),
-	OneDeclError(fp) :- fp is FunProtoCreatesDecl(f, list), MemberOfStringList(list, name), no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _).
-
+	
 	//events in sends
 	ERROR1(id, "Event in sends list is not declared"),
 	OneDeclError(ms) :- decl is MachineDecl(mach, id), ms is MachineSends(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
@@ -369,10 +365,6 @@ domain PStaticTyping extends PData, PError
 
 	InferredCreatesError ::= (m: FunDecl).
 
-	MemberOfStringList ::= sub (StringList, String).
-	ERROR1(f.id, "Creates list of the function prototype is not a subset of the inferred creates list for the function"),
-	InferredCreatesError(f) :- f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm);
-							   f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, _), no FunProtoCreatesDecl(fd, _).
 
 	//// Compute the FunCreates
 	GlobalFunCreates(f.name, iorm) :-
@@ -381,8 +373,7 @@ domain PStaticTyping extends PData, PError
 		f is FunDecl, f.owner = NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, NewStmt(iorm, _, _, _));
 		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunProtoDecl, no FunDecl(f.name, NIL, _, _, _, _, _), FunProtoCreatesDecl(f, list), MemberOfStringList(list, iorm).
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm).
 
 	LocalFunCreates(f, iorm) :-
 		f is FunDecl, f.owner != NIL, SubSE(f, NewStmt(iorm, _, _, _));

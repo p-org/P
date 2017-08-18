@@ -37,7 +37,6 @@ domain PLink
 	AnonFunDecl		    ::= new (ownerFun: String, anonFunIndex: Natural).
 	FunDecl				::= new (name: String, params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, id: any Id).
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
-	FunProtoCreatesDecl ::= fun (fp: FunProtoDecl -> iormlist: StringList).
 	Pure				::= new (name: String, isPure: { TRUE, FALSE }).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
 	InterfaceTypeDecl	::= new (name: String, list: InterfaceType, argType: any TypeExpr, id: any Id).
@@ -170,8 +169,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	err.OneNameError(NIL, name, "multiple functions with same name") :- f is FunDecl, f' is FunDecl, f != f', f.name = f'.name, name = f.name.
 
-	err.OneNameError(NIL, mp.name, "machine prototype not implemented") :- mp is MachineProtoDecl, no MachineDecl(mp.name, _, _).
-	
 	err.OneNameError(NIL, mp.name, "constructor type does not match") :- mp is MachineProtoDecl, m is MachineDecl, mp.name = m.name, mp.constType != m.constType.
 	
 	err.OneNameError(NIL, fp.name, "parameter type does not match") :- fp is FunProtoDecl, f is FunDecl, fp.name = f.name, fp.params != f.params.
@@ -203,11 +200,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	//multiple declarations of the same type
 	err.OneNameError(NIL, td.name, "multiple declarations of named types have same name") :- NamedTypes(td), NamedTypes(td'), td != td', td.name = td'.name.
-
-	// creates list does not match
-	MemberOfStringList ::= sub (StringList, String).
-	InferredCreatesError(NIL, fd.name, "Creates list of the function prototype is not a subset of the inferred creates list for the function") 
-	:- fd is FunProtoDecl, GlobalFunCreates(fd.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm).
 
 	/******************************************/
 	/*   Module System related Linker Errors */

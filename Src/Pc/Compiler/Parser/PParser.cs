@@ -12,7 +12,7 @@
     using Microsoft.Formula.API.Generators;
     using Microsoft.Formula.API.Nodes;
 
-    public enum PProgramTopDecl { Event, EventSet, Interface, Machine, TypeDef, Enum, FunProto, MachineProto };
+    public enum PProgramTopDecl { Event, EventSet, Interface, Machine, TypeDef, Enum };
     public class PProgramTopDeclNames
     {
         public HashSet<string> eventNames;
@@ -23,8 +23,6 @@
         public HashSet<string> machineNames;
         public HashSet<string> interfaceNames;
         public HashSet<string> enumNames;
-        public HashSet<string> machineProto;
-        public HashSet<string> funProto;
         public HashSet<string> funNames;
         public PProgramTopDeclNames()
         {
@@ -36,8 +34,6 @@
             testNames = new HashSet<string>();
             typeNames = new HashSet<string>();
             enumNames = new HashSet<string>();
-            funProto = new HashSet<string>();
-            machineProto = new HashSet<string>();
             funNames = new HashSet<string>();
 
         }
@@ -51,8 +47,6 @@
             machineNames.Clear();
             testNames.Clear();
             typeNames.Clear();
-            funProto.Clear();
-            machineProto.Clear();
             funNames.Clear();
         }
     }
@@ -70,7 +64,6 @@
 
         private Span crntAnnotSpan;
         private bool isTrigAnnotated = false;
-        private bool isFunProtoDecl = false;
 
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.FunProtoDecl crntFunProtoDecl = null;
@@ -426,35 +419,6 @@
                     else if (PPTopDeclNames.machineNames.Contains(name))
                     {
                         errorMessage = string.Format("A machine with name {0} already declared", name);
-                        error = true;
-                    }
-                    break;
-                case PProgramTopDecl.MachineProto:
-                    if (PPTopDeclNames.machineProto.Contains(name))
-                    {
-                        errorMessage = string.Format("A machine prototype with name {0} already declared", name);
-                        error = true;
-                    }
-                    if (PPTopDeclNames.interfaceNames.Contains(name))
-                    {
-                        errorMessage = string.Format("A interface with name {0} already declared", name);
-                        error = true;
-                    }
-                    else if (PPTopDeclNames.typeNames.Contains(name))
-                    {
-                        errorMessage = string.Format("A typedef with name {0} already declared", name);
-                        error = true;
-                    }
-                    else if (PPTopDeclNames.enumNames.Contains(name))
-                    {
-                        errorMessage = string.Format("An enum with name {0} already declared", name);
-                        error = true;
-                    }
-                    break;
-                case PProgramTopDecl.FunProto:
-                    if (PPTopDeclNames.funProto.Contains(name))
-                    {
-                        errorMessage = string.Format("A function prototype with name {0} already declared", name);
                         error = true;
                     }
                     break;
@@ -1453,20 +1417,8 @@
 
         private void SetFunName(string name, Span span)
         {
-            if(isFunProtoDecl)
-            {
-                var funProtoDecl = GetCurrentFunProtoDecl(span);
-                funProtoDecl.name = MkString(name, span);
-                if(IsValidName(PProgramTopDecl.FunProto, name, span))
-                {
-                    PPTopDeclNames.funProto.Add(name);
-                }
-            }
-            else
-            {
-                var funDecl = GetCurrentFunDecl(span);
-                funDecl.name = MkString(name, span);
-            }
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.name = MkString(name, span);
             
             //catch early errors
             if (crntFunNames.Contains(name))
@@ -1488,36 +1440,19 @@
 
         private void SetFunParams(Span span)
         {
-            if(isFunProtoDecl)
-            {
-                Contract.Assert(typeExprStack.Count > 0);
-                var funDecl = GetCurrentFunProtoDecl(span);
-                funDecl.@params = (P_Root.IArgType_FunProtoDecl__1)typeExprStack.Pop();
-            }
-            else
-            {
-                Contract.Assert(typeExprStack.Count > 0);
-                var funDecl = GetCurrentFunDecl(span);
-                funDecl.@params = (P_Root.IArgType_FunDecl__2)typeExprStack.Pop();
-                localVarStack = new LocalVarStack(this, (P_Root.IArgType_NmdTupType__1)funDecl.@params);
-            }
+
+            Contract.Assert(typeExprStack.Count > 0);
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.@params = (P_Root.IArgType_FunDecl__2)typeExprStack.Pop();
+            localVarStack = new LocalVarStack(this, (P_Root.IArgType_NmdTupType__1)funDecl.@params);
             
         }
 
         private void SetFunReturn(Span span)
         {
-            if(isFunProtoDecl)
-            {
-                Contract.Assert(typeExprStack.Count > 0);
-                var funDecl = GetCurrentFunProtoDecl(span);
-                funDecl.@return = (P_Root.IArgType_FunProtoDecl__2)typeExprStack.Pop();
-            }
-            else
-            {
-                Contract.Assert(typeExprStack.Count > 0);
-                var funDecl = GetCurrentFunDecl(span);
-                funDecl.@return = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
-            }
+            Contract.Assert(typeExprStack.Count > 0);
+            var funDecl = GetCurrentFunDecl(span);
+            funDecl.@return = (P_Root.IArgType_FunDecl__3)typeExprStack.Pop();
             
         }
         #endregion
@@ -2115,18 +2050,6 @@
             crntEventList.Clear();
         }
 
-        private void AddMachineProto(string name, Span nameSpan, Span span)
-        {
-            var machProto = GetCurrentMachineProtoDecl(span);
-            machProto.name = MkString(name, nameSpan);
-            machProto.Span = span;
-            parseProgram.Add(machProto);
-            crntMachProtoDecl = null;
-            if (IsValidName(PProgramTopDecl.MachineProto, name, nameSpan))
-            {
-                PPTopDeclNames.machineProto.Add(name);
-            }
-        }
 
         private void RecordReceives()
         {
@@ -2191,31 +2114,6 @@
             sendsList = null;
         }
 
-        private void AddFunCreatesList(Span span = default(Span))
-        {
-            Contract.Assert(crntStringIdList.Count > 0);
-            Stack<P_Root.StringList> stringListStack = new Stack<P_Root.StringList>();
-            var strList = new P_Root.StringList();
-            strList.hd = (P_Root.IArgType_StringList__0)crntStringIdList.ElementAt(0);
-            strList.tl = MkUserCnst(P_Root.UserCnstKind.NIL, span);
-            stringListStack.Push(strList);
-            crntStringIdList.RemoveAt(0);
-
-            foreach (var id in crntStringIdList)
-            {
-                strList = new P_Root.StringList();
-                strList.hd = (P_Root.IArgType_StringList__0)id;
-                strList.tl = (P_Root.IArgType_StringList__1)stringListStack.Pop();
-                stringListStack.Push(strList);
-            }
-
-            var funcreates = P_Root.MkFunProtoCreatesDecl();
-            funcreates.Span = span;
-            funcreates.iormlist = stringListStack.Pop();
-            funcreates.fp = GetCurrentFunProtoDecl(span);
-            parseProgram.Add(funcreates);
-            crntStringIdList.Clear();
-        }
 
         private void AddToCreatesList(string name, Span nameSpan)
         {
@@ -2334,14 +2232,6 @@
             crntFunDecl = null;
         }
 
-        private void AddFunProto(Span span)
-        {
-            Contract.Assert(isFunProtoDecl);
-            var funProtoDecl = GetCurrentFunProtoDecl(span);
-            parseProgram.Add(funProtoDecl);
-            crntFunProtoDecl = null;
-            isFunProtoDecl = false;
-        }
         #endregion
 
         #region Node getters

@@ -51,6 +51,15 @@ namespace UnitTests.PSharpBackend
 
             Location GetTreeLocation(ParserRuleContext decl)
             {
+                if (decl == null)
+                {
+                    return new Location
+                    {
+                        Line = -1,
+                        Column = -1,
+                        File = null
+                    };
+                }
                 return new Location
                 {
                     Line = decl.Start.Line,
@@ -95,7 +104,7 @@ namespace UnitTests.PSharpBackend
 
             public override string ToString()
             {
-                return $"{File.Name}:{Line},{Column}";
+                return File == null ? "<built-in>" : $"{File.Name}:{Line},{Column}";
             }
         }
 

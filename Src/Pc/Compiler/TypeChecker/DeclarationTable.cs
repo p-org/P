@@ -509,7 +509,7 @@ namespace Microsoft.Pc.TypeChecker
         #endregion
     }
 
-    public class Variable : IPDecl
+    public class Variable : IPDecl, ITypedName
     {
         public Variable(string name, PParser.VarDeclContext sourceNode)
         {
@@ -523,7 +523,8 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
-        public string Name { get; }
+        public string Name { get; set; }
+        public PLanguageType Type { get; set; }
         public ParserRuleContext SourceNode { get; }
     }
     
@@ -571,7 +572,12 @@ namespace Microsoft.Pc.TypeChecker
         public ParserRuleContext SourceNode { get; }
     }
 
-    public class MachineProto : IPDecl
+    public interface IConstructibleDecl : IPDecl
+    {
+        PLanguageType PayloadType { get; }
+    }
+
+    public class MachineProto : IConstructibleDecl
     {
         public MachineProto(string name, PParser.ImplMachineProtoDeclContext sourceNode)
         {
@@ -581,9 +587,10 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
     }
 
-    public class Machine : IPDecl
+    public class Machine : IConstructibleDecl
     {
         public Machine(string name, PParser.ImplMachineDeclContext sourceNode)
         {
@@ -602,9 +609,10 @@ namespace Microsoft.Pc.TypeChecker
         public bool IsSpec { get; }
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
     }
 
-    public class Interface : IPDecl
+    public class Interface : IConstructibleDecl
     {
         public Interface(string name, PParser.InterfaceDeclContext sourceNode)
         {
@@ -614,6 +622,8 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
+        public EventSet ReceivableEvents { get; set; }
     }
 
     public class TypeDef : IPDecl
@@ -697,6 +707,9 @@ namespace Microsoft.Pc.TypeChecker
         {
             Name = name;
             SourceNode = sourceNode;
+            PayloadType = PrimitiveType.Null;
+            Assert = -1;
+            Assume = -1;
         }
 
         public int Assume { get; set; }
@@ -717,6 +730,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public FunctionSignature Signature { get; } = new FunctionSignature();
     }
 
     public class FunctionProto : IPDecl
@@ -729,5 +743,12 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public FunctionSignature Signature { get; } = new FunctionSignature();
+    }
+
+    public class FunctionSignature
+    {
+        public List<ITypedName> Parameters { get; } = new List<ITypedName>();
+        public PLanguageType ReturnType { get; set; } = PrimitiveType.Null;
     }
 }

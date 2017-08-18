@@ -6,7 +6,7 @@ using Microsoft.Pc.Antlr;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    public class TypeResolver
+    public static class TypeResolver
     {
         public static PLanguageType ResolveType(ParserRuleContext context, DeclarationTable table)
         {
@@ -86,7 +86,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 var names = new HashSet<string>();
                 PParser.IdenTypeContext[] namedTupleFields = context.idenTypeList().idenType();
-                var fields = new TypedName[namedTupleFields.Length];
+                var fields = new NamedTupleEntry[namedTupleFields.Length];
                 for (var i = 0; i < namedTupleFields.Length; i++)
                 {
                     PParser.IdenTypeContext field = namedTupleFields[i];

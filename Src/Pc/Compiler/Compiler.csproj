@@ -278,7 +278,10 @@
     <Compile Include="TypeChecker\DuplicateDeclarationException.cs" />
     <Compile Include="TypeChecker\EnumMissingDefaultException.cs" />
     <Compile Include="TypeChecker\EnumType.cs" />
+    <Compile Include="TypeChecker\FormalParameter.cs" />
+    <Compile Include="TypeChecker\ITypedName.cs" />
     <Compile Include="TypeChecker\MissingEventException.cs" />
+    <Compile Include="TypeChecker\NamedTupleEntry.cs" />
     <Compile Include="TypeChecker\PrimitiveType.cs" />
     <Compile Include="TypeChecker\MapType.cs" />
     <Compile Include="TypeChecker\NamedTupleType.cs" />

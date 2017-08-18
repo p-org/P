@@ -10,6 +10,11 @@ namespace Microsoft.Pc.TypeChecker
         {
             var programDeclarations = new ParseTreeProperty<DeclarationTable>();
             var topLevelTable = new DeclarationTable();
+
+            // Add built-in events to the table.
+            topLevelTable.Put("halt", (PParser.EventDeclContext) null);
+            topLevelTable.Put("null", (PParser.EventDeclContext) null);
+
             /* TODO: strengthen interface of two listeners to ensure they are
              * always called at the root of the parse trees?
              */
@@ -61,7 +66,10 @@ namespace Microsoft.Pc.TypeChecker
 
             foreach (IPDecl decl in WalkTable(table))
             {
-                prop.Put(decl.SourceNode, decl);
+                if (decl.SourceNode != null)
+                {
+                    prop.Put(decl.SourceNode, decl);
+                }
             }
 
             return prop;

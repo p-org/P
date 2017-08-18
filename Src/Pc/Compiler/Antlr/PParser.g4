@@ -1,6 +1,27 @@
 ﻿parser grammar PParser;
 options { tokenVocab=PLexer; }
 
+// A small overview of ANTLRs parser rules:
+//
+// Parser rules begin with a lower case letter, lexer rules begin 
+// with an Uppercase letter. To create a parser rule, write the name
+// followed by a colon (:) and then a list of alternatives, separated
+// by pipe (|) characters. You can use parenthesis for sub-expressions,
+// alternatives within those sub-expressions, and kleene * or + on any
+// element in a rule.
+//
+// Every production rule corresponds to a class that gets generated
+// in the target language for the ANTLR generator. If we use alternative
+// labels, as in `type`, then subclasses of the rule-class will be created
+// for each label. If one alternative is labelled, then they all must be.
+// The purpose of labels is to call different functions in the generated
+// listeners and visitors for the results of these productions.
+//
+// Lastly, ANTLR's DSL contains a feature that allows us to name the matched
+// tokens and productions in an alternative (name=part) or collect multiple
+// tokens or productions of the same type into a list (list+=part). The `type`
+// production below uses this feature, too.
+
 program : (topDecl | annotationSet)* ;
 
 type : ANY LT eventSet=Iden GT    # BoundedType

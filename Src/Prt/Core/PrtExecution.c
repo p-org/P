@@ -1717,7 +1717,6 @@ _In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 )
 {
-	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
 	return context->process->program->machines[context->instanceOf]->states[stateIndex].defersSet->packedEvents;
 }
 
@@ -1728,7 +1727,6 @@ _In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 )
 {
-	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
 	return context->process->program->machines[context->instanceOf]->states[stateIndex].doSet->packedEvents;
 }
 
@@ -1739,7 +1737,6 @@ _In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 )
 {
-	PRT_EVENTSETDECL* evSets = context->process->program->eventSets;
 	return context->process->program->machines[context->instanceOf]->states[stateIndex].transSet->packedEvents;
 }
 

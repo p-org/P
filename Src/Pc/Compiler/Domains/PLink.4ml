@@ -834,29 +834,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 								  strJoin("P_GEND_EVENTSET_", toString(id)), 
 								  Init(a)).
 
-    //// Build up event sets.
-	EvSetDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
-
-	//// Base case
-	EvSetDeclConcat(c, NIL) :- c = count({l | EventPacking(l, _, 0, _) }).
-
-    //// Build every event set array in reverse order
-	EvSetDeclConcat(m, arr) :- 
-	                        EventPacking(l, _, _, NIL),
-	                        m = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),
-							EvSetDeclConcat(m + 1, after),							  
-							arr = out.Args(def, after), 
-	                        def = Init(
-							   Args(Ident(strJoin("P_GEND_EVENTSET_", toString(m))),
-							   NIL)).
-
-	COut(4, def) :- EvSetDeclConcat(0, arr),
-	                def = out.VarDef(
-							      NIL, 
-								  ArrType(NmdType(NIL, "PRT_EVENTSETDECL"), NIL), 
-								  "P_GEND_EVENTSETS", 
-								  Init(arr)).
-
   	COut(4, def) :- EventSet(evsetName, itype), id = toOrdinal(itype, 0, { x | EventSet(_, x) }),
 					init = Init(Args(Ident(strJoin("P_GEND_EVENTSET_", toString(id))), NIL)),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_EVENTSETDECL"), evsetName, init).
@@ -1023,10 +1000,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ProgEvntArray ::= (size: Natural, arr: out.Ident).
 	ProgEvntArray(size, arr) :- size = 2 + count({ e | e is EventDecl }), arr = out.Ident("P_GEND_EVENTS").
 
-	ProgEvntSetArray ::= (size: Natural, arr: out.Ident).
-	ProgEvntSetArray(size, arr) :- size = count({ l | EventPacking(l, _, 0, _) }), size = 0, arr = out.Ident("NULL").
-	ProgEvntSetArray(size, arr) :- size = count({ l | EventPacking(l, _, 0, _) }), size > 0, arr = out.Ident("P_GEND_EVENTSETS").
-
 	ProgMachArray ::= (size: Natural, arr: out.Ident).
 	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl }), size = 0, arr = out.Ident("NULL").
 	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl }), size > 0, arr = out.Ident("P_GEND_MACHINES").
@@ -1047,7 +1020,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	RenameMapArray(arr) :- size = count({n | CRenameMap(n, _)}), size > 0, arr = out.Ident("P_GEND_RENAMEMAP").
 
 	COut(7, def) :-  ProgEvntArray(evArrSize, evArrName),
-	                 ProgEvntSetArray(evSetArrSize, evSetArrName),
 					 ProgMachArray(machArrSize, machArrName),
 					 ProgGlobalFunArray(globalFunArrSize, globalFunArrName),
 					 ProgForeignTypesArray(foreignTypesSize, foreignTypesArrName),
@@ -1060,12 +1032,10 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 								  init),
 				     init = Init(
 							   Args(IntLit(evArrSize, DEC, U),
-							   Args(IntLit(evSetArrSize, DEC, U),
 							   Args(IntLit(machArrSize, DEC, U),
 							   Args(IntLit(globalFunArrSize, DEC, U),
 							   Args(IntLit(foreignTypesSize, DEC, U),
 							   Args(evArrName,
-							   Args(evSetArrName,
 							   Args(machArrName,
 							   Args(globalFunArrName,
 							   Args(foreignTypesArrName,
@@ -1073,7 +1043,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 							   Args(renameMapArrName,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))))))).
+							   NIL))))))))))))).
 
 	/*************************************************************/
     /******                 Powers of two                   ******/

@@ -18,13 +18,13 @@ OUT: <StateLog> Machine Main-1 entering State Main_WaitForUser
 OUT: <CreateLog> Created Machine Loop-1
 OUT: <StateLog> Machine Loop-1 entering State Loop_Looping
 OUT: <EnqueueLog> Enqueued Event <Done, null> in Loop-1 by Loop-1
-OUT: <AnnounceLog> Enqueued Event <Waiting, null> to Spec Machine WatchDog
-OUT: <StateLog> Machine WatchDog-0 exiting State WatchDog_CanGetUserInput
-OUT: <EnqueueLog> Enqueued Event <UserEvent, null> in Main-1 by Main-1
 OUT: <DequeueLog> Dequeued Event <Done, null> at Machine Loop-1
 OUT: <StateLog> Machine Loop-1 exiting State Loop_Looping
 OUT: <StateLog> Machine Loop-1 entering State Loop_Looping
 OUT: <EnqueueLog> Enqueued Event <Done, null> in Loop-1 by Loop-1
+OUT: <AnnounceLog> Enqueued Event <Waiting, null> to Spec Machine WatchDog
+OUT: <StateLog> Machine WatchDog-0 exiting State WatchDog_CanGetUserInput
+OUT: <EnqueueLog> Enqueued Event <UserEvent, null> in Main-1 by Main-1
 OUT: <DequeueLog> Dequeued Event <Done, null> at Machine Loop-1
 OUT: <StateLog> Machine Loop-1 exiting State Loop_Looping
 OUT: <StateLog> Machine Loop-1 entering State Loop_Looping

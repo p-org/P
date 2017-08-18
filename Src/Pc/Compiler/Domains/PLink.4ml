@@ -839,49 +839,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_EVENTSETDECL"), evsetName, init).
 
     /*************************************************************/
-    /******          Generate Global Fun Decl Array         ******/
-    /*************************************************************/
-	COut(4, def) :-			init = Init(
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   Args(Ident("NULL"),
-							   Args(IntLit(1, DEC, U),
-							   Args(IntLit(0, DEC, U),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   Args(Ident("NULL"),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   Args(IntLit(0, DEC, U),
-							   Args(Ident("NULL"),
-							   NIL))))))))))))),
-							def = out.VarDef(
-							      NIL, 
-								  NmdType(NIL, "PRT_FUNDECL"), 
-								  "P_FUN_IGNORE_PUSH_STRUCT", 
-								  init).
-	
-   	FunDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
-
-	FunDeclConcat(c, NIL) :- c = 1 + count({d | d is AnonOrNamedFun }).
-
-	FunDeclConcat(m, arr) :-  
-							DeclId(d, m, cn), FunDeclConcat(m + 1, after), d : AnonOrNamedFun,
-							funStructName = strJoin(cn, "_STRUCT"),
-							arr = out.Args(def, after),
-							def = UnApp(ADDR, Ident(funStructName)).
-
-	//// Reserve the zeroth decl for the ignore/push transition
-	FunDeclConcat(0, arr) :- FunDeclConcat(1, after), arr = out.Args(def, after), def = UnApp(ADDR, Ident("P_FUN_IGNORE_PUSH_STRUCT")).
-
-	COut(5, def) :- FunDeclConcat(0, arr),
-	                def = out.VarDef(
-							      NIL, 
-								  ArrType(PtrType(NmdType(NIL, "PRT_FUNDECL")), NIL), 
-								  "P_GEND_FUNS", 
-								  Init(arr)).
-
-    /*************************************************************/
     /******          Generate Event Decl Array              ******/
     /*************************************************************/	
 	EventDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
@@ -1004,9 +961,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl }), size = 0, arr = out.Ident("NULL").
 	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl }), size > 0, arr = out.Ident("P_GEND_MACHINES").
 
-	ProgGlobalFunArray ::= (size: Natural, arr: out.Ident).
-	ProgGlobalFunArray(size, arr) :- size = 1 + count({ m | m is AnonOrNamedFun }), arr = out.Ident("P_GEND_FUNS").
-
 	ProgForeignTypesArray ::= (size: Natural, arr: out.Ident).
 	ProgForeignTypesArray(size, arr) :- size = count({ n | TypeDef(n, NIL, _) }), size = 0, arr = out.Ident("NULL").
 	ProgForeignTypesArray(size, arr) :- size = count({ n | TypeDef(n, NIL, _) }), size > 0, arr = out.Ident("P_GEND_FOREIGNTYPES").
@@ -1021,7 +975,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	COut(7, def) :-  ProgEvntArray(evArrSize, evArrName),
 					 ProgMachArray(machArrSize, machArrName),
-					 ProgGlobalFunArray(globalFunArrSize, globalFunArrName),
 					 ProgForeignTypesArray(foreignTypesSize, foreignTypesArrName),
 					 LinkMapArray(linkMapArrName),
 					 RenameMapArray(renameMapArrName),
@@ -1033,17 +986,15 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 				     init = Init(
 							   Args(IntLit(evArrSize, DEC, U),
 							   Args(IntLit(machArrSize, DEC, U),
-							   Args(IntLit(globalFunArrSize, DEC, U),
 							   Args(IntLit(foreignTypesSize, DEC, U),
 							   Args(evArrName,
 							   Args(machArrName,
-							   Args(globalFunArrName,
 							   Args(foreignTypesArrName,
 							   Args(linkMapArrName,
 							   Args(renameMapArrName,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))))).
+							   NIL))))))))))).
 
 	/*************************************************************/
     /******                 Powers of two                   ******/

@@ -476,22 +476,6 @@ PRT_VALUE *MakeTupleFromArray(_In_ PRT_TYPE *tupleType, _In_ PRT_VALUE **elems)
 	return payload;
 }
 
-FORCEINLINE
-PRT_FUNDECL *
-GetFunDeclFromIndex(_In_ PRT_MACHINEINST_PRIV	*context, _In_ PRT_UINT32 funIndex)
-{
-	PRT_UINT32 isMachineLocal = funIndex % 2;
-	PRT_UINT32 arrayIndex = funIndex / 2;
-	if (isMachineLocal)
-	{
-		return context->process->program->machines[context->instanceOf]->funs[arrayIndex];
-	}
-	else
-	{
-		return context->process->program->globalFuns[arrayIndex];
-	}
-}
-
 void
 PrtGoto(
 	_Inout_ PRT_MACHINEINST_PRIV		*context,
@@ -544,8 +528,8 @@ PrtGoto(
 		payload = args[0];
 		if (numArgs > 1)
 		{
-			PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[destStateIndex].entryFun->declIndex;
-			PRT_TYPE *payloadType = GetFunDeclFromIndex(context, entryFunIndex)->payloadType;
+			PRT_FUNDECL *entryFun = context->process->program->machines[context->instanceOf]->states[destStateIndex].entryFun;
+			PRT_TYPE *payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
@@ -630,8 +614,7 @@ _Inout_ PRT_FUNSTACK_INFO		*funStackInfo,
 _In_ PRT_UINT16					receiveIndex
 )
 {
-	PRT_UINT32 funIndex = funStackInfo->funIndex;
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
+	PRT_FUNDECL *funDecl = funStackInfo->funDecl; 
 	for (PRT_UINT32 i = 0; i < funDecl->nReceives; i++)
 	{
 		if (funDecl->receives[i].receiveIndex == receiveIndex)
@@ -690,7 +673,7 @@ PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)
 void
 PrtPushNewEventHandlerFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
-	_In_ PRT_UINT32					funIndex,
+	_In_ PRT_FUNDECL				*funDecl,
 	_In_ PRT_FUN_PARAM_STATUS       payloadStatus,
 	_In_ PRT_VALUE					**locals
 )
@@ -699,9 +682,8 @@ PrtPushNewEventHandlerFrame(
 	PRT_UINT16 length = context->funStack.length;
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
-	context->funStack.funs[length].funIndex = funIndex;
+	context->funStack.funs[length].funDecl = funDecl;
 	PRT_BOOLEAN freeLocals = PRT_FALSE;
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
 	PRT_VALUE ***refArgs = NULL;
 	if (locals == NULL && funDecl->maxNumLocals != 0)
 	{
@@ -766,15 +748,14 @@ void
 PrtPushNewFrame(
 	_Inout_ PRT_MACHINEINST_PRIV	*context,
 	_In_ PRT_BOOLEAN				isFunApp,
-	_In_ PRT_UINT32					funIndex,
+	_In_ PRT_FUNDECL				*funDecl,
 	...
 )
 {
 	PRT_UINT16 length = context->funStack.length;
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
-	context->funStack.funs[length].funIndex = funIndex;
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
+	context->funStack.funs[length].funDecl = funDecl;
 	PRT_VALUE **locals = NULL;
 	PRT_VALUE ***refArgs = NULL;
 	PRT_BOOLEAN freeLocals = PRT_FALSE;
@@ -800,7 +781,7 @@ PrtPushNewFrame(
 				refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
 			}
 			va_list argp;
-			va_start(argp, funIndex);
+			va_start(argp, funDecl);
 			for (PRT_UINT32 i = 0; i < numParameters; i++)
 			{
 #if __PX4_NUTTX
@@ -864,7 +845,7 @@ _In_ PRT_FUNSTACK_INFO			*funStackInfo
 	PRT_UINT16 length = context->funStack.length;
 	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
 	context->funStack.length = length + 1;
-	context->funStack.funs[length].funIndex = funStackInfo->funIndex;
+	context->funStack.funs[length].funDecl = funStackInfo->funDecl;
 	context->funStack.funs[length].locals = funStackInfo->locals;
 	context->funStack.funs[length].refArgs = funStackInfo->refArgs;
 	context->funStack.funs[length].freeLocals = funStackInfo->freeLocals;
@@ -881,7 +862,7 @@ _Inout_ PRT_FUNSTACK_INFO *funStackInfo
 	PRT_UINT16 length = context->funStack.length;
 	PrtAssert(0 < length, "Fun stack underflow");
 	PRT_UINT16 top = length - 1;
-	funStackInfo->funIndex = context->funStack.funs[top].funIndex;
+	funStackInfo->funDecl = context->funStack.funs[top].funDecl;
 	funStackInfo->locals = context->funStack.funs[top].locals;
 	funStackInfo->refArgs = context->funStack.funs[top].refArgs;
 	funStackInfo->freeLocals = context->funStack.funs[top].freeLocals;
@@ -1028,8 +1009,8 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
-	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFun->declIndex;
-	PrtPushNewEventHandlerFrame(context, exitFunIndex, PRT_FUN_PARAM_SWAP, NULL);
+	PRT_FUNDECL *exitFun = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFun;
+	PrtPushNewEventHandlerFrame(context, exitFun, PRT_FUN_PARAM_SWAP, NULL);
 	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
 }
 
@@ -1042,11 +1023,10 @@ PrtRunTransitionFunction(
 {
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement; 
-	PRT_UINT32 transFunIndex = stateDecl->transitions[transIndex].transFun->declIndex;
-	PRT_DBG_ASSERT(transFunIndex != PRT_SPECIAL_ACTION_PUSH_OR_IGN, "Must be valid function index");
-	PrtPushNewEventHandlerFrame(context, transFunIndex, PRT_FUN_PARAM_SWAP, NULL);
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, transFunIndex);
-	funDecl->implementation((PRT_MACHINEINST *)context);
+	PRT_FUNDECL *transFun = stateDecl->transitions[transIndex].transFun;
+	PRT_DBG_ASSERT(transFun != NULL, "Must be valid function");
+	PrtPushNewEventHandlerFrame(context, transFun, PRT_FUN_PARAM_SWAP, NULL);
+	transFun->implementation((PRT_MACHINEINST *)context);
 }
 
 static PRT_BOOLEAN
@@ -1084,19 +1064,18 @@ DoEntry:
 		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 		PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 		PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
-		PRT_UINT32 entryFunIndex = currentState->entryFun->declIndex;
-		PrtPushNewEventHandlerFrame(context, entryFunIndex, PRT_FUN_PARAM_MOVE, NULL);
+		PRT_FUNDECL *entryFun = currentState->entryFun;
+		PrtPushNewEventHandlerFrame(context, entryFun, PRT_FUN_PARAM_MOVE, NULL);
 	}
-	PRT_UINT32 funIndex = PrtBottomOfFunStack(context)->funIndex;
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
+	PRT_FUNDECL *funDecl = PrtBottomOfFunStack(context)->funDecl;
 	funDecl->implementation((PRT_MACHINEINST *)context);
 	goto CheckLastOperation;
 
 DoAction:
 	currActionDecl = PrtGetAction(context, eventValue);
-	PRT_UINT32 doFunIndex = currActionDecl->doFun->declIndex;
+	PRT_FUNDECL *doFun = currActionDecl->doFun;
 	context->lastOperation = ReturnStatement;
-	if (doFunIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
+	if (doFun == NULL)
 	{
 		PRT_VALUE* event = PrtMkEventValue(eventValue);
 		PRT_MACHINESTATE state;
@@ -1112,10 +1091,9 @@ DoAction:
 			PRT_MACHINESTATE state;
 			PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 			PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
-			PrtPushNewEventHandlerFrame(context, doFunIndex, PRT_FUN_PARAM_MOVE, NULL);
+			PrtPushNewEventHandlerFrame(context, doFun, PRT_FUN_PARAM_MOVE, NULL);
 		}
-		funIndex = PrtBottomOfFunStack(context)->funIndex;
-		funDecl = GetFunDeclFromIndex(context, funIndex);
+		funDecl = PrtBottomOfFunStack(context)->funDecl;
 		funDecl->implementation((PRT_MACHINEINST *)context);
 	}
 	goto CheckLastOperation;
@@ -1388,7 +1366,7 @@ _In_ PRT_UINT32					eventIndex
 	PRT_UINT32 nTransitions;
 	PRT_TRANSDECL *transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 	PRT_UINT32 transIndex = PrtFindTransition(context, eventIndex);
-	if (transTable[transIndex].transFun->declIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN)
+	if (transTable[transIndex].transFun == NULL)
 	{
 		PrtPushState(context, transTable[transIndex].destStateIndex);
 	}
@@ -1470,7 +1448,7 @@ PrtDequeueEvent(
 					if (triggerIndex == rcase->triggerEvent->declIndex)
 					{
 						frame->rcase = rcase;
-						PrtPushNewEventHandlerFrame(context, rcase->fun->declIndex, PRT_FUN_PARAM_MOVE, frame->locals);
+						PrtPushNewEventHandlerFrame(context, rcase->fun, PRT_FUN_PARAM_MOVE, frame->locals);
 						break;
 					}
 				}
@@ -1511,7 +1489,7 @@ PrtDequeueEvent(
 				if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEvent->declIndex)
 				{
 					frame->rcase = rcase;
-					PrtPushNewEventHandlerFrame(context, rcase->fun->declIndex, PRT_FUN_PARAM_MOVE, frame->locals);
+					PrtPushNewEventHandlerFrame(context, rcase->fun, PRT_FUN_PARAM_MOVE, frame->locals);
 					break;
 				}
 			}
@@ -1561,10 +1539,9 @@ PrtWrapFunStmt(
 _Inout_ PRT_FUNSTACK_INFO		*frame,
 _In_ PRT_UINT16					funCallIndex,
 _Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32					funIndex
+_In_ PRT_FUNDECL				*funDecl
 )
 {
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, funIndex);
 	PRT_SM_FUN fun = funDecl->implementation;
 	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
 	if (context->receive != NULL)
@@ -1590,7 +1567,7 @@ PrtFreeLocals(
 		return;
 	}
 
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, frame->funIndex);
+	PRT_FUNDECL *funDecl = frame->funDecl;
 	PRT_UINT32 numParameters = funDecl->numParameters;
 	if (frame->refArgs != NULL)
 	{
@@ -1630,9 +1607,8 @@ PrtGetEntryFunction(
 _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
-	PRT_UINT32 entryFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].entryFun->declIndex;
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, entryFunIndex);
-	return funDecl->implementation;
+	PRT_FUNDECL *entryFun = context->process->program->machines[context->instanceOf]->states[context->currentState].entryFun;
+	return entryFun->implementation;
 }
 
 FORCEINLINE
@@ -1641,9 +1617,8 @@ PrtGetExitFunction(
 _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
-	PRT_UINT32 exitFunIndex = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFun->declIndex;
-	PRT_FUNDECL *funDecl = GetFunDeclFromIndex(context, exitFunIndex);
-	return funDecl->implementation;
+	PRT_FUNDECL *exitFun = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFun;
+	return exitFun->implementation;
 }
 
 FORCEINLINE
@@ -1907,7 +1882,7 @@ _In_ PRT_UINT32					event
 	transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 	for (i = 0; i < nTransitions; ++i)
 	{
-		if (transTable[i].transFun->declIndex == PRT_SPECIAL_ACTION_PUSH_OR_IGN && transTable[i].triggerEvent->declIndex == event)
+		if (transTable[i].transFun == NULL && transTable[i].triggerEvent->declIndex == event)
 		{
 			return PRT_TRUE;
 		}

@@ -18,18 +18,10 @@ void PrtInitialize(
 	for (PRT_UINT32 i = 0; i < program->nMachines; i++)
 	{
 		program->machines[i]->declIndex = i;
-		for (PRT_UINT32 j = 0; j < program->machines[i]->nFuns; j++)
-		{
-			program->machines[i]->funs[j]->declIndex = 2*j + 1;
-		}
 	}
 	for (PRT_UINT32 i = 0; i < program->nForeignTypes; i++)
 	{
 		program->foreignTypes[i]->declIndex = i;
-	}
-	for (PRT_UINT32 i = 0; i < program->nGlobalFuns; i++)
-	{
-		program->globalFuns[i]->declIndex = 2*i;
 	}
 }
 
@@ -202,23 +194,6 @@ PrtStopProcess(
 	PrtFree(process);
 }
 
-FORCEINLINE
-PRT_FUNDECL *
-GetFunDeclHelper(_In_ PRT_PROCESS	*process, _In_ PRT_UINT32 instanceOf, _In_ PRT_UINT32 funIndex)
-{
-	PRT_UINT32 isMachineLocal = funIndex % 2;
-	PRT_UINT32 arrayIndex = funIndex / 2;
-	if (isMachineLocal)
-	{
-		return process->program->machines[instanceOf]->funs[arrayIndex];
-	}
-	else
-	{
-		return process->program->globalFuns[arrayIndex];
-	}
-}
-
-
 PRT_MACHINEINST *
 PrtMkInterfaceOrMachine(
 	_In_ PRT_MACHINEINST*		creator,
@@ -272,8 +247,8 @@ PrtMkInterfaceOrMachine(
 		if (numArgs > 1)
 		{
 			PRT_MACHINEDECL *machineDecl = context->process->program->machines[instanceOf];
-			PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFun->declIndex;
-			PRT_TYPE *payloadType = GetFunDeclHelper(context->process, instanceOf, entryFunIndex)->payloadType;
+			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
+			PRT_TYPE *payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
@@ -335,8 +310,8 @@ PrtMkMachine(
 		if (numArgs > 1)
 		{
 			PRT_MACHINEDECL *machineDecl = process->program->machines[instanceOf];
-			PRT_UINT32 entryFunIndex = machineDecl->states[machineDecl->initStateIndex].entryFun->declIndex;
-			PRT_TYPE *payloadType = GetFunDeclHelper(process, instanceOf, entryFunIndex)->payloadType;
+			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
+			PRT_TYPE *payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);

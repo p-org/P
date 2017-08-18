@@ -376,7 +376,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	HOut(0, def) :- AnonOrNamedFunName(decl, funName), decl.owner = NIL, def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), funName, NIL).
  	HOut(0, def) :- AnonOrNamedFunName(_, funName), funStructName = strJoin(funName, "_STRUCT"),
 	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_FUNDECL"), funStructName, NIL).
-	HOut(0, def) :- def = out.VarDef(EXTERN, NmdType(NIL, "PRT_FUNDECL"), "P_FUN_IGNORE_PUSH_STRUCT", NIL).
 
 	//// Machine structs
 	HOut(0, def) :- MachineName(_, machineName),
@@ -852,10 +851,12 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	TransDeclEvnt(t, evname) :- t is in.TransDecl, trig = t.trig, trig : NullOrHalt, EventName(trig, evname).
 
 	//// Transition action index depends on whether the transition is a push transition or not.
-    TransDeclAction  ::= (decl: in.TransDecl, funName: String).
-	TransDeclAction(t, funname) :- t is in.TransDecl, t.action = PUSH, funname = "P_FUN_IGNORE_PUSH". 
-	TransDeclAction(t, funname) :- t is in.TransDecl, act = t.action, act : in.AnonFunDecl, AnonOrNamedFunName(act, funname). 
-	TransDeclAction(t, funname) :- t is in.TransDecl, act = t.action, act : String, FunAvailable(f, t.src.owner), f.name = act, AnonOrNamedFunName(f, funname). 
+    TransDeclAction  ::= (decl: in.TransDecl, funStruct: out.Expr).
+	TransDeclAction(t, funStruct) :- t is in.TransDecl, t.action = PUSH, funStruct = Ident("NULL"). 
+	TransDeclAction(t, funStruct) :- t is in.TransDecl, act = t.action, act : in.AnonFunDecl, 
+	                                 AnonOrNamedFunName(act, funname), funStruct = out.UnApp(ADDR, Ident(strJoin(funname, "_STRUCT"))).
+	TransDeclAction(t, funStruct) :- t is in.TransDecl, act = t.action, act : String, FunAvailable(f, t.src.owner), f.name = act, 
+	                                 AnonOrNamedFunName(f, funname), funStruct = out.UnApp(ADDR, Ident(strJoin(funname, "_STRUCT"))).
 
 	//// Base case
 	TransDeclConcat(c, s, NIL) :- s is in.StateDecl, c = count({t | t is in.TransDecl, t.src = s}).
@@ -864,14 +865,14 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	TransDeclConcat(m, d.src, arr) :- 
 							TransDeclId(d, m, srcname, dstname, machname),
 							TransDeclEvnt(d, evname), evStructName = strJoin(evname, "_STRUCT"),
-							TransDeclAction(d, funname), funStructName = strJoin(funname, "_STRUCT"),
+							TransDeclAction(d, funStruct),
 							TransDeclConcat(m + 1, d.src, after), 
 							arr = out.Args(def, after), 
 	                        def = Init(
 							   Args(Ident(srcname),
 							   Args(UnApp(ADDR, Ident(evStructName)),
 							   Args(Ident(dstname),
-							   Args(UnApp(ADDR, Ident(funStructName)),
+							   Args(funStruct,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   NIL))))))).
@@ -908,10 +909,12 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	DeferEvnt(d, evname) :- d is in.DoDecl, d.action = DEFER, trig = d.trig, trig : NullOrHalt, EventName(trig, evname).
 
 	//// Do action index depends on whether the do is an ignore or not.
-    DoDeclAction  ::= (decl: in.DoDecl, funName: String).
-	DoDeclAction(d, funname) :- d is in.DoDecl, d.action = IGNORE, funname = "P_FUN_IGNORE_PUSH". 
-	DoDeclAction(d, funname) :- d is in.DoDecl, act = d.action, act : AnonOrNamedFun, AnonOrNamedFunName(act, funname). 
-	DoDeclAction(d, funname) :- d is in.DoDecl, act = d.action, act : String, FunAvailable(f, d.src.owner), f.name = act, AnonOrNamedFunName(f, funname). 
+    DoDeclAction  ::= (decl: in.DoDecl, funStruct: out.Expr).
+	DoDeclAction(d, funStruct) :- d is in.DoDecl, d.action = IGNORE, funStruct = Ident("NULL"). 
+	DoDeclAction(d, funStruct) :- d is in.DoDecl, act = d.action, act : AnonOrNamedFun, 
+	                              AnonOrNamedFunName(act, funname), funStruct = out.UnApp(ADDR, Ident(strJoin(funname, "_STRUCT"))).
+	DoDeclAction(d, funStruct) :- d is in.DoDecl, act = d.action, act : String, FunAvailable(f, d.src.owner), f.name = act, 
+	                              AnonOrNamedFunName(f, funname), funStruct = out.UnApp(ADDR, Ident(strJoin(funname, "_STRUCT"))).
 
 	//// Base case
 	DoDeclConcat(c, s, NIL) :- s is in.StateDecl, c = count({d | d is in.DoDecl, d.src = s, d.action != DEFER}).
@@ -920,13 +923,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	DoDeclConcat(m, d.src, arr) :- 
 							DoDeclId(d, m, srcname, machname),
 							DoDeclEvnt(d, evname), evStructName = strJoin(evname, "_STRUCT"),
-							DoDeclAction(d, funname), funStructName = strJoin(funname, "_STRUCT"),
+							DoDeclAction(d, funStruct),
 							DoDeclConcat(m + 1, d.src, after), 
 							arr = out.Args(def, after), 
 	                        def = Init(
 							   Args(Ident(srcname),
 							   Args(UnApp(ADDR, Ident(evStructName)),
-							   Args(UnApp(ADDR, Ident(funStructName)),
+							   Args(funStruct,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   NIL)))))).
@@ -1170,7 +1173,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							ReceiveDeclInit(d, nReceives, receives), 
 							numParameters = lstLength(in.#NmdTupType, d.params),
 	                        init = Init(
-							   Args(IntLit(0, DEC, U),
 							   Args(StringLit(d.name, NIL),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
 							   Args(IntLit(numParameters, DEC, U),
@@ -1182,7 +1184,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))))),
+							   NIL)))))))))))),
 							def = out.VarDef(
 							      NIL, 
 								  NmdType(NIL, "PRT_FUNDECL"), 
@@ -1196,7 +1198,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							LocalsType(d, localsType),
 							ReceiveDeclInit(d, nReceives, receives),
 	                        init = Init(
-							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
 							   Args(IntLit(1, DEC, U),
@@ -1208,7 +1209,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 							   Args(receives,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))))),
+							   NIL)))))))))))),
 							def = out.VarDef(
 							      NIL, 
 								  NmdType(NIL, "PRT_FUNDECL"), 
@@ -1477,15 +1478,17 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Function application
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), e = in.FunApp(name, NIL, _, _), 
 									AnonOrNamedFunName(funDecl, funName), funDecl.name = name, FunAvailable(funDecl, c.owner), 
-									pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_TRUE"), Args(Ident(funName), NIL)))),
-									wrapFunStmt = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(Ident(funName), NIL))))),
+									funStruct = out.UnApp(ADDR, Ident(strJoin(funName, "_STRUCT"))),
+									pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_TRUE"), Args(funStruct, NIL)))),
+									wrapFunStmt = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(funStruct, NIL))))),
 									ec = out.FunApp(Ident("P_SEQ"), Args(pushFrame, Args(wrapFunStmt, NIL))).
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), e = in.FunApp(name, args, _, _), args != NIL, 
 									AnonOrNamedFunName(funDecl, funName), funDecl.name = name, FunAvailable(funDecl, c.owner), 
+									funStruct = out.UnApp(ADDR, Ident(strJoin(funName, "_STRUCT"))),
 									TransformArgs(c, s, i, e, NIL, ecs', NIL),
-									pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_TRUE"), Args(Ident(funName), lstReverse(#Args, ecs'))))),
-									wrapFunStmt = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(Ident(funName), NIL))))),
+									pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_TRUE"), Args(funStruct, lstReverse(#Args, ecs'))))),
+									wrapFunStmt = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(funStruct, NIL))))),
 									ec = out.FunApp(Ident("P_SEQ"), Args(pushFrame, Args(wrapFunStmt, NIL))).
 
 	//// Nullary expressions
@@ -2028,9 +2031,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
 						   s = in.FunStmt(name, NIL, _, label, x), AnonOrNamedFunName(funDecl, funName), FunAvailable(funDecl, c.owner), funDecl.name = name,
-						   ret = Ident("p_tmp_funstmt_ret"),
-						   pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_FALSE"), Args(Ident(funName), NIL)))),
-						   funcall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(Ident(funName), NIL)))))),
+						   funStruct = out.UnApp(ADDR, Ident(strJoin(funName, "_STRUCT"))), ret = Ident("p_tmp_funstmt_ret"),
+						   pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_FALSE"), Args(funStruct, NIL)))),
+						   funcall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(funStruct, NIL)))))),
 						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Seq(info, Return(ret)), NIL),
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Seq(info, Goto("P_EXIT_FUN")), NIL),
 						   FunStmtCleanup(c, s, cleanup),
@@ -2039,14 +2042,15 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	StmtTrans(c, s, cs) :- RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1, 
 						   s = in.FunStmt(name, args, _, label, x), args != NIL, 
-	                       AnonOrNamedFunName(fn, funName), fn.name = name, FunAvailable(fn, c.owner),  
+	                       AnonOrNamedFunName(fn, funName), fn.name = name, FunAvailable(fn, c.owner),
+						   funStruct = out.UnApp(ADDR, Ident(strJoin(funName, "_STRUCT"))),
 						   TransformStmtArgs(c, s, 0, NIL, NIL, ecs', NIL),
 						   ContextLineInfo(c, s, info),
 						   cs = out.Seq(Seq(info, pushFrame), Lbl(strJoin("L", toString(label)), Seq(Seq(info, funCall), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(info, cleanup)))))),
 						   pushFrame = out.FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
-						                          Args(FunApp(Ident("P_SEQ"), Args(FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_FALSE"), Args(Ident(funName), lstReverse(#Args, ecs'))))), Args(Ident("NULL"), NIL))), 
+						                          Args(FunApp(Ident("P_SEQ"), Args(FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_FALSE"), Args(funStruct, lstReverse(#Args, ecs'))))), Args(Ident("NULL"), NIL))), 
 												  Args(Ident("PRT_FALSE"), tail))),
-						   funCall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(Ident(funName), NIL)))))),
+						   funCall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(funStruct, NIL)))))),
 						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Seq(info, Return(ret)), NIL),
 						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Seq(info, Goto("P_EXIT_FUN")), NIL),
 						   FunStmtCleanup(c, s, cleanup),

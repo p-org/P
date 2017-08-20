@@ -103,7 +103,7 @@ extern "C"{
 
 	typedef struct PRT_FUNSTACK_INFO
 	{
-		PRT_UINT32			funIndex;
+		PRT_FUNDECL			*funDecl;
 		PRT_VALUE			**locals;
 		PRT_BOOLEAN			freeLocals; 
 		PRT_VALUE			***refArgs;
@@ -496,7 +496,7 @@ extern "C"{
 	void
 		PrtPushNewEventHandlerFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_UINT32					funIndex,
+		_In_ PRT_FUNDECL				*funDecl,
 		_In_ PRT_FUN_PARAM_STATUS       payloadStatus, 
 		_In_ PRT_VALUE					**locals
 		);
@@ -505,7 +505,7 @@ extern "C"{
 		PrtPushNewFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_BOOLEAN				isFunApp,
-		_In_ PRT_UINT32					funIndex,
+		_In_ PRT_FUNDECL				*funDecl,
 		...
 		);
 
@@ -532,7 +532,7 @@ extern "C"{
 		_Inout_ PRT_FUNSTACK_INFO		*frame,
 		_In_ PRT_UINT16					funCallIndex,
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_UINT32					funIndex
+		_In_ PRT_FUNDECL				*funDecl
 		);
 
 	PRT_API PRT_BOOLEAN

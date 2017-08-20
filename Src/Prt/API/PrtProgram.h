@@ -13,13 +13,6 @@ extern "C"{
 
 #include "PrtValues.h"
 
-/** These are reserved indices in the array of function decls.
-*/
-typedef enum PRT_SPECIAL_ACTIONS
-{
-	PRT_SPECIAL_ACTION_PUSH_OR_IGN = 0 /**< The index of push action. */
-} PRT_SPECIAL_ACTION;
-
 struct PRT_MACHINEINST; /* forward declaration */
 
 /** A PRT_SM_FUN function is a pointer to a P function.
@@ -27,18 +20,6 @@ struct PRT_MACHINEINST; /* forward declaration */
 *   Returns a non-null pointer if function has a return type. Otherwise returns C null value. Caller frees return.
 */
 typedef PRT_VALUE *(PRT_CALL_CONV * PRT_SM_FUN)(_Inout_ struct PRT_MACHINEINST *context);
-
-/** A PRT_SM_EXTCTOR function constructs the external blob attached to a machine.
-*   context is the machine context to construct.
-*   value is the value passed to the new M(...) operation. It will be the P null value if no value was passed.
-*   Function frees value.
-*/
-typedef void(PRT_CALL_CONV * PRT_SM_EXTCTOR)(_Inout_ struct PRT_MACHINEINST * context, _Inout_ PRT_VALUE * value);
-
-/** A PRT_SM_EXTDTOR function destructs the external blob attached to a machine.
-*   context is the machine context to destruct.
-*/
-typedef void(PRT_CALL_CONV * PRT_SM_EXTDTOR)(_Inout_ struct PRT_MACHINEINST * context);
 
 /** Represents a P event declaration */
 typedef struct PRT_EVENTDECL
@@ -85,7 +66,6 @@ typedef struct PRT_RECEIVEDECL
 /** Represents a P function declaration */
 typedef struct PRT_FUNDECL
 {
-	PRT_UINT32 declIndex;        /**< index of function in owner machine                                    */
 	PRT_STRING name;             /**< name (NULL is anonymous)                                              */
 	PRT_SM_FUN implementation;   /**< implementation                                                        */
 	PRT_UINT32 numParameters;    /**< number of parameters (1 for anonymous functions)                      */
@@ -117,7 +97,7 @@ typedef struct PRT_DODECL
 {
 	PRT_UINT32      ownerStateIndex;   /**< The index of owner state in owner machine              */
 	PRT_EVENTDECL   *triggerEvent;     /**< The trigger event             */
-	PRT_FUNDECL     *doFun;            /**< The index of function to execute when this do is triggered  */
+	PRT_FUNDECL     *doFun;            /**< The function to execute when this do is triggered  */
 
 	PRT_UINT32      nAnnotations;      /**< Number of annotations                         */
 	void            **annotations;     /**< An array of annotations                       */
@@ -134,8 +114,8 @@ typedef struct PRT_STATEDECL
 	PRT_EVENTSETDECL   *doSet;         /**< The do trigger set                 */
 	PRT_TRANSDECL      *transitions;   /**< The array of transitions                           */
 	PRT_DODECL         *dos;           /**< The array of installed actions                     */
-	PRT_FUNDECL        *entryFun;      /**< The index of entry function in owner machine       */
-	PRT_FUNDECL        *exitFun;       /**< The index of exit function in owner machine        */
+	PRT_FUNDECL        *entryFun;      /**< The entry function in owner machine       */
+	PRT_FUNDECL        *exitFun;       /**< The exit function in owner machine        */
 
 	PRT_UINT32         nAnnotations;   /**< Number of annotations                              */
 	void               **annotations;  /**< An array of annotations                            */
@@ -151,7 +131,7 @@ typedef struct PRT_MACHINEDECL
 	PRT_UINT32       nFuns;             /**< The number of functions             */
 
 	PRT_UINT32       maxQueueSize;      /**< The max queue size                  */
-	PRT_UINT32       initStateIndex;    /**< The index of the initial state      */
+	PRT_UINT32       initStateIndex;    /**< The index of initial state      */
 	PRT_VARDECL      *vars;             /**< The array of variable declarations  */
 	PRT_STATEDECL    *states;           /**< The array of state declarations     */
 	PRT_FUNDECL      **funs;            /**< The array of fun declarations       */
@@ -165,11 +145,9 @@ typedef struct PRT_PROGRAMDECL
 {
 	PRT_UINT32          nEvents;        /**< The number of events      */
 	PRT_UINT32          nMachines;      /**< The number of machines    */
-	PRT_UINT32          nGlobalFuns;    /**< The number of global functions   */
 	PRT_UINT32          nForeignTypes;  /**< The number of foreign types */
 	PRT_EVENTDECL       **events;       /**< The array of events                 */
 	PRT_MACHINEDECL     **machines;     /**< The array of machines               */
-	PRT_FUNDECL			**globalFuns;   /**< The array of global functions */
 	PRT_FOREIGNTYPEDECL **foreignTypes; /**< The array of foreign types */
 	PRT_UINT32			**linkMap;		/**< stores the link map from renameName -> IorM -> renameName */
 	PRT_UINT32			*renameMap;		/**< stores the rename map from renameName -> real name */

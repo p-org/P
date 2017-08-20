@@ -350,7 +350,7 @@ namespace Microsoft.Pc.TypeChecker
         #endregion
 
         #region Conflict-checking putters
-        public void Put(string name, PParser.PTypeDefContext tree)
+        public TypeDef Put(string name, PParser.PTypeDefContext tree)
         {
             var typedef = new TypeDef(name, tree);
             CheckConflicts(
@@ -361,6 +361,7 @@ namespace Microsoft.Pc.TypeChecker
                 Namespace(machines),
                 Namespace(machineProtos));
             typedefs.Add(name, typedef);
+            return typedef;
         }
 
         public PEnum Put(string name, PParser.EnumTypeDefDeclContext tree)
@@ -377,21 +378,23 @@ namespace Microsoft.Pc.TypeChecker
             return @enum;
         }
 
-        public void Put(string name, PParser.EventDeclContext tree)
+        public PEvent Put(string name, PParser.EventDeclContext tree)
         {
             var @event = new PEvent(name, tree);
             CheckConflicts(@event, Namespace(events), Namespace(enumElems));
             events.Add(name, @event);
+            return @event;
         }
 
-        public void Put(string name, PParser.EventSetDeclContext tree)
+        public EventSet Put(string name, PParser.EventSetDeclContext tree)
         {
             var eventSet = new EventSet(name, tree);
             CheckConflicts(eventSet, Namespace(eventSets));
             eventSets.Add(name, eventSet);
+            return eventSet;
         }
 
-        public void Put(string name, PParser.InterfaceDeclContext tree)
+        public Interface Put(string name, PParser.InterfaceDeclContext tree)
         {
             var machineInterface = new Interface(name, tree);
             CheckConflicts(
@@ -402,48 +405,55 @@ namespace Microsoft.Pc.TypeChecker
                 Namespace(machines),
                 Namespace(machineProtos));
             interfaces.Add(name, machineInterface);
+            return machineInterface;
         }
 
-        public void Put(string name, PParser.ImplMachineDeclContext tree)
+        public Machine Put(string name, PParser.ImplMachineDeclContext tree)
         {
             var machine = new Machine(name, tree);
             CheckConflicts(machine, Namespace(machines), Namespace(interfaces), Namespace(enums), Namespace(typedefs));
             machines.Add(name, machine);
+            return machine;
         }
 
-        public void Put(string name, PParser.ImplMachineProtoDeclContext tree)
+        public MachineProto Put(string name, PParser.ImplMachineProtoDeclContext tree)
         {
             var machineProto = new MachineProto(name, tree);
             CheckConflicts(machineProto, Namespace(machineProtos), Namespace(interfaces), Namespace(enums), Namespace(typedefs));
             machineProtos.Add(name, machineProto);
+            return machineProto;
         }
 
-        public void Put(string name, PParser.SpecMachineDeclContext tree)
+        public Machine Put(string name, PParser.SpecMachineDeclContext tree)
         {
             var specMachine = new Machine(name, tree);
             CheckConflicts(specMachine, Namespace(machines), Namespace(interfaces), Namespace(enums), Namespace(typedefs));
             machines.Add(name, specMachine);
+            return specMachine;
         }
 
-        public void Put(string name, PParser.FunDeclContext tree)
+        public Function Put(string name, PParser.FunDeclContext tree)
         {
             var function = new Function(name, tree);
             CheckConflicts(function, Namespace(functions));
             functions.Add(name, function);
+            return function;
         }
 
-        public void Put(string name, PParser.FunProtoDeclContext tree)
+        public FunctionProto Put(string name, PParser.FunProtoDeclContext tree)
         {
             var functionProto = new FunctionProto(name, tree);
             CheckConflicts(functionProto, Namespace(functionProtos));
             functionProtos.Add(name, functionProto);
+            return functionProto;
         }
 
-        public void Put(string name, PParser.GroupContext tree)
+        public StateGroup Put(string name, PParser.GroupContext tree)
         {
             var group = new StateGroup(name, tree);
             CheckConflicts(group, Namespace(stateGroups));
             stateGroups.Add(name, group);
+            return group;
         }
 
         public EnumElem Put(string name, PParser.EnumElemContext tree)
@@ -462,25 +472,28 @@ namespace Microsoft.Pc.TypeChecker
             return enumElem;
         }
 
-        public void Put(string name, PParser.VarDeclContext tree)
+        public Variable Put(string name, PParser.VarDeclContext tree)
         {
             var variable = new Variable(name, tree);
             CheckConflicts(variable, Namespace(variables));
             variables.Add(name, variable);
+            return variable;
         }
 
-        public void Put(string name, PParser.FunParamContext tree)
+        public Variable Put(string name, PParser.FunParamContext tree)
         {
             var variable = new Variable(name, tree);
             CheckConflicts(variable, Namespace(variables));
             variables.Add(name, variable);
+            return variable;
         }
 
-        public void Put(string name, PParser.StateDeclContext tree)
+        public State Put(string name, PParser.StateDeclContext tree)
         {
             var state = new State(name, tree);
             CheckConflicts(state, Namespace(states));
             states.Add(name, state);
+            return state;
         }
         #endregion
 
@@ -610,6 +623,11 @@ namespace Microsoft.Pc.TypeChecker
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
+        public int Assume { get; set; } = -1;
+        public int Assert { get; set; } = -1;
+        public List<Interface> Interfaces { get; } = new List<Interface>();
+        public EventSet Receives { get; set; }
+        public EventSet Sends { get; set; }
     }
 
     public class Interface : IConstructibleDecl
@@ -729,6 +747,7 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public string Name { get; }
+        public Machine Owner { get; set; }
         public ParserRuleContext SourceNode { get; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
     }

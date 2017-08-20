@@ -1,26 +1,23 @@
-using System.Collections.Generic;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    public class Analyzer
+    public static class Analyzer
     {
-        public static void Analyze(params PParser.ProgramContext[] programUnits)
+        public static void AnalyzeCompilationUnit(params PParser.ProgramContext[] programUnits)
         {
-            var programDeclarations = new ParseTreeProperty<DeclarationTable>();
+            var walker = new ParseTreeWalker();
             var topLevelTable = new DeclarationTable();
+            var programDeclarations = new ParseTreeProperty<DeclarationTable>();
+            var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
+            var stubListener = new DeclarationStubListener(topLevelTable, programDeclarations, nodesToDeclarations);
+            var declListener = new DeclarationListener(programDeclarations, nodesToDeclarations);
 
             // Add built-in events to the table.
             topLevelTable.Put("halt", (PParser.EventDeclContext) null);
             topLevelTable.Put("null", (PParser.EventDeclContext) null);
-
-            /* TODO: strengthen interface of two listeners to ensure they are
-             * always called at the root of the parse trees?
-             */
-            var walker = new ParseTreeWalker();
-            var stubListener = new DeclarationStubListener(programDeclarations, topLevelTable);
-
+            
             // Step 1: Create mapping of names to declaration stubs
             foreach (PParser.ProgramContext programUnit in programUnits)
             {
@@ -33,8 +30,6 @@ namespace Microsoft.Pc.TypeChecker
             // NOW: enums and their elements are related to one another
 
             // Step 4: Validate declarations and fill with types
-            ParseTreeProperty<IPDecl> nodesToDeclarations = BuildParseTreeRelation(topLevelTable);
-            var declListener = new DeclarationListener(programDeclarations, nodesToDeclarations);
             foreach (PParser.ProgramContext programUnit in programUnits)
             {
                 walker.Walk(declListener, programUnit);
@@ -42,37 +37,6 @@ namespace Microsoft.Pc.TypeChecker
 
             // NOW: all enums are valid
             // NOW: all event sets are valid
-        }
-
-        private static ParseTreeProperty<IPDecl> BuildParseTreeRelation(DeclarationTable table)
-        {
-            var prop = new ParseTreeProperty<IPDecl>();
-
-            IEnumerable<IPDecl> WalkTable(DeclarationTable t)
-            {
-                foreach (IPDecl decl in t.AllDecls)
-                {
-                    yield return decl;
-                }
-
-                foreach (DeclarationTable child in t.Children)
-                {
-                    foreach (IPDecl decl in WalkTable(child))
-                    {
-                        yield return decl;
-                    }
-                }
-            }
-
-            foreach (IPDecl decl in WalkTable(table))
-            {
-                if (decl.SourceNode != null)
-                {
-                    prop.Put(decl.SourceNode, decl);
-                }
-            }
-
-            return prop;
         }
     }
 }

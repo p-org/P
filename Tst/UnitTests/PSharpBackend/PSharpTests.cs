@@ -37,7 +37,7 @@ namespace UnitTests.PSharpBackend
 
                 if (parser.NumberOfSyntaxErrors != 0)
                 {
-                    Console.Error.WriteLine($"[{testName}] {inputFile.FullName}");
+                    Console.Error.WriteLine($"[{testName}] Failed to parse {inputFile.FullName}");
                     return;
                 }
 
@@ -70,7 +70,7 @@ namespace UnitTests.PSharpBackend
 
             try
             {
-                Analyzer.Analyze(trees);
+                Analyzer.AnalyzeCompilationUnit(trees);
             }
             catch (DuplicateDeclarationException e)
             {
@@ -93,6 +93,10 @@ namespace UnitTests.PSharpBackend
             {
                 Location badTypeLocation = GetTreeLocation(e.Subtree);
                 Console.Error.WriteLine($"[{testName}] {badTypeLocation} : {e.Message}");
+            }
+            catch (NotImplementedException e)
+            {
+                Console.Error.WriteLine($"[{testName}] {e.Message}");
             }
         }
 

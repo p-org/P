@@ -67,7 +67,7 @@ namespace Microsoft.Pc.TypeChecker
 
                 if (declarations.Lookup(typeName, out Interface pInterface))
                 {
-                    throw new NotImplementedException("Have yet to implement interface types");
+                    throw new NotImplementedException("interface types");
                 }
 
                 throw new TypeConstructionException(

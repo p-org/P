@@ -92,6 +92,12 @@ namespace Microsoft.Pc.TypeChecker
             string symbolName = context.name.Text;
             Machine decl = currentTable.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
+            PushTable(context);
+        }
+
+        public override void ExitImplMachineDecl(PParser.ImplMachineDeclContext context)
+        {
+            PopTable();
         }
 
         public override void EnterStateDecl(PParser.StateDeclContext context)
@@ -110,16 +116,6 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public override void ExitGroup(PParser.GroupContext context)
-        {
-            PopTable();
-        }
-
-        public override void EnterMachineBody(PParser.MachineBodyContext context)
-        {
-            PushTable(context);
-        }
-
-        public override void ExitMachineBody(PParser.MachineBodyContext context)
         {
             PopTable();
         }
@@ -145,6 +141,12 @@ namespace Microsoft.Pc.TypeChecker
             string symbolName = context.name.Text;
             Machine decl = currentTable.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
+            PushTable(context);
+        }
+
+        public override void ExitSpecMachineDecl(PParser.SpecMachineDeclContext context)
+        {
+            PopTable();
         }
 
         public override void EnterFunDecl(PParser.FunDeclContext context)

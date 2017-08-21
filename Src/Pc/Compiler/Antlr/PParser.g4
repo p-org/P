@@ -81,23 +81,23 @@ cardinality : ASSERT IntLiteral
             | ASSUME IntLiteral
             ;
 
-eventSetDecl : EVENTSET name=Iden ASSIGN LBRACE nonDefaultEventList RBRACE SEMI ;
+eventSetDecl : EVENTSET name=Iden ASSIGN LBRACE eventSetLiteral RBRACE SEMI ;
 
 interfaceDecl : TYPE name=Iden LPAREN type? RPAREN ASSIGN eventSet=Iden SEMI
-              | TYPE name=Iden LPAREN type? RPAREN ASSIGN LBRACE nonDefaultEventList RBRACE SEMI
+              | TYPE name=Iden LPAREN type? RPAREN ASSIGN LBRACE eventSetLiteral RBRACE SEMI
               ;
 
-nonDefaultEventList : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
+eventSetLiteral : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 
 implMachineDecl : MACHINE name=Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
 idenList : names+=Iden (COMMA names+=Iden)* ;
-receivesSends : RECEIVES nonDefaultEventList? SEMI
-              | SENDS nonDefaultEventList? SEMI
+receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
+              | SENDS eventSetLiteral? SEMI    # MachineSend
               ;
 
 implMachineProtoDecl : EXTERN MACHINE name=Iden LPAREN type? RPAREN SEMI;
 
-specMachineDecl : SPEC name=Iden OBSERVES nonDefaultEventList machineBody ;
+specMachineDecl : SPEC name=Iden OBSERVES eventSetLiteral machineBody ;
 
 machineBody : LBRACE machineEntry* RBRACE;
 machineEntry : varDecl
@@ -108,7 +108,7 @@ machineEntry : varDecl
 
 varDecl : VAR idenList COLON type annotationSet? SEMI ;
 
-funDecl : FUN name=Iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? (SEMI | statementBlock) ;
+funDecl : FUN name=Iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? (SEMI | functionBody) ;
 funProtoDecl : EXTERN FUN name=Iden (CREATES idenList? SEMI)? LPAREN funParamList? RPAREN (COLON type)? annotationSet? SEMI;
 
 group : GROUP name=Iden LBRACE groupItem* RBRACE ;
@@ -132,12 +132,13 @@ stateBodyItem : ENTRY anonEventHandler       # StateEntry
               | ON eventList GOTO stateName annotationSet? WITH funName=Iden SEMI # OnEventGotoState
               ;
 
+nonDefaultEventList : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 eventList : eventId (COMMA eventId)* ;
 eventId : NullLiteral | HALT | Iden ;
 
-stateName : Iden (DOT Iden)* ; // First few Idens are groups
+stateName : (groups+=Iden DOT)* state=Iden ; // First few Idens are groups
 
-statementBlock : LBRACE varDecl* statement* RBRACE ;
+functionBody : LBRACE varDecl* statement* RBRACE ;
 statement : LBRACE statement* RBRACE
           | POP SEMI
           | ASSERT expr (COMMA StringLiteral)? SEMI
@@ -165,9 +166,8 @@ lvalue : Iden
        ;
 
 recvCase : CASE eventList COLON anonEventHandler ;
-anonEventHandler : payloadVarDecl? statementBlock ;
-noParamAnonEventHandler : statementBlock;
-payloadVarDecl : LPAREN funParam RPAREN ;
+anonEventHandler : (LPAREN funParam RPAREN)? functionBody ;
+noParamAnonEventHandler : functionBody;
 
 expr : primitive # PrimitiveExpr
      | LPAREN unnamedTupleBody RPAREN # UnnamedTupleExpr

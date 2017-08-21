@@ -35,8 +35,7 @@ namespace Microsoft.Pc.TypeChecker
                 walker.Walk(declListener, programUnit);
             }
 
-            // NOW: all enums are valid
-            // NOW: all event sets are valid
+            // NOW: all declarations are valid
         }
     }
 }

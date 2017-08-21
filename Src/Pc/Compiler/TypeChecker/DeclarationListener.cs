@@ -14,13 +14,28 @@ namespace Microsoft.Pc.TypeChecker
         ///     Functions can be nested via anonymous event handlers, so we do need to keep track.
         /// </summary>
         private readonly Stack<Function> functionStack = new Stack<Function>();
+
         /// <summary>
-        /// Groups can be nested
+        ///     Groups can be nested
         /// </summary>
         private readonly Stack<StateGroup> groupStack = new Stack<StateGroup>();
 
+        /// <summary>
+        ///     Maps source nodes to the unique declarations they produced.
+        /// </summary>
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
+
+        /// <summary>
+        ///     Maps source nodes to the scope objects they produced.
+        /// </summary>
         private readonly ParseTreeProperty<DeclarationTable> programDeclarations;
+
+
+        /// <summary>
+        ///     Enum declarations can't be nested, so we simply store the most recently encountered
+        ///     one in a variable for the listener actions for the elements to access.
+        /// </summary>
+        private PEnum currentEnum;
 
         /// <summary>
         ///     Event sets cannot be nested, so we keep track only of the most recent one.
@@ -38,90 +53,115 @@ namespace Microsoft.Pc.TypeChecker
         private Machine currentMachine;
 
         /// <summary>
+        ///     There can't be any nested states, so we only keep track of the most recent.
+        /// </summary>
+        private State currentState;
+
+        /// <summary>
         ///     This keeps track of the current declaration table. The "on every entry/exit" rules handle popping the
         ///     stack using its Parent pointer.
         /// </summary>
         private DeclarationTable table;
 
-        public DeclarationListener(ParseTreeProperty<DeclarationTable> programDeclarations, ParseTreeProperty<IPDecl> nodesToDeclarations)
+        public DeclarationListener(
+            ParseTreeProperty<DeclarationTable> programDeclarations,
+            ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             this.programDeclarations = programDeclarations;
             this.nodesToDeclarations = nodesToDeclarations;
         }
 
+        /// <summary>
+        ///     Gets the current function or null if not in a function context.
+        /// </summary>
         private Function CurrentFunction => functionStack.Count > 0 ? functionStack.Peek() : null;
 
-        #region Events
         public override void EnterEventDecl(PParser.EventDeclContext context)
         {
+            // EVENT name=Iden
             var pEvent = (PEvent) nodesToDeclarations.Get(context);
 
-            bool hasAssume = context.cardinality()?.ASSUME() != null;
-            bool hasAssert = context.cardinality()?.ASSERT() != null;
-            int cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            // cardinality?
+            var hasAssume = context.cardinality()?.ASSUME() != null;
+            var hasAssert = context.cardinality()?.ASSERT() != null;
+            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
             pEvent.Assume = hasAssume ? cardinality : -1;
             pEvent.Assert = hasAssert ? cardinality : -1;
 
+            // (COLON type)?
             pEvent.PayloadType = TypeResolver.ResolveType(context.type(), table);
 
+            // annotationSet?
             if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("Have not implemented event annotations");
-            }
+                throw new NotImplementedException("event annotations");
+
+            // SEMI ;
         }
-        #endregion
 
-        public override void EnterNonDefaultEventList(PParser.NonDefaultEventListContext context)
+        public override void EnterEventSetLiteral(PParser.EventSetLiteralContext context)
         {
-            // TODO: implement handlers for other parents of these event lists.
-            Debug.Assert(currentEventSet != null, $"Event set not prepared for {nameof(EnterNonDefaultEventList)}");
-            foreach (IToken contextEvent in context._events)
+            // events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
+            foreach (var contextEvent in context._events)
             {
-                string eventName = contextEvent.Text;
+                var eventName = contextEvent.Text;
                 if (!table.Lookup(eventName, out PEvent evt))
-                {
                     throw new MissingEventException(currentEventSet, eventName);
-                }
 
-                currentEventSet?.Events.Add(evt);
+                currentEventSet.Events.Add(evt);
             }
         }
 
         public override void EnterFunDecl(PParser.FunDeclContext context)
         {
+            // FUN name=Iden
             var fun = (Function) nodesToDeclarations.Get(context);
+            currentMachine?.Methods.Add(fun);
+
+            // LPAREN funParamList? RPAREN
+            functionStack.Push(fun); // funParamList builds signature
+
+            // (COLON type)?
             fun.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table);
 
+            // annotationSet?
             if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("Function annotations not implemented");
-            }
+                throw new NotImplementedException("function annotations");
 
-            if (context.statementBlock() == null)
-            {
-                throw new NotImplementedException("Foreign functions not implemented");
-            }
+            // (SEMI |
+            if (context.functionBody() == null)
+                throw new NotImplementedException("foreign functions");
 
-            currentMachine?.Methods.Add(fun);
-            functionStack.Push(fun);
+            // functionBody) ;
+            // handled in EnterFunctionBody
         }
 
         public override void EnterFunParam(PParser.FunParamContext context)
         {
-            string name = context.name.Text;
+            // name=Iden
+            var name = context.name.Text;
+            // COLON type ;
+            var type = TypeResolver.ResolveType(context.type(), table);
+
+            ITypedName param;
             if (currentFunctionProto != null)
             {
                 // If we're in a prototype, then we don't look up a variable, we just create a formal parameter
-                currentFunctionProto.Signature.Parameters.Add(
-                    new FormalParameter {Name = name, Type = TypeResolver.ResolveType(context.type(), table)});
+                param = new FormalParameter
+                {
+                    Name = name,
+                    Type = type
+                };
             }
             else
             {
                 // Otherwise, we're in a function of some sort, and we add the variable to its signature
-                bool success = table.Get(name, out Variable variable);
+                var success = table.Get(name, out Variable variable);
                 Debug.Assert(success);
-                CurrentFunction.Signature.Parameters.Add(variable);
+                variable.Type = type;
+                param = variable;
             }
+
+            CurrentFunction.Signature.Parameters.Add(param);
         }
 
         public override void ExitFunDecl(PParser.FunDeclContext context)
@@ -131,31 +171,36 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterVarDecl(PParser.VarDeclContext context)
         {
-            foreach (ITerminalNode varName in context.idenList().Iden())
+            // VAR idenList
+            var varNames = context.idenList().Iden();
+            // COLON type 
+            var type = TypeResolver.ResolveType(context.type(), table);
+            // annotationSet?
+            if (context.annotationSet() != null)
+                throw new NotImplementedException("variable annotations");
+            // SEMI
+            foreach (var varName in varNames)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varName);
-                variable.Type = TypeResolver.ResolveType(context.type(), table);
+                variable.Type = type;
 
                 if (CurrentFunction != null)
-                {
-                    // Either a local variable to the current function...
                     CurrentFunction.LocalVariables.Add(variable);
-                }
                 else
-                {
-                    // ...or a field to the current machine, if no function contains it.
                     currentMachine.Fields.Add(variable);
-                }
             }
         }
 
         public override void EnterGroup(PParser.GroupContext context)
         {
+            // GROUP name=Iden
             var group = (StateGroup) nodesToDeclarations.Get(context);
+            // LBRACE groupItem* RBRACE
             if (groupStack.Count > 0)
-            {
                 groupStack.Peek().SubGroups.Add(group);
-            }
+            else
+                currentMachine.Groups.Add(group);
+
             groupStack.Push(group);
         }
 
@@ -166,42 +211,34 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterStateDecl(PParser.StateDeclContext context)
         {
-            var state = (State) nodesToDeclarations.Get(context);
-            // Register current state with parents
-            currentState = state;
+            currentState = (State) nodesToDeclarations.Get(context);
             if (groupStack.Count > 0)
-            {
-                groupStack.Peek().States.Add(state);
-            }
+                groupStack.Peek().States.Add(currentState);
             else
-            {
-                currentMachine.States.Add(state);
-            }
+                currentMachine.States.Add(currentState);
 
             // START?
-            state.IsStart = context.START() != null;
-            if (state.IsStart)
+            currentState.IsStart = context.START() != null;
+            if (currentState.IsStart)
             {
                 if (currentMachine.StartState != null)
-                {
-                    throw new DuplicateStartStateException(currentMachine, state);
-                }
-                currentMachine.StartState = state;
+                    throw new DuplicateStartStateException(currentMachine, currentState);
+                currentMachine.StartState = currentState;
             }
 
             // temperature=(HOT | COLD)?
-            state.Temperature = context.temperature == null
-                ? StateTemperature.WARM
-                : context.temperature.Text.Equals("HOT")
-                    ? StateTemperature.HOT
-                    : StateTemperature.COLD;
+            currentState.Temperature = context.temperature == null
+                                           ? StateTemperature.WARM
+                                           : context.temperature.Text.Equals("HOT")
+                                               ? StateTemperature.HOT
+                                               : StateTemperature.COLD;
 
             // STATE name=Iden
+            // handled above with lookup.
+
             // annotationSet?
             if (context.annotationSet() != null)
-            {
                 throw new NotImplementedException("state annotations");
-            }
 
             // LBRACE stateBodyItem* RBRACE
             // handled by StateEntry / StateExit / StateDefer / StateIgnore / OnEventDoAction / OnEventPushState / OnEventGotoState
@@ -209,49 +246,237 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void ExitStateDecl(PParser.StateDeclContext context)
         {
+            if (currentState.IsStart)
+            {
+                // The machine's payload type is the start state's entry payload type (or null, by default)
+                currentMachine.PayloadType = currentState.Entry?.Signature.ReturnType ?? PrimitiveType.Null;
+            }
             currentState = null;
         }
 
         public override void EnterStateEntry(PParser.StateEntryContext context)
         {
-            // TODO: state entry
+            // (
+            Function fun;
+            if (context.anonEventHandler() != null)
+            {
+                // ENTRY anonEventHandler 
+                fun = new Function(context.anonEventHandler()) {Owner = currentMachine};
+            }
+            else // |
+            {
+                // ENTRY funName=Iden)
+                if (!table.Lookup(context.funName.Text, out fun))
+                {
+                    // TODO: allow prototype state entries
+                    if (table.Lookup(context.funName.Text, out FunctionProto proto))
+                        throw new NotImplementedException("function prototypes for state entries");
+                    throw new MissingDeclarationException(context.funName.Text, context);
+                }
+            }
+            // SEMI
+            if (currentState.Entry != null)
+                throw new DuplicateEntryException(currentState);
+            currentState.Entry = fun;
+            functionStack.Push(fun);
+        }
+
+        public override void ExitStateEntry(PParser.StateEntryContext context)
+        {
+            functionStack.Pop();
         }
 
         public override void EnterOnEventDoAction(PParser.OnEventDoActionContext context)
         {
-            // TODO: on event do action
+            // annotationSet?
+            if (context.annotationSet() != null)
+                throw new NotImplementedException("state action annotations");
+
+            Function fun;
+            if (context.anonEventHandler() != null)
+            {
+                // DO [...] anonEventHandler
+                fun = new Function(context.anonEventHandler()) {Owner = currentMachine};
+            }
+            else
+            {
+                // DO funName=Iden
+                if (!table.Lookup(context.funName.Text, out fun))
+                {
+                    if (table.Lookup(context.funName.Text, out FunctionProto proto))
+                        throw new NotImplementedException("function prototypes for state actions");
+                    throw new MissingDeclarationException(context.funName.Text, context);
+                }
+            }
+
+            // ON eventList
+            foreach (var eventIdContext in context.eventList().eventId())
+            {
+                if (!table.Lookup(eventIdContext.GetText(), out PEvent evt))
+                    throw new MissingDeclarationException(eventIdContext.GetText(), eventIdContext);
+                if (currentState.Actions.ContainsKey(evt))
+                    throw new DuplicateHandlerException(evt, currentState);
+                currentState.Actions.Add(evt, new EventDoAction(evt, fun));
+            }
+
+            // SEMI
+            functionStack.Push(fun);
+        }
+
+        public override void ExitOnEventDoAction(PParser.OnEventDoActionContext context)
+        {
+            functionStack.Pop();
         }
 
         public override void EnterStateExit(PParser.StateExitContext context)
         {
-            // TODO: state exit
+            // EXIT
+            Function fun;
+            if (context.noParamAnonEventHandler() != null)
+            {
+                // noParamAnonEventHandler
+                fun = new Function(context.noParamAnonEventHandler()) {Owner = currentMachine};
+            }
+            else
+            {
+                // funName=Iden
+                if (!table.Lookup(context.funName.Text, out fun))
+                {
+                    if (table.Lookup(context.funName.Text, out FunctionProto proto))
+                        throw new NotImplementedException("function prototypes for state exits");
+                    throw new MissingDeclarationException(context.funName.Text, context);
+                }
+            }
+            // SEMI
+            if (currentState.Exit != null)
+                throw new DuplicateExitException(currentState);
+            currentState.Exit = fun;
+            functionStack.Push(fun);
+        }
+
+        public override void ExitStateExit(PParser.StateExitContext context)
+        {
+            functionStack.Pop();
         }
 
         public override void EnterOnEventGotoState(PParser.OnEventGotoStateContext context)
         {
-            // TODO: on event goto state
+            // annotationSet?
+            if (context.annotationSet() != null)
+                throw new NotImplementedException("state transition annotations");
+
+            Function transitionFunction;
+            if (context.funName != null)
+            {
+                // WITH funName=Iden
+                if (!table.Lookup(context.funName.Text, out transitionFunction))
+                    throw new MissingDeclarationException(context.funName.Text, context);
+            }
+            else if (context.anonEventHandler() != null)
+            {
+                // WITH anonEventHandler
+                transitionFunction = new Function(context.anonEventHandler()) {Owner = currentMachine};
+            }
+            else
+            {
+                // SEMI
+                transitionFunction = null;
+            }
+            functionStack.Push(transitionFunction);
+
+            // GOTO stateName 
+            var target = FindState(context.stateName());
+
+            // ON eventList
+            foreach (var eventIdContext in context.eventList().eventId())
+            {
+                if (!table.Lookup(eventIdContext.GetText(), out PEvent evt))
+                    throw new MissingDeclarationException(eventIdContext.GetText(), eventIdContext);
+
+                if (currentState.Actions.ContainsKey(evt))
+                    throw new DuplicateHandlerException(evt, currentState);
+
+                currentState.Actions.Add(evt, new EventGotoState(evt, target, transitionFunction));
+            }
+        }
+
+        /// <summary>
+        ///     Navigate declaration tables in current context to find event in groups named by stateName
+        /// </summary>
+        /// <param name="stateName">The parse tree naming a state</param>
+        /// <returns>The state referenced by the name context</returns>
+        private State FindState(PParser.StateNameContext stateName)
+        {
+            // Starting from machine table...
+            var currTable = programDeclarations.Get(currentMachine.SourceNode);
+            if (stateName._groups.Count > 0)
+                foreach (var groupName in stateName._groups)
+                {
+                    if (!currTable.Get(groupName.Text, out StateGroup group))
+                        throw new MissingDeclarationException(groupName.Text, stateName);
+                    currTable = programDeclarations.Get(group.SourceNode);
+                }
+            // ...and get the state or throw
+            Debug.Assert(currTable != null);
+            if (!currTable.Get(stateName.state.Text, out State target))
+                throw new MissingDeclarationException(stateName.state.Text, stateName);
+            return target;
+        }
+
+        public override void ExitOnEventGotoState(PParser.OnEventGotoStateContext context)
+        {
+            functionStack.Pop();
         }
 
         public override void EnterStateIgnore(PParser.StateIgnoreContext context)
         {
-            // TODO: state ignore
+            // annotationSet? 
+            if (context.annotationSet() != null)
+                throw new NotImplementedException("event ignore annotations");
+            // IGNORE nonDefaultEventList
+            foreach (var token in context.nonDefaultEventList()._events)
+            {
+                if (!table.Lookup(token.Text, out PEvent evt))
+                    throw new MissingDeclarationException(token.Text, context.nonDefaultEventList());
+                if (currentState.Actions.ContainsKey(evt))
+                    throw new DuplicateHandlerException(evt, currentState);
+                currentState.Actions.Add(evt, new EventIgnore(evt));
+            }
         }
 
         public override void EnterStateDefer(PParser.StateDeferContext context)
         {
-            // TODO: state defer
+            // annotationSet? SEMI
+            if (context.annotationSet() != null)
+                throw new NotImplementedException("event defer annotations");
+            // DEFER nonDefaultEventList 
+            foreach (var token in context.nonDefaultEventList()._events)
+            {
+                if (!table.Lookup(token.Text, out PEvent evt))
+                    throw new MissingDeclarationException(token.Text, context.nonDefaultEventList());
+                if (currentState.Actions.ContainsKey(evt))
+                    throw new DuplicateHandlerException(evt, currentState);
+                currentState.Actions.Add(evt, new EventDefer(evt));
+            }
         }
 
         public override void EnterOnEventPushState(PParser.OnEventPushStateContext context)
         {
-            // TODO: on event push state
-        }
+            //annotationSet? 
+            if (context.annotationSet() != null)
+                throw new NotImplementedException("push state annotations");
 
-        public override void EnterPayloadVarDecl(PParser.PayloadVarDeclContext context)
-        {
-            var variable = (Variable) nodesToDeclarations.Get(context.funParam());
-            variable.Type = TypeResolver.ResolveType(context.funParam().type(), table);
-            CurrentFunction.LocalVariables.Add(variable);
+            // PUSH stateName 
+            var targetState = FindState(context.stateName());
+            // ON eventList
+            foreach (var token in context.eventList().eventId())
+            {
+                if (!table.Lookup(token.GetText(), out PEvent evt))
+                    throw new MissingDeclarationException(token.GetText(), context.eventList());
+                if (currentState.Actions.ContainsKey(evt))
+                    throw new DuplicateHandlerException(evt, currentState);
+                currentState.Actions.Add(evt, new EventPushState(evt, targetState));
+            }
         }
 
         public override void EnterImplMachineProtoDecl(PParser.ImplMachineProtoDeclContext context)
@@ -262,13 +487,39 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
-            // TODO: implement
+            // SPEC name=Iden 
+            var specMachine = (Machine) nodesToDeclarations.Get(context);
+            // OBSERVES eventSetLiteral
+            specMachine.Observes = new EventSet($"{specMachine.Name}$eventset", context.eventSetLiteral());
+            currentEventSet = specMachine.Observes;
+            // machineBody
+            currentMachine = specMachine;
+        }
+
+        public override void ExitSpecMachineDecl(PParser.SpecMachineDeclContext context)
+        {
+            currentEventSet = null;
+            currentMachine = null;
         }
 
         public override void EnterFunProtoDecl(PParser.FunProtoDeclContext context)
         {
+            // EXTERN FUN name=Iden annotationSet?
             var proto = (FunctionProto) nodesToDeclarations.Get(context);
+
+            // (CREATES idenList? SEMI)?
+            if (context.idenList() != null)
+                foreach (var machineNameToken in context.idenList()._names)
+                {
+                    if (!table.Lookup(machineNameToken.Text, out Machine machine))
+                        throw new MissingDeclarationException(machineNameToken.Text, context.idenList());
+                    proto.Creates.Add(machine);
+                }
+
+            // (COLON type)?
             proto.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table);
+
+            // LPAREN funParamList? RPAREN 
             currentFunctionProto = proto;
         }
 
@@ -279,11 +530,9 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterEveryRule(ParserRuleContext ctx)
         {
-            DeclarationTable thisTable = programDeclarations.Get(ctx);
+            var thisTable = programDeclarations.Get(ctx);
             if (thisTable != null)
-            {
                 table = thisTable;
-            }
         }
 
         public override void ExitEveryRule(ParserRuleContext context)
@@ -291,11 +540,12 @@ namespace Microsoft.Pc.TypeChecker
             if (programDeclarations.Get(context) != null)
             {
                 Debug.Assert(table != null);
+                // pop the stack
                 table = table.Parent;
             }
         }
 
-        #region Event sets
+
         public override void EnterEventSetDecl(PParser.EventSetDeclContext context)
         {
             currentEventSet = (EventSet) nodesToDeclarations.Get(context);
@@ -305,123 +555,104 @@ namespace Microsoft.Pc.TypeChecker
         {
             currentEventSet = null;
         }
-        #endregion
 
-        #region Interfaces
         public override void EnterInterfaceDecl(PParser.InterfaceDeclContext context)
         {
+            // TYPE name=Iden
             var mInterface = (Interface) nodesToDeclarations.Get(context);
-            mInterface.PayloadType = TypeResolver.ResolveType(context.type(), table);
-            if (context.eventSet != null)
-            {
-                // Either look up the event set and establish the link by name...
-                if (!table.Lookup(context.eventSet.Text, out EventSet eventSet))
-                {
-                    throw new MissingDeclarationException(eventSet);
-                }
 
-                mInterface.ReceivableEvents = eventSet;
+            // LPAREN type? RPAREN
+            mInterface.PayloadType = TypeResolver.ResolveType(context.type(), table);
+
+            if (context.eventSet == null)
+            {
+                // ASSIGN LBRACE nonDefaultEventList RBRACE
+                // ... or let the nonDefaultEventList handler fill in a newly created event set
+                Debug.Assert(context.eventSetLiteral() != null);
+                mInterface.ReceivableEvents = new EventSet($"{mInterface.Name}$eventset", context.eventSetLiteral());
             }
             else
             {
-                // ... or let the nonDefaultEventList handler fill in a newly created event set
-                Debug.Assert(context.nonDefaultEventList() != null);
-                currentEventSet = new EventSet($"{mInterface.Name}$eventset", null);
-                mInterface.ReceivableEvents = currentEventSet;
+                // ASSIGN eventSet=Iden
+                // Either look up the event set and establish the link by name...
+                if (!table.Lookup(context.eventSet.Text, out EventSet eventSet))
+                    throw new MissingDeclarationException(context.eventSet.Text, context);
+
+                mInterface.ReceivableEvents = eventSet;
             }
+
+            currentEventSet = mInterface.ReceivableEvents;
         }
 
         public override void ExitInterfaceDecl(PParser.InterfaceDeclContext context)
         {
-            if (context.eventSet == null)
-            {
-                currentEventSet = null;
-            }
+            currentEventSet = null;
         }
-        #endregion
 
-        #region Typedefs
         public override void EnterPTypeDef(PParser.PTypeDefContext context)
         {
+            // TYPE name=Iden 
             var typedef = (TypeDef) nodesToDeclarations.Get(context);
+
+            // ASSIGN type
             typedef.Type = TypeResolver.ResolveType(context.type(), table);
         }
 
         public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
         {
-            throw new NotImplementedException("TODO: foreign types");
+            // TYPE name=Iden SEMI
+            throw new NotImplementedException("foreign types");
         }
-        #endregion
-
-        #region Enums
-        /// <summary>
-        ///     Enum declarations can't be nested, so we simply store the most recently encountered
-        ///     one in a variable for the listener actions for the elements to access.
-        /// </summary>
-        private PEnum currentEnum;
-
-        private State currentState;
 
         public override void EnterEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
         {
+            // ENUM name=Iden LBRACE enumElemList RBRACE | ENUM name = Iden LBRACE numberedEnumElemList RBRACE
             currentEnum = (PEnum) nodesToDeclarations.Get(context);
-        }
-
-        public override void ExitEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
-        {
-            // Check that there is a default element in the enum.
-            if (currentEnum.Values.All(elem => elem.Value != 0))
-            {
-                throw new EnumMissingDefaultException(currentEnum);
-            }
         }
 
         public override void EnterEnumElem(PParser.EnumElemContext context)
         {
+            // name=Iden
             var elem = (EnumElem) nodesToDeclarations.Get(context);
             elem.Value = currentEnum.Count; // listener visits from left-to-right, so this will count upwards correctly.
-            bool success = currentEnum.AddElement(elem);
+            var success = currentEnum.AddElement(elem);
             Debug.Assert(success);
         }
 
         public override void EnterNumberedEnumElem(PParser.NumberedEnumElemContext context)
         {
+            // name=Iden 
             var elem = (EnumElem) nodesToDeclarations.Get(context);
+            // ASSIGN value=IntLiteral
             elem.Value = int.Parse(context.value.Text);
-            bool success = currentEnum.AddElement(elem);
+            var success = currentEnum.AddElement(elem);
             Debug.Assert(success);
         }
-        #endregion
 
-        #region Machines
         public override void EnterImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
             // eventDecl : MACHINE name=Iden
             currentMachine = (Machine) nodesToDeclarations.Get(context);
 
             // cardinality?
-            bool hasAssume = context.cardinality()?.ASSUME() != null;
-            bool hasAssert = context.cardinality()?.ASSERT() != null;
-            int cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            var hasAssume = context.cardinality()?.ASSUME() != null;
+            var hasAssert = context.cardinality()?.ASSERT() != null;
+            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
             currentMachine.Assume = hasAssume ? cardinality : -1;
             currentMachine.Assert = hasAssert ? cardinality : -1;
 
             // annotationSet?
             if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("Machine annotations not yet implemented");
-            }
+                throw new NotImplementedException("machine annotations");
 
             // (COLON idenList)?
             if (context.idenList() != null)
             {
-                IEnumerable<string> interfaces = context.idenList()._names.Select(name => name.Text);
-                foreach (string pInterfaceName in interfaces)
+                var interfaces = context.idenList()._names.Select(name => name.Text);
+                foreach (var pInterfaceName in interfaces)
                 {
                     if (!table.Lookup(pInterfaceName, out Interface pInterface))
-                    {
-                        throw new MissingDeclarationException(pInterface);
-                    }
+                        throw new MissingDeclarationException(pInterfaceName, context.idenList());
 
                     currentMachine.Interfaces.Add(pInterface);
                 }
@@ -439,46 +670,74 @@ namespace Microsoft.Pc.TypeChecker
             currentMachine = null;
         }
 
-        public override void EnterReceivesSends(PParser.ReceivesSendsContext context)
+        public override void EnterMachineReceive(PParser.MachineReceiveContext context)
         {
-            if (context.RECEIVES() != null)
-            {
-                if (currentMachine.Receives == null)
-                {
-                    currentMachine.Receives = new EventSet($"{currentMachine.Name}$receives", null);
-                }
-                currentEventSet = currentMachine.Receives;
-            }
-            else if (context.SENDS() != null)
-            {
-                if (currentMachine.Sends == null)
-                {
-                    currentMachine.Sends = new EventSet($"{currentMachine.Name}$sends", null);
-                }
-                currentEventSet = currentMachine.Sends;
-            }
-            else
-            {
-                Debug.Fail("A receives / sends spec had neither a receives nor sends.");
-            }
+            // RECEIVES nonDefaultEventList? SEMI
+            if (currentMachine.Receives == null)
+                currentMachine.Receives = new EventSet($"{currentMachine.Name}$receives", context.eventSetLiteral());
+            currentEventSet = currentMachine.Receives;
         }
 
-        public override void ExitReceivesSends(PParser.ReceivesSendsContext context)
+        public override void ExitMachineReceive(PParser.MachineReceiveContext context)
         {
             currentEventSet = null;
         }
-        #endregion
+
+        public override void EnterMachineSend(PParser.MachineSendContext context)
+        {
+            // SENDS nonDefaultEventList? SEMI
+            if (currentMachine.Sends == null)
+                currentMachine.Sends = new EventSet($"{currentMachine.Name}$sends", context.eventSetLiteral());
+            currentEventSet = currentMachine.Sends;
+        }
+
+        public override void ExitMachineSend(PParser.MachineSendContext context)
+        {
+            currentEventSet = null;
+        }
+    }
+
+    public class DuplicateExitException : Exception
+    {
+        public DuplicateExitException(State state)
+        {
+            State = state;
+        }
+
+        public State State { get; }
+    }
+
+    public class DuplicateHandlerException : Exception
+    {
+        public DuplicateHandlerException(PEvent badEvent, State inState)
+        {
+            BadEvent = badEvent;
+            InState = inState;
+        }
+
+        public PEvent BadEvent { get; }
+        public State InState { get; }
+    }
+
+    public class DuplicateEntryException : Exception
+    {
+        public DuplicateEntryException(State state)
+        {
+            State = state;
+        }
+
+        public State State { get; }
     }
 
     public class DuplicateStartStateException : Exception
     {
-        public Machine CurrentMachine { get; }
-        public State ConflictingStartState { get; }
-
         public DuplicateStartStateException(Machine currentMachine, State conflictingStartState)
         {
-            this.CurrentMachine = currentMachine;
-            this.ConflictingStartState = conflictingStartState;
+            CurrentMachine = currentMachine;
+            ConflictingStartState = conflictingStartState;
         }
+
+        public Machine CurrentMachine { get; }
+        public State ConflictingStartState { get; }
     }
 }

@@ -587,6 +587,72 @@ namespace Microsoft.Pc.TypeChecker
         public ParserRuleContext SourceNode { get; }
         public StateTemperature Temperature { get; set; }
         public bool IsStart { get; set; }
+        public Function Entry { get; set; }
+        public IDictionary<PEvent, IStateAction> Actions { get; } = new Dictionary<PEvent, IStateAction>();
+        public Function Exit { get; set; }
+    }
+
+    public interface IStateAction
+    {
+        PEvent Trigger { get; }
+    }
+
+    public class EventDefer : IStateAction
+    {
+        public EventDefer(PEvent trigger)
+        {
+            Trigger = trigger;
+        }
+
+        public PEvent Trigger { get; }
+    }
+
+    public class EventIgnore : IStateAction
+    {
+        public EventIgnore(PEvent trigger)
+        {
+            Trigger = trigger;
+        }
+
+        public PEvent Trigger { get; }
+    }
+
+    public class EventGotoState : IStateAction
+    {
+        public EventGotoState(PEvent trigger, State target, Function transitionFunction)
+        {
+            Trigger = trigger;
+            Target = target;
+            TransitionFunction = transitionFunction;
+        }
+
+        public PEvent Trigger { get; }
+        public State Target { get; }
+        public Function TransitionFunction { get; }
+    }
+
+    public class EventPushState : IStateAction
+    {
+        public EventPushState(PEvent trigger, State target)
+        {
+            Trigger = trigger;
+            Target = target;
+        }
+
+        public PEvent Trigger { get; }
+        public State Target { get; }
+    }
+
+    public class EventDoAction : IStateAction
+    {
+        public PEvent Trigger { get; }
+        public Function Target { get; }
+
+        public EventDoAction(PEvent trigger, Function target)
+        {
+            Trigger = trigger;
+            Target = target;
+        }
     }
 
     public interface IConstructibleDecl : IPDecl
@@ -636,6 +702,8 @@ namespace Microsoft.Pc.TypeChecker
         public List<Function> Methods { get; } = new List<Function>();
         public List<State> States { get; } = new List<State>();
         public State StartState { get; set; }
+        public List<StateGroup> Groups { get; } = new List<StateGroup>();
+        public EventSet Observes { get; set; }
     }
 
     public class Interface : IConstructibleDecl
@@ -722,6 +790,12 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
+        public EventSet(string name, PParser.EventSetLiteralContext sourceNode)
+        {
+            Name = name;
+            SourceNode = sourceNode;
+        }
+
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
         public SortedSet<PEvent> Events { get; } = new SortedSet<PEvent>(Comparer<PEvent>.Create((ev1, ev2) => string.Compare(ev1.Name, ev2.Name, StringComparison.Ordinal)));
@@ -754,6 +828,18 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
+        public Function(PParser.AnonEventHandlerContext sourceNode)
+        {
+            Name = "";
+            SourceNode = sourceNode;
+        }
+
+        public Function(PParser.NoParamAnonEventHandlerContext sourceNode)
+        {
+            Name = "";
+            SourceNode = sourceNode;
+        }
+
         public string Name { get; }
         public Machine Owner { get; set; }
         public ParserRuleContext SourceNode { get; }
@@ -772,6 +858,7 @@ namespace Microsoft.Pc.TypeChecker
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
+        public List<Machine> Creates { get; set; }
     }
 
     public class FunctionSignature

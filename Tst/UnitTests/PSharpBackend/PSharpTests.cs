@@ -76,27 +76,39 @@ namespace UnitTests.PSharpBackend
             {
                 Location bad = GetLocation(e.Conflicting);
                 Location good = GetLocation(e.Existing);
-                Console.Error.WriteLine($"[{testName}] Declaration of {e.Conflicting.Name} at {bad} duplicates the declaration at {good}");
+                Console.Error.WriteLine(
+                                        $"[{testName}] Declaration of {e.Conflicting.Name} at {bad} duplicates the declaration at {good}");
             }
             catch (MissingEventException e)
             {
                 Location eventSetLocation = GetLocation(e.EventSet);
                 Console.Error.WriteLine(
-                    $"[{testName}] Event set {e.EventSet.Name} at {eventSetLocation} references non-existent event {e.EventName}");
+                                        $"[{testName}] Event set {e.EventSet.Name} at {eventSetLocation} references non-existent event {e.EventName}");
             }
             catch (EnumMissingDefaultException e)
             {
                 Location enumLocation = GetLocation(e.Enum);
-                Console.Error.WriteLine($"[{testName}] Enum {e.Enum.Name} at {enumLocation} does not have a default 0-element");
+                Console.Error.WriteLine(
+                                        $"[{testName}] Enum {e.Enum.Name} at {enumLocation} does not have a default 0-element");
             }
             catch (TypeConstructionException e)
             {
                 Location badTypeLocation = GetTreeLocation(e.Subtree);
                 Console.Error.WriteLine($"[{testName}] {badTypeLocation} : {e.Message}");
             }
+            catch (DuplicateHandlerException e)
+            {
+                Location badLocation = GetLocation(e.BadEvent);
+                Console.Error.WriteLine($"[{testName}] Event {e.BadEvent.Name} has multiple handlers at {badLocation}");
+            }
+            catch (MissingDeclarationException e)
+            {
+                Location location = GetTreeLocation(e.Location);
+                Console.Error.WriteLine($"[{testName}] Could not find declaration {e.Declaration} at {location}");
+            }
             catch (NotImplementedException e)
             {
-                Console.Error.WriteLine($"[{testName}] {e.Message}");
+                Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
             }
         }
 
@@ -141,10 +153,5 @@ namespace UnitTests.PSharpBackend
         {
             RunTest("TEMP", SolutionPath("tmp", "tupOrder.p"), SolutionPath("tmp", "N.p"));
         }
-    }
-
-    public class PParseException : Exception
-    {
-        public PParseException(string message) : base($"Failed to parse file: {message}") { }
     }
 }

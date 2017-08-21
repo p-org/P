@@ -43,7 +43,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), in.TypeExpansion(ctype, ectype).
 	link.MachineReceives(m, ev) :- in.MachineReceives(m, ev).
 	link.MachineSends(m, ev) :- in.MachineSends(m, ev).
-	link.FunProtoCreatesDecl(f, list) :- in.FunProtoCreatesDecl(f, list).
 	link.MachineCreatesInt(m, iorm) :- in.InferredMachineCreates(m, iorm), no in.MachineDecl(iorm, _), no in.MachineProtoDecl(iorm, _), in.InterfaceTypeDecl(iorm, _, _, _).
 	link.MachineCreatesM(m, mc) :- in.InferredMachineCreates(m, mc), in.MachineDecl(mc, _);
 								   in.InferredMachineCreates(m, mc), in.MachineProtoDecl(mc, _).
@@ -72,16 +71,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 		c is in.FunDecl(name, NIL, params, NIL, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType.
 	link.FunDecl(name, NIL, NIL, id), link.FunProtoDecl(name, NIL, NIL) :- 
 		c is in.FunDecl(name, NIL, NIL, NIL, _, _, id).
-	link.FunProtoDecl(name, eparams, ereturn) :- 
-		c is in.FunProtoDecl(name, params, return), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).
-	link.FunProtoDecl(name, NIL, ereturn) :- 
-		c is in.FunProtoDecl(name, NIL, return), return != NIL, in.TypeExpansion(return, ereturn).
-	link.FunProtoDecl(name, eparams, NIL) :- 
-		c is in.FunProtoDecl(name, params, NIL), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType.
-	link.FunProtoDecl(name, NIL, NIL) :- 
-		c is in.FunProtoDecl(name, NIL, NIL).
 
-	link.Pure(name, TRUE)  :- c is in.FunProtoDecl, name = c.name, in.Annotation(c, "pure", _, _).
 	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.Impure(c).
 	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.ControlImpure(c).
 	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.SpecImpure(c).

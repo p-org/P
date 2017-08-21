@@ -571,6 +571,8 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public List<State> States { get; } = new List<State>();
+        public List<StateGroup> SubGroups { get; } = new List<StateGroup>();
     }
 
     public class State : IPDecl
@@ -583,6 +585,8 @@ namespace Microsoft.Pc.TypeChecker
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
+        public StateTemperature Temperature { get; set; }
+        public bool IsStart { get; set; }
     }
 
     public interface IConstructibleDecl : IPDecl
@@ -628,6 +632,10 @@ namespace Microsoft.Pc.TypeChecker
         public List<Interface> Interfaces { get; } = new List<Interface>();
         public EventSet Receives { get; set; }
         public EventSet Sends { get; set; }
+        public List<Variable> Fields { get; } = new List<Variable>();
+        public List<Function> Methods { get; } = new List<Function>();
+        public List<State> States { get; } = new List<State>();
+        public State StartState { get; set; }
     }
 
     public class Interface : IConstructibleDecl
@@ -750,6 +758,7 @@ namespace Microsoft.Pc.TypeChecker
         public Machine Owner { get; set; }
         public ParserRuleContext SourceNode { get; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
+        public List<Variable> LocalVariables { get; } = new List<Variable>();
     }
 
     public class FunctionProto : IPDecl
@@ -768,6 +777,7 @@ namespace Microsoft.Pc.TypeChecker
     public class FunctionSignature
     {
         public List<ITypedName> Parameters { get; } = new List<ITypedName>();
+        public IEnumerable<PLanguageType> ParameterTypes => Parameters.Select(ty => ty.Type);
         public PLanguageType ReturnType { get; set; } = PrimitiveType.Null;
     }
 }

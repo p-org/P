@@ -114,7 +114,6 @@
 			 keywords.Add("receives", (int)PTokens.RECEIVES);
 			 keywords.Add("sends", (int)PTokens.SENDS);
 			 keywords.Add("creates", (int)PTokens.CREATES);
-			 keywords.Add("extern", (int)PTokens.EXTERN);
 			 
 			 keywords.Add("module", (int)PTokens.MODULE);
 			 keywords.Add("compose", (int)PTokens.COMPOSE);

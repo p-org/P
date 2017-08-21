@@ -6,10 +6,3 @@ event CANCEL;
 event TIMEOUT: machine;
 event CANCEL_SUCCESS: machine;
 event CANCEL_FAILURE: machine;
-
-//Function prototypes related to timer
-extern fun CreateTimer creates Timer; (owner : machine): machine;
-
-extern fun StartTimer(timer : machine, time: int);
-
-extern fun CancelTimer(timer : machine);

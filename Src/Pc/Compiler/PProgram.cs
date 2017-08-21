@@ -43,15 +43,9 @@ namespace Microsoft.Pc
 
         public List<P_Root.MachineExports> MachineExports { get; } = new List<P_Root.MachineExports>();
 
-        public List<P_Root.FunProtoDecl> FunProtoDecls { get; } = new List<P_Root.FunProtoDecl>();
-
-        public List<P_Root.MachineProtoDecl> MachineProtoDecls { get; } = new List<P_Root.MachineProtoDecl>();
-
         public List<P_Root.MachineReceives> MachineReceives { get; } = new List<P_Root.MachineReceives>();
 
         public List<P_Root.MachineSends> MachineSends { get; } = new List<P_Root.MachineSends>();
-
-        public List<P_Root.FunProtoCreatesDecl> FunProtoCreates { get; } = new List<P_Root.FunProtoCreatesDecl>();
 
         public List<P_Root.MachineKind> MachineKinds { get; } = new List<P_Root.MachineKind>();
 
@@ -163,15 +157,6 @@ namespace Microsoft.Pc
                     yield return ex;
                 }
 
-                foreach (P_Root.FunProtoDecl fp in FunProtoDecls)
-                {
-                    yield return fp;
-                }
-
-                foreach (P_Root.MachineProtoDecl mp in MachineProtoDecls)
-                {
-                    yield return mp;
-                }
 
                 foreach (P_Root.MachineReceives mr in MachineReceives)
                 {
@@ -181,11 +166,6 @@ namespace Microsoft.Pc
                 foreach (P_Root.MachineSends ms in MachineSends)
                 {
                     yield return ms;
-                }
-
-                foreach (P_Root.FunProtoCreatesDecl fp in FunProtoCreates)
-                {
-                    yield return fp;
                 }
 
                 foreach (P_Root.DependsOn d in DependsOn)
@@ -208,14 +188,6 @@ namespace Microsoft.Pc
             else if (item is P_Root.MachineReceives)
             {
                 MachineReceives.Add(item as P_Root.MachineReceives);
-            }
-            else if (item is P_Root.MachineProtoDecl)
-            {
-                MachineProtoDecls.Add(item as P_Root.MachineProtoDecl);
-            }
-            else if (item is P_Root.FunProtoDecl)
-            {
-                FunProtoDecls.Add(item as P_Root.FunProtoDecl);
             }
             else if (item is P_Root.MachineExports)
             {
@@ -296,10 +268,6 @@ namespace Microsoft.Pc
             else if (item is P_Root.DependsOn)
             {
                 DependsOn.Add(item as P_Root.DependsOn);
-            }
-            else if (item is P_Root.FunProtoCreatesDecl)
-            {
-                FunProtoCreates.Add(item as P_Root.FunProtoCreatesDecl);
             }
             else
             {

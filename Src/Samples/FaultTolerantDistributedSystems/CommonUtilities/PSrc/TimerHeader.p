@@ -10,10 +10,3 @@ event eCancelTimer;
 event eTimeOut: TimerPtr;
 event eCancelSuccess: TimerPtr;
 event eCancelFailure: TimerPtr;
-
-//Function declarations
-extern fun StartTimer(timer: TimerPtr, time: int);
-extern fun CancelTimer(timer: TimerPtr);
-extern fun CreateTimer 
-creates ITimer;
-(owner: ITimerClient): TimerPtr;

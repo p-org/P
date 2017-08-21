@@ -1,4 +1,5 @@
 #include "PrtUser.h"
+#include "PrtProgram.h"
 
 static void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 numCharsWritten, PRT_UINT32 resizeNum)
 {
@@ -217,7 +218,7 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 		PrtUserPrintMachineId(PrtPrimGetMachine(value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALUE_KIND_FOREIGN:
-		frgnStr = prtForeignTypeDecls[value->valueUnion.frgn->typeTag]->toStringFun(value->valueUnion.frgn->value);
+		frgnStr = program->foreignTypes[value->valueUnion.frgn->typeTag]->toStringFun(value->valueUnion.frgn->value);
 		PrtUserPrintString(frgnStr, buffer, bufferSize, numCharsWritten);
 		PrtFree(frgnStr);
 		break;

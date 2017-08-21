@@ -160,7 +160,6 @@ int main(int argc, char *argv[])
 	PRT_GUID processGuid;
 
 	EnvInitialize();
-	PrtInitialize(&P_GEND_PROGRAM);
     processGuid.data1 = 1;
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;

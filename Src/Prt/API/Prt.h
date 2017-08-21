@@ -113,14 +113,6 @@ extern "C"{
         _In_ PRT_LOG_FUN loggerFun
         );
 
-
-	/** PrtInitialize must be called exactly once before performing any operation in the runtime.
-	*   @param[in] program Program to run (not cloned).
-	*   @see PRT_PROGRAMDECL
-	*/
-	void PrtInitialize(
-		_In_ PRT_PROGRAMDECL *program);
-
     /** Set the scheduling policy for this process.  The default policy is TaskNeutral
     *   @param[in] policy The new policy.
     *   @see PRT_PROCESS

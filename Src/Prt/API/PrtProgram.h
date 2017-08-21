@@ -24,8 +24,8 @@ typedef PRT_VALUE *(PRT_CALL_CONV * PRT_SM_FUN)(_Inout_ struct PRT_MACHINEINST *
 /** Represents a P event declaration */
 typedef struct PRT_EVENTDECL
 {
-	PRT_UINT32 declIndex;         /**< The index of event in program                                           */
-	PRT_STRING name;              /**< The name of this event set                                              */
+    PRT_VALUE value;              /**< The value representing this event in the program >*/
+	PRT_STRING name;              /**< The name of this event                                                  */
 	PRT_UINT32 eventMaxInstances; /**< The value of maximum instances of the event that can occur in the queue */
 	PRT_TYPE   *type;	          /**< The type of the payload associated with this event                      */
 
@@ -36,6 +36,8 @@ typedef struct PRT_EVENTDECL
 /** Represents a set of P events and the set packed into a bit vector */
 typedef struct PRT_EVENTSETDECL
 {
+    PRT_UINT32 nEvents;        /**< The number of events */
+    PRT_EVENTDECL **events;    /**< The array of events */
 	PRT_UINT32 *packedEvents;  /**< The events packed into an array of ints */
 } PRT_EVENTSETDECL;
 
@@ -145,16 +147,20 @@ typedef struct PRT_PROGRAMDECL
 {
 	PRT_UINT32          nEvents;        /**< The number of events      */
 	PRT_UINT32          nMachines;      /**< The number of machines    */
-	PRT_UINT32          nForeignTypes;  /**< The number of foreign types */
+    PRT_UINT32          nGlobalFuns;    /**< The number of global functions */
+    PRT_UINT32          nForeignTypes;  /**< The number of foreign types */
 	PRT_EVENTDECL       **events;       /**< The array of events                 */
 	PRT_MACHINEDECL     **machines;     /**< The array of machines               */
-	PRT_FOREIGNTYPEDECL **foreignTypes; /**< The array of foreign types */
-	PRT_UINT32			**linkMap;		/**< stores the link map from renameName -> IorM -> renameName */
-	PRT_UINT32			*renameMap;		/**< stores the rename map from renameName -> real name */
+    PRT_FUNDECL         **globalFuns;   /**< The array of global functions */
+    PRT_FOREIGNTYPEDECL **foreignTypes; /**< The array of foreign types */
+	PRT_UINT32			**linkMap;		/**< The link map from renameName -> IorM -> renameName */
+	PRT_UINT32			*renameMap;		/**< The rename map from renameName -> real name */
 
 	PRT_UINT32          nAnnotations;   /**< Number of annotations               */
 	void                **annotations;  /**< An array of annotations             */
 } PRT_PROGRAMDECL;
+
+extern PRT_PROGRAMDECL *program;
 
 #ifdef __cplusplus
 }

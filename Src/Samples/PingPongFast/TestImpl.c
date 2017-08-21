@@ -44,15 +44,14 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* senderState, PRT_MACHINE
     {
         stopping = TRUE;
         printf("Ran %d steps in 10 seconds\n", steps);
-		PRT_VALUE *haltEvent = PrtMkEventValue(_P_EVENT_HALT);
-		PRT_VALUE *nullValue = PrtMkNullValue();
+		PRT_VALUE *haltEvent = &_P_EVENT_HALT_STRUCT.value;
+        PRT_VALUE *nullValue = PrtMkNullValue();
 		PRT_MACHINESTATE state;
 		state.machineId = 0;
 		state.machineName = "App";
 		state.stateId = 0;
 		state.stateName = "LogHandler";
 		PrtSend(&state, receiver, haltEvent, 1, PRT_FUN_PARAM_CLONE, nullValue);
-		PrtFreeValue(haltEvent);
 		PrtFreeValue(nullValue);
     }
 }
@@ -115,7 +114,6 @@ PrtDistSMExceptionHandler(
 int main(int argc, char *argv[])
 {
     startTime = GetTickCount();
-	PrtInitialize(&P_GEND_PROGRAM);
 
     PRT_GUID processGuid;
     processGuid.data1 = 1;

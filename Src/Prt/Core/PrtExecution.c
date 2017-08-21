@@ -15,7 +15,10 @@ PRT_TYPE AnyType =
 
 PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
 {
-	PRT_SPECIAL_EVENT_NULL,
+    {
+        PRT_VALUE_KIND_EVENT,
+        PRT_SPECIAL_EVENT_NULL
+    },
 	"null",
 	0,
 	&NullType,
@@ -25,7 +28,10 @@ PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
 
 PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
 {
-	PRT_SPECIAL_EVENT_HALT,
+    {
+        PRT_VALUE_KIND_EVENT,
+        PRT_SPECIAL_EVENT_HALT
+    },
 	"halt",
 	4294967295U,
 	&AnyType,
@@ -169,7 +175,7 @@ _In_  PRT_VALUE					*payload
 	PrtLockMutex(process->processLock);
 
 
-	nVars = process->program->machines[instanceOf]->nVars;
+	nVars = program->machines[instanceOf]->nVars;
 	eQSize = PRT_QUEUE_LEN_DEFAULT;
 
 	//
@@ -228,7 +234,7 @@ _In_  PRT_VALUE					*payload
 
 	// Initialize Machine Internal Variables
 	//
-	context->currentState = process->program->machines[context->instanceOf]->initStateIndex;
+	context->currentState = program->machines[context->instanceOf]->initStateIndex;
 	context->isRunning = PRT_FALSE;
 	context->isHalted = PRT_FALSE; 
     context->nextOperation = EntryOperation;
@@ -249,7 +255,7 @@ _In_  PRT_VALUE					*payload
 		context->varValues = PrtCalloc(nVars, sizeof(PRT_VALUE*));
 		for (i = 0; i < nVars; i++)
 		{
-			context->varValues[i] = PrtMkDefaultValue(process->program->machines[instanceOf]->vars[i].type);
+			context->varValues[i] = PrtMkDefaultValue(program->machines[instanceOf]->vars[i].type);
 		}
 	}
 
@@ -1349,7 +1355,7 @@ _In_ PRT_UINT32					eventIndex
 
 	for (i = 0; i < nTransitions; ++i)
 	{
-		if (transTable[i].triggerEvent->declIndex == eventIndex)
+		if (transTable[i].triggerEvent->value.valueUnion.ev == eventIndex)
 		{
 			break;
 		}
@@ -1445,7 +1451,7 @@ PrtDequeueEvent(
 				for (PRT_UINT32 j = 0; j < context->receive->nCases; j++)
 				{
 					PRT_CASEDECL *rcase = &context->receive->cases[j];
-					if (triggerIndex == rcase->triggerEvent->declIndex)
+					if (triggerIndex == rcase->triggerEvent->value.valueUnion.ev)
 					{
 						frame->rcase = rcase;
 						PrtPushNewEventHandlerFrame(context, rcase->fun, PRT_FUN_PARAM_MOVE, frame->locals);
@@ -1486,7 +1492,7 @@ PrtDequeueEvent(
 			for (PRT_UINT32 j = 0; j < context->receive->nCases; j++)
 			{
 				PRT_CASEDECL *rcase = &context->receive->cases[j];
-				if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEvent->declIndex)
+				if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEvent->value.valueUnion.ev)
 				{
 					frame->rcase = rcase;
 					PrtPushNewEventHandlerFrame(context, rcase->fun, PRT_FUN_PARAM_MOVE, frame->locals);
@@ -1647,7 +1653,7 @@ _In_ PRT_UINT32					currEvent
 		nActions = stateDecl->nDos;
 		for (ui = 0; ui < nActions; ui++)
 		{
-			if (stateDecl->dos[ui].triggerEvent->declIndex == currEvent)
+			if (stateDecl->dos[ui].triggerEvent->value.valueUnion.ev == currEvent)
 			{
 				actionDecl = &stateDecl->dos[ui];
 				return actionDecl;
@@ -1672,7 +1678,7 @@ _In_ PRT_UINT32					currEvent
 			nActions = stateTable[topOfStackState].nDos;
 			for (ui = 0; ui < nActions; ui++)
 			{
-				if (stateTable[topOfStackState].dos[ui].triggerEvent->declIndex == currEvent)
+				if (stateTable[topOfStackState].dos[ui].triggerEvent->value.valueUnion.ev == currEvent)
 				{
 					actionDecl = &stateTable[topOfStackState].dos[ui];
 					return actionDecl;
@@ -1882,7 +1888,7 @@ _In_ PRT_UINT32					event
 	transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 	for (i = 0; i < nTransitions; ++i)
 	{
-		if (transTable[i].transFun == NULL && transTable[i].triggerEvent->declIndex == event)
+		if (transTable[i].transFun == NULL && transTable[i].triggerEvent->value.valueUnion.ev == event)
 		{
 			return PRT_TRUE;
 		}

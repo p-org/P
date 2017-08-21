@@ -33,7 +33,6 @@ extern "C"{
 
 	typedef struct PRT_PROCESS_PRIV {
 		PRT_GUID				guid;
-		PRT_PROGRAMDECL			*program;
 		PRT_ERROR_FUN	        errorHandler;
 		PRT_LOG_FUN				logHandler;
 		PRT_RECURSIVE_MUTEX		processLock;

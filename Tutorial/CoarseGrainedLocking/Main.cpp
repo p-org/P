@@ -119,8 +119,6 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 
 int main(int argc, char *argv[])
 {
-	PrtInitialize(&P_GEND_PROGRAM);
-
     PRT_GUID processGuid;
     processGuid.data1 = 1;
     processGuid.data2 = 1; //nodeId

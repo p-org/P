@@ -347,15 +347,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 					  UNKNOWN).
 
 	//// Event structs
-	HOut(0, def) :- def = out.VarDef(EXTERN, NmdType(NIL, "PRT_VALUE"), "P_GEND_VALUE_EVENT_NULL", NIL).
-	HOut(0, def) :- def = out.VarDef(EXTERN, NmdType(NIL, "PRT_VALUE"), "P_GEND_VALUE_EVENT_HALT", NIL).
-	HOut(0, def) :- d is in.EventDecl, def = out.VarDef(EXTERN, NmdType(NIL, "PRT_VALUE"), strJoin("P_GEND_VALUE_EVENT_", d.name), NIL).
-	HOut(0, def) :- EventName(_, eventName),
-	                        def = out.VarDef(
-							      EXTERN, 
-								  NmdType(NIL, "PRT_UINT32"), 
-								  eventName, 
-								  NIL).
 	HOut(0, def) :- EventName(_, eventName), eventStructName = strJoin(eventName, "_STRUCT"),
 	                        def = out.VarDef(
 							      EXTERN, 
@@ -795,13 +786,46 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								  eventStructName, 
 								  init),
 	                        init = Init(
-							   Args(IntLit(0, DEC, U),
+							   Args(Init(Args(Ident("PRT_VALUE_KIND_EVENT"), Args(IntLit(0, DEC, U), NIL))),
 							   Args(StringLit(name, NIL),
 							   Args(card,
 							   Args(expr,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   NIL))))))).
+
+    /*************************************************************/
+    /******            Generate Event Set Decls             ******/
+    /*************************************************************/	
+	EventNameListToEventStructList ::= (link.EventNameList + { NIL }, link.EventNameList + { NIL }, out.Args + { NIL }).
+	EventNameListToEventStructList(l', NIL, NIL) :- link.EventSet(_, l), l' = lstReverse(link.#EventNameList, l).
+	EventNameListToEventStructList(tl, x', y') :- 
+		EventNameListToEventStructList(link.EventNameList(name, tl), x, y), name: String,
+		x' = link.EventNameList(name, x), y' = Args(UnApp(ADDR, Ident(strJoin(strJoin("P_EVENT_", name), "_STRUCT"))), y).
+	EventNameListToEventStructList(tl, x', y') :- 
+		EventNameListToEventStructList(link.EventNameList(NULL, tl), x, y),
+		x' = link.EventNameList(NULL, x), y' = Args(UnApp(ADDR, Ident("_P_EVENT_NULL_STRUCT")), y).
+	EventNameListToEventStructList(tl, x', y') :- 
+		EventNameListToEventStructList(link.EventNameList(HALT, tl), x, y),
+		x' = link.EventNameList(HALT, x), y' = Args(UnApp(ADDR, Ident("_P_EVENT_HALT_STRUCT")), y).
+
+	COut(3, def) :- link.EventSet(esName, l), l: link.EventNameList,
+					EventNameListToEventStructList(NIL, l, args),
+					init = Init(args),
+					def = out.VarDef(NIL,  ArrType(PtrType(NmdType(NIL, "PRT_EVENTDECL")), NIL), strJoin(esName, "_INNER"), init).
+
+	EventSetArray ::= (esName: String, size: Natural, arr: out.Ident).
+	EventSetArray(esName, size, arr) :- link.EventSet(esName, NIL), size = 0, arr = out.Ident("NULL").
+	EventSetArray(esName, size, arr) :- link.EventSet(esName, l), l: link.EventNameList, 
+										size = lstLength(link.#EventNameList, l), arr = out.Ident(strJoin(esName, "_INNER")).
+	
+	COut(4, def) :- EventSetArray(esName, size, arr),
+					init = Init(
+						Args(IntLit(size, DEC, U),
+						Args(arr,
+						Args(Ident("NULL"),
+						NIL)))),
+					def = out.VarDef(NIL,  NmdType(NIL, "PRT_EVENTSETDECL"), esName, init).
 
     /*************************************************************/
     /******            Generate Variable Decl Arrays        ******/
@@ -902,11 +926,6 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
     DoDeclEvnt  ::= (decl: in.DoDecl, evName: String).
 	DoDeclEvnt(d, evname) :- d is in.DoDecl, d.action != DEFER, ev is in.EventDecl, ev.name = d.trig, EventName(ev, evname).
 	DoDeclEvnt(d, evname) :- d is in.DoDecl, d.action != DEFER, trig = d.trig, trig : NullOrHalt, EventName(trig, evname).
-
-    //// Defer event Id depends on whether the do is a user event, default, or halt.
-    DeferEvnt  ::= (decl: in.DoDecl, evName: String).
-	DeferEvnt(d, evname) :- d is in.DoDecl, d.action = DEFER, ev is in.EventDecl, ev.name = d.trig, EventName(ev, evname).
-	DeferEvnt(d, evname) :- d is in.DoDecl, d.action = DEFER, trig = d.trig, trig : NullOrHalt, EventName(trig, evname).
 
 	//// Do action index depends on whether the do is an ignore or not.
     DoDeclAction  ::= (decl: in.DoDecl, funStruct: out.Expr).
@@ -1469,7 +1488,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
 									e = in.Name(n, _), IsEventCnst(c, n, _),
-									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_EVENT_", n))). 
+									ec = out.UnApp(ADDR, BinApp(FLD, Ident(strJoin(strJoin("P_EVENT_", n), "_STRUCT")), Ident("value"))). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.Name(n, _), IsEnumCnst(c, n, _), ConstId(m, in.Name(n, NIL)),
@@ -1522,11 +1541,11 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.NulApp(NULL, _),
-									ec = out.UnApp(ADDR, Ident("P_GEND_VALUE_EVENT_NULL")). 
+									ec = out.UnApp(ADDR, BinApp(FLD, Ident("_P_EVENT_NULL_STRUCT"), Ident("value"))). 
 
 	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
 									e = in.NulApp(HALT, _),
-									ec = out.UnApp(ADDR, Ident("P_GEND_VALUE_EVENT_HALT")). 
+									ec = out.UnApp(ADDR, BinApp(FLD, Ident("_P_EVENT_HALT_STRUCT"), Ident("value"))). 
 	
 	GetFunctionIden ::= (type: in.TypeExpr, iden: Ident).
 	GetFunctionIden(in.BaseType(INT), Ident("PrtPrimGetInt")).

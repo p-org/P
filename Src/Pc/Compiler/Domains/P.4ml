@@ -90,9 +90,8 @@ domain PData
 	EventSetDecl ::= fun (name : String -> id: any Id).
 	EventSetContains ::= new (evset: any EventSetDecl, ev: NonNullEventName).
 	EventSet ::= fun (name: String -> list: any EventNameList + { NIL }).
-	InterfaceTypeDef ::= fun (name: String -> evsetName: String, argType: any TypeExpr, id: any Id).
-	InterfaceTypeDecl ::= new (name: String, evList: any InterfaceType, argType: any TypeExpr, id: any Id).
-	MachineExports ::= fun (mach: String -> iname: String).
+	SymbolicMachineNameDef ::= fun (name: String -> evsetName: String, argType: any TypeExpr, id: any Id).
+	SymbolicMachineNameDecl ::= new (name: String, evList: any InterfaceType, argType: any TypeExpr, id: any Id).
 	MachineReceives ::= new (mach: String, ev: NonNullEventName + { ALL }).
 	MachineSends ::= new (mach: String, ev: NonNullEventName + { ALL }).
 
@@ -126,7 +125,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives  + TypeDef + EnumTypeDef.            
+    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + SymbolicMachineNameDef + SymbolicMachineNameDecl + MachineSends + MachineReceives  + TypeDef + EnumTypeDef.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -159,8 +158,8 @@ domain PStructuralTyping extends PData, PError
     TwoDeclError ::= (PDecl, PDecl).
     DeclFunError ::= (PDecl, String).
 	
-	//// List representation of interfacetypedecl
-    InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
+	//// List representation of SymbolicMachineNameDecl
+    SymbolicMachineNameDecl(name, it, ctype, id) :- SymbolicMachineNameDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
                                        it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
 
     ERROR2(f1.id, f2.id, "Multiple functions with same name"),
@@ -274,11 +273,7 @@ domain PStructuralTyping extends PData, PError
 
 	//eventset in interface type
 	ERROR1(inter.id, "Unknown eventset in interface declaration"),
-	OneDeclError(inter) :- inter is InterfaceTypeDef(_, es, _, _), no EventSetDecl(es, _).
-
-	//interface declared in the exports
-	ERROR1(id, "Interface in exports is not declared"),
-	OneDeclError(me) :- decl is MachineDecl(mach, id), me is MachineExports(mach, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
+	OneDeclError(inter) :- inter is SymbolicMachineNameDef(_, es, _, _), no EventSetDecl(es, _).
 
 	MemberOfStringList ::= sub (StringList, String).
 	
@@ -295,8 +290,8 @@ domain PStructuralTyping extends PData, PError
 	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
 	/* Rules for separate compilation checks */
-	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl).
-	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl.
+	NamedTypes ::= (type: TypeDef + EnumTypeDef + SymbolicMachineNameDecl).
+	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is SymbolicMachineNameDecl.
 
 	//multiple declarations of the same type
 	ERROR2(td.id, td'.id, "Multiple declarations of named types have same name"),
@@ -323,7 +318,6 @@ domain PStaticTyping extends PData, PError
 	conforms no UnavailableVarAccessError(_, _, _).
 	conforms no UnavailableParameterError(_, _).
 	conforms no FunRetError(_).
-	conforms no ExportInterfaceError(_).
 	conforms no InferredCreatesError(_).
     /*************************************************************/
 	
@@ -334,8 +328,8 @@ domain PStaticTyping extends PData, PError
 	/*		Computation related to module system					  */
 	/******************************************************************/
 
-	//// List representation of interfacetypedecl
-    InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
+	//// List representation of SymbolicMachineNameDecl
+    SymbolicMachineNameDecl(name, it, ctype, id) :- SymbolicMachineNameDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
                                        it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
     
     //// List representation of EventSet
@@ -394,17 +388,8 @@ domain PStaticTyping extends PData, PError
 		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm).
 		
 	
-	//populate the receive set if the machine exports an interface
-	MachineReceives(m, ev) :- MachineExports(m, i), InterfaceTypeDecl(i, it, _, _), MemberOfInterfaceType(it, ev).
-
-	//Checking the constructor type error for each exported interface
-	CompTypeRel(t1, t2) :- MachineExports(name, i), InterfaceTypeDecl(i, _, t1', _), TypeExpansion(t1', t1), ConstructorType(name, _, t2).
-
-	ExportInterfaceError ::= (m: MachineDecl).
-	ERROR1(id, "the exported interface argument type is not a subtype of the constructor argument type"),
-	ExportInterfaceError(m) :- m is MachineDecl(name, id), MachineExports(name, i), ConstructorType(name, _, ct),
-	                           InterfaceTypeDecl(i, _, iargt, _), TypeExpansion(iargt, eargt), ct != eargt, TypeRel(eargt, ct, k), k != SUB. 						 
-    
+	
+	
 	PFile ::= (fileName: String).
 	PFile(fileName) :- PUnit(unitName), PUnitContains(unitName, fileName).
 
@@ -417,7 +402,7 @@ domain PStaticTyping extends PData, PError
 	TypeDefError ::= (name: String).
 
 	ERROR0(errorMsg),
-	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no SymbolicMachineNameDecl(name, _, _, _),
 						  errorMsg = strJoin("Undefined type: ", name).
 	
 	ERROR2(td1.id, td2.id, "Multiple type definitions for a type name"),
@@ -471,10 +456,9 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(type, type)  :- TypeDef(typeName, NIL, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), SymbolicMachineNameDecl(name, eType, _, _).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ev), ev: NonNullEventName, type = NameType(name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(name, ev), ev: NonNullEventName}), eType : InterfaceType.
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ALL), type = NameType(name), eType = BaseType(MACHINE).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineExports(name, iname), type = NameType(iname), InterfaceTypeDecl(iname, eType, _, _).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE), no MachineReceives(name, _).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
@@ -496,13 +480,13 @@ domain PStaticTyping extends PData, PError
 	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
 	ExportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
-	ExportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val = fileName.
+	ExportedType(name, eType) :- SymbolicMachineNameDecl(name, eType, _, id), PFile(fileName), id.tl.val = fileName.
 
 	ImportedType ::= (String, TypeExpr).
 	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
 	ImportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
-	ImportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
+	ImportedType(name, eType) :- SymbolicMachineNameDecl(name, eType, _, id), PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
 
 	NotImportedType ::= (type: TypeExpr).
 	NotImportedType(type) :- OldTranslatedTypeExpr(type), no ImportedType(_, type).
@@ -1102,7 +1086,7 @@ domain PStaticTyping extends PData, PError
 
 	ERROR1(e.id, "Undefined machine or interface type"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
-									  no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
+									  no MachineProtoDecl(n, _), no SymbolicMachineNameDecl(n, _, _, _).
 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineKind(n, kind), kind != SPEC,
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
@@ -1119,12 +1103,12 @@ domain PStaticTyping extends PData, PError
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
 	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
-									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
+									  no MachineProtoDecl(n, _), SymbolicMachineNameDecl(n, _, _, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 	
 	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
 	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
-									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
+									  no MachineProtoDecl(n, _), SymbolicMachineNameDecl(n, _, _, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
 	//// Error rules for pop.
@@ -1997,10 +1981,10 @@ domain PStaticTyping extends PData, PError
 					   			   
 	//for creation of interfaces
 	ERROR1(n.id, "Created interface expects an argument"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), SymbolicMachineNameDecl(name, _, ft, _), ft != BaseType(NULL).
 	
 	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of the created interface"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), SymbolicMachineNameDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
 	//Entry function of spec machine must have null constructor type

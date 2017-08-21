@@ -226,18 +226,6 @@
             moduleExprStack.Push(renameExpr);
         }
 
-        private void PushExportExpr(string mName, string iName, Span mSpan, Span iSpan, Span span)
-        {
-            var exportExpr = new PLink_Root.ExportExpr();
-            exportExpr.Span = span;
-            Contract.Assert(moduleExprStack.Count >= 1);
-            exportExpr.mod = (PLink_Root.IArgType_ExportExpr__2)moduleExprStack.Pop(); ;
-            exportExpr.mName = MkString(mName, mSpan);
-            exportExpr.iName = MkString(iName, iSpan);
-            exportExpr.id = (PLink_Root.IArgType_ExportExpr__3)MkUniqueId(span);
-            moduleExprStack.Push(exportExpr);
-        }
-
         private void PushMonitorName(string name, Span nameSpan, bool isLast)
         {
             var monNameList = PLink_Root.MkMonitorNameList();

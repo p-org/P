@@ -30,7 +30,7 @@ TopDeclList
 
 TopDecl
 	: TypeDefDecl
-	| InterfaceDecl
+	| MachineSymNameDecl
 	| EventSetDecl
 	| EnumTypeDefDecl
 	| EventDecl
@@ -108,30 +108,19 @@ EventSetDecl
 	: EVENTSET ID ASSIGN LCBRACE NonDefaultEventList RCBRACE SEMICOLON		{ AddEventSet($2.str, ToSpan(@2), ToSpan(@2)); }
 	;
 
-InterfaceDecl
-	: TYPE ID LPAREN ConstTypeOrNone RPAREN ASSIGN ID SEMICOLON	{ AddInterfaceType($2.str, $7.str, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
-	| TYPE ID LPAREN ConstTypeOrNone RPAREN ASSIGN LCBRACE NonDefaultEventList RCBRACE SEMICOLON	{ AddInterfaceType($2.str, null, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
+MachineSymNameDecl
+	: MACHINE ID LPAREN ConstTypeOrNone RPAREN RECEIVES NonDefaultEventList SEMICOLON	{ AddSymbolicMachineName($2.str, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
 	;
 
 ConstTypeOrNone
-	: Type														{ SetInterfaceConstType(ToSpan(@1));    }
+	: Type														{ SetSymbolicDeclConstType(ToSpan(@1));    }
 	|												
 	;
 
 
 /******************* Machine Declarations *******************/
 ImplMachineDecl
-	: ImplMachineNameDecl MachAnnotOrNone Exports ReceivesSendsList LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@5), ToSpan(@7)); }
-	;
-
-Exports
-	: COLON ExportsList									{ machineExportsInterface = true; }
-	|													{ machineExportsInterface = false; }
-	;
-
-ExportsList
-	: ID											{ AddExportsInterface($1.str, ToSpan(@1), ToSpan(@1)); }
-	| ExportsList COMMA ID 							{ AddExportsInterface($3.str, ToSpan(@3), ToSpan(@1)); }
+	: ImplMachineNameDecl MachAnnotOrNone  ReceivesSendsList LCBRACE MachineBody RCBRACE { AddMachine(ToSpan(@1), ToSpan(@5), ToSpan(@6)); }
 	;
 
 ReceivesSends

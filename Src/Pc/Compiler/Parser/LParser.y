@@ -32,7 +32,6 @@ ModuleExpr
 	: HideExpr
 	| AssertExpr
 	| AssumeExpr
-	| ExportExpr
 	| SafeExpr
 	| RenameExpr
 	| ComposeExpr
@@ -90,10 +89,6 @@ AssumeExpr
 	: LPAREN ASSUME MonitorNameList IN ModuleExpr RPAREN		{ PushAssumeExpr(ToSpan(@1)); }
 	;
 
-/* Export */
-ExportExpr
-	: LPAREN EXPORT ID AS ID IN ModuleExpr RPAREN		{ PushExportExpr($3.str, $5.str, ToSpan(@3), ToSpan(@5), ToSpan(@1)); }
-	;
 
 /* Rename */
 RenameExpr

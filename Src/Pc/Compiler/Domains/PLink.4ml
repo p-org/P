@@ -94,8 +94,8 @@ domain PLink
 	ModuleContains ::= (mod: ModuleExpr, m: String).
 
 	//// Module Code Gen and Compatibity Helpers
-	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, interfaceOrMachine: String + { NIL }, newImpMachine: String + { NIL }).
-	ModuleRenameMap ::= (mod: ModuleExpr, newName: String, impMachine: String).  // for both machines and monitors
+	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, createdMachine: String + { NIL }, newImpMachine: String + { NIL }).
+	ModuleMachineDefMap ::= (mod: ModuleExpr, newName: String, impMachine: String).  // for both machines and monitors
 	ModuleSafeMap ::= (mod: ModuleExpr, newName: String, isSafe: Boolean).
 	ModuleMonitorMap ::= (mod: ModuleExpr, newMonitorName: String, impMachine: String).
 
@@ -128,7 +128,7 @@ domain PLinkError
 	RefinementDeclError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	InferredCreatesError ::= new (fid : any Id, arg: String, msg: String).
 	
-	CSharpLinkMap ::= new (testName: String, newMachineName: String, interfaceOrMachine: String, newImpMachine: String).
+	CSharpLinkMap ::= new (testName: String, newMachineName: String, createdMachine: String, newImpMachine: String).
 	CSharpRenameMap ::= new (testName: String, newName: String, impMachine: String).
 	CSharpSafeMap ::= new (testName: String, newName: String, isSafe: Boolean).
 	CSharpMonitorMap ::= new (testName: String, newMonitorName: String, impMachine: String).
@@ -248,9 +248,9 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	/*	Check that there is main machine in each moduleExpr in the test decl  */
 	/**************************************************************************/
 	NoMainMachineInModExpr(id, name, "no Main machine in the module expression in test decl") :-
-			TestDecl(name, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _);
-			RefinementDecl(name, modExpr, _, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _);
-			RefinementDecl(name, _, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleRenameMap(emodExpr, "Main", _).
+			TestDecl(name, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, "Main", _);
+			RefinementDecl(name, modExpr, _, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, "Main", _);
+			RefinementDecl(name, _, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, "Main", _).
 
 	/************************************************************************************/
 	/*	Generate sends, receives, exports, private and creates for Module Expressions   */
@@ -314,7 +314,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	//// Export Operation 1 (m \in M)
 	ModuleConstructionIllegal(id, m, "illegal export, exported machine undefined in the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), no ModuleRenameMap(mod, m, _).
+	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), no ModuleMachineDefMap(mod, m, _).
 
 	//// Export Operation 2 (\alpha not empty and is declared)
 	ModuleConstructionIllegal(id, ix, "illegal export, exported interface not defined") 
@@ -322,12 +322,12 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	//// Export Operation 3 (\alpha \subset MR(m)\EP)
 	ModuleConstructionIllegal(id, ix, "illegal export, interface exported is not a subset of the (public) receive-set of the machine") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleRenameMap(mod, m, mach), 
+	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleMachineDefMap(mod, m, mach), 
 	impInterface = toList(#InterfaceType, NIL, {ev | MachineReceives(mach, ev), no ModulePrivate(mod, ev), ev: NonNullEventName}), InterfaceTypeDecl(ix, exInterface, _, _), NotSubsetInterfaces(exInterface, impInterface).
 
 	//// Export Operation 4 (constructor type match)
 	ModuleConstructionIllegal(id, ix, "illegal export, exported interface constructor type is not equal to the contructor type of implemented machine") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleRenameMap(mod, m, mach), InterfaceTypeDecl(ix, _, iargt, _), MachineDecl(mach, ct, _), iargt != ct.
+	:- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(m, ix, mod, id), ModuleMachineDefMap(mod, m, mach), InterfaceTypeDecl(ix, _, iargt, _), MachineDecl(mach, ct, _), iargt != ct.
 
 	//// Export Operation 5 (\alpha is not in dom(IX))
 	ModuleConstructionIllegal(id, ix, "illegal export, interface being exported is already exported by the module expression") 
@@ -342,11 +342,11 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	////Rename Operation
 	//check if the names in rename exists
 	ModuleConstructionIllegal(id, newName, "illegal rename, new machine name already exists in the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldName, newName, mod, id), ModuleRenameMap(mod, newName, _);
-	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldName, newName, mod, id), ModuleRenameMap(mod, _, newName).
+	:- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldName, newName, mod, id), ModuleMachineDefMap(mod, newName, _);
+	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldName, newName, mod, id), ModuleMachineDefMap(mod, _, newName).
 
 	ModuleConstructionIllegal(id, oldName, "illegal rename, machine being renamed does not exists in the module expression") 
-	:- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldName, _, mod, id), no ModuleRenameMap(mod, oldName, _).
+	:- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldName, _, mod, id), no ModuleMachineDefMap(mod, oldName, _).
 
 	////Assume and Assert Operation
 	//Monitor is defined
@@ -396,7 +396,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	
 	//// Mp and Mq are disjoint
 	ModuleConstructionIllegal(modL.id, mname, "illegal composition, machine names are not disjoint") 
-	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleRenameMap(emodL, mname, _), ModuleRenameMap(emodR, mname, _).
+	:- AllCompositionExprs(modL, modR, emodL, emodR), ModuleMachineDefMap(emodL, mname, _), ModuleMachineDefMap(emodR, mname, _).
 
 	//// dom(IXp) and dom(IXq) are disjoint
 	ModuleConstructionIllegal(modL.id, ixL, "illegal composition, exported interfaces are not disjoint") 
@@ -448,7 +448,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	//// make sure that the constructor arguments do not have private permissions in them.
 	ModuleConstructionIllegal(modL.id, ic, "illegal composition, after composition the constructor type of created interface has private permissions") 
 	:- AllCompositionExprs(modL, modR, emodL, emodR), composedMod = ComposeExpr(emodL, emodR, _), ModuleCreates(composedMod, ic),
-	ModuleLinkMap(composedMod, _, ic, renameM), ModuleRenameMap(composedMod, renameM, impM), PermEmbeddedInConstType(impM, ev), ModulePrivate(composedMod, ev).
+	ModuleLinkMap(composedMod, _, ic, renameM), ModuleMachineDefMap(composedMod, renameM, impM), PermEmbeddedInConstType(impM, ev), ModulePrivate(composedMod, ev).
 	
 	/**************************************************************************/
 	/*			Well-formedness condition check for the leaf modules		  */
@@ -535,22 +535,22 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	/**************************************************************************/
 	
 	////populate the rename map
-	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), newName), newName = impName.
-	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : SafeExpr, ModuleRenameMap(modExpr.mod, newName, impName);
-													AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModuleRenameMap(modExpr.mod, newName, impName);
-													AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleRenameMap(modExpr.mod, newName, impName).
-	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleRenameMap(modExpr.left, newName, impName);
-													AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleRenameMap(modExpr.right, newName, impName).	
-	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr', _), ModuleRenameMap(modExpr', newName, impName), newName != oldname;
-													AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newName, modExpr', _), ModuleRenameMap(modExpr', oldname, impName).
-	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr', _), ModuleRenameMap(modExpr', newName, impName);
+	ModuleMachineDefMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), newName), newName = impName.
+	ModuleMachineDefMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : SafeExpr, ModuleMachineDefMap(modExpr.mod, newName, impName);
+													AllExpandedModuleExprs(modExpr), modExpr : HideExpr, ModuleMachineDefMap(modExpr.mod, newName, impName);
+													AllExpandedModuleExprs(modExpr), modExpr : ExportExpr, ModuleMachineDefMap(modExpr.mod, newName, impName).
+	ModuleMachineDefMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleMachineDefMap(modExpr.left, newName, impName);
+													AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleMachineDefMap(modExpr.right, newName, impName).	
+	ModuleMachineDefMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr', _), ModuleMachineDefMap(modExpr', newName, impName), newName != oldname;
+													AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newName, modExpr', _), ModuleMachineDefMap(modExpr', oldname, impName).
+	ModuleMachineDefMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr', _), ModuleMachineDefMap(modExpr', newName, impName);
 													AllExpandedModuleExprs(modExpr), modExpr = AssumeExpr(monNames, modExpr', _), MemberOfMonitorNameList(monNames, newName), MonitorDecl(newName, _, _), impName = newName.
-	ModuleRenameMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr', _), ModuleRenameMap(modExpr', newName, impName);
+	ModuleMachineDefMap(modExpr, newName, impName) :-	AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr', _), ModuleMachineDefMap(modExpr', newName, impName);
 													AllExpandedModuleExprs(modExpr), modExpr = AssertExpr(monNames, modExpr', _), MemberOfMonitorNameList(monNames, newName),  MonitorDecl(newName, _, _), impName = newName.										 										 								 							 
 	////populate the safe map
 	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #SafeExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #AssertExpr, 
 											  toSymbol(modExpr) != #AssumeExpr, toSymbol(modExpr) != #ModuleDecl, toSymbol(modExpr) != #RenameExpr, ModuleSafeMap(modExpr.mod, mname, isSafe).
-	ModuleSafeMap(modExpr, mname, FALSE) :-  AllExpandedModuleExprs(modExpr), modExpr : ModuleExpr, ModuleRenameMap(modExpr, mname, _).
+	ModuleSafeMap(modExpr, mname, FALSE) :-  AllExpandedModuleExprs(modExpr), modExpr : ModuleExpr, ModuleMachineDefMap(modExpr, mname, _).
 	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSafeMap(modExpr.left, mname, isSafe);
 											 AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModuleSafeMap(modExpr.right, mname, isSafe).
 	ModuleSafeMap(modExpr, mname, isSafe) :- AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, ModuleSafeMap(modExpr.mod, mname, isSafe);
@@ -578,12 +578,12 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(left, _, _), ModuleLinkMap(left, creatorM, IorM, ImpMachine);
 														  AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(_, right, _), ModuleLinkMap(right, creatorM, IorM, ImpMachine);
-														  AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(left, right, _), ModuleLinkMap(modExpr, creatorM, _, _), ModuleLinkMap(right, _, IorM, ImpMachine), ModuleExports(right, IorM), ModuleRenameMap(left, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM);
-														  AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(left, right, _), ModuleLinkMap(modExpr, creatorM, _, _), ModuleLinkMap(left, _, IorM, ImpMachine), ModuleExports(left, IorM), ModuleRenameMap(right, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM).
+														  AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(left, right, _), ModuleLinkMap(modExpr, creatorM, _, _), ModuleLinkMap(right, _, IorM, ImpMachine), ModuleExports(right, IorM), ModuleMachineDefMap(left, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM);
+														  AllExpandedModuleExprs(modExpr), modExpr = ComposeExpr(left, right, _), ModuleLinkMap(modExpr, creatorM, _, _), ModuleLinkMap(left, _, IorM, ImpMachine), ModuleExports(left, IorM), ModuleMachineDefMap(right, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM).
 
 
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(_, _, mod, _), ModuleLinkMap(mod, creatorM, IorM, ImpMachine);
-													  	  AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(mName, iName, mod, _), ModuleLinkMap(mod, creatorM, _, _), IorM = iName, ImpMachine = mName, ModuleRenameMap(mod, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM).
+													  	  AllExpandedModuleExprs(modExpr), modExpr = ExportExpr(mName, iName, mod, _), ModuleLinkMap(mod, creatorM, _, _), IorM = iName, ImpMachine = mName, ModuleMachineDefMap(mod, creatorM, creatorM'), MachineCreatesInt(creatorM', IorM).
 	ModuleLinkMap(modExpr, creatorM, IorM, ImpMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr', _), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine), creatorM != oldname, ImpMachine != oldname;
 														AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr',_), ModuleLinkMap(modExpr', creatorM', IorM, ImpMachine), creatorM' = oldname, creatorM = newname, ImpMachine != oldname;
 													  	AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleLinkMap(modExpr', creatorM, IorM, ImpMachine'), ImpMachine' = oldname, ImpMachine = newname, creatorM != oldname;
@@ -595,10 +595,10 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 														  AllExpandedModuleExprs(modExpr), modExpr : ModuleDecl, ModuleContains(ModuleDecl(modExpr.name, _), creatorM), IorM = NIL, ImpMachine = NIL.
 
 	/*code generation for test decls*/
-	CSharpLinkMap(testName, MachineName, interfaceOrMachine, ImpMachine) :- 
-							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, interfaceOrMachine, ImpMachine), interfaceOrMachine: String, ImpMachine: String.
+	CSharpLinkMap(testName, MachineName, createdMachine, ImpMachine) :- 
+							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdMachine, ImpMachine), createdMachine: String, ImpMachine: String.
 	CSharpRenameMap(testName, newName, impName) :- 
-							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, impName).
+							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName).
 	CSharpSafeMap(testName, mname, isSafe):- 
 							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe).
 	CSharpMonitorMap(testName, monName, impMachine) :- 
@@ -607,17 +607,17 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 							TestDecl(testName, _, _), InterfaceTypeDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
 
 	//If there is no testdecl then generate linkmap corresponding to CLinkMap
-	CSharpRenameMap("linker", newName, impName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CRenameMap (newName, impName).
+	CSharpRenameMap("linker", newName, impName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CMachineDefMap (newName, impName).
 	CSharpLinkMap("linker", creatorM, IorM, impM) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CLinkMap(creatorM, IorM, impM).
-	CSharpSafeMap("linker", newName, FALSE) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CRenameMap (newName, _).
+	CSharpSafeMap("linker", newName, FALSE) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CMachineDefMap (newName, _).
 	CSharpMonitorMap("linker", monName, impMachine) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), MonitorDecl(monName, _, _), MachineDecl(impMachine, _, _).
 	CSharpInterfaceMap("linker", iName, evName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), InterfaceTypeDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
 	
 	/*code generation for refinement*/
-	CSharpLinkMap(testName', MachineName, interfaceOrMachine, ImpMachine) :- 
-							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, interfaceOrMachine, ImpMachine), interfaceOrMachine: String, ImpMachine: String, testName' = strJoin(testName, "LHS").
+	CSharpLinkMap(testName', MachineName, createdMachine, ImpMachine) :- 
+							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdMachine, ImpMachine), createdMachine: String, ImpMachine: String, testName' = strJoin(testName, "LHS").
 	CSharpRenameMap(testName', newName, impName) :- 
-							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, impName), testName' = strJoin(testName, "LHS").
+							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName), testName' = strJoin(testName, "LHS").
 	CSharpSafeMap(testName', mname, isSafe):- 
 							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe), testName' = strJoin(testName, "LHS").
 	CSharpMonitorMap(testName', monName, impMachine) :- 
@@ -625,10 +625,10 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	CSharpInterfaceMap(testName', iName, evName) :- 
 							RefinementDecl(testName, modExpr, _, _), InterfaceTypeDecl(iName, es, _, _), MemberOfInterfaceType(es, evName), testName' = strJoin(testName, "LHS").
 	
-	CSharpLinkMap(testName', MachineName, interfaceOrMachine, ImpMachine) :- 
-							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, interfaceOrMachine, ImpMachine), interfaceOrMachine: String, ImpMachine: String, testName' = strJoin(testName, "RHS").
+	CSharpLinkMap(testName', MachineName, createdMachine, ImpMachine) :- 
+							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdMachine, ImpMachine), createdMachine: String, ImpMachine: String, testName' = strJoin(testName, "RHS").
 	CSharpRenameMap(testName', newName, impName) :- 
-							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, impName), testName' = strJoin(testName, "RHS").
+							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName), testName' = strJoin(testName, "RHS").
 	CSharpSafeMap(testName', mname, isSafe):- 
 							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe), testName' = strJoin(testName, "RHS").
 	CSharpMonitorMap(testName', monName, impMachine) :- 
@@ -652,14 +652,14 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	CLinkMap(creatorM, IorM, impM) :-	ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, cM, impM), no InterfaceTypeDecl(IorM, _, _, _), cM = IorM, cM : String, impM : String; //machine creation
 										ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, creatorM, IorM, impM), IorM : String, impM : String.
 	
-	CRenameMap ::= (nName: String, iName: String).
-	CRenameMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleRenameMap(emodExpr, newName, ImpName).
+	CMachineDefMap ::= (nName: String, iName: String).
+	CMachineDefMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, ImpName).
 	
 	// If there is no implementation decl then generate the normal link map
 	CLinkMap(creatorM, m, m) :- MachineDecl(creatorM, _, _), MachineDecl(m, _, _), no ImplementationDecl(_, _).
 	CLinkMap(creatorM, i, impM) :- MachineDecl(creatorM, _, _), MachineCreatesInt(creatorM, i), MachineExports(impM, i), no ImplementationDecl(_, _).
 	
-	CRenameMap (nName, nName) :- MachineDecl(nName, _, _), no ImplementationDecl(_, _).
+	CMachineDefMap (nName, nName) :- MachineDecl(nName, _, _), no ImplementationDecl(_, _).
 	//TestError (n,n',n'') :- CLinkMap(n, n', n'').
 
     /*************************************************************/
@@ -761,10 +761,10 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	COut(0, def) :- size = count({d | d is MachineDecl}),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_MACHINES_COUNT", IntLit(size, DEC, NIL)).
 
-	COut(0, def) :- CRenameMap(name, _), id = toOrdinal(name, 0, {n | CRenameMap(n, _)}), cn = strJoin("P_RENAME_", name),
+	COut(0, def) :- CMachineDefMap(name, _), id = toOrdinal(name, 0, {n | CMachineDefMap(n, _)}), cn = strJoin("P_SYMNAME_", name),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
-	COut(0, def) :- size = count({n | CRenameMap(n, _)}),
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_RENAME_COUNT", IntLit(size, DEC, NIL)).
+	COut(0, def) :- size = count({n | CMachineDefMap(n, _)}),
+					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_SYMNAME_COUNT", IntLit(size, DEC, NIL)).
 
 	COut(0, def) :- CLinkMap(_, iOrM, _), id = toOrdinal(iOrM, 0, {n | CLinkMap(_, n, _)}), cn = strJoin("P_IORM_", iOrM),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
@@ -891,32 +891,32 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 								  Init(arr)).
 
     /*************************************************************/
-    /******     Generate Rename Map and Link Map Arrays     ******/
+    /******     Generate Machine Def. Map and Link Map Arrays     ******/
     /*************************************************************/	
-	RenameMapDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
-	RenameMapDeclConcat(c, NIL) :- c = count({n | CRenameMap(n, _)}).
-	RenameMapDeclConcat(m, arr) :- 
+	MachineDefMapDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+	MachineDefMapDeclConcat(c, NIL) :- c = count({n | CMachineDefMap(n, _)}).
+	MachineDefMapDeclConcat(m, arr) :- 
 							mdecl is MachineDecl, DeclId(mdecl, machineId, _), 
-							CRenameMap(name, mdecl.name), m = toOrdinal(name, 0, {n | CRenameMap(n, _)}),
-							RenameMapDeclConcat(m + 1, after),  
+							CMachineDefMap(name, mdecl.name), m = toOrdinal(name, 0, {n | CMachineDefMap(n, _)}),
+							MachineDefMapDeclConcat(m + 1, after),  
 							arr = out.Args(IntLit(machineId, DEC, U), after).
 
-	COut(5, def) :- RenameMapDeclConcat(0, arr),
+	COut(5, def) :- MachineDefMapDeclConcat(0, arr),
 					def = out.VarDef(
 							      NIL, 
 								  ArrType(NmdType(NIL, "PRT_UINT32"), NIL), 
-								  "P_GEND_RENAMEMAP", 
+								  "P_GEND_MACHDEF_MAP", 
 								  Init(arr)).
 
 	LinkMapDeclInnerConcat ::= (name: String, pos: Natural, arr: out.Args + {NIL}).
-	LinkMapDeclInnerConcat(name, c, NIL) :- CRenameMap(name, _), c = count({n | CLinkMap(_, n, _)}).
+	LinkMapDeclInnerConcat(name, c, NIL) :- CMachineDefMap(name, _), c = count({n | CLinkMap(_, n, _)}).
 	LinkMapDeclInnerConcat(name, m, arr) :- 
-							CLinkMap(name, mOrI, x), xid = toOrdinal(x, 0, {n | CRenameMap(n, _)}),
+							CLinkMap(name, mOrI, x), xid = toOrdinal(x, 0, {n | CMachineDefMap(n, _)}),
 							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
 							LinkMapDeclInnerConcat(name, m + 1, after),  
 							arr = out.Args(IntLit(xid, DEC, U), after).
 	LinkMapDeclInnerConcat(name, m, arr) :- 
-							CRenameMap(name, _), CLinkMap(_, mOrI, _), no CLinkMap(name, mOrI, _), 
+							CMachineDefMap(name, _), CLinkMap(_, mOrI, _), no CLinkMap(name, mOrI, _), 
 							m = toOrdinal(mOrI, 0, {n | CLinkMap(_, n, _)}),
 							LinkMapDeclInnerConcat(name, m + 1, after),  
 							arr = out.Args(IntLit(-1, DEC, L), after).
@@ -961,15 +961,15 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	LinkMapArray(arr) :- size = count({n | LinkMapDeclInnerConcat(n, _, _)}), size = 0, arr = out.Ident("NULL").
 	LinkMapArray(arr) :- size = count({n | LinkMapDeclInnerConcat(n, _, _)}), size > 0, arr = out.Ident("P_GEND_LINKMAP").
 
-	RenameMapArray ::= (arr: out.Ident).
-	RenameMapArray(arr) :- size = count({n | CRenameMap(n, _)}), size = 0, arr = out.Ident("NULL").
-	RenameMapArray(arr) :- size = count({n | CRenameMap(n, _)}), size > 0, arr = out.Ident("P_GEND_RENAMEMAP").
+	MachineDefMapArray ::= (arr: out.Ident).
+	MachineDefMapArray(arr) :- size = count({n | CMachineDefMap(n, _)}), size = 0, arr = out.Ident("NULL").
+	MachineDefMapArray(arr) :- size = count({n | CMachineDefMap(n, _)}), size > 0, arr = out.Ident("P_GEND_MACHDEF_MAP").
 
 	COut(7, def) :-  ProgEvntArray(evArrSize, evArrName),
 					 ProgMachArray(machArrSize, machArrName),
 					 ProgForeignTypesArray(foreignTypesSize, foreignTypesArrName),
 					 LinkMapArray(linkMapArrName),
-					 RenameMapArray(renameMapArrName),
+					 MachineDefMapArray(machDefMapArrName),
 	                 def = out.VarDef(
 							      NIL, 
 								  NmdType(NIL, "PRT_PROGRAMDECL"), 
@@ -983,7 +983,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 							   Args(machArrName,
 							   Args(foreignTypesArrName,
 							   Args(linkMapArrName,
-							   Args(renameMapArrName,
+							   Args(machDefMapArrName,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
 							   NIL))))))))))).

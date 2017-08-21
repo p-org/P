@@ -149,8 +149,8 @@ typedef struct PRT_PROGRAMDECL
 	PRT_EVENTDECL       **events;       /**< The array of events                 */
 	PRT_MACHINEDECL     **machines;     /**< The array of machines               */
 	PRT_FOREIGNTYPEDECL **foreignTypes; /**< The array of foreign types */
-	PRT_UINT32			**linkMap;		/**< stores the link map from renameName -> IorM -> renameName */
-	PRT_UINT32			*renameMap;		/**< stores the rename map from renameName -> real name */
+	PRT_UINT32			**linkMap;		/**< stores the link map from symbolicName -> symbolicName -> symbolicName */
+	PRT_UINT32			*machineDefMap;		/**< stores the machine definition map from symbolicName -> concrete name */
 
 	PRT_UINT32          nAnnotations;   /**< Number of annotations               */
 	void                **annotations;  /**< An array of annotations             */

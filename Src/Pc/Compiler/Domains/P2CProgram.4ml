@@ -1751,7 +1751,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// New Machine
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, NIL, _, x), ret = Ident("p_tmp_funstmt_ret"),
 						   IOrMName = strJoin("P_IORM_", iname),
-						   newCall = out.FunApp(Ident("PrtMkInterfaceOrMachine"),
+						   newCall = out.FunApp(Ident("PrtMkSymbolicMachine"),
 												Args(Ident("context"),
 												Args(Ident(IOrMName), 
 												Args(IntLit(0, DEC, U), NIL)))),
@@ -1762,7 +1762,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, pay, _, x), pay != NIL, ret = Ident("p_tmp_funstmt_ret"),
 						   IOrMName = strJoin("P_IORM_", iname),
-						   newCall = out.FunApp(Ident("PrtMkInterfaceOrMachine"),
+						   newCall = out.FunApp(Ident("PrtMkSymbolicMachine"),
 												Args(Ident("context"),
 												Args(Ident(IOrMName),
 												Args(IntLit(numArgs, DEC, U), lstReverse(#Args, ecs'))))),

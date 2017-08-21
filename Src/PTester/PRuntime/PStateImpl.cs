@@ -158,7 +158,7 @@ namespace P.Runtime
                                         .Select(monName => specMachinesMap[monName]).ToList();
             return allSpecMachines;
         }
-        public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
+        public PrtInterfaceValue CreateSymbolicMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
         {
             //add visible action to trace
             if(visibleInterfaces.Contains(interfaceOrMachineName))

@@ -1,16 +1,22 @@
-﻿namespace Microsoft.Pc.Parser
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using System.Linq;
+using QUT.Gppg;
+
+
+using Microsoft.Formula.API;
+
+
+[assembly: CLSCompliant(false)]
+namespace Microsoft.Pc.Parser
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics.Contracts;
-    using System.Linq;
-    using QUT.Gppg;
 
     using Domains;
-    using Microsoft.Formula.API;
     using Microsoft.Pc;
     using Microsoft.Formula.API.Generators;
     using Microsoft.Formula.API.Nodes;
+
 
     public enum PProgramTopDecl { Event, EventSet, Interface, Machine, TypeDef, Enum };
     public class PProgramTopDeclNames
@@ -51,7 +57,7 @@
         }
     }
 
-
+    
     internal partial class PParser : ShiftReduceParser<LexValue, LexLocation>
     {
         private static readonly P_Root.Exprs TheDefaultExprs = new P_Root.Exprs();
@@ -66,10 +72,8 @@
         private bool isTrigAnnotated = false;
 
         private P_Root.FunDecl crntFunDecl = null;
-        private P_Root.FunProtoDecl crntFunProtoDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
-        private P_Root.MachineProtoDecl crntMachProtoDecl = null;
         private P_Root.InterfaceTypeDef crntInterfaceDef = null;
         private P_Root.QualifiedName crntStateTargetName = null;
         private P_Root.QualifiedName crntGotoTargetName = null;
@@ -1408,13 +1412,6 @@
             inDecl.argType = (P_Root.IArgType_InterfaceTypeDef__2)typeExprStack.Pop();
         }
 
-        private void SetMachineProtoConstType(Span span)
-        {
-            var machineProto = GetCurrentMachineProtoDecl(span);
-            Contract.Assert(typeExprStack.Count > 0);
-            machineProto.constType = (P_Root.IArgType_MachineProtoDecl__1)typeExprStack.Pop();
-        }
-
         private void SetFunName(string name, Span span)
         {
             var funDecl = GetCurrentFunDecl(span);
@@ -2277,20 +2274,6 @@
             return crntFunDecl;
         }
 
-        private P_Root.FunProtoDecl GetCurrentFunProtoDecl(Span span)
-        {
-            if (crntFunProtoDecl != null)
-            {
-                return crntFunProtoDecl;
-            }
-
-            crntFunProtoDecl = P_Root.MkFunProtoDecl();
-            crntFunProtoDecl.@params = MkUserCnst(P_Root.UserCnstKind.NIL, span);
-            crntFunProtoDecl.@return = MkUserCnst(P_Root.UserCnstKind.NIL, span);
-            crntFunProtoDecl.Span = span;
-            return crntFunProtoDecl;
-        }
-
         private P_Root.StateDecl GetCurrentStateDecl(Span span)
         {
             if (crntState != null)
@@ -2319,17 +2302,6 @@
             return crntMachDecl;
         }
 
-        private P_Root.MachineProtoDecl GetCurrentMachineProtoDecl(Span span)
-        {
-            if (crntMachProtoDecl != null)
-            {
-                return crntMachProtoDecl;
-            }
-
-            crntMachProtoDecl = P_Root.MkMachineProtoDecl();
-            crntMachProtoDecl.constType = (P_Root.IArgType_MachineProtoDecl__1)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown);
-            return crntMachProtoDecl;
-        }
         #endregion
 
         #region Helpers

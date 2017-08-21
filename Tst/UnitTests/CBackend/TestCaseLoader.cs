@@ -10,7 +10,7 @@ namespace UnitTests.CBackend
 {
     internal class TestCaseLoader
     {
-        private static readonly List<string> TestDirs = new List<string> { "RegressionTests", "ModPRegressionTests" };
+        private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
         //TODO(debug only):
         //private static readonly List<string> TestDirs = new List<string> { "Temp-PtTests" };
 

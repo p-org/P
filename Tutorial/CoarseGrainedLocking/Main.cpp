@@ -52,7 +52,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 {
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
 
-	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf]->name);
+	std::wstring machineName = ConvertToUnicode((const char*)program->machines[c->instanceOf]->name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	char number[20]; // longest 32 bit integer in base 10 is 10 digits, plus room for null terminator.
 	_itoa(machineId, number, 16);
@@ -81,7 +81,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	{
 		//find out what state the sender machine is in so we can also log that information.
 		PRT_MACHINEINST_PRIV * s = (PRT_MACHINEINST_PRIV *)receiver;
-		eventName = ConvertToUnicode((const char*)s->process->program->events[PrtPrimGetEvent(event)]->name);
+		eventName = ConvertToUnicode((const char*)program->events[PrtPrimGetEvent(event)]->name);
 	}
 
 	switch (step)

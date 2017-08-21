@@ -56,7 +56,6 @@ extern "C"{
     */
     typedef struct PRT_PROCESS {
         PRT_GUID         guid;     /**< The unique ID for this process. Cannot be 0-0-0-0. */
-        PRT_PROGRAMDECL *program;  /**< The program running in this process.               */
     } PRT_PROCESS;
 
     /** The state of running machine in a process.

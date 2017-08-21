@@ -10,23 +10,29 @@ Public Functions
 
 void PrtTraverseEventset(PRT_EVENTSETDECL *evset, PRT_BOOLEAN doInstall)
 {
-    PrtAssert((evset->packedEvents == NULL) == doInstall, "evset->packedEvents is NULL iff doInstall is true");
     if (doInstall)
     {
-        PRT_UINT32 unitSize = sizeof(PRT_UINT32) * 8;
-        PRT_UINT32 packedArraySize = program->nEvents / unitSize + 1;
-        evset->packedEvents = (PRT_UINT32 *)PrtCalloc(packedArraySize, sizeof(PRT_UINT32));
-        for (PRT_UINT32 i = 0; i < evset->nEvents; i++)
+        if (evset->packedEvents == NULL)
         {
-            PRT_UINT32 eventIndex = evset->events[i]->value.valueUnion.ev;
-            PRT_UINT32 arrayOffset = eventIndex / unitSize;
-            PRT_UINT32 eventMask = 1 << (eventIndex % unitSize);
-            evset->packedEvents[arrayOffset] |= eventMask;
+            PRT_UINT32 unitSize = sizeof(PRT_UINT32) * 8;
+            PRT_UINT32 packedArraySize = program->nEvents / unitSize + 1;
+            evset->packedEvents = (PRT_UINT32 *)PrtCalloc(packedArraySize, sizeof(PRT_UINT32));
+            for (PRT_UINT32 i = 0; i < evset->nEvents; i++)
+            {
+                PRT_UINT32 eventIndex = evset->events[i]->value.valueUnion.ev;
+                PRT_UINT32 arrayOffset = eventIndex / unitSize;
+                PRT_UINT32 eventMask = 1 << (eventIndex % unitSize);
+                evset->packedEvents[arrayOffset] |= eventMask;
+            }
         }
     }
-    else 
+    else
     {
-        PrtFree(evset->packedEvents);
+        if (evset->packedEvents != NULL)
+        {
+            PrtFree(evset->packedEvents);
+            evset->packedEvents = NULL;
+        }
     }
 }
 
@@ -76,20 +82,10 @@ void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
     }
 }
 
-void PrtTraverseProgram(_In_ PRT_PROGRAMDECL *p)
+void PrtInstallProgram(_In_ PRT_PROGRAMDECL *p)
 {
-    PrtAssert((program == NULL) == (p != NULL), "program is NULL iff p is non-NULL");
-    PRT_BOOLEAN doInstall;
-    if (p == NULL)
-    {
-        program = NULL;
-        doInstall = PRT_FALSE;
-    }
-    else
-    {
-        program = p;
-        doInstall = PRT_TRUE;
-    }
+    PrtAssert(p != NULL && program == NULL, "p and program must be non-NULL");
+    program = p;
     for (PRT_UINT32 i = 0; i < p->nEvents; i++)
 	{
 		p->events[i]->value.valueUnion.ev = i;
@@ -97,16 +93,39 @@ void PrtTraverseProgram(_In_ PRT_PROGRAMDECL *p)
 	for (PRT_UINT32 i = 0; i < p->nMachines; i++)
 	{
 		p->machines[i]->declIndex = i;
-        PrtTraverseMachine(p->machines[i], doInstall);
+        PrtTraverseMachine(p->machines[i], PRT_TRUE);
 	}
     for (PRT_UINT32 i = 0; i < p->nGlobalFuns; i++)
     {
-        PrtTraverseFun(p->globalFuns[i], doInstall);
+        PrtTraverseFun(p->globalFuns[i], PRT_TRUE);
     }
 	for (PRT_UINT32 i = 0; i < p->nForeignTypes; i++)
 	{
 		p->foreignTypes[i]->declIndex = i;
 	}
+}
+
+void PrtUninstallProgram()
+{
+    PrtAssert(program != NULL, "program must be non-NULL");
+    for (PRT_UINT32 i = 0; i < program->nEvents; i++)
+    {
+        program->events[i]->value.valueUnion.ev = 0;
+    }
+    for (PRT_UINT32 i = 0; i < program->nMachines; i++)
+    {
+        program->machines[i]->declIndex = 0;
+        PrtTraverseMachine(program->machines[i], PRT_FALSE);
+    }
+    for (PRT_UINT32 i = 0; i < program->nGlobalFuns; i++)
+    {
+        PrtTraverseFun(program->globalFuns[i], PRT_FALSE);
+    }
+    for (PRT_UINT32 i = 0; i < program->nForeignTypes; i++)
+    {
+        program->foreignTypes[i]->declIndex = 0;
+    }
+    program = NULL;
 }
 
 PRT_PROCESS *
@@ -117,7 +136,7 @@ PrtStartProcess(
     _In_ PRT_LOG_FUN logFun
 )
 {
-    PrtTraverseProgram(p);
+    PrtInstallProgram(p);
 
     PRT_PROCESS_PRIV *process;
     process = (PRT_PROCESS_PRIV *)PrtMalloc(sizeof(PRT_PROCESS_PRIV));
@@ -275,7 +294,7 @@ PrtStopProcess(
 	PrtFree(privateProcess->machines);
 	PrtDestroyCooperativeScheduler(info);
 	PrtDestroyMutex(privateProcess->processLock);
-    PrtTraverseProgram(NULL);
+    PrtUninstallProgram();
 	PrtFree(process);
 }
 
@@ -289,7 +308,7 @@ PrtMkInterfaceOrMachine(
 {
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
 	PRT_VALUE *payload = NULL;
-	PRT_UINT32 renamedName = context->process->program->linkMap[context->renamedName][IorM];
+	PRT_UINT32 renamedName = program->linkMap[context->renamedName][IorM];
 	PRT_UINT32 instanceOf = program->renameMap[renamedName];
 
 	if (numArgs == 0)
@@ -331,7 +350,7 @@ PrtMkInterfaceOrMachine(
 
 		if (numArgs > 1)
 		{
-			PRT_MACHINEDECL *machineDecl = context->process->program->machines[instanceOf];
+			PRT_MACHINEDECL *machineDecl = program->machines[instanceOf];
 			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
 			PRT_TYPE *payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
@@ -394,7 +413,7 @@ PrtMkMachine(
 
 		if (numArgs > 1)
 		{
-			PRT_MACHINEDECL *machineDecl = process->program->machines[instanceOf];
+			PRT_MACHINEDECL *machineDecl = program->machines[instanceOf];
 			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
 			PRT_TYPE *payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
@@ -428,7 +447,7 @@ void PRT_CALL_CONV PrtGetMachineState(_In_ PRT_MACHINEINST *context, _Inout_ PRT
 {
 	PRT_MACHINEINST_PRIV *priv = (PRT_MACHINEINST_PRIV*)context;
 	state->machineId = context->id->valueUnion.mid->machineId;
-	state->machineName = (PRT_STRING)context->process->program->machines[context->instanceOf]->name;
+	state->machineName = program->machines[context->instanceOf]->name;
 	state->stateId = priv->currentState;
 	state->stateName = PrtGetCurrentStateDecl(priv)->name;
 }

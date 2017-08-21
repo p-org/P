@@ -63,7 +63,7 @@ PrtDistSMExceptionHandler(
 )
 {
 	int log_size = 1000;
-	PRT_STRING MachineName = vcontext->process->program->machines[vcontext->instanceOf]->name;
+	PRT_STRING MachineName = program->machines[vcontext->instanceOf]->name;
 	PRT_UINT32 MachineId = vcontext->id->valueUnion.mid->machineId;
 
 

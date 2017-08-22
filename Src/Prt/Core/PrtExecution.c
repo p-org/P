@@ -16,7 +16,7 @@ PRT_TYPE AnyType =
 PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
 {
     {
-        PRT_VALUE_KIND_EVENT,
+        PRT_VALUE_KIND_NULL,
         PRT_SPECIAL_EVENT_NULL
     },
 	"null",

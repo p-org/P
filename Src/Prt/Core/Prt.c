@@ -80,6 +80,10 @@ void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
     {
         PrtTraverseState(&machine->states[i], doInstall);
     }
+    for (PRT_UINT32 i = 0; i < machine->nFuns; i++)
+    {
+        PrtTraverseFun(machine->funs[i], doInstall);
+    }
 }
 
 void PrtInstallProgram(_In_ PRT_PROGRAMDECL *p)

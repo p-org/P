@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 
 namespace Microsoft.Pc.TypeChecker
@@ -472,9 +473,9 @@ namespace Microsoft.Pc.TypeChecker
             return enumElem;
         }
 
-        public Variable Put(string name, PParser.VarDeclContext tree)
+        public Variable Put(string name, PParser.VarDeclContext tree, PParser.IdenContext varName)
         {
-            var variable = new Variable(name, tree);
+            var variable = new Variable(name, tree, varName);
             CheckConflicts(variable, Namespace(variables));
             variables.Add(name, variable);
             return variable;
@@ -524,9 +525,10 @@ namespace Microsoft.Pc.TypeChecker
 
     public class Variable : IPDecl, ITypedName
     {
-        public Variable(string name, PParser.VarDeclContext sourceNode)
+        public Variable(string name, PParser.VarDeclContext containingVarDecl, PParser.IdenContext sourceNode)
         {
             Name = name;
+            ContainingVarDecl = containingVarDecl;
             SourceNode = sourceNode;
         }
 
@@ -537,6 +539,8 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public string Name { get; set; }
+        public PParser.VarDeclContext ContainingVarDecl { get; }
+        public bool IsParam => ContainingVarDecl == null;
         public PLanguageType Type { get; set; }
         public ParserRuleContext SourceNode { get; }
     }

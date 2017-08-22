@@ -5,184 +5,9 @@ using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
-using Microsoft.Pc.Domains;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    public class CastExpr : IPExpr
-    {
-        public PLanguageType Type { get; }
-        public IPExpr SubExpr { get; }
-
-        public CastExpr(IPExpr subExpr, PLanguageType type)
-        {
-            Type = type;
-            SubExpr = subExpr;
-        }
-    }
-
-    public class LogicalNegateExpr : IPExpr
-    {
-        public IPExpr SubExpr { get; }
-        public PLanguageType Type { get; }
-
-        public LogicalNegateExpr(IPExpr subExpr)
-        {
-            SubExpr = subExpr;
-            Type = subExpr.Type;
-        }
-    }
-
-    public class SignNegateExpr : IPExpr
-    {
-        public IPExpr SubExpr { get; }
-
-        public SignNegateExpr(IPExpr subExpr)
-        {
-            SubExpr = subExpr;
-            Type = subExpr.Type;
-        }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class FunCallExpr : IPExpr
-    {
-        public Function Function { get; }
-        public IPExpr[] Arguments { get; }
-
-        public FunCallExpr(Function function, IPExpr[] arguments)
-        {
-            Function = function;
-            Arguments = arguments;
-            Type = function.Signature.ReturnType;
-        }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class CtorExpr : IPExpr
-    {
-        public Machine Machine { get; }
-        public IPExpr[] Arguments { get; }
-
-        public CtorExpr(Machine machine, IPExpr[] arguments)
-        {
-            Machine = machine;
-            Arguments = arguments;
-        }
-
-        public PLanguageType Type { get; } = PrimitiveType.Machine;
-    }
-
-    public class DefaultExpr : IPExpr
-    {
-        public PLanguageType Type { get; }
-
-        public DefaultExpr(PLanguageType type)
-        {
-            Type = type;
-        }
-    }
-
-    public class SizeofExpr : IPExpr
-    {
-        public IPExpr Expr { get; }
-
-        public SizeofExpr(IPExpr expr)
-        {
-            Expr = expr;
-        }
-
-        public PLanguageType Type { get; } = PrimitiveType.Int;
-    }
-
-    public class ValuesExpr : IPExpr
-    {
-        public IPExpr Expr { get; }
-
-        public ValuesExpr(IPExpr expr, PLanguageType type)
-        {
-            Expr = expr;
-            Type = type;
-        }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class KeysExpr : IPExpr
-    {
-        public KeysExpr(IPExpr expr, PLanguageType type)
-        {
-            Expr = expr;
-            Type = type;
-        }
-
-        public IPExpr Expr { get; }
-        public PLanguageType Type { get; }
-    }
-
-    public class SeqAccessExpr : IPExpr
-    {
-        public IPExpr SeqExpr { get; }
-        public IPExpr IndexExpr { get; }
-
-        public SeqAccessExpr(IPExpr seqExpr, IPExpr indexExpr, PLanguageType type)
-        {
-            SeqExpr = seqExpr;
-            IndexExpr = indexExpr;
-            Type = type;
-        }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class NamedTupleAccessExpr : IPExpr
-    {
-        public NamedTupleAccessExpr(IPExpr subExpr, string fieldName, PLanguageType type)
-        {
-            SubExpr = subExpr;
-            FieldName = fieldName;
-            Type = type;
-        }
-
-        public IPExpr SubExpr { get; }
-        public string FieldName { get; }
-        public PLanguageType Type { get; }
-    }
-
-    public class TupleAccessExpr : IPExpr
-    {
-        public IPExpr SubExpr { get; }
-        public int FieldNo { get; }
-
-        public TupleAccessExpr(IPExpr subExpr, int fieldNo, PLanguageType type)
-        {
-            SubExpr = subExpr;
-            FieldNo = fieldNo;
-            Type = type;
-        }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class TypeException : Exception
-    {
-        public ParserRuleContext Location { get; }
-        public string Clarification { get; }
-
-        public TypeException(ParserRuleContext location, string clarification)
-        {
-            Location = location;
-            Clarification = clarification;
-        }
-    }
-
-    public interface IPExpr
-    {
-        PLanguageType Type { get; }
-    }
-
     public class DeclarationListener : PParserBaseListener
     {
         /// <summary>
@@ -204,7 +29,6 @@ namespace Microsoft.Pc.TypeChecker
         ///     Maps source nodes to the scope objects they produced.
         /// </summary>
         private readonly ParseTreeProperty<DeclarationTable> programDeclarations;
-
 
         /// <summary>
         ///     Enum declarations can't be nested, so we simply store the most recently encountered
@@ -257,9 +81,9 @@ namespace Microsoft.Pc.TypeChecker
             var pEvent = (PEvent) nodesToDeclarations.Get(context);
 
             // cardinality?
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            bool hasAssume = context.cardinality()?.ASSUME() != null;
+            bool hasAssert = context.cardinality()?.ASSERT() != null;
+            int cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
             pEvent.Assume = hasAssume ? cardinality : -1;
             pEvent.Assert = hasAssert ? cardinality : -1;
 
@@ -276,9 +100,9 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterEventSetLiteral(PParser.EventSetLiteralContext context)
         {
             // events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
-            foreach (var contextEvent in context._events)
+            foreach (IToken contextEvent in context._events)
             {
-                var eventName = contextEvent.Text;
+                string eventName = contextEvent.Text;
                 if (!table.Lookup(eventName, out PEvent evt))
                     throw new MissingEventException(currentEventSet, eventName);
 
@@ -291,6 +115,7 @@ namespace Microsoft.Pc.TypeChecker
             // FUN name=Iden
             var fun = (Function) nodesToDeclarations.Get(context);
             currentMachine?.Methods.Add(fun);
+            fun.Owner = currentMachine;
 
             // LPAREN funParamList? RPAREN
             functionStack.Push(fun); // funParamList builds signature
@@ -313,9 +138,9 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterFunParam(PParser.FunParamContext context)
         {
             // name=Iden
-            var name = context.name.Text;
+            string name = context.name.Text;
             // COLON type ;
-            var type = TypeResolver.ResolveType(context.type(), table);
+            PLanguageType type = TypeResolver.ResolveType(context.type(), table);
 
             ITypedName param;
             if (currentFunctionProto != null)
@@ -330,7 +155,7 @@ namespace Microsoft.Pc.TypeChecker
             else
             {
                 // Otherwise, we're in a function of some sort, and we add the variable to its signature
-                var success = table.Get(name, out Variable variable);
+                bool success = table.Get(name, out Variable variable);
                 Debug.Assert(success);
                 variable.Type = type;
                 param = variable;
@@ -339,22 +164,19 @@ namespace Microsoft.Pc.TypeChecker
             CurrentFunction.Signature.Parameters.Add(param);
         }
 
-        public override void ExitFunDecl(PParser.FunDeclContext context)
-        {
-            functionStack.Pop();
-        }
+        public override void ExitFunDecl(PParser.FunDeclContext context) { functionStack.Pop(); }
 
         public override void EnterVarDecl(PParser.VarDeclContext context)
         {
             // VAR idenList
-            var varNames = context.idenList().Iden();
+            var varNames = context.idenList()._names;
             // COLON type 
-            var type = TypeResolver.ResolveType(context.type(), table);
+            PLanguageType type = TypeResolver.ResolveType(context.type(), table);
             // annotationSet?
             if (context.annotationSet() != null)
                 throw new NotImplementedException("variable annotations");
             // SEMI
-            foreach (var varName in varNames)
+            foreach (PParser.IdenContext varName in varNames)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varName);
                 variable.Type = type;
@@ -382,10 +204,7 @@ namespace Microsoft.Pc.TypeChecker
             groupStack.Push(group);
         }
 
-        public override void ExitGroup(PParser.GroupContext context)
-        {
-            groupStack.Pop();
-        }
+        public override void ExitGroup(PParser.GroupContext context) { groupStack.Pop(); }
 
         public override void EnterStateDecl(PParser.StateDeclContext context)
         {
@@ -459,10 +278,7 @@ namespace Microsoft.Pc.TypeChecker
             functionStack.Push(fun);
         }
 
-        public override void ExitStateEntry(PParser.StateEntryContext context)
-        {
-            functionStack.Pop();
-        }
+        public override void ExitStateEntry(PParser.StateEntryContext context) { functionStack.Pop(); }
 
         public override void EnterOnEventDoAction(PParser.OnEventDoActionContext context)
         {
@@ -488,7 +304,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // ON eventList
-            foreach (var eventIdContext in context.eventList().eventId())
+            foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
             {
                 if (!table.Lookup(eventIdContext.GetText(), out PEvent evt))
                     throw new MissingDeclarationException(eventIdContext.GetText(), eventIdContext);
@@ -501,10 +317,7 @@ namespace Microsoft.Pc.TypeChecker
             functionStack.Push(fun);
         }
 
-        public override void ExitOnEventDoAction(PParser.OnEventDoActionContext context)
-        {
-            functionStack.Pop();
-        }
+        public override void ExitOnEventDoAction(PParser.OnEventDoActionContext context) { functionStack.Pop(); }
 
         public override void EnterStateExit(PParser.StateExitContext context)
         {
@@ -532,10 +345,7 @@ namespace Microsoft.Pc.TypeChecker
             functionStack.Push(fun);
         }
 
-        public override void ExitStateExit(PParser.StateExitContext context)
-        {
-            functionStack.Pop();
-        }
+        public override void ExitStateExit(PParser.StateExitContext context) { functionStack.Pop(); }
 
         public override void EnterOnEventGotoState(PParser.OnEventGotoStateContext context)
         {
@@ -563,10 +373,10 @@ namespace Microsoft.Pc.TypeChecker
             functionStack.Push(transitionFunction);
 
             // GOTO stateName 
-            var target = FindState(context.stateName());
+            State target = FindState(context.stateName());
 
             // ON eventList
-            foreach (var eventIdContext in context.eventList().eventId())
+            foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
             {
                 if (!table.Lookup(eventIdContext.GetText(), out PEvent evt))
                     throw new MissingDeclarationException(eventIdContext.GetText(), eventIdContext);
@@ -586,14 +396,16 @@ namespace Microsoft.Pc.TypeChecker
         private State FindState(PParser.StateNameContext stateName)
         {
             // Starting from machine table...
-            var currTable = programDeclarations.Get(currentMachine.SourceNode);
+            DeclarationTable currTable = programDeclarations.Get(currentMachine.SourceNode);
             if (stateName._groups.Count > 0)
-                foreach (var groupName in stateName._groups)
+            {
+                foreach (IToken groupName in stateName._groups)
                 {
                     if (!currTable.Get(groupName.Text, out StateGroup group))
                         throw new MissingDeclarationException(groupName.Text, stateName);
                     currTable = programDeclarations.Get(group.SourceNode);
                 }
+            }
             // ...and get the state or throw
             Debug.Assert(currTable != null);
             if (!currTable.Get(stateName.state.Text, out State target))
@@ -601,10 +413,7 @@ namespace Microsoft.Pc.TypeChecker
             return target;
         }
 
-        public override void ExitOnEventGotoState(PParser.OnEventGotoStateContext context)
-        {
-            functionStack.Pop();
-        }
+        public override void ExitOnEventGotoState(PParser.OnEventGotoStateContext context) { functionStack.Pop(); }
 
         public override void EnterStateIgnore(PParser.StateIgnoreContext context)
         {
@@ -612,7 +421,7 @@ namespace Microsoft.Pc.TypeChecker
             if (context.annotationSet() != null)
                 throw new NotImplementedException("event ignore annotations");
             // IGNORE nonDefaultEventList
-            foreach (var token in context.nonDefaultEventList()._events)
+            foreach (IToken token in context.nonDefaultEventList()._events)
             {
                 if (!table.Lookup(token.Text, out PEvent evt))
                     throw new MissingDeclarationException(token.Text, context.nonDefaultEventList());
@@ -628,7 +437,7 @@ namespace Microsoft.Pc.TypeChecker
             if (context.annotationSet() != null)
                 throw new NotImplementedException("event defer annotations");
             // DEFER nonDefaultEventList 
-            foreach (var token in context.nonDefaultEventList()._events)
+            foreach (IToken token in context.nonDefaultEventList()._events)
             {
                 if (!table.Lookup(token.Text, out PEvent evt))
                     throw new MissingDeclarationException(token.Text, context.nonDefaultEventList());
@@ -645,9 +454,9 @@ namespace Microsoft.Pc.TypeChecker
                 throw new NotImplementedException("push state annotations");
 
             // PUSH stateName 
-            var targetState = FindState(context.stateName());
+            State targetState = FindState(context.stateName());
             // ON eventList
-            foreach (var token in context.eventList().eventId())
+            foreach (PParser.EventIdContext token in context.eventList().eventId())
             {
                 if (!table.Lookup(token.GetText(), out PEvent evt))
                     throw new MissingDeclarationException(token.GetText(), context.eventList());
@@ -678,6 +487,11 @@ namespace Microsoft.Pc.TypeChecker
         {
             currentEventSet = null;
             currentMachine = null;
+            var specMachine = (Machine)nodesToDeclarations.Get(context);
+            if (specMachine.StartState == null)
+            {
+                throw new NotImplementedException("machines with no start state");
+            }
         }
 
         public override void EnterFunProtoDecl(PParser.FunProtoDeclContext context)
@@ -687,12 +501,14 @@ namespace Microsoft.Pc.TypeChecker
 
             // (CREATES idenList? SEMI)?
             if (context.idenList() != null)
-                foreach (var machineNameToken in context.idenList()._names)
+            {
+                foreach (PParser.IdenContext machineNameToken in context.idenList()._names)
                 {
-                    if (!table.Lookup(machineNameToken.Text, out Machine machine))
-                        throw new MissingDeclarationException(machineNameToken.Text, context.idenList());
+                    if (!table.Lookup(machineNameToken.GetText(), out Machine machine))
+                        throw new MissingDeclarationException(machineNameToken.GetText(), context.idenList());
                     proto.Creates.Add(machine);
                 }
+            }
 
             // (COLON type)?
             proto.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table);
@@ -701,14 +517,11 @@ namespace Microsoft.Pc.TypeChecker
             currentFunctionProto = proto;
         }
 
-        public override void ExitFunProtoDecl(PParser.FunProtoDeclContext context)
-        {
-            currentFunctionProto = null;
-        }
+        public override void ExitFunProtoDecl(PParser.FunProtoDeclContext context) { currentFunctionProto = null; }
 
         public override void EnterEveryRule(ParserRuleContext ctx)
         {
-            var thisTable = programDeclarations.Get(ctx);
+            DeclarationTable thisTable = programDeclarations.Get(ctx);
             if (thisTable != null)
                 table = thisTable;
         }
@@ -728,10 +541,7 @@ namespace Microsoft.Pc.TypeChecker
             currentEventSet = (EventSet) nodesToDeclarations.Get(context);
         }
 
-        public override void ExitEventSetDecl(PParser.EventSetDeclContext context)
-        {
-            currentEventSet = null;
-        }
+        public override void ExitEventSetDecl(PParser.EventSetDeclContext context) { currentEventSet = null; }
 
         public override void EnterInterfaceDecl(PParser.InterfaceDeclContext context)
         {
@@ -761,10 +571,7 @@ namespace Microsoft.Pc.TypeChecker
             currentEventSet = mInterface.ReceivableEvents;
         }
 
-        public override void ExitInterfaceDecl(PParser.InterfaceDeclContext context)
-        {
-            currentEventSet = null;
-        }
+        public override void ExitInterfaceDecl(PParser.InterfaceDeclContext context) { currentEventSet = null; }
 
         public override void EnterPTypeDef(PParser.PTypeDefContext context)
         {
@@ -792,7 +599,7 @@ namespace Microsoft.Pc.TypeChecker
             // name=Iden
             var elem = (EnumElem) nodesToDeclarations.Get(context);
             elem.Value = currentEnum.Count; // listener visits from left-to-right, so this will count upwards correctly.
-            var success = currentEnum.AddElement(elem);
+            bool success = currentEnum.AddElement(elem);
             Debug.Assert(success);
         }
 
@@ -802,7 +609,7 @@ namespace Microsoft.Pc.TypeChecker
             var elem = (EnumElem) nodesToDeclarations.Get(context);
             // ASSIGN value=IntLiteral
             elem.Value = int.Parse(context.value.Text);
-            var success = currentEnum.AddElement(elem);
+            bool success = currentEnum.AddElement(elem);
             Debug.Assert(success);
         }
 
@@ -812,9 +619,9 @@ namespace Microsoft.Pc.TypeChecker
             currentMachine = (Machine) nodesToDeclarations.Get(context);
 
             // cardinality?
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            bool hasAssume = context.cardinality()?.ASSUME() != null;
+            bool hasAssert = context.cardinality()?.ASSERT() != null;
+            int cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
             currentMachine.Assume = hasAssume ? cardinality : -1;
             currentMachine.Assert = hasAssert ? cardinality : -1;
 
@@ -825,8 +632,8 @@ namespace Microsoft.Pc.TypeChecker
             // (COLON idenList)?
             if (context.idenList() != null)
             {
-                var interfaces = context.idenList()._names.Select(name => name.Text);
-                foreach (var pInterfaceName in interfaces)
+                var interfaces = context.idenList()._names.Select(name => name.GetText());
+                foreach (string pInterfaceName in interfaces)
                 {
                     if (!table.Lookup(pInterfaceName, out Interface pInterface))
                         throw new MissingDeclarationException(pInterfaceName, context.idenList());
@@ -845,6 +652,11 @@ namespace Microsoft.Pc.TypeChecker
         public override void ExitImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
             currentMachine = null;
+            var machine = (Machine)nodesToDeclarations.Get(context);
+            if (machine.StartState == null)
+            {
+                throw new NotImplementedException("machines with no start state");
+            }
         }
 
         public override void EnterMachineReceive(PParser.MachineReceiveContext context)
@@ -855,10 +667,7 @@ namespace Microsoft.Pc.TypeChecker
             currentEventSet = currentMachine.Receives;
         }
 
-        public override void ExitMachineReceive(PParser.MachineReceiveContext context)
-        {
-            currentEventSet = null;
-        }
+        public override void ExitMachineReceive(PParser.MachineReceiveContext context) { currentEventSet = null; }
 
         public override void EnterMachineSend(PParser.MachineSendContext context)
         {
@@ -868,18 +677,12 @@ namespace Microsoft.Pc.TypeChecker
             currentEventSet = currentMachine.Sends;
         }
 
-        public override void ExitMachineSend(PParser.MachineSendContext context)
-        {
-            currentEventSet = null;
-        }
+        public override void ExitMachineSend(PParser.MachineSendContext context) { currentEventSet = null; }
     }
 
     public class DuplicateExitException : Exception
     {
-        public DuplicateExitException(State state)
-        {
-            State = state;
-        }
+        public DuplicateExitException(State state) { State = state; }
 
         public State State { get; }
     }
@@ -898,10 +701,7 @@ namespace Microsoft.Pc.TypeChecker
 
     public class DuplicateEntryException : Exception
     {
-        public DuplicateEntryException(State state)
-        {
-            State = state;
-        }
+        public DuplicateEntryException(State state) { State = state; }
 
         public State State { get; }
     }

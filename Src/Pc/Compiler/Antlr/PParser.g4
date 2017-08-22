@@ -91,7 +91,8 @@ eventSetLiteral : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 
 // has scope
 implMachineDecl : MACHINE name=Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
-idenList : names+=Iden (COMMA names+=Iden)* ;
+idenList : names+=iden (COMMA names+=iden)* ;
+iden : Iden ;
 receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
               | SENDS eventSetLiteral? SEMI    # MachineSend
               ;

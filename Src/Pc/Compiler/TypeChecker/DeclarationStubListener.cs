@@ -122,9 +122,9 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterVarDecl(PParser.VarDeclContext context)
         {
-            foreach (ITerminalNode varName in context.idenList().Iden())
+            foreach (PParser.IdenContext varName in context.idenList()._names)
             {
-                Variable decl = currentTable.Put(varName.GetText(), context);
+                Variable decl = currentTable.Put(varName.GetText(), context, varName);
                 nodesToDeclarations.Put(varName, decl);
             }
         }

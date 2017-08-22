@@ -656,4 +656,172 @@ namespace Microsoft.Pc.TypeChecker
 
         public PLanguageType Type { get; }
     }
+
+    public class CastExpr : IPExpr
+    {
+        public CastExpr(IPExpr subExpr, PLanguageType type)
+        {
+            Type = type;
+            SubExpr = subExpr;
+        }
+
+        public IPExpr SubExpr { get; }
+        public PLanguageType Type { get; }
+    }
+
+    public class LogicalNegateExpr : IPExpr
+    {
+        public LogicalNegateExpr(IPExpr subExpr)
+        {
+            SubExpr = subExpr;
+            Type = subExpr.Type;
+        }
+
+        public IPExpr SubExpr { get; }
+        public PLanguageType Type { get; }
+    }
+
+    public class SignNegateExpr : IPExpr
+    {
+        public SignNegateExpr(IPExpr subExpr)
+        {
+            SubExpr = subExpr;
+            Type = subExpr.Type;
+        }
+
+        public IPExpr SubExpr { get; }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class FunCallExpr : IPExpr
+    {
+        public FunCallExpr(Function function, IPExpr[] arguments)
+        {
+            Function = function;
+            Arguments = arguments;
+            Type = function.Signature.ReturnType;
+        }
+
+        public Function Function { get; }
+        public IPExpr[] Arguments { get; }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class CtorExpr : IPExpr
+    {
+        public CtorExpr(Machine machine, IPExpr[] arguments)
+        {
+            Machine = machine;
+            Arguments = arguments;
+        }
+
+        public Machine Machine { get; }
+        public IPExpr[] Arguments { get; }
+
+        public PLanguageType Type { get; } = PrimitiveType.Machine;
+    }
+
+    public class DefaultExpr : IPExpr
+    {
+        public DefaultExpr(PLanguageType type) { Type = type; }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class SizeofExpr : IPExpr
+    {
+        public SizeofExpr(IPExpr expr) { Expr = expr; }
+
+        public IPExpr Expr { get; }
+
+        public PLanguageType Type { get; } = PrimitiveType.Int;
+    }
+
+    public class ValuesExpr : IPExpr
+    {
+        public ValuesExpr(IPExpr expr, PLanguageType type)
+        {
+            Expr = expr;
+            Type = type;
+        }
+
+        public IPExpr Expr { get; }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class KeysExpr : IPExpr
+    {
+        public KeysExpr(IPExpr expr, PLanguageType type)
+        {
+            Expr = expr;
+            Type = type;
+        }
+
+        public IPExpr Expr { get; }
+        public PLanguageType Type { get; }
+    }
+
+    public class SeqAccessExpr : IPExpr
+    {
+        public SeqAccessExpr(IPExpr seqExpr, IPExpr indexExpr, PLanguageType type)
+        {
+            SeqExpr = seqExpr;
+            IndexExpr = indexExpr;
+            Type = type;
+        }
+
+        public IPExpr SeqExpr { get; }
+        public IPExpr IndexExpr { get; }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class NamedTupleAccessExpr : IPExpr
+    {
+        public NamedTupleAccessExpr(IPExpr subExpr, string fieldName, PLanguageType type)
+        {
+            SubExpr = subExpr;
+            FieldName = fieldName;
+            Type = type;
+        }
+
+        public IPExpr SubExpr { get; }
+        public string FieldName { get; }
+        public PLanguageType Type { get; }
+    }
+
+    public class TupleAccessExpr : IPExpr
+    {
+        public TupleAccessExpr(IPExpr subExpr, int fieldNo, PLanguageType type)
+        {
+            SubExpr = subExpr;
+            FieldNo = fieldNo;
+            Type = type;
+        }
+
+        public IPExpr SubExpr { get; }
+        public int FieldNo { get; }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class TypeException : Exception
+    {
+        public TypeException(ParserRuleContext location, string clarification)
+        {
+            Location = location;
+            Clarification = clarification;
+        }
+
+        public ParserRuleContext Location { get; }
+        public string Clarification { get; }
+    }
+
+    public interface IPExpr
+    {
+        PLanguageType Type { get; }
+    }
 }

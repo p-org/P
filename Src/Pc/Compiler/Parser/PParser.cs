@@ -1549,33 +1549,39 @@ namespace Microsoft.Pc.Parser
             crntEventList.Clear();
         }
 
-        private void AddSymbolicMachineName(string iname, Span inameSpan, Span iesnameSpan, Span span)
+        private void AddSymbolicMachineName(string iname, bool isReceiveAvailable, Span inameSpan, Span iesnameSpan, Span span)
         {
             var inDecl = GetCurrentInterfaceTypeDef(span);
             inDecl.Span = span;
             inDecl.name = MkString(iname, inameSpan);
             inDecl.id = (P_Root.IArgType_SymbolicMachineNameDef__3)MkUniqueId(inameSpan);
-
-            //declaration contains set of events
-            Contract.Assert(crntEventList.Count() > 0);
-            var anonEventSetName = "__AnonEventSet_" + iname;
-            anonEventSetCounter++;
-            var eventset = new P_Root.EventSetDecl();
-            eventset.name = MkString(anonEventSetName, iesnameSpan);
-            eventset.id = (P_Root.IArgType_EventSetDecl__1)MkUniqueId(inameSpan);
-            eventset.Span = span;
-            parseProgram.Add(eventset);
-            foreach (var ev in crntEventList)
+            if (isReceiveAvailable)
             {
-                var eventsetContains = new P_Root.EventSetContains();
-                eventsetContains.evset = eventset;
-                eventsetContains.ev = (P_Root.IArgType_EventSetContains__1)ev;
-                eventsetContains.Span = ev.Span;
-                parseProgram.Add(eventsetContains);
+                //declaration contains set of events
+                Contract.Assert(crntEventList.Count() > 0);
+                var anonEventSetName = "__AnonEventSet_" + iname;
+                anonEventSetCounter++;
+                var eventset = new P_Root.EventSetDecl();
+                eventset.name = MkString(anonEventSetName, iesnameSpan);
+                eventset.id = (P_Root.IArgType_EventSetDecl__1)MkUniqueId(inameSpan);
+                eventset.Span = span;
+                parseProgram.Add(eventset);
+                foreach (var ev in crntEventList)
+                {
+                    var eventsetContains = new P_Root.EventSetContains();
+                    eventsetContains.evset = eventset;
+                    eventsetContains.ev = (P_Root.IArgType_EventSetContains__1)ev;
+                    eventsetContains.Span = ev.Span;
+                    parseProgram.Add(eventsetContains);
+                }
+                inDecl.evsetName = MkString(anonEventSetName, iesnameSpan);
+                crntEventList.Clear();
             }
-            inDecl.evsetName = MkString(anonEventSetName, iesnameSpan);
-            crntEventList.Clear();
-            
+            else
+            {
+                Contract.Assert(crntEventList.Count() == 0);
+                inDecl.evsetName = (P_Root.IArgType_SymbolicMachineNameDef__1)MkUserCnst(P_Root.UserCnstKind.ALL, iesnameSpan);
+            }
             
             parseProgram.Add(inDecl);
             if (IsValidName(PProgramTopDecl.Interface, iname, inameSpan))

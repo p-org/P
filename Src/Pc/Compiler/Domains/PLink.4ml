@@ -39,7 +39,7 @@ domain PLink
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
 	Pure				::= new (name: String, isPure: { TRUE, FALSE }).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
-	SymbolicMachineNameDecl	::= new (name: String, list: InterfaceType, argType: any TypeExpr, id: any Id).
+	SymbolicMachineNameDecl	::= new (name: String, list: any InterfaceType + { ALL }, argType: any TypeExpr, id: any Id).
     MachineDecl			::= new (name: String, constType: any TypeExpr, id: any Id).
 	MonitorDecl			::= new (name: String, obsList: InterfaceType, id: any Id).
 	MachineProtoDecl	::= fun (name: String -> constType: any TypeExpr).

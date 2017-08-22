@@ -109,7 +109,8 @@ EventSetDecl
 	;
 
 MachineSymNameDecl
-	: MACHINE ID LPAREN ConstTypeOrNone RPAREN RECEIVES NonDefaultEventList SEMICOLON	{ AddSymbolicMachineName($2.str, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
+	: MACHINE ID LPAREN ConstTypeOrNone RPAREN RECEIVES NonDefaultEventList SEMICOLON	{ AddSymbolicMachineName($2.str, true, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
+	| MACHINE ID LPAREN ConstTypeOrNone RPAREN SEMICOLON								{ AddSymbolicMachineName($2.str, false, ToSpan(@2), ToSpan(@6), ToSpan(@1)); } 
 	;
 
 ConstTypeOrNone

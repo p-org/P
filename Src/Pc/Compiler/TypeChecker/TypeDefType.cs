@@ -11,5 +11,9 @@ namespace Microsoft.Pc.TypeChecker {
         public override string OriginalRepresentation => TypeDefDecl.Name;
 
         public override string CanonicalRepresentation => TypeDefDecl.Type.CanonicalRepresentation;
+        public override bool IsAssignableFrom(PLanguageType otherType)
+        {
+            return TypeDefDecl.Type.IsAssignableFrom(otherType);
+        }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
@@ -26,7 +25,7 @@ namespace UnitTests.PSharpBackend
 
             for (var i = 0; i < inputFiles.Length; i++)
             {
-                FileInfo inputFile = inputFiles[i];
+                var inputFile = inputFiles[i];
                 var fileStream = new AntlrFileStream(inputFile.FullName);
                 var lexer = new PLexer(fileStream);
                 var tokens = new CommonTokenStream(lexer);
@@ -46,20 +45,18 @@ namespace UnitTests.PSharpBackend
 
             Location GetLocation(IPDecl decl)
             {
-                return GetTreeLocation(decl.SourceNode);
+                return GetRuleLocation(decl.SourceNode);
             }
 
-            Location GetTreeLocation(ParserRuleContext decl)
+            Location GetRuleLocation(ParserRuleContext decl)
             {
                 if (decl == null)
-                {
                     return new Location
                     {
                         Line = -1,
                         Column = -1,
                         File = null
                     };
-                }
                 return new Location
                 {
                     Line = decl.Start.Line,
@@ -74,36 +71,36 @@ namespace UnitTests.PSharpBackend
             }
             catch (DuplicateDeclarationException e)
             {
-                Location bad = GetLocation(e.Conflicting);
-                Location good = GetLocation(e.Existing);
+                var bad = GetLocation(e.Conflicting);
+                var good = GetLocation(e.Existing);
                 Console.Error.WriteLine(
                                         $"[{testName}] Declaration of {e.Conflicting.Name} at {bad} duplicates the declaration at {good}");
             }
             catch (MissingEventException e)
             {
-                Location eventSetLocation = GetLocation(e.EventSet);
+                var eventSetLocation = GetLocation(e.EventSet);
                 Console.Error.WriteLine(
                                         $"[{testName}] Event set {e.EventSet.Name} at {eventSetLocation} references non-existent event {e.EventName}");
             }
             catch (EnumMissingDefaultException e)
             {
-                Location enumLocation = GetLocation(e.Enum);
+                var enumLocation = GetLocation(e.Enum);
                 Console.Error.WriteLine(
                                         $"[{testName}] Enum {e.Enum.Name} at {enumLocation} does not have a default 0-element");
             }
             catch (TypeConstructionException e)
             {
-                Location badTypeLocation = GetTreeLocation(e.Subtree);
+                var badTypeLocation = GetRuleLocation(e.Subtree);
                 Console.Error.WriteLine($"[{testName}] {badTypeLocation} : {e.Message}");
             }
             catch (DuplicateHandlerException e)
             {
-                Location badLocation = GetLocation(e.BadEvent);
+                var badLocation = GetLocation(e.BadEvent);
                 Console.Error.WriteLine($"[{testName}] Event {e.BadEvent.Name} has multiple handlers at {badLocation}");
             }
             catch (MissingDeclarationException e)
             {
-                Location location = GetTreeLocation(e.Location);
+                var location = GetRuleLocation(e.Location);
                 Console.Error.WriteLine($"[{testName}] Could not find declaration {e.Declaration} at {location}");
             }
             catch (NotImplementedException e)
@@ -124,12 +121,10 @@ namespace UnitTests.PSharpBackend
             }
         }
 
-        private static RuleContext GetRoot(RuleContext node)
+        private static IParseTree GetRoot(IParseTree node)
         {
             while (node?.Parent != null)
-            {
                 node = node.Parent;
-            }
 
             return node;
         }
@@ -137,11 +132,11 @@ namespace UnitTests.PSharpBackend
         [Test]
         public void TestAnalyzeAllTests()
         {
-            IEnumerable<TestCaseData> testCases = TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
-            foreach (TestCaseData testCase in testCases)
+            var testCases = TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
+            foreach (var testCase in testCases)
             {
                 var testDir = (DirectoryInfo) testCase.Arguments[0];
-                string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
+                var testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
                     .MakeRelativeUri(new Uri(testDir.FullName)).ToString();
 
                 RunTest(testName, testDir.GetFiles("*.p"));

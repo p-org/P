@@ -5,9 +5,184 @@ using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.Domains;
 
 namespace Microsoft.Pc.TypeChecker
 {
+    public class CastExpr : IPExpr
+    {
+        public PLanguageType Type { get; }
+        public IPExpr SubExpr { get; }
+
+        public CastExpr(IPExpr subExpr, PLanguageType type)
+        {
+            Type = type;
+            SubExpr = subExpr;
+        }
+    }
+
+    public class LogicalNegateExpr : IPExpr
+    {
+        public IPExpr SubExpr { get; }
+        public PLanguageType Type { get; }
+
+        public LogicalNegateExpr(IPExpr subExpr)
+        {
+            SubExpr = subExpr;
+            Type = subExpr.Type;
+        }
+    }
+
+    public class SignNegateExpr : IPExpr
+    {
+        public IPExpr SubExpr { get; }
+
+        public SignNegateExpr(IPExpr subExpr)
+        {
+            SubExpr = subExpr;
+            Type = subExpr.Type;
+        }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class FunCallExpr : IPExpr
+    {
+        public Function Function { get; }
+        public IPExpr[] Arguments { get; }
+
+        public FunCallExpr(Function function, IPExpr[] arguments)
+        {
+            Function = function;
+            Arguments = arguments;
+            Type = function.Signature.ReturnType;
+        }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class CtorExpr : IPExpr
+    {
+        public Machine Machine { get; }
+        public IPExpr[] Arguments { get; }
+
+        public CtorExpr(Machine machine, IPExpr[] arguments)
+        {
+            Machine = machine;
+            Arguments = arguments;
+        }
+
+        public PLanguageType Type { get; } = PrimitiveType.Machine;
+    }
+
+    public class DefaultExpr : IPExpr
+    {
+        public PLanguageType Type { get; }
+
+        public DefaultExpr(PLanguageType type)
+        {
+            Type = type;
+        }
+    }
+
+    public class SizeofExpr : IPExpr
+    {
+        public IPExpr Expr { get; }
+
+        public SizeofExpr(IPExpr expr)
+        {
+            Expr = expr;
+        }
+
+        public PLanguageType Type { get; } = PrimitiveType.Int;
+    }
+
+    public class ValuesExpr : IPExpr
+    {
+        public IPExpr Expr { get; }
+
+        public ValuesExpr(IPExpr expr, PLanguageType type)
+        {
+            Expr = expr;
+            Type = type;
+        }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class KeysExpr : IPExpr
+    {
+        public KeysExpr(IPExpr expr, PLanguageType type)
+        {
+            Expr = expr;
+            Type = type;
+        }
+
+        public IPExpr Expr { get; }
+        public PLanguageType Type { get; }
+    }
+
+    public class SeqAccessExpr : IPExpr
+    {
+        public IPExpr SeqExpr { get; }
+        public IPExpr IndexExpr { get; }
+
+        public SeqAccessExpr(IPExpr seqExpr, IPExpr indexExpr, PLanguageType type)
+        {
+            SeqExpr = seqExpr;
+            IndexExpr = indexExpr;
+            Type = type;
+        }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class NamedTupleAccessExpr : IPExpr
+    {
+        public NamedTupleAccessExpr(IPExpr subExpr, string fieldName, PLanguageType type)
+        {
+            SubExpr = subExpr;
+            FieldName = fieldName;
+            Type = type;
+        }
+
+        public IPExpr SubExpr { get; }
+        public string FieldName { get; }
+        public PLanguageType Type { get; }
+    }
+
+    public class TupleAccessExpr : IPExpr
+    {
+        public IPExpr SubExpr { get; }
+        public int FieldNo { get; }
+
+        public TupleAccessExpr(IPExpr subExpr, int fieldNo, PLanguageType type)
+        {
+            SubExpr = subExpr;
+            FieldNo = fieldNo;
+            Type = type;
+        }
+
+        public PLanguageType Type { get; }
+    }
+
+    public class TypeException : Exception
+    {
+        public ParserRuleContext Location { get; }
+        public string Clarification { get; }
+
+        public TypeException(ParserRuleContext location, string clarification)
+        {
+            Location = location;
+            Clarification = clarification;
+        }
+    }
+
+    public interface IPExpr
+    {
+        PLanguageType Type { get; }
+    }
+
     public class DeclarationListener : PParserBaseListener
     {
         /// <summary>
@@ -187,7 +362,10 @@ namespace Microsoft.Pc.TypeChecker
                 if (CurrentFunction != null)
                     CurrentFunction.LocalVariables.Add(variable);
                 else
+                {
+                    Debug.Assert(currentMachine != null);
                     currentMachine.Fields.Add(variable);
+                }
             }
         }
 
@@ -545,7 +723,6 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-
         public override void EnterEventSetDecl(PParser.EventSetDeclContext context)
         {
             currentEventSet = (EventSet) nodesToDeclarations.Get(context);
@@ -566,8 +743,8 @@ namespace Microsoft.Pc.TypeChecker
 
             if (context.eventSet == null)
             {
-                // ASSIGN LBRACE nonDefaultEventList RBRACE
-                // ... or let the nonDefaultEventList handler fill in a newly created event set
+                // ASSIGN LBRACE eventSetLiteral RBRACE
+                // ... or let the eventSetLiteral handler fill in a newly created event set
                 Debug.Assert(context.eventSetLiteral() != null);
                 mInterface.ReceivableEvents = new EventSet($"{mInterface.Name}$eventset", context.eventSetLiteral());
             }
@@ -672,7 +849,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterMachineReceive(PParser.MachineReceiveContext context)
         {
-            // RECEIVES nonDefaultEventList? SEMI
+            // RECEIVES eventSetLiteral? SEMI
             if (currentMachine.Receives == null)
                 currentMachine.Receives = new EventSet($"{currentMachine.Name}$receives", context.eventSetLiteral());
             currentEventSet = currentMachine.Receives;
@@ -685,7 +862,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterMachineSend(PParser.MachineSendContext context)
         {
-            // SENDS nonDefaultEventList? SEMI
+            // SENDS eventSetLiteral? SEMI
             if (currentMachine.Sends == null)
                 currentMachine.Sends = new EventSet($"{currentMachine.Name}$sends", context.eventSetLiteral());
             currentEventSet = currentMachine.Sends;

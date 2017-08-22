@@ -89,6 +89,7 @@ interfaceDecl : TYPE name=Iden LPAREN type? RPAREN ASSIGN eventSet=Iden SEMI
 
 eventSetLiteral : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 
+// has scope
 implMachineDecl : MACHINE name=Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
 idenList : names+=Iden (COMMA names+=Iden)* ;
 receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
@@ -159,8 +160,8 @@ statement : LBRACE statement* RBRACE
           | SEMI
           ;
 
-lvalue : Iden
-       | lvalue DOT Iden
+lvalue : name=Iden
+       | lvalue DOT field=Iden
        | lvalue DOT IntLiteral
        | lvalue LBRACK expr RBRACK
        ;
@@ -173,23 +174,23 @@ expr : primitive # PrimitiveExpr
      | LPAREN unnamedTupleBody RPAREN # UnnamedTupleExpr
      | LPAREN namedTupleBody RPAREN # NamedTupleExpr
      | LPAREN expr RPAREN # ParenExpr
-     | expr DOT field=Iden # TupleAccessExpr
+     | expr DOT field=Iden # NamedTupleAccessExpr
      | expr DOT field=IntLiteral # TupleAccessExpr
-     | expr LBRACK expr RBRACK # SeqAccessExpr
+     | seq=expr LBRACK index=expr RBRACK # SeqAccessExpr
      | fun=KEYS LPAREN expr RPAREN # KeywordExpr
      | fun=VALUES LPAREN expr RPAREN # KeywordExpr
      | fun=SIZEOF LPAREN expr RPAREN # KeywordExpr
      | fun=DEFAULT LPAREN type RPAREN # KeywordExpr
-     | NEW Iden LPAREN rvalueList? RPAREN #CtorExpr
-     | Iden LPAREN rvalueList? RPAREN # FunCallExpr
+     | NEW machineName=Iden LPAREN rvalueList? RPAREN #CtorExpr
+     | fun=Iden LPAREN rvalueList? RPAREN # FunCallExpr
      | op=(SUB | LNOT) expr # UnaryExpr
-     | expr op=(MUL | DIV) expr # BinExpr
-     | expr op=(ADD | SUB) expr # BinExpr
+     | lhs=expr op=(MUL | DIV) rhs=expr # BinExpr
+     | lhs=expr op=(ADD | SUB) rhs=expr # BinExpr
      | expr cast=(AS | TO) type # CastExpr
-     | expr op=(LT | GT | GE | LE | IN) expr # BinExpr
-     | expr op=(EQ | NE) expr # BinExpr
-     | expr op=LAND expr # BinExpr
-     | expr op=LOR expr # BinExpr
+     | lhs=expr op=(LT | GT | GE | LE | IN) rhs=expr # BinExpr
+     | lhs=expr op=(EQ | NE) rhs=expr # BinExpr
+     | lhs=expr op=LAND rhs=expr # BinExpr
+     | lhs=expr op=LOR rhs=expr # BinExpr
      ;
 
 primitive : Iden

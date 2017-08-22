@@ -12,5 +12,9 @@ namespace Microsoft.Pc.TypeChecker
         public EventSet EventSet { get; }
         public override string OriginalRepresentation => $"any<{EventSet.Name}>";
         public override string CanonicalRepresentation => $"any<{{{string.Join(",", EventSet.Events.Select(ev => ev.Name))}}}>";
+        public override bool IsAssignableFrom(PLanguageType otherType)
+        {
+            throw new System.NotImplementedException("any<> type checking");
+        }
     }
 }

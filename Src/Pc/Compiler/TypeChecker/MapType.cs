@@ -10,7 +10,19 @@ namespace Microsoft.Pc.TypeChecker
 
         public PLanguageType KeyType { get; }
         public PLanguageType ValueType { get; }
-        public override string OriginalRepresentation => $"map[{KeyType.OriginalRepresentation},{ValueType.OriginalRepresentation}]";
-        public override string CanonicalRepresentation => $"map[{KeyType.CanonicalRepresentation},{ValueType.CanonicalRepresentation}]";
+
+        public override string OriginalRepresentation =>
+            $"map[{KeyType.OriginalRepresentation},{ValueType.OriginalRepresentation}]";
+
+        public override string CanonicalRepresentation =>
+            $"map[{KeyType.CanonicalRepresentation},{ValueType.CanonicalRepresentation}]";
+
+        public override bool IsAssignableFrom(PLanguageType otherType)
+        {
+            // Copying semantics: both the other key and value types must be subtypes of this key/value type.
+            var other = otherType as MapType;
+            return other != null && KeyType.IsAssignableFrom(other.KeyType) &&
+                   ValueType.IsAssignableFrom(other.ValueType);
+        }
     }
 }

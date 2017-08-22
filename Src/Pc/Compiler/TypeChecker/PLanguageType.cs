@@ -21,5 +21,12 @@ namespace Microsoft.Pc.TypeChecker
         ///     Representation of the type with typedefs and event sets expanded.
         /// </summary>
         public abstract string CanonicalRepresentation { get; }
+
+        public abstract bool IsAssignableFrom(PLanguageType otherType);
+
+        public virtual bool IsSameTypeAs(PLanguageType otherType)
+        {
+            return this.IsAssignableFrom(otherType) && otherType.IsAssignableFrom(this);
+        }
     }
 }

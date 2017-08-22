@@ -19,5 +19,11 @@ namespace Microsoft.Pc.TypeChecker
 
         public override string OriginalRepresentation { get; }
         public override string CanonicalRepresentation { get; }
+        public override bool IsAssignableFrom(PLanguageType otherType)
+        {
+            // if this type is "any", then it's always good. Otherwise, the types have to match exactly.
+            return CanonicalRepresentation.Equals("any") ||
+                   CanonicalRepresentation.Equals(otherType.CanonicalRepresentation);
+        }
     }
 }

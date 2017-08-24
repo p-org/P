@@ -34,11 +34,15 @@ namespace Microsoft.Pc.TypeChecker
         {
             IPExpr subExpr = Visit(context.expr());
             if (!(subExpr.Type is NamedTupleType))
+            {
                 throw new TypeException(context.expr(), "expected named tuple type");
+            }
             var tuple = (NamedTupleType) subExpr.Type;
             string fieldName = context.field.Text;
             if (!tuple.LookupEntry(fieldName, out var entry))
+            {
                 throw new TypeException(context, "invalid named tuple field");
+            }
             return new NamedTupleAccessExpr(subExpr, fieldName, entry.Type);
         }
 
@@ -46,11 +50,15 @@ namespace Microsoft.Pc.TypeChecker
         {
             IPExpr subExpr = Visit(context.expr());
             if (!(subExpr.Type is TupleType))
+            {
                 throw new TypeException(context.expr(), "expected tuple type");
+            }
             var tuple = (TupleType) subExpr.Type;
             int fieldNo = int.Parse(context.field.Text);
             if (tuple.Types.Length >= fieldNo)
+            {
                 throw new TypeException(context, "tuple access out of bounds");
+            }
             PLanguageType type = tuple.Types[fieldNo];
             return new TupleAccessExpr(subExpr, fieldNo, type);
         }
@@ -60,7 +68,13 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr seqExpr = Visit(context.seq);
             IPExpr indexExpr = Visit(context.index);
             if (!(seqExpr.Type is SequenceType))
+            {
                 throw new TypeException(context.seq, "expression must be sequence type");
+            }
+            if (indexExpr.Type != PrimitiveType.Int)
+            {
+                throw new TypeException(context.index, "index must be int type");
+            }
 
             var type = (SequenceType) seqExpr.Type;
             return new SeqAccessExpr(seqExpr, indexExpr, type.ElementType);
@@ -85,7 +99,9 @@ namespace Microsoft.Pc.TypeChecker
                 case "sizeof":
                     expr = Visit(context.expr());
                     if (!(expr.Type is SequenceType) && !(expr.Type is MapType))
+                    {
                         throw new TypeException(context.expr(), $"{context.fun.Text} expects map or seq type");
+                    }
                     return new SizeofExpr(expr);
                 case "default":
                     PLanguageType type = TypeResolver.ResolveType(context.type(), table);
@@ -101,18 +117,25 @@ namespace Microsoft.Pc.TypeChecker
             if (!table.Lookup(machineName, out Machine machine))
             {
                 if (!table.Lookup(machineName, out MachineProto proto))
+                {
                     throw new NotImplementedException($"constructing machine prototypes ({proto.Name})");
+                }
                 throw new MissingDeclarationException(machineName, context);
             }
+
             var arguments = context.rvalueList().rvalue().Select(Visit).ToArray();
             if (machine.PayloadType == PrimitiveType.Null && arguments.Length != 0)
+            {
                 throw new TypeException(context, $"machine {machine.Name} expects no parameters, but 1 was given");
+            }
+
             if (machine.PayloadType != PrimitiveType.Null && arguments.Length != 1)
             {
                 throw new TypeException(
                                         context,
                                         $"machine {machine.Name} expects a single parameter, but {arguments.Length} were given");
             }
+
             if (machine.PayloadType != PrimitiveType.Null)
             {
                 // check the argument types
@@ -125,6 +148,7 @@ namespace Microsoft.Pc.TypeChecker
                                             $"{actualType.OriginalRepresentation} is not a subtype of {expectedType.OriginalRepresentation}");
                 }
             }
+
             return new CtorExpr(machine, arguments);
         }
 
@@ -134,12 +158,14 @@ namespace Microsoft.Pc.TypeChecker
             if (!table.Lookup(funName, out Function function))
             {
                 if (table.Lookup(funName, out FunctionProto proto))
+                {
                     throw new NotImplementedException($"function proto calls ({proto.Name})");
+                }
                 throw new MissingDeclarationException(funName, context);
             }
 
             // Check the arguments
-            // TODO: linear types
+            // TODO: linearly typed arguments
             var arguments = context.rvalueList().rvalue().Select(Visit).ToArray();
             for (var i = 0; i < arguments.Length; i++)
             {
@@ -147,8 +173,7 @@ namespace Microsoft.Pc.TypeChecker
                 PLanguageType paramType = function.Signature.Parameters[i].Type;
                 if (!paramType.IsAssignableFrom(argument.Type))
                 {
-                    throw new TypeException(
-                                            context.rvalueList().rvalue(i),
+                    throw new TypeException(context.rvalueList().rvalue(i),
                                             $"{argument.Type.OriginalRepresentation} is not a subtype of {paramType.OriginalRepresentation}");
                 }
             }
@@ -164,16 +189,14 @@ namespace Microsoft.Pc.TypeChecker
                 case "-":
                     if (subExpr.Type != PrimitiveType.Int && subExpr.Type != PrimitiveType.Float)
                     {
-                        throw new TypeException(
-                                                context,
+                        throw new TypeException(context,
                                                 $"sign negation only applies to ints and floats, not to {subExpr.Type.OriginalRepresentation}");
                     }
                     return new SignNegateExpr(subExpr);
                 case "!":
                     if (subExpr.Type != PrimitiveType.Bool)
                     {
-                        throw new TypeException(
-                                                context,
+                        throw new TypeException(context,
                                                 $"logical negation only applies to bools, not to {subExpr.Type.OriginalRepresentation}");
                     }
                     return new LogicalNegateExpr(subExpr);
@@ -192,7 +215,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 {"*", (elhs, erhs) => new MultExpr(elhs, erhs)},
                 {"/", (elhs, erhs) => new DivExpr(elhs, erhs)},
-                {"+", (elhs, erhs) => new AddExpr(elhs, erhs)}, // TODO: are there other overloads for plus?
+                {"+", (elhs, erhs) => new AddExpr(elhs, erhs)},
                 {"-", (elhs, erhs) => new SubExpr(elhs, erhs)},
                 {"<", (elhs, erhs) => new LessThanExpr(elhs, erhs)},
                 {"<=", (elhs, erhs) => new LessEqualsExpr(elhs, erhs)},
@@ -224,18 +247,20 @@ namespace Microsoft.Pc.TypeChecker
                 case "<=":
                     if (lhs.Type == PrimitiveType.Int && rhs.Type == PrimitiveType.Int ||
                         lhs.Type == PrimitiveType.Float && rhs.Type == PrimitiveType.Float)
+                    {
                         return arithCtors[op](lhs, rhs);
-                    throw new TypeException(
-                                            context,
+                    }
+                    throw new TypeException(context,
                                             $"operator {op} expects operands to both be either int or float; instead got ({lhs.Type.OriginalRepresentation}, {rhs.Type.OriginalRepresentation})");
                 case "in":
                     var rhsMap = rhs.Type as MapType;
                     if (rhsMap == null)
+                    {
                         throw new TypeException(context, $"operator {op} requires a map type on the right hand side");
+                    }
                     if (!rhsMap.KeyType.IsAssignableFrom(lhs.Type))
                     {
-                        throw new TypeException(
-                                                context,
+                        throw new TypeException(context,
                                                 $"{lhs.Type.OriginalRepresentation} is not a subtype of the key type of {rhs.Type.OriginalRepresentation}");
                     }
                     return new ContainsKeyExpr(lhs, rhs);
@@ -243,15 +268,15 @@ namespace Microsoft.Pc.TypeChecker
                 case "!=":
                     if (!lhs.Type.IsAssignableFrom(rhs.Type) && !rhs.Type.IsAssignableFrom(lhs.Type))
                     {
-                        throw new TypeException(
-                                                context,
-                                                $"{op} comparison between two unrelated types");
+                        throw new TypeException(context, $"{op} comparison between two unrelated types");
                     }
                     return compCtors[op](lhs, rhs);
                 case "&&":
                 case "||":
                     if (lhs.Type == PrimitiveType.Bool && rhs.Type == PrimitiveType.Bool)
+                    {
                         return logicCtors[op](lhs, rhs);
+                    }
                     throw new TypeException(context, $"operator {op} expects both operands to be bools");
                 default:
                     throw new ArgumentException($"unknown binary operation {op}", nameof(context));
@@ -262,15 +287,19 @@ namespace Microsoft.Pc.TypeChecker
         {
             IPExpr subExpr = Visit(context.expr());
             PLanguageType newType = TypeResolver.ResolveType(context.type(), table);
-            if (!newType.IsAssignableFrom(subExpr.Type) && !subExpr.Type.IsAssignableFrom(newType))
+            if (context.cast.Text.Equals("as"))
             {
-                throw new TypeException(
-                                        context,
-                                        $"impossible cast from {subExpr.Type.OriginalRepresentation} to {newType.OriginalRepresentation}");
+                if (!newType.IsAssignableFrom(subExpr.Type) && !subExpr.Type.IsAssignableFrom(newType))
+                {
+                    throw new TypeException(context, $"impossible cast from {subExpr.Type.OriginalRepresentation} to {newType.OriginalRepresentation}");
+                }
+                return new CastExpr(subExpr, newType);
             }
-            // TODO: semantics of `as` vs `to`?
-            // `to` seems to allow some direct conversions. Maybe add IsConvertibleFrom as a virtual method?
-            return new CastExpr(subExpr, newType);
+            if (context.cast.Text.Equals("to"))
+            {
+                throw new NotImplementedException("to conversions");
+            }
+            throw new ArgumentException(nameof(context));
         }
 
         public override IPExpr VisitPrimitive(PParser.PrimitiveContext context)
@@ -279,27 +308,50 @@ namespace Microsoft.Pc.TypeChecker
             {
                 string symbolName = context.Iden().GetText();
                 if (table.Lookup(symbolName, out Variable variable))
+                {
                     return new VariableAccessExpr(variable);
+                }
+                if (table.Lookup(symbolName, out EnumElem enumElem))
+                {
+                    return new EnumElemRefExpr(enumElem);
+                }
+                if (table.Lookup(symbolName, out PEvent evt))
+                {
+                    return new EventRefExpr(evt);
+                }
+                throw new MissingDeclarationException(symbolName, context);
             }
-            else if (context.floatLiteral() != null)
+            if (context.floatLiteral() != null)
+            {
                 return VisitFloatLiteral(context.floatLiteral());
-            else if (context.BoolLiteral() != null)
+            }
+            if (context.BoolLiteral() != null)
+            {
                 return new BoolLiteralExpr(context.BoolLiteral().GetText().Equals("true"));
-            else if (context.IntLiteral() != null)
+            }
+            if (context.IntLiteral() != null)
+            {
                 return new IntLiteralExpr(int.Parse(context.IntLiteral().GetText()));
-            else if (context.NullLiteral() != null)
+            }
+            if (context.NullLiteral() != null)
+            {
                 return new NullLiteralExpr();
-            else if (context.NONDET() != null)
+            }
+            if (context.NONDET() != null)
+            {
                 return new NondetExpr();
-            else if (context.FAIRNONDET() != null)
+            }
+            if (context.FAIRNONDET() != null)
+            {
                 return new FairNondetExpr();
-            else if (context.HALT() != null)
+            }
+            if (context.HALT() != null)
             {
                 bool success = table.Lookup("halt", out PEvent haltEvent);
                 Debug.Assert(success);
                 return new EventRefExpr(haltEvent);
             }
-            else if (context.THIS() != null)
+            if (context.THIS() != null)
             {
                 RuleContext ctx = context;
                 var hasMachineParent = false;
@@ -313,13 +365,14 @@ namespace Microsoft.Pc.TypeChecker
                     ctx = ctx.Parent;
                 }
                 if (!hasMachineParent)
+                {
                     throw new TypeException(context, "keyword `this` must appear in machine");
+                }
                 string machineName = (ctx as PParser.ImplMachineDeclContext)?.name.Text ??
                                      (ctx as PParser.SpecMachineDeclContext)?.name.Text;
                 if (!table.Lookup(machineName, out Machine machine))
                 {
-                    throw new ArgumentException(
-                                                $"Sanity check failed. Could not find machine {machineName}",
+                    throw new ArgumentException($"Sanity check failed. Could not find machine {machineName}",
                                                 nameof(context));
                 }
                 return new ThisRefExpr(machine);
@@ -338,8 +391,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitNamedTupleBody(PParser.NamedTupleBodyContext context)
         {
             var fields = context._values.Select(Visit).ToArray();
-            var entries = context._names.Zip(
-                                             fields,
+            var entries = context._names.Zip(fields,
                                              (fieldName, value) => new NamedTupleEntry
                                              {
                                                  Name = fieldName.Text,
@@ -364,9 +416,61 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitRvalue(PParser.RvalueContext context)
         {
             if (context.linear != null)
-                throw new NotImplementedException("linearly typed variable accesses");
+            {
+                string varName = context.Iden().GetText();
+                if (!table.Lookup(varName, out Variable variable))
+                {
+                    throw new MissingDeclarationException(varName, context);
+                }
+
+                return context.linear.Text.Equals("move")
+                           ? new LinearAccessRefExpr(variable, LinearType.Move)
+                           : new LinearAccessRefExpr(variable, LinearType.Swap);
+            }
             return Visit(context.expr());
         }
+    }
+
+    public class EnumElemRefExpr : IPExpr
+    {
+        public EnumElemRefExpr(EnumElem enumElem)
+        {
+            EnumElem = enumElem;
+            Type = new EnumType(EnumElem.ParentEnum);
+        }
+
+        public EnumElem EnumElem { get; }
+        public PLanguageType Type { get; }
+    }
+
+    public enum LinearType
+    {
+        Move,
+        Swap
+    }
+
+    public interface IVarRef : IPExpr
+    {
+        Variable Variable { get; }
+    }
+
+    public interface ILinearRef : IVarRef
+    {
+        LinearType LinearType { get; }
+    }
+
+    public class LinearAccessRefExpr : ILinearRef
+    {
+        public LinearAccessRefExpr(Variable variable, LinearType linearType)
+        {
+            Variable = variable;
+            LinearType = linearType;
+            Type = variable.Type;
+        }
+
+        public Variable Variable { get; }
+        public PLanguageType Type { get; }
+        public LinearType LinearType { get; }
     }
 
     public class UnnamedTupleExpr : IPExpr
@@ -644,7 +748,7 @@ namespace Microsoft.Pc.TypeChecker
         public PLanguageType Type { get; } = PrimitiveType.Bool;
     }
 
-    public class VariableAccessExpr : IPExpr
+    public class VariableAccessExpr : IVarRef
     {
         public VariableAccessExpr(Variable variable)
         {

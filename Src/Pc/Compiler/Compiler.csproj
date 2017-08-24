@@ -289,6 +289,7 @@
     <Compile Include="TypeChecker\NamedTupleType.cs" />
     <Compile Include="TypeChecker\RuleContextExtensions.cs" />
     <Compile Include="TypeChecker\SequenceType.cs" />
+    <Compile Include="TypeChecker\StatementVisitor.cs" />
     <Compile Include="TypeChecker\TupleType.cs" />
     <Compile Include="TypeChecker\PLanguageType.cs" />
     <Compile Include="TypeChecker\TypeDefType.cs" />

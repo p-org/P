@@ -31,13 +31,15 @@ namespace Microsoft.Pc.TypeChecker
             // NOW: every declaration object is associated in both directions with its corresponding parse tree node.
             // NOW: enums and their elements are related to one another
 
-            // Step 4: Validate declarations and fill with types
+            // Step 2: Validate declarations and fill with types
             foreach (PParser.ProgramContext programUnit in programUnits)
                 walker.Walk(declListener, programUnit);
 
             ValidateDeclarations(programDeclarations, nodesToDeclarations, topLevelTable);
 
-            // NOW: all declarations are valid
+            // NOW: all declarations are valid, with appropriate links and types resolved.
+
+            // Step 3: Fill in method bodies
         }
 
         [Conditional("DEBUG")]
@@ -123,7 +125,7 @@ namespace Microsoft.Pc.TypeChecker
                 foreach (State groupState in group.States)
                     yield return groupState;
 
-                foreach (State subState in Flatten(group.SubGroups))
+                foreach (State subState in Flatten(group.Groups))
                     yield return subState;
             }
         }
@@ -143,40 +145,58 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool IsValid(MachineProto machineProto, DeclarationTable sourceTable)
         {
-            return _nodesToDeclarations.Get(machineProto.SourceNode) == machineProto;
+            return machineProto.PayloadType != null &&
+                _nodesToDeclarations.Get(machineProto.SourceNode) == machineProto;
         }
 
         public bool IsValid(PEnum pEnum, DeclarationTable sourceTable)
         {
-            return _nodesToDeclarations.Get(pEnum.SourceNode) == pEnum;
+            // All of its values have the correct parent registered
+            // There is a zero element
+            // All elements are distinct
+            return pEnum.Values.All(val => val.ParentEnum == pEnum) &&
+                pEnum.Values.Any(val => val.Value == 0) &&
+                pEnum.Values.Select(val => val.Value).Distinct().Count() == pEnum.Values.Count() &&
+                _nodesToDeclarations.Get(pEnum.SourceNode) == pEnum;
         }
 
         public bool IsValid(PEvent pEvent, DeclarationTable sourceTable)
         {
+            // special handling for special events
             if (pEvent.SourceNode == null)
                 return pEvent.Name.Equals("halt") || pEvent.Name.Equals("null");
 
+            // check that reverse trips works
             return _nodesToDeclarations.Get(pEvent.SourceNode) == pEvent;
         }
 
         public bool IsValid(State state, DeclarationTable sourceTable)
         {
-            return _nodesToDeclarations.Get(state.SourceNode) == state;
+            return state.Container.States.Contains(state) &&
+                state.Actions.All(kv => kv.Value.Trigger == kv.Key) &&
+                _nodesToDeclarations.Get(state.SourceNode) == state;
         }
 
         public bool IsValid(StateGroup stateGroup, DeclarationTable sourceTable)
         {
-            return _nodesToDeclarations.Get(stateGroup.SourceNode) == stateGroup;
+            return stateGroup.ParentStateContainer.Groups.Contains(stateGroup) &&
+                stateGroup.States.All(state => state.Container == stateGroup) &&
+                stateGroup.States.All(state => state.OwningMachine == stateGroup.OwningMachine) &&
+                stateGroup.Groups.All(group => group.OwningMachine == stateGroup.OwningMachine) &&
+                stateGroup.Groups.All(group => group.ParentStateContainer == stateGroup) &&
+                _nodesToDeclarations.Get(stateGroup.SourceNode) == stateGroup;
         }
 
         public bool IsValid(TypeDef typeDef, DeclarationTable sourceTable)
         {
-            return _nodesToDeclarations.Get(typeDef.SourceNode) == typeDef;
+            return typeDef.Type != null &&
+                _nodesToDeclarations.Get(typeDef.SourceNode) == typeDef;
         }
 
         public bool IsValid(Variable variable, DeclarationTable sourceTable)
         {
-            return _nodesToDeclarations.Get(variable.SourceNode) == variable;
+            return variable.Type != null &&
+                _nodesToDeclarations.Get(variable.SourceNode) == variable;
         }
     }
 }

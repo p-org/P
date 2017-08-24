@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
-using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 
 namespace Microsoft.Pc.TypeChecker
@@ -42,9 +41,19 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<DeclarationTable> Children => children;
 
         public IEnumerable<IPDecl> AllDecls => enumElems
-            .Values.Cast<IPDecl>().Concat(enums.Values).Concat(events.Values).Concat(eventSets.Values).Concat(functionProtos.Values)
-            .Concat(functions.Values).Concat(interfaces.Values).Concat(machineProtos.Values).Concat(machines.Values)
-            .Concat(stateGroups.Values).Concat(states.Values).Concat(typedefs.Values).Concat(variables.Values);
+            .Values.Cast<IPDecl>()
+            .Concat(enums.Values)
+            .Concat(events.Values)
+            .Concat(eventSets.Values)
+            .Concat(functionProtos.Values)
+            .Concat(functions.Values)
+            .Concat(interfaces.Values)
+            .Concat(machineProtos.Values)
+            .Concat(machines.Values)
+            .Concat(stateGroups.Values)
+            .Concat(states.Values)
+            .Concat(typedefs.Values)
+            .Concat(variables.Values);
 
         public IEnumerable<EnumElem> EnumElems => enumElems.Values;
         public IEnumerable<PEnum> Enums => enums.Values;
@@ -61,82 +70,44 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<Variable> Variables => variables.Values;
 
         #region Overloaded getters
-        public bool Get(string name, out EnumElem tree)
-        {
-            return enumElems.TryGetValue(name, out tree);
-        }
 
-        public bool Get(string name, out PEnum tree)
-        {
-            return enums.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out EnumElem tree) { return enumElems.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out PEvent tree)
-        {
-            return events.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out PEnum tree) { return enums.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out EventSet tree)
-        {
-            return eventSets.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out PEvent tree) { return events.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out FunctionProto tree)
-        {
-            return functionProtos.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out EventSet tree) { return eventSets.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out Function tree)
-        {
-            return functions.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out FunctionProto tree) { return functionProtos.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out Interface tree)
-        {
-            return interfaces.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out Function tree) { return functions.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out MachineProto tree)
-        {
-            return machineProtos.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out Interface tree) { return interfaces.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out Machine tree)
-        {
-            return machines.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out MachineProto tree) { return machineProtos.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out StateGroup tree)
-        {
-            return stateGroups.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out Machine tree) { return machines.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out State tree)
-        {
-            return states.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out StateGroup tree) { return stateGroups.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out TypeDef tree)
-        {
-            return typedefs.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out State tree) { return states.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out Variable tree)
-        {
-            return variables.TryGetValue(name, out tree);
-        }
+        public bool Get(string name, out TypeDef tree) { return typedefs.TryGetValue(name, out tree); }
+
+        public bool Get(string name, out Variable tree) { return variables.TryGetValue(name, out tree); }
+
         #endregion
 
         #region Overloaded lookup methods
+
         public bool Lookup(string name, out EnumElem tree)
         {
             DeclarationTable current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -151,9 +122,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -168,9 +137,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -185,9 +152,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -202,9 +167,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -219,9 +182,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -236,9 +197,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -253,9 +212,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -270,9 +227,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -287,9 +242,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -304,9 +257,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -321,9 +272,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -338,9 +287,7 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
-                {
                     return true;
-                }
 
                 current = current.Parent;
             }
@@ -348,19 +295,21 @@ namespace Microsoft.Pc.TypeChecker
             tree = null;
             return false;
         }
+
         #endregion
 
         #region Conflict-checking putters
+
         public TypeDef Put(string name, PParser.PTypeDefContext tree)
         {
             var typedef = new TypeDef(name, tree);
             CheckConflicts(
-                typedef,
-                Namespace(typedefs),
-                Namespace(enums),
-                Namespace(interfaces),
-                Namespace(machines),
-                Namespace(machineProtos));
+                           typedef,
+                           Namespace(typedefs),
+                           Namespace(enums),
+                           Namespace(interfaces),
+                           Namespace(machines),
+                           Namespace(machineProtos));
             typedefs.Add(name, typedef);
             return typedef;
         }
@@ -369,12 +318,12 @@ namespace Microsoft.Pc.TypeChecker
         {
             var @enum = new PEnum(name, tree);
             CheckConflicts(
-                @enum,
-                Namespace(enums),
-                Namespace(interfaces),
-                Namespace(typedefs),
-                Namespace(machines),
-                Namespace(machineProtos));
+                           @enum,
+                           Namespace(enums),
+                           Namespace(interfaces),
+                           Namespace(typedefs),
+                           Namespace(machines),
+                           Namespace(machineProtos));
             enums.Add(name, @enum);
             return @enum;
         }
@@ -399,12 +348,12 @@ namespace Microsoft.Pc.TypeChecker
         {
             var machineInterface = new Interface(name, tree);
             CheckConflicts(
-                machineInterface,
-                Namespace(interfaces),
-                Namespace(enums),
-                Namespace(typedefs),
-                Namespace(machines),
-                Namespace(machineProtos));
+                           machineInterface,
+                           Namespace(interfaces),
+                           Namespace(enums),
+                           Namespace(typedefs),
+                           Namespace(machines),
+                           Namespace(machineProtos));
             interfaces.Add(name, machineInterface);
             return machineInterface;
         }
@@ -420,7 +369,12 @@ namespace Microsoft.Pc.TypeChecker
         public MachineProto Put(string name, PParser.ImplMachineProtoDeclContext tree)
         {
             var machineProto = new MachineProto(name, tree);
-            CheckConflicts(machineProto, Namespace(machineProtos), Namespace(interfaces), Namespace(enums), Namespace(typedefs));
+            CheckConflicts(
+                           machineProto,
+                           Namespace(machineProtos),
+                           Namespace(interfaces),
+                           Namespace(enums),
+                           Namespace(typedefs));
             machineProtos.Add(name, machineProto);
             return machineProto;
         }
@@ -428,7 +382,12 @@ namespace Microsoft.Pc.TypeChecker
         public Machine Put(string name, PParser.SpecMachineDeclContext tree)
         {
             var specMachine = new Machine(name, tree);
-            CheckConflicts(specMachine, Namespace(machines), Namespace(interfaces), Namespace(enums), Namespace(typedefs));
+            CheckConflicts(
+                           specMachine,
+                           Namespace(machines),
+                           Namespace(interfaces),
+                           Namespace(enums),
+                           Namespace(typedefs));
             machines.Add(name, specMachine);
             return specMachine;
         }
@@ -496,9 +455,11 @@ namespace Microsoft.Pc.TypeChecker
             states.Add(name, state);
             return state;
         }
+
         #endregion
 
         #region Conflict API
+
         // TODO: maybe optimize this?
         private delegate bool TableReader(string name, out IPDecl decl);
 
@@ -506,9 +467,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             IPDecl existingDecl = null;
             if (namespaces.Any(table => table(decl.Name, out existingDecl)))
-            {
                 throw new DuplicateDeclarationException(decl, existingDecl);
-            }
         }
 
         private static TableReader Namespace<T>(IDictionary<string, T> table) where T : IPDecl
@@ -520,6 +479,7 @@ namespace Microsoft.Pc.TypeChecker
                 return success;
             };
         }
+
         #endregion
     }
 
@@ -538,13 +498,14 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
-        public string Name { get; set; }
         public PParser.VarDeclContext ContainingVarDecl { get; }
         public bool IsParam => ContainingVarDecl == null;
-        public PLanguageType Type { get; set; }
+
+        public string Name { get; set; }
         public ParserRuleContext SourceNode { get; }
+        public PLanguageType Type { get; set; }
     }
-    
+
     public class EnumElem : IPDecl
     {
         public EnumElem(string name, PParser.EnumElemContext sourceNode)
@@ -559,24 +520,69 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
-        public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
         public int Value { get; set; }
         public PEnum ParentEnum { get; set; }
+
+        public string Name { get; }
+        public ParserRuleContext SourceNode { get; }
     }
 
-    public class StateGroup : IPDecl
+    public interface IStateContainer : IPDecl
     {
+        IStateContainer ParentStateContainer { get; }
+        IEnumerable<State> States { get; }
+        IEnumerable<StateGroup> Groups { get; }
+        void AddState(State state);
+        void AddGroup(StateGroup group);
+        IStateContainer GetGroup(string groupName);
+        State GetState(string stateName);
+    }
+
+    public interface IHasScope : IPDecl
+    {
+        DeclarationTable Table { get; set; }
+    }
+
+    public class StateGroup : IStateContainer, IHasScope
+    {
+        private readonly Dictionary<string, StateGroup> _groups = new Dictionary<string, StateGroup>();
+        private readonly Dictionary<string, State> _states = new Dictionary<string, State>();
+
         public StateGroup(string name, PParser.GroupContext sourceNode)
         {
             Name = name;
             SourceNode = sourceNode;
         }
 
+        public Machine OwningMachine { get; set; }
+
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
-        public List<State> States { get; } = new List<State>();
-        public List<StateGroup> SubGroups { get; } = new List<StateGroup>();
+        public IStateContainer ParentStateContainer { get; set; }
+        public IEnumerable<State> States => _states.Values;
+        public IEnumerable<StateGroup> Groups => _groups.Values;
+
+        public void AddState(State state)
+        {
+            Debug.Assert(state.Container == null);
+            state.Container = this;
+            _states.Add(state.Name, state);
+        }
+
+        public void AddGroup(StateGroup group)
+        {
+            Debug.Assert(group.ParentStateContainer == null);
+            group.ParentStateContainer = this;
+            _groups.Add(group.Name, group);
+        }
+
+        public IStateContainer GetGroup(string groupName)
+        {
+            return _groups.TryGetValue(groupName, out var group) ? group : null;
+        }
+
+        public State GetState(string stateName) { return _states.TryGetValue(stateName, out var state) ? state : null; }
+        public DeclarationTable Table { get; set; }
     }
 
     public class State : IPDecl
@@ -587,13 +593,16 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
-        public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
         public StateTemperature Temperature { get; set; }
         public bool IsStart { get; set; }
         public Function Entry { get; set; }
         public IDictionary<PEvent, IStateAction> Actions { get; } = new Dictionary<PEvent, IStateAction>();
         public Function Exit { get; set; }
+        public Machine OwningMachine { get; set; }
+        public IStateContainer Container { get; set; }
+
+        public string Name { get; }
+        public ParserRuleContext SourceNode { get; }
     }
 
     public interface IStateAction
@@ -603,20 +612,14 @@ namespace Microsoft.Pc.TypeChecker
 
     public class EventDefer : IStateAction
     {
-        public EventDefer(PEvent trigger)
-        {
-            Trigger = trigger;
-        }
+        public EventDefer(PEvent trigger) { Trigger = trigger; }
 
         public PEvent Trigger { get; }
     }
 
     public class EventIgnore : IStateAction
     {
-        public EventIgnore(PEvent trigger)
-        {
-            Trigger = trigger;
-        }
+        public EventIgnore(PEvent trigger) { Trigger = trigger; }
 
         public PEvent Trigger { get; }
     }
@@ -630,9 +633,10 @@ namespace Microsoft.Pc.TypeChecker
             TransitionFunction = transitionFunction;
         }
 
-        public PEvent Trigger { get; }
         public State Target { get; }
         public Function TransitionFunction { get; }
+
+        public PEvent Trigger { get; }
     }
 
     public class EventPushState : IStateAction
@@ -643,20 +647,21 @@ namespace Microsoft.Pc.TypeChecker
             Target = target;
         }
 
-        public PEvent Trigger { get; }
         public State Target { get; }
+
+        public PEvent Trigger { get; }
     }
 
     public class EventDoAction : IStateAction
     {
-        public PEvent Trigger { get; }
-        public Function Target { get; }
-
         public EventDoAction(PEvent trigger, Function target)
         {
             Trigger = trigger;
             Target = target;
         }
+
+        public Function Target { get; }
+        public PEvent Trigger { get; }
     }
 
     public interface IConstructibleDecl : IPDecl
@@ -677,8 +682,11 @@ namespace Microsoft.Pc.TypeChecker
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
     }
 
-    public class Machine : IConstructibleDecl
+    public class Machine : IConstructibleDecl, IStateContainer, IHasScope
     {
+        private readonly Dictionary<string, StateGroup> _groups = new Dictionary<string, StateGroup>();
+        private readonly Dictionary<string, State> _states = new Dictionary<string, State>();
+
         public Machine(string name, PParser.ImplMachineDeclContext sourceNode)
         {
             Name = name;
@@ -694,9 +702,6 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public bool IsSpec { get; }
-        public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
-        public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
         public int Assume { get; set; } = -1;
         public int Assert { get; set; } = -1;
         public List<Interface> Interfaces { get; } = new List<Interface>();
@@ -704,10 +709,39 @@ namespace Microsoft.Pc.TypeChecker
         public EventSet Sends { get; set; }
         public List<Variable> Fields { get; } = new List<Variable>();
         public List<Function> Methods { get; } = new List<Function>();
-        public List<State> States { get; } = new List<State>();
+
         public State StartState { get; set; }
-        public List<StateGroup> Groups { get; } = new List<StateGroup>();
+
         public EventSet Observes { get; set; }
+        public string Name { get; }
+        public ParserRuleContext SourceNode { get; }
+        public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
+        public IStateContainer ParentStateContainer { get; } = null;
+        public IEnumerable<State> States => _states.Values;
+        public IEnumerable<StateGroup> Groups => _groups.Values;
+
+        public IStateContainer GetGroup(string groupName)
+        {
+            return _groups.TryGetValue(groupName, out var group) ? group : null;
+        }
+
+        public State GetState(string stateName) { return _states.TryGetValue(stateName, out var state) ? state : null; }
+
+        public void AddState(State state)
+        {
+            Debug.Assert(state.Container == null);
+            state.Container = this;
+            _states.Add(state.Name, state);
+        }
+
+        public void AddGroup(StateGroup group)
+        {
+            Debug.Assert(group.ParentStateContainer == null);
+            group.ParentStateContainer = this;
+            _groups.Add(group.Name, group);
+        }
+
+        public DeclarationTable Table { get; set; }
     }
 
     public class Interface : IConstructibleDecl
@@ -718,10 +752,12 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
+        public EventSet ReceivableEvents { get; set; }
+
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
-        public EventSet ReceivableEvents { get; set; }
+        public ISet<Machine> Implementations { get; } = new HashSet<Machine>();
     }
 
     public class TypeDef : IPDecl
@@ -732,52 +768,53 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
+        public PLanguageType Type { get; set; }
+
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
-        public PLanguageType Type { get; set; }
     }
 
     public class PEnum : IPDecl
     {
+        private readonly HashSet<EnumElem> elements = new HashSet<EnumElem>();
+        private readonly HashSet<int> values = new HashSet<int>();
+
         public PEnum(string name, PParser.EnumTypeDefDeclContext sourceNode)
         {
             Name = name;
             SourceNode = sourceNode;
         }
 
-        public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
         public IEnumerable<EnumElem> Values => elements;
         public int Count => elements.Count;
 
+        public string Name { get; }
+        public ParserRuleContext SourceNode { get; }
+
         public bool AddElement(EnumElem elem)
         {
-            if (elem.ParentEnum == this)
-            {
+            if (values.Contains(elem.Value))
                 return false;
-            }
 
-            bool? success = elem.ParentEnum?.RemoveElement(elem);
+            var success = elem.ParentEnum?.RemoveElement(elem);
             Debug.Assert(success != false);
             elem.ParentEnum = this;
             elements.Add(elem);
+            values.Add(elem.Value);
             return true;
         }
 
         public bool RemoveElement(EnumElem elem)
         {
             if (elem.ParentEnum != this)
-            {
                 return false;
-            }
 
             bool success = elements.Remove(elem);
             Debug.Assert(success);
+            values.Remove(elem.Value);
             elem.ParentEnum = null;
             return true;
         }
-
-        private readonly HashSet<EnumElem> elements = new HashSet<EnumElem>();
     }
 
     public interface IPDecl
@@ -800,9 +837,16 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
+        public SortedSet<PEvent> Events { get; } =
+            new SortedSet<PEvent>(
+                                  Comparer<PEvent>.Create(
+                                                          (ev1, ev2) => string.Compare(
+                                                                                       ev1.Name,
+                                                                                       ev2.Name,
+                                                                                       StringComparison.Ordinal)));
+
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
-        public SortedSet<PEvent> Events { get; } = new SortedSet<PEvent>(Comparer<PEvent>.Create((ev1, ev2) => string.Compare(ev1.Name, ev2.Name, StringComparison.Ordinal)));
     }
 
     public class PEvent : IPDecl
@@ -824,7 +868,7 @@ namespace Microsoft.Pc.TypeChecker
         public ParserRuleContext SourceNode { get; }
     }
 
-    public class Function : IPDecl
+    public class Function : IHasScope
     {
         public Function(string name, PParser.FunDeclContext sourceNode)
         {
@@ -844,11 +888,13 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
-        public string Name { get; }
         public Machine Owner { get; set; }
-        public ParserRuleContext SourceNode { get; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
         public List<Variable> LocalVariables { get; } = new List<Variable>();
+
+        public string Name { get; }
+        public ParserRuleContext SourceNode { get; }
+        public DeclarationTable Table { get; set; }
     }
 
     public class FunctionProto : IPDecl
@@ -859,10 +905,11 @@ namespace Microsoft.Pc.TypeChecker
             SourceNode = sourceNode;
         }
 
-        public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
         public List<Machine> Creates { get; set; }
+
+        public string Name { get; }
+        public ParserRuleContext SourceNode { get; }
     }
 
     public class FunctionSignature

@@ -10,16 +10,7 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class DeclarationListener : PParserBaseListener
     {
-        /// <summary>
-        ///     Functions can be nested via anonymous event handlers, so we do need to keep track.
-        /// </summary>
-        private readonly Stack<Function> functionStack = new Stack<Function>();
-
-        /// <summary>
-        ///     Groups can be nested
-        /// </summary>
-        private readonly Stack<StateGroup> groupStack = new Stack<StateGroup>();
-
+        #region Parse tree propertoes
         /// <summary>
         ///     Maps source nodes to the unique declarations they produced.
         /// </summary>
@@ -29,6 +20,18 @@ namespace Microsoft.Pc.TypeChecker
         ///     Maps source nodes to the scope objects they produced.
         /// </summary>
         private readonly ParseTreeProperty<DeclarationTable> programDeclarations;
+        #endregion
+
+        #region Context fields
+        /// <summary>
+        ///     Functions can be nested via anonymous event handlers, so we do need to keep track.
+        /// </summary>
+        private readonly Stack<Function> functionStack = new Stack<Function>();
+
+        /// <summary>
+        ///     Groups can be nested
+        /// </summary>
+        private readonly Stack<IStateContainer> stateContainerStack = new Stack<IStateContainer>();
 
         /// <summary>
         ///     Enum declarations can't be nested, so we simply store the most recently encountered
@@ -62,6 +65,17 @@ namespace Microsoft.Pc.TypeChecker
         /// </summary>
         private DeclarationTable table;
 
+        /// <summary>
+        ///     Gets the current function or null if not in a function context.
+        /// </summary>
+        private Function CurrentFunction => functionStack.Count > 0 ? functionStack.Peek() : null;
+
+        /// <summary>
+        ///     Gets the current state group or null if not in a state group context
+        /// </summary>
+        private IStateContainer CurrentStateContainer => stateContainerStack.Count > 0 ? stateContainerStack.Peek() : null;
+        #endregion
+
         public DeclarationListener(
             ParseTreeProperty<DeclarationTable> programDeclarations,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
@@ -70,11 +84,55 @@ namespace Microsoft.Pc.TypeChecker
             this.nodesToDeclarations = nodesToDeclarations;
         }
 
-        /// <summary>
-        ///     Gets the current function or null if not in a function context.
-        /// </summary>
-        private Function CurrentFunction => functionStack.Count > 0 ? functionStack.Peek() : null;
+        #region Typedefs
+        public override void EnterPTypeDef(PParser.PTypeDefContext context)
+        {
+            // TYPE name=Iden 
+            var typedef = (TypeDef) nodesToDeclarations.Get(context);
 
+            // ASSIGN type
+            typedef.Type = TypeResolver.ResolveType(context.type(), table);
+        }
+
+        public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
+        {
+            // TYPE name=Iden SEMI
+            throw new NotImplementedException("foreign types");
+        }
+        #endregion
+
+        #region Enums
+        public override void EnterEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
+        {
+            // ENUM name=Iden LBRACE enumElemList RBRACE | ENUM name = Iden LBRACE numberedEnumElemList RBRACE
+            currentEnum = (PEnum) nodesToDeclarations.Get(context);
+        }
+
+        public override void ExitEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context) { currentEnum = null; }
+
+        public override void EnterEnumElem(PParser.EnumElemContext context)
+        {
+            // name=Iden
+            var elem = (EnumElem) nodesToDeclarations.Get(context);
+            elem.Value = currentEnum.Count; // listener visits from left-to-right, so this will count upwards correctly.
+            bool success = currentEnum.AddElement(elem);
+            Debug.Assert(success, "automatic numbering of enum elements failed");
+        }
+
+        public override void EnterNumberedEnumElem(PParser.NumberedEnumElemContext context)
+        {
+            // name=Iden 
+            var elem = (EnumElem) nodesToDeclarations.Get(context);
+            // ASSIGN value=IntLiteral
+            elem.Value = int.Parse(context.value.Text);
+            if (!currentEnum.AddElement(elem))
+            {
+                throw new EnumElemException(currentEnum, elem);
+            }
+        }
+        #endregion
+
+        #region Events
         public override void EnterEventDecl(PParser.EventDeclContext context)
         {
             // EVENT name=Iden
@@ -96,6 +154,16 @@ namespace Microsoft.Pc.TypeChecker
 
             // SEMI ;
         }
+        #endregion
+
+        #region Event sets
+        public override void EnterEventSetDecl(PParser.EventSetDeclContext context)
+        {
+            // EVENTSET name=Iden ASSIGN LBRACE eventSetLiteral RBRACE SEMI ;
+            currentEventSet = (EventSet) nodesToDeclarations.Get(context);
+        }
+
+        public override void ExitEventSetDecl(PParser.EventSetDeclContext context) { currentEventSet = null; }
 
         public override void EnterEventSetLiteral(PParser.EventSetLiteralContext context)
         {
@@ -109,6 +177,37 @@ namespace Microsoft.Pc.TypeChecker
                 currentEventSet.Events.Add(evt);
             }
         }
+        #endregion
+
+        #region Interfaces
+        public override void EnterInterfaceDecl(PParser.InterfaceDeclContext context)
+        {
+            // TYPE name=Iden
+            var mInterface = (Interface) nodesToDeclarations.Get(context);
+
+            // LPAREN type? RPAREN
+            mInterface.PayloadType = TypeResolver.ResolveType(context.type(), table);
+
+            if (context.eventSet == null)
+            {
+                // ASSIGN LBRACE eventSetLiteral RBRACE
+                // Let the eventSetLiteral handler fill in a newly created event set...
+                Debug.Assert(context.eventSetLiteral() != null);
+                mInterface.ReceivableEvents = new EventSet($"{mInterface.Name}$eventset", context.eventSetLiteral());
+            }
+            else
+            {
+                // ASSIGN eventSet=Iden
+                // ...or look up the event set and establish the link by name.
+                if (!table.Lookup(context.eventSet.Text, out EventSet eventSet))
+                    throw new MissingDeclarationException(context.eventSet.Text, context);
+
+                mInterface.ReceivableEvents = eventSet;
+            }
+
+            currentEventSet = mInterface.ReceivableEvents;
+        }
+        #endregion
 
         public override void EnterFunDecl(PParser.FunDeclContext context)
         {
@@ -135,6 +234,8 @@ namespace Microsoft.Pc.TypeChecker
             // handled in EnterFunctionBody
         }
 
+        public override void ExitFunDecl(PParser.FunDeclContext context) { functionStack.Pop(); }
+
         public override void EnterFunParam(PParser.FunParamContext context)
         {
             // name=Iden
@@ -154,7 +255,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             else
             {
-                // Otherwise, we're in a function of some sort, and we add the variable to its signature
+                // Otherwise, we're in a (possibly anonymous) function, and we add the variable to its signature
                 bool success = table.Get(name, out Variable variable);
                 Debug.Assert(success);
                 variable.Type = type;
@@ -163,8 +264,6 @@ namespace Microsoft.Pc.TypeChecker
 
             CurrentFunction.Signature.Parameters.Add(param);
         }
-
-        public override void ExitFunDecl(PParser.FunDeclContext context) { functionStack.Pop(); }
 
         public override void EnterVarDecl(PParser.VarDeclContext context)
         {
@@ -195,24 +294,19 @@ namespace Microsoft.Pc.TypeChecker
         {
             // GROUP name=Iden
             var group = (StateGroup) nodesToDeclarations.Get(context);
+            group.OwningMachine = currentMachine;
             // LBRACE groupItem* RBRACE
-            if (groupStack.Count > 0)
-                groupStack.Peek().SubGroups.Add(group);
-            else
-                currentMachine.Groups.Add(group);
-
-            groupStack.Push(group);
+            CurrentStateContainer.AddGroup(group);
+            stateContainerStack.Push(group);
         }
 
-        public override void ExitGroup(PParser.GroupContext context) { groupStack.Pop(); }
+        public override void ExitGroup(PParser.GroupContext context) { stateContainerStack.Pop(); }
 
         public override void EnterStateDecl(PParser.StateDeclContext context)
         {
             currentState = (State) nodesToDeclarations.Get(context);
-            if (groupStack.Count > 0)
-                groupStack.Peek().States.Add(currentState);
-            else
-                currentMachine.States.Add(currentState);
+            CurrentStateContainer.AddState(currentState);
+            currentState.OwningMachine = currentMachine;
 
             // START?
             currentState.IsStart = context.START() != null;
@@ -388,31 +482,6 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        /// <summary>
-        ///     Navigate declaration tables in current context to find event in groups named by stateName
-        /// </summary>
-        /// <param name="stateName">The parse tree naming a state</param>
-        /// <returns>The state referenced by the name context</returns>
-        private State FindState(PParser.StateNameContext stateName)
-        {
-            // Starting from machine table...
-            DeclarationTable currTable = programDeclarations.Get(currentMachine.SourceNode);
-            if (stateName._groups.Count > 0)
-            {
-                foreach (IToken groupName in stateName._groups)
-                {
-                    if (!currTable.Get(groupName.Text, out StateGroup group))
-                        throw new MissingDeclarationException(groupName.Text, stateName);
-                    currTable = programDeclarations.Get(group.SourceNode);
-                }
-            }
-            // ...and get the state or throw
-            Debug.Assert(currTable != null);
-            if (!currTable.Get(stateName.state.Text, out State target))
-                throw new MissingDeclarationException(stateName.state.Text, stateName);
-            return target;
-        }
-
         public override void ExitOnEventGotoState(PParser.OnEventGotoStateContext context) { functionStack.Pop(); }
 
         public override void EnterStateIgnore(PParser.StateIgnoreContext context)
@@ -455,6 +524,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // PUSH stateName 
             State targetState = FindState(context.stateName());
+
             // ON eventList
             foreach (PParser.EventIdContext token in context.eventList().eventId())
             {
@@ -464,6 +534,24 @@ namespace Microsoft.Pc.TypeChecker
                     throw new DuplicateHandlerException(evt, currentState);
                 currentState.Actions.Add(evt, new EventPushState(evt, targetState));
             }
+        }
+
+        private State FindState(PParser.StateNameContext context)
+        {
+            DeclarationTable curTable = programDeclarations.Get(currentMachine.SourceNode);
+            foreach (IToken groupToken in context._groups)
+            {
+                if (!curTable.Get(groupToken.Text, out StateGroup group))
+                {
+                    throw new MissingDeclarationException(groupToken.Text, context);
+                }
+                curTable = programDeclarations.Get(group.SourceNode);
+            }
+            if (!curTable.Get(context.state.Text, out State state))
+            {
+                throw new MissingDeclarationException(context.state.Text, context);
+            }
+            return state;
         }
 
         public override void EnterImplMachineProtoDecl(PParser.ImplMachineProtoDeclContext context)
@@ -476,6 +564,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             // SPEC name=Iden 
             var specMachine = (Machine) nodesToDeclarations.Get(context);
+            stateContainerStack.Push(specMachine);
             // OBSERVES eventSetLiteral
             specMachine.Observes = new EventSet($"{specMachine.Name}$eventset", context.eventSetLiteral());
             currentEventSet = specMachine.Observes;
@@ -487,6 +576,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             currentEventSet = null;
             currentMachine = null;
+            stateContainerStack.Pop();
             var specMachine = (Machine)nodesToDeclarations.Get(context);
             if (specMachine.StartState == null)
             {
@@ -536,87 +626,14 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public override void EnterEventSetDecl(PParser.EventSetDeclContext context)
-        {
-            currentEventSet = (EventSet) nodesToDeclarations.Get(context);
-        }
-
-        public override void ExitEventSetDecl(PParser.EventSetDeclContext context) { currentEventSet = null; }
-
-        public override void EnterInterfaceDecl(PParser.InterfaceDeclContext context)
-        {
-            // TYPE name=Iden
-            var mInterface = (Interface) nodesToDeclarations.Get(context);
-
-            // LPAREN type? RPAREN
-            mInterface.PayloadType = TypeResolver.ResolveType(context.type(), table);
-
-            if (context.eventSet == null)
-            {
-                // ASSIGN LBRACE eventSetLiteral RBRACE
-                // ... or let the eventSetLiteral handler fill in a newly created event set
-                Debug.Assert(context.eventSetLiteral() != null);
-                mInterface.ReceivableEvents = new EventSet($"{mInterface.Name}$eventset", context.eventSetLiteral());
-            }
-            else
-            {
-                // ASSIGN eventSet=Iden
-                // Either look up the event set and establish the link by name...
-                if (!table.Lookup(context.eventSet.Text, out EventSet eventSet))
-                    throw new MissingDeclarationException(context.eventSet.Text, context);
-
-                mInterface.ReceivableEvents = eventSet;
-            }
-
-            currentEventSet = mInterface.ReceivableEvents;
-        }
 
         public override void ExitInterfaceDecl(PParser.InterfaceDeclContext context) { currentEventSet = null; }
-
-        public override void EnterPTypeDef(PParser.PTypeDefContext context)
-        {
-            // TYPE name=Iden 
-            var typedef = (TypeDef) nodesToDeclarations.Get(context);
-
-            // ASSIGN type
-            typedef.Type = TypeResolver.ResolveType(context.type(), table);
-        }
-
-        public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
-        {
-            // TYPE name=Iden SEMI
-            throw new NotImplementedException("foreign types");
-        }
-
-        public override void EnterEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
-        {
-            // ENUM name=Iden LBRACE enumElemList RBRACE | ENUM name = Iden LBRACE numberedEnumElemList RBRACE
-            currentEnum = (PEnum) nodesToDeclarations.Get(context);
-        }
-
-        public override void EnterEnumElem(PParser.EnumElemContext context)
-        {
-            // name=Iden
-            var elem = (EnumElem) nodesToDeclarations.Get(context);
-            elem.Value = currentEnum.Count; // listener visits from left-to-right, so this will count upwards correctly.
-            bool success = currentEnum.AddElement(elem);
-            Debug.Assert(success);
-        }
-
-        public override void EnterNumberedEnumElem(PParser.NumberedEnumElemContext context)
-        {
-            // name=Iden 
-            var elem = (EnumElem) nodesToDeclarations.Get(context);
-            // ASSIGN value=IntLiteral
-            elem.Value = int.Parse(context.value.Text);
-            bool success = currentEnum.AddElement(elem);
-            Debug.Assert(success);
-        }
 
         public override void EnterImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
             // eventDecl : MACHINE name=Iden
             currentMachine = (Machine) nodesToDeclarations.Get(context);
+            stateContainerStack.Push(currentMachine);
 
             // cardinality?
             bool hasAssume = context.cardinality()?.ASSUME() != null;
@@ -638,6 +655,7 @@ namespace Microsoft.Pc.TypeChecker
                     if (!table.Lookup(pInterfaceName, out Interface pInterface))
                         throw new MissingDeclarationException(pInterfaceName, context.idenList());
 
+                    pInterface.Implementations.Add(currentMachine);
                     currentMachine.Interfaces.Add(pInterface);
                 }
             }
@@ -651,6 +669,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void ExitImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
+            stateContainerStack.Pop();
             currentMachine = null;
             var machine = (Machine)nodesToDeclarations.Get(context);
             if (machine.StartState == null)
@@ -678,6 +697,18 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public override void ExitMachineSend(PParser.MachineSendContext context) { currentEventSet = null; }
+    }
+
+    public class EnumElemException : Exception
+    {
+        public PEnum CurrentEnum { get; }
+        public IPDecl Elem { get; }
+
+        public EnumElemException(PEnum currentEnum, EnumElem elem)
+        {
+            CurrentEnum = currentEnum;
+            Elem = elem;
+        }
     }
 
     public class DuplicateExitException : Exception

@@ -82,12 +82,11 @@ cardinality : ASSERT IntLiteral
             ;
 
 eventSetDecl : EVENTSET name=Iden ASSIGN LBRACE eventSetLiteral RBRACE SEMI ;
+eventSetLiteral : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 
 interfaceDecl : TYPE name=Iden LPAREN type? RPAREN ASSIGN eventSet=Iden SEMI
               | TYPE name=Iden LPAREN type? RPAREN ASSIGN LBRACE eventSetLiteral RBRACE SEMI
               ;
-
-eventSetLiteral : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
 
 // has scope
 implMachineDecl : MACHINE name=Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
@@ -141,24 +140,26 @@ eventId : NullLiteral | HALT | Iden ;
 stateName : (groups+=Iden DOT)* state=Iden ; // First few Idens are groups
 
 functionBody : LBRACE varDecl* statement* RBRACE ;
-statement : LBRACE statement* RBRACE
-          | POP SEMI
-          | ASSERT expr (COMMA StringLiteral)? SEMI
-          | PRINT StringLiteral (COMMA rvalueList)? SEMI
-          | RETURN expr? SEMI
-          | lvalue ASSIGN rvalue SEMI
-          | lvalue INSERT rvalue SEMI
-          | lvalue REMOVE expr SEMI
-          | WHILE LPAREN expr RPAREN statement
-          | IF LPAREN expr RPAREN statement (ELSE statement)?
-          | NEW Iden LPAREN rvalueList? RPAREN SEMI
-          | Iden LPAREN rvalueList? RPAREN SEMI
-          | RAISE expr (COMMA rvalueList)? SEMI
-          | SEND expr COMMA expr (COMMA rvalueList)? SEMI
-          | ANNOUNCE expr (COMMA rvalueList)? SEMI
-          | GOTO stateName (COMMA rvalueList)? SEMI
-          | RECEIVE LBRACE recvCase+ RBRACE
-          | SEMI
+statement : LBRACE statement* RBRACE                      # CompoundStmt
+          | POP SEMI                                      # PopStmt
+          | ASSERT expr (COMMA StringLiteral)? SEMI       # AssertStmt
+          | PRINT StringLiteral (COMMA rvalueList)? SEMI  # PrintStmt
+          | RETURN expr? SEMI                             # ReturnStmt
+          | lvalue ASSIGN rvalue SEMI                     # AssignStmt
+          | lvalue INSERT rvalue SEMI                     # InsertStmt
+          | lvalue REMOVE expr SEMI                       # RemoveStmt
+          | WHILE LPAREN expr RPAREN statement            # WhileStmt
+          | IF LPAREN expr RPAREN thenBranch=statement 
+                            (ELSE elseBranch=statement)?  # IfStmt
+          | NEW Iden LPAREN rvalueList? RPAREN SEMI       # CtorStmt
+          | Iden LPAREN rvalueList? RPAREN SEMI           # FunCallStmt
+          | RAISE expr (COMMA rvalueList)? SEMI           # RaiseStmt
+          | SEND machine=expr COMMA event=expr 
+                              (COMMA rvalueList)? SEMI    # SendStmt
+          | ANNOUNCE expr (COMMA rvalueList)? SEMI        # AnnounceStmt
+          | GOTO stateName (COMMA rvalueList)? SEMI       # GotoStmt
+          | RECEIVE LBRACE recvCase+ RBRACE               # ReceiveStmt
+          | SEMI                                          # NoStmt
           ;
 
 lvalue : name=Iden
@@ -171,27 +172,27 @@ recvCase : CASE eventList COLON anonEventHandler ;
 anonEventHandler : (LPAREN funParam RPAREN)? functionBody ;
 noParamAnonEventHandler : functionBody;
 
-expr : primitive # PrimitiveExpr
-     | LPAREN unnamedTupleBody RPAREN # UnnamedTupleExpr
-     | LPAREN namedTupleBody RPAREN # NamedTupleExpr
-     | LPAREN expr RPAREN # ParenExpr
-     | expr DOT field=Iden # NamedTupleAccessExpr
-     | expr DOT field=IntLiteral # TupleAccessExpr
-     | seq=expr LBRACK index=expr RBRACK # SeqAccessExpr
-     | fun=KEYS LPAREN expr RPAREN # KeywordExpr
-     | fun=VALUES LPAREN expr RPAREN # KeywordExpr
-     | fun=SIZEOF LPAREN expr RPAREN # KeywordExpr
-     | fun=DEFAULT LPAREN type RPAREN # KeywordExpr
-     | NEW machineName=Iden LPAREN rvalueList? RPAREN #CtorExpr
-     | fun=Iden LPAREN rvalueList? RPAREN # FunCallExpr
-     | op=(SUB | LNOT) expr # UnaryExpr
-     | lhs=expr op=(MUL | DIV) rhs=expr # BinExpr
-     | lhs=expr op=(ADD | SUB) rhs=expr # BinExpr
-     | expr cast=(AS | TO) type # CastExpr
-     | lhs=expr op=(LT | GT | GE | LE | IN) rhs=expr # BinExpr
-     | lhs=expr op=(EQ | NE) rhs=expr # BinExpr
-     | lhs=expr op=LAND rhs=expr # BinExpr
-     | lhs=expr op=LOR rhs=expr # BinExpr
+expr : primitive                                      # PrimitiveExpr
+     | LPAREN unnamedTupleBody RPAREN                 # UnnamedTupleExpr
+     | LPAREN namedTupleBody RPAREN                   # NamedTupleExpr
+     | LPAREN expr RPAREN                             # ParenExpr
+     | expr DOT field=Iden                            # NamedTupleAccessExpr
+     | expr DOT field=IntLiteral                      # TupleAccessExpr
+     | seq=expr LBRACK index=expr RBRACK              # SeqAccessExpr
+     | fun=KEYS LPAREN expr RPAREN                    # KeywordExpr
+     | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
+     | fun=SIZEOF LPAREN expr RPAREN                  # KeywordExpr
+     | fun=DEFAULT LPAREN type RPAREN                 # KeywordExpr
+     | NEW machineName=Iden LPAREN rvalueList? RPAREN # CtorExpr
+     | fun=Iden LPAREN rvalueList? RPAREN             # FunCallExpr
+     | op=(SUB | LNOT) expr                           # UnaryExpr
+     | lhs=expr op=(MUL | DIV) rhs=expr               # BinExpr
+     | lhs=expr op=(ADD | SUB) rhs=expr               # BinExpr
+     | expr cast=(AS | TO) type                       # CastExpr
+     | lhs=expr op=(LT | GT | GE | LE | IN) rhs=expr  # BinExpr
+     | lhs=expr op=(EQ | NE) rhs=expr                 # BinExpr
+     | lhs=expr op=LAND rhs=expr                      # BinExpr
+     | lhs=expr op=LOR rhs=expr                       # BinExpr
      ;
 
 primitive : Iden

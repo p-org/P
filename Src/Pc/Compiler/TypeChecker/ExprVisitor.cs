@@ -131,12 +131,13 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPExpr VisitCtorExpr(PParser.CtorExprContext context)
         {
+            // TODO: roll arguments into tuple automatically if that would match constructor
             string machineName = context.machineName.GetText();
             if (!table.Lookup(machineName, out Machine machine))
             {
                 if (!table.Lookup(machineName, out MachineProto proto))
                 {
-                    throw new NotImplementedException($"constructing machine prototypes ({proto.Name})");
+                    throw new NotImplementedException($"constructing machine prototypes ({machineName})");
                 }
                 throw handler.MissingDeclaration(context.machineName, "machine", machineName);
             }
@@ -425,7 +426,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPExpr VisitDecimalFloat(PParser.DecimalFloatContext context)
         {
-            double value = double.Parse($"{context.pre.Text}.{context.post.Text}");
+            double value = double.Parse($"{context.pre?.Text ?? ""}.{context.post.Text}");
             return new FloatLiteralExpr(value);
         }
 
@@ -474,6 +475,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPExpr VisitTupleLvalue(PParser.TupleLvalueContext context)
         {
+            // TODO: adapt to named tuples. Numbers map to positions
             IPExpr lvalue = Visit(context.lvalue());
             var type = lvalue.Type.Canonicalize() as TupleType;
             if (type == null)

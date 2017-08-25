@@ -15,7 +15,7 @@ namespace Microsoft.Pc.TypeChecker
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             // Copying semantics: Can assign to a sequence variable if the other sequence's elements are subtypes of this sequence's elements.
-            var other = otherType as SequenceType;
+            var other = otherType.Canonicalize() as SequenceType;
             return other != null && ElementType.IsAssignableFrom(other.ElementType);
         }
 

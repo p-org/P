@@ -18,6 +18,8 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, EventSet> eventSets = new Dictionary<string, EventSet>();
         private readonly IDictionary<string, FunctionProto> functionProtos = new Dictionary<string, FunctionProto>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
+
+        private readonly ITranslationErrorHandler handler;
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
         private readonly IDictionary<string, MachineProto> machineProtos = new Dictionary<string, MachineProto>();
         private readonly IDictionary<string, Machine> machines = new Dictionary<string, Machine>();
@@ -26,8 +28,6 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
         private DeclarationTable parent;
-
-        private readonly ITranslationErrorHandler handler;
         public DeclarationTable(ITranslationErrorHandler handler) { this.handler = handler; }
 
         public DeclarationTable Parent
@@ -110,7 +110,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -125,7 +127,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -140,7 +144,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -155,7 +161,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -170,7 +178,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -185,7 +195,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -200,7 +212,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -215,7 +229,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -230,7 +246,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -245,7 +263,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -260,7 +280,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -275,7 +297,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -290,7 +314,9 @@ namespace Microsoft.Pc.TypeChecker
             while (current != null)
             {
                 if (current.Get(name, out tree))
+                {
                     return true;
+                }
 
                 current = current.Parent;
             }
@@ -462,6 +488,7 @@ namespace Microsoft.Pc.TypeChecker
         #endregion
 
         #region Conflict API
+
         // TODO: maybe optimize this?
         private delegate bool TableReader(string name, out IPDecl decl);
 
@@ -559,6 +586,7 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public Machine OwningMachine { get; set; }
+        public DeclarationTable Table { get; set; }
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
@@ -586,7 +614,6 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public State GetState(string stateName) { return _states.TryGetValue(stateName, out var state) ? state : null; }
-        public DeclarationTable Table { get; set; }
     }
 
     public class State : IPDecl
@@ -720,6 +747,8 @@ namespace Microsoft.Pc.TypeChecker
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
+
+        public DeclarationTable Table { get; set; }
         public IStateContainer ParentStateContainer { get; } = null;
         public IEnumerable<State> States => _states.Values;
         public IEnumerable<StateGroup> Groups => _groups.Values;
@@ -744,8 +773,6 @@ namespace Microsoft.Pc.TypeChecker
             group.ParentStateContainer = this;
             _groups.Add(group.Name, group);
         }
-
-        public DeclarationTable Table { get; set; }
     }
 
     public class Interface : IConstructibleDecl
@@ -757,11 +784,11 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public EventSet ReceivableEvents { get; set; }
+        public ISet<Machine> Implementations { get; } = new HashSet<Machine>();
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
-        public ISet<Machine> Implementations { get; } = new HashSet<Machine>();
     }
 
     public class TypeDef : IPDecl
@@ -798,7 +825,9 @@ namespace Microsoft.Pc.TypeChecker
         public bool AddElement(EnumElem elem)
         {
             if (values.Contains(elem.Value))
+            {
                 return false;
+            }
 
             var success = elem.ParentEnum?.RemoveElement(elem);
             Debug.Assert(success != false);
@@ -811,7 +840,9 @@ namespace Microsoft.Pc.TypeChecker
         public bool RemoveElement(EnumElem elem)
         {
             if (elem.ParentEnum != this)
+            {
                 return false;
+            }
 
             bool success = elements.Remove(elem);
             Debug.Assert(success);
@@ -895,11 +926,11 @@ namespace Microsoft.Pc.TypeChecker
         public Machine Owner { get; set; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
         public List<Variable> LocalVariables { get; } = new List<Variable>();
+        public List<IPStmt> Body { get; set; }
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
         public DeclarationTable Table { get; set; }
-        public List<IPStmt> Body { get; set; }
     }
 
     public class FunctionProto : IPDecl

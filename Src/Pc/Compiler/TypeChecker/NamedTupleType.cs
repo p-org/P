@@ -25,7 +25,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
-            var other = otherType as NamedTupleType;
+            var other = otherType.Canonicalize() as NamedTupleType;
             return other != null &&
                    Fields.Count == other.Fields.Count &&
                    Names.SequenceEqual(other.Names) &&

@@ -8,7 +8,10 @@ namespace Microsoft.Pc.TypeChecker
 {
     public static class TypeResolver
     {
-        public static PLanguageType ResolveType(ParserRuleContext context, DeclarationTable table, ITranslationErrorHandler handler)
+        public static PLanguageType ResolveType(
+            ParserRuleContext context,
+            DeclarationTable table,
+            ITranslationErrorHandler handler)
         {
             return context == null ? PrimitiveType.Null : new TypeVisitor(table, handler).Visit(context);
         }
@@ -16,8 +19,8 @@ namespace Microsoft.Pc.TypeChecker
         private class TypeVisitor : PParserBaseVisitor<PLanguageType>
         {
             private readonly DeclarationTable declarations;
-            private readonly HashSet<TypeDef> visitedTypeDefs = new HashSet<TypeDef>();
             private readonly ITranslationErrorHandler handler;
+            private readonly HashSet<TypeDef> visitedTypeDefs = new HashSet<TypeDef>();
 
             public TypeVisitor(DeclarationTable declarations, ITranslationErrorHandler handler)
             {
@@ -78,14 +81,14 @@ namespace Microsoft.Pc.TypeChecker
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
             {
-                PLanguageType[] tupleTypes = context._tupTypes.Select(Visit).ToArray();
+                var tupleTypes = context._tupTypes.Select(Visit).ToArray();
                 return new TupleType(tupleTypes);
             }
 
             public override PLanguageType VisitNamedTupleType(PParser.NamedTupleTypeContext context)
             {
                 var names = new HashSet<string>();
-                PParser.IdenTypeContext[] namedTupleFields = context.idenTypeList().idenType();
+                var namedTupleFields = context.idenTypeList().idenType();
                 var fields = new NamedTupleEntry[namedTupleFields.Length];
                 for (var i = 0; i < namedTupleFields.Length; i++)
                 {
@@ -115,7 +118,9 @@ namespace Microsoft.Pc.TypeChecker
                     case "machine": return PrimitiveType.Machine;
                     case "data": return PrimitiveType.Data;
                     case "any": return PrimitiveType.Any;
-                    default: throw new ArgumentException($"INTERNAL ERROR: Unrecognized primitive type `{name}`!", nameof(context));
+                    default:
+                        throw new ArgumentException($"INTERNAL ERROR: Unrecognized type `{name}`!",
+                                                    nameof(context));
                 }
             }
 

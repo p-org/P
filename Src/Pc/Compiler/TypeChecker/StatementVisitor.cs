@@ -46,7 +46,7 @@ namespace Microsoft.Pc.TypeChecker
             var exprVisitor = new ExprVisitor(table, handler);
             string message = context.StringLiteral().GetText();
             int numNecessaryArgs = (from Match match in Regex.Matches(message, @"(?:{{|}}|{(\d+)}|[^{}]+|{|})")
-                                    where match.Groups.Count >= 2
+                                    where match.Groups[1].Success
                                     select int.Parse(match.Groups[1].Value) + 1)
                 .Concat(new[] {0})
                 .Max();
@@ -231,6 +231,11 @@ namespace Microsoft.Pc.TypeChecker
             var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
                         Enumerable.Empty<IPExpr>()).ToList();
             PEvent evt = eventRef.PEvent;
+            if (evt.Name.Equals("null"))
+            {
+                throw handler.EmittedNullEvent(context.expr());
+            }
+
             if (evt.PayloadType == PrimitiveType.Null && args.Count == 0 ||
                 evt.PayloadType != PrimitiveType.Null && args.Count == 1)
             {
@@ -254,12 +259,17 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.machine, machineExpr.Type, PrimitiveType.Machine);
             }
             IPExpr evtExpr = exprVisitor.Visit(context.@event);
-            if (!(evtExpr is EventRefExpr))
+            if (!(evtExpr is EventRefExpr evtRef))
             {
                 throw new NotImplementedException("sending dynamic events");
             }
 
-            PEvent evt = ((EventRefExpr) evtExpr).PEvent;
+            PEvent evt = evtRef.PEvent;
+            if (evt.Name.Equals("null"))
+            {
+                throw handler.EmittedNullEvent(context.@event);
+            }
+
             var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ?? Enumerable.Empty<IPExpr>();
             var argsList = args.ToList();
             if (evt.PayloadType != PrimitiveType.Null && argsList.Count == 1)

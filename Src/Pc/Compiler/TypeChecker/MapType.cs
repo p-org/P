@@ -20,7 +20,7 @@ namespace Microsoft.Pc.TypeChecker
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             // Copying semantics: both the other key and value types must be subtypes of this key/value type.
-            var other = otherType as MapType;
+            var other = otherType.Canonicalize() as MapType;
             return other != null && KeyType.IsAssignableFrom(other.KeyType) &&
                    ValueType.IsAssignableFrom(other.ValueType);
         }

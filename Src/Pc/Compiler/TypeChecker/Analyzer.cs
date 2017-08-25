@@ -7,6 +7,29 @@ using Microsoft.Pc.Antlr;
 
 namespace Microsoft.Pc.TypeChecker
 {
+    public class FunctionBodyListener : PParserBaseListener
+    {
+        private readonly ParseTreeProperty<DeclarationTable> nodesToScopes;
+        private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
+        private readonly ITranslationErrorHandler handler;
+        public FunctionBodyListener(ITranslationErrorHandler handler, ParseTreeProperty<IPDecl> nodesToDeclarations, ParseTreeProperty<DeclarationTable> nodesToScopes)
+        {
+            this.handler = handler;
+            this.nodesToDeclarations = nodesToDeclarations;
+            this.nodesToScopes = nodesToScopes;
+        }
+
+        public override void EnterFunctionBody(PParser.FunctionBodyContext context)
+        {
+            var fun = nodesToDeclarations.Get(context.Parent) as Function;
+            Debug.Assert(fun != null);
+            DeclarationTable table = nodesToScopes.Get(context.Parent);
+            Debug.Assert(table != null);
+            var statementVisitor = new StatementVisitor(table, fun.Owner, handler);
+            fun.Body = context.statement().SelectMany(stmt => statementVisitor.Visit(stmt)).ToList();
+        }
+    }
+
     public static class Analyzer
     {
         public static void AnalyzeCompilationUnit(ITranslationErrorHandler handler, params PParser.ProgramContext[] programUnits)
@@ -17,6 +40,7 @@ namespace Microsoft.Pc.TypeChecker
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
             var stubListener = new DeclarationStubListener(topLevelTable, nodesToScopes, nodesToDeclarations, handler);
             var declListener = new DeclarationListener(handler, nodesToScopes, nodesToDeclarations);
+            var funcBodyListener = new FunctionBodyListener(handler, nodesToDeclarations, nodesToScopes);
 
             // Add built-in events to the table.
             topLevelTable.Put("halt", (PParser.EventDeclContext) null);
@@ -35,39 +59,13 @@ namespace Microsoft.Pc.TypeChecker
             foreach (PParser.ProgramContext programUnit in programUnits)
                 walker.Walk(declListener, programUnit);
 
-            ValidateDeclarations(nodesToScopes, nodesToDeclarations, topLevelTable);
+            //ValidateDeclarations(nodesToScopes, nodesToDeclarations, topLevelTable);
 
             // NOW: all declarations are valid, with appropriate links and types resolved.
 
             // Step 3: Fill in method bodies
-            foreach (var declaration in AllDeclarations(topLevelTable))
-            {
-                if (!(declaration.Item1 is Function fun))
-                {
-                    continue;
-                }
-
-                PParser.FunctionBodyContext functionBody;
-                DeclarationTable table = nodesToScopes.Get(fun.SourceNode);
-                if (fun.SourceNode is PParser.FunDeclContext funDecl)
-                {
-                    functionBody = funDecl.functionBody();
-                }
-                else if (fun.SourceNode is PParser.AnonEventHandlerContext anonHandler)
-                {
-                    functionBody = anonHandler.functionBody();
-                }
-                else if (fun.SourceNode is PParser.NoParamAnonEventHandlerContext noParamAnonHandler)
-                {
-                    functionBody = noParamAnonHandler.functionBody();
-                }
-                else
-                {
-                    throw new ArgumentException();
-                }
-                var statementVisitor = new StatementVisitor(table, fun.Owner, handler);
-                fun.Body = functionBody.statement().SelectMany(stmt => statementVisitor.Visit(stmt)).ToList();
-            }
+            foreach (PParser.ProgramContext programUnit in programUnits)
+                walker.Walk(funcBodyListener, programUnit);
 
             // NOW: AST Complete, pass to StringTemplate
         }

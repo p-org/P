@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
@@ -18,35 +19,45 @@ namespace UnitTests.PSharpBackend
             return new FileInfo(Path.Combine(new[] {Constants.SolutionDirectory}.Concat(names).ToArray()));
         }
 
+        private static readonly HashSet<string> testWhitelist = new HashSet<string>
+        {
+            "RegressionTests/Feature2Stmts/Correct/receive1",
+            "RegressionTests/Feature2Stmts/Correct/receive17",
+            "RegressionTests/Feature2Stmts/DynamicError/receive2",
+            "RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes12",
+            "RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes13",
+            "RegressionTests/Integration/Correct/German"
+        };
+
         private static void RunTest(string testName, params FileInfo[] inputFiles)
         {
-            var trees = new PParser.ProgramContext[inputFiles.Length];
-            var originalFiles = new ParseTreeProperty<FileInfo>();
-
-            for (var i = 0; i < inputFiles.Length; i++)
-            {
-                var inputFile = inputFiles[i];
-                var fileStream = new AntlrFileStream(inputFile.FullName);
-                var lexer = new PLexer(fileStream);
-                var tokens = new CommonTokenStream(lexer);
-                var parser = new PParser(tokens);
-                parser.RemoveErrorListeners();
-
-                trees[i] = parser.program();
-
-                if (parser.NumberOfSyntaxErrors != 0)
-                {
-                    //Console.Error.WriteLine($"[{testName}] Failed to parse {inputFile.FullName}");
-                    return;
-                }
-
-                originalFiles.Put(trees[i], inputFile);
-            }
-
             try
             {
+                var trees = new PParser.ProgramContext[inputFiles.Length];
+                var originalFiles = new ParseTreeProperty<FileInfo>();
                 ITranslationErrorHandler handler = new DefaultTranslationHandler(originalFiles);
+
+                for (var i = 0; i < inputFiles.Length; i++)
+                {
+                    FileInfo inputFile = inputFiles[i];
+                    var fileStream = new AntlrFileStream(inputFile.FullName);
+                    var lexer = new PLexer(fileStream);
+                    var tokens = new CommonTokenStream(lexer);
+                    var parser = new PParser(tokens);
+                    parser.RemoveErrorListeners();
+
+                    trees[i] = parser.program();
+
+                    if (parser.NumberOfSyntaxErrors != 0)
+                    {
+                        throw handler.ParseFailure(inputFile);
+                    }
+
+                    originalFiles.Put(trees[i], inputFile);
+                }
+
                 Analyzer.AnalyzeCompilationUnit(handler, trees);
+                Console.WriteLine($"[{testName}] Success!");
             }
             catch (TranslationException e)
             {
@@ -54,21 +65,25 @@ namespace UnitTests.PSharpBackend
             }
             catch (NotImplementedException e)
             {
-                //Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
+                Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
             }
         }
-        
+
         [Test]
         public void TestAnalyzeAllTests()
         {
             var testCases = TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
-            foreach (var testCase in testCases)
+            foreach (TestCaseData testCase in testCases)
             {
                 var testDir = (DirectoryInfo) testCase.Arguments[0];
-                var testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
-                    .MakeRelativeUri(new Uri(testDir.FullName)).ToString();
+                string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
+                    .MakeRelativeUri(new Uri(testDir.FullName))
+                    .ToString();
 
-                RunTest(testName, testDir.GetFiles("*.p"));
+                if (testWhitelist.Contains(testName))
+                {
+                    RunTest(testName, testDir.GetFiles("*.p"));
+                }
             }
         }
 

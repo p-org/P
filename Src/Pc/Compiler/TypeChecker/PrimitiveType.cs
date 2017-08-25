@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using Microsoft.Pc.Antlr;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -9,7 +10,7 @@ namespace Microsoft.Pc.TypeChecker
         public static readonly PrimitiveType Float = new PrimitiveType("float");
         public static readonly PrimitiveType Event = new PrimitiveType("event");
         public static readonly PrimitiveType Machine = new PrimitiveType("machine");
-        public static readonly PrimitiveType Data = new PrimitiveType("data");
+        public static readonly BoundedType Data = new BoundedType(new EventSet("", (PParser.EventSetLiteralContext)null));
         public static readonly PrimitiveType Any = new PrimitiveType("any");
         public static readonly PrimitiveType Null = new PrimitiveType("null");
 
@@ -32,6 +33,10 @@ namespace Microsoft.Pc.TypeChecker
             {
                 return otherType.CanonicalRepresentation.Equals("machine") ||
                        otherType.CanonicalRepresentation.Equals("null");
+            }
+            if (CanonicalRepresentation.Equals("int"))
+            {
+                return TypeIsOfKind(otherType, TypeKind.Enum) || otherType.CanonicalRepresentation.Equals("int");
             }
             if (CanonicalRepresentation.Equals("event"))
             {

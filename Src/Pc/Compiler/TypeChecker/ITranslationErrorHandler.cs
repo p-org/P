@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 
@@ -32,5 +33,7 @@ namespace Microsoft.Pc.TypeChecker
         Exception IncomparableTypes(ParserRuleContext location, PLanguageType lhsType, PLanguageType rhsType);
         Exception MisplacedThis(PParser.PrimitiveContext location);
         Exception BinOpTypeMismatch(PParser.BinExprContext location, PLanguageType lhsType, PLanguageType rhsType);
+        Exception ParseFailure(FileInfo file);
+        Exception EmittedNullEvent(ParserRuleContext location);
     }
 }

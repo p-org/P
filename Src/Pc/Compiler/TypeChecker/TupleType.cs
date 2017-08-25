@@ -15,7 +15,7 @@ namespace Microsoft.Pc.TypeChecker
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             // Tuples must be of the same size, and other tuple's fields must subtype this one's 
-            var other = otherType as TupleType;
+            var other = otherType.Canonicalize() as TupleType;
             return other != null && Types.Length == other.Types.Length && Types
                        .Zip(other.Types, (myT, otherT) => myT.IsAssignableFrom(otherT)).All(x => x);
         }

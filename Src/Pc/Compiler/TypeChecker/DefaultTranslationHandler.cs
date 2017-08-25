@@ -44,7 +44,7 @@ namespace Microsoft.Pc.TypeChecker
             return new Location
             {
                 Line = decl.Start.Line,
-                Column = decl.Start.Column,
+                Column = decl.Start.Column + 1,
                 File = originalFiles.Get(GetRoot(decl))
             };
         }
@@ -54,7 +54,7 @@ namespace Microsoft.Pc.TypeChecker
             return new Location
             {
                 Line = tok.Line,
-                Column = tok.Column,
+                Column = tok.Column + 1,
                 File = originalFiles.Get(GetRoot(ctx))
             };
         }
@@ -179,6 +179,16 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(location,
                               location.op,
                               $"expected either both float or both int; got {lhsType.OriginalRepresentation} and {rhsType.OriginalRepresentation}");
+        }
+
+        public Exception ParseFailure(FileInfo file)
+        {
+            return new TranslationException($"failed to parse {file.Name}");
+        }
+
+        public Exception EmittedNullEvent(ParserRuleContext location)
+        {
+            return IssueError(location, "cannot send null events");
         }
     }
 }

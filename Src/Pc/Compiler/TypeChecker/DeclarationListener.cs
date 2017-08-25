@@ -364,10 +364,12 @@ namespace Microsoft.Pc.TypeChecker
         {
             // (
             Function fun;
+
             if (context.anonEventHandler() != null)
             {
                 // ENTRY anonEventHandler 
                 fun = new Function(context.anonEventHandler()) {Owner = currentMachine};
+                nodesToDeclarations.Put(context.anonEventHandler(), fun);
             }
             else // |
             {
@@ -400,6 +402,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // DO [...] anonEventHandler
                 fun = new Function(context.anonEventHandler()) {Owner = currentMachine};
+                nodesToDeclarations.Put(context.anonEventHandler(), fun);
             }
             else
             {
@@ -442,6 +445,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // noParamAnonEventHandler
                 fun = new Function(context.noParamAnonEventHandler()) {Owner = currentMachine};
+                nodesToDeclarations.Put(context.noParamAnonEventHandler(), fun);
             }
             else
             {
@@ -484,6 +488,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // WITH anonEventHandler
                 transitionFunction = new Function(context.anonEventHandler()) {Owner = currentMachine};
+                nodesToDeclarations.Put(context.anonEventHandler(), transitionFunction);
             }
             else
             {

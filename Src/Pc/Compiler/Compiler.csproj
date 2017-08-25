@@ -274,7 +274,6 @@
     <Compile Include="TypeChecker\DeclarationStubListener.cs" />
     <Compile Include="TypeChecker\DeclarationTable.cs" />
     <Compile Include="TypeChecker\DeclPrinter.cs" />
-    <Compile Include="TypeChecker\DictionaryExtensions.cs" />
     <Compile Include="TypeChecker\BoundedType.cs" />
     <Compile Include="TypeChecker\EnumType.cs" />
     <Compile Include="TypeChecker\ExprVisitor.cs" />

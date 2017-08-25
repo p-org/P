@@ -10,9 +10,15 @@ namespace UnitTests.CBackend
 {
     internal class TestCaseLoader
     {
-        private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
+        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
         //TODO(debug only):
         //private static readonly List<string> TestDirs = new List<string> { "Temp-PtTests" };
+        //private static readonly List<string> TestDirs =
+        //    new List<string> { "C:\\VanillaPLanguage\\P\\Tst\\RegressionTests\\Feature2Stmts\\Correct" };
+        private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Combined",
+           "RegressionTests\\Feature1SMLevelDecls",  "RegressionTests\\Feature2Stmts", "RegressionTests\\Feature3Exprs",
+           "RegressionTests\\Feature4DataTypes", "RegressionTests\\Integration", "RegressionTests\\Zinger"
+            };
 
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName)
         {

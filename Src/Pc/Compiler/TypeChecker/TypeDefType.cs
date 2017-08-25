@@ -15,5 +15,7 @@ namespace Microsoft.Pc.TypeChecker {
         {
             return TypeDefDecl.Type.IsAssignableFrom(otherType);
         }
+
+        public override PLanguageType Canonicalize() { return TypeDefDecl.Type.Canonicalize(); }
     }
 }

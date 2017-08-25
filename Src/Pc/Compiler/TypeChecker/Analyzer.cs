@@ -42,29 +42,31 @@ namespace Microsoft.Pc.TypeChecker
             // Step 3: Fill in method bodies
             foreach (var declaration in AllDeclarations(topLevelTable))
             {
-                if (declaration.Item1 is Function fun)
+                if (!(declaration.Item1 is Function fun))
                 {
-                    PParser.FunctionBodyContext functionBody;
-                    DeclarationTable table = nodesToScopes.Get(fun.SourceNode);
-                    if (fun.SourceNode is PParser.FunDeclContext funDecl)
-                    {
-                        functionBody = funDecl.functionBody();
-                    }
-                    else if (fun.SourceNode is PParser.AnonEventHandlerContext anonHandler)
-                    {
-                        functionBody = anonHandler.functionBody();
-                    }
-                    else if (fun.SourceNode is PParser.NoParamAnonEventHandlerContext noParamAnonHandler)
-                    {
-                        functionBody = noParamAnonHandler.functionBody();
-                    }
-                    else
-                    {
-                        throw new ArgumentException();
-                    }
-                    var statementVisitor = new StatementVisitor(table, fun.Owner, handler);
-                    fun.Body = functionBody.statement().SelectMany(stmt => statementVisitor.Visit(stmt)).ToList();
+                    continue;
                 }
+
+                PParser.FunctionBodyContext functionBody;
+                DeclarationTable table = nodesToScopes.Get(fun.SourceNode);
+                if (fun.SourceNode is PParser.FunDeclContext funDecl)
+                {
+                    functionBody = funDecl.functionBody();
+                }
+                else if (fun.SourceNode is PParser.AnonEventHandlerContext anonHandler)
+                {
+                    functionBody = anonHandler.functionBody();
+                }
+                else if (fun.SourceNode is PParser.NoParamAnonEventHandlerContext noParamAnonHandler)
+                {
+                    functionBody = noParamAnonHandler.functionBody();
+                }
+                else
+                {
+                    throw new ArgumentException();
+                }
+                var statementVisitor = new StatementVisitor(table, fun.Owner, handler);
+                fun.Body = functionBody.statement().SelectMany(stmt => statementVisitor.Visit(stmt)).ToList();
             }
 
             // NOW: AST Complete, pass to StringTemplate

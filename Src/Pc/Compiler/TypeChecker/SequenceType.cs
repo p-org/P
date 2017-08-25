@@ -18,5 +18,7 @@ namespace Microsoft.Pc.TypeChecker
             var other = otherType as SequenceType;
             return other != null && ElementType.IsAssignableFrom(other.ElementType);
         }
+
+        public override PLanguageType Canonicalize() { return new SequenceType(ElementType.Canonicalize()); }
     }
 }

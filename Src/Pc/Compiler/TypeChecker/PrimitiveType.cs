@@ -40,5 +40,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             return CanonicalRepresentation.Equals(otherType.CanonicalRepresentation);
         }
+
+        public override PLanguageType Canonicalize() { return this; }
     }
 }

@@ -24,5 +24,7 @@ namespace Microsoft.Pc.TypeChecker
             return other != null && KeyType.IsAssignableFrom(other.KeyType) &&
                    ValueType.IsAssignableFrom(other.ValueType);
         }
+
+        public override PLanguageType Canonicalize() { return new MapType(KeyType.Canonicalize(), ValueType.Canonicalize()); }
     }
 }

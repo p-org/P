@@ -19,5 +19,7 @@ namespace Microsoft.Pc.TypeChecker
             return other != null && Types.Length == other.Types.Length && Types
                        .Zip(other.Types, (myT, otherT) => myT.IsAssignableFrom(otherT)).All(x => x);
         }
+
+        public override PLanguageType Canonicalize() { return new TupleType(Types.Select(t => t.Canonicalize()).ToArray()); }
     }
 }

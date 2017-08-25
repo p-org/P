@@ -28,5 +28,12 @@ namespace Microsoft.Pc.TypeChecker
         {
             return this.IsAssignableFrom(otherType) && otherType.IsAssignableFrom(this);
         }
+
+        public abstract PLanguageType Canonicalize();
+
+        public static bool TypeIsOfKind(PLanguageType type, TypeKind kind)
+        {
+            return type.Canonicalize().TypeKind.Equals(kind);
+        }
     }
 }

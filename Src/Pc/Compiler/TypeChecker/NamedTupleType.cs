@@ -26,8 +26,20 @@ namespace Microsoft.Pc.TypeChecker
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             var other = otherType as NamedTupleType;
-            return other != null && Fields.Count == other.Fields.Count && Names.SequenceEqual(other.Names) 
-                && Types.Zip(other.Types, (myT, otherT) => myT.IsAssignableFrom(otherT)).All(x => x);
+            return other != null &&
+                   Fields.Count == other.Fields.Count &&
+                   Names.SequenceEqual(other.Names) &&
+                   Types.Zip(other.Types, (myT, otherT) => myT.IsAssignableFrom(otherT)).All(x => x);
+        }
+
+        public override PLanguageType Canonicalize()
+        {
+            return new NamedTupleType(Fields.Select(f => new NamedTupleEntry
+                                            {
+                                                Name = f.Name,
+                                                Type = f.Type.Canonicalize()
+                                            })
+                                            .ToList());
         }
 
         public bool LookupEntry(string name, out NamedTupleEntry entry)

@@ -16,5 +16,7 @@ namespace Microsoft.Pc.TypeChecker {
             // enum declarations are always reference-equal
             return (otherType as EnumType)?.EnumDecl == EnumDecl;
         }
+
+        public override PLanguageType Canonicalize() { return this; }
     }
 }

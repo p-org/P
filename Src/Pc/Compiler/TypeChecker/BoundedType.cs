@@ -16,5 +16,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             throw new System.NotImplementedException("any<> type checking");
         }
+
+        public override PLanguageType Canonicalize() { return this; }
     }
 }

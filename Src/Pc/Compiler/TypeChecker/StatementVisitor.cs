@@ -121,7 +121,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
             var body = Visit(context.statement()).ToList();
-            Debug.Assert(body.Count == 0);
+            Debug.Assert(body.Count == 1);
             yield return new WhileStmt(condition, body[0]);
         }
 
@@ -134,7 +134,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
             var thenBody = Visit(context.thenBranch).ToList();
-            Debug.Assert(thenBody.Count == 0);
+            Debug.Assert(thenBody.Count == 1);
             var elseBody = context.elseBranch == null ? null : Visit(context.elseBranch).ToList();
             Debug.Assert(elseBody == null || elseBody.Count == 1);
             yield return new IfStmt(condition, thenBody[0], elseBody?[0]);

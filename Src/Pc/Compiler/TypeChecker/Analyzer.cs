@@ -63,7 +63,7 @@ namespace Microsoft.Pc.TypeChecker
                         throw new ArgumentException();
                     }
                     var statementVisitor = new StatementVisitor(table, fun.Owner, handler);
-                    //fun.Body = functionBody.statement().SelectMany(stmt => statementVisitor.Visit(stmt)).ToList();
+                    fun.Body = functionBody.statement().SelectMany(stmt => statementVisitor.Visit(stmt)).ToList();
                 }
             }
 

@@ -169,7 +169,7 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
 
 lvalue : name=iden                 # VarLvalue
        | lvalue DOT field=iden     # NamedTupleLvalue
-       | lvalue DOT IntLiteral     # TupleLvalue
+       | lvalue DOT int            # TupleLvalue
        | lvalue LBRACK expr RBRACK # MapOrSeqLvalue
        ;
 

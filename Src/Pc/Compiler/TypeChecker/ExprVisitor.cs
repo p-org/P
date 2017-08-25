@@ -48,7 +48,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.MissingNamedTupleEntry(context.field, context.field.GetText(), tuple);
             }
-            return new NamedTupleAccessExpr(subExpr, fieldName, entry.Type);
+            return new NamedTupleAccessExpr(subExpr, entry);
         }
 
         public override IPExpr VisitTupleAccessExpr(PParser.TupleAccessExprContext context)
@@ -64,26 +64,31 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.OutOfBoundsTupleAccess(context.field, fieldNo, tuple);
             }
-            PLanguageType type = tuple.Types[fieldNo];
-            return new TupleAccessExpr(subExpr, fieldNo, type);
+            return new TupleAccessExpr(subExpr, fieldNo, tuple.Types[fieldNo]);
         }
 
         public override IPExpr VisitSeqAccessExpr(PParser.SeqAccessExprContext context)
         {
-            // TODO: also should work for maps
-            IPExpr seqExpr = Visit(context.seq);
-            IPExpr indexExpr = Visit(context.index);
-            if (seqExpr.Type.TypeKind != TypeKind.Sequence)
+            IPExpr seqOrMap = Visit(context.seq);
+            if (seqOrMap.Type is SequenceType seqType)
             {
-                throw handler.TypeMismatch(context.seq, seqExpr.Type, TypeKind.Sequence);
+                IPExpr indexExpr = Visit(context.index);
+                if (indexExpr.Type != PrimitiveType.Int)
+                {
+                    throw handler.TypeMismatch(context.index, indexExpr.Type, PrimitiveType.Int);
+                }
+                return new SeqAccessExpr(seqOrMap, indexExpr, seqType.ElementType);
             }
-            if (indexExpr.Type != PrimitiveType.Int)
+            if (seqOrMap.Type is MapType mapType)
             {
-                throw handler.TypeMismatch(context.index, indexExpr.Type, PrimitiveType.Int);
+                IPExpr indexExpr = Visit(context.index);
+                if (!mapType.KeyType.IsAssignableFrom(indexExpr.Type))
+                {
+                    throw handler.TypeMismatch(context.index, indexExpr.Type, mapType.KeyType);
+                }
+                return new MapAccessExpr(seqOrMap, indexExpr, mapType.ValueType);
             }
-
-            var type = (SequenceType) seqExpr.Type;
-            return new SeqAccessExpr(seqExpr, indexExpr, type.ElementType);
+            throw handler.TypeMismatch(context.seq, seqOrMap.Type, TypeKind.Sequence, TypeKind.Map);
         }
 
         public override IPExpr VisitKeywordExpr(PParser.KeywordExprContext context)
@@ -180,7 +185,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // Check the arguments
             // TODO: linearly typed arguments
-            var arguments = context.rvalueList().rvalue().Select(Visit).ToArray();
+            var arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
             for (var i = 0; i < arguments.Length; i++)
             {
                 IPExpr argument = arguments[i];
@@ -336,7 +341,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.floatLiteral() != null)
             {
-                return VisitFloatLiteral(context.floatLiteral());
+                return Visit(context.floatLiteral());
             }
             if (context.BoolLiteral() != null)
             {
@@ -438,6 +443,86 @@ namespace Microsoft.Pc.TypeChecker
                            : new LinearAccessRefExpr(variable, LinearType.Swap);
             }
             return Visit(context.expr());
+        }
+
+        public override IPExpr VisitVarLvalue(PParser.VarLvalueContext context)
+        {
+            string varName = context.name.GetText();
+            if (!table.Lookup(varName, out Variable variable))
+            {
+                throw handler.MissingDeclaration(context, "variable", varName);
+            }
+            return new VariableAccessExpr(variable);
+        }
+
+        public override IPExpr VisitNamedTupleLvalue(PParser.NamedTupleLvalueContext context)
+        {
+            IPExpr lvalue = Visit(context.lvalue());
+            if (lvalue.Type.TypeKind != TypeKind.NamedTuple)
+            {
+                throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.NamedTuple);
+            }
+            string field = context.field.GetText();
+            var type = (NamedTupleType)lvalue.Type;
+            if (!type.LookupEntry(field, out NamedTupleEntry entry))
+            {
+                throw handler.MissingNamedTupleEntry(context.field, field, type);
+            }
+            return new NamedTupleAccessExpr(lvalue, entry);
+        }
+
+        public override IPExpr VisitTupleLvalue(PParser.TupleLvalueContext context)
+        {
+            IPExpr lvalue = Visit(context.lvalue());
+            if (lvalue.Type.TypeKind != TypeKind.Tuple)
+            {
+                throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Tuple);
+            }
+            int field = int.Parse(context.@int().GetText());
+            var type = (TupleType) lvalue.Type;
+            if (field >= type.Types.Length)
+            {
+                throw handler.OutOfBoundsTupleAccess(context.@int(), field, type);
+            }
+            return new TupleAccessExpr(lvalue, field, type.Types[field]);
+        }
+
+        public override IPExpr VisitMapOrSeqLvalue(PParser.MapOrSeqLvalueContext context)
+        {
+            IPExpr lvalue = Visit(context.lvalue());
+            if (lvalue.Type is MapType mapType)
+            {
+                IPExpr index = Visit(context.expr());
+                if (mapType.KeyType.IsAssignableFrom(index.Type))
+                {
+                    throw handler.TypeMismatch(context.expr(), index.Type, mapType.KeyType);
+                }
+                return new MapAccessExpr(lvalue, index, mapType.ValueType);
+            }
+            if (lvalue.Type is SequenceType seqType)
+            {
+                IPExpr index = Visit(context.expr());
+                if (index.Type != PrimitiveType.Int)
+                {
+                    throw handler.TypeMismatch(context.expr(), index.Type, PrimitiveType.Int);
+                }
+                return new SeqAccessExpr(lvalue, index, seqType.ElementType);
+            }
+            throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Sequence, TypeKind.Map);
+        }
+    }
+
+    public class MapAccessExpr : IPExpr
+    {
+        public IPExpr MapExpr { get; }
+        public IPExpr IndexExpr { get; }
+        public PLanguageType Type { get; }
+
+        public MapAccessExpr(IPExpr mapExpr, IPExpr indexExpr, PLanguageType type)
+        {
+            MapExpr = mapExpr;
+            IndexExpr = indexExpr;
+            Type = type;
         }
     }
 
@@ -895,16 +980,16 @@ namespace Microsoft.Pc.TypeChecker
 
     public class NamedTupleAccessExpr : IPExpr
     {
-        public NamedTupleAccessExpr(IPExpr subExpr, string fieldName, PLanguageType type)
+        public NamedTupleAccessExpr(IPExpr subExpr, NamedTupleEntry entry)
         {
             SubExpr = subExpr;
-            FieldName = fieldName;
-            Type = type;
+            Entry = entry;
         }
 
         public IPExpr SubExpr { get; }
-        public string FieldName { get; }
-        public PLanguageType Type { get; }
+        public NamedTupleEntry Entry { get; }
+        public string FieldName => Entry.Name;
+        public PLanguageType Type => Entry.Type;
     }
 
     public class TupleAccessExpr : IPExpr

@@ -12,10 +12,13 @@ namespace Microsoft.Pc.TypeChecker
     {
         private readonly DeclarationTable table;
         private readonly Machine machine;
-        public StatementVisitor(DeclarationTable table, Machine machine)
+        private readonly ITranslationErrorHandler handler;
+
+        public StatementVisitor(DeclarationTable table, Machine machine, ITranslationErrorHandler handler)
         {
             this.table = table;
             this.machine = machine;
+            this.handler = handler;
         }
 
         public override IEnumerable<IPStmt> VisitCompoundStmt(PParser.CompoundStmtContext context)
@@ -28,11 +31,11 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IEnumerable<IPStmt> VisitAssertStmt(PParser.AssertStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr assertion = exprVisitor.Visit(context.expr());
             if (assertion.Type != PrimitiveType.Bool)
             {
-                throw new TypeMismatchException(context.expr(), assertion.Type, PrimitiveType.Bool);
+                throw handler.TypeMismatch(context.expr(), assertion.Type, PrimitiveType.Bool);
             }
             string message = context.StringLiteral()?.GetText() ?? "";
             yield return new AssertStmt(assertion, message);
@@ -40,44 +43,46 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IEnumerable<IPStmt> VisitPrintStmt(PParser.PrintStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             string message = context.StringLiteral().GetText();
             int numNecessaryArgs = (from Match match in Regex.Matches(message, @"(?:{{|}}|{(\d+)}|[^{}]+|{|})")
                                     where match.Groups.Count >= 2
                                     select int.Parse(match.Groups[1].Value) + 1)
                 .Concat(new[] {0})
                 .Max();
-            var args = context.rvalueList().rvalue().Select(rvalue => exprVisitor.Visit(rvalue)).ToList();
+            var argsExprs = context.rvalueList()?.rvalue().Select(rvalue => exprVisitor.Visit(rvalue)) ?? Enumerable.Empty<IPExpr>();
+            var args = argsExprs.ToList();
             if (args.Count < numNecessaryArgs)
             {
-                throw new InvalidPrintException(context, numNecessaryArgs, args.Count);
+                throw handler.IncorrectArgumentCount(
+                    (ParserRuleContext)context.rvalueList() ?? context,
+                    args.Count,
+                    numNecessaryArgs);
             }
             if (args.Count > numNecessaryArgs)
             {
-                // TODO: implement proper logging
-                // Man, algebraic effects would be great here
-                Console
-                    .Error.WriteLine($"Warning! Print expression {message} expected {numNecessaryArgs} arguments but got too many! Actual number was {args.Count}.");
+                handler.IssueWarning((ParserRuleContext)context.rvalueList() ?? context, "ignoring extra arguments to print expression");
+                args = args.Take(numNecessaryArgs).ToList();
             }
             yield return new PrintStmt(message, args);
         }
 
         public override IEnumerable<IPStmt> VisitReturnStmt(PParser.ReturnStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             yield return new ReturnStmt(context.expr() == null ? null : exprVisitor.Visit(context.expr()));
         }
 
         public override IEnumerable<IPStmt> VisitAssignStmt(PParser.AssignStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr variable = exprVisitor.Visit(context.lvalue());
             IPExpr value = exprVisitor.Visit(context.rvalue());
             if (value is ILinearRef linearRef)
             {
                 if (!variable.Type.IsAssignableFrom(linearRef.Variable.Type))
                 {
-                    throw new TypeMismatchException(context.rvalue(), linearRef.Variable.Type, variable.Type);
+                    throw handler.TypeMismatch(context.rvalue(), linearRef.Variable.Type, variable.Type);
                 }
                 switch (linearRef.LinearType)
                 {
@@ -109,11 +114,11 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IEnumerable<IPStmt> VisitWhileStmt(PParser.WhileStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr condition = exprVisitor.Visit(context.expr());
             if (condition.Type != PrimitiveType.Bool)
             {
-                throw new TypeMismatchException(context.expr(), condition.Type, PrimitiveType.Bool);
+                throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
             var body = Visit(context.statement()).ToList();
             Debug.Assert(body.Count == 0);
@@ -122,11 +127,11 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IEnumerable<IPStmt> VisitIfStmt(PParser.IfStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr condition = exprVisitor.Visit(context.expr());
             if (condition.Type != PrimitiveType.Bool)
             {
-                throw new TypeMismatchException(context.expr(), condition.Type, PrimitiveType.Bool);
+                throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
             var thenBody = Visit(context.thenBranch).ToList();
             Debug.Assert(thenBody.Count == 0);
@@ -137,8 +142,8 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IEnumerable<IPStmt> VisitCtorStmt(PParser.CtorStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
-            string machineName = context.Iden().GetText();
+            var exprVisitor = new ExprVisitor(table, handler);
+            string machineName = context.iden().GetText();
             if (table.Lookup(machineName, out Machine machine))
             {
                 bool hasArguments = machine.PayloadType != PrimitiveType.Null;
@@ -149,16 +154,19 @@ namespace Microsoft.Pc.TypeChecker
                     var argsList = args.ToList();
                     if (argsList.Count != 1)
                     {
-                        throw new ArgumentCountException(context);
+                        throw handler.IncorrectArgumentCount((ParserRuleContext)context.rvalueList() ?? context,
+                                                             argsList.Count,
+                                                             1);
                     }
                     yield return new CtorStmt(machine, argsList);
                 }
                 else
                 {
-                    // TODO: another good place for algebraic effects, need a warning system
                     if (args.Count() != 0)
                     {
-                        Console.Error.WriteLine("too many arguments passed to constructor");
+                        handler.IssueWarning(
+                            (ParserRuleContext)context.rvalueList() ?? context,
+                            "ignoring extra parameters passed to machine constructor");
                     }
                     yield return new CtorStmt(machine, new List<IPExpr>());
                 }
@@ -169,21 +177,24 @@ namespace Microsoft.Pc.TypeChecker
             }
             else
             {
-                throw new MissingDeclarationException(machineName, context);
+                throw handler.MissingDeclaration(context.iden(), "machine or machine prototype", machineName);
             }
         }
 
         public override IEnumerable<IPStmt> VisitFunCallStmt(PParser.FunCallStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
-            string funName = context.Iden().GetText();
+            var exprVisitor = new ExprVisitor(table, handler);
+            string funName = context.fun.GetText();
             var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ?? Enumerable.Empty<IPExpr>();
             var argsList = args.ToList();
             if (table.Lookup(funName, out Function fun))
             {
                 if (fun.Signature.Parameters.Count != argsList.Count)
                 {
-                    throw new ArgumentCountException(context);
+                    throw handler.IncorrectArgumentCount(
+                        (ParserRuleContext)context.rvalueList() ?? context,
+                        argsList.Count,
+                        fun.Signature.Parameters.Count);
                 }
                 foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
                 {
@@ -191,7 +202,7 @@ namespace Microsoft.Pc.TypeChecker
                     IPExpr arg = pair.Item2;
                     if (!param.Type.IsAssignableFrom(arg.Type))
                     {
-                        throw new TypeMismatchException(context, arg.Type, param.Type);
+                        throw handler.TypeMismatch(context, arg.Type, param.Type);
                     }
                 }
                 yield return new FunCallStmt(fun, argsList);
@@ -202,17 +213,17 @@ namespace Microsoft.Pc.TypeChecker
             }
             else
             {
-                throw new MissingDeclarationException(funName, context);
+                throw handler.MissingDeclaration(context.fun, "function or function prototype", funName);
             }
         }
 
         public override IEnumerable<IPStmt> VisitRaiseStmt(PParser.RaiseStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr pExpr = exprVisitor.Visit(context.expr());
             if (!(pExpr is EventRefExpr eventRef))
             {
-                throw new StaticEventException(context.expr());
+                throw new NotImplementedException("raising dynamic events");
             }
 
             var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
@@ -223,22 +234,26 @@ namespace Microsoft.Pc.TypeChecker
             {
                 yield return new RaiseStmt(eventRef.PEvent, args.Count == 0 ? null : args[0]);
             }
-            throw new ArgumentCountException(context);
+            throw handler.IncorrectArgumentCount(
+                (ParserRuleContext)context.rvalueList() ?? context,
+                args.Count,
+                evt.PayloadType == PrimitiveType.Null ? 0 : 1);
         }
 
         public override IEnumerable<IPStmt> VisitSendStmt(PParser.SendStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr machineExpr = exprVisitor.Visit(context.machine);
             if (machineExpr.Type != PrimitiveType.Machine)
             {
-                throw new TypeMismatchException(context.machine, machineExpr.Type, PrimitiveType.Machine);
+                throw handler.TypeMismatch(context.machine, machineExpr.Type, PrimitiveType.Machine);
             }
             IPExpr evtExpr = exprVisitor.Visit(context.@event);
             if (!(evtExpr is EventRefExpr))
             {
-                throw new StaticEventException(context.@event);
+                throw new NotImplementedException("sending dynamic events");
             }
+
             PEvent evt = ((EventRefExpr) evtExpr).PEvent;
             var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ?? Enumerable.Empty<IPExpr>();
             var argsList = args.ToList();
@@ -246,7 +261,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 if (!evt.PayloadType.IsAssignableFrom(argsList[0].Type))
                 {
-                    throw new TypeMismatchException(context.rvalueList().rvalue(0), argsList[0].Type, evt.PayloadType);
+                    throw handler.TypeMismatch(context.rvalueList().rvalue(0), argsList[0].Type, evt.PayloadType);
                 }
                 yield return new SendStmt(machineExpr, evt, argsList);
             }
@@ -256,17 +271,20 @@ namespace Microsoft.Pc.TypeChecker
             }
             else
             {
-                throw new ArgumentCountException(context);
+                throw handler.IncorrectArgumentCount(
+                    (ParserRuleContext)context.rvalueList() ?? context,
+                    argsList.Count,
+                    evt.PayloadType == PrimitiveType.Null ? 0 : 1);
             }
         }
 
         public override IEnumerable<IPStmt> VisitAnnounceStmt(PParser.AnnounceStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table);
+            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr pExpr = exprVisitor.Visit(context.expr());
             if (!(pExpr is EventRefExpr eventRef))
             {
-                throw new StaticEventException(context.expr());
+                throw new NotImplementedException("announcing dynamic events");
             }
 
             var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
@@ -277,19 +295,29 @@ namespace Microsoft.Pc.TypeChecker
             {
                 yield return new AnnounceStmt(eventRef.PEvent, args.Count == 0 ? null : args[0]);
             }
-            throw new ArgumentCountException(context);
+            throw handler.IncorrectArgumentCount(
+                (ParserRuleContext)context.rvalueList() ?? context,
+                args.Count,
+                evt.PayloadType == PrimitiveType.Null ? 0 : 1);
         }
 
         public override IEnumerable<IPStmt> VisitGotoStmt(PParser.GotoStmtContext context)
         {
             PParser.StateNameContext stateNameContext = context.stateName();
-            var groupNames = stateNameContext._groups.Select(g => g.Text).ToArray();
-            var stateName = stateNameContext.state.Text;
-            IStateContainer current = groupNames.Aggregate<string, IStateContainer>(machine, (current1, groupName) => current1.GetGroup(groupName));
-            var state = current.GetState(stateName);
+            var stateName = stateNameContext.state.GetText();
+            IStateContainer current = machine;
+            foreach (var token in stateNameContext._groups)
+            {
+                current = current?.GetGroup(token.GetText());
+                if (current == null)
+                {  
+                    throw handler.MissingDeclaration(token, "group", token.GetText());
+                }
+            }
+            var state = current?.GetState(stateName);
             if (state == null)
             {
-                throw new MissingDeclarationException(stateName, context);
+                throw handler.MissingDeclaration(stateNameContext.state, "state", stateName);
             }
             IPExpr payload = null;
             if (context.rvalueList() != null)
@@ -360,12 +388,6 @@ namespace Microsoft.Pc.TypeChecker
         public IPExpr Payload { get; }
     }
 
-    public class StaticEventException : Exception
-    {
-        public StaticEventException(ParserRuleContext evtExpr) { EvtExpr = evtExpr; }
-        public ParserRuleContext EvtExpr { get; }
-    }
-
     public class FunCallStmt : IPStmt
     {
         public FunCallStmt(Function fun, List<IPExpr> argsList)
@@ -376,12 +398,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public Function Fun { get; }
         public List<IPExpr> ArgsList { get; }
-    }
-
-    public class ArgumentCountException : Exception
-    {
-        public ArgumentCountException(ParserRuleContext context) { Context = context; }
-        public ParserRuleContext Context { get; }
     }
 
     public class CtorStmt : IPStmt
@@ -477,20 +493,6 @@ namespace Microsoft.Pc.TypeChecker
         public List<IPExpr> Args { get; }
     }
 
-    public class InvalidPrintException : Exception
-    {
-        public InvalidPrintException(PParser.PrintStmtContext context, int expectedArgs, int actualArgs)
-        {
-            Context = context;
-            ExpectedArgs = expectedArgs;
-            ActualArgs = actualArgs;
-        }
-
-        public PParser.PrintStmtContext Context { get; }
-        public int ExpectedArgs { get; }
-        public int ActualArgs { get; }
-    }
-
     public class AssertStmt : IPStmt
     {
         public AssertStmt(IPExpr assertion, string message)
@@ -501,20 +503,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public IPExpr Assertion { get; }
         public string Message { get; }
-    }
-
-    public class TypeMismatchException : Exception
-    {
-        public TypeMismatchException(ParserRuleContext expr, PLanguageType actualType, PLanguageType expectedType)
-        {
-            Expr = expr;
-            ActualType = actualType;
-            ExpectedType = expectedType;
-        }
-
-        public ParserRuleContext Expr { get; }
-        public PLanguageType ActualType { get; }
-        public PLanguageType ExpectedType { get; }
     }
 
     public class PopStmt : IPStmt

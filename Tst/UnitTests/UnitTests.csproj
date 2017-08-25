@@ -133,6 +133,7 @@
     <Compile Include="CBackend\TestCaseLoader.cs" />
     <Compile Include="CBackend\TestConfig.cs" />
     <Compile Include="CBackend\TestType.cs" />
+    <Compile Include="PSharpBackend\DefaultTranslationHandler.cs" />
     <Compile Include="PSharpBackend\PSharpTests.cs" />
   </ItemGroup>
   <ItemGroup>

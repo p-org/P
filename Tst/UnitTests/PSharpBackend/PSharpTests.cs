@@ -43,92 +43,21 @@ namespace UnitTests.PSharpBackend
                 originalFiles.Put(trees[i], inputFile);
             }
 
-            Location GetLocation(IPDecl decl)
-            {
-                return GetRuleLocation(decl.SourceNode);
-            }
-
-            Location GetRuleLocation(ParserRuleContext decl)
-            {
-                if (decl == null)
-                    return new Location
-                    {
-                        Line = -1,
-                        Column = -1,
-                        File = null
-                    };
-                return new Location
-                {
-                    Line = decl.Start.Line,
-                    Column = decl.Start.Column,
-                    File = originalFiles.Get(GetRoot(decl))
-                };
-            }
-
             try
             {
-                Analyzer.AnalyzeCompilationUnit(trees);
+                ITranslationErrorHandler handler = new DefaultTranslationHandler(originalFiles);
+                Analyzer.AnalyzeCompilationUnit(handler, trees);
             }
-            catch (DuplicateDeclarationException e)
+            catch (TranslationException e)
             {
-                var bad = GetLocation(e.Conflicting);
-                var good = GetLocation(e.Existing);
-                Console.Error.WriteLine(
-                                        $"[{testName}] Declaration of {e.Conflicting.Name} at {bad} duplicates the declaration at {good}");
-            }
-            catch (MissingEventException e)
-            {
-                var eventSetLocation = GetLocation(e.EventSet);
-                Console.Error.WriteLine(
-                                        $"[{testName}] Event set {e.EventSet.Name} at {eventSetLocation} references non-existent event {e.EventName}");
-            }
-            catch (EnumMissingDefaultException e)
-            {
-                var enumLocation = GetLocation(e.Enum);
-                Console.Error.WriteLine(
-                                        $"[{testName}] Enum {e.Enum.Name} at {enumLocation} does not have a default 0-element");
-            }
-            catch (TypeConstructionException e)
-            {
-                var badTypeLocation = GetRuleLocation(e.Subtree);
-                Console.Error.WriteLine($"[{testName}] {badTypeLocation} : {e.Message}");
-            }
-            catch (DuplicateHandlerException e)
-            {
-                var badLocation = GetLocation(e.BadEvent);
-                Console.Error.WriteLine($"[{testName}] Event {e.BadEvent.Name} has multiple handlers at {badLocation}");
-            }
-            catch (MissingDeclarationException e)
-            {
-                var location = GetRuleLocation(e.Location);
-                Console.Error.WriteLine($"[{testName}] Could not find declaration {e.Declaration} at {location}");
+                Console.Error.WriteLine($"[{testName}] {e.Message}");
             }
             catch (NotImplementedException e)
             {
                 Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
             }
         }
-
-        private class Location
-        {
-            public int Line { get; set; }
-            public int Column { get; set; }
-            public FileInfo File { get; set; }
-
-            public override string ToString()
-            {
-                return File == null ? "<built-in>" : $"{File.Name}:{Line},{Column}";
-            }
-        }
-
-        private static IParseTree GetRoot(IParseTree node)
-        {
-            while (node?.Parent != null)
-                node = node.Parent;
-
-            return node;
-        }
-
+        
         [Test]
         public void TestAnalyzeAllTests()
         {

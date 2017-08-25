@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    internal class NamedTupleType : PLanguageType
+    public class NamedTupleType : PLanguageType
     {
         private readonly IDictionary<string, NamedTupleEntry> lookupTable;
 

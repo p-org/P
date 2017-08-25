@@ -8,27 +8,29 @@ namespace Microsoft.Pc.TypeChecker
 {
     public static class TypeResolver
     {
-        public static PLanguageType ResolveType(ParserRuleContext context, DeclarationTable table)
+        public static PLanguageType ResolveType(ParserRuleContext context, DeclarationTable table, ITranslationErrorHandler handler)
         {
-            return context == null ? PrimitiveType.Null : new TypeVisitor(table).Visit(context);
+            return context == null ? PrimitiveType.Null : new TypeVisitor(table, handler).Visit(context);
         }
 
         private class TypeVisitor : PParserBaseVisitor<PLanguageType>
         {
             private readonly DeclarationTable declarations;
             private readonly HashSet<TypeDef> visitedTypeDefs = new HashSet<TypeDef>();
+            private readonly ITranslationErrorHandler handler;
 
-            public TypeVisitor(DeclarationTable declarations)
+            public TypeVisitor(DeclarationTable declarations, ITranslationErrorHandler handler)
             {
                 this.declarations = declarations;
+                this.handler = handler;
             }
 
             public override PLanguageType VisitBoundedType(PParser.BoundedTypeContext context)
             {
-                string eventSetName = context.eventSet.Text;
+                string eventSetName = context.eventSet.GetText();
                 if (!declarations.Lookup(eventSetName, out EventSet eventSet))
                 {
-                    throw new TypeConstructionException($"Event set {eventSetName} does not exist.", context, context.eventSet);
+                    throw handler.MissingDeclaration(context.eventSet, "event set", eventSetName);
                 }
 
                 return new BoundedType(eventSet);
@@ -42,7 +44,7 @@ namespace Microsoft.Pc.TypeChecker
 
             public override PLanguageType VisitNamedType(PParser.NamedTypeContext context)
             {
-                string typeName = context.name.Text;
+                string typeName = context.name.GetText();
                 if (declarations.Lookup(typeName, out PEnum pEnum))
                 {
                     return new EnumType(pEnum);
@@ -52,7 +54,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     if (visitedTypeDefs.Contains(typeDef))
                     {
-                        throw new TypeConstructionException($"Typedef {typeDef.Name} is circular!", context, context.name);
+                        throw handler.CircularTypeDef(context.name, typeDef);
                     }
 
                     if (typeDef.Type == null)
@@ -70,10 +72,8 @@ namespace Microsoft.Pc.TypeChecker
                     throw new NotImplementedException("interface types");
                 }
 
-                throw new TypeConstructionException(
-                    $"Expected an enum, typedef, or interface name, but got {typeName}.",
-                    context,
-                    context.name);
+                throw handler.MissingDeclaration(context.name, "enum, typedef, or interface", typeName);
+                throw new Exception("unreachable");
             }
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
@@ -90,10 +90,10 @@ namespace Microsoft.Pc.TypeChecker
                 for (var i = 0; i < namedTupleFields.Length; i++)
                 {
                     PParser.IdenTypeContext field = namedTupleFields[i];
-                    string fieldName = field.name.Text;
+                    string fieldName = field.name.GetText();
                     if (names.Contains(fieldName))
                     {
-                        throw new TypeConstructionException($"Duplicate entry {fieldName} in named tuple.", context, field.name);
+                        throw handler.DuplicateNamedTupleEntry(field.name, fieldName);
                     }
 
                     names.Add(fieldName);

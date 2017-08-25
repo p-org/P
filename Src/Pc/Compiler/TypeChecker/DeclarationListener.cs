@@ -16,6 +16,8 @@ namespace Microsoft.Pc.TypeChecker
         /// </summary>
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
 
+        private readonly ITranslationErrorHandler handler;
+
         /// <summary>
         ///     Maps source nodes to the scope objects they produced.
         /// </summary>
@@ -77,9 +79,11 @@ namespace Microsoft.Pc.TypeChecker
         #endregion
 
         public DeclarationListener(
+            ITranslationErrorHandler handler,
             ParseTreeProperty<DeclarationTable> programDeclarations,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
+            this.handler = handler;
             this.programDeclarations = programDeclarations;
             this.nodesToDeclarations = nodesToDeclarations;
         }
@@ -91,7 +95,7 @@ namespace Microsoft.Pc.TypeChecker
             var typedef = (TypeDef) nodesToDeclarations.Get(context);
 
             // ASSIGN type
-            typedef.Type = TypeResolver.ResolveType(context.type(), table);
+            typedef.Type = TypeResolver.ResolveType(context.type(), table, handler);
         }
 
         public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
@@ -127,7 +131,7 @@ namespace Microsoft.Pc.TypeChecker
             elem.Value = int.Parse(context.value.Text);
             if (!currentEnum.AddElement(elem))
             {
-                throw new EnumElemException(currentEnum, elem);
+                throw handler.DuplicateEnumValue(context, currentEnum);
             }
         }
         #endregion
@@ -146,7 +150,7 @@ namespace Microsoft.Pc.TypeChecker
             pEvent.Assert = hasAssert ? cardinality : -1;
 
             // (COLON type)?
-            pEvent.PayloadType = TypeResolver.ResolveType(context.type(), table);
+            pEvent.PayloadType = TypeResolver.ResolveType(context.type(), table, handler);
 
             // annotationSet?
             if (context.annotationSet() != null)
@@ -168,11 +172,13 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterEventSetLiteral(PParser.EventSetLiteralContext context)
         {
             // events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
-            foreach (IToken contextEvent in context._events)
+            foreach (PParser.NonDefaultEventContext token in context._events)
             {
-                string eventName = contextEvent.Text;
+                string eventName = token.GetText();
                 if (!table.Lookup(eventName, out PEvent evt))
-                    throw new MissingEventException(currentEventSet, eventName);
+                {
+                    throw handler.MissingDeclaration(token, "event", eventName);
+                }
 
                 currentEventSet.Events.Add(evt);
             }
@@ -186,7 +192,7 @@ namespace Microsoft.Pc.TypeChecker
             var mInterface = (Interface) nodesToDeclarations.Get(context);
 
             // LPAREN type? RPAREN
-            mInterface.PayloadType = TypeResolver.ResolveType(context.type(), table);
+            mInterface.PayloadType = TypeResolver.ResolveType(context.type(), table, handler);
 
             if (context.eventSet == null)
             {
@@ -199,8 +205,11 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // ASSIGN eventSet=Iden
                 // ...or look up the event set and establish the link by name.
-                if (!table.Lookup(context.eventSet.Text, out EventSet eventSet))
-                    throw new MissingDeclarationException(context.eventSet.Text, context);
+                var eventSetName = context.eventSet.GetText();
+                if (!table.Lookup(eventSetName, out EventSet eventSet))
+                {
+                    throw handler.MissingDeclaration(context.eventSet, "event set", eventSetName);
+                }
 
                 mInterface.ReceivableEvents = eventSet;
             }
@@ -220,7 +229,7 @@ namespace Microsoft.Pc.TypeChecker
             functionStack.Push(fun); // funParamList builds signature
 
             // (COLON type)?
-            fun.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table);
+            fun.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table, handler);
 
             // annotationSet?
             if (context.annotationSet() != null)
@@ -239,9 +248,9 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterFunParam(PParser.FunParamContext context)
         {
             // name=Iden
-            string name = context.name.Text;
+            string name = context.name.GetText();
             // COLON type ;
-            PLanguageType type = TypeResolver.ResolveType(context.type(), table);
+            PLanguageType type = TypeResolver.ResolveType(context.type(), table, handler);
 
             ITypedName param;
             if (currentFunctionProto != null)
@@ -270,7 +279,7 @@ namespace Microsoft.Pc.TypeChecker
             // VAR idenList
             var varNames = context.idenList()._names;
             // COLON type 
-            PLanguageType type = TypeResolver.ResolveType(context.type(), table);
+            PLanguageType type = TypeResolver.ResolveType(context.type(), table, handler);
             // annotationSet?
             if (context.annotationSet() != null)
                 throw new NotImplementedException("variable annotations");
@@ -313,7 +322,9 @@ namespace Microsoft.Pc.TypeChecker
             if (currentState.IsStart)
             {
                 if (currentMachine.StartState != null)
-                    throw new DuplicateStartStateException(currentMachine, currentState);
+                {
+                    throw handler.DuplicateStartState(context, currentState, currentMachine.StartState, currentMachine);
+                }
                 currentMachine.StartState = currentState;
             }
 
@@ -357,17 +368,17 @@ namespace Microsoft.Pc.TypeChecker
             else // |
             {
                 // ENTRY funName=Iden)
-                if (!table.Lookup(context.funName.Text, out fun))
+                string funName = context.funName.GetText();
+                if (!table.Lookup(funName, out fun))
                 {
-                    // TODO: allow prototype state entries
-                    if (table.Lookup(context.funName.Text, out FunctionProto proto))
+                    if (table.Lookup(funName, out FunctionProto proto))
                         throw new NotImplementedException("function prototypes for state entries");
-                    throw new MissingDeclarationException(context.funName.Text, context);
+                    throw handler.MissingDeclaration(context.funName, "function", funName);
                 }
             }
             // SEMI
             if (currentState.Entry != null)
-                throw new DuplicateEntryException(currentState);
+                throw handler.DuplicateStateEntry(context, currentState.Entry, currentState);
             currentState.Entry = fun;
             functionStack.Push(fun);
         }
@@ -389,21 +400,27 @@ namespace Microsoft.Pc.TypeChecker
             else
             {
                 // DO funName=Iden
-                if (!table.Lookup(context.funName.Text, out fun))
+                string funName = context.funName.GetText();
+                if (!table.Lookup(funName, out fun))
                 {
-                    if (table.Lookup(context.funName.Text, out FunctionProto proto))
+                    if (table.Lookup(funName, out FunctionProto proto))
                         throw new NotImplementedException("function prototypes for state actions");
-                    throw new MissingDeclarationException(context.funName.Text, context);
-                }
+                    throw handler.MissingDeclaration(context.funName, "function", funName);                }
             }
 
             // ON eventList
             foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
             {
                 if (!table.Lookup(eventIdContext.GetText(), out PEvent evt))
-                    throw new MissingDeclarationException(eventIdContext.GetText(), eventIdContext);
+                {
+                    throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
+                }
+
                 if (currentState.Actions.ContainsKey(evt))
-                    throw new DuplicateHandlerException(evt, currentState);
+                {
+                    throw handler.DuplicateEventAction(eventIdContext, currentState.Actions[evt], currentState);
+                }
+
                 currentState.Actions.Add(evt, new EventDoAction(evt, fun));
             }
 
@@ -425,16 +442,20 @@ namespace Microsoft.Pc.TypeChecker
             else
             {
                 // funName=Iden
-                if (!table.Lookup(context.funName.Text, out fun))
+                string funName = context.funName.GetText();
+                if (!table.Lookup(funName, out fun))
                 {
-                    if (table.Lookup(context.funName.Text, out FunctionProto proto))
+                    if (table.Lookup(funName, out FunctionProto proto))
                         throw new NotImplementedException("function prototypes for state exits");
-                    throw new MissingDeclarationException(context.funName.Text, context);
+                    throw handler.MissingDeclaration(context.funName, "function", funName);
                 }
             }
             // SEMI
             if (currentState.Exit != null)
-                throw new DuplicateExitException(currentState);
+            {
+                throw handler.DuplicateStateExitHandler(context, currentState.Exit, currentState);
+            }
+
             currentState.Exit = fun;
             functionStack.Push(fun);
         }
@@ -451,8 +472,9 @@ namespace Microsoft.Pc.TypeChecker
             if (context.funName != null)
             {
                 // WITH funName=Iden
-                if (!table.Lookup(context.funName.Text, out transitionFunction))
-                    throw new MissingDeclarationException(context.funName.Text, context);
+                string funName = context.funName.GetText();
+                if (!table.Lookup(funName, out transitionFunction))
+                    throw handler.MissingDeclaration(context.funName, "function", funName);
             }
             else if (context.anonEventHandler() != null)
             {
@@ -473,10 +495,12 @@ namespace Microsoft.Pc.TypeChecker
             foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
             {
                 if (!table.Lookup(eventIdContext.GetText(), out PEvent evt))
-                    throw new MissingDeclarationException(eventIdContext.GetText(), eventIdContext);
+                    throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
 
                 if (currentState.Actions.ContainsKey(evt))
-                    throw new DuplicateHandlerException(evt, currentState);
+                {
+                    throw handler.DuplicateEventAction(eventIdContext, currentState.Actions[evt], currentState);
+                }
 
                 currentState.Actions.Add(evt, new EventGotoState(evt, target, transitionFunction));
             }
@@ -490,12 +514,15 @@ namespace Microsoft.Pc.TypeChecker
             if (context.annotationSet() != null)
                 throw new NotImplementedException("event ignore annotations");
             // IGNORE nonDefaultEventList
-            foreach (IToken token in context.nonDefaultEventList()._events)
+            foreach (PParser.NonDefaultEventContext token in context.nonDefaultEventList()._events)
             {
-                if (!table.Lookup(token.Text, out PEvent evt))
-                    throw new MissingDeclarationException(token.Text, context.nonDefaultEventList());
+                if (!table.Lookup(token.GetText(), out PEvent evt))
+                    throw handler.MissingDeclaration(token, "event", token.GetText());
                 if (currentState.Actions.ContainsKey(evt))
-                    throw new DuplicateHandlerException(evt, currentState);
+                {
+                    throw handler.DuplicateEventAction(token, currentState.Actions[evt], currentState);
+                }
+
                 currentState.Actions.Add(evt, new EventIgnore(evt));
             }
         }
@@ -506,12 +533,14 @@ namespace Microsoft.Pc.TypeChecker
             if (context.annotationSet() != null)
                 throw new NotImplementedException("event defer annotations");
             // DEFER nonDefaultEventList 
-            foreach (IToken token in context.nonDefaultEventList()._events)
+            foreach (PParser.NonDefaultEventContext token in context.nonDefaultEventList()._events)
             {
-                if (!table.Lookup(token.Text, out PEvent evt))
-                    throw new MissingDeclarationException(token.Text, context.nonDefaultEventList());
+                if (!table.Lookup(token.GetText(), out PEvent evt))
+                    throw handler.MissingDeclaration(token, "event", token.GetText());
                 if (currentState.Actions.ContainsKey(evt))
-                    throw new DuplicateHandlerException(evt, currentState);
+                {
+                    throw handler.DuplicateEventAction(token, currentState.Actions[evt], currentState);
+                }
                 currentState.Actions.Add(evt, new EventDefer(evt));
             }
         }
@@ -529,9 +558,12 @@ namespace Microsoft.Pc.TypeChecker
             foreach (PParser.EventIdContext token in context.eventList().eventId())
             {
                 if (!table.Lookup(token.GetText(), out PEvent evt))
-                    throw new MissingDeclarationException(token.GetText(), context.eventList());
+                    throw handler.MissingDeclaration(token, "event", token.GetText());
                 if (currentState.Actions.ContainsKey(evt))
-                    throw new DuplicateHandlerException(evt, currentState);
+                {
+                    throw handler.DuplicateEventAction(token, currentState.Actions[evt], currentState);
+                }
+
                 currentState.Actions.Add(evt, new EventPushState(evt, targetState));
             }
         }
@@ -539,17 +571,17 @@ namespace Microsoft.Pc.TypeChecker
         private State FindState(PParser.StateNameContext context)
         {
             DeclarationTable curTable = programDeclarations.Get(currentMachine.SourceNode);
-            foreach (IToken groupToken in context._groups)
+            foreach (var groupToken in context._groups)
             {
-                if (!curTable.Get(groupToken.Text, out StateGroup group))
+                if (!curTable.Get(groupToken.GetText(), out StateGroup group))
                 {
-                    throw new MissingDeclarationException(groupToken.Text, context);
+                    throw handler.MissingDeclaration(groupToken, "group", groupToken.GetText());
                 }
                 curTable = programDeclarations.Get(group.SourceNode);
             }
-            if (!curTable.Get(context.state.Text, out State state))
+            if (!curTable.Get(context.state.GetText(), out State state))
             {
-                throw new MissingDeclarationException(context.state.Text, context);
+                throw handler.MissingDeclaration(context.state, "state", context.state.GetText());
             }
             return state;
         }
@@ -557,7 +589,7 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterImplMachineProtoDecl(PParser.ImplMachineProtoDeclContext context)
         {
             var proto = (MachineProto) nodesToDeclarations.Get(context);
-            proto.PayloadType = TypeResolver.ResolveType(context.type(), table);
+            proto.PayloadType = TypeResolver.ResolveType(context.type(), table, handler);
         }
 
         public override void EnterSpecMachineDecl(PParser.SpecMachineDeclContext context)
@@ -595,13 +627,16 @@ namespace Microsoft.Pc.TypeChecker
                 foreach (PParser.IdenContext machineNameToken in context.idenList()._names)
                 {
                     if (!table.Lookup(machineNameToken.GetText(), out Machine machine))
-                        throw new MissingDeclarationException(machineNameToken.GetText(), context.idenList());
+                    {
+                        throw handler.MissingDeclaration(machineNameToken, "machine", machineNameToken.GetText());
+                    }
+
                     proto.Creates.Add(machine);
                 }
             }
 
             // (COLON type)?
-            proto.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table);
+            proto.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table, handler);
 
             // LPAREN funParamList? RPAREN 
             currentFunctionProto = proto;
@@ -649,11 +684,14 @@ namespace Microsoft.Pc.TypeChecker
             // (COLON idenList)?
             if (context.idenList() != null)
             {
-                var interfaces = context.idenList()._names.Select(name => name.GetText());
-                foreach (string pInterfaceName in interfaces)
+                var interfaces = context.idenList()._names;
+                foreach (PParser.IdenContext pInterfaceNameCtx in interfaces)
                 {
+                    string pInterfaceName = pInterfaceNameCtx.GetText();
                     if (!table.Lookup(pInterfaceName, out Interface pInterface))
-                        throw new MissingDeclarationException(pInterfaceName, context.idenList());
+                    {
+                        throw handler.MissingDeclaration(pInterfaceNameCtx, "interface", pInterfaceName);
+                    }
 
                     pInterface.Implementations.Add(currentMachine);
                     currentMachine.Interfaces.Add(pInterface);
@@ -697,55 +735,5 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public override void ExitMachineSend(PParser.MachineSendContext context) { currentEventSet = null; }
-    }
-
-    public class EnumElemException : Exception
-    {
-        public PEnum CurrentEnum { get; }
-        public IPDecl Elem { get; }
-
-        public EnumElemException(PEnum currentEnum, EnumElem elem)
-        {
-            CurrentEnum = currentEnum;
-            Elem = elem;
-        }
-    }
-
-    public class DuplicateExitException : Exception
-    {
-        public DuplicateExitException(State state) { State = state; }
-
-        public State State { get; }
-    }
-
-    public class DuplicateHandlerException : Exception
-    {
-        public DuplicateHandlerException(PEvent badEvent, State inState)
-        {
-            BadEvent = badEvent;
-            InState = inState;
-        }
-
-        public PEvent BadEvent { get; }
-        public State InState { get; }
-    }
-
-    public class DuplicateEntryException : Exception
-    {
-        public DuplicateEntryException(State state) { State = state; }
-
-        public State State { get; }
-    }
-
-    public class DuplicateStartStateException : Exception
-    {
-        public DuplicateStartStateException(Machine currentMachine, State conflictingStartState)
-        {
-            CurrentMachine = currentMachine;
-            ConflictingStartState = conflictingStartState;
-        }
-
-        public Machine CurrentMachine { get; }
-        public State ConflictingStartState { get; }
     }
 }

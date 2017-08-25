@@ -24,7 +24,10 @@ options { tokenVocab=PLexer; }
 
 program : (topDecl | annotationSet)* ;
 
-type : ANY LT eventSet=Iden GT    # BoundedType
+iden : Iden ;
+int  : IntLiteral ;
+
+type : ANY LT eventSet=iden GT    # BoundedType
      | SEQ LBRACK type RBRACK     # SeqType
      | MAP LBRACK keyType=type COMMA valueType=type RBRACK  # MapType
      | LPAREN tupTypes+=type (COMMA tupTypes+=type)* RPAREN # TupleType
@@ -36,14 +39,14 @@ type : ANY LT eventSet=Iden GT    # BoundedType
      | MACHINE   # PrimitiveType
      | DATA      # PrimitiveType
      | ANY       # PrimitiveType
-     | name=Iden # NamedType
+     | name=iden # NamedType
      ;
 
 idenTypeList : idenType (COMMA idenType)* ;
-idenType : name=Iden COLON type ;
+idenType : name=iden COLON type ;
 
 funParamList : funParam (COMMA funParam)* ;
-funParam : name=Iden COLON type ;
+funParam : name=iden COLON type ;
 
 topDecl : typeDefDecl
         | enumTypeDefDecl
@@ -58,47 +61,47 @@ topDecl : typeDefDecl
         ;
 
 annotationSet : LBRACK (annotations+=annotation (COMMA annotations+=annotation)*)? RBRACK;
-annotation : name=Iden ASSIGN value=NullLiteral
-           | name=Iden ASSIGN value=BoolLiteral
-           | name=Iden ASSIGN value=IntLiteral
-           | name=Iden ASSIGN value=Iden
+annotation : name=iden ASSIGN value=NullLiteral
+           | name=iden ASSIGN value=BoolLiteral
+           | name=iden ASSIGN value=IntLiteral
+           | name=iden ASSIGN value=Iden
            ;
 
-typeDefDecl : TYPE name=Iden SEMI # ForeignTypeDef
-            | TYPE name=Iden ASSIGN type SEMI # PTypeDef
+typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
+            | TYPE name=iden ASSIGN type SEMI # PTypeDef
             ;
 
-enumTypeDefDecl : ENUM name=Iden LBRACE enumElemList RBRACE
-                | ENUM name=Iden LBRACE numberedEnumElemList RBRACE
+enumTypeDefDecl : ENUM name=iden LBRACE enumElemList RBRACE
+                | ENUM name=iden LBRACE numberedEnumElemList RBRACE
                 ;
 enumElemList : enumElem (COMMA enumElem)* ;
-enumElem : name=Iden ;
+enumElem : name=iden ;
 numberedEnumElemList : numberedEnumElem (COMMA numberedEnumElem)* ;
-numberedEnumElem : name=Iden ASSIGN value=IntLiteral ;
+numberedEnumElem : name=iden ASSIGN value=IntLiteral ;
 
-eventDecl : EVENT name=Iden cardinality? (COLON type)? annotationSet? SEMI;
+eventDecl : EVENT name=iden cardinality? (COLON type)? annotationSet? SEMI;
 cardinality : ASSERT IntLiteral
             | ASSUME IntLiteral
             ;
 
-eventSetDecl : EVENTSET name=Iden ASSIGN LBRACE eventSetLiteral RBRACE SEMI ;
-eventSetLiteral : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
+eventSetDecl : EVENTSET name=iden ASSIGN LBRACE eventSetLiteral RBRACE SEMI ;
+eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
 
-interfaceDecl : TYPE name=Iden LPAREN type? RPAREN ASSIGN eventSet=Iden SEMI
-              | TYPE name=Iden LPAREN type? RPAREN ASSIGN LBRACE eventSetLiteral RBRACE SEMI
+interfaceDecl : TYPE name=iden LPAREN type? RPAREN ASSIGN eventSet=iden  SEMI
+              | TYPE name=iden LPAREN type? RPAREN ASSIGN LBRACE eventSetLiteral RBRACE SEMI
               ;
 
 // has scope
-implMachineDecl : MACHINE name=Iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
+implMachineDecl : MACHINE name=iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
 idenList : names+=iden (COMMA names+=iden)* ;
-iden : Iden ;
+
 receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
               | SENDS eventSetLiteral? SEMI    # MachineSend
               ;
 
-implMachineProtoDecl : EXTERN MACHINE name=Iden LPAREN type? RPAREN SEMI;
+implMachineProtoDecl : EXTERN MACHINE name=iden LPAREN type? RPAREN SEMI;
 
-specMachineDecl : SPEC name=Iden OBSERVES eventSetLiteral machineBody ;
+specMachineDecl : SPEC name=iden OBSERVES eventSetLiteral machineBody ;
 
 machineBody : LBRACE machineEntry* RBRACE;
 machineEntry : varDecl
@@ -109,35 +112,37 @@ machineEntry : varDecl
 
 varDecl : VAR idenList COLON type annotationSet? SEMI ;
 
-funDecl : FUN name=Iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? (SEMI | functionBody) ;
-funProtoDecl : EXTERN FUN name=Iden (CREATES idenList? SEMI)? LPAREN funParamList? RPAREN (COLON type)? annotationSet? SEMI;
+funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? (SEMI | functionBody) ;
+funProtoDecl : EXTERN FUN name=iden (CREATES idenList? SEMI)? LPAREN funParamList? RPAREN (COLON type)? annotationSet? SEMI;
 
-group : GROUP name=Iden LBRACE groupItem* RBRACE ;
+group : GROUP name=iden LBRACE groupItem* RBRACE ;
 groupItem : stateDecl
           | group
           ;
 
-stateDecl : START? temperature=(HOT | COLD)? STATE name=Iden annotationSet? LBRACE stateBodyItem* RBRACE ;
+stateDecl : START? temperature=(HOT | COLD)? STATE name=iden annotationSet? LBRACE stateBodyItem* RBRACE ;
 
 stateBodyItem : ENTRY anonEventHandler       # StateEntry
-              | ENTRY funName=Iden SEMI      # StateEntry
+              | ENTRY funName=iden SEMI      # StateEntry
               | EXIT noParamAnonEventHandler # StateExit
-              | EXIT funName=Iden SEMI       # StateExit
+              | EXIT funName=iden SEMI       # StateExit
               | DEFER nonDefaultEventList annotationSet? SEMI    # StateDefer
               | IGNORE nonDefaultEventList annotationSet? SEMI   # StateIgnore
-              | ON eventList DO funName=Iden annotationSet? SEMI # OnEventDoAction
+              | ON eventList DO funName=iden annotationSet? SEMI # OnEventDoAction
               | ON eventList DO annotationSet? anonEventHandler  # OnEventDoAction
               | ON eventList PUSH stateName annotationSet? SEMI  # OnEventPushState
               | ON eventList GOTO stateName annotationSet? SEMI  # OnEventGotoState
               | ON eventList GOTO stateName annotationSet? WITH anonEventHandler  # OnEventGotoState
-              | ON eventList GOTO stateName annotationSet? WITH funName=Iden SEMI # OnEventGotoState
+              | ON eventList GOTO stateName annotationSet? WITH funName=iden SEMI # OnEventGotoState
               ;
 
-nonDefaultEventList : events+=(HALT | Iden) (COMMA events+=(HALT | Iden))* ;
-eventList : eventId (COMMA eventId)* ;
-eventId : NullLiteral | HALT | Iden ;
+nonDefaultEventList : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
+nonDefaultEvent : HALT | iden ;
 
-stateName : (groups+=Iden DOT)* state=Iden ; // First few Idens are groups
+eventList : eventId (COMMA eventId)* ;
+eventId : NullLiteral | HALT | iden ;
+
+stateName : (groups+=iden DOT)* state=iden ; // First few Idens are groups
 
 functionBody : LBRACE varDecl* statement* RBRACE ;
 statement : LBRACE statement* RBRACE                      # CompoundStmt
@@ -151,8 +156,8 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | WHILE LPAREN expr RPAREN statement            # WhileStmt
           | IF LPAREN expr RPAREN thenBranch=statement 
                             (ELSE elseBranch=statement)?  # IfStmt
-          | NEW Iden LPAREN rvalueList? RPAREN SEMI       # CtorStmt
-          | Iden LPAREN rvalueList? RPAREN SEMI           # FunCallStmt
+          | NEW iden LPAREN rvalueList? RPAREN SEMI       # CtorStmt
+          | fun=iden LPAREN rvalueList? RPAREN SEMI       # FunCallStmt
           | RAISE expr (COMMA rvalueList)? SEMI           # RaiseStmt
           | SEND machine=expr COMMA event=expr 
                               (COMMA rvalueList)? SEMI    # SendStmt
@@ -162,10 +167,10 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | SEMI                                          # NoStmt
           ;
 
-lvalue : name=Iden
-       | lvalue DOT field=Iden
-       | lvalue DOT IntLiteral
-       | lvalue LBRACK expr RBRACK
+lvalue : name=iden                 # VarLvalue
+       | lvalue DOT field=iden     # NamedTupleLvalue
+       | lvalue DOT IntLiteral     # TupleLvalue
+       | lvalue LBRACK expr RBRACK # MapOrSeqLvalue
        ;
 
 recvCase : CASE eventList COLON anonEventHandler ;
@@ -176,15 +181,15 @@ expr : primitive                                      # PrimitiveExpr
      | LPAREN unnamedTupleBody RPAREN                 # UnnamedTupleExpr
      | LPAREN namedTupleBody RPAREN                   # NamedTupleExpr
      | LPAREN expr RPAREN                             # ParenExpr
-     | expr DOT field=Iden                            # NamedTupleAccessExpr
-     | expr DOT field=IntLiteral                      # TupleAccessExpr
+     | expr DOT field=iden                            # NamedTupleAccessExpr
+     | expr DOT field=int                             # TupleAccessExpr
      | seq=expr LBRACK index=expr RBRACK              # SeqAccessExpr
      | fun=KEYS LPAREN expr RPAREN                    # KeywordExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
      | fun=SIZEOF LPAREN expr RPAREN                  # KeywordExpr
      | fun=DEFAULT LPAREN type RPAREN                 # KeywordExpr
-     | NEW machineName=Iden LPAREN rvalueList? RPAREN # CtorExpr
-     | fun=Iden LPAREN rvalueList? RPAREN             # FunCallExpr
+     | NEW machineName=iden LPAREN rvalueList? RPAREN # CtorExpr
+     | fun=iden LPAREN rvalueList? RPAREN             # FunCallExpr
      | op=(SUB | LNOT) expr                           # UnaryExpr
      | lhs=expr op=(MUL | DIV) rhs=expr               # BinExpr
      | lhs=expr op=(ADD | SUB) rhs=expr               # BinExpr
@@ -195,7 +200,7 @@ expr : primitive                                      # PrimitiveExpr
      | lhs=expr op=LOR rhs=expr                       # BinExpr
      ;
 
-primitive : Iden
+primitive : iden
           | floatLiteral
           | BoolLiteral
           | IntLiteral
@@ -214,11 +219,11 @@ unnamedTupleBody : fields+=rvalue COMMA
                  | fields+=rvalue (COMMA fields+=rvalue)+
                  ;
 
-namedTupleBody : names+=Iden ASSIGN values+=rvalue COMMA
-               | names+=Iden ASSIGN values+=rvalue (COMMA names+=Iden ASSIGN values+=rvalue)+
+namedTupleBody : names+=iden ASSIGN values+=rvalue COMMA
+               | names+=iden ASSIGN values+=rvalue (COMMA names+=iden ASSIGN values+=rvalue)+
                ;
 
 rvalueList : rvalue (COMMA rvalue)* ;
-rvalue : Iden linear=(SWAP | MOVE)
+rvalue : iden linear=(SWAP | MOVE)
        | expr
        ;

@@ -27,6 +27,9 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
         private DeclarationTable parent;
 
+        private readonly ITranslationErrorHandler handler;
+        public DeclarationTable(ITranslationErrorHandler handler) { this.handler = handler; }
+
         public DeclarationTable Parent
         {
             get => parent;
@@ -459,15 +462,16 @@ namespace Microsoft.Pc.TypeChecker
         #endregion
 
         #region Conflict API
-
         // TODO: maybe optimize this?
         private delegate bool TableReader(string name, out IPDecl decl);
 
-        private static void CheckConflicts(IPDecl decl, params TableReader[] namespaces)
+        private void CheckConflicts(IPDecl decl, params TableReader[] namespaces)
         {
             IPDecl existingDecl = null;
             if (namespaces.Any(table => table(decl.Name, out existingDecl)))
-                throw new DuplicateDeclarationException(decl, existingDecl);
+            {
+                throw handler.DuplicateDeclaration(decl.SourceNode, decl, existingDecl);
+            }
         }
 
         private static TableReader Namespace<T>(IDictionary<string, T> table) where T : IPDecl
@@ -895,6 +899,7 @@ namespace Microsoft.Pc.TypeChecker
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
         public DeclarationTable Table { get; set; }
+        public List<IPStmt> Body { get; set; }
     }
 
     public class FunctionProto : IPDecl

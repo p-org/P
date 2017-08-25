@@ -2,7 +2,7 @@ using System.Linq;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    internal class TupleType : PLanguageType
+    public class TupleType : PLanguageType
     {
         public TupleType(PLanguageType[] types) : base(TypeKind.Tuple)
         {

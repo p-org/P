@@ -1,3 +1,0 @@
-RegressionTests\Integration\StaticError\TokenRing_Typos\
-RegressionTests\Integration\DynamicError\PushStatement_1\
-RegressionTests\Integration\DynamicError\Actions_6\

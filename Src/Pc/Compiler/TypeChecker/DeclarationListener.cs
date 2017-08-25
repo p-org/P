@@ -351,7 +351,11 @@ namespace Microsoft.Pc.TypeChecker
             if (currentState.IsStart)
             {
                 // The machine's payload type is the start state's entry payload type (or null, by default)
-                currentMachine.PayloadType = currentState.Entry?.Signature.ReturnType ?? PrimitiveType.Null;
+                currentMachine.PayloadType = PrimitiveType.Null;
+                if (currentState.Entry?.Signature.Parameters.Count > 0)
+                {
+                    currentMachine.PayloadType = currentState.Entry.Signature.Parameters[0].Type;
+                }
             }
             currentState = null;
         }

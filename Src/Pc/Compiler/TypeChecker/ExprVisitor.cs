@@ -60,7 +60,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             var tuple = (TupleType) subExpr.Type;
             int fieldNo = int.Parse(context.field.GetText());
-            if (tuple.Types.Length >= fieldNo)
+            if (fieldNo >= tuple.Types.Length)
             {
                 throw handler.OutOfBoundsTupleAccess(context.field, fieldNo, tuple);
             }
@@ -140,7 +140,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(context.machineName, "machine", machineName);
             }
 
-            var arguments = context.rvalueList().rvalue().Select(Visit).ToArray();
+            var arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
             if (machine.PayloadType == PrimitiveType.Null && arguments.Length != 0)
             {
                 throw handler.IncorrectArgumentCount(
@@ -151,8 +151,7 @@ namespace Microsoft.Pc.TypeChecker
 
             if (machine.PayloadType != PrimitiveType.Null && arguments.Length != 1)
             {
-                throw handler.IncorrectArgumentCount(
-                                                     (ParserRuleContext)context.rvalueList() ?? context,
+                throw handler.IncorrectArgumentCount((ParserRuleContext)context.rvalueList() ?? context,
                                                      arguments.Length,
                                                      1);
             }
@@ -261,8 +260,8 @@ namespace Microsoft.Pc.TypeChecker
                 case ">":
                 case ">=":
                 case "<=":
-                    if ((lhs.Type != PrimitiveType.Int || rhs.Type != PrimitiveType.Int) &&
-                        (lhs.Type != PrimitiveType.Float || rhs.Type != PrimitiveType.Float))
+                    if (!(PrimitiveType.Int.IsAssignableFrom(lhs.Type) && PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
+                          PrimitiveType.Float.IsAssignableFrom(lhs.Type) && PrimitiveType.Float.IsAssignableFrom(rhs.Type)))
                     {
                         throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
                     }
@@ -493,7 +492,7 @@ namespace Microsoft.Pc.TypeChecker
             if (lvalue.Type is MapType mapType)
             {
                 IPExpr index = Visit(context.expr());
-                if (mapType.KeyType.IsAssignableFrom(index.Type))
+                if (!mapType.KeyType.IsAssignableFrom(index.Type))
                 {
                     throw handler.TypeMismatch(context.expr(), index.Type, mapType.KeyType);
                 }

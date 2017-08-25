@@ -224,6 +224,7 @@
     <Compile Include="CompilerOutputStream.cs" />
     <Compile Include="ConsoleProfiler.cs" />
     <Compile Include="CSharpHelper.cs" />
+    <Compile Include="TypeChecker\DefaultTranslationHandler.cs" />
     <Compile Include="Domains\P.4ml.g.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>

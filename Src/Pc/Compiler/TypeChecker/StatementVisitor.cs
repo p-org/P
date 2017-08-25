@@ -10,9 +10,9 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class StatementVisitor : PParserBaseVisitor<IEnumerable<IPStmt>>
     {
-        private readonly DeclarationTable table;
-        private readonly Machine machine;
         private readonly ITranslationErrorHandler handler;
+        private readonly Machine machine;
+        private readonly DeclarationTable table;
 
         public StatementVisitor(DeclarationTable table, Machine machine, ITranslationErrorHandler handler)
         {
@@ -50,18 +50,20 @@ namespace Microsoft.Pc.TypeChecker
                                     select int.Parse(match.Groups[1].Value) + 1)
                 .Concat(new[] {0})
                 .Max();
-            var argsExprs = context.rvalueList()?.rvalue().Select(rvalue => exprVisitor.Visit(rvalue)) ?? Enumerable.Empty<IPExpr>();
+            var argsExprs = context.rvalueList()?.rvalue().Select(rvalue => exprVisitor.Visit(rvalue)) ??
+                            Enumerable.Empty<IPExpr>();
             var args = argsExprs.ToList();
             if (args.Count < numNecessaryArgs)
             {
                 throw handler.IncorrectArgumentCount(
-                    (ParserRuleContext)context.rvalueList() ?? context,
-                    args.Count,
-                    numNecessaryArgs);
+                                                     (ParserRuleContext) context.rvalueList() ?? context,
+                                                     args.Count,
+                                                     numNecessaryArgs);
             }
             if (args.Count > numNecessaryArgs)
             {
-                handler.IssueWarning((ParserRuleContext)context.rvalueList() ?? context, "ignoring extra arguments to print expression");
+                handler.IssueWarning((ParserRuleContext) context.rvalueList() ?? context,
+                                     "ignoring extra arguments to print expression");
                 args = args.Take(numNecessaryArgs).ToList();
             }
             yield return new PrintStmt(message, args);
@@ -154,7 +156,7 @@ namespace Microsoft.Pc.TypeChecker
                     var argsList = args.ToList();
                     if (argsList.Count != 1)
                     {
-                        throw handler.IncorrectArgumentCount((ParserRuleContext)context.rvalueList() ?? context,
+                        throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
                                                              argsList.Count,
                                                              1);
                     }
@@ -165,8 +167,8 @@ namespace Microsoft.Pc.TypeChecker
                     if (args.Count() != 0)
                     {
                         handler.IssueWarning(
-                            (ParserRuleContext)context.rvalueList() ?? context,
-                            "ignoring extra parameters passed to machine constructor");
+                                             (ParserRuleContext) context.rvalueList() ?? context,
+                                             "ignoring extra parameters passed to machine constructor");
                     }
                     yield return new CtorStmt(machine, new List<IPExpr>());
                 }
@@ -192,9 +194,9 @@ namespace Microsoft.Pc.TypeChecker
                 if (fun.Signature.Parameters.Count != argsList.Count)
                 {
                     throw handler.IncorrectArgumentCount(
-                        (ParserRuleContext)context.rvalueList() ?? context,
-                        argsList.Count,
-                        fun.Signature.Parameters.Count);
+                                                         (ParserRuleContext) context.rvalueList() ?? context,
+                                                         argsList.Count,
+                                                         fun.Signature.Parameters.Count);
                 }
                 foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
                 {
@@ -234,10 +236,13 @@ namespace Microsoft.Pc.TypeChecker
             {
                 yield return new RaiseStmt(eventRef.PEvent, args.Count == 0 ? null : args[0]);
             }
-            throw handler.IncorrectArgumentCount(
-                (ParserRuleContext)context.rvalueList() ?? context,
-                args.Count,
-                evt.PayloadType == PrimitiveType.Null ? 0 : 1);
+            else
+            {
+                throw handler.IncorrectArgumentCount(
+                                                     (ParserRuleContext) context.rvalueList() ?? context,
+                                                     args.Count,
+                                                     evt.PayloadType == PrimitiveType.Null ? 0 : 1);
+            }
         }
 
         public override IEnumerable<IPStmt> VisitSendStmt(PParser.SendStmtContext context)
@@ -272,9 +277,9 @@ namespace Microsoft.Pc.TypeChecker
             else
             {
                 throw handler.IncorrectArgumentCount(
-                    (ParserRuleContext)context.rvalueList() ?? context,
-                    argsList.Count,
-                    evt.PayloadType == PrimitiveType.Null ? 0 : 1);
+                                                     (ParserRuleContext) context.rvalueList() ?? context,
+                                                     argsList.Count,
+                                                     evt.PayloadType == PrimitiveType.Null ? 0 : 1);
             }
         }
 
@@ -295,26 +300,29 @@ namespace Microsoft.Pc.TypeChecker
             {
                 yield return new AnnounceStmt(eventRef.PEvent, args.Count == 0 ? null : args[0]);
             }
-            throw handler.IncorrectArgumentCount(
-                (ParserRuleContext)context.rvalueList() ?? context,
-                args.Count,
-                evt.PayloadType == PrimitiveType.Null ? 0 : 1);
+            else
+            {
+                throw handler.IncorrectArgumentCount(
+                                                     (ParserRuleContext) context.rvalueList() ?? context,
+                                                     args.Count,
+                                                     evt.PayloadType == PrimitiveType.Null ? 0 : 1);
+            }
         }
 
         public override IEnumerable<IPStmt> VisitGotoStmt(PParser.GotoStmtContext context)
         {
             PParser.StateNameContext stateNameContext = context.stateName();
-            var stateName = stateNameContext.state.GetText();
+            string stateName = stateNameContext.state.GetText();
             IStateContainer current = machine;
-            foreach (var token in stateNameContext._groups)
+            foreach (PParser.IdenContext token in stateNameContext._groups)
             {
                 current = current?.GetGroup(token.GetText());
                 if (current == null)
-                {  
+                {
                     throw handler.MissingDeclaration(token, "group", token.GetText());
                 }
             }
-            var state = current?.GetState(stateName);
+            State state = current?.GetState(stateName);
             if (state == null)
             {
                 throw handler.MissingDeclaration(stateNameContext.state, "state", stateName);
@@ -341,25 +349,26 @@ namespace Microsoft.Pc.TypeChecker
 
     public class GotoStmt : IPStmt
     {
-        public State State { get; }
-        public IPExpr Payload { get; }
         public GotoStmt(State state, IPExpr payload)
         {
             State = state;
             Payload = payload;
         }
+
+        public State State { get; }
+        public IPExpr Payload { get; }
     }
 
     public class AnnounceStmt : IPStmt
     {
-        public PEvent PEvent { get; }
-        public IPExpr Payload { get; }
-
         public AnnounceStmt(PEvent pEvent, IPExpr payload)
         {
             PEvent = pEvent;
             Payload = payload;
         }
+
+        public PEvent PEvent { get; }
+        public IPExpr Payload { get; }
     }
 
     public class SendStmt : IPStmt

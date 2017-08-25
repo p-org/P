@@ -4,11 +4,10 @@ using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
-using Microsoft.Pc.TypeChecker;
 
-namespace UnitTests.PSharpBackend
+namespace Microsoft.Pc.TypeChecker
 {
-    internal class DefaultTranslationHandler : ITranslationErrorHandler
+    public class DefaultTranslationHandler : ITranslationErrorHandler
     {
         #region Internal book keeping
         private readonly ParseTreeProperty<FileInfo> originalFiles;

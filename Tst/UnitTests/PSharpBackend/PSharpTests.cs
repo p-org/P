@@ -36,7 +36,7 @@ namespace UnitTests.PSharpBackend
 
                 if (parser.NumberOfSyntaxErrors != 0)
                 {
-                    Console.Error.WriteLine($"[{testName}] Failed to parse {inputFile.FullName}");
+                    //Console.Error.WriteLine($"[{testName}] Failed to parse {inputFile.FullName}");
                     return;
                 }
 
@@ -54,7 +54,7 @@ namespace UnitTests.PSharpBackend
             }
             catch (NotImplementedException e)
             {
-                Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
+                //Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
             }
         }
         

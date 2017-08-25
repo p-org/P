@@ -1,6 +1,5 @@
 ﻿using System;
 using Antlr4.Runtime;
-using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 
 namespace Microsoft.Pc.TypeChecker

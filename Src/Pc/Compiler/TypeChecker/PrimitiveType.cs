@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace Microsoft.Pc.TypeChecker
 {
     public class PrimitiveType : PLanguageType
@@ -22,8 +24,21 @@ namespace Microsoft.Pc.TypeChecker
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             // if this type is "any", then it's always good. Otherwise, the types have to match exactly.
-            return CanonicalRepresentation.Equals("any") ||
-                   CanonicalRepresentation.Equals(otherType.CanonicalRepresentation);
+            if (CanonicalRepresentation.Equals("any"))
+            {
+                return true;
+            }
+            if (CanonicalRepresentation.Equals("machine"))
+            {
+                return otherType.CanonicalRepresentation.Equals("machine") ||
+                       otherType.CanonicalRepresentation.Equals("null");
+            }
+            if (CanonicalRepresentation.Equals("event"))
+            {
+                return otherType.CanonicalRepresentation.Equals("event") ||
+                       otherType.CanonicalRepresentation.Equals("null");
+            }
+            return CanonicalRepresentation.Equals(otherType.CanonicalRepresentation);
         }
     }
 }

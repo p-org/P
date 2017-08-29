@@ -5,6 +5,7 @@ OUT: Writing SpinlockSameAsRule.cs ...
 OUT: Writing SpinlockSameAsRule.4ml ...
 OUT: Writing linker.cs ...
 OUT: Writing linker.dll ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -21,87 +22,6 @@ OUT: -----------------------------------------------------
 OUT: -----------------------------------------------------
 OUT: Total Schedules Explored: 30
 OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 40
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 50
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 60
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 70
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 80
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 90
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 100
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 110
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 120
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 130
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 140
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 150
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 160
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 170
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 180
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 190
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 200
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 210
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 220
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 230
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 240
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 250
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 260
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 270
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 280
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 290
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 300
-OUT: -----------------------------------------------------
 OUT: <CreateLog> Created spec Machine Spinlock
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Init
@@ -113,12 +33,6 @@ OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
 OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
 OUT: <RaiseLog> Machine Spinlock-0 raised Event Error1
 OUT: <StateLog> Machine Spinlock-0 exiting State Spinlock_Init
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
 OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
 OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
 OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock

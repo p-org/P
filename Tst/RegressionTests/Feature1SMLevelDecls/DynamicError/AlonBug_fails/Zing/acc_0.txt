@@ -5,6 +5,7 @@ OUT: Writing AlonBug_fails.zing ...
 OUT: Compiling AlonBug_fails.zing to AlonBug_fails.dll ...
 OUT: Writing linker.c ...
 OUT: Writing linker.h ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -27,5 +28,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_5.bl,)
+Expression: assert(tmp_2.bl,)
 Comment: AlonBug_fails.p(10,10,10,16): error PC1001: Assert failed

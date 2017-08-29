@@ -5,6 +5,7 @@ OUT: Writing SpinlockNoTypestate.cs ...
 OUT: Writing SpinlockNoTypestate.4ml ...
 OUT: Writing linker.cs ...
 OUT: Writing linker.dll ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -12,68 +13,18 @@ EXIT (csc.exe): 0
 OUT: -----------------------------------------------------
 OUT: Total Schedules Explored: 0
 OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 10
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 20
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 30
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 40
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 50
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 60
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 70
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 80
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 90
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 100
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 110
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 120
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 130
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 140
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 150
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 160
-OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Init
 OUT: <CreateLog> Created Machine Rule-1
+OUT: <StateLog> Machine Rule-1 entering State Rule_Start
 OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
 OUT: <EnqueueLog> Enqueued Event <ACQ, null> in Rule-1 by Main-1
-OUT: <StateLog> Machine Rule-1 entering State Rule_Start
+OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
+OUT: <EnqueueLog> Enqueued Event <ACQ, null> in Rule-1 by Main-1
 OUT: <DequeueLog> Dequeued Event <ACQ, null> at Machine Rule-1
 OUT: <StateLog> Machine Rule-1 entering State Rule_Acquire
-OUT: <NullActionLog> Null action taken by Machine Rule-1
-OUT: <ActionLog> Machine Rule-1 executing action for Event null in State Rule_Acquire
-OUT: <StateLog> Machine Rule-1 exiting State Rule_Acquire
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <EnqueueLog> Enqueued Event <ACQ, null> in Rule-1 by Main-1
 OUT: <DequeueLog> Dequeued Event <ACQ, null> at Machine Rule-1
+OUT: <StateLog> Machine Rule-1 exiting State Rule_Acquire
 OUT: <StateLog> Machine Rule-1 entering State Rule_Acquire
 OUT: <RaiseLog> Machine Rule-1 raised Event Error1
 OUT: <StateLog> Machine Rule-1 exiting State Rule_Acquire

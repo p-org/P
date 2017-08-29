@@ -5,27 +5,20 @@ OUT: Writing SentNullDetected.zing ...
 OUT: Compiling SentNullDetected.zing to SentNullDetected.dll ...
 OUT: Writing linker.c ...
 OUT: Writing linker.h ...
+EXIT: 0
 =================================
          Console output          
 =================================
-OUT: ##################
-OUT: Check Failed
-OUT: ##################
-OUT: 4 distinct states explored
+OUT: Exception from Zing model checker:
+OUT: System.ArgumentException: invalid assembly
+OUT:    at Microsoft.Zing.StateImpl.Load(Assembly zingAssembly)
+OUT:    at Microsoft.Zing.StateImpl.Load(String zingAssemblyPath)
+OUT:    at Microsoft.Zing.ZingExplorer..ctor()
+OUT:    at Microsoft.Zing.ZingExplorerExhaustiveSearch..ctor()
+OUT:    at Microsoft.Zing.Zinger.Main(String[] args)
 OUT: 
-EXIT: 3
+EXIT: 5
 
 =================================
 SentNullDetected.trace
 =================================
-Safety Error Trace
-Trace-Log 0:
-<CreateLog> Created Machine Main-0
-<StateLog> Machine Main-0 entering State Real1_Init
-<CreateLog> Created Machine Real2-0
-<StateLog> Machine Real2-0 entering State Real2_Init
-
-Error:
-P Assertion failed:
-Expression: assert(e != null)
-Comment: Enqueued event must be non-null

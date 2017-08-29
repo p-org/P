@@ -5,6 +5,7 @@ OUT: Writing receive9.zing ...
 OUT: Compiling receive9.zing to receive9.dll ...
 OUT: Writing linker.c ...
 OUT: Writing linker.h ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -34,5 +35,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_3.bl,)
+Expression: assert(tmp_9.bl,)
 Comment: receive9.p(31,22,31,28): error PC1001: Assert failed

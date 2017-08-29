@@ -5,6 +5,7 @@ OUT: Writing SendInExitUnhandledEvent.cs ...
 OUT: Writing SendInExitUnhandledEvent.4ml ...
 OUT: Writing linker.cs ...
 OUT: Writing linker.dll ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -22,6 +23,6 @@ OUT: <StateLog> Machine Main-1 entering State Main_Real1_S1
 OUT: <DequeueLog> Dequeued Event <E2, null> at Machine Main-1
 OUT: <StateLog> Machine Main-1 exiting State Main_Real1_S1
 OUT: 
-OUT: ERROR: Main failed to handle E2
+OUT: ERROR: Main failed to handle event E2
 OUT: 
 EXIT: -1

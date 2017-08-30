@@ -1404,7 +1404,7 @@ namespace Microsoft.Pc.Parser
             evDecl.type = (P_Root.IArgType_EventDecl__2)typeExprStack.Pop();
         }
 
-        private void SetSymbolicDeclConstType(Span span)
+        private void SetInterfaceDeclConstType(Span span)
         {
             var inDecl = GetCurrentInterfaceTypeDef(span);
             Contract.Assert(typeExprStack.Count > 0);
@@ -1549,7 +1549,7 @@ namespace Microsoft.Pc.Parser
             crntEventList.Clear();
         }
 
-        private void AddSymbolicMachineName(string iname, bool isReceiveAvailable, Span inameSpan, Span iesnameSpan, Span span)
+        private void AddInterfaceDecl(string iname, bool isReceiveAvailable, Span inameSpan, Span iesnameSpan, Span span)
         {
             var inDecl = GetCurrentInterfaceTypeDef(span);
             inDecl.Span = span;

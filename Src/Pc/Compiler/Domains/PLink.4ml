@@ -94,7 +94,7 @@ domain PLink
 	ModuleCreates ::= (mod: ModuleExpr, i: String).
 
 	//// Module Code Gen and Compatibity Helpers
-	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, createdMachine: String + { NIL }, newImpMachine: String + { NIL }).
+	ModuleLinkMap ::= (mod: ModuleExpr, newMachineName: String, createdMachine: String, newImpMachine: String).
 	ModuleMachineDefMap ::= (mod: ModuleExpr, newName: String, impMachine: String).  // for both machines and monitors
 	ModuleSafeMap ::= (mod: ModuleExpr, newName: String, isSafe: Boolean).
 	ModuleMonitorMap ::= (mod: ModuleExpr, newMonitorName: String, impMachine: String).
@@ -261,8 +261,8 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 										AllExpandedModuleExprs(modExpr), modExpr : UnionExpr, ModulePrivateEvents(modExpr.right, ev).
 
 	ModulePrivateMachines(modExpr, mp) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #HideMachineExpr, toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #UnionExpr, ModulePrivateMachines(modExpr.mod, mp).
-	ModulePrivateMachines(modExpr, mp) :- AllExpandedModuleExprs(modExpr), modExpr : HideMachineExpr, ModulePrivateMachines(modExpr.mod, mp), ev: in.NonNullEventName;
-										  AllExpandedModuleExprs(modExpr), modExpr : HideMachineExpr, MemberOfMachineNamesList(modExpr.evtNames, mp), ev: in.String.
+	ModulePrivateMachines(modExpr, mp) :- AllExpandedModuleExprs(modExpr), modExpr : HideMachineExpr, ModulePrivateMachines(modExpr.mod, mp), mp: in.String;
+										  AllExpandedModuleExprs(modExpr), modExpr : HideMachineExpr, MemberOfMachineNamesList(modExpr.machNames, mp), mp: in.String.
 	ModulePrivateMachines(modExpr, mp) :- AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivateMachines(modExpr.left, mp);
 										  AllExpandedModuleExprs(modExpr), modExpr : ComposeExpr, ModulePrivateMachines(modExpr.right, mp).
 	ModulePrivateMachines(modExpr, mp) :- AllExpandedModuleExprs(modExpr), modExpr : UnionExpr, ModulePrivateMachines(modExpr.left, mp);
@@ -609,7 +609,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	
 	// If there is no implementation decl then generate the normal link map
 	CLinkMap(creatorM, m, m) :- MachineDecl(creatorM, _, _), MachineDecl(m, _, _), no ImplementationDecl(_, _).
-	CLinkMap(creatorM, i, impM) :- MachineDecl(creatorM, _, _), MachineCreatesInt(creatorM, i), impM = i, no ImplementationDecl(_, _).
+	CLinkMap(creatorM, i, impM) :- MachineDecl(creatorM, _, _), MachineCreates(creatorM, i), impM = i, no ImplementationDecl(_, _).
 	
 	CMachineDefMap (nName, nName) :- MachineDecl(nName, _, _), no ImplementationDecl(_, _).
 	//TestError (n,n',n'') :- CLinkMap(n, n', n'').

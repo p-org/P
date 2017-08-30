@@ -187,7 +187,7 @@ extern "C"{
 
     /** Creates a new machine instance in process. Will be freed when process is stopped.
     * @param[in,out] process    The process that will own this machine.
-    * @param[in]     instanceOf symbolic machine .
+    * @param[in]     instanceOf interface (machine).
     * @param[in]     payload The payload to pass to the start state of machine instance (cloned, user frees).
     * @returns       A pointer to a PRT_MACHINEINST.
     * @see PrtSend
@@ -202,14 +202,14 @@ extern "C"{
 	/** Creates a new machine instance in process. Will be freed when process is stopped.
 	* @param[in,out] process    The process that will own this machine.
 	* @param[in]     context	context of the creator machine.
-	* @param[in]     symbolicName	Symbolic machine to be created.
+	* @param[in]     interfaceName	interface machine to be created.
 	* @returns       A pointer to a PRT_MACHINEINST.
 	* @see PrtSend
 	* @see PRT_MACHINEINST
 	*/
-	PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkSymbolicMachine(
-			_In_ PRT_MACHINEINST*  context,
-			_In_ PRT_UINT32				symbolicName,
+	PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkInterface(
+			_In_ PRT_MACHINEINST*		context,
+			_In_ PRT_UINT32				interfaceName,
 			_In_ PRT_UINT32				numArgs,
 			...
 		);

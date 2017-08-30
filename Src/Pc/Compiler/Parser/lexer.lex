@@ -128,6 +128,7 @@
 			 keywords.Add("refines", (int)PTokens.REFINES);
 			 keywords.Add("data", (int)PTokens.DATA);
 			 keywords.Add("float", (int)PTokens.FLOAT);
+			 keywords.Add("interface", (int)PTokens.INTERFACE);
 		 }
 
          int GetIdToken(string txt)

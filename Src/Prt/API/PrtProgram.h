@@ -153,8 +153,8 @@ typedef struct PRT_PROGRAMDECL
 	PRT_MACHINEDECL     **machines;     /**< The array of machines               */
   PRT_FUNDECL         **globalFuns;   /**< The array of global functions */
 	PRT_FOREIGNTYPEDECL **foreignTypes; /**< The array of foreign types */
-	PRT_UINT32			**linkMap;		/**< stores the link map from symbolicName -> symbolicName -> symbolicName */
-	PRT_UINT32			*machineDefMap;		/**< stores the machine definition map from symbolicName -> concrete name */
+	PRT_UINT32			**linkMap;		/**< stores the link map from interfaceName -> interfaceName -> interfaceName */
+	PRT_UINT32			*machineDefMap;		/**< stores the machine definition map from interfaceName -> concrete name */
 
 	PRT_UINT32          nAnnotations;   /**< Number of annotations               */
 	void                **annotations;  /**< An array of annotations             */

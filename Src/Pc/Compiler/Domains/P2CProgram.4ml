@@ -376,13 +376,13 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 								  machineStructName, 
 								  NIL).
 
-	//// IORM enum names
-	HOut(0, def) :- in.MachineDecl(name, _), iormName = strJoin("P_IORM_", name),
-	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iormName, NIL).
-	HOut(0, def) :- in.MachineProtoDecl(name, _), iormName = strJoin("P_IORM_", name),
-	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iormName, NIL).
-	HOut(0, def) :- in.SymbolicMachineNameDecl(name, _, _, _), iormName = strJoin("P_IORM_", name),
-	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iormName, NIL).
+	//// I enum names
+	HOut(0, def) :- in.MachineDecl(name, _), iName = strJoin("P_I_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
+	HOut(0, def) :- in.MachineProtoDecl(name, _), iName = strJoin("P_I_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
+	HOut(0, def) :- in.SymbolicMachineNameDecl(name, _, _, _), iName = strJoin("P_I_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
 
 	//// Extern declaration for Program Decl
 	HOut(0, def) :- def = out.VarDef(
@@ -1773,10 +1773,10 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	
 	//// New Machine
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, NIL, _, x), ret = Ident("p_tmp_funstmt_ret"),
-						   IOrMName = strJoin("P_IORM_", iname),
-						   newCall = out.FunApp(Ident("PrtMkSymbolicMachine"),
+						   iName = strJoin("P_I_", iname),
+						   newCall = out.FunApp(Ident("PrtMkInterface"),
 												Args(Ident("context"),
-												Args(Ident(IOrMName), 
+												Args(Ident(iName), 
 												Args(IntLit(0, DEC, U), NIL)))),
 						   ContextLineInfo(c, s, info),
 						   FunStmtCleanup(c, s, cleanup),
@@ -1784,10 +1784,10 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 						   cs = out.Seq(Seq(info, out.BinApp(ASN, ret, ec)), Seq(info, cleanup)).
 
 	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, pay, _, x), pay != NIL, ret = Ident("p_tmp_funstmt_ret"),
-						   IOrMName = strJoin("P_IORM_", iname),
-						   newCall = out.FunApp(Ident("PrtMkSymbolicMachine"),
+						   iName = strJoin("P_I_", iname),
+						   newCall = out.FunApp(Ident("PrtMkInterface"),
 												Args(Ident("context"),
-												Args(Ident(IOrMName),
+												Args(Ident(iName),
 												Args(IntLit(numArgs, DEC, U), lstReverse(#Args, ecs'))))),
 						   RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1,
 						   TransformStmtArgs(c, s, 0, NIL, NIL, ecs', NIL), numArgs = lstLength(#Args, ecs') / 2,

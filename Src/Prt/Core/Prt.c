@@ -303,17 +303,17 @@ PrtStopProcess(
 }
 
 PRT_MACHINEINST *
-PrtMkSymbolicMachine(
+PrtMkInterface(
 	_In_ PRT_MACHINEINST*		creator,
-    _In_ PRT_UINT32				IorM,
+    _In_ PRT_UINT32				IName,
 	_In_ PRT_UINT32				numArgs,
 	...
 )
 {
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
 	PRT_VALUE *payload = NULL;
-	PRT_UINT32 symbolicName = context->process->program->linkMap[context->symbolicName][IorM];
-	PRT_UINT32 instanceOf = ((PRT_PROCESS_PRIV *)context->process)->program->machineDefMap[symbolicName];
+	PRT_UINT32 interfaceName = program->linkMap[context->interfaceBound][IName];
+	PRT_UINT32 instanceOf = program->machineDefMap[interfaceName];
 
 
 	if (numArgs == 0)
@@ -341,7 +341,7 @@ PrtMkSymbolicMachine(
 				args[i] = PrtCloneValue(arg);
 				break;
 			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkSymbolicMachine");
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkInterface");
 				break;
 			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);
@@ -362,7 +362,7 @@ PrtMkSymbolicMachine(
 		}
 		PrtFree(args);
 	}
-	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, symbolicName, instanceOf, payload);
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, interfaceName, instanceOf, payload);
 	// must now free this payload because PrtMkMachinePrivate clones it.
 	PrtFreeValue(payload);
 	return result;
@@ -371,13 +371,13 @@ PrtMkSymbolicMachine(
 PRT_MACHINEINST *
 PrtMkMachine(
 	_Inout_  PRT_PROCESS		*process,
-	_In_ PRT_UINT32				symbolicMachineName,
+	_In_ PRT_UINT32				interfaceName,
 	_In_ PRT_UINT32				numArgs,
 	...
 )
 {
 	PRT_VALUE *payload = NULL;
-	PRT_UINT32 instanceOf = program->machineDefMap[symbolicMachineName];
+	PRT_UINT32 instanceOf = program->machineDefMap[interfaceName];
 
 	if (numArgs == 0)
 	{
@@ -425,7 +425,7 @@ PrtMkMachine(
 		}
 		PrtFree(args);
 	}
-	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, symbolicMachineName, instanceOf, payload);
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, interfaceName, instanceOf, payload);
 	// free the payload since we cloned it here, and PrtMkMachinePrivate also clones it.
 	PrtFreeValue(payload);
 	return result;

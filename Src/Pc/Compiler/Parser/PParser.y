@@ -30,7 +30,7 @@ TopDeclList
 
 TopDecl
 	: TypeDefDecl
-	| MachineSymNameDecl
+	| InterfaceDecl
 	| EventSetDecl
 	| EnumTypeDefDecl
 	| EventDecl
@@ -108,13 +108,13 @@ EventSetDecl
 	: EVENTSET ID ASSIGN LCBRACE NonDefaultEventList RCBRACE SEMICOLON		{ AddEventSet($2.str, ToSpan(@2), ToSpan(@2)); }
 	;
 
-MachineSymNameDecl
-	: MACHINE ID LPAREN ConstTypeOrNone RPAREN RECEIVES NonDefaultEventList SEMICOLON	{ AddSymbolicMachineName($2.str, true, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
-	| MACHINE ID LPAREN ConstTypeOrNone RPAREN SEMICOLON								{ AddSymbolicMachineName($2.str, false, ToSpan(@2), ToSpan(@6), ToSpan(@1)); } 
+InterfaceDecl
+	: INTERFACE ID LPAREN ConstTypeOrNone RPAREN RECEIVES NonDefaultEventList SEMICOLON	{ AddInterfaceDecl($2.str, true, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
+	| INTERFACE ID LPAREN ConstTypeOrNone RPAREN SEMICOLON								{ AddInterfaceDecl($2.str, false, ToSpan(@2), ToSpan(@6), ToSpan(@1)); } 
 	;
 
 ConstTypeOrNone
-	: Type														{ SetSymbolicDeclConstType(ToSpan(@1));    }
+	: Type														{ SetInterfaceDeclConstType(ToSpan(@1));    }
 	|												
 	;
 

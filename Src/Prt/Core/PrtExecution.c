@@ -161,7 +161,7 @@ static void PrtScheduleWork(PRT_MACHINEINST_PRIV *context)
 PRT_MACHINEINST_PRIV *
 PrtMkMachinePrivate(
 _Inout_  PRT_PROCESS_PRIV		*process,
-_In_  PRT_UINT32				symbolicName,
+_In_  PRT_UINT32				interfaceName,
 _In_  PRT_UINT32				instanceOf,
 _In_  PRT_VALUE					*payload
 )
@@ -183,8 +183,8 @@ _In_  PRT_VALUE					*payload
 	//
 	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
 
-	//assign the symbolic name
-	context->symbolicName = symbolicName;
+	//assign the interface name
+	context->interfaceBound = interfaceName;
 	//
 	// Add it to the array of machines in the process
 	//

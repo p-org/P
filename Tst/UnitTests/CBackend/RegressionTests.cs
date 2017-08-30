@@ -89,11 +89,9 @@ namespace UnitTests.CBackend
                 tmpWriter.WriteLine("EXIT: -1");
                 return -1;
             }
-
-            //Skip the link step if outputLanguage == CompilerOutput.CSharp?
+          
+            //(TODO)Skip the link step if outputLanguage == CompilerOutput.CSharp?
             // Link
-            //if (!(outputLanguage == CompilerOutput.CSharp))
-            //{
             compileArgs.dependencies.Add(linkFileName);
             compileArgs.inputFileNames.Clear();
 
@@ -107,54 +105,10 @@ namespace UnitTests.CBackend
                 tmpWriter.WriteLine("EXIT: -1");
                 return -1;
             }
-            //}
-
-            //pc.exe with Zing option is called when outputLanguage is C;
-            //pc.exe with CSharp option is called when outputLanguage is CSharp; 
-            //if (outputLanguage == CompilerOutput.C)
-            //{
-            //    // compile *.p again, this time with Zing option:
-            //    compileArgs.compilerOutput = CompilerOutput.Zing;
-            //    compileArgs.inputFileNames = new List<string>(pFiles);
-            //    compileArgs.dependencies.Clear();
-            //    int zingResult = PCompiler.Compile(compilerOutput, compileArgs) ? 0 : -1;
-            //    tmpWriter.WriteLine($"EXIT: {zingResult}");
-            //    if (!(zingResult == 0))
-            //    { 
-            //        return -1;
-            //    }
-            //}
-            //if (outputLanguage == CompilerOutput.CSharp)
-            //{
-            //    // compile *.p again, this time with CSharp option:
-            //    compileArgs.compilerOutput = CompilerOutput.CSharp;
-            //    compileArgs.inputFileNames = new List<string>(pFiles);
-            //    compileArgs.dependencies.Clear();
-            //    if (!PCompiler.Compile(compilerOutput, compileArgs))
-            //    {
-            //        tmpWriter.WriteLine("EXIT: -1");
-            //        return -1;
-            //    }
-            //    else
-            //    {
-            //        tmpWriter.WriteLine("EXIT: 0");
-            //    }
-            //    // Link
-            //    compileArgs.dependencies.Add(linkFileName);
-            //    compileArgs.inputFileNames.Clear();
-
-            //    if (config.Link != null)
-            //    {
-            //        compileArgs.inputFileNames.Add(Path.Combine(activeDirectory, config.Link));
-            //    }
-
-            //    if (!PCompiler.Link(compilerOutput, compileArgs))
-            //    {
-            //        tmpWriter.WriteLine("EXIT: -1");
-            //        return -1;
-            //    }
-            //}
-
+            else
+            {
+                tmpWriter.WriteLine("EXIT: 0");
+            }
             return 0;
         }
 
@@ -172,16 +126,6 @@ namespace UnitTests.CBackend
             string activeDirectory,
             DirectoryInfo origTestDir)
         {
-            //Delete generated files from previous PTester run:
-            //<test>.cs,  <test>.dll, <test>.pdb
-            //foreach (var file in workDirectory.EnumerateFiles())
-            //{
-            //    if (file.Extension == ".cs" || ((file.Extension == ".dll" || file.Extension == ".pdb") && file.Name == origTestDir.Name))
-            //    {
-            //        file.Delete();
-            //    }
-
-            //}
             //Run CSharp compiler on generated .cs:
             // % 1: workDirectory
             // % 2: (origTestDir (test name)
@@ -208,14 +152,6 @@ namespace UnitTests.CBackend
                     csFileName = fileName.FullName;
                 }
             }
-            //string csFileName = (from fileName in workDirectory.EnumerateFiles()
-            //                     where fileName.Extension == ".cs" && (Path.GetFileNameWithoutExtension(fileName.Name)).Equals(origTestDir.Name))
-            //                     select fileName.FullName).FirstOrDefault();
-            //Debug:
-            //if (!(csFileName == null))
-            //
-            //    Console.WriteLine(".cs input for pt.exe: {}", csFileName);
-            //}
 
             if (csFileName == null)
             {
@@ -226,11 +162,6 @@ namespace UnitTests.CBackend
             string linkerFileName = (from fileName1 in workDirectory.EnumerateFiles()
                                      where fileName1.Extension == ".cs" && Path.GetFileNameWithoutExtension(fileName1.Name).Equals("linker")
                                      select fileName1.FullName).FirstOrDefault();
-            //Debug:
-            //if (!(linkerFileName == null))
-            //{
-            //    Console.WriteLine("linker.cs input for pt.exe: {}", linkerFileName);
-            //}
             if (linkerFileName == null)
             {
                 throw new Exception("Could not find linker.cs input for pt.exe");
@@ -245,8 +176,6 @@ namespace UnitTests.CBackend
                 Constants.Platform,
                 "Binaries",
                 "Prt.dll");
-            //Debug:
-            //Console.WriteLine("Prt.dll input for pt.exe: {}", prtDLLPath);
             if (!File.Exists(prtDllPath))
             {
                 throw new Exception("Could not find Prt.dll");
@@ -255,8 +184,6 @@ namespace UnitTests.CBackend
             // Output DLL file name:
             string outputDllName = origTestDir.Name + ".dll";
             string outputDllPath = Path.Combine(workDirectory.FullName, outputDllName);
-            //Debug:
-            //Console.WriteLine("output DLL for csc.exe: {}", outputDLLPath);
 
             //Delete generated files from previous PTester run:
             //<test>.cs,  <test>.dll, <test>.pdb, 
@@ -323,8 +250,6 @@ namespace UnitTests.CBackend
                 Constants.Platform,
                 "Binaries",
                 "Pt.exe");
-            //Debug:
-            //Console.WriteLine("Pt.exe input for pt.exe: {}", ptExePath);
             if (!File.Exists(ptExePath))
             {
                 throw new Exception("Could not find pt.exe");
@@ -487,8 +412,6 @@ namespace UnitTests.CBackend
                     programFiles = Environment.GetEnvironmentVariable("ProgramFiles");
                 }
                 msbuildPath = Path.Combine(programFiles, @"MSBuild\15.0\Bin\MSBuild.exe");
-                //Debug:
-                //Console.WriteLine("path for msbuild.exe:", msbuildPath);
                 if (!File.Exists(msbuildPath))
                 {
                     throw new Exception("msbuild.exe is not in your PATH.");
@@ -578,12 +501,10 @@ namespace UnitTests.CBackend
                 var sb = new StringBuilder();
                 using (var tmpWriter = new StringWriter(sb))
                 {
-                    //WriteHeader(tmpWriter);
                     int pcResult;
                     switch (testType)
                     {
                         case TestType.Pc:
-                            //Console.WriteLine("RunPc option; Running TestPc");
                             WriteHeader(tmpWriter);
                             TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.C);
                             if (Constants.RunPc || Constants.RunAll)
@@ -598,7 +519,6 @@ namespace UnitTests.CBackend
                         case TestType.Prt:
                             if (Constants.RunPrt || Constants.RunAll)
                             {
-                                //Console.WriteLine("RunPrt option; Running TestPrt");
                                 WriteHeader(tmpWriter);
                                 TestPrt(config, tmpWriter, workDirectory, activeDirectory);
                                 CheckResult(activeDirectory, origTestDir, testType, sb, true);
@@ -607,7 +527,6 @@ namespace UnitTests.CBackend
                         case TestType.Pt:
                             if (Constants.RunPt || Constants.RunAll)
                             {
-                                //Console.WriteLine("RunPt option; Running TestPc and TestPt");
                                 WriteHeader(tmpWriter);
                                 pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.CSharp);
                                 //CheckResult(activeDirectory, origTestDir, testType, sb);
@@ -622,7 +541,6 @@ namespace UnitTests.CBackend
                         case TestType.Zing:
                             if (Constants.RunZing || Constants.RunAll)
                             {
-                                //Console.WriteLine("RunZing option; Running TestPc andTestZing");
                                 WriteHeader(tmpWriter);
                                 pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.Zing);
                                 //CheckResult(activeDirectory, origTestDir, testType, sb);

@@ -5,6 +5,7 @@ OUT: Writing EventSentAfterSentHalt_v.zing ...
 OUT: Compiling EventSentAfterSentHalt_v.zing to EventSentAfterSentHalt_v.dll ...
 OUT: Writing linker.c ...
 OUT: Writing linker.h ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -46,5 +47,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_0.bl,)
+Expression: assert(tmp_2.bl,)
 Comment: EventSentAfterSentHalt_v.p(47,23,47,29): error PC1001: Assert failed

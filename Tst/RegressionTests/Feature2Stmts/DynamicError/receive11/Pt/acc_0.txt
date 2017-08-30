@@ -5,6 +5,7 @@ OUT: Writing receive11.cs ...
 OUT: Writing receive11.4ml ...
 OUT: Writing linker.cs ...
 OUT: Writing linker.dll ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -24,6 +25,8 @@ OUT: <EnqueueLog> Enqueued Event <E, 10> in Main-1 by Main-1
 OUT: <AnnounceLog> Enqueued Event <E, 10> to Spec Machine M
 OUT: <StateLog> Machine M-0 exiting State M_Init
 OUT: <CreateLog> Created Machine A-1
+OUT: <DequeueLog> Dequeued Event <E, 10> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 executing action for Event E in State Main_X
 OUT: <StateLog> Machine A-1 entering State A_Init
 OUT: <AnnounceLog> Enqueued Event <F, null> to Spec Machine M
 OUT: <StateLog> Machine M-0 exiting State M_Next

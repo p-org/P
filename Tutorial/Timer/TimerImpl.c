@@ -57,7 +57,7 @@ VOID CALLBACK Callback(PTP_CALLBACK_INSTANCE Instance, PVOID Context, PTP_TIMER 
 	//printf("Entering Timer Callback\n");	
 	TimerContext *timerContext = (TimerContext *)Context;
 	PRT_MACHINEINST *context = timerContext->clientContext;
-	PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
+    PRT_VALUE *ev = &P_EVENT_TIMEOUT_STRUCT.value;
 	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, context->id);
 	PRT_VALUE *timerId = PrtMkForeignValue((PRT_UINT64)timerContext, &P_GEND_TYPE_TimerPtr);
 	PRT_MACHINESTATE state;
@@ -66,7 +66,6 @@ VOID CALLBACK Callback(PTP_CALLBACK_INSTANCE Instance, PVOID Context, PTP_TIMER 
 	state.stateId = 1;
 	state.stateName = "Tick";
 	PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_MOVE, &timerId);
-	PrtFreeValue(ev);
 }
 
 PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **owner)

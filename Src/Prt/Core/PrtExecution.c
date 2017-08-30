@@ -15,7 +15,10 @@ PRT_TYPE AnyType =
 
 PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
 {
-	PRT_SPECIAL_EVENT_NULL,
+    {
+        PRT_VALUE_KIND_NULL,
+        PRT_SPECIAL_EVENT_NULL
+    },
 	"null",
 	0,
 	&NullType,
@@ -25,7 +28,10 @@ PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
 
 PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
 {
-	PRT_SPECIAL_EVENT_HALT,
+    {
+        PRT_VALUE_KIND_EVENT,
+        PRT_SPECIAL_EVENT_HALT
+    },
 	"halt",
 	4294967295U,
 	&AnyType,
@@ -169,7 +175,7 @@ _In_  PRT_VALUE					*payload
 	PrtLockMutex(process->processLock);
 
 
-	nVars = process->program->machines[instanceOf]->nVars;
+	nVars = program->machines[instanceOf]->nVars;
 	eQSize = PRT_QUEUE_LEN_DEFAULT;
 
 	//
@@ -228,7 +234,7 @@ _In_  PRT_VALUE					*payload
 
 	// Initialize Machine Internal Variables
 	//
-	context->currentState = process->program->machines[context->instanceOf]->initStateIndex;
+	context->currentState = program->machines[context->instanceOf]->initStateIndex;
 	context->isRunning = PRT_FALSE;
 	context->isHalted = PRT_FALSE; 
     context->nextOperation = EntryOperation;
@@ -249,7 +255,7 @@ _In_  PRT_VALUE					*payload
 		context->varValues = PrtCalloc(nVars, sizeof(PRT_VALUE*));
 		for (i = 0; i < nVars; i++)
 		{
-			context->varValues[i] = PrtMkDefaultValue(process->program->machines[instanceOf]->vars[i].type);
+			context->varValues[i] = PrtMkDefaultValue(program->machines[instanceOf]->vars[i].type);
 		}
 	}
 
@@ -353,8 +359,8 @@ _In_ PRT_VALUE					*payload
 	}
 
 	eventIndex = PrtPrimGetEvent(event);
-	eventMaxInstances = context->process->program->events[eventIndex]->eventMaxInstances;
-	maxQueueSize = context->process->program->machines[context->instanceOf]->maxQueueSize;
+	eventMaxInstances = program->events[eventIndex]->eventMaxInstances;
+	maxQueueSize = program->machines[context->instanceOf]->maxQueueSize;
 
 	queue = &context->eventQueue;
 
@@ -528,7 +534,7 @@ PrtGoto(
 		payload = args[0];
 		if (numArgs > 1)
 		{
-			PRT_FUNDECL *entryFun = context->process->program->machines[context->instanceOf]->states[destStateIndex].entryFun;
+			PRT_FUNDECL *entryFun = program->machines[context->instanceOf]->states[destStateIndex].entryFun;
 			PRT_TYPE *payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
@@ -1009,7 +1015,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
-	PRT_FUNDECL *exitFun = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFun;
+	PRT_FUNDECL *exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
 	PrtPushNewEventHandlerFrame(context, exitFun, PRT_FUN_PARAM_SWAP, NULL);
 	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
 }
@@ -1349,7 +1355,7 @@ _In_ PRT_UINT32					eventIndex
 
 	for (i = 0; i < nTransitions; ++i)
 	{
-		if (transTable[i].triggerEvent->declIndex == eventIndex)
+		if (transTable[i].triggerEvent->value.valueUnion.ev == eventIndex)
 		{
 			break;
 		}
@@ -1445,7 +1451,7 @@ PrtDequeueEvent(
 				for (PRT_UINT32 j = 0; j < context->receive->nCases; j++)
 				{
 					PRT_CASEDECL *rcase = &context->receive->cases[j];
-					if (triggerIndex == rcase->triggerEvent->declIndex)
+					if (triggerIndex == rcase->triggerEvent->value.valueUnion.ev)
 					{
 						frame->rcase = rcase;
 						PrtPushNewEventHandlerFrame(context, rcase->fun, PRT_FUN_PARAM_MOVE, frame->locals);
@@ -1486,7 +1492,7 @@ PrtDequeueEvent(
 			for (PRT_UINT32 j = 0; j < context->receive->nCases; j++)
 			{
 				PRT_CASEDECL *rcase = &context->receive->cases[j];
-				if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEvent->declIndex)
+				if (PRT_SPECIAL_EVENT_NULL == rcase->triggerEvent->value.valueUnion.ev)
 				{
 					frame->rcase = rcase;
 					PrtPushNewEventHandlerFrame(context, rcase->fun, PRT_FUN_PARAM_MOVE, frame->locals);
@@ -1509,7 +1515,7 @@ PrtGetCurrentStateDecl(
 _In_ PRT_MACHINEINST_PRIV			*context
 )
 {
-	return &(context->process->program->machines[context->instanceOf]->states[context->currentState]);
+	return &(program->machines[context->instanceOf]->states[context->currentState]);
 }
 
 FORCEINLINE
@@ -1519,7 +1525,7 @@ _In_ PRT_MACHINEINST_PRIV *context,
 _In_ PRT_VALUE	  *event
 )
 {
-	return context->process->program->events[PrtPrimGetEvent(event)]->type;
+	return program->events[PrtPrimGetEvent(event)]->type;
 }
 
 FORCEINLINE
@@ -1528,7 +1534,7 @@ PrtGetPackSize(
 _In_ PRT_MACHINEINST_PRIV			*context
 )
 {
-	PRT_UINT32 nEvents = context->process->program->nEvents;
+	PRT_UINT32 nEvents = program->nEvents;
 	PrtAssert(0 < nEvents, "Illegal number of events");
 	PRT_UINT32 highestEventIndex = nEvents - 1;
 	return 1 + (PRT_UINT16)(highestEventIndex / (sizeof(PRT_UINT32) * 8));
@@ -1607,7 +1613,7 @@ PrtGetEntryFunction(
 _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
-	PRT_FUNDECL *entryFun = context->process->program->machines[context->instanceOf]->states[context->currentState].entryFun;
+	PRT_FUNDECL *entryFun = program->machines[context->instanceOf]->states[context->currentState].entryFun;
 	return entryFun->implementation;
 }
 
@@ -1617,7 +1623,7 @@ PrtGetExitFunction(
 _In_ PRT_MACHINEINST_PRIV		*context
 )
 {
-	PRT_FUNDECL *exitFun = context->process->program->machines[context->instanceOf]->states[context->currentState].exitFun;
+	PRT_FUNDECL *exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
 	return exitFun->implementation;
 }
 
@@ -1647,7 +1653,7 @@ _In_ PRT_UINT32					currEvent
 		nActions = stateDecl->nDos;
 		for (ui = 0; ui < nActions; ui++)
 		{
-			if (stateDecl->dos[ui].triggerEvent->declIndex == currEvent)
+			if (stateDecl->dos[ui].triggerEvent->value.valueUnion.ev == currEvent)
 			{
 				actionDecl = &stateDecl->dos[ui];
 				return actionDecl;
@@ -1659,7 +1665,7 @@ _In_ PRT_UINT32					currEvent
 	// Scan the parent states
 	//
 	currStack = context->callStack;
-	stateTable = context->process->program->machines[context->instanceOf]->states;
+	stateTable = program->machines[context->instanceOf]->states;
 	for (i = currStack.length - 1; i >= 0; i--)
 	{
 		topOfStackState = currStack.stateStack[i].stateIndex;
@@ -1672,7 +1678,7 @@ _In_ PRT_UINT32					currEvent
 			nActions = stateTable[topOfStackState].nDos;
 			for (ui = 0; ui < nActions; ui++)
 			{
-				if (stateTable[topOfStackState].dos[ui].triggerEvent->declIndex == currEvent)
+				if (stateTable[topOfStackState].dos[ui].triggerEvent->value.valueUnion.ev == currEvent)
 				{
 					actionDecl = &stateTable[topOfStackState].dos[ui];
 					return actionDecl;
@@ -1692,7 +1698,7 @@ _In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 )
 {
-	return context->process->program->machines[context->instanceOf]->states[stateIndex].defersSet->packedEvents;
+	return program->machines[context->instanceOf]->states[stateIndex].defersSet->packedEvents;
 }
 
 FORCEINLINE
@@ -1702,7 +1708,7 @@ _In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 )
 {
-	return context->process->program->machines[context->instanceOf]->states[stateIndex].doSet->packedEvents;
+	return program->machines[context->instanceOf]->states[stateIndex].doSet->packedEvents;
 }
 
 FORCEINLINE
@@ -1712,7 +1718,7 @@ _In_ PRT_MACHINEINST_PRIV	*context,
 _In_ PRT_UINT32				stateIndex
 )
 {
-	return context->process->program->machines[context->instanceOf]->states[stateIndex].transSet->packedEvents;
+	return program->machines[context->instanceOf]->states[stateIndex].transSet->packedEvents;
 }
 
 FORCEINLINE
@@ -1723,8 +1729,8 @@ _In_ PRT_UINT32				stateIndex,
 _Out_ PRT_UINT32			*nTransitions
 )
 {
-	*nTransitions = context->process->program->machines[context->instanceOf]->states[stateIndex].nTransitions;
-	return context->process->program->machines[context->instanceOf]->states[stateIndex].transitions;
+	*nTransitions = program->machines[context->instanceOf]->states[stateIndex].nTransitions;
+	return program->machines[context->instanceOf]->states[stateIndex].transitions;
 }
 
 PRT_BOOLEAN
@@ -1882,7 +1888,7 @@ _In_ PRT_UINT32					event
 	transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 	for (i = 0; i < nTransitions; ++i)
 	{
-		if (transTable[i].transFun == NULL && transTable[i].triggerEvent->declIndex == event)
+		if (transTable[i].transFun == NULL && transTable[i].triggerEvent->value.valueUnion.ev == event)
 		{
 			return PRT_TRUE;
 		}
@@ -1965,7 +1971,7 @@ PrtResizeEventQueue(
 _Inout_ PRT_MACHINEINST_PRIV *context
 )
 {
-	PRT_UINT32 maxEventQueueSize = context->process->program->machines[context->instanceOf]->maxQueueSize;
+	PRT_UINT32 maxEventQueueSize = program->machines[context->instanceOf]->maxQueueSize;
 	PRT_UINT32 currEventQueueSize = context->eventQueue.eventsSize;
 	PRT_UINT32 newQueueSize = (maxEventQueueSize != 0xffffffff && currEventQueueSize * 2 > maxEventQueueSize) ? maxEventQueueSize : currEventQueueSize * 2;
 	PRT_EVENT* oldQueue = context->eventQueue.events;
@@ -2110,7 +2116,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	if (context->varValues != NULL)
 	{
 		PRT_UINT32 i;
-		PRT_MACHINEDECL *mdecl = context->process->program->machines[context->instanceOf];
+		PRT_MACHINEDECL *mdecl = program->machines[context->instanceOf];
 
 		for (i = 0; i < mdecl->nVars; i++) {
 			PrtFreeValue(context->varValues[i]);

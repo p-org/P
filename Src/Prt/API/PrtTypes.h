@@ -156,12 +156,6 @@ typedef struct PRT_FOREIGNTYPEDECL
 	void            **annotations;  /**< An array of annotations                            */
 } PRT_FOREIGNTYPEDECL;
 
-/* The number of foreign type decls */
-extern PRT_UINT32 prtNumForeignTypeDecls;
-
-/* The active set of foreign type decls */
-extern PRT_FOREIGNTYPEDECL **prtForeignTypeDecls;
-
 /** Makes an instance of a primitive type.
 * @param[in] primType Any primitive type; cannot be a foreign type.
 * @returns An instance of a primitive. Caller is responsible for freeing.

@@ -1,29 +1,25 @@
 =================================
          Console output          
 =================================
-OUT: Writing foreigntypes.zing ...
-OUT: Compiling foreigntypes.zing to foreigntypes.dll ...
-OUT: Writing linker.c ...
-OUT: Writing linker.h ...
+OUT: Writing foreigntypes.cs ...
+OUT: Writing foreigntypes.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+EXIT: 0
 =================================
          Console output          
 =================================
-OUT: ##################
-OUT: Check Failed
-OUT: ##################
-OUT: 2 distinct states explored
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Init
+OUT: <FunctionLog> Machine Main-1 executing Function def
+OUT: <FunctionLog> Machine Main-1 executing Function def
+OUT: <FunctionLog> Machine Main-1 executing Function foo
+OUT: <FunctionLog> Machine Main-1 executing Function bar
 OUT: 
-EXIT: 3
-
-=================================
-frgn.trace
-=================================
-Safety Error Trace
-Trace-Log 0:
-<CreateLog> Created Machine Main-0
-<StateLog> Machine Main-0 entering State Init
-
-Error:
-P Assertion failed:
-Expression: assert(tmpVar_1.bl,)
-Comment: foreigntypes.p(20,6,20,12): error PC1001: Assert failed
+OUT: ERROR: foreigntypes.p(20,6,20,12): error PC1001: Assert failed
+OUT: 
+EXIT: -1

@@ -1,4 +1,5 @@
 #include "PrtUser.h"
+#include "PrtProgram.h"
 
 static void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 numCharsWritten, PRT_UINT32 resizeNum)
 {
@@ -217,7 +218,7 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 		PrtUserPrintMachineId(PrtPrimGetMachine(value), buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_VALUE_KIND_FOREIGN:
-		frgnStr = prtForeignTypeDecls[value->valueUnion.frgn->typeTag]->toStringFun(value->valueUnion.frgn->value);
+		frgnStr = program->foreignTypes[value->valueUnion.frgn->typeTag]->toStringFun(value->valueUnion.frgn->value);
 		PrtUserPrintString(frgnStr, buffer, bufferSize, numCharsWritten);
 		PrtFree(frgnStr);
 		break;
@@ -305,7 +306,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 							_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
-	PRT_STRING machineName = c->process->program->machines[c->instanceOf]->name;
+	PRT_STRING machineName = program->machines[c->instanceOf]->name;
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	PRT_STRING stateName = PrtGetCurrentStateDecl(c)->name;
 	PRT_STRING eventName;
@@ -322,7 +323,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_ENQUEUE:
-		eventName = c->process->program->events[PrtPrimGetEvent(event)]->name;
+		eventName = program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<EnqueueLog> Enqueued event ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
@@ -334,7 +335,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString(")\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_DEQUEUE:
-		eventName = c->process->program->events[PrtPrimGetEvent(event)]->name;
+		eventName = program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<DequeueLog> Dequeued event ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
@@ -364,7 +365,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 	case PRT_STEP_GOTO:
 	{
 		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV *)receiver;
-		PRT_STRING destStateName = c->process->program->machines[context->instanceOf]->states[context->destStateIndex].name;
+		PRT_STRING destStateName = program->machines[context->instanceOf]->states[context->destStateIndex].name;
 		PrtUserPrintString("<GotoLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
@@ -377,7 +378,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		break; 
 	}
 	case PRT_STEP_RAISE:
-		eventName = c->process->program->events[PrtPrimGetEvent(event)]->name;
+		eventName = program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<RaiseLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
@@ -405,7 +406,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString(") pushed\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_UNHANDLED:
-		eventName = c->process->program->events[c->eventValue]->name;
+		eventName = program->events[c->eventValue]->name;
 		PrtUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
@@ -435,7 +436,7 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_IGNORE:
-		eventName = c->process->program->events[PrtPrimGetEvent(event)]->name;
+		eventName = program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<ActionLog> Machine ", buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
 		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);

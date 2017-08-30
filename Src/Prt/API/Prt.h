@@ -56,7 +56,6 @@ extern "C"{
     */
     typedef struct PRT_PROCESS {
         PRT_GUID         guid;     /**< The unique ID for this process. Cannot be 0-0-0-0. */
-        PRT_PROGRAMDECL *program;  /**< The program running in this process.               */
     } PRT_PROCESS;
 
     /** The state of running machine in a process.
@@ -112,14 +111,6 @@ extern "C"{
         _In_ PRT_ERROR_FUN errorFun,
         _In_ PRT_LOG_FUN loggerFun
         );
-
-
-	/** PrtInitialize must be called exactly once before performing any operation in the runtime.
-	*   @param[in] program Program to run (not cloned).
-	*   @see PRT_PROGRAMDECL
-	*/
-	void PrtInitialize(
-		_In_ PRT_PROGRAMDECL *program);
 
     /** Set the scheduling policy for this process.  The default policy is TaskNeutral
     *   @param[in] policy The new policy.

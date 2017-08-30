@@ -5,28 +5,20 @@ OUT: Writing SendInEntry.zing ...
 OUT: Compiling SendInEntry.zing to SendInEntry.dll ...
 OUT: Writing linker.c ...
 OUT: Writing linker.h ...
+EXIT: 0
 =================================
          Console output          
 =================================
-OUT: ##################
-OUT: Check Failed
-OUT: ##################
-OUT: 3 distinct states explored
+OUT: Exception from Zing model checker:
+OUT: System.ArgumentException: invalid assembly
+OUT:    at Microsoft.Zing.StateImpl.Load(Assembly zingAssembly)
+OUT:    at Microsoft.Zing.StateImpl.Load(String zingAssemblyPath)
+OUT:    at Microsoft.Zing.ZingExplorer..ctor()
+OUT:    at Microsoft.Zing.ZingExplorerExhaustiveSearch..ctor()
+OUT:    at Microsoft.Zing.Zinger.Main(String[] args)
 OUT: 
-EXIT: 3
+EXIT: 5
 
 =================================
 SendInEntry.trace
 =================================
-Safety Error Trace
-Trace-Log 0:
-<CreateLog> Created Machine Main-0
-<StateLog> Machine Main-0 entering State Real1_Init
-<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Main-0 by ____Main-0
-<DequeueLog> Dequeued Event < ____E2, null > at Machine ____Main-0
-<FunctionLog> Machine Main-0 executing Function Action2
-
-Error:
-P Assertion failed:
-Expression: assert(tmp_0.bl,)
-Comment: SendInEntry.p(14,3,14,9): error PC1001: Assert failed

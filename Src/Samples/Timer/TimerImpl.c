@@ -58,7 +58,7 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 	//printf("Entering Timer Callback\n");	
 	TimerContext *timerContext = (TimerContext *)arg;
 	PRT_MACHINEINST *context = timerContext->clientContext;
-	PRT_VALUE *ev = PrtMkEventValue(P_EVENT_TIMEOUT);
+	PRT_VALUE *ev = &P_EVENT_TIMEOUT_STRUCT.value;
 	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, context->id);
 	PRT_VALUE *timerId = PrtMkForeignValue((PRT_UINT64)timerContext, &P_GEND_TYPE_TimerPtr);
 	PRT_MACHINESTATE state;
@@ -67,7 +67,6 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 	state.stateId = 1;
 	state.stateName = "Tick";
 	PrtSend(&state, clientMachine, ev, 1, PRT_FUN_PARAM_MOVE, &timerId);
-	PrtFreeValue(ev);
 }
 
 PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **owner)
@@ -115,14 +114,13 @@ PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer
 	timerContext->started = FALSE;
 	success = CancelWaitableTimer(timerContext->timer);
 	if (success) {
-		ev = PrtMkEventValue(P_EVENT_CANCEL_SUCCESS);
+		ev = &P_EVENT_CANCEL_SUCCESS_STRUCT.value;
 		PrtSend(&state, timerContext->clientContext, ev, 1, PRT_FUN_PARAM_CLONE, *timer);
 	}
 	else {
-		ev = PrtMkEventValue(P_EVENT_CANCEL_FAILURE);
+		ev = &P_EVENT_CANCEL_FAILURE_STRUCT.value;
 		PrtSend(&state, timerContext->clientContext, ev, 1, PRT_FUN_PARAM_CLONE, *timer);
 	}
-	PrtFreeValue(ev);
 
 	return NULL;
 }

@@ -5,6 +5,7 @@ OUT: Writing receive4.cs ...
 OUT: Writing receive4.4ml ...
 OUT: Writing linker.cs ...
 OUT: Writing linker.dll ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -20,6 +21,6 @@ OUT: <DequeueLog> Dequeued Event <E, null> at Machine Main-1
 OUT: <RaiseLog> Machine Main-1 raised Event F
 OUT: <StateLog> Machine Main-1 exiting State Main_Init
 OUT: 
-OUT: ERROR: Main failed to handle F
+OUT: ERROR: Main failed to handle event F
 OUT: 
 EXIT: -1

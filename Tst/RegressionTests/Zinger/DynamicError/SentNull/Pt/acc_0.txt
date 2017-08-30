@@ -5,6 +5,7 @@ OUT: Writing SentNullDetected.cs ...
 OUT: Writing SentNullDetected.4ml ...
 OUT: Writing linker.cs ...
 OUT: Writing linker.dll ...
+EXIT: 0
 =================================
          Console output          
 =================================
@@ -15,7 +16,6 @@ OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
 OUT: <CreateLog> Created Machine Real2-1
-OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_Init
 OUT: 
 OUT: ERROR: Enqueued event must not be null
 OUT: 

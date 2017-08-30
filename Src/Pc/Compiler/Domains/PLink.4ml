@@ -681,9 +681,9 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	//// (Anon)FunDecls
 	AnonOrNamedFun ::= FunDecl + AnonFunDecl.
 	DeclId(d, id, cn) :- 
-		d is FunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }), 
+		d is FunDecl, id = toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }), 
 							 cn = strJoin("P_FUN_", d.name);
-		d is AnonFunDecl, id = 1 + toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }),
+		d is AnonFunDecl, id = toOrdinal(d, 0, { d' | d' is AnonOrNamedFun }),
 							 cn = strJoin("P_FUN_", strJoin(d.ownerFun, strJoin("_ANON", toString(d.anonFunIndex)))).
 
     //// Machine decls - Start at Id 0.
@@ -697,17 +697,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
 	COut(0, def) :- size = count({n | TypeDef(n, NIL, _)}),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_FOREIGN_TYPES_COUNT", IntLit(size, DEC, NIL)). 
-
-	COut(0, def) :- EventId(_, id, cn),
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
-	COut(0, def) :- size = 2 + count({d | d is EventId}),
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_EVENTS_COUNT", IntLit(size, DEC, NIL)).
-
-	COut(0, def) :- def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_FUN_PUSH_OR_IGN", IntLit(0, DEC, NIL)).
-	COut(0, def) :- DeclId(d, id, cn), d is AnonOrNamedFun, x = 2*id,
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(x, DEC, NIL)).
-	COut(0, def) :- size = 1 + count({d | d is AnonOrNamedFun}),
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_FUNS_COUNT", IntLit(size, DEC, NIL)).
 
 	COut(0, def) :- DeclId(d, id, cn), d : MachineDecl,
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
@@ -723,65 +712,6 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
 	COut(0, def) :- size = count({n | CLinkMap(_, n, _)}),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_IORM_COUNT", IntLit(size, DEC, NIL)).
-
-	COut(0, def) :- EventId(NULL, id, _), 
-					init = Init(
-							Args(Ident("PRT_VALUE_KIND_NULL"),
-							Args(IntLit(id, DEC, U), 
-							NIL))),
-					def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), "P_GEND_VALUE_EVENT_NULL", init).
-	COut(0, def) :- EventId(HALT, id, _), 
-					init = Init(
-							Args(Ident("PRT_VALUE_KIND_EVENT"),
-							Args(IntLit(id, DEC, U), 
-							NIL))),
-					def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), "P_GEND_VALUE_EVENT_HALT", init).
-	COut(0, def) :- EventId(name, id, _), name: String,
-					init = Init(
-							Args(Ident("PRT_VALUE_KIND_EVENT"),
-							Args(IntLit(id, DEC, U), 
-							NIL))),
-					def = out.VarDef(NIL, NmdType(NIL, "PRT_VALUE"), strJoin("P_GEND_VALUE_EVENT_", name), init).
-
-    /*************************************************************/
-    /******         Generate EventSet Decl Arrays           ******/
-    /*************************************************************/	
-	EventPackList ::= (dat: EventPackData, tl: EventPackList + { NIL }).
-	EventPackData ::= (arrIndex: Natural, events: Natural). 
-	EventPacking  ::= (list: in.EventNameList + { NIL }, rem: EventPackList + { NIL }, arrIndex: Natural, packArr: out.Args + { NIL }).
-
-	EventSetId ::= (EventSet, in.EventNameList + { NIL }, in.EventName, Natural).
-	EventSetId(eventset, list, ev, id) :- eventset is EventSet(_, in.EventNameList(ev, list)), EventId(ev, id, _).
-	EventSetId(eventset, list, ev, id) :- EventSetId(eventset, in.EventNameList(ev, list), _, _), EventId(ev, id, _).
-
-	EventPacking(eventset.list, rlist, size, NIL) :- 
-		 eventset is EventSet,
-		 list = toList(
-		           #EventPackList, 
-				   NIL, 
-				   { EventPackData(i, n) | 
-				        EventSetId(eventset, _, _, j), i = qtnt(j / 32, 1), 
-				        n = sum(0, { m | EventSetId(eventset, _, _, k), i = qtnt(k / 32, 1), PowOf2(k % 32, m) }), n : Natural 
-	               }),
-		 rlist = lstReverse(#EventPackList, list),
-		 highestEventIndex = 1 + count({decl | decl is EventDecl}), size = 1 + qtnt(highestEventIndex / 32, 1), size: Natural.
-
-    //// Build up pack array.
-	EventPacking(l, NIL, i', a') :- EventPacking(l, NIL, i, a), i > 0, i' = i - 1, i' : Natural, a' = Args(IntLit(0, HEX, U), a).
-	EventPacking(l, r, i', a') :- EventPacking(l, r, i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex < i', a' = Args(IntLit(0, HEX, U), a).
-	EventPacking(l, r.tl, i', a') :- EventPacking(l, r, i, a), i > 0, i' = i - 1, i' : Natural, r.dat.arrIndex = i', a' = Args(IntLit(r.dat.events, HEX, U), a).
-
-	COut(3, def) :- EventPacking(l, _, 0, a),
-	                id = toOrdinal(l, 0, { l' | EventPacking(l', _, 0, _) }),
-	                def = out.VarDef(
-							      NIL, 
-								  ArrType(NmdType(NIL, "PRT_UINT32"), NIL), 
-								  strJoin("P_GEND_EVENTSET_", toString(id)), 
-								  Init(a)).
-
-  	COut(4, def) :- EventSet(evsetName, itype), id = toOrdinal(itype, 0, { x | EventSet(_, x) }),
-					init = Init(Args(Ident(strJoin("P_GEND_EVENTSET_", toString(id))), NIL)),
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_EVENTSETDECL"), evsetName, init).
 
     /*************************************************************/
     /******          Generate Event Decl Array              ******/
@@ -820,6 +750,22 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 								  ArrType(PtrType(NmdType(NIL, "PRT_MACHINEDECL")), NIL), 
 								  "P_GEND_MACHINES", 
 								  Init(arr)).
+
+    /*************************************************************/ 
+    /******          Generate Global Fun Decl Array         ******/ 
+    /*************************************************************/ 
+   	FunDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}). 
+	FunDeclConcat(c, NIL) :- c = count({d | d is AnonOrNamedFun }). 
+	FunDeclConcat(m, arr) :- DeclId(d, m, cn), FunDeclConcat(m + 1, after), d : AnonOrNamedFun, 
+							funStructName = strJoin(cn, "_STRUCT"), 
+							arr = out.Args(def, after), 
+							def = UnApp(ADDR, Ident(funStructName)). 
+	COut(5, def) :- FunDeclConcat(0, arr), 
+	                def = out.VarDef( 
+							      NIL,  
+								  ArrType(PtrType(NmdType(NIL, "PRT_FUNDECL")), NIL),  
+								  "P_GEND_FUNS",  
+								  Init(arr)). 
 
     /*************************************************************/
     /******     Generate Foreign Type Decl Arrays           ******/
@@ -898,13 +844,16 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
     /*************************************************************/
     /******            Generate Program Decl                ******/
     /*************************************************************/	
-
 	ProgEvntArray ::= (size: Natural, arr: out.Ident).
 	ProgEvntArray(size, arr) :- size = 2 + count({ e | e is EventDecl }), arr = out.Ident("P_GEND_EVENTS").
 
 	ProgMachArray ::= (size: Natural, arr: out.Ident).
 	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl }), size = 0, arr = out.Ident("NULL").
 	ProgMachArray(size, arr) :- size = count({ m | m is MachineDecl }), size > 0, arr = out.Ident("P_GEND_MACHINES").
+
+	ProgGlobalFunArray ::= (size: Natural, arr: out.Ident). 
+	ProgGlobalFunArray(size, arr) :- size = count({ m | m is AnonOrNamedFun }), size = 0, arr = out.Ident("NULL"). 
+	ProgGlobalFunArray(size, arr) :- size = count({ m | m is AnonOrNamedFun }), size > 0, arr = out.Ident("P_GEND_FUNS"). 
 
 	ProgForeignTypesArray ::= (size: Natural, arr: out.Ident).
 	ProgForeignTypesArray(size, arr) :- size = count({ n | TypeDef(n, NIL, _) }), size = 0, arr = out.Ident("NULL").
@@ -920,6 +869,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	COut(7, def) :-  ProgEvntArray(evArrSize, evArrName),
 					 ProgMachArray(machArrSize, machArrName),
+					 ProgGlobalFunArray(globalFunArrSize, globalFunArrName),
 					 ProgForeignTypesArray(foreignTypesSize, foreignTypesArrName),
 					 LinkMapArray(linkMapArrName),
 					 MachineDefMapArray(machDefMapArrName),
@@ -931,29 +881,15 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 				     init = Init(
 							   Args(IntLit(evArrSize, DEC, U),
 							   Args(IntLit(machArrSize, DEC, U),
+							   Args(IntLit(globalFunArrSize, DEC, U), 
 							   Args(IntLit(foreignTypesSize, DEC, U),
 							   Args(evArrName,
 							   Args(machArrName,
+							   Args(globalFunArrName,
 							   Args(foreignTypesArrName,
 							   Args(linkMapArrName,
 							   Args(machDefMapArrName,
 							   Args(IntLit(0, DEC, U),
 							   Args(Ident("NULL"),
-							   NIL))))))))))).
-
-	/*************************************************************/
-    /******                 Powers of two                   ******/
-    /*************************************************************/	
-
-	PowOf2 ::= (exp: {0..31}, val: Natural).
-
-	PowOf2(0, 1).          PowOf2(1, 2).          PowOf2(2, 4).           PowOf2(3, 8).
-	PowOf2(4, 16).         PowOf2(5, 32).         PowOf2(6, 64).          PowOf2(7, 128).
-	PowOf2(8, 256).        PowOf2(9, 512).        PowOf2(10, 1024).       PowOf2(11, 2048).
-	PowOf2(12, 4096).      PowOf2(13, 8192).      PowOf2(14, 16384).      PowOf2(15, 32768).
-	PowOf2(16, 65536).     PowOf2(17, 131072).    PowOf2(18, 262144).     PowOf2(19, 524288).
-	PowOf2(20, 1048576).   PowOf2(21, 2097152).   PowOf2(22, 4194304).    PowOf2(23, 8388608).
-	PowOf2(24, 16777216).  PowOf2(25, 33554432).  PowOf2(26, 67108864).   PowOf2(27, 134217728).
-	PowOf2(28, 268435456). PowOf2(29, 536870912). PowOf2(30, 1073741824). PowOf2(31, 2147483648).
-
+							   NIL))))))))))))).
 }

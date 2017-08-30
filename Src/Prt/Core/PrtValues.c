@@ -1,4 +1,5 @@
 #include "PrtValues.h"
+#include "PrtProgram.h"
 
 /** Maximum load factor before hashtable is resized. */
 #define PRT_MAXHASHLOAD 0.75
@@ -240,14 +241,14 @@ PRT_VALUE * PRT_CALL_CONV PrtMkForeignValue(
 {
 	PrtAssert(type->typeKind == PRT_KIND_FOREIGN, "Bad type");
 	PRT_UINT32 typeTag = type->typeUnion.foreignType->declIndex;
-	PrtAssert(typeTag < prtNumForeignTypeDecls && prtForeignTypeDecls[typeTag]->declIndex == typeTag, "Bad type tag");
+	PrtAssert(typeTag < program->nForeignTypes && program->foreignTypes[typeTag]->declIndex == typeTag, "Bad type tag");
 
 	PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 	PRT_FOREIGNVALUE *frgn = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
 	retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
 	retVal->valueUnion.frgn = frgn;
 	frgn->typeTag = typeTag;
-	frgn->value = prtForeignTypeDecls[typeTag]->cloneFun(value);
+	frgn->value = program->foreignTypes[typeTag]->cloneFun(value);
 	return retVal;
 }
 
@@ -280,13 +281,13 @@ PRT_VALUE * PRT_CALL_CONV PrtMkDefaultValue(_In_ PRT_TYPE *type)
 	case PRT_KIND_FOREIGN:
 	{
 		PRT_UINT32 declIndex = type->typeUnion.foreignType->declIndex;
-		PrtAssert(declIndex < prtNumForeignTypeDecls && prtForeignTypeDecls[declIndex]->declIndex == declIndex, "Invalid type expression.");
+		PrtAssert(declIndex < program->nForeignTypes && program->foreignTypes[declIndex]->declIndex == declIndex, "Invalid type expression.");
 		PRT_VALUE *retVal = (PRT_VALUE*)PrtMalloc(sizeof(PRT_VALUE));
 		PRT_FOREIGNVALUE *frgn = (PRT_FOREIGNVALUE *)PrtMalloc(sizeof(PRT_FOREIGNVALUE));
 		retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
 		retVal->valueUnion.frgn = frgn;
 		frgn->typeTag = declIndex;
-		frgn->value = prtForeignTypeDecls[declIndex]->mkDefValueFun();
+		frgn->value = program->foreignTypes[declIndex]->mkDefValueFun();
 		return retVal;
 	}
 	case PRT_KIND_MAP:
@@ -1113,7 +1114,7 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 		return PrtGetHashCodePrtFloat((inputValue->valueUnion.ft));
 	case PRT_VALUE_KIND_FOREIGN:
 	{
-		return 0x08000000 ^ prtForeignTypeDecls[inputValue->valueUnion.frgn->typeTag]->hashFun(inputValue->valueUnion.frgn->value);
+		return 0x08000000 ^ program->foreignTypes[inputValue->valueUnion.frgn->typeTag]->hashFun(inputValue->valueUnion.frgn->value);
 	}
 	case PRT_VALUE_KIND_MAP:
 	{
@@ -1244,7 +1245,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsEqualValue(_In_ PRT_VALUE *value1, _In_ PRT_VALUE
 	{
 		PRT_FOREIGNVALUE *fVal1 = value1->valueUnion.frgn;
 		PRT_FOREIGNVALUE *fVal2 = value2->valueUnion.frgn;
-		return (fVal1->typeTag == fVal2->typeTag) ? prtForeignTypeDecls[fVal1->typeTag]->isEqualFun(fVal1->value, fVal2->value) : PRT_FALSE;
+		return (fVal1->typeTag == fVal2->typeTag) ? program->foreignTypes[fVal1->typeTag]->isEqualFun(fVal1->value, fVal2->value) : PRT_FALSE;
 	}
 	case PRT_VALUE_KIND_MAP:
 	{
@@ -1344,7 +1345,7 @@ PRT_VALUE * PRT_CALL_CONV PrtCloneValue(_In_ PRT_VALUE *value)
 		retVal->discriminator = PRT_VALUE_KIND_FOREIGN;
 		retVal->valueUnion.frgn = cVal;
 		cVal->typeTag = fVal->typeTag;
-		cVal->value = prtForeignTypeDecls[fVal->typeTag]->cloneFun(fVal->value);
+		cVal->value = program->foreignTypes[fVal->typeTag]->cloneFun(fVal->value);
 		return retVal;
 	}
 	case PRT_VALUE_KIND_MAP:
@@ -1643,7 +1644,7 @@ void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 	case PRT_VALUE_KIND_FOREIGN:
 	{
 		PRT_FOREIGNVALUE *fVal = value->valueUnion.frgn;
-		prtForeignTypeDecls[fVal->typeTag]->freeFun(fVal->value);
+		program->foreignTypes[fVal->typeTag]->freeFun(fVal->value);
 		PrtFree(fVal);
 		PrtFree(value);
 		break;
@@ -1733,8 +1734,8 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidValue(_In_ PRT_VALUE *value)
 	case PRT_VALUE_KIND_FOREIGN:
 		return value->discriminator == PRT_VALUE_KIND_FOREIGN &&
 			value->valueUnion.frgn != NULL &&
-			value->valueUnion.frgn->typeTag < prtNumForeignTypeDecls &&
-			prtForeignTypeDecls[value->valueUnion.frgn->typeTag]->declIndex == value->valueUnion.frgn->typeTag;
+			value->valueUnion.frgn->typeTag < program->nForeignTypes &&
+			program->foreignTypes[value->valueUnion.frgn->typeTag]->declIndex == value->valueUnion.frgn->typeTag;
 	case PRT_VALUE_KIND_MAP:
 		return value->discriminator == PRT_VALUE_KIND_MAP &&
 			value->valueUnion.map != NULL;

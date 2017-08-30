@@ -20,7 +20,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 {
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
 
-	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf]->name);
+	std::wstring machineName = ConvertToUnicode((const char*)program->machines[c->instanceOf]->name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	char number[20]; // longest 32 bit integer in base 10 is 10 digits, plus room for null terminator.
 	_itoa(machineId, number, 16);
@@ -49,7 +49,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	{
 		//find out what state the sender machine is in so we can also log that information.
 		PRT_MACHINEINST_PRIV * s = (PRT_MACHINEINST_PRIV *)receiver;
-		eventName = ConvertToUnicode((const char*)s->process->program->events[PrtPrimGetEvent(event)]->name);
+		eventName = ConvertToUnicode((const char*)program->events[PrtPrimGetEvent(event)]->name);
 	}
 
 	switch (step)
@@ -87,7 +87,7 @@ ExceptionHandler(
 	__in PRT_MACHINEINST* vcontext
 )
 {
-	PRT_STRING MachineName = vcontext->process->program->machines[vcontext->instanceOf]->name;
+	PRT_STRING MachineName = program->machines[vcontext->instanceOf]->name;
 	PRT_UINT32 MachineId = vcontext->id->valueUnion.mid->machineId;
 	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
 
@@ -134,7 +134,6 @@ int main(int argc, char *argv[])
 	PRT_GUID processGuid;
 
 	EnvInitialize();
-	PrtInitialize(&P_GEND_PROGRAM);
     processGuid.data1 = 1;
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;

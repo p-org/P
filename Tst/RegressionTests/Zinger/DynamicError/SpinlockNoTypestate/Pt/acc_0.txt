@@ -16,11 +16,11 @@ OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Init
 OUT: <CreateLog> Created Machine Rule-1
+OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
+OUT: <EnqueueLog> Enqueued Event <ACQ, null> in Rule-1 by Main-1
+OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
+OUT: <EnqueueLog> Enqueued Event <ACQ, null> in Rule-1 by Main-1
 OUT: <StateLog> Machine Rule-1 entering State Rule_Start
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <EnqueueLog> Enqueued Event <ACQ, null> in Rule-1 by Main-1
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <EnqueueLog> Enqueued Event <ACQ, null> in Rule-1 by Main-1
 OUT: <DequeueLog> Dequeued Event <ACQ, null> at Machine Rule-1
 OUT: <StateLog> Machine Rule-1 entering State Rule_Acquire
 OUT: <DequeueLog> Dequeued Event <ACQ, null> at Machine Rule-1

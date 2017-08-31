@@ -16,17 +16,18 @@ OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_S1
 OUT: <CreateLog> Created Machine M3-1
-OUT: <StateLog> Machine M3-1 entering State M3_S1
 OUT: <CreateLog> Created Machine M2-1
-OUT: <StateLog> Machine M2-1 entering State M2_S1
 OUT: <FunctionLog> Machine Main-1 executing Function sealwithRR
 OUT: <EnqueueLog> Enqueued Event <E1, null> in M2-1 by Main-1
+OUT: <StateLog> Machine M2-1 entering State M2_S1
 OUT: <DequeueLog> Dequeued Event <E1, null> at Machine M2-1
 OUT: <ActionLog> Machine M2-1 executing action for Event E1 in State M2_S1
 OUT: <EnqueueLog> Enqueued Event <E2, 3> in M3-1 by M2-1
+OUT: <StateLog> Machine M3-1 entering State M3_S1
 OUT: <DequeueLog> Dequeued Event <E2, 3> at Machine M3-1
 OUT: <ActionLog> Machine M3-1 executing action for Event E2 in State M3_S1
 OUT: <EnqueueLog> Enqueued Event <E3, null> in M3-1 by Main-1
+OUT: <FunctionLog> Machine Main-1 executing Function unsealwithRR
 OUT: <DequeueLog> Dequeued Event <E3, null> at Machine M3-1
 OUT: <ActionLog> Machine M3-1 executing action for Event E3 in State M3_S1
 OUT: 

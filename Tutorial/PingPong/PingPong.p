@@ -2,10 +2,10 @@ event PING assert 1: IClient;
 event PONG assert 1; 
 event SUCCESS;
 
-type IClient(int) = { PONG };
-type IServer() = { PING };
+interface IClient(int) receives PONG;
+interface IServer() receives PING;
 
-machine Client : IClient
+machine Client
 receives PONG;
 sends PING;
 {
@@ -42,7 +42,7 @@ sends PING;
   }
 }
 
-machine Server : IServer
+machine Server
 receives PING, TIMEOUT;
 sends PONG, START;
 { 

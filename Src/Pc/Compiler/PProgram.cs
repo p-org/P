@@ -35,7 +35,7 @@ namespace Microsoft.Pc
 
         public List<P_Root.ObservesDecl> Observes { get; } = new List<P_Root.ObservesDecl>();
 
-        public List<P_Root.SymbolicMachineNameDef> SymbolicMachineNameDef { get; } = new List<P_Root.SymbolicMachineNameDef>();
+        public List<P_Root.InterfaceDef> InterfaceDef { get; } = new List<P_Root.InterfaceDef>();
 
         public List<P_Root.EventSetDecl> EventSetDecl { get; } = new List<P_Root.EventSetDecl>();
 
@@ -146,7 +146,7 @@ namespace Microsoft.Pc
                     yield return ev;
                 }
 
-                foreach (P_Root.SymbolicMachineNameDef inter in SymbolicMachineNameDef)
+                foreach (P_Root.InterfaceDef inter in InterfaceDef)
                 {
                     yield return inter;
                 }
@@ -190,9 +190,9 @@ namespace Microsoft.Pc
             {
                 EventSetDecl.Add(item as P_Root.EventSetDecl);
             }
-            else if (item is P_Root.SymbolicMachineNameDef)
+            else if (item is P_Root.InterfaceDef)
             {
-                SymbolicMachineNameDef.Add(item as P_Root.SymbolicMachineNameDef);
+                InterfaceDef.Add(item as P_Root.InterfaceDef);
             }
             else if (item is P_Root.ObservesDecl)
             {

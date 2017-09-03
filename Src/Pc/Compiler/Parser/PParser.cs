@@ -74,7 +74,7 @@ namespace Microsoft.Pc.Parser
         private P_Root.FunDecl crntFunDecl = null;
         private P_Root.EventDecl crntEventDecl = null;
         private P_Root.MachineDecl crntMachDecl = null;
-        private P_Root.SymbolicMachineNameDef crntSymbolicMachineDef = null;
+        private P_Root.InterfaceDef crntInterfaceDef = null;
         private P_Root.QualifiedName crntStateTargetName = null;
         private P_Root.QualifiedName crntGotoTargetName = null;
         private P_Root.StateDecl crntState = null;
@@ -1406,9 +1406,9 @@ namespace Microsoft.Pc.Parser
 
         private void SetInterfaceDeclConstType(Span span)
         {
-            var inDecl = GetCurrentInterfaceTypeDef(span);
+            var inDecl = GetCurrentInterfaceDef(span);
             Contract.Assert(typeExprStack.Count > 0);
-            inDecl.argType = (P_Root.IArgType_SymbolicMachineNameDef__2)typeExprStack.Pop();
+            inDecl.argType = (P_Root.IArgType_InterfaceDef__2)typeExprStack.Pop();
         }
 
         private void SetFunName(string name, Span span)
@@ -1551,10 +1551,10 @@ namespace Microsoft.Pc.Parser
 
         private void AddInterfaceDecl(string iname, bool isReceiveAvailable, Span inameSpan, Span iesnameSpan, Span span)
         {
-            var inDecl = GetCurrentInterfaceTypeDef(span);
+            var inDecl = GetCurrentInterfaceDef(span);
             inDecl.Span = span;
             inDecl.name = MkString(iname, inameSpan);
-            inDecl.id = (P_Root.IArgType_SymbolicMachineNameDef__3)MkUniqueId(inameSpan);
+            inDecl.id = (P_Root.IArgType_InterfaceDef__3)MkUniqueId(inameSpan);
             if (isReceiveAvailable)
             {
                 //declaration contains set of events
@@ -1580,7 +1580,7 @@ namespace Microsoft.Pc.Parser
             else
             {
                 Contract.Assert(crntEventList.Count() == 0);
-                inDecl.evsetName = (P_Root.IArgType_SymbolicMachineNameDef__1)MkUserCnst(P_Root.UserCnstKind.ALL, iesnameSpan);
+                inDecl.evsetName = (P_Root.IArgType_InterfaceDef__1)MkUserCnst(P_Root.UserCnstKind.ALL, iesnameSpan);
             }
             
             parseProgram.Add(inDecl);
@@ -1588,7 +1588,7 @@ namespace Microsoft.Pc.Parser
             {
                 PPTopDeclNames.interfaceNames.Add(iname);
             }
-            crntSymbolicMachineDef = null;
+            crntInterfaceDef = null;
         }
 
         private void AddVarDecl(string name, Span span)
@@ -2234,17 +2234,17 @@ namespace Microsoft.Pc.Parser
             return crntEventDecl;
         }
 
-        private P_Root.SymbolicMachineNameDef GetCurrentInterfaceTypeDef(Span span)
+        private P_Root.InterfaceDef GetCurrentInterfaceDef(Span span)
         {
-            if (crntSymbolicMachineDef != null)
+            if (crntInterfaceDef != null)
             {
-                return crntSymbolicMachineDef;
+                return crntInterfaceDef;
             }
 
-            crntSymbolicMachineDef = P_Root.MkSymbolicMachineNameDef();
-            crntSymbolicMachineDef.Span = span;
-            crntSymbolicMachineDef.argType = (P_Root.IArgType_SymbolicMachineNameDef__2)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown);
-            return crntSymbolicMachineDef;
+            crntInterfaceDef = P_Root.MkInterfaceDef();
+            crntInterfaceDef.Span = span;
+            crntInterfaceDef.argType = (P_Root.IArgType_InterfaceDef__2)MkBaseType(P_Root.UserCnstKind.NULL, Span.Unknown);
+            return crntInterfaceDef;
         }
 
         private P_Root.FunDecl GetCurrentFunDecl(Span span)
@@ -2476,7 +2476,7 @@ namespace Microsoft.Pc.Parser
             crntState = null;
             crntEventDecl = null;
             crntMachDecl = null;
-            crntSymbolicMachineDef = null;
+            crntInterfaceDef = null;
             crntStateTargetName = null;
             crntGotoTargetName = null;
             nextPayloadVarLabel = 0;

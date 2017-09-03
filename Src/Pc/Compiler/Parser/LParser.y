@@ -21,8 +21,7 @@ TopDeclList
 	;
 
 TopDecl
-	: ModuleDecl
-	| NamedModuleDecl
+	: NamedModuleDecl
 	| TestDecl
 	| ImplementationDecl
 	;
@@ -35,6 +34,7 @@ ModuleExpr
 	| SafeExpr
 	| RenameExpr
 	| ComposeExpr
+	| PrimitiveModuleExpr
 	| ID								{ PushModuleName($1.str, ToSpan(@1)); }
 	;
 
@@ -48,20 +48,19 @@ NamedModuleDecl
 	: MODULE ID ASSIGN ModuleExpr SEMICOLON			{ AddModuleDef($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
-/* Module */
-ModuleDecl
-	: MODULE ID ModulePrivateEvents LCBRACE MachineNamesList RCBRACE			{ AddModuleDecl($2.str, ToSpan(@2), ToSpan(@1)); }
+/* Primitive Module */
+PrimitiveModuleExpr
+	: LCBRACE MachineNamesList RCBRACE			{ PushPrimitiveModule(ToSpan(@1)); }
+	;
+
+MachineBinds
+	: ID							{ AddToMachineBindingList($1.str, $1.str, ToSpan(@1)); }
+	| ID BIND ID					{ AddToMachineBindingList($1.str, $3.str, ToSpan(@1)); }
 	;
 
 MachineNamesList
-	: ID							{ AddToMachineNamesList($1.str, ToSpan(@1)); }
-	| ID COMMA MachineNamesList		{ AddToMachineNamesList($1.str, ToSpan(@1)); }
-	;
-
-ModulePrivateEvents
-	: PRIVATE NonDefaultEventList SEMICOLON		{ AddPrivatesList(ToSpan(@1)); }
-	| PRIVATE SEMICOLON
-	|
+	: MachineBinds
+	| MachineBinds COMMA MachineNamesList
 	;
 
 /* Composition */
@@ -71,7 +70,8 @@ ComposeExpr
 
 /* Hide */
 HideExpr
-	: LPAREN HIDE NonDefaultEventList IN ModuleExpr RPAREN		{ PushHideExpr(ToSpan(@1)); }
+	: LPAREN HIDEE NonDefaultEventList IN ModuleExpr RPAREN		{ PushHideEventExpr(ToSpan(@1)); }
+	| LPAREN HIDEI StringList IN ModuleExpr RPAREN				{ PushHideInterfaceExpr(ToSpan(@1)); }
 	;
 
 /* Safe */
@@ -81,12 +81,12 @@ SafeExpr
 
 /* Assert */
 AssertExpr
-	: LPAREN ASSERT MonitorNameList IN ModuleExpr RPAREN		{ PushAssertExpr(ToSpan(@1)); }
+	: LPAREN ASSERT StringList IN ModuleExpr RPAREN		{ PushAssertExpr(ToSpan(@1)); }
 	;
 
 /* Assume */
 AssumeExpr
-	: LPAREN ASSUME MonitorNameList IN ModuleExpr RPAREN		{ PushAssumeExpr(ToSpan(@1)); }
+	: LPAREN ASSUME StringList IN ModuleExpr RPAREN		{ PushAssumeExpr(ToSpan(@1)); }
 	;
 
 
@@ -95,16 +95,16 @@ RenameExpr
 	: LPAREN RENAME ID TO ID IN ModuleExpr RPAREN		{ PushRenameExpr($3.str, ToSpan(@3), $5.str, ToSpan(@5), ToSpan(@1)); }
 	;
 
-/* MonitorNameList */
-MonitorNameList 
-	: ID							{ PushMonitorName($1.str, ToSpan(@1), true); }
-	| ID COMMA MonitorNameList		{ PushMonitorName($1.str, ToSpan(@1), false); }
+/* StringList */
+StringList 
+	: ID							{ PushString($1.str, ToSpan(@1), true); }
+	| ID COMMA StringList			{ PushString($1.str, ToSpan(@1), false); }
 	;
 
 /* Test Declaration */
 TestDecl
 	: TEST ID COLON ModuleExpr SEMICOLON							{ AddTestDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
-	| TEST ID COLON ModuleExpr REFINES ModuleExpr SEMICOLON		{ AddRefinementDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
+	| TEST ID COLON ModuleExpr REFINES ModuleExpr SEMICOLON			{ AddRefinementDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
 	;
 
 /* Implementation Declaration */

@@ -43,11 +43,9 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), in.TypeExpansion(ctype, ectype).
 	link.MachineReceives(m, ev) :- in.MachineReceives(m, ev).
 	link.MachineSends(m, ev) :- in.MachineSends(m, ev).
-	link.MachineCreatesInt(m, iorm) :- in.InferredMachineCreates(m, iorm), no in.MachineDecl(iorm, _), no in.MachineProtoDecl(iorm, _), in.SymbolicMachineNameDecl(iorm, _, _, _).
-	link.MachineCreatesM(m, mc) :- in.InferredMachineCreates(m, mc), in.MachineDecl(mc, _);
-								   in.InferredMachineCreates(m, mc), in.MachineProtoDecl(mc, _).
+	link.MachineCreates(m, i) :- in.InferredMachineCreates(m, i).
 
-	link.GlobalFunCreates(m, iorm) :- in.GlobalFunCreates(m, iorm).
+	link.GlobalFunCreates(m, ICreated) :- in.GlobalFunCreates(m, ICreated).
 
 	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id).
 	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id), in.TypeExpansion(type, etype).
@@ -55,8 +53,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.TypeDef(name, NIL, id) :- in.TypeDef(name, NIL, id).
 	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), in.ExportedType(name, _), in.TypeExpansion(type, etype).
 	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
-	link.SymbolicMachineNameDecl(name, list, etype, id) :- in.SymbolicMachineNameDecl(name, list, type, id), in.TypeExpansion(type, etype).
-	link.SymbolicMachineNameDecl(name, list, etype, id) :- 
+	link.InterfaceDecl(name, list, etype, id) :- in.InterfaceDecl(name, list, type, id), in.TypeExpansion(type, etype).
+	link.InterfaceDecl(name, list, etype, id) :- 
 		in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), ConstructorType(name, _, ft), in.TypeExpansion(ft, etype), no in.MachineReceives(name, ALL),
 		list = toList(in.#InterfaceType, NIL, {ev | in.MachineReceives(name, ev), ev : in.NonNullEventName }), list : in.InterfaceType;
 		in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), no ConstructorType(name, _, _), etype = link.BaseType(NULL), no in.MachineReceives(name, ALL),
@@ -65,7 +63,8 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 		in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), no ConstructorType(name, _, _), etype = link.BaseType(NULL), in.MachineReceives(name, ALL), list = ALL.
 
 	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), in.EmbeddedPermissionsInType(pt, perm).
-	PermEmbeddedInConstType(name, perm) :- ConstructorType(name, _, ct), in.EmbeddedPermissionsInType(ct, perm).
+	PermEmbeddedInConstType(name, perm) :- in.InterfaceDecl(name, _, ct, _), in.EmbeddedPermissionsInType(ct, perm);
+										   ConstructorType(name, _, ct), in.EmbeddedPermissionsInType(ct, perm).
 
 	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
 		c is in.FunDecl(name, NIL, params, return, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).
@@ -239,7 +238,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	//// Extern declarations for defined types
 	HOut(0, def) :- in.TypeDef(name, _, _),	typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
 	HOut(0, def) :- in.EnumTypeDef(name, _, _, _),	typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
-	HOut(0, def) :- in.SymbolicMachineNameDecl(name, _, _, _), typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+	HOut(0, def) :- in.InterfaceDecl(name, _, _, _), typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
 
 	//// Field names for exported named tuple types
 	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
@@ -381,7 +380,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
 	HOut(0, def) :- in.MachineProtoDecl(name, _), iName = strJoin("P_I_", name),
 	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
-	HOut(0, def) :- in.SymbolicMachineNameDecl(name, _, _, _), iName = strJoin("P_I_", name),
+	HOut(0, def) :- in.InterfaceDecl(name, _, _, _), iName = strJoin("P_I_", name),
 	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
 
 	//// Extern declaration for Program Decl

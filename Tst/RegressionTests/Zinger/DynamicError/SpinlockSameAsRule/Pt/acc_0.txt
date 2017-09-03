@@ -22,6 +22,27 @@ OUT: -----------------------------------------------------
 OUT: -----------------------------------------------------
 OUT: Total Schedules Explored: 30
 OUT: -----------------------------------------------------
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 40
+OUT: -----------------------------------------------------
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 50
+OUT: -----------------------------------------------------
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 60
+OUT: -----------------------------------------------------
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 70
+OUT: -----------------------------------------------------
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 80
+OUT: -----------------------------------------------------
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 90
+OUT: -----------------------------------------------------
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 100
+OUT: -----------------------------------------------------
 OUT: <CreateLog> Created spec Machine Spinlock
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Init
@@ -33,21 +54,6 @@ OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
 OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
 OUT: <RaiseLog> Machine Spinlock-0 raised Event Error1
 OUT: <StateLog> Machine Spinlock-0 exiting State Spinlock_Init
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
 OUT: 
 OUT: ERROR: SpinlockSameAsRule.p(78,4,78,10): error PC1001: Assert failed
 OUT: 

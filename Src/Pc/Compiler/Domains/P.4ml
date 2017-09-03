@@ -90,8 +90,8 @@ domain PData
 	EventSetDecl ::= fun (name : String -> id: any Id).
 	EventSetContains ::= new (evset: any EventSetDecl, ev: NonNullEventName).
 	EventSet ::= fun (name: String -> list: any EventNameList + { NIL }).
-	InterfaceDef ::= fun (name: String -> evsetName: String + { ALL }, argType: any TypeExpr, id: any Id).
-	InterfaceDecl ::= new (name: String, evList: any InterfaceType + { ALL }, argType: any TypeExpr, id: any Id).
+	InterfaceDef ::= fun (name: String -> evsetName: String + { ALL, NIL }, argType: any TypeExpr, id: any Id).
+	InterfaceDecl ::= new (name: String, evList: any InterfaceType + { ALL, NIL }, argType: any TypeExpr, id: any Id).
 	MachineReceives ::= new (mach: String, ev: NonNullEventName + { ALL }).
 	MachineSends ::= new (mach: String, ev: NonNullEventName + { ALL }).
 
@@ -328,6 +328,7 @@ domain PStaticTyping extends PData, PError
                                        it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev : NonNullEventName }), it : InterfaceType.
 
 	InterfaceDecl(name, ALL, ctype, id) :- InterfaceDef(name, ALL, ctype, id).
+	InterfaceDecl(name, NIL, ctype, id) :- InterfaceDef(name, NIL, ctype, id).
 
     //// List representation of EventSet
     EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
@@ -452,6 +453,8 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, eType, _, _), eType : InterfaceType.
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, ALL, _, _), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, NIL, _, _), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), MachineDecl(name, _), no MachineReceives(name, _), eType = BaseType(MACHINE).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), MachineReceives(name, ALL), eType = BaseType(MACHINE).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), no MachineReceives(name, ALL), MachineReceives(name, _), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(name, ev), ev : NonNullEventName }), eType : InterfaceType.
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
@@ -475,7 +478,8 @@ domain PStaticTyping extends PData, PError
 	ExportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- InterfaceDecl(name, eType, _, id), eType: InterfaceType, PFile(fileName), id.tl.val = fileName.
-	ExportedType(name, BaseType(MACHINE)) :- InterfaceDecl(name, ALL, _, id), PFile(fileName), id.tl.val = fileName.
+	ExportedType(name, BaseType(MACHINE)) :- InterfaceDecl(name, eType, _, id), toSymbol(eType) != #InterfaceType, PFile(fileName), id.tl.val = fileName.
+	ExportedType(name, eType) :- MachineDecl(name, id), TypeExpansion(NameType(name), eType), PFile(fileName), id.tl.val = fileName.
 
 	ImportedType ::= (String, TypeExpr).
 	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).

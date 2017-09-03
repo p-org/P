@@ -39,7 +39,7 @@ domain PLink
 	FunProtoDecl		::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
 	Pure				::= new (name: String, isPure: { TRUE, FALSE }).
 	EventSet			::= fun (name: String -> list: any EventNameList + { NIL }).
-	InterfaceDecl		::= new (name: String, list: any InterfaceType + { ALL }, argType: any TypeExpr, id: any Id).
+	InterfaceDecl		::= new (name: String, list: any InterfaceType + { ALL, NIL }, argType: any TypeExpr, id: any Id).
     MachineDecl			::= new (name: String, constType: any TypeExpr, id: any Id).
 	MonitorDecl			::= new (name: String, obsList: InterfaceType, id: any Id).
 	MachineProtoDecl	::= fun (name: String -> constType: any TypeExpr).
@@ -429,18 +429,18 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	//// Primitive module bind operation
 	//// concrete machines mentioned in the primitive module declaration are legal
 	WellFormednessError(mod.id, cm, "illegal primitive module, concrete machine not declared")
-	:- mod is PrimitiveModule(mblist, _), MemberOfMachineBindingList(mblist, mb), mb = MachineBinding(i, cm), no MachineDecl(cm, _, _).
+	:- AllExpandedModuleExprs(mod),  mod = PrimitiveModule(mblist, _), MemberOfMachineBindingList(mblist, mb), mb = MachineBinding(i, cm), no MachineDecl(cm, _, _).
 
 	//// interface mentioned in the primitive module declaration are legal
-	WellFormednessError(mod.id, i, "illegal primitive module, concrete machine not declared")
-	:- mod is PrimitiveModule(mblist, _), MemberOfMachineBindingList(mblist, mb), mb = MachineBinding(i, cm), no InterfaceDecl(i, _, _, _).
+	WellFormednessError(mod.id, i, "illegal primitive module, interface not declared")
+	:- AllExpandedModuleExprs(mod),  mod =  PrimitiveModule(mblist, _), MemberOfMachineBindingList(mblist, mb), mb = MachineBinding(i, cm), no InterfaceDecl(i, _, _, _).
 	
 	//// interface bound has receive set that is subset of the receive set of concrete machine.
 	WellFormednessError(mod.id, i, "illegal primitive module, receive set of the interface must be a subset of the receive set of concrete machine") 
-	:- mod is PrimitiveModule(mblist, _), MemberOfMachineBindingList(mblist, mb), mb = MachineBinding(i, cm), InterfaceDecl(i, it, _, _), MemberOfInterfaceType(it, ev), no MachineReceives(cm, ev).
+	:- AllExpandedModuleExprs(mod),  mod =  PrimitiveModule(mblist, _), MemberOfMachineBindingList(mblist, mb), mb = MachineBinding(i, cm), InterfaceDecl(i, it, _, _), MemberOfInterfaceType(it, ev), no MachineReceives(cm, ev).
 
 	WellFormednessError(mod.id, i, "illegal primitive module, constructor type of the interface must be equal to the constructor type of concrete machine") 
-	:- mod is PrimitiveModule(mblist, _), MemberOfMachineBindingList(mblist, mb), mb = MachineBinding(i, cm), InterfaceDecl(i, _, ct, _), MachineDecl(cm, ct', _), ct != ct'.
+	:- AllExpandedModuleExprs(mod),  mod =  PrimitiveModule(mblist, _), MemberOfMachineBindingList(mblist, mb), mb = MachineBinding(i, cm), InterfaceDecl(i, _, ct, _), MachineDecl(cm, ct', _), ct != ct'.
 
 	/**************************************************************************/
 	/*			Refinement, Implementation and Test Decls are legal			  */
@@ -610,8 +610,9 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	CMachineDefMap(newName, ImpName) :- ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, ImpName).
 	
 	// If there is no implementation decl then generate the normal link map
-	CLinkMap(creatorM, i, i) :- MachineDecl(creatorM, _, _), MachineCreates(creatorM, i), no ImplementationDecl(_, _).
-	
+	CLinkMap(creatorM, i, i) :- MachineDecl(creatorM, _, _), MachineCreates(creatorM, i), MachineDecl(i, _, _), no ImplementationDecl(_, _).
+	CLinkMap(creatorM, creatorM, creatorM) :- MachineDecl(creatorM, _, _), no ImplementationDecl(_, _).
+
 	CMachineDefMap (nName, nName) :- MachineDecl(nName, _, _), no ImplementationDecl(_, _).
 
 	
@@ -703,15 +704,11 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	COut(0, def) :- size = count({d | d is MachineDecl}),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_MACHINES_COUNT", IntLit(size, DEC, NIL)).
 
-	COut(0, def) :- CMachineDefMap(name, _), id = toOrdinal(name, 0, {n | CMachineDefMap(n, _)}), cn = strJoin("P_SYMNAME_", name),
+	COut(0, def) :- CMachineDefMap(name, _), id = toOrdinal(name, 0, {n | CMachineDefMap(n, _)}), cn = strJoin("P_I_", name),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
 	COut(0, def) :- size = count({n | CMachineDefMap(n, _)}),
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_SYMNAME_COUNT", IntLit(size, DEC, NIL)).
-
-	COut(0, def) :- CLinkMap(_, ICreated, _), id = toOrdinal(ICreated, 0, {n | CLinkMap(_, n, _)}), cn = strJoin("P_I_", ICreated),
-					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), cn, IntLit(id, DEC, NIL)).
-	COut(0, def) :- size = count({n | CLinkMap(_, n, _)}),
 					def = out.VarDef(NIL,  NmdType(NIL, "PRT_UINT32"), "_P_I_COUNT", IntLit(size, DEC, NIL)).
+
 
     /*************************************************************/
     /******          Generate Event Decl Array              ******/

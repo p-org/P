@@ -1,6 +1,1 @@
-module System
-{
-    Main, FaultTolerantMachine, ReliableStorage, Service
-}
-
-test Test0: System;
+test Test0: { Main, IHaltable -> FaultTolerantMachine, IReliableStorage -> ReliableStorage, IService -> Service };

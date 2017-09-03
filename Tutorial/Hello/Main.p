@@ -1,3 +1,5 @@
+interface Main();
+
 machine Hello
 {
   var timer: TimerPtr;

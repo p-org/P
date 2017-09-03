@@ -1,4 +1,4 @@
-interface Main;
+interface Main();
 
 machine TestMachine0
 receives;

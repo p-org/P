@@ -7,10 +7,10 @@ event eStartSteamer;
 event eStopSteamer;
 event eDumpGrinds;
 
-type ICoffeeMachine(ICoffeeMachineController) = 
-    { eBeginHeating, eGrindBeans, eStartEspresso, eStartSteamer, eStopSteamer, eDumpGrinds };
+interface ICoffeeMachine(ICoffeeMachineController) receives
+eBeginHeating, eGrindBeans, eStartEspresso, eStartSteamer, eStopSteamer, eDumpGrinds;
 
-machine CoffeeMachine : ICoffeeMachine
+machine CoffeeMachine
 sends eTemperatureReached, eNoBeans, eGrindComplete, eEspressoComplete, eNoWater, eUnknownError, eDumpComplete;
 {
     var controller: ICoffeeMachineController;

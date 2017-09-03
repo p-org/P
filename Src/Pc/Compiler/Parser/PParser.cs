@@ -1557,25 +1557,33 @@ namespace Microsoft.Pc.Parser
             inDecl.id = (P_Root.IArgType_InterfaceDef__3)MkUniqueId(inameSpan);
             if (isReceiveAvailable)
             {
-                //declaration contains set of events
-                Contract.Assert(crntEventList.Count() > 0);
-                var anonEventSetName = "__AnonEventSet_" + iname;
-                anonEventSetCounter++;
-                var eventset = new P_Root.EventSetDecl();
-                eventset.name = MkString(anonEventSetName, iesnameSpan);
-                eventset.id = (P_Root.IArgType_EventSetDecl__1)MkUniqueId(inameSpan);
-                eventset.Span = span;
-                parseProgram.Add(eventset);
-                foreach (var ev in crntEventList)
+                if (crntEventList.Count > 0)
                 {
-                    var eventsetContains = new P_Root.EventSetContains();
-                    eventsetContains.evset = eventset;
-                    eventsetContains.ev = (P_Root.IArgType_EventSetContains__1)ev;
-                    eventsetContains.Span = ev.Span;
-                    parseProgram.Add(eventsetContains);
+                    //declaration contains set of events
+                    Contract.Assert(crntEventList.Count() > 0);
+                    var anonEventSetName = "__AnonEventSet_" + iname;
+                    anonEventSetCounter++;
+                    var eventset = new P_Root.EventSetDecl();
+                    eventset.name = MkString(anonEventSetName, iesnameSpan);
+                    eventset.id = (P_Root.IArgType_EventSetDecl__1)MkUniqueId(inameSpan);
+                    eventset.Span = span;
+                    parseProgram.Add(eventset);
+                    foreach (var ev in crntEventList)
+                    {
+                        var eventsetContains = new P_Root.EventSetContains();
+                        eventsetContains.evset = eventset;
+                        eventsetContains.ev = (P_Root.IArgType_EventSetContains__1)ev;
+                        eventsetContains.Span = ev.Span;
+                        parseProgram.Add(eventsetContains);
+                    }
+                    inDecl.evsetName = MkString(anonEventSetName, iesnameSpan);
+                    crntEventList.Clear();
                 }
-                inDecl.evsetName = MkString(anonEventSetName, iesnameSpan);
-                crntEventList.Clear();
+                else
+                {
+                    Contract.Assert(crntEventList.Count() == 0);
+                    inDecl.evsetName = (P_Root.IArgType_InterfaceDef__1)MkUserCnst(P_Root.UserCnstKind.NIL, iesnameSpan);
+                }
             }
             else
             {

@@ -54,6 +54,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), in.ExportedType(name, _), in.TypeExpansion(type, etype).
 	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
 	link.InterfaceDecl(name, list, etype, id) :- in.InterfaceDecl(name, list, type, id), in.TypeExpansion(type, etype).
+	link.InterfaceDecl(name, NIL, etype, id) :- link.MachineDecl(name, _, id), no link.MachineReceives(name, _), ConstructorType(name, _, ft), in.TypeExpansion(ft, etype).
 	link.InterfaceDecl(name, list, etype, id) :- 
 		in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), ConstructorType(name, _, ft), in.TypeExpansion(ft, etype), no in.MachineReceives(name, ALL),
 		list = toList(in.#InterfaceType, NIL, {ev | in.MachineReceives(name, ev), ev : in.NonNullEventName }), list : in.InterfaceType;

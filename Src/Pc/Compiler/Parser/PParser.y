@@ -111,6 +111,7 @@ EventSetDecl
 InterfaceDecl
 	: INTERFACE ID LPAREN ConstTypeOrNone RPAREN RECEIVES NonDefaultEventList SEMICOLON	{ AddInterfaceDecl($2.str, true, ToSpan(@2), ToSpan(@7), ToSpan(@1)); } 
 	| INTERFACE ID LPAREN ConstTypeOrNone RPAREN SEMICOLON								{ AddInterfaceDecl($2.str, false, ToSpan(@2), ToSpan(@6), ToSpan(@1)); } 
+	| INTERFACE ID LPAREN ConstTypeOrNone RPAREN RECEIVES SEMICOLON						{ AddInterfaceDecl($2.str, true, ToSpan(@2), ToSpan(@6), ToSpan(@1)); } 
 	;
 
 ConstTypeOrNone

@@ -27,7 +27,7 @@ module SMRReplicated = { SMRReplicatedMachineInterface -> SMRReplicatedMachine }
 
 module MultiPaxos = { MultiPaxosNodeInterface -> MultiPaxosNodeMachine, ITimer -> Timer };
 
-module MultiPaxosWithLeaderAbs = (compose LeaderElectionAbs, MultiPaxos, SMRReplicated);
+module MultiPaxosWithLeaderAbs = (compose { LeaderElectionInterface -> LeaderElectionAbsMachine }, MultiPaxos, SMRReplicated);
 
 //test that the multipaxos implementation is safe
 test Test2: (rename TestDriver1 to Main in (compose MultiPaxosWithLeaderAbs, TestDriver1));

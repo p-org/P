@@ -12,9 +12,9 @@ event eSMRLeaderUpdated : (int, SMRServerInterface);
 event eSMRReplicatedLeader;
 
 //Interfaces used by clients of State Machine Replication (SMR)
-type SMRClientInterface(data)  = {eSMRResponse, eSMRLeaderUpdated};
-type SMRReplicatedMachineInterface((client:SMRClientInterface, val: data)) =  { eSMRReplicatedMachineOperation, eSMRReplicatedLeader };
-type SMRServerInterface(SMRServerConstrutorType) = { eSMROperation };
+interface SMRClientInterface(data) receives eSMRResponse, eSMRLeaderUpdated;
+interface SMRReplicatedMachineInterface((client:SMRClientInterface, val: data)) receives eSMRReplicatedMachineOperation, eSMRReplicatedLeader;
+interface SMRServerInterface(SMRServerConstrutorType) receives eSMROperation;
 
 type SMRServerConstrutorType = (client: SMRClientInterface, reorder: bool, isRoot : bool, ft : FaultTolerance, val: data);
 

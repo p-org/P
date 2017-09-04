@@ -17,7 +17,7 @@ fun CancelTimer(timer: TimerPtr) {
 	}
 }
 
-machine Timer : ITimer
+machine Timer
 receives eStartTimer, eCancelTimer;
 sends eTimeOut, eCancelSuccess, eCancelFailure;
 {

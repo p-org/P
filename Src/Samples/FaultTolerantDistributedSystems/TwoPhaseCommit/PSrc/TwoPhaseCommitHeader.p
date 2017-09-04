@@ -38,13 +38,13 @@ type ParticipantStatusType =
 
 /* Interface types */
 // Interface implemented by the client of the 2PC.
-type ClientInterface((CoorClientInterface, int)) = { eRespPartStatus, eTransactionFailed, eTransactionSuccess};
+interface ClientInterface((CoorClientInterface, int)) receives eRespPartStatus, eTransactionFailed, eTransactionSuccess;
 // Interface exported by the Coordinator to the client of 2PC
-type CoorClientInterface((isfaultTolerant: bool)) = { eTransaction, eReadPartStatus };
+interface CoorClientInterface((isfaultTolerant: bool)) receives eTransaction, eReadPartStatus;
 // Interface exported by the Coordinator to the Participants in 2PC
-type CoorParticipantInterface() = { ePrepared, eNotPrepared, eStatusResp };
+interface CoorParticipantInterface() receives ePrepared, eNotPrepared, eStatusResp;
 // Interface implemented by the Participant machines in 2PC
-type ParticipantInterface((client: CoorParticipantInterface, val : data)) = { ePrepare, eCommit, eAbort, eStatusQuery };
+interface ParticipantInterface((client: CoorParticipantInterface, val : data)) receives ePrepare, eCommit, eAbort, eStatusQuery;
 
 /* Declaring all the events */
 
@@ -79,3 +79,6 @@ event eStatusResp : ParticipantStatusType;
 
 //local event
 event local;
+
+interface ITimer1(ITimerClient) receives eStartTimer, eCancelTimer;
+interface ITimer2(ITimerClient) receives eStartTimer, eCancelTimer;

@@ -2043,7 +2043,9 @@ namespace Microsoft.Pc.Parser
         private void AddMachine(Span span, Span entrySpan, Span exitSpan)
         {
             var machDecl = GetCurrentMachineDecl(span);
-            AddReceivesSendsLists();
+            if(crntObservesList.Count == 0)
+                AddReceivesSendsLists();
+
             machDecl.id = (P_Root.IArgType_MachineDecl__1)MkUniqueId(entrySpan, exitSpan);
             machDecl.Span = span;
             parseProgram.Add(machDecl);

@@ -1,6 +1,7 @@
 /*************************
 The TestDriver1 machine creates a Data structure client and sets up the testing problem
 *************************/
+interface Main() receives;
 
 machine TestDriver1 
 receives;

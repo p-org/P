@@ -1,8 +1,7 @@
 /*
 The leader election protocol for multi-paxos, the protocol is based on broadcast based approach. 
 */
-machine LeaderElectionMachine : LeaderElectionInterface
-receives eTimeOut, eCancelSuccess, eCancelFailure;
+machine LeaderElectionMachine
 sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 {
 	var servers : seq[any<MultiPaxosLEEvents>];
@@ -64,7 +63,7 @@ sends eNewLeader, eStartTimer, eCancelTimer, eFwdPing;
 	}
 }
 
-machine LeaderElectionAbsMachine : LeaderElectionInterface
+machine LeaderElectionAbsMachine
 sends eNewLeader;
 {
 	var servers : seq[any<MultiPaxosLEEvents>];
@@ -109,7 +108,6 @@ sends eNewLeader;
 }
 
 machine MultiPaxosLEAbsMachine
-receives eNewLeader, eFwdPing;
 sends ePing;
 {
 	var allLE : seq[LeaderElectionInterface];
@@ -126,7 +124,7 @@ sends ePing;
 
 			while(iter < numOfNodes)
 			{
-				allNodes += (iter, this);
+				allNodes += (iter, this to LeaderElectionClientInterface);
 				iter = iter + 1;
 			}
 

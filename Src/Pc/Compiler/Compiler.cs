@@ -162,10 +162,9 @@
                                 ftName == "EventSet" ||
                                 ftName == "TypeDef" ||
                                 ftName == "EnumTypeDef" ||
-                                ftName == "InterfaceTypeDecl" ||
+                                ftName == "InterfaceDecl" ||
                                 ftName == "FunProtoDecl" ||
-                                ftName == "GlobalFunCreates" ||
-                                ftName == "MachineProtoDecl")
+                                ftName == "GlobalFunCreates")
                             {
                                 unitModel = Factory.Instance.AddFact(unitModel, (AST<ModelFact>)Factory.Instance.ToAST(n));
                             }

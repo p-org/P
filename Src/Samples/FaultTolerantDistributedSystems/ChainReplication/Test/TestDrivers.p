@@ -2,7 +2,7 @@
 We create test driver to create the SMR protocol with FT 1
 *******************************************************************************/
 event dummyOp;
-machine TestDriver1 : SMRClientInterface
+machine TestDriver1
 sends eSMROperation;
 {
 	var SMRLeader : SMRServerInterface;
@@ -11,7 +11,7 @@ sends eSMROperation;
 	var commitMap : map[int, int];
 	start state Init {
 		
-		entry {
+		entry (payload: data){
 			//create a SMR implementation with FT = 1
 			var args: SMRServerConstrutorType;
 			args.client = this as SMRClientInterface;
@@ -58,7 +58,7 @@ sends eSMROperation;
 	
 }
 
-machine TestDriver2 : SMRClientInterface
+machine TestDriver2
 sends eSMROperation;
 {
 	var SMRLeader : SMRServerInterface;
@@ -67,7 +67,7 @@ sends eSMROperation;
 	var commitMap : map[int, int];
 	start state Init {
 		
-		entry {
+		entry (payload: data){
 			//create a SMR implementation with FT = 1
 			var args: SMRServerConstrutorType;
 			args.client = this as SMRClientInterface;
@@ -114,18 +114,19 @@ sends eSMROperation;
 	
 }
 
-machine SMRReplicatedMachine : SMRReplicatedMachineInterface 
+machine SMRReplicatedMachine 
 sends eSMRResponse;
 {
 	var isLeader: bool;
 	start state Init {
+		entry (payload: (client:SMRClientInterface, val: data)) {}
 		//install common handler
         on eSMRReplicatedMachineOperation do (payload:SMRRepMachOperationType){
-			SendSMRResponse(payload.smrop.source, dummyOp, (val = true, ), payload.smrop.clientOpId, payload.respId, isLeader);
+					SendSMRResponse(payload.smrop.source, dummyOp, (val = true, ), payload.smrop.clientOpId, payload.respId, isLeader);
         }
 
         on eSMRReplicatedLeader do {
-			isLeader = true;
+					isLeader = true;
 		}
 	}
 }

@@ -1,7 +1,3 @@
-module System
-private START, TIMEOUT;
-{
-    Client, Server
-}
+module System = { IClient -> Client, IServer -> Server};
 
 implementation System;

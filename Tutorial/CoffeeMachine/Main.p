@@ -1,3 +1,5 @@
+interface Main() receives;
+
 machine Main0 
 receives ;
 sends eInit;

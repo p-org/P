@@ -38,12 +38,12 @@
         private ProgramName parseSource;
 
         private bool parseFailed = false;
-        private PLink_Root.ModuleDecl crntModuleDecl = null;
         private LProgramTopDeclNames LinkTopDeclNames;
         private List<PLink_Root.NonNullEventName> crntEventList = new List<PLink_Root.NonNullEventName>();
+        private Dictionary<PLink_Root.String, PLink_Root.String> crntMachineBindingList = new Dictionary<PLink_Root.String, PLink_Root.String>();
         private List<PLink_Root.String> crntStringList = new List<PLink_Root.String>();
         private Stack<PLink_Root.ModuleExpr> moduleExprStack = new Stack<PLink_Root.ModuleExpr>();
-        private Stack<PLink_Root.MonitorNameList> monitorNameListStack = new Stack<PLink_Root.MonitorNameList>();
+        private Stack<PLink_Root.StringList> stringListStack = new Stack<PLink_Root.StringList>();
 
         public LParser()
             : base(new Scanner())
@@ -175,19 +175,32 @@
             return interfaceTypeList.Pop();
         }
 
-        private void PushHideExpr(Span span)
+        private void PushHideEventExpr(Span span)
         {
-            var hideExpr = new PLink_Root.HideExpr();
+            var hideExpr = new PLink_Root.HideEventExpr();
             hideExpr.Span = span;
             Contract.Assert(moduleExprStack.Count >= 1);
-            hideExpr.mod = (PLink_Root.IArgType_HideExpr__1)moduleExprStack.Pop(); ;
+            hideExpr.mod = (PLink_Root.IArgType_HideEventExpr__1)moduleExprStack.Pop(); ;
             Contract.Assert(crntEventList.Count >= 1);
-            //convert the string list to EventNameList
+            //convert the string list to Interface type
             hideExpr.evtNames = ConvertToInterfaceType(crntEventList);
-            hideExpr.id = (PLink_Root.IArgType_HideExpr__2)MkUniqueId(span);
+            hideExpr.id = (PLink_Root.IArgType_HideEventExpr__2)MkUniqueId(span);
             moduleExprStack.Push(hideExpr);
             //clear eventList
             crntEventList.Clear();
+        }
+
+        private void PushHideInterfaceExpr(Span span)
+        {
+            var hideExpr = new PLink_Root.HideInterfaceExpr();
+            hideExpr.Span = span;
+            Contract.Assert(moduleExprStack.Count >= 1);
+            hideExpr.mod = (PLink_Root.IArgType_HideInterfaceExpr__1)moduleExprStack.Pop(); ;
+            Contract.Assert(stringListStack.Count >= 1);
+            //convert the string list to stringList
+            hideExpr.interfaceNames = stringListStack.Pop();
+            hideExpr.id = (PLink_Root.IArgType_HideInterfaceExpr__2)MkUniqueId(span);
+            moduleExprStack.Push(hideExpr);
         }
 
         private void PushAssumeExpr(Span span)
@@ -196,8 +209,8 @@
             assumeExpr.Span = span;
             Contract.Assert(moduleExprStack.Count >= 1);
             assumeExpr.mod = (PLink_Root.IArgType_AssumeExpr__1)moduleExprStack.Pop(); ;
-            Contract.Assert(monitorNameListStack.Count >= 1);
-            assumeExpr.monNames = monitorNameListStack.Pop();
+            Contract.Assert(stringListStack.Count >= 1);
+            assumeExpr.monNames = (PLink_Root.IArgType_AssumeExpr__0)stringListStack.Pop();
             assumeExpr.id = (PLink_Root.IArgType_AssumeExpr__2)MkUniqueId(span);
             moduleExprStack.Push(assumeExpr);
         }
@@ -208,8 +221,8 @@
             assertExpr.Span = span;
             Contract.Assert(moduleExprStack.Count >= 1);
             assertExpr.mod = (PLink_Root.IArgType_AssertExpr__1)moduleExprStack.Pop(); ;
-            Contract.Assert(monitorNameListStack.Count >= 1);
-            assertExpr.monNames = monitorNameListStack.Pop();
+            Contract.Assert(stringListStack.Count >= 1);
+            assertExpr.monNames = (PLink_Root.IArgType_AssertExpr__0)stringListStack.Pop();
             assertExpr.id = (PLink_Root.IArgType_AssertExpr__2)MkUniqueId(span);
             moduleExprStack.Push(assertExpr);
         }
@@ -226,21 +239,9 @@
             moduleExprStack.Push(renameExpr);
         }
 
-        private void PushExportExpr(string mName, string iName, Span mSpan, Span iSpan, Span span)
+        private void PushString(string name, Span nameSpan, bool isLast)
         {
-            var exportExpr = new PLink_Root.ExportExpr();
-            exportExpr.Span = span;
-            Contract.Assert(moduleExprStack.Count >= 1);
-            exportExpr.mod = (PLink_Root.IArgType_ExportExpr__2)moduleExprStack.Pop(); ;
-            exportExpr.mName = MkString(mName, mSpan);
-            exportExpr.iName = MkString(iName, iSpan);
-            exportExpr.id = (PLink_Root.IArgType_ExportExpr__3)MkUniqueId(span);
-            moduleExprStack.Push(exportExpr);
-        }
-
-        private void PushMonitorName(string name, Span nameSpan, bool isLast)
-        {
-            var monNameList = PLink_Root.MkMonitorNameList();
+            var monNameList = PLink_Root.MkStringList();
             monNameList.Span = nameSpan;
             if (crntStringList.Where(e => (string)e.Symbol == name).Count() >= 1)
             {
@@ -255,29 +256,28 @@
             }
             if (isLast)
             {
-                monNameList.str = (PLink_Root.IArgType_MonitorNameList__0)MkString(name, nameSpan);
+                monNameList.hd = (PLink_Root.IArgType_StringList__0)MkString(name, nameSpan);
                 monNameList.tl = MkUserCnst(PLink_Root.UserCnstKind.NIL, nameSpan);
                 crntStringList.Clear();
             }
             else
             {
-                Contract.Assert(monitorNameListStack.Count > 0);
-                monNameList.str = (PLink_Root.IArgType_MonitorNameList__0)MkString(name, nameSpan);
-                monNameList.tl = (PLink_Root.IArgType_MonitorNameList__1)monitorNameListStack.Pop();
+                Contract.Assert(stringListStack.Count > 0);
+                monNameList.hd = (PLink_Root.IArgType_StringList__0)MkString(name, nameSpan);
+                monNameList.tl = (PLink_Root.IArgType_StringList__1)stringListStack.Pop();
             }
-            monitorNameListStack.Push(monNameList);
+            stringListStack.Push(monNameList);
         }
 
         #endregion
 
-        private void AddToMachineNamesList(string name, Span span)
+        private void AddToMachineBindingList(string interfaceName, string machineName, Span span)
         {
-            if (crntStringList.Where(e => ((string)e.Symbol == name)).Count() >= 1)
-            {
+            if (crntMachineBindingList.Keys.Where(e => ((string)e.Symbol == interfaceName)).Count() >= 1) { 
                 var errFlag = new Flag(
                                      SeverityKind.Error,
                                      span,
-                                     Constants.BadSyntax.ToString(string.Format("Machine {0} listed multiple times in the list", name)),
+                                     Constants.BadSyntax.ToString(string.Format("Interface {0} bound multiple times in the module", interfaceName)),
                                      Constants.BadSyntax.Code,
                                      parseSource);
                 parseFailed = true;
@@ -285,7 +285,7 @@
             }
             else
             {
-                crntStringList.Add(MkString(name, span));
+                crntMachineBindingList.Add(MkString(interfaceName, span), MkString(machineName, span));
             }
         }
 
@@ -366,53 +366,36 @@
             parseLinker.ModuleDef.Add(moduleDef);
         }
 
-        private void AddPrivatesList(Span span = default(Span))
+        private void PushPrimitiveModule(Span span)
         {
-            Contract.Assert(crntEventList.Count > 0);
-            foreach (var ev in crntEventList)
-            {
-                var rec = PLink_Root.MkModulePrivateEvents(GetCurrentModuleDecl(span), (PLink_Root.IArgType_ModulePrivateEvents__1)ev);
-                rec.Span = ev.Span;
-                parseLinker.ModulePrivateEvents.Add(rec);
-            }
-            crntEventList.Clear();
-        }
+            var primModuleExpr = PLink_Root.MkPrimitiveModule();
+            primModuleExpr.Span = span;
+            primModuleExpr.id = (PLink_Root.IArgType_PrimitiveModule__1)MkUniqueId(span);
+            
 
-        private void AddModuleDecl(string name, Span nameSpan, Span span)
-        {
-            var moduleDecl = GetCurrentModuleDecl(span);
-            moduleDecl.Span = span;
-            moduleDecl.name = MkString(name, nameSpan);
-            moduleDecl.id = (PLink_Root.IArgType_ModuleDecl__1)MkUniqueId(span);
-            //add the module decl
-            if (IsValidName(LProgramTopDecl.Module, name, nameSpan))
-            {
-                LinkTopDeclNames.moduleNames.Add(name);
-            }
-            parseLinker.ModuleDecl.Add(moduleDecl);
+            var orderedMachineBindingList = crntMachineBindingList.OrderBy(x => (string)x.Key.Symbol);
+            var bindingsStack = new Stack<PLink_Root.MachineBindingList>();
+            var machineBindingList = PLink_Root.MkMachineBindingList();
+            var machineBinding = PLink_Root.MkMachineBinding();
+            machineBinding.i = (PLink_Root.IArgType_MachineBinding__0)orderedMachineBindingList.First().Key;
+            machineBinding.con = (PLink_Root.IArgType_MachineBinding__1)orderedMachineBindingList.First().Value;
+            machineBindingList.hd = machineBinding;
+            machineBindingList.tail = MkUserCnst(PLink_Root.UserCnstKind.NIL, orderedMachineBindingList.First().Value.Span);
+            bindingsStack.Push(machineBindingList);
 
-            foreach(var machine in crntStringList)
+            foreach (var binding in orderedMachineBindingList.Skip(1))
             {
-                var moduleContains = PLink_Root.MkModuleContainsMachine();
-                moduleContains.mod = (PLink_Root.IArgType_ModuleContainsMachine__0)moduleDecl;
-                moduleContains.mach = (PLink_Root.IArgType_ModuleContainsMachine__1)machine;
-                parseLinker.ModuleContainsMachine.Add(moduleContains);
+                machineBindingList = PLink_Root.MkMachineBindingList();
+                machineBinding = PLink_Root.MkMachineBinding();
+                machineBinding.i = (PLink_Root.IArgType_MachineBinding__0)binding.Key;
+                machineBinding.con = (PLink_Root.IArgType_MachineBinding__1)binding.Value;
+                machineBindingList.hd = machineBinding;
+                machineBindingList.tail = (PLink_Root.IArgType_MachineBindingList__1)bindingsStack.Pop();
+                bindingsStack.Push(machineBindingList);
             }
-            crntStringList.Clear();
-            crntModuleDecl = null;
-        }
-
-        private PLink_Root.ModuleDecl GetCurrentModuleDecl(Span span)
-        {
-            if (crntModuleDecl != null)
-            {
-                return crntModuleDecl;
-            }
-
-            crntModuleDecl = PLink_Root.MkModuleDecl();
-            crntModuleDecl.name = MkString(string.Empty, span);
-            crntModuleDecl.Span = span;
-            return crntModuleDecl;
+            crntMachineBindingList.Clear();
+            primModuleExpr.binds = bindingsStack.Pop();
+            moduleExprStack.Push(primModuleExpr);
         }
 
         private void ResetState()
@@ -420,8 +403,7 @@
             crntEventList.Clear();
             crntStringList.Clear();
             moduleExprStack.Clear();
-            monitorNameListStack.Clear();
-            crntModuleDecl = null;
+            crntMachineBindingList.Clear();
         }
 
         internal bool ParseFile(

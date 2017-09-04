@@ -147,14 +147,14 @@ typedef struct PRT_PROGRAMDECL
 {
 	PRT_UINT32          nEvents;        /**< The number of events      */
 	PRT_UINT32          nMachines;      /**< The number of machines    */
-    PRT_UINT32          nGlobalFuns;    /**< The number of global functions */
-    PRT_UINT32          nForeignTypes;  /**< The number of foreign types */
+  PRT_UINT32          nGlobalFuns;    /**< The number of global functions */
+  PRT_UINT32          nForeignTypes;  /**< The number of foreign types */
 	PRT_EVENTDECL       **events;       /**< The array of events                 */
 	PRT_MACHINEDECL     **machines;     /**< The array of machines               */
-    PRT_FUNDECL         **globalFuns;   /**< The array of global functions */
-    PRT_FOREIGNTYPEDECL **foreignTypes; /**< The array of foreign types */
-	PRT_UINT32			**linkMap;		/**< The link map from renameName -> IorM -> renameName */
-	PRT_UINT32			*renameMap;		/**< The rename map from renameName -> real name */
+  PRT_FUNDECL         **globalFuns;   /**< The array of global functions */
+	PRT_FOREIGNTYPEDECL **foreignTypes; /**< The array of foreign types */
+	PRT_UINT32			**linkMap;		/**< stores the link map from interfaceName -> interfaceName -> interfaceName */
+	PRT_UINT32			*machineDefMap;		/**< stores the machine definition map from interfaceName -> concrete name */
 
 	PRT_UINT32          nAnnotations;   /**< Number of annotations               */
 	void                **annotations;  /**< An array of annotations             */

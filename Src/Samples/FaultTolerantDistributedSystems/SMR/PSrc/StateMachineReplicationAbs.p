@@ -1,4 +1,4 @@
-machine LinearizabilityAbs : SMRServerInterface
+machine LinearizabilityAbs
 receives eSMROperation;
 sends eSMRReplicatedMachineOperation, eSMRLeaderUpdated, eSMRReplicatedLeader;
 {

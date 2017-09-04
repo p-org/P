@@ -1,4 +1,4 @@
-type ITimer(machine) = { START, CANCEL };
+interface ITimer(machine) receives START, CANCEL;
 type TimerPtr = ITimer;
 
 // events from client to timer
@@ -28,7 +28,7 @@ fun CancelTimer(timer: TimerPtr) {
 // local event for control transfer within timer
 event UNIT; 
 
-machine Timer : ITimer
+machine Timer
 sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
 {
   var client: machine;
@@ -44,7 +44,7 @@ sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
 
   state WaitForReq {
     on CANCEL goto WaitForReq with { 
-      send client, CANCEL_FAILURE, this;
+      send client, CANCEL_FAILURE, this to ITimer;
     } 
     on START goto WaitForCancel;
   }
@@ -52,14 +52,14 @@ sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
   state WaitForCancel {
     ignore START;
     on null goto WaitForReq with { 
-	  send client, TIMEOUT, this; 
+	  send client, TIMEOUT, this to ITimer; 
 	}
     on CANCEL goto WaitForReq with {
       if ($) {
-        send client, CANCEL_SUCCESS, this;
+        send client, CANCEL_SUCCESS, this to ITimer;
       } else {
-        send client, CANCEL_FAILURE, this;
-        send client, TIMEOUT, this;
+        send client, CANCEL_FAILURE, this to ITimer;
+        send client, TIMEOUT, this to ITimer;
       }
     }
   }

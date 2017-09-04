@@ -1,12 +1,12 @@
 event eInit : ICoffeeMachine;
 
-type ICoffeeMachineController() = { 
+interface ICoffeeMachineController() 
+receives
     eInit, eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans, eGrindComplete,
     eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,
-    eDumpComplete, eReadyDoorOpened, TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE
-};
+    eDumpComplete, eReadyDoorOpened, TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
 
-machine CoffeeMachineController : ICoffeeMachineController
+machine CoffeeMachineController
 sends START, CANCEL, 
       eDumpComplete, eUnknownError, eNoWater, eEspressoComplete, eGrindComplete, eNoBeans, eTemperatureReached, eBeginHeating;
 {

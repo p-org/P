@@ -60,9 +60,10 @@ enum NodeType {
 }
 
 // All the interfaces
-type ChainReplicationNodeInterface((client: SMRClientInterface, reorder: bool, isRoot : bool, ft : FaultTolerance, val: data)) = { eBackwardAck, eForwardUpdate, ePredSucc, eCRPing, eBecomeTail, eBecomeHead, eNewPredecessor, eNewSuccessor,halt };
+interface ChainReplicationNodeInterface((client: SMRClientInterface, reorder: bool, isRoot : bool, ft : FaultTolerance, val: data)) receives eBackwardAck, eForwardUpdate, ePredSucc, eCRPing, eBecomeTail, eBecomeHead, eNewPredecessor, eNewSuccessor, halt;
 
-type ChainReplicationFaultDetectorInterface ((master: ChainReplicationMasterInterface, nodes: seq[ChainReplicationNodeInterface])) = 
-{ eCRPong, eFaultCorrected };
+interface ChainReplicationFaultDetectorInterface ((master: ChainReplicationMasterInterface, nodes: seq[ChainReplicationNodeInterface])) receives eCRPong, eFaultCorrected;
 
-type ChainReplicationMasterInterface((client: SMRClientInterface, nodes: seq[ChainReplicationNodeInterface])) = { eFaultDetected, eNewSuccInfo, eTailChanged, eHeadChanged, eSuccess };
+interface ChainReplicationMasterInterface((client: SMRClientInterface, nodes: seq[ChainReplicationNodeInterface])) receives eFaultDetected, eNewSuccInfo, eTailChanged, eHeadChanged, eSuccess;
+
+interface Main(data) receives eSMRResponse, eSMRLeaderUpdated;

@@ -1,4 +1,4 @@
-type IHaltable((IService, IReliableStorage)) = { halt };
+interface IHaltable((IService, IReliableStorage)) receives halt;
 
 machine Main {
     var reliableStorage: IReliableStorage;

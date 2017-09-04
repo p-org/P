@@ -117,7 +117,8 @@
 			 
 			 keywords.Add("module", (int)PTokens.MODULE);
 			 keywords.Add("compose", (int)PTokens.COMPOSE);
-			 keywords.Add("hide", (int)PTokens.HIDE);
+			 keywords.Add("hidee", (int)PTokens.HIDEE);
+			 keywords.Add("hidei", (int)PTokens.HIDEI);
 			 keywords.Add("export", (int)PTokens.EXPORT);
 			 keywords.Add("safe", (int)PTokens.SAFE);
 			 keywords.Add("rename", (int)PTokens.RENAME);
@@ -128,6 +129,7 @@
 			 keywords.Add("refines", (int)PTokens.REFINES);
 			 keywords.Add("data", (int)PTokens.DATA);
 			 keywords.Add("float", (int)PTokens.FLOAT);
+			 keywords.Add("interface", (int)PTokens.INTERFACE);
 		 }
 
          int GetIdToken(string txt)
@@ -185,6 +187,7 @@ Id              [A-Za-z_]([A-Za-z_0-9]*)
 [,]                                        { return (int)PTokens.COMMA;     }
 [;]                                        { return (int)PTokens.SEMICOLON; }
 
+"->"                                       { return (int)PTokens.BIND;   }
 "=="                                       { return (int)PTokens.EQ;     }
 "="                                        { return (int)PTokens.ASSIGN; }
 "+="									   { return (int)PTokens.INSERT; }

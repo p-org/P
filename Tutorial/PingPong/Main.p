@@ -1,6 +1,8 @@
+interface Main() receives;
+
 machine TestMachine0
-receives ;
-sends ;
+receives;
+sends;
 {
   var client: IClient;  
   start state Init {  
@@ -11,8 +13,8 @@ sends ;
 } 
 
 machine TestMachine1
-receives ;
-sends ;
+receives;
+sends;
 {
   var client: IClient;  
   start state Init {  

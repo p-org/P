@@ -1,7 +1,7 @@
 =================================
          Console output          
 =================================
-OUT: purity.p(2,11,2,12): error PC1001: No start state in machine
+OUT: purity.p(3,4,74,5): error PC1001: No start state in machine
 OUT: purity.p(8,12,8,16): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
 OUT: purity.p(26,12,26,16): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
 OUT: purity.p(47,13,47,16): error PC1001: Illegal machine creation: only new M(...); or x = new M(...) is allowed

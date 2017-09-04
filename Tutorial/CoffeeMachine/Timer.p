@@ -44,7 +44,7 @@ sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
 
   state WaitForReq {
     on CANCEL goto WaitForReq with { 
-      send client, CANCEL_FAILURE, this as ITimer;
+      send client, CANCEL_FAILURE, this to ITimer;
     } 
     on START goto WaitForCancel;
   }
@@ -52,14 +52,14 @@ sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
   state WaitForCancel {
     ignore START;
     on null goto WaitForReq with { 
-	  send client, TIMEOUT, this as ITimer; 
+	  send client, TIMEOUT, this to ITimer; 
 	}
     on CANCEL goto WaitForReq with {
       if ($) {
-        send client, CANCEL_SUCCESS, this as ITimer;
+        send client, CANCEL_SUCCESS, this to ITimer;
       } else {
-        send client, CANCEL_FAILURE, this as ITimer;
-        send client, TIMEOUT, this as ITimer;
+        send client, CANCEL_FAILURE, this to ITimer;
+        send client, TIMEOUT, this to ITimer;
       }
     }
   }

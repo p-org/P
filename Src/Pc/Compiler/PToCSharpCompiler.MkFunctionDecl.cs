@@ -575,12 +575,12 @@ namespace Microsoft.Pc
                 {
                     stmtList.Add(
                         CSharpHelper.MkCSharpSimpleAssignmentExpressionStatement(aout,
-                                                                                 CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("application", "CreateSymbolicMachine"), CSharpHelper.MkCSharpDot("parent", "renamedName"), CSharpHelper.MkCSharpStringLiteralExpression(createdIorM), payloadVar)));
+                                                                                 CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("application", "CreateInterface"), CSharpHelper.MkCSharpDot("parent", "renamedName"), CSharpHelper.MkCSharpStringLiteralExpression(createdIorM), payloadVar)));
                 }
                 else
                 {
                     stmtList.Add(
-                        SyntaxFactory.ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("application", "CreateSymbolicMachine"), CSharpHelper.MkCSharpDot("parent", "renamedName"), CSharpHelper.MkCSharpStringLiteralExpression(createdIorM), payloadVar))
+                        SyntaxFactory.ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("application", "CreateInterface"), CSharpHelper.MkCSharpDot("parent", "renamedName"), CSharpHelper.MkCSharpStringLiteralExpression(createdIorM), payloadVar))
                     );
                 }
                 int afterLabelId = GetFreshLabelId();

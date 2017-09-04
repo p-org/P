@@ -1084,7 +1084,7 @@ domain PStaticTyping extends PData, PError
 	ERROR1(e.id, "Cannot create a spec machine"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineKind(n, SPEC).
 
-	ERROR1(e.id, "Undefined Symbolic machine name"),
+	ERROR1(e.id, "Undefined interface or machine name"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no InterfaceDecl(n, _, _, _), no MachineDecl(n, _).
 
     TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), InterfaceDecl(n, _, _, _),
@@ -1970,10 +1970,10 @@ domain PStaticTyping extends PData, PError
 					   TypeRel(type, ft, k), type != ft, k != SUB.
 					   			   
 	//for creation of machines
-	ERROR1(n.id, "Created symbolic machine expects an argument"),
+	ERROR1(n.id, "Created interface expects an argument"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), InterfaceDecl(name, _, ft, _), ft != BaseType(NULL).
 	
-	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of the created symbolic machine"),
+	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of the created interface"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), InterfaceDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 

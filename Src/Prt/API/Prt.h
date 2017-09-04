@@ -195,7 +195,7 @@ extern "C"{
     */
 	PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachine(
 		_Inout_ PRT_PROCESS *process,
-		_In_ PRT_UINT32 symbolicMachineName,
+		_In_ PRT_UINT32 interfaceName,
 		_In_ PRT_UINT32	numArgs,
 		...);
 

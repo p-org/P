@@ -1,4 +1,4 @@
-interface Main() receives;
+interface Main();
 
 machine Hello
 {

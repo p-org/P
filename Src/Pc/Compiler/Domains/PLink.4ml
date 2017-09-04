@@ -162,7 +162,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	err.OneNameError(NIL, name, "multiple enum types with same name") :- m is EnumTypeDef, m' is EnumTypeDef, m != m', m.name = m'.name, name = m.name.
 
-	err.OneNameError(NIL, name, "multiple symbolic machine declarations with same name") :- m is InterfaceDecl, m' is InterfaceDecl, m != m', m.name = m'.name, name = m.name.
+	err.OneNameError(NIL, name, "multiple interface declarations with same name") :- m is InterfaceDecl, m' is InterfaceDecl, m != m', m.name = m'.name, name = m.name.
 
 	err.OneNameError(NIL, name, "multiple events with same name") :- m is EventDecl, m' is EventDecl, m != m', m.name = m'.name, name = m.name.
 

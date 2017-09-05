@@ -20,21 +20,23 @@ namespace Microsoft.Pc
         internal class TestCaseInfo
         {
             public Dictionary<string, Dictionary<string, string>> linkMap;
-            public Dictionary<string, string> renameMap;
+            public Dictionary<string, string> machineDefMap;
             public Dictionary<string, bool> isSafeMap;
             public Dictionary<string, List<string>> specMachineMap;
             public Dictionary<string, List<string>> interfaceMap;
             public HashSet<string> sendActions;
             public HashSet<string> createActions;
+            public string mainInterface;
             public TestCaseInfo()
             {
                 linkMap = new Dictionary<string, Dictionary<string, string>>();
-                renameMap = new Dictionary<string, string>();
+                machineDefMap = new Dictionary<string, string>();
                 isSafeMap = new Dictionary<string, bool>();
                 specMachineMap = new Dictionary<string, List<string>>();
                 interfaceMap = new Dictionary<string, System.Collections.Generic.List<string>>();
                 sendActions = new HashSet<string>();
                 createActions = new HashSet<string>();
+                mainInterface = "Main";
             }
         }
 
@@ -121,20 +123,20 @@ namespace Microsoft.Pc
                    
                     if (allTests.ContainsKey(name))
                     {
-                        if (allTests[name].renameMap.ContainsKey(renamedMachineName))
+                        if (allTests[name].machineDefMap.ContainsKey(renamedMachineName))
                         {
                             Console.WriteLine("Internal Error");
                             Environment.Exit(-1);
                         }
                         else
                         {
-                            allTests[name].renameMap.Add(renamedMachineName, impName);
+                            allTests[name].machineDefMap.Add(renamedMachineName, impName);
                         }
                     }
                     else
                     {
                         allTests[name] = new TestCaseInfo();
-                        allTests[name].renameMap.Add(renamedMachineName, impName);
+                        allTests[name].machineDefMap.Add(renamedMachineName, impName);
                     }
                 }
             }
@@ -279,6 +281,28 @@ namespace Microsoft.Pc
                 }
             }
 
+            terms = GetBin(factBins, "CSharpMainInterfaceName");
+            foreach (var term in terms)
+            {
+                using (var it = term.Node.Args.GetEnumerator())
+                {
+                    it.MoveNext();
+                    var name = ((Cnst)it.Current).GetStringValue();
+                    it.MoveNext();
+                    var imain = ((Cnst)it.Current).GetStringValue();
+                    var testInfo = new TestCaseInfo();
+                    if (allTests.ContainsKey(name))
+                    {
+                        allTests[name].mainInterface = imain;
+                    }
+                    else
+                    {
+                        allTests[name] = new TestCaseInfo();
+                        allTests[name].mainInterface = imain;
+                    }
+                }
+            }
+
             terms = GetBin(factBins, "CSharpEventActionsRefinementTest");
             foreach (var term in terms)
             {
@@ -389,7 +413,7 @@ namespace Microsoft.Pc
 
             var constructorBody = generator.ExpressionStatement(
                 generator.InvocationExpression(
-                    generator.IdentifierName("CreateMainMachine")));
+                    generator.IdentifierName("CreateMainMachine"), generator.LiteralExpression(allTests[testName].mainInterface)));
             stmtList.Add(constructorBody);
             
             var constructor_2 = generator.ConstructorDeclaration("Application", constructorParameters, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0],
@@ -471,18 +495,18 @@ namespace Microsoft.Pc
             }
 
             //rename map
-            foreach (var rename in allTests[testName].renameMap)
+            foreach (var rename in allTests[testName].machineDefMap)
             {
                 var renameadd = CSharpHelper.MkCSharpInvocationExpression(
-                    CSharpHelper.MkCSharpDot("renameMap", "Add"),
+                    CSharpHelper.MkCSharpDot("machineDefMap", "Add"),
                     CSharpHelper.MkCSharpStringLiteralExpression(rename.Key),
                     CSharpHelper.MkCSharpStringLiteralExpression(rename.Value)
                 );
                 stmtList.Add(SyntaxFactory.ExpressionStatement(renameadd));
             }
             //create map
-            var listOfSpecMachineNames = allTests[testName].renameMap.Where(item => allTests[testName].specMachineMap.ContainsKey(item.Key)).Select(item => item.Value).Distinct();
-            var listOfMachineNames = allTests[testName].renameMap.Where(item => !allTests[testName].specMachineMap.ContainsKey(item.Key)).Select(item => item.Value).Distinct();
+            var listOfSpecMachineNames = allTests[testName].machineDefMap.Where(item => allTests[testName].specMachineMap.ContainsKey(item.Key)).Select(item => item.Value).Distinct();
+            var listOfMachineNames = allTests[testName].machineDefMap.Where(item => !allTests[testName].specMachineMap.ContainsKey(item.Key)).Select(item => item.Value).Distinct();
             foreach (var specMachine in listOfSpecMachineNames)
             {
                 var createadd = CSharpHelper.MkCSharpInvocationExpression(
@@ -745,9 +769,9 @@ namespace Microsoft.Pc
             foreach(var testCase in allTests)
             {
                 //make sure test case has a main file
-                if(!testCase.Value.renameMap.ContainsKey("Main"))
+                if(!testCase.Value.machineDefMap.ContainsKey(testCase.Value.mainInterface))
                 {
-                    Log.WriteMessage(string.Format("No Main Machine, cannot generate {0}.dll", testCase.Key), SeverityKind.Error);
+                    Log.WriteMessage(string.Format($"No Main {testCase.Value.mainInterface}, cannot generate {0}.dll", testCase.Key), SeverityKind.Error);
                     return false;
                 }
                 SyntaxNode finalOutput = null;

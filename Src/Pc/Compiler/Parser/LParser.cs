@@ -147,6 +147,19 @@
             moduleExprStack.Push(composeExpr);
         }
 
+        private void PushUnionExpr(Span span)
+        {
+            var unionExpr = new PLink_Root.UnionExpr();
+            unionExpr.Span = span;
+            Contract.Assert(moduleExprStack.Count >= 2);
+            var mod1 = moduleExprStack.Pop();
+            var mod2 = moduleExprStack.Pop();
+            unionExpr.left = (PLink_Root.IArgType_UnionExpr__0)mod1;
+            unionExpr.right = (PLink_Root.IArgType_UnionExpr__1)mod2;
+            unionExpr.id = (PLink_Root.IArgType_UnionExpr__2)MkUniqueId(span);
+            moduleExprStack.Push(unionExpr);
+        }
+
         private void PushSafeExpr(Span span)
         {
             var safeExpr = new PLink_Root.SafeExpr();
@@ -323,7 +336,7 @@
             parseLinker.ImplementationDecl.Add(impsDecl);
         }
 
-        private void AddRefinementDeclaration(string name, Span nameSpan, Span span)
+        private void AddRefinementDeclaration(string name, Span nameSpan, string mainL, Span mainLSpan, string mainR, Span mainRSpan, Span span)
         {
             if (IsValidName(LProgramTopDecl.Test, name, nameSpan))
             {
@@ -333,12 +346,15 @@
             var refinesDecl = PLink_Root.MkRefinementDecl();
             refinesDecl.name = (PLink_Root.IArgType_RefinementDecl__0)MkString(name, nameSpan);
             refinesDecl.Span = span;
-            refinesDecl.rhs = (PLink_Root.IArgType_RefinementDecl__2)moduleExprStack.Pop();
+            refinesDecl.lhsMain = MkString(mainL, mainLSpan);
+            refinesDecl.rhsMain = MkString(mainR, mainRSpan);
+            refinesDecl.rhs = (PLink_Root.IArgType_RefinementDecl__3)moduleExprStack.Pop();
             refinesDecl.lhs = (PLink_Root.IArgType_RefinementDecl__1)moduleExprStack.Pop();
+            refinesDecl.id = (PLink_Root.IArgType_RefinementDecl__5)MkUniqueId(span);
             parseLinker.RefinementDecl.Add(refinesDecl);
         }
 
-        private void AddTestDeclaration(string name, Span nameSpan, Span span)
+        private void AddTestDeclaration(string name, Span nameSpan, string main, Span mainSpan, Span span)
         {
             if (IsValidName(LProgramTopDecl.Test, name, nameSpan))
             {
@@ -347,8 +363,10 @@
             Contract.Assert(moduleExprStack.Count == 1);
             var testDecl = PLink_Root.MkTestDecl();
             testDecl.name = (PLink_Root.IArgType_TestDecl__0)MkString(name, nameSpan);
+            testDecl.main = MkString(main, mainSpan);
             testDecl.Span = span;
             testDecl.mod = (PLink_Root.IArgType_TestDecl__1)moduleExprStack.Pop();
+            testDecl.id = (PLink_Root.IArgType_TestDecl__3)MkUniqueId(span);
             parseLinker.TestDecl.Add(testDecl);
         }
 

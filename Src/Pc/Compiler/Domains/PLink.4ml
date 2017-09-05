@@ -82,8 +82,8 @@ domain PLink
 	
 
 	//// Test Declarations and Implementation
-	TestDecl ::= fun (name: String -> mod: any ModuleExpr, id: any Id).
-	RefinementDecl ::= fun (name: String -> lhs: any ModuleExpr, rhs: any ModuleExpr, id: any Id).
+	TestDecl ::= fun (name: String -> mod: any ModuleExpr, main: String, id: any Id).
+	RefinementDecl ::= fun (name: String -> lhs: any ModuleExpr, lhsMain: String, rhs: any ModuleExpr, rhsMain: String, id: any Id).
 	ImplementationDecl ::= fun (mod: any ModuleExpr -> id: any Id).
 
 	//// Module Signature 
@@ -120,7 +120,7 @@ domain PLinkError
 
 	//// Module system related linker errors
 	ModuleDefError ::= new (errorId: any Id, name: String, msg: String).
-	NoMainMachineInModExpr ::= new (modExprId: any Id, name: String, msg: String).
+	NoMainMachineInModExpr ::= new (modExprId: any Id, name: String, imain: String, msg: String).
 	ModuleConstructionIllegal ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	WellFormednessError ::= new (modExprId: any Id, arg: String + { HALT }, msg: String).
 	TestOrImplDeclError ::= new (modExprId: any Id, arg: String, msg: String).
@@ -135,7 +135,7 @@ domain PLinkError
 	CSharpDependsOn ::= new (o: String, d: String + { NIL }).
 	CSharpEventActionsRefinementTest ::= new (testName: String, eventName: String + { HALT }).
 	CSharpInterfaceActionsRefinementTest ::= new (testName: String, interfaceName: String).
-
+	CSharpMainInterfaceName ::= new (testName: String, mainI: String). 
 	TestError ::= new (modId: String, arg: any String, i: String).
 }
 
@@ -180,7 +180,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	// The following checks are performed when there is no implementation, test decl.
 	err.OneNameError(NIL, mc, "created machine is not declared") 
 	:- MachineDecl(mach, _, _), MachineCreates(mach, mc), no MachineDecl(mc, _, _), 
-	no ImplementationDecl(_, _), no TestDecl(_, _, _), no RefinementDecl(_, _, _, _).
+	no ImplementationDecl(_, _), no TestDecl(_, _, _, _), no RefinementDecl(_, _, _, _, _, _).
 
 	/* Rules for separate compilation checks */
 	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceDecl).
@@ -237,10 +237,10 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	/**************************************************************************/
 	/*	Check that there is main machine in each moduleExpr in the test decl  */
 	/**************************************************************************/
-	NoMainMachineInModExpr(id, name, "no Main machine in the module expression in test decl") :-
-			TestDecl(name, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, "Main", _);
-			RefinementDecl(name, modExpr, _, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, "Main", _);
-			RefinementDecl(name, _, modExpr, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, "Main", _).
+	NoMainMachineInModExpr(id, name, main, "main interface does not exist in the module expression") :-
+			TestDecl(name, modExpr, main, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, main, _);
+			RefinementDecl(name, modExpr, main, _, _, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, main, _);
+			RefinementDecl(name, _, _, modExpr, main, id), ModuleExprExpansion(modExpr, emodExpr), no ModuleMachineDefMap(emodExpr, main, _).
 
 	/************************************************************************************/
 	/*	Generate sends, receives, private (events and machines) and creates for Module Expressions   */
@@ -450,9 +450,9 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	TestOrImplDeclError(modExpr.id, ic, "top level module expressions must be closed with respect to created interfaces (all created interfaces must be exported)") 
 	:- 
 	ImplementationDecl(modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleMachineDefMap(emodExpr, ic, _);
-	TestDecl(_, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleMachineDefMap(emodExpr, ic, _);
-	RefinementDecl(_, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleMachineDefMap(emodExpr, ic, _);
-	RefinementDecl(_, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleMachineDefMap(emodExpr, ic, _).
+	TestDecl(_, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleMachineDefMap(emodExpr, ic, _);
+	RefinementDecl(_, modExpr, _, _, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleMachineDefMap(emodExpr, ic, _);
+	RefinementDecl(_, _, _, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, ic), no ModuleMachineDefMap(emodExpr, ic, _).
 
 	//// There is only one implementation modExpr
 	TestOrImplDeclError(modExpr.id, "Error", "Multiple implementation declarations")
@@ -460,7 +460,7 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 
 	//// Refinement checks
 	AllRefinementTests ::= (modL: ModuleExpr, modR: ModuleExpr).
-	AllRefinementTests(emodL, emodR) :- RefinementDecl(_, modL, modR, _), ModuleExprExpansion(modL, emodL), ModuleExprExpansion(modR, emodR).
+	AllRefinementTests(emodL, emodR) :- RefinementDecl(_, modL, _, modR, _, _), ModuleExprExpansion(modL, emodL), ModuleExprExpansion(modR, emodR).
 
 	// IC_q subset of IC_p
 	RefinementDeclError(modp.id, icq, "interfaces created by RHS must be a subset of interfaces created by LHS") :-
@@ -548,56 +548,58 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	
 	//code generation for test decls
 	CSharpLinkMap(testName, MachineName, createdInterface, ImpMachine) :- 
-							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdInterface, ImpMachine), createdInterface: String, ImpMachine: String.
+							TestDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdInterface, ImpMachine), createdInterface: String, ImpMachine: String.
 	CSharpRenameMap(testName, newName, impName) :- 
-							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName).
+							TestDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName).
 	CSharpSafeMap(testName, mname, isSafe):- 
-							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe).
+							TestDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe).
 	CSharpMonitorMap(testName, monName, impMachine) :- 
-							TestDecl(testName, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMonitorMap(emodExpr, monName, impMachine).
+							TestDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMonitorMap(emodExpr, monName, impMachine).
 	CSharpInterfaceMap(testName, iName, evName) :- 
-							TestDecl(testName, _, _), InterfaceDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
+							TestDecl(testName, _, _, _), InterfaceDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
 
 	
 	//If there is no testdecl then generate linkmap corresponding to CLinkMap
-	CSharpRenameMap("linker", newName, impName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CMachineDefMap (newName, impName).
-	CSharpLinkMap("linker", creatorM, ICreated, impM) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CLinkMap(creatorM, ICreated, impM).
-	CSharpSafeMap("linker", newName, FALSE) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), CMachineDefMap (newName, _).
-	CSharpMonitorMap("linker", monName, impMachine) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), MonitorDecl(monName, _, _), MachineDecl(impMachine, _, _).
-	CSharpInterfaceMap("linker", iName, evName) :- no TestDecl(_, _, _), no RefinementDecl(_, _, _, _), InterfaceDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
+	CSharpRenameMap("linker", newName, impName) :- no TestDecl(_, _, _, _), no RefinementDecl(_, _, _, _, _, _), CMachineDefMap (newName, impName).
+	CSharpLinkMap("linker", creatorM, ICreated, impM) :- no TestDecl(_, _, _, _), no RefinementDecl(_, _, _, _, _, _), CLinkMap(creatorM, ICreated, impM).
+	CSharpSafeMap("linker", newName, FALSE) :- no TestDecl(_, _, _, _), no RefinementDecl(_, _, _, _, _, _), CMachineDefMap (newName, _).
+	CSharpMonitorMap("linker", monName, impMachine) :- no TestDecl(_, _, _, _), no RefinementDecl(_, _, _, _, _, _), MonitorDecl(monName, _, _), MachineDecl(impMachine, _, _).
+	CSharpInterfaceMap("linker", iName, evName) :- no TestDecl(_, _, _, _), no RefinementDecl(_, _, _, _, _, _), InterfaceDecl(iName, es, _, _), MemberOfInterfaceType(es, evName).
 	
 	
 	// code generation for refinement
 	CSharpLinkMap(testName', MachineName, createdInterface, ImpMachine) :- 
-							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdInterface, ImpMachine), createdInterface: String, ImpMachine: String, testName' = strJoin(testName, "LHS").
+							RefinementDecl(testName, modExpr, _, _, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdInterface, ImpMachine), createdInterface: String, ImpMachine: String, testName' = strJoin(testName, "LHS").
 	CSharpRenameMap(testName', newName, impName) :- 
-							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName), testName' = strJoin(testName, "LHS").
+							RefinementDecl(testName, modExpr, _, _, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName), testName' = strJoin(testName, "LHS").
 	CSharpSafeMap(testName', mname, isSafe):- 
-							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe), testName' = strJoin(testName, "LHS").
+							RefinementDecl(testName, modExpr, _, _, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe), testName' = strJoin(testName, "LHS").
 	CSharpMonitorMap(testName', monName, impMachine) :- 
-							RefinementDecl(testName, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMonitorMap(emodExpr, monName, impMachine), testName' = strJoin(testName, "LHS").
+							RefinementDecl(testName, modExpr, _, _, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMonitorMap(emodExpr, monName, impMachine), testName' = strJoin(testName, "LHS").
 	CSharpInterfaceMap(testName', iName, evName) :- 
-							RefinementDecl(testName, modExpr, _, _), InterfaceDecl(iName, es, _, _), MemberOfInterfaceType(es, evName), testName' = strJoin(testName, "LHS").
+							RefinementDecl(testName, modExpr, _, _, _, _), InterfaceDecl(iName, es, _, _), MemberOfInterfaceType(es, evName), testName' = strJoin(testName, "LHS").
 	
 	CSharpLinkMap(testName', MachineName, createdInterface, ImpMachine) :- 
-							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdInterface, ImpMachine), createdInterface: String, ImpMachine: String, testName' = strJoin(testName, "RHS").
+							RefinementDecl(testName, _, _, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleLinkMap(emodExpr, MachineName, createdInterface, ImpMachine), createdInterface: String, ImpMachine: String, testName' = strJoin(testName, "RHS").
 	CSharpRenameMap(testName', newName, impName) :- 
-							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName), testName' = strJoin(testName, "RHS").
+							RefinementDecl(testName, _, _, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMachineDefMap(emodExpr, newName, impName), testName' = strJoin(testName, "RHS").
 	CSharpSafeMap(testName', mname, isSafe):- 
-							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe), testName' = strJoin(testName, "RHS").
+							RefinementDecl(testName, _, _, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSafeMap(emodExpr, mname, isSafe), testName' = strJoin(testName, "RHS").
 	CSharpMonitorMap(testName', monName, impMachine) :- 
-							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMonitorMap(emodExpr, monName, impMachine), testName' = strJoin(testName, "RHS").
+							RefinementDecl(testName, _, _, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleMonitorMap(emodExpr, monName, impMachine), testName' = strJoin(testName, "RHS").
 	CSharpInterfaceMap(testName', iName, evName) :- 
-							RefinementDecl(testName, _, modExpr, _), InterfaceDecl(iName, es, _, _), MemberOfInterfaceType(es, evName), testName' = strJoin(testName, "RHS").
+							RefinementDecl(testName, _, _, modExpr, _, _), InterfaceDecl(iName, es, _, _), MemberOfInterfaceType(es, evName), testName' = strJoin(testName, "RHS").
 	
 	//create the projection function of the refinement test
 	CSharpEventActionsRefinementTest(testName, eventName) :-
-							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSends(emodExpr, eventName).
+							RefinementDecl(testName, _, _, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleSends(emodExpr, eventName).
 	CSharpInterfaceActionsRefinementTest(testName, interfaceName) :-
-							RefinementDecl(testName, _, modExpr, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, interfaceName).
+							RefinementDecl(testName, _, _, modExpr, _, _), ModuleExprExpansion(modExpr, emodExpr), ModuleCreates(emodExpr, interfaceName).
 	
-	
-
+	//main machine names
+	CSharpMainInterfaceName(testName', mainI) :- RefinementDecl(testName, _, _, _, mainI, _), testName' = strJoin(testName, "RHS").
+	CSharpMainInterfaceName(testName', mainI) :- RefinementDecl(testName, _, mainI, _, _, _), testName' = strJoin(testName, "LHS").
+	CSharpMainInterfaceName(testName, mainI) :- TestDecl(testName, _, mainI, _).
 	/**************************************************************************/
 	/*     C Code Helpers
 	/**************************************************************************/

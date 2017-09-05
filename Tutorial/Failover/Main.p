@@ -1,6 +1,6 @@
 interface IHaltable((IService, IReliableStorage)) receives halt;
 
-machine Main {
+machine TestDriver {
     var reliableStorage: IReliableStorage;
     var service: IService;
     start state Init {

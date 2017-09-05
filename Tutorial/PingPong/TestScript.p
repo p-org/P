@@ -3,6 +3,6 @@ module System =
     IClient -> Client, IServer -> Server, Timer
 };
 
-test Test0: (rename TestMachine0 to Main in (assert Safety in (compose { TestMachine0 }, System)));
+test Test0: main TestMachine0 in (assert Safety in (union { TestMachine0 }, System));
 
-test Test1: (rename TestMachine1 to Main in (assert Liveness in (compose { TestMachine1 }, System)));
+test Test1: main TestMachine1 in (assert Liveness in (union { TestMachine1 }, System));

@@ -1,7 +1,6 @@
 /************************************************************************************************
 * Description: This file implements the test drivers for testing the two phase commit protocols
 ************************************************************************************************/
-interface Main() receives;
 // TestDriver1 is used to test to the two phase commit protocol without fault-tolerance
 // In this case two phase commit protocol is not composed with the SMR.
 machine TestDriver1

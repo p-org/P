@@ -65,5 +65,3 @@ interface ChainReplicationNodeInterface((client: SMRClientInterface, reorder: bo
 interface ChainReplicationFaultDetectorInterface ((master: ChainReplicationMasterInterface, nodes: seq[ChainReplicationNodeInterface])) receives eCRPong, eFaultCorrected;
 
 interface ChainReplicationMasterInterface((client: SMRClientInterface, nodes: seq[ChainReplicationNodeInterface])) receives eFaultDetected, eNewSuccInfo, eTailChanged, eHeadChanged, eSuccess;
-
-interface Main(data) receives eSMRResponse, eSMRLeaderUpdated;

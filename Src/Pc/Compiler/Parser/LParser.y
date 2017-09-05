@@ -34,13 +34,19 @@ ModuleExpr
 	| SafeExpr
 	| RenameExpr
 	| ComposeExpr
+	| UnionExpr
 	| PrimitiveModuleExpr
 	| ID								{ PushModuleName($1.str, ToSpan(@1)); }
 	;
 
-ModuleExprList
-	: ModuleExpr COMMA ModuleExpr		{ PushComposeExpr(ToSpan(@2)); }
-	| ModuleExpr COMMA ModuleExprList	{ PushComposeExpr(ToSpan(@2)); }
+UnionModuleExprList
+	: ModuleExpr COMMA ModuleExpr			{ PushUnionExpr(ToSpan(@2)); }
+	| ModuleExpr COMMA UnionModuleExprList	{ PushUnionExpr(ToSpan(@2)); }
+	;
+
+ComposeModuleExprList
+	: ModuleExpr COMMA ModuleExpr				{ PushComposeExpr(ToSpan(@2)); }
+	| ModuleExpr COMMA ComposeModuleExprList	{ PushComposeExpr(ToSpan(@2)); }
 	;
 
 /* Named Module Expr */
@@ -65,7 +71,11 @@ MachineNamesList
 
 /* Composition */
 ComposeExpr
-	:  LPAREN COMPOSE ModuleExprList RPAREN
+	:  LPAREN COMPOSE ComposeModuleExprList RPAREN
+	;
+/* Union */
+UnionExpr
+	:  LPAREN UNION UnionModuleExprList RPAREN
 	;
 
 /* Hide */
@@ -103,8 +113,8 @@ StringList
 
 /* Test Declaration */
 TestDecl
-	: TEST ID COLON ModuleExpr SEMICOLON							{ AddTestDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
-	| TEST ID COLON ModuleExpr REFINES ModuleExpr SEMICOLON			{ AddRefinementDeclaration($2.str, ToSpan(@2), ToSpan(@1)); }
+	: TEST ID COLON MAIN ID IN ModuleExpr SEMICOLON											{ AddTestDeclaration($2.str, ToSpan(@2), $5.str, ToSpan(@5), ToSpan(@1)); }
+	| TEST ID COLON MAIN ID IN ModuleExpr REFINES MAIN ID IN ModuleExpr SEMICOLON			{ AddRefinementDeclaration($2.str, ToSpan(@2), $5.str, ToSpan(@5), $10.str, ToSpan(@10), ToSpan(@1)); }
 	;
 
 /* Implementation Declaration */

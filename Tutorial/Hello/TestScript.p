@@ -1,2 +1,2 @@
-test Test0: (rename Hello to Main in { Hello, Timer });
+test Test0: main Hello in { Hello, Timer };
 

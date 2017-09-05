@@ -24,13 +24,13 @@ module TwoPCWithTimer = (rename ITimer to ITimer2 in
 
 
 // Test 0: To check that the fault tolerant 2PC protocol is safe 
-test Test0: (rename TestDriver2 to Main in (compose TwoPCWithTimer, LinearAbs, ClientWithTimer, { TestDriver2 }));
+test Test0: main TestDriver2 in (compose TwoPCWithTimer, LinearAbs, ClientWithTimer, { TestDriver2 });
 
 // Test 1: To check that the fault tolerant 2PC protocol satisfies the ConsistencySpec 
 module TwoPCwithConsistencySpec = (assert ConsistencySpec in TwoPCWithTimer);
-test Test1: (rename TestDriver2 to Main in (compose TwoPCwithConsistencySpec, LinearAbs, ClientWithTimer, { TestDriver2 }));
+test Test1: main TestDriver2 in (compose TwoPCwithConsistencySpec, LinearAbs, ClientWithTimer, { TestDriver2 });
 
 //Test 2: To check that the fault tolerant 2PC protocol satisfies the ProgressSpec
 module TwoPCwithProgressSpec = (assert ProgressSpec in (compose TwoPCWithTimer, LinearAbs, ClientWithTimer, { TestDriver2 }));
-test Test2: (rename TestDriver2 to Main in TwoPCwithProgressSpec);
+test Test2: main TestDriver2 in TwoPCwithProgressSpec;
 

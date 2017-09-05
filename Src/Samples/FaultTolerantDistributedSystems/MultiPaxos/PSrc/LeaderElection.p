@@ -113,7 +113,7 @@ sends ePing;
 	var allLE : seq[LeaderElectionInterface];
 	var numOfNodes : int;
 	start state Init {
-		entry
+		entry (payload: SMRServerConstrutorType)
 		{
 			
 			var iter: int;

@@ -12,7 +12,7 @@ type requestType = (source: ClientInterface, id:int);
 type responseType = (id: int, success: bool);
 
 //Interface types
-type ServerClientInterface() = { eRequest }; 
-type ClientInterface(ServerClientInterface) = { eResponse };
-type ServerHelperInterface() = { eReqSuccessful, eReqFailed };
-type HelperInterface(ServerHelperInterface) = { eProcessReq };
+interface ServerClientInterface() receives eRequest; 
+interface ClientInterface(ServerClientInterface) receives eResponse;
+interface ServerHelperInterface() receives eReqSuccessful, eReqFailed;
+interface HelperInterface(ServerHelperInterface) receives eProcessReq;

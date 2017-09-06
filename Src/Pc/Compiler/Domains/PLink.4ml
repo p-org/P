@@ -524,8 +524,8 @@ transform PLink2C(in:: PLink, importFileNames: in.StringList + { NIL }) returns 
 	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, _, modExpr', _), ModuleMonitorMap(modExpr', monName, impMachine), monName != oldname;
 											 		  AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleMonitorMap(modExpr', monName', impMachine), monName' = oldname, monName = newname;
 											 		  AllExpandedModuleExprs(modExpr), modExpr = RenameExpr(oldname, newname, modExpr', _), ModuleMonitorMap(modExpr', monName, impMachine'), impMachine' = oldname, impMachine = newname.	
-	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, MemberOfStringList(modExpr.monNames, monName), ModuleLinkMap(modExpr.mod, impMachine, _, _).
-	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssertExpr, MemberOfStringList(modExpr.monNames, monName), ModuleLinkMap(modExpr.mod, impMachine, _, _).
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssumeExpr, MemberOfStringList(modExpr.monNames, monName), ModuleMachineDefMap(modExpr.mod, impMachine, _).
+	ModuleMonitorMap(modExpr, monName, impMachine) :- AllExpandedModuleExprs(modExpr), modExpr : AssertExpr, MemberOfStringList(modExpr.monNames, monName), ModuleMachineDefMap(modExpr.mod, impMachine, _).
 
 	////populate the link map
 	ModuleLinkMap(modExpr, creatorM, ICreated, ImpMachine) :- AllExpandedModuleExprs(modExpr), toSymbol(modExpr) != #ComposeExpr, toSymbol(modExpr) != #UnionExpr, toSymbol(modExpr) != #RenameExpr, toSymbol(modExpr) != #PrimitiveModule,

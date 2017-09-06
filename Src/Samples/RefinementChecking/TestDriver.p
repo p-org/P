@@ -1,5 +1,5 @@
 //Test driver that creates 1 client and 1 server for testing the client-server system
-machine Main
+machine TestDriver0
 receives;
 sends;
  {

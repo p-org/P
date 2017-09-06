@@ -5,15 +5,14 @@ responds with either eReqSuccessful or eReqFailed.  Server
 responds to requests in the order in which they were received.
 *************************************************************/
 
-machine ServerMachine : ServerClientInterface
-receives eReqSuccessful, eReqFailed;
+machine ServerMachine
 sends eResponse, eProcessReq;
 {
   var helper: HelperInterface;
 
   start state Init {
     entry {
-      helper = new HelperInterface(this as ServerHelperInterface);
+      helper = new HelperInterface(this to ServerHelperInterface);
       goto WaitForRequests;
     }
   }
@@ -37,7 +36,7 @@ sends eResponse, eProcessReq;
 The helper machine performs some complex computation and returns
 either eReqSuccessful or eReqFailed.
 ****************************************************************/
-machine HelperMachine : HelperInterface
+machine HelperMachine
 sends eReqSuccessful, eReqFailed;
 {
   var server: ServerHelperInterface;

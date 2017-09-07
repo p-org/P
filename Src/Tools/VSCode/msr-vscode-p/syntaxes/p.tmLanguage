@@ -30,7 +30,7 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\bfloat\b|\bannounce\b|\bspec\b|\binclude\b|\bfun\b|\bnull\b|\bsizeof\b|\bpublic\b|\bin\b|\bdefault\b|\bdo\b|\bwith\b|\bevent\b|\binterface\b|\bmodule\b|\btype\b|\bsends\b|\bcreates\b|\bmachine\b|\breceives\b|\bstate\b|\bon\b|\bgoto\b|\bignore\b|\bdefer\b|\brename\b|\bobserves\b|\bcold\b|\bhot\b|\btest\b|\brefines\b|\bimplementation\b|\bpush\b|\bnew\b|\bprint\b|\bto\b|\bextern\b|\bhide\b|\benum\b</string>
+			<string>\bannounce\b|\bspec\b|\binclude\b|\bfun\b|\bnull\b|\bsizeof\b|\bpublic\b|\bin\b|\bdefault\b|\bdo\b|\bwith\b|\bevent\b|\binterface\b|\bmodule\b|\btype\b|\bsends\b|\bcreates\b|\bmachine\b|\breceives\b|\bstate\b|\bon\b|\bgoto\b|\bignore\b|\bdefer\b|\brename\b|\bobserves\b|\bcold\b|\bhot\b|\btest\b|\brefines\b|\bimplementation\b|\bpush\b|\bnew\b|\bprint\b|\bto\b|\bunion\b|\bhidee\b|\benum\b|\bhidei\b</string>
 			<key>name</key>
 			<string>keyword.other</string>
 		</dict>
@@ -78,7 +78,7 @@
 		</dict>
 		<dict>
 			<key>match</key>
-			<string>\bint\b|\bbool\b|\bseq\b|\bmap\b|\bany\b|\bforeign\b</string>
+			<string>\bint\b|\bbool\b|\bseq\b|\bmap\b|\bany\b|\bforeign\b|\bfloat\b|\bdata\b|</string>
 			<key>name</key>
 			<string>storage.type</string>
 		</dict>

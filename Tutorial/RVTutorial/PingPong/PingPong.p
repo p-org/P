@@ -1,22 +1,19 @@
-event PING assert 1: IClient; 
+event PING assert 1: ClientMachine; 
 event PONG assert 1; 
 event SUCCESS;
 
-interface IClient(int) receives PONG;
-interface IServer() receives PING;
-
-machine Client
+machine ClientMachine
 receives PONG;
 sends PING;
 {
-  var server: IServer;
+  var server: ServerMachine;
   var numIterations: int;  
 
   start state Init {  
     entry (n: int) { 	
 	    print "Client created\n";
       numIterations = n;
-      server = new IServer(); 
+      server = new ServerMachine(); 
       raise SUCCESS; 
     } 
     on SUCCESS goto SendPing; 
@@ -42,12 +39,12 @@ sends PING;
   }
 }
 
-machine Server
+machine ServerMachine
 receives PING, TIMEOUT;
 sends PONG, START;
 { 
   var timer: TimerPtr;
-  var client: IClient;
+  var client: ClientMachine;
 
   start state Init {  
     entry { 
@@ -62,7 +59,7 @@ sends PONG, START;
   }
   
   state Sleep { 
-    entry (m: IClient) {       
+    entry (m: ClientMachine) {       
       client =  m;
       StartTimer(timer, 1000);
     } 

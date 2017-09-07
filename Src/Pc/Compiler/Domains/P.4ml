@@ -397,7 +397,7 @@ domain PStaticTyping extends PData, PError
 	TypeDefError ::= (name: String).
 
 	ERROR0(errorMsg),
-	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceDecl(name, _, _, _),
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceDecl(name, _, _, _), no MachineDecl(name, _),
 						  errorMsg = strJoin("Undefined type: ", name).
 	
 	ERROR2(td1.id, td2.id, "Multiple type definitions for a type name"),

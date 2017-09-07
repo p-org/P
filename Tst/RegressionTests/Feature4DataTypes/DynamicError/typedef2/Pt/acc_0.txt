@@ -90,9 +90,6 @@ OUT: <RaiseLog> Machine client-1 raised Event next
 OUT: <StateLog> Machine client-1 exiting State client_StartReqResp
 OUT: <StateLog> Machine client-1 entering State client_StartReqResp
 OUT: <EnqueueLog> Enqueued Event <halt, null> in Main-1 by client-1
-OUT: <DequeueLog> Dequeued Event <halt, null> at Machine Main-1
-OUT: <StateLog> Machine Main-1 exiting State Main_Init
-OUT: <HaltLog> Machine Main-1 HALTED
 OUT: 
 OUT: ERROR: typedef2.p(57,5,57,11): error PC1001: Assert failed
 OUT: 

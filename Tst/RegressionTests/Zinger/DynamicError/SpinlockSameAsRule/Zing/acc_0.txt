@@ -29,7 +29,7 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_16.bl,)
+Expression: assert(tmpVar_1.bl,)
 Comment: SpinlockSameAsRule.p(47,4,47,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 1:
@@ -41,7 +41,7 @@ Trace-Log 1:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_16.bl,)
+Expression: assert(tmpVar_1.bl,)
 Comment: SpinlockSameAsRule.p(47,4,47,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 2:
@@ -65,12 +65,12 @@ Trace-Log 3:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
-<AnnounceLog> Enqueued Event < ____REL, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____REL, 1 > to Spinlock spec machine
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_16.bl,)
+Expression: assert(tmpVar_1.bl,)
 Comment: SpinlockSameAsRule.p(47,4,47,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 4:
@@ -78,12 +78,12 @@ Trace-Log 4:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
-<AnnounceLog> Enqueued Event < ____REL, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____REL, 0 > to Spinlock spec machine
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_16.bl,)
+Expression: assert(tmpVar_1.bl,)
 Comment: SpinlockSameAsRule.p(47,4,47,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 5:
@@ -107,8 +107,8 @@ Trace-Log 6:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init
@@ -124,8 +124,8 @@ Trace-Log 7:
 <StateLog> Machine Spinlock-0 entering State Init
 <CreateLog> Created Machine Main-0
 <StateLog> Machine Main-0 entering State Init
-<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
+<AnnounceLog> Enqueued Event < ____ACQ, 0 > to Spinlock spec machine
 <AnnounceLog> Enqueued Event < ____ACQ, 1 > to Spinlock spec machine
 <RaiseLog> Machine Spinlock-0 raised Event ____Error1
 <StateLog> Machine Spinlock-0 exiting State Init

@@ -20,29 +20,33 @@ OUT: <RaiseLog> Machine Main-1 raised Event E2
 OUT: <ActionLog> Machine Main-1 executing action for Event E2 in State Main_Real1_Init
 OUT: <FunctionLog> Machine Main-1 executing Function Action1
 OUT: <NullTransLog> Null transition taken by Machine Main-1
-OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_Init
-OUT: <NullTransLog> Null transition taken by Machine Real2-1
-OUT: <StateLog> Machine Real2-1 exiting State Real2_Real2_Init
-OUT: <EnqueueLog> Enqueued Event <E4, null> in Main-1 by Real2-1
-OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_S1
 OUT: <StateLog> Machine Main-1 exiting State Main_Real1_Init
 OUT: <EnqueueLog> Enqueued Event <E2, E1> in Real2-1 by Main-1
-OUT: <EnqueueLog> Enqueued Event <E0, 100> in Real2-1 by Main-1
-OUT: <EnqueueLog> Enqueued Event <E2, null> in Real2-1 by Main-1
-OUT: <EnqueueLog> Enqueued Event <E2, E0> in Real2-1 by Main-1
-OUT: <EnqueueLog> Enqueued Event <E2, E0> in Real2-1 by Main-1
+OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_Init
 OUT: <DequeueLog> Dequeued Event <E2, E1> at Machine Real2-1
-OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_S1
+OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_Init
+OUT: <NullTransLog> Null transition taken by Machine Real2-1
+OUT: <StateLog> Machine Real2-1 exiting State Real2_Real2_Init
+OUT: <EnqueueLog> Enqueued Event <E1, null> in Main-1 by Real2-1
+OUT: <EnqueueLog> Enqueued Event <E0, 100> in Real2-1 by Main-1
+OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_S1
 OUT: <DequeueLog> Dequeued Event <E0, 100> at Machine Real2-1
 OUT: <ActionLog> Machine Real2-1 executing action for Event E0 in State Real2_Real2_S1
+OUT: <EnqueueLog> Enqueued Event <E2, null> in Real2-1 by Main-1
 OUT: <DequeueLog> Dequeued Event <E2, null> at Machine Real2-1
 OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_S1
+OUT: <EnqueueLog> Enqueued Event <E2, E0> in Real2-1 by Main-1
 OUT: <DequeueLog> Dequeued Event <E2, E0> at Machine Real2-1
 OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_S1
+OUT: <EnqueueLog> Enqueued Event <E2, E0> in Real2-1 by Main-1
 OUT: <DequeueLog> Dequeued Event <E2, E0> at Machine Real2-1
 OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_S1
 OUT: <EnqueueLog> Enqueued Event <E2, E0> in Real2-1 by Main-1
 OUT: <EnqueueLog> Enqueued Event <E3, True> in Real2-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <E2, E0> at Machine Real2-1
+OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_S1
+OUT: <DequeueLog> Dequeued Event <E3, True> at Machine Real2-1
+OUT: <ActionLog> Machine Real2-1 executing action for Event E3 in State Real2_Real2_S1
 OUT: <StateLog> Machine Main-1 entering State Main_Real1_S1
 OUT: 
 OUT: ERROR: EventExprSemantics2.p(70,5,70,11): error PC1001: Assert failed

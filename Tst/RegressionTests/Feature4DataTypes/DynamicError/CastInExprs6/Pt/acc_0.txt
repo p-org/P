@@ -16,6 +16,7 @@ OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_S
 OUT: <CreateLog> Created Machine XYZ-1
+OUT: <StateLog> Machine XYZ-1 entering State XYZ_init
 OUT: 
 OUT: ERROR: value null is not a member of type <INT, INT, >
 OUT: 

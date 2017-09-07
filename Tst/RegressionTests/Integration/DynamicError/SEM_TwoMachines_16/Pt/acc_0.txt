@@ -16,6 +16,7 @@ OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
 OUT: <CreateLog> Created Machine Real2-1
+OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_Init
 OUT: <RaiseLog> Machine Main-1 raised Event E1
 OUT: <ActionLog> Machine Main-1 executing action for Event E1 in State Main_Real1_Init
 OUT: <FunctionLog> Machine Main-1 executing Function Action1

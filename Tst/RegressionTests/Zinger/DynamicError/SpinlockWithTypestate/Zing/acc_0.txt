@@ -29,7 +29,7 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_1.bl,)
+Expression: assert(tmpVar_10.bl,)
 Comment: SpinlockWithTypestate.p(38,4,38,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 1:
@@ -53,7 +53,7 @@ Trace-Log 2:
 
 Error:
 P Assertion failed:
-Expression: assert(tmpVar_1.bl,)
+Expression: assert(tmpVar_10.bl,)
 Comment: SpinlockWithTypestate.p(38,4,38,10): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 3:

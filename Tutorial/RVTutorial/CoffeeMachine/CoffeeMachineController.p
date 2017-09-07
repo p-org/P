@@ -1,20 +1,18 @@
-event eInit : ICoffeeMachine;
+event eInit : CoffeeMakerMachine;
 
-interface ICoffeeMachineController() 
+machine CoffeeMkrControllerMachine
 receives
     eInit, eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans, eGrindComplete,
     eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,
     eDumpComplete, eReadyDoorOpened, TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
-
-machine CoffeeMachineController
 sends START, CANCEL, 
       eDumpComplete, eUnknownError, eNoWater, eEspressoComplete, eGrindComplete, eNoBeans, eTemperatureReached, eBeginHeating;
 {
     var timer: TimerPtr;
-    var coffeeMachine: ICoffeeMachine;
+    var coffeeMachine: CoffeeMakerMachine;
 
     start state Init {
-        on eInit goto WarmingUp with (x: ICoffeeMachine) {
+        on eInit goto WarmingUp with (x: CoffeeMakerMachine) {
             coffeeMachine = x;
             timer = CreateTimer(this);
         }

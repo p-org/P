@@ -1,5 +1,4 @@
-interface ITimer(machine) receives START, CANCEL;
-type TimerPtr = ITimer;
+type TimerPtr = machine;
 
 // events from client to timer
 event START: int;
@@ -11,8 +10,8 @@ event CANCEL_FAILURE: TimerPtr;
 
 //Functions for interacting with the timer machine
 fun CreateTimer(owner : machine): TimerPtr {
-	var m: ITimer;
-	m = new ITimer(owner);
+	var m: Timer;
+	m = new Timer(owner);
 	return m;
 }
 
@@ -29,6 +28,7 @@ fun CancelTimer(timer: TimerPtr) {
 event UNIT; 
 
 machine Timer
+receives START, CANCEL;
 sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
 {
   var client: machine;
@@ -44,7 +44,7 @@ sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
 
   state WaitForReq {
     on CANCEL goto WaitForReq with { 
-      send client, CANCEL_FAILURE, this to ITimer;
+      send client, CANCEL_FAILURE, this to Timer;
     } 
     on START goto WaitForCancel;
   }
@@ -52,14 +52,14 @@ sends TIMEOUT, CANCEL_SUCCESS, CANCEL_FAILURE;
   state WaitForCancel {
     ignore START;
     on null goto WaitForReq with { 
-	  send client, TIMEOUT, this to ITimer; 
+	  send client, TIMEOUT, this to Timer; 
 	}
     on CANCEL goto WaitForReq with {
       if ($) {
-        send client, CANCEL_SUCCESS, this to ITimer;
+        send client, CANCEL_SUCCESS, this to Timer;
       } else {
-        send client, CANCEL_FAILURE, this to ITimer;
-        send client, TIMEOUT, this to ITimer;
+        send client, CANCEL_FAILURE, this to Timer;
+        send client, TIMEOUT, this to Timer;
       }
     }
   }

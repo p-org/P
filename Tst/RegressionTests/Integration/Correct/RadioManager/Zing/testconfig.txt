@@ -1,0 +1,2 @@
+arg: -fbound:3
+dsc: zinger.exe, Feature Integration: WDG example with groups

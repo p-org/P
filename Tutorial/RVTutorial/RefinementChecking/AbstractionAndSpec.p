@@ -30,3 +30,15 @@ spec RespIdsAreMonotonicallyIncreasing observes eResponse {
     }
   }
 }
+
+machine UNSOUNDAbstractServerMachine
+sends eResponse;
+{
+  start state Init {
+    on eRequest do (payload: requestType){
+      var successful : bool;
+      successful = true;
+      send payload.source, eResponse, (id = payload.id, success = successful);
+    }
+  }
+}

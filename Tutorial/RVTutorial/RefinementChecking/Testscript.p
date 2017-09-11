@@ -8,6 +8,8 @@ module ServerModule = {
 
 module AbstractServerModule = { ServerClientInterface -> AbstractServerMachine };
 
+module UNSOUNDAbstractServerModule = { ServerClientInterface -> UNSOUNDAbstractServerMachine };
+
 //Check that the composition of ClientModule and AbstractServerModule is safe.
 test testcase0: main TestDriver0 in 
   (compose { TestDriver0 }, 
@@ -20,5 +22,15 @@ test testcase1:
   refines 
   main TestDriver0 in (compose TestDriver1, AbstractServerModule);
 
+
+
 //C code generation for the implementation.
 implementation (compose ClientModule, ServerModule);
+
+
+//Check that server abstraction is correct.
+test testcase2: 
+  main TestDriver0 in (compose TestDriver1, ServerModule) 
+  refines 
+  main TestDriver0 in (compose TestDriver1, UNSOUNDAbstractServerModule);
+

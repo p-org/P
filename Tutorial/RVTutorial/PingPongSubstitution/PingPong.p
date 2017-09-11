@@ -42,7 +42,7 @@ sends PING;
   }
 }
 
-machine Server
+machine Server1000
 receives PING, TIMEOUT;
 sends PONG, START;
 { 
@@ -68,6 +68,37 @@ sends PONG, START;
     } 
     on TIMEOUT goto WaitPing with { 
 	    print "Server sending PONG\n";
+      send client, PONG; 
+    }
+  }
+}
+
+machine Server2000
+receives PING, TIMEOUT;
+sends PONG, START;
+{ 
+  var timer: TimerPtr;
+  var client: IClient;
+
+  start state Init {  
+    entry { 
+      print "Server created\n";
+      timer = CreateTimer(this);
+      goto WaitPing;
+    }
+  }
+
+  state WaitPing { 
+    on PING goto Sleep; 
+  }
+  
+  state Sleep { 
+    entry (m: IClient) {       
+      client =  m;
+      StartTimer(timer, 2000);
+    } 
+    on TIMEOUT goto WaitPing with { 
+      print "Server sending PONG\n";
       send client, PONG; 
     }
   }

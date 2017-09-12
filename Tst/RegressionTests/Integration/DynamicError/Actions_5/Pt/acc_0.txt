@@ -16,10 +16,10 @@ OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Real_Init
 OUT: <CreateLog> Created Machine Ghost-1
+OUT: <StateLog> Machine Ghost-1 entering State Ghost_Ghost_Init
 OUT: <RaiseLog> Machine Main-1 raised Event unit
 OUT: <StateLog> Machine Main-1 entering State Main_Real_S1
 OUT: <EnqueueLog> Enqueued Event <E1, null> in Ghost-1 by Main-1
-OUT: <StateLog> Machine Ghost-1 entering State Ghost_Ghost_Init
 OUT: <DequeueLog> Dequeued Event <E1, null> at Machine Ghost-1
 OUT: <StateLog> Machine Ghost-1 exiting State Ghost_Ghost_Init
 OUT: <StateLog> Machine Ghost-1 entering State Ghost_Ghost_S1

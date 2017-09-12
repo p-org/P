@@ -16,7 +16,6 @@ OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Init
 OUT: <CreateLog> Created Machine B-1
-OUT: <StateLog> Machine B-1 entering State B_Init
 OUT: <FunctionLog> Machine Main-1 executing Function foo
 OUT: <EnqueueLog> Enqueued Event <E, null> in B-1 by Main-1
 OUT: <NullTransLog> Null transition taken by Machine Main-1

@@ -1,0 +1,10 @@
+=================================
+         Console output          
+=================================
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state S
+OUT: <CreateLog> Machine N(2) is created
+OUT: <StateLog> Machine N(2) entered state S
+OUT: <EnqueueLog> Enqueued event getres with payload < (1, 0, 0, 0), 1> on Machine N(2)
+OUT: 
+EXIT: 0

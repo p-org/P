@@ -22,31 +22,31 @@ OUT: <StateLog> Machine Node-2 entering State Node_Init_Main_Node
 OUT: <CreateLog> Created Machine Node-3
 OUT: <StateLog> Machine Node-3 entering State Node_Init_Main_Node
 OUT: <CreateLog> Created Machine Node-4
-OUT: <StateLog> Machine Node-4 entering State Node_Init_Main_Node
 OUT: <EnqueueLog> Enqueued Event <Next, Node(2)> in Node-1 by Main-1
+OUT: <EnqueueLog> Enqueued Event <Next, Node(3)> in Node-2 by Main-1
+OUT: <StateLog> Machine Node-4 entering State Node_Init_Main_Node
 OUT: <DequeueLog> Dequeued Event <Next, Node(2)> at Machine Node-1
 OUT: <StateLog> Machine Node-1 exiting State Node_Init_Main_Node
 OUT: <StateLog> Machine Node-1 entering State Node_SetNext_Main_Node
 OUT: <EnqueueLog> Enqueued Event <Ready, null> in Main-1 by Node-1
-OUT: <EnqueueLog> Enqueued Event <Next, Node(3)> in Node-2 by Main-1
 OUT: <DequeueLog> Dequeued Event <Next, Node(3)> at Machine Node-2
 OUT: <StateLog> Machine Node-2 exiting State Node_Init_Main_Node
 OUT: <StateLog> Machine Node-2 entering State Node_SetNext_Main_Node
 OUT: <EnqueueLog> Enqueued Event <Ready, null> in Main-1 by Node-2
 OUT: <EnqueueLog> Enqueued Event <Next, Node(4)> in Node-3 by Main-1
+OUT: <RaiseLog> Machine Node-2 raised Event Unit
+OUT: <StateLog> Machine Node-2 exiting State Node_SetNext_Main_Node
+OUT: <StateLog> Machine Node-2 entering State Node_Wait_Main_Node
+OUT: <RaiseLog> Machine Node-1 raised Event Unit
+OUT: <StateLog> Machine Node-1 exiting State Node_SetNext_Main_Node
+OUT: <StateLog> Machine Node-1 entering State Node_Wait_Main_Node
 OUT: <DequeueLog> Dequeued Event <Next, Node(4)> at Machine Node-3
 OUT: <StateLog> Machine Node-3 exiting State Node_Init_Main_Node
 OUT: <StateLog> Machine Node-3 entering State Node_SetNext_Main_Node
 OUT: <EnqueueLog> Enqueued Event <Ready, null> in Main-1 by Node-3
-OUT: <RaiseLog> Machine Node-1 raised Event Unit
-OUT: <StateLog> Machine Node-1 exiting State Node_SetNext_Main_Node
-OUT: <StateLog> Machine Node-1 entering State Node_Wait_Main_Node
 OUT: <RaiseLog> Machine Node-3 raised Event Unit
 OUT: <StateLog> Machine Node-3 exiting State Node_SetNext_Main_Node
 OUT: <StateLog> Machine Node-3 entering State Node_Wait_Main_Node
-OUT: <RaiseLog> Machine Node-2 raised Event Unit
-OUT: <StateLog> Machine Node-2 exiting State Node_SetNext_Main_Node
-OUT: <StateLog> Machine Node-2 entering State Node_Wait_Main_Node
 OUT: <EnqueueLog> Enqueued Event <Next, Node(1)> in Node-4 by Main-1
 OUT: <RaiseLog> Machine Main-1 raised Event Unit
 OUT: <StateLog> Machine Main-1 exiting State Main_Boot_Main_Ring4
@@ -85,94 +85,6 @@ OUT: <RaiseLog> Machine Main-1 raised Event Unit
 OUT: <StateLog> Machine Main-1 exiting State Main_RandomComm_Main_Ring4
 OUT: <StateLog> Machine Main-1 entering State Main_RandomComm_Main_Ring4
 OUT: <EnqueueLog> Enqueued Event <Send, Node(4)> in Node-4 by Main-1
-OUT: <DequeueLog> Dequeued Event <Sending, Node(4)> at Machine Node-1
-OUT: <StateLog> Machine Node-1 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-1 entering State Node_KeepSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Sending, Node(4)> in Node-2 by Node-1
-OUT: <DequeueLog> Dequeued Event <Sending, Node(4)> at Machine Node-2
-OUT: <StateLog> Machine Node-2 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-2 entering State Node_KeepSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Sending, Node(4)> in Node-3 by Node-2
-OUT: <RaiseLog> Machine Node-2 raised Event Unit
-OUT: <StateLog> Machine Node-2 exiting State Node_KeepSending_Main_Node
-OUT: <StateLog> Machine Node-2 entering State Node_Wait_Main_Node
-OUT: <RaiseLog> Machine Node-1 raised Event Unit
-OUT: <StateLog> Machine Node-1 exiting State Node_KeepSending_Main_Node
-OUT: <StateLog> Machine Node-1 entering State Node_Wait_Main_Node
-OUT: <DequeueLog> Dequeued Event <Sending, Node(4)> at Machine Node-3
-OUT: <StateLog> Machine Node-3 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-3 entering State Node_KeepSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Sending, Node(4)> in Node-4 by Node-3
-OUT: <RaiseLog> Machine Main-1 raised Event Unit
-OUT: <StateLog> Machine Main-1 exiting State Main_RandomComm_Main_Ring4
-OUT: <StateLog> Machine Main-1 entering State Main_RandomComm_Main_Ring4
-OUT: <EnqueueLog> Enqueued Event <Send, Node(4)> in Node-4 by Main-1
-OUT: <RaiseLog> Machine Main-1 raised Event Unit
-OUT: <StateLog> Machine Main-1 exiting State Main_RandomComm_Main_Ring4
-OUT: <StateLog> Machine Main-1 entering State Main_RandomComm_Main_Ring4
-OUT: <EnqueueLog> Enqueued Event <Send, Node(4)> in Node-4 by Main-1
-OUT: <RaiseLog> Machine Node-3 raised Event Unit
-OUT: <StateLog> Machine Node-3 exiting State Node_KeepSending_Main_Node
-OUT: <StateLog> Machine Node-3 entering State Node_Wait_Main_Node
-OUT: <RaiseLog> Machine Main-1 raised Event Unit
-OUT: <StateLog> Machine Main-1 exiting State Main_RandomComm_Main_Ring4
-OUT: <StateLog> Machine Main-1 entering State Main_RandomComm_Main_Ring4
-OUT: <EnqueueLog> Enqueued Event <Send, Node(4)> in Node-4 by Main-1
-OUT: <DequeueLog> Dequeued Event <Send, Node(4)> at Machine Node-4
-OUT: <StateLog> Machine Node-4 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-4 entering State Node_StartSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Sending, Node(4)> in Node-1 by Node-4
-OUT: <DequeueLog> Dequeued Event <Sending, Node(4)> at Machine Node-1
-OUT: <StateLog> Machine Node-1 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-1 entering State Node_KeepSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Sending, Node(4)> in Node-2 by Node-1
-OUT: <RaiseLog> Machine Node-4 raised Event Unit
-OUT: <StateLog> Machine Node-4 exiting State Node_StartSending_Main_Node
-OUT: <StateLog> Machine Node-4 entering State Node_Wait_Main_Node
-OUT: <DequeueLog> Dequeued Event <Sending, Node(4)> at Machine Node-4
-OUT: <StateLog> Machine Node-4 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-4 entering State Node_KeepSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Done, Node(4)> in Node-1 by Node-4
-OUT: <RaiseLog> Machine Main-1 raised Event Unit
-OUT: <StateLog> Machine Main-1 exiting State Main_RandomComm_Main_Ring4
-OUT: <StateLog> Machine Main-1 entering State Main_RandomComm_Main_Ring4
-OUT: <EnqueueLog> Enqueued Event <Send, Node(4)> in Node-4 by Main-1
-OUT: <DequeueLog> Dequeued Event <Sending, Node(4)> at Machine Node-2
-OUT: <StateLog> Machine Node-2 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-2 entering State Node_KeepSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Sending, Node(4)> in Node-3 by Node-2
-OUT: <RaiseLog> Machine Node-4 raised Event Unit
-OUT: <StateLog> Machine Node-4 exiting State Node_KeepSending_Main_Node
-OUT: <StateLog> Machine Node-4 entering State Node_Wait_Main_Node
-OUT: <DequeueLog> Dequeued Event <Send, Node(4)> at Machine Node-4
-OUT: <StateLog> Machine Node-4 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-4 entering State Node_StartSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Sending, Node(4)> in Node-1 by Node-4
-OUT: <RaiseLog> Machine Node-1 raised Event Unit
-OUT: <StateLog> Machine Node-1 exiting State Node_KeepSending_Main_Node
-OUT: <StateLog> Machine Node-1 entering State Node_Wait_Main_Node
-OUT: <DequeueLog> Dequeued Event <Done, Node(4)> at Machine Node-1
-OUT: <StateLog> Machine Node-1 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-1 entering State Node_StopSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Done, Node(4)> in Node-2 by Node-1
-OUT: <DequeueLog> Dequeued Event <Sending, Node(4)> at Machine Node-3
-OUT: <StateLog> Machine Node-3 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-3 entering State Node_KeepSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Sending, Node(4)> in Node-4 by Node-3
-OUT: <RaiseLog> Machine Node-2 raised Event Unit
-OUT: <StateLog> Machine Node-2 exiting State Node_KeepSending_Main_Node
-OUT: <StateLog> Machine Node-2 entering State Node_Wait_Main_Node
-OUT: <DequeueLog> Dequeued Event <Done, Node(4)> at Machine Node-2
-OUT: <StateLog> Machine Node-2 exiting State Node_Wait_Main_Node
-OUT: <StateLog> Machine Node-2 entering State Node_StopSending_Main_Node
-OUT: <EnqueueLog> Enqueued Event <Done, Node(4)> in Node-3 by Node-2
-OUT: <RaiseLog> Machine Main-1 raised Event Unit
-OUT: <StateLog> Machine Main-1 exiting State Main_RandomComm_Main_Ring4
-OUT: <StateLog> Machine Main-1 entering State Main_RandomComm_Main_Ring4
-OUT: <EnqueueLog> Enqueued Event <Send, Node(4)> in Node-4 by Main-1
-OUT: <RaiseLog> Machine Node-4 raised Event Unit
-OUT: <StateLog> Machine Node-4 exiting State Node_StartSending_Main_Node
-OUT: <StateLog> Machine Node-4 entering State Node_Wait_Main_Node
 OUT: <DequeueLog> Dequeued Event <Send, Node(4)> at Machine Node-4
 OUT: <StateLog> Machine Node-4 exiting State Node_Wait_Main_Node
 OUT: <StateLog> Machine Node-4 entering State Node_StartSending_Main_Node

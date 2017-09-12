@@ -13,21 +13,6 @@ EXIT (csc.exe): 0
 OUT: -----------------------------------------------------
 OUT: Total Schedules Explored: 0
 OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 10
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 20
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 30
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 40
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 50
-OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Init
 OUT: <FunctionLog> Machine Main-1 executing Function Foo

@@ -39,8 +39,6 @@ OUT: <StateLog> Machine Real2-1 exiting State Real2_Real2_Init
 OUT: <EnqueueLog> Enqueued Event <E0, null> in Main-1 by Real2-1
 OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_S1
 OUT: <EnqueueLog> Enqueued Event <E3, True> in Real2-1 by Main-1
-OUT: <DequeueLog> Dequeued Event <E3, True> at Machine Real2-1
-OUT: <ActionLog> Machine Real2-1 executing action for Event E3 in State Real2_Real2_S1
 OUT: <StateLog> Machine Main-1 entering State Main_Real1_S1
 OUT: <DequeueLog> Dequeued Event <E0, null> at Machine Main-1
 OUT: <StateLog> Machine Main-1 exiting State Main_Real1_S1

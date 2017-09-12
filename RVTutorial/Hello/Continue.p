@@ -1,0 +1,5 @@
+fun Continue() : bool
+{ 
+    return $;
+}
+

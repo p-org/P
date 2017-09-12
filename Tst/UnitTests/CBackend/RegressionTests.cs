@@ -12,7 +12,7 @@ using NUnit.Framework;
 namespace UnitTests.CBackend
 {
     [TestFixture]
-    [Parallelizable(ParallelScope.Children)]
+    //[Parallelizable(ParallelScope.Children)]
     public class RegressionTests
     {
         private ThreadLocal<Compiler> PCompiler { get; } = new ThreadLocal<Compiler>(() => new Compiler(true));

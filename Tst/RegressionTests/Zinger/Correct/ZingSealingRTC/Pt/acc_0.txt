@@ -18,7 +18,6 @@ OUT: <StateLog> Machine Main-1 entering State Main_S1
 OUT: <CreateLog> Created Machine M3-1
 OUT: <StateLog> Machine M3-1 entering State M3_S1
 OUT: <CreateLog> Created Machine M2-1
-OUT: <StateLog> Machine M2-1 entering State M2_S1
 OUT: <FunctionLog> Machine Main-1 executing Function sealwithRTC
 OUT: <EnqueueLog> Enqueued Event <E1, null> in M2-1 by Main-1
 OUT: <FunctionLog> Machine Main-1 executing Function unsealwithRTC

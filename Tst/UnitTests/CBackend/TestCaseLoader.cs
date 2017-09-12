@@ -19,7 +19,14 @@ namespace UnitTests.CBackend
            "RegressionTests\\Feature1SMLevelDecls",  "RegressionTests\\Feature2Stmts", "RegressionTests\\Feature3Exprs",
            "RegressionTests\\Feature4DataTypes", "RegressionTests\\Integration", "RegressionTests\\Zinger"
             };
-
+        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Combined",
+        //   "RegressionTests\\Feature1SMLevelDecls" };
+        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Feature2Stmts" };
+        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Feature3Exprs", "RegressionTests\\Zinger" };
+        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Feature4DataTypes" };
+        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Integration\\DynamicError" };
+        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Integration\\Correct", 
+        //                                                                  "RegressionTests\\Integration\\StaticError" };
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName)
         {
             return from testDir in TestDirs

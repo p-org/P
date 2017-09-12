@@ -16,11 +16,7 @@ OUT: -----------------------------------------------------
 OUT: <CreateLog> Created Machine Main-1
 OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
 OUT: <CreateLog> Created Machine Real2-1
-OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_Init
 OUT: <EnqueueLog> Enqueued Event <E2, False> in Real2-1 by Main-1
-OUT: <DequeueLog> Dequeued Event <E2, False> at Machine Real2-1
-OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_Init
-OUT: <FunctionLog> Machine Real2-1 executing Function Action2
 OUT: 
 OUT: ERROR: RaisedNullDetected.p(17,4,17,9): error PC1001: Raised event must be non-null
 OUT: 

@@ -42,7 +42,7 @@ sends PING;
   }
 }
 
-machine Server1000
+machine ServerImpl
 receives PING, TIMEOUT;
 sends PONG, START;
 { 
@@ -73,7 +73,7 @@ sends PONG, START;
   }
 }
 
-machine Server2000
+machine ServerAbs
 receives PING, TIMEOUT;
 sends PONG, START;
 { 

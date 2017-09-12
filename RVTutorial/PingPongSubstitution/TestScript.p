@@ -1,8 +1,31 @@
 module System = 
 {
-    IClient -> Client, IServer -> Server, Timer
+    IClient -> Client, IServer -> ServerImpl
 };
 
-test Test0: main TestMachine0 in (assert Safety in (union { TestMachine0 }, System));
+module System' = 
+{
+    IClient -> Client, IServer -> ServerAbs
+};
 
-test Test1: main TestMachine1 in (assert Liveness in (union { TestMachine1 }, System));
+
+// Similar behavior in union or composition.
+
+module ClientModule = 
+{
+  IClient -> Client
+};
+
+module ServerImplModule = 
+{
+  IServer -> ServerImpl
+};
+
+module ServerAbsModule =
+{
+  IServer -> ServerAbs
+};
+
+test test0: (compose ClientModule, ServerImplModule);
+
+test test1: (compose ClientModule, ServerAbsModule);

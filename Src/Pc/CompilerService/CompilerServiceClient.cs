@@ -70,7 +70,7 @@ namespace Microsoft.Pc
                         }
                         else
                         {
-                            // now lock a Compiler object until we re disposed so we can get better
+                            // now lock a Compiler object until we are disposed so we can get better
                             // performance by sharing the same Compiler across compile, link and test.
                             service.WriteMessage(CompilerLockMessage);
                             id = service.ReadMessage();

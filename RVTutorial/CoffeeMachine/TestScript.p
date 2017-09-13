@@ -1,4 +1,4 @@
-module CoffeeMaker = { CoffeeMkrControllerMachine, CoffeeMakerMachine, Timer };
+module CoffeeMaker = { CoffeeMakerControllerMachine, CoffeeMakerMachine, Timer };
 
 test Test0: main Main0 in (union { EspressoButtonMachine, Main0 }, CoffeeMaker);
 

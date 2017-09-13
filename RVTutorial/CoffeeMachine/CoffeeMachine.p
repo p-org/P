@@ -11,10 +11,10 @@ machine CoffeeMakerMachine
 receives eBeginHeating, eGrindBeans, eStartEspresso, eStartSteamer, eStopSteamer, eDumpGrinds;
 sends eTemperatureReached, eNoBeans, eGrindComplete, eEspressoComplete, eNoWater, eUnknownError, eDumpComplete;
 {
-    var controller: CoffeeMkrControllerMachine;
+    var controller: CoffeeMakerControllerMachine;
 
     start state Init {
-        entry (x: CoffeeMkrControllerMachine) {
+        entry (x: CoffeeMakerControllerMachine) {
             controller = x;
         }
         on eBeginHeating do { 

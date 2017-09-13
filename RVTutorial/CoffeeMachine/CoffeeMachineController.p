@@ -1,6 +1,6 @@
 event eInit : CoffeeMakerMachine;
 
-machine CoffeeMkrControllerMachine
+machine CoffeeMakerControllerMachine
 receives
     eInit, eDoorOpened, eDoorClosed, eUnknownError, eTemperatureReached, eNoBeans, eGrindComplete,
     eEspressoButtonPressed, eEspressoComplete, eNoWater, eSteamerButtonOn, eSteamerButtonOff,

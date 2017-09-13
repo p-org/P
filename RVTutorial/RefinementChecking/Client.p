@@ -18,9 +18,6 @@ sends eRequest;
       server = payload;
       goto StartPumpingRequests;
     }
-    exit {
-
-    }
   }
 
   state StartPumpingRequests {

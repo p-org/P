@@ -9,7 +9,7 @@ module System' =
 };
 
 
-// Similar behavior in union or composition.
+// Similar behavior in union.
 
 module ClientModule = 
 {
@@ -26,6 +26,9 @@ module ServerAbsModule =
   IServer -> ServerAbs
 };
 
-test test0: (compose ClientModule, ServerImplModule);
+//same as system
+module System = (union ClientModule, ServerImplModule);
 
-test test1: (compose ClientModule, ServerAbsModule);
+
+//same as system'
+module System' = (union ClientModule, ServerAbsModule);

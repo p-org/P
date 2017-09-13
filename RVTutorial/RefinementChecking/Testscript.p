@@ -2,7 +2,6 @@ module ClientModule = { ClientInterface -> ClientMachine };
 
 module ServerModule = {
   ServerClientInterface -> ServerMachine,
-  ServerHelperInterface -> ServerMachine,
   HelperInterface -> HelperMachine
 };
 

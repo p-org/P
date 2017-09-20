@@ -4,7 +4,7 @@ The DSClientMachine creates the datastructure state machine.
 It creates the replicated datastructure state machine if fault tolerance is needed.
 **********************************/
 
-machine DSClientMachine : SMRClientInterface
+machine DSClientMachine
 sends eSMROperation, eDSOperation;
 {
     var numOfOperations : int;
@@ -14,7 +14,7 @@ sends eSMROperation, eDSOperation;
     start state Init {
         entry (payload: data){
             numOfOperations = payload as int;
-            repDS = new SMRServerInterface((client = this as SMRClientInterface, reorder = false, isRoot = true, ft = FT1, val = 0));
+            repDS = new SMRServerInterface((client = this to SMRClientInterface, reorder = false, isRoot = true, ft = FT1, val = 0));
             raise local;
         }
 
@@ -72,7 +72,7 @@ sends eSMROperation, eDSOperation;
                 val = ChooseVal();
 
                 //send the operation to replicated data-structure
-                SendSMROperation(operationId, repDS, eDSOperation, (op = operation, val = val), this as SMRClientInterface);
+                SendSMROperation(operationId, repDS, eDSOperation, (op = operation, val = val), this to SMRClientInterface);
 
                 print "Performed operation {0}({1}) with operation id = {2}", operation, val, operationId;
 

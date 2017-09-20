@@ -1,0 +1,3 @@
+runPrt: ..\..\..\..\..\..\Tst\PrtTester\$(Configuration)\$(Platform)\Tester.exe
+acc: .\
+dsc: runtime, Liveness: Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)

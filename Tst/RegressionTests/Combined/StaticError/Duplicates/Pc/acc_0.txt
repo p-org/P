@@ -3,6 +3,7 @@
 =================================
 OUT: Duplicates.p(5,7,5,8): error PC1001: Syntax error - An event with name x already declared
 OUT: Duplicates.p(13,2,12,3): error PC1001: Syntax error - A state with name S1 already declared
+OUT: Duplicates.p(18,9,18,13): error PC1001: Syntax error - A machine with name Main already declared
 OUT: Duplicates.p(20,6,20,7): error PC1001: Syntax error - A variable with name x already declared
 OUT: Duplicates.p(34,2,33,3): error PC1001: Syntax error - A state with name S2 already declared
 OUT: Duplicates.p(38,6,38,9): error PC1001: Syntax error - A function with name foo already declared

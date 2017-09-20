@@ -1,0 +1,30 @@
+=================================
+         Console output          
+=================================
+OUT: Writing receive7.cs ...
+OUT: Writing receive7.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Init
+OUT: <CreateLog> Created Machine B-1
+OUT: <EnqueueLog> Enqueued Event <F, null> in B-1 by Main-1
+OUT: <StateLog> Machine B-1 entering State B_Init
+OUT: <RaiseLog> Machine B-1 raised Event Unit
+OUT: <StateLog> Machine B-1 exiting State B_Init
+OUT: <StateLog> Machine B-1 entering State B_X
+OUT: <NullTransLog> Null transition taken by Machine B-1
+OUT: <DequeueLog> Dequeued Event <F, null> at Machine B-1
+OUT: <StateLog> Machine B-1 exiting State B_X
+OUT: 
+OUT: ERROR: receive7.p(32,22,32,28): error PC1001: Assert failed
+OUT: 
+EXIT: -1

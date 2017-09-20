@@ -4,7 +4,7 @@ Server responds with eResponse event for each eRequest event.
 The responses must be in the same order as the requests being sent.
 **************************************************************************/
 
-machine ClientMachine : ClientInterface
+machine ClientMachine
 sends eRequest;
 {
   var server : ServerClientInterface;
@@ -30,7 +30,7 @@ sends eRequest;
       index = 0;
       while(index < 2)
       {
-          send server, eRequest, (source = this, id = nextReqId);
+          send server, eRequest, (source = this to ClientInterface, id = nextReqId);
           nextReqId = nextReqId + 1;
           index = index + 1;
       }

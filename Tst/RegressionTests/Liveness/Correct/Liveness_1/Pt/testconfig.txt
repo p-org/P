@@ -1,0 +1,1 @@
+dsc: ptester, Liveness: simplest sample demonstrating liveness checking

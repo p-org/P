@@ -1,6 +1,6 @@
 //Interfaces and model types
-type ITimer(ITimerClient) = { eStartTimer, eCancelTimer };
-type ITimerClient() = { eTimeOut, eCancelSuccess, eCancelFailure }; 
+interface ITimer(ITimerClient) receives eStartTimer, eCancelTimer;
+interface ITimerClient() receives eTimeOut, eCancelSuccess, eCancelFailure; 
 type TimerPtr = ITimer;
 
 // events from client to timer
@@ -10,10 +10,3 @@ event eCancelTimer;
 event eTimeOut: TimerPtr;
 event eCancelSuccess: TimerPtr;
 event eCancelFailure: TimerPtr;
-
-//Function declarations
-extern fun StartTimer(timer: TimerPtr, time: int);
-extern fun CancelTimer(timer: TimerPtr);
-extern fun CreateTimer 
-creates ITimer;
-(owner: ITimerClient): TimerPtr;

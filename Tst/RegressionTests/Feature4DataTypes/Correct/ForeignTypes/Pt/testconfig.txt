@@ -1,0 +1,1 @@
+dsc: test the foreign type implementation

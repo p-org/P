@@ -34,7 +34,7 @@ fun PerformParticipantOp(opt: OperationType, oldVal: data)
 }
 
 
-machine ClientMachine : ClientInterface
+machine ClientMachine
 receives eRespPartStatus, eTransactionFailed, eTransactionSuccess, eTimeOut, eCancelSuccess, eCancelFailure;
 sends eTransaction, eMonitorTransaction, eReadPartStatus, eStartTimer, eCancelTimer;
 {

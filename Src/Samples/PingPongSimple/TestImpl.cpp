@@ -38,7 +38,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	// were recorded by this LogHandler.  The DGML identifiers computed below are designed to ensure the correct DGML graph is built.
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
 
-	std::wstring machineName = ConvertToUnicode((const char*)c->process->program->machines[c->instanceOf]->name);
+	std::wstring machineName = ConvertToUnicode((const char*)program->machines[c->instanceOf]->name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	char number[20]; // longest 32 bit integer in base 10 is 10 digits, plus room for null terminator.
 	_itoa(machineId, number, 16);
@@ -70,7 +70,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	{
 		//find out what state the sender machine is in so we can also log that information.
 		PRT_MACHINEINST_PRIV * s = (PRT_MACHINEINST_PRIV *)receiver;
-		eventName = ConvertToUnicode((const char*)s->process->program->events[PrtPrimGetEvent(event)]->name);
+		eventName = ConvertToUnicode((const char*)program->events[PrtPrimGetEvent(event)]->name);
 	}
 
 	switch (step)
@@ -113,7 +113,7 @@ PrtDistSMExceptionHandler(
 )
 {
 	int log_size = 1000;
-	PRT_STRING MachineName = vcontext->process->program->machines[vcontext->instanceOf]->name;
+	PRT_STRING MachineName = program->machines[vcontext->instanceOf]->name;
 	PRT_UINT32 MachineId = vcontext->id->valueUnion.mid->machineId;
 
 
@@ -201,8 +201,6 @@ int main(int argc, char *argv[])
 		// at the time you call dgmlMonitor.Close(), otherwise VS will maintain the graph inside VS.
 		dgmlMonitor.NewGraph(L"d:\\temp\\trace.dgml");
 	}
-
-	PrtInitialize(&P_GEND_PROGRAM);
 
     PRT_GUID processGuid;
     processGuid.data1 = 1;

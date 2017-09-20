@@ -1,6 +1,1 @@
-module System
-{
-    Main, FaultTolerantMachine, ReliableStorage, Service
-}
-
-test Test0: System;
+test Test0: main TestDriver in { TestDriver, IHaltable -> FaultTolerantMachine, IReliableStorage -> ReliableStorage, IService -> Service };

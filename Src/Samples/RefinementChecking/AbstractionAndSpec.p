@@ -1,4 +1,4 @@
-machine AbstractServerMachine: ServerClientInterface
+machine AbstractServerMachine
 sends eResponse;
 {
   start state Init {

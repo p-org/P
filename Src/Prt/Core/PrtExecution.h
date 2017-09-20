@@ -33,7 +33,6 @@ extern "C"{
 
 	typedef struct PRT_PROCESS_PRIV {
 		PRT_GUID				guid;
-		PRT_PROGRAMDECL			*program;
 		PRT_ERROR_FUN	        errorHandler;
 		PRT_LOG_FUN				logHandler;
 		PRT_RECURSIVE_MUTEX		processLock;
@@ -103,7 +102,7 @@ extern "C"{
 
 	typedef struct PRT_FUNSTACK_INFO
 	{
-		PRT_UINT32			funIndex;
+		PRT_FUNDECL			*funDecl;
 		PRT_VALUE			**locals;
 		PRT_BOOLEAN			freeLocals; 
 		PRT_VALUE			***refArgs;
@@ -148,7 +147,7 @@ extern "C"{
 		PRT_UINT32          *currentDeferredSetCompact;
 		PRT_UINT32          *inheritedActionSetCompact;
 		PRT_UINT32          *currentActionSetCompact;
-		PRT_UINT32			renamedName;
+		PRT_UINT32			interfaceBound;
 	} PRT_MACHINEINST_PRIV;
 
 	/** Sets a global variable to variable
@@ -161,10 +160,11 @@ extern "C"{
 	/** Sets a global variable to variable
 	* @param[in,out] context The context to modify.
 	* @param[in] varIndex The index of the variable to modify.
-	* @param[in] status Indicates whether this operation is transfer or swap
-	* @param[in,out] value The pointer to the value to transfer or swap
+	* @param[in] status Indicates whether this operation is move or swap
+	* @param[in,out] value The pointer to the value to move or swap
+	* @param[in]     type The type of data pointed to by value
 	*/
-	PRT_API void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE ** value);
+	PRT_API void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE ** value, _In_ PRT_TYPE *type);
 
 	/** Sets a global variable to variable
 	* @param[in,out] context The context to modify.
@@ -177,7 +177,7 @@ extern "C"{
 	PRT_MACHINEINST_PRIV *
 		PrtMkMachinePrivate(
 		_Inout_  PRT_PROCESS_PRIV		*process,
-		_In_  PRT_UINT32				renamedName,
+		_In_  PRT_UINT32				interfaceName,
 		_In_  PRT_UINT32				instanceOf,
 		_In_  PRT_VALUE					*payload
 		);
@@ -186,7 +186,8 @@ extern "C"{
 		_Inout_ PRT_VALUE **locals,
 		_In_ PRT_UINT32 varIndex,
 		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value
+		_Inout_ PRT_VALUE **value,
+		_In_ PRT_TYPE *type
 	);
 
 	PRT_API void PRT_CALL_CONV PrtSetLocalVarEx(
@@ -494,7 +495,7 @@ extern "C"{
 	void
 		PrtPushNewEventHandlerFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_UINT32					funIndex,
+		_In_ PRT_FUNDECL				*funDecl,
 		_In_ PRT_FUN_PARAM_STATUS       payloadStatus, 
 		_In_ PRT_VALUE					**locals
 		);
@@ -503,7 +504,7 @@ extern "C"{
 		PrtPushNewFrame(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
 		_In_ PRT_BOOLEAN				isFunApp,
-		_In_ PRT_UINT32					funIndex,
+		_In_ PRT_FUNDECL				*funDecl,
 		...
 		);
 
@@ -530,7 +531,7 @@ extern "C"{
 		_Inout_ PRT_FUNSTACK_INFO		*frame,
 		_In_ PRT_UINT16					funCallIndex,
 		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_UINT32					funIndex
+		_In_ PRT_FUNDECL				*funDecl
 		);
 
 	PRT_API PRT_BOOLEAN

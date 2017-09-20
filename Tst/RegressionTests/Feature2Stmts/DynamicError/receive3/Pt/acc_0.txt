@@ -1,0 +1,26 @@
+=================================
+         Console output          
+=================================
+OUT: Writing receive3.cs ...
+OUT: Writing receive3.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Init
+OUT: <FunctionLog> Machine Main-1 executing Function foo
+OUT: <EnqueueLog> Enqueued Event <E, null> in Main-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <E, null> at Machine Main-1
+OUT: <RaiseLog> Machine Main-1 raised Event F
+OUT: <StateLog> Machine Main-1 exiting State Main_Init
+OUT: 
+OUT: ERROR: Main failed to handle event F
+OUT: 
+EXIT: -1

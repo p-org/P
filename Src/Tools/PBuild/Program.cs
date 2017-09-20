@@ -26,13 +26,13 @@ namespace PBuild
                 var arg = t;
                 if (arg[0] == '/' || arg[0] == '-')
                 {
-                    arg = arg.Substring(1).ToLowerInvariant();
+                    arg = arg.Substring(1);
                     string option = null;
                     var sep = arg.IndexOfAny(new[] {'=', ':'});
                     if (sep > 0)
                     {
-                        option = arg.Substring(sep + 1).Trim().ToLower();
-                        arg = arg.Substring(0, sep).Trim().ToLower();
+                        option = arg.Substring(sep + 1).Trim();
+                        arg = arg.Substring(0, sep).Trim();
                     }
                     switch (arg)
                     {
@@ -108,14 +108,13 @@ namespace PBuild
             Console.WriteLine("Loaded the solution file : {0}", fileName);
             try
             {
-                var solName = psolutionXml.GetElementsByTagName("PSolution")[0].Attributes.GetNamedItem("name").Value
-                    .ToLower();
+                var solName = psolutionXml.GetElementsByTagName("PSolution")[0].Attributes.GetNamedItem("name").Value;
                 var pprojects = psolutionXml.GetElementsByTagName("PProject");
                 foreach (XmlNode project in pprojects)
                 {
                     var projectInfo = new PProjectInfo
                     {
-                        Name = project.Attributes.GetNamedItem("name").Value.ToLower(),
+                        Name = project.Attributes.GetNamedItem("name").Value,
                         outputDir = Path.GetFullPath(project.Attributes.GetNamedItem("outputdir").Value)
                     };
                     var psources = project["Source"].ChildNodes;
@@ -123,7 +122,7 @@ namespace PBuild
                         projectInfo.psources.Add(pfile.InnerText);
                     var depends = project.SelectNodes("Depends");
                     foreach (XmlNode dproject in depends)
-                        projectInfo.depends.Add(dproject.InnerText.ToLower());
+                        projectInfo.depends.Add(dproject.InnerText);
 
                     var plinkfiles = project["Link"];
                     if (plinkfiles != null)
@@ -159,7 +158,7 @@ namespace PBuild
             compileArgs.profile = true;
 
             var compileResult = false;
-            var svc = new CompilerServiceClient();
+            var svc = new Compiler(true);
             if (Options.Relink && !Options.Rebuild)
             {
                 compileResult = true;
@@ -288,7 +287,7 @@ namespace PBuild
                 var compileProject = p.CurrentSolution.projects.First(x => x.Name == p.Options.ProjectName);
                 var nodes = compileProject.depends.ToList();
                 nodes.Add(compileProject.Name);
-                var edges = (from dep in compileProject.depends where compileProject.Name != dep select new Tuple<string, string>(dep.ToLower(), compileProject.Name)).ToList();
+                var edges = (from dep in compileProject.depends where compileProject.Name != dep select new Tuple<string, string>(dep, compileProject.Name)).ToList();
 
                 var orderedProjects = TopologicalSortFiles(nodes, edges);
                 var rebuild = false;
@@ -314,7 +313,7 @@ namespace PBuild
             {
                 //compile the entire solution
                 var nodes = p.CurrentSolution.projects.Select(x => x.Name).ToList();
-                var edges = (from project in p.CurrentSolution.projects from dep in project.depends where project.Name != dep select new Tuple<string, string>(dep.ToLower(), project.Name)).ToList();
+                var edges = (from project in p.CurrentSolution.projects from dep in project.depends where project.Name != dep select new Tuple<string, string>(dep, project.Name)).ToList();
 
                 var orderedProjects = TopologicalSortFiles(nodes, edges);
                 var rebuild = false;

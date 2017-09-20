@@ -1,6 +1,14 @@
 =================================
          Console output          
 =================================
+OUT: Writing staticfunctions_3.zing ...
+OUT: Compiling staticfunctions_3.zing to staticfunctions_3.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

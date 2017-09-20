@@ -188,7 +188,6 @@ int main(int argc, char *argv[])
 		// then re-run the test, you will get the full call stack in the debugger where the block was allocated.
 		// _CrtSetBreakAlloc(105);
 #endif
-		PrtInitialize(&P_GEND_PROGRAM);
 		PRT_PROCESS *process;
 		PRT_GUID processGuid;
 		PRT_VALUE *payload;

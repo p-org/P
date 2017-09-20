@@ -1,6 +1,14 @@
 =================================
          Console output          
 =================================
+OUT: Writing receive11.zing ...
+OUT: Compiling receive11.zing to receive11.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################
@@ -33,5 +41,5 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_8.bl,)
+Expression: assert(tmp_7.bl,)
 Comment: receive11.p(13,24,13,30): error PC1001: Assert failed

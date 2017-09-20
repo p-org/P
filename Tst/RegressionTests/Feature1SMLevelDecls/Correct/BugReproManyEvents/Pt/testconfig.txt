@@ -1,0 +1,1 @@
+dsc: ptester, bug repro with more than 32 events

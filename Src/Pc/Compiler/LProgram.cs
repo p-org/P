@@ -6,11 +6,6 @@ namespace Microsoft.Pc
 {
     public class LProgram
     {
-        public List<PLink_Root.ModuleContainsMachine> ModuleContainsMachine { get; } = new List<PLink_Root.ModuleContainsMachine>();
-
-        public List<PLink_Root.ModuleDecl> ModuleDecl { get; } = new List<PLink_Root.ModuleDecl>();
-
-        public List<PLink_Root.ModulePrivateEvents> ModulePrivateEvents { get; } = new List<PLink_Root.ModulePrivateEvents>();
 
         public List<PLink_Root.ModuleName> ModuleName { get; } = new List<PLink_Root.ModuleName>();
 
@@ -26,22 +21,11 @@ namespace Microsoft.Pc
         {
             get
             {
-                foreach (PLink_Root.ModuleContainsMachine mc in ModuleContainsMachine)
-                {
-                    yield return mc;
-                }
                 foreach (PLink_Root.ModuleName mn in ModuleName)
                 {
                     yield return mn;
                 }
-                foreach (PLink_Root.ModulePrivateEvents mp in ModulePrivateEvents)
-                {
-                    yield return mp;
-                }
-                foreach (PLink_Root.ModuleDecl md in ModuleDecl)
-                {
-                    yield return md;
-                }
+                
                 foreach (PLink_Root.TestDecl td in TestDecl)
                 {
                     yield return td;

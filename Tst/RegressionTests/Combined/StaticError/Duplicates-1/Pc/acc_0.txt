@@ -1,8 +1,8 @@
 =================================
          Console output          
 =================================
-OUT: Duplicates-1.p(15,11,15,12): error PC1001: No start state in machine
-OUT: Duplicates-1.p(19,12,19,13): error PC1001: No start state in machine
+OUT: Duplicates-1.p(16,2,16,14): error PC1001: No start state in machine
+OUT: Duplicates-1.p(20,2,30,14): error PC1001: No start state in machine
 OUT: Duplicates-1.p(21,2,21,6): error PC1001: Multiple transitions over the same event
 OUT: Duplicates-1.p(23,2,23,6): error PC1001: Multiple transitions over the same event
 OUT: Duplicates-1.p(27,3,27,7): error PC1001: Multiple actions over the same event

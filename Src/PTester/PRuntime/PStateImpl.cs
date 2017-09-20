@@ -62,7 +62,7 @@ namespace P.Runtime
         public delegate PrtImplMachine CreateMachineDelegate(StateImpl application, PrtValue payload);
         public delegate PrtSpecMachine CreateSpecDelegate(StateImpl application);
         public static Dictionary<string, Dictionary<string, string>> linkMap = new Dictionary<string, Dictionary<string, string>>();
-        public static Dictionary<string, string> renameMap = new Dictionary<string, string>();
+        public static Dictionary<string, string> machineDefMap = new Dictionary<string, string>();
         public static Dictionary<string, bool> isSafeMap = new Dictionary<string, bool>();
         public static Dictionary<string, List<string>> specMachineMap = new Dictionary<string, List<string>>();
         public static Dictionary<string, CreateMachineDelegate> createMachineMap = new Dictionary<string, CreateMachineDelegate>();
@@ -158,7 +158,7 @@ namespace P.Runtime
                                         .Select(monName => specMachinesMap[monName]).ToList();
             return allSpecMachines;
         }
-        public PrtInterfaceValue CreateInterfaceOrMachine(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
+        public PrtInterfaceValue CreateInterface(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
         {
             //add visible action to trace
             if(visibleInterfaces.Contains(interfaceOrMachineName))
@@ -167,7 +167,7 @@ namespace P.Runtime
             }
 
             var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
-            var impMachineName = renameMap[renamedImpMachine];
+            var impMachineName = machineDefMap[renamedImpMachine];
             var machine = createMachineMap[impMachineName](this, payload);
             machine.isSafe = isSafeMap[renamedImpMachine];
             machine.renamedName = renamedImpMachine;
@@ -185,22 +185,24 @@ namespace P.Runtime
             }
         }
 
-        public void CreateMainMachine()
+        public void CreateMainMachine(string mainInterface)
         {
-            if(!renameMap.ContainsKey("Main"))
+
+            if (!machineDefMap.ContainsKey(mainInterface))
             {
-                throw new PrtInternalException("No Main Machine");
+                throw new PrtInternalException($"No {mainInterface} interface in the module machine definition map");
             }
-            var impMachineName = renameMap["Main"];
+            var impMachineName = machineDefMap[mainInterface];
             var machine = createMachineMap[impMachineName](this, PrtValue.@null);
-            machine.isSafe = isSafeMap["Main"];
-            machine.renamedName = "Main";
+            machine.isSafe = isSafeMap[mainInterface];
+            machine.renamedName = mainInterface;
             AddImplMachineToStateImpl(machine);
+            
         }
 
         public void CreateSpecMachine(string renamedSpecName)
         {
-            var impSpecMachine = renameMap[renamedSpecName];
+            var impSpecMachine = machineDefMap[renamedSpecName];
             var machine = createSpecMap[impSpecMachine](this);
             machine.isSafe = isSafeMap[renamedSpecName];
             machine.renamedName = renamedSpecName;

@@ -1,0 +1,14 @@
+<PSolution name= "RefinementCheckingExample">
+  <PProject name= "Refinement" outputdir="./PGenerated">
+    <Source>
+      <Include>./AbstractionAndSpec.p</Include>
+      <Include>./Client.p</Include>
+      <Include>./Header.p</Include>
+      <Include>./Server.p</Include>
+      <Include>./TestDriver.p</Include>
+    </Source>
+    <Link>
+      <Include>./Testscript.p</Include>
+    </Link>
+  </PProject>
+</PSolution>

@@ -3,7 +3,7 @@
 * This file presents the ChainReplicationNodeMachine that implements the Chain Replication protocol
 *******************************************************************/
 
-machine ChainReplicationNodeMachine : ChainReplicationNodeInterface, SMRServerInterface
+machine ChainReplicationNodeMachine
 sends eBackwardAck, eForwardUpdate, eCRPong, eNewSuccInfo, eSMRReplicatedLeader, eSuccess, eTailChanged, eHeadChanged, eSMRReplicatedMachineOperation, eSMRLeaderUpdated, ePredSucc,
 eMonitorHistoryUpdate, eMonitorSentUpdate, eMonitorUpdateForLiveness, eMonitorResponseForLiveness;
  {

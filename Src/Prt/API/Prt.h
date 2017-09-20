@@ -56,7 +56,6 @@ extern "C"{
     */
     typedef struct PRT_PROCESS {
         PRT_GUID         guid;     /**< The unique ID for this process. Cannot be 0-0-0-0. */
-        PRT_PROGRAMDECL *program;  /**< The program running in this process.               */
     } PRT_PROCESS;
 
     /** The state of running machine in a process.
@@ -112,14 +111,6 @@ extern "C"{
         _In_ PRT_ERROR_FUN errorFun,
         _In_ PRT_LOG_FUN loggerFun
         );
-
-
-	/** PrtInitialize must be called exactly once before performing any operation in the runtime.
-	*   @param[in] program Program to run (not cloned).
-	*   @see PRT_PROGRAMDECL
-	*/
-	void PrtInitialize(
-		_In_ PRT_PROGRAMDECL *program);
 
     /** Set the scheduling policy for this process.  The default policy is TaskNeutral
     *   @param[in] policy The new policy.
@@ -196,7 +187,7 @@ extern "C"{
 
     /** Creates a new machine instance in process. Will be freed when process is stopped.
     * @param[in,out] process    The process that will own this machine.
-    * @param[in]     instanceOf renamed machine .
+    * @param[in]     instanceOf interface (machine).
     * @param[in]     payload The payload to pass to the start state of machine instance (cloned, user frees).
     * @returns       A pointer to a PRT_MACHINEINST.
     * @see PrtSend
@@ -204,21 +195,21 @@ extern "C"{
     */
 	PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkMachine(
 		_Inout_ PRT_PROCESS *process,
-		_In_ PRT_UINT32 renamedMachine,
+		_In_ PRT_UINT32 interfaceName,
 		_In_ PRT_UINT32	numArgs,
 		...);
 
 	/** Creates a new machine instance in process. Will be freed when process is stopped.
 	* @param[in,out] process    The process that will own this machine.
 	* @param[in]     context	context of the creator machine.
-	* @param[in]     IorM	Interface or renamed machine to be created.
+	* @param[in]     interfaceName	interface machine to be created.
 	* @returns       A pointer to a PRT_MACHINEINST.
 	* @see PrtSend
 	* @see PRT_MACHINEINST
 	*/
-	PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkInterfaceOrMachine(
-			_In_ PRT_MACHINEINST*  context,
-			_In_ PRT_UINT32				IorM,
+	PRT_API PRT_MACHINEINST * PRT_CALL_CONV PrtMkInterface(
+			_In_ PRT_MACHINEINST*		context,
+			_In_ PRT_UINT32				interfaceName,
 			_In_ PRT_UINT32				numArgs,
 			...
 		);

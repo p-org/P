@@ -12,12 +12,15 @@ using NUnit.Framework;
 namespace UnitTests.CBackend
 {
     [TestFixture]
+    //Parallel execution is not working:
     //[Parallelizable(ParallelScope.Children)]
+    [NonParallelizable]
     public class RegressionTests
     {
         private ThreadLocal<Compiler> PCompiler { get; } = new ThreadLocal<Compiler>(() => new Compiler(true));
-
-        private static string TestResultsDirectory { get; } = Path.Combine(
+        //If running PCompilerService:
+        private ThreadLocal<ICompiler> PCompilerService { get; }  = new ThreadLocal<ICompiler>(() => new CompilerServiceClient());
+        public static string TestResultsDirectory { get; } = Path.Combine(
             Constants.TestDirectory,
             $"TestResult_{Constants.Configuration}_{Constants.Platform}");
 
@@ -29,23 +32,26 @@ namespace UnitTests.CBackend
             var curTest = new Uri(testDir.FullName);
             Uri relativePath = testRoot.MakeRelativeUri(curTest);
             string destinationDir = Path.GetFullPath(Path.Combine(TestResultsDirectory, relativePath.OriginalString));
-            try
-            {
-                if (Directory.Exists(destinationDir))
-                {
-                    Directory.Delete(destinationDir, true);
-                }
-            }
-            catch (Exception e)
-            {
-                WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
-            }
+            //Why below is commented out:
+            //Some tests failed to copy without any exception
+            //Removing TestResult_Debug_x86 dir in FindTestCasesInDirectory instead
+            //try
+            //{
+            //    if (Directory.Exists(destinationDir))
+            //    {
+            //        Directory.Delete(destinationDir, true);
+            //    }
+            //}
+            //catch (Exception e)
+            //{
+            //    WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
+            //}
 
             FileHelper.DeepCopy(testDir, destinationDir);
             return new DirectoryInfo(destinationDir);
         }
 
-        private static void WriteError(string format, params object[] args)
+        public static void WriteError(string format, params object[] args)
         {
             ConsoleColor saved = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
@@ -85,6 +91,7 @@ namespace UnitTests.CBackend
 
             // Compile
             if (!PCompiler.Value.Compile(compilerOutput, compileArgs))
+            //if (!PCompilerService.Value.Compile(compilerOutput, compileArgs))
             {
                 tmpWriter.WriteLine("EXIT: -1");
                 return -1;
@@ -101,6 +108,7 @@ namespace UnitTests.CBackend
             }
 
             if (!PCompiler.Value.Link(compilerOutput, compileArgs))
+            //if(!PCompilerService.Value.Link(compilerOutput, compileArgs))
             {
                 tmpWriter.WriteLine("EXIT: -1");
                 return -1;
@@ -478,8 +486,6 @@ namespace UnitTests.CBackend
         {
             // First step: clone test folder to new spot
             DirectoryInfo workDirectory = PrepareTestDir(origTestDir);
-
-            File.Delete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
 
             foreach (KeyValuePair<TestType, TestConfig> kv in testConfigs.OrderBy(kv => kv.Key))
             {

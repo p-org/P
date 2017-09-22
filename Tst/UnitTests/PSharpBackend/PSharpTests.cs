@@ -12,7 +12,7 @@ namespace UnitTests.PSharpBackend
         //private const string PSourcePath = @"RegressionTests\Integration\Correct\Multi_Paxos_4\Multi_Paxos_4.p";
         private const string PSourcePath = @"..\tmp\tupOrder.p";
 
-        [Test]
+        //[Test]
         public void TestBasic()
         {
             string pFilePath = Path.Combine(Constants.TestDirectory, PSourcePath);

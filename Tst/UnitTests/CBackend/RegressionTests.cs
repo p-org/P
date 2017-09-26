@@ -275,36 +275,35 @@ namespace UnitTests.CBackend
                 arguments = new List<string>(config.Arguments) { outputDllPath };
             }
             int exitCode1 = ProcessHelper.RunWithOutput(ptExePath, activeDirectory, arguments, out stdout, out stderr);
-            tmpWriter.Write(stdout);
-            tmpWriter.Write(stderr);
-            tmpWriter.WriteLine($"EXIT: {exitCode1}");
-
-            // Append includes
-            foreach (string include in config.Includes)
+            
+            if (!(exitCode1 == 0))
             {
-                tmpWriter.WriteLine();
-                tmpWriter.WriteLine("=================================");
-                tmpWriter.WriteLine(include);
-                tmpWriter.WriteLine("=================================");
-
-                try
+                //Only copy into accceptor the lines with error reporting:
+                bool copy = false;
+                using (StringReader sr = new StringReader(stdout))
                 {
-                    using (var sr = new StreamReader(Path.Combine(activeDirectory, include)))
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
                     {
-                        while (!sr.EndOfStream)
+                        if (line.Contains("ERROR"))
                         {
-                            tmpWriter.WriteLine(sr.ReadLine());
+                            copy = true;
+                        }
+                        if (copy)
+                        {
+                            tmpWriter.WriteLine(line);
                         }
                     }
                 }
-                catch (FileNotFoundException)
-                {
-                    if (!include.EndsWith("trace"))
-                    {
-                        throw;
-                    }
-                }
+                tmpWriter.Write(stderr);
+                tmpWriter.WriteLine($"EXIT: {exitCode1}");
             }
+            else
+            {
+                tmpWriter.Write(stdout);
+                tmpWriter.Write(stderr);
+                tmpWriter.WriteLine($"EXIT: {exitCode1}");
+            } 
         }
 
         private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)

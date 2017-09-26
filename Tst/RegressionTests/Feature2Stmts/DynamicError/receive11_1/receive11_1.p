@@ -6,11 +6,11 @@ event Unit;
 
 spec M observes E, F {
 	start state Init {
-		on E goto Next with (payload: int) { assert (payload == 10);}
+		on E goto Next with (payload: int) { /* assert (payload == 10); */}
 	}
 	
 	state Next {
-		on F goto Next with {assert false;}
+		on F goto Next with { assert false; }
 	}
 }
 

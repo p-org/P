@@ -10,15 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Init
-OUT: <RaiseLog> Machine Main-1 raised Event E
-OUT: <StateLog> Machine Main-1 entering State Main_Call
-OUT: <StateLog> Machine Main-1 exiting State Main_Call
-OUT: 
 OUT: ERROR: BugReproIdenticalTerms.p(16,11,16,17): error PC1001: Assert failed
 OUT: 
 EXIT: -1

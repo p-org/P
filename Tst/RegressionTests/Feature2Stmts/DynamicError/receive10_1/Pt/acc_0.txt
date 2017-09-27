@@ -10,6 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: ERROR: receive10_1.p(42,22,42,28): error PC1001: Assert failed
+OUT: ERROR: receive10_1.p(35,6,35,12): error PC1001: Assert failed
 OUT: 
 EXIT: -1

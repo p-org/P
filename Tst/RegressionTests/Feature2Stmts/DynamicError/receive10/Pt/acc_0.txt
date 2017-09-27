@@ -10,6 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: ERROR: B failed to handle event E
+OUT: ERROR: receive10.p(39,22,39,28): error PC1001: Assert failed
 OUT: 
 EXIT: -1

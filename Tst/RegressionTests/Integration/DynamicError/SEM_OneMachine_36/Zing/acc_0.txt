@@ -1,6 +1,14 @@
 =================================
          Console output          
 =================================
+OUT: Writing NullEventHandler1.zing ...
+OUT: Compiling NullEventHandler1.zing to NullEventHandler1.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

@@ -139,17 +139,29 @@ namespace Microsoft.Pc
                 else if (typeKind == "NameType")
                 {
                     string enumTypeName = (GetArgByIndex(type, 0) as Cnst).GetStringValue();
-                    var args = new List<ExpressionSyntax> {CSharpHelper.MkCSharpStringLiteralExpression(enumTypeName)};
-                    foreach (KeyValuePair<string, int> x in pToCSharp.allEnums[enumTypeName])
+                    if(pToCSharp.allEnums.ContainsKey(enumTypeName))
                     {
-                        args.Add(CSharpHelper.MkCSharpStringLiteralExpression(x.Key));
-                        args.Add(CSharpHelper.MkCSharpNumericLiteralExpression(x.Value));
-                    }
+                        var args = new List<ExpressionSyntax> { CSharpHelper.MkCSharpStringLiteralExpression(enumTypeName) };
+                        foreach (KeyValuePair<string, int> x in pToCSharp.allEnums[enumTypeName])
+                        {
+                            args.Add(CSharpHelper.MkCSharpStringLiteralExpression(x.Key));
+                            args.Add(CSharpHelper.MkCSharpNumericLiteralExpression(x.Value));
+                        }
 
-                    AddTypeDeclaration(typeName);
-                    AddTypeInitialization(
-                        typeExpr,
-                        CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtEnumType"), args.ToArray()));
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(
+                            typeExpr,
+                            CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName("PrtEnumType"), args.ToArray()));
+                    }
+                    else
+                    {
+                        var args = new List<ExpressionSyntax>();
+                        AddTypeDeclaration(typeName);
+                        AddTypeInitialization(
+                            typeExpr,
+                            CSharpHelper.MkCSharpObjectCreationExpression(SyntaxFactory.IdentifierName($"Foreign_{enumTypeName}"), args.ToArray()));
+                    }
+                    
                 }
                 else if (typeKind == "TupType")
                 {

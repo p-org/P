@@ -5,8 +5,7 @@ enum TPCConfig {
 	dummy = 0,
 	NumOfParticipants = 2
 }
-machine Coordinator : CoorClientInterface
-receives ePrepared, eNotPrepared, eStatusResp, eTimeOut, eCancelSuccess, eCancelFailure, eSMRResponse, eSMRLeaderUpdated;
+machine Coordinator
 sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionSuccess, eMonitorTransactionFailed, eMonitorTransactionSuccess, eMonitorCoordinatorTimeOut, eRespPartStatus, eStartTimer, eCancelTimer, eSMROperation;
 {
 
@@ -29,16 +28,6 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 				while(index < NumOfParticipants)
 				{
 					temp = new SMRServerInterface((client = this to SMRClientInterface, reorder = false, isRoot = true, ft = FT1, id = index));
-					participants[index] = temp;
-					index = index + 1;
-				}
-			}
-			else
-			{
-				index = 0;
-				while(index < NumOfParticipants)
-				{
-					temp = new ParticipantInterface((client = this to CoorParticipantInterface, val = (index, false)));
 					participants[index] = temp;
 					index = index + 1;
 				}
@@ -182,7 +171,7 @@ sends eCommit, eAbort, ePrepare, eStatusQuery, eTransactionFailed, eTransactionS
 
 eventset esCoordinatorEvents = { ePrepared, eNotPrepared, eStatusResp, eSMRResponse, eSMRLeaderUpdated};
 
-machine Participant : ParticipantInterface, SMRReplicatedMachineInterface
+machine Participant
 sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantAborted, eSMRResponse;
 {
 	var myId : int;
@@ -194,7 +183,7 @@ sends ePrepared, eNotPrepared, eStatusResp, eParticipantCommitted, eParticipantA
 	var currRespId: int;
 	var currOpId : int;
 	start state Init {
-		entry (payload: (client: any<esCoordinatorEvents>, val: data)){
+		entry (payload: (client:SMRClientInterface, val: data)){
 			var payVal: (int, bool);
 			payVal = payload.val as (int, bool);
 			myId = payVal.0;

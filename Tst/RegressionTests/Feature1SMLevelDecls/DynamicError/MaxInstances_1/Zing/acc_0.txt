@@ -1,6 +1,14 @@
 =================================
          Console output          
 =================================
+OUT: Writing MaxInstances_1.zing ...
+OUT: Compiling MaxInstances_1.zing to MaxInstances_1.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

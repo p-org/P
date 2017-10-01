@@ -1,16 +1,7 @@
-module CoffeeMaker
-{
-    CoffeeMachineController, CoffeeMachine, Timer
-}
+module CoffeeMaker = { ICoffeeMachineController -> CoffeeMachineController, ICoffeeMachine -> CoffeeMachine, ITimer -> Timer };
 
-module Main0 { EspressoButton, Main0 }
-module Test0 = (compose Main0, CoffeeMaker);
-test Test0: (rename Main0 to Main in Test0);
+test Test0: main Main0 in (union { EspressoButton, Main0 }, CoffeeMaker);
 
-module Main1 { SteamerButton, Main1 }
-module Test1 = (compose Main1, CoffeeMaker);
-test Test1: (rename Main1 to Main in Test1);
+test Test1: main Main1 in (union { SteamerButton, Main1 }, CoffeeMaker);
 
-module Main2 { Door, Main2 }
-module Test2 = (compose Main2, CoffeeMaker);
-test Test2: (rename Main2 to Main in Test2);
+test Test2: main Main2 in (union { Door, Main2 }, CoffeeMaker);

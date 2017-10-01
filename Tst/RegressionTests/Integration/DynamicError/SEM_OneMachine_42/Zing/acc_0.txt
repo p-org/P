@@ -1,6 +1,14 @@
 =================================
          Console output          
 =================================
+OUT: Writing NullTriggerPayload.zing ...
+OUT: Compiling NullTriggerPayload.zing to NullTriggerPayload.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

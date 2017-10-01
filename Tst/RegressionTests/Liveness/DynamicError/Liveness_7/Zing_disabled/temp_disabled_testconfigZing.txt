@@ -1,0 +1,8 @@
+runZing: ..\..\..\..\..\..\Bld\Drops\$(Configuration)\$(Platform)\Zinger.exe
+argZing: ..\Liveness_4.dll
+argZing: -ndfsliveness
+argZing: -et:Liveness_4.trace
+incZing: Liveness_4.trace
+del: Liveness_4.trace
+acc: .\
+dsc: zinger.exe, Liveness Bug : Liveness bug detected with the target thread blocked (no deadlock)

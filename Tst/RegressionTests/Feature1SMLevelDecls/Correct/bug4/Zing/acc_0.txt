@@ -1,6 +1,14 @@
 =================================
          Console output          
 =================================
+OUT: Writing bug4.zing ...
+OUT: Compiling bug4.zing to bug4.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Passed
 OUT: ##################

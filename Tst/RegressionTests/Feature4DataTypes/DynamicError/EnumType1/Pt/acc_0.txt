@@ -1,0 +1,25 @@
+=================================
+         Console output          
+=================================
+OUT: Writing enumType.cs ...
+OUT: Writing enumType.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_S
+OUT: <FunctionLog> Machine Main-1 executing Function baz
+OUT: <FunctionLog> Machine Main-1 executing Function foo
+OUT: <CreateLog> Created Machine XYZ-1
+OUT: <StateLog> Machine XYZ-1 entering State XYZ_init
+OUT: 
+OUT: ERROR: value ((0,(1, 2, )), (1,(3, 4, )), ) is not a member of type Foo
+OUT: 
+EXIT: -1

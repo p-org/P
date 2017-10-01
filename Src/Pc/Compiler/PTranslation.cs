@@ -462,7 +462,12 @@ namespace Microsoft.Pc
                     it.MoveNext();
                     var locals = it.Current as FuncTerm;
                     it.MoveNext();
-                    Node body = translatedBody[termAlias];
+                    Node body = null; //body is empty
+                    if (translatedBody.ContainsKey(termAlias))
+                    {
+                        body = translatedBody[termAlias];
+                    }
+                    
                     var funInfo = new FunInfo(false, parameters, returnTypeName, locals, body);
                     if (owner != null)
                     {

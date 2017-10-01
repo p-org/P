@@ -1,6 +1,14 @@
 =================================
          Console output          
 =================================
+OUT: Writing BugReproIdenticalTerms.zing ...
+OUT: Compiling BugReproIdenticalTerms.zing to BugReproIdenticalTerms.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
 OUT: ##################
 OUT: Check Failed
 OUT: ##################

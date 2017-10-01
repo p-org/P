@@ -7,12 +7,12 @@ event eQueryStateResponse: MyState;
 event eUpdateToState0;
 event eUpdateToState1;
 
-type IService() = { eDoOpI, eDoOpJ };
-type IReliableStorage() = { eQueryState, eUpdateToState0, eUpdateToState1 };
+interface IService() receives eDoOpI, eDoOpJ;
+interface IReliableStorage() receives eQueryState, eUpdateToState0, eUpdateToState1;
 type Pair = (IService, IReliableStorage);
 
-machine FaultTolerantMachine : IHaltable
-receives eQueryStateResponse;
+machine FaultTolerantMachine
+receives eQueryStateResponse, halt;
 {
     var service: IService;
     var reliableStorage: IReliableStorage;
@@ -63,7 +63,7 @@ receives eQueryStateResponse;
     }
 }
 		       
-machine Service : IService
+machine Service
 {
     var i, j: int;
     var donei, donej: bool;
@@ -90,7 +90,7 @@ machine Service : IService
     }
 }
 
-machine ReliableStorage : IReliableStorage
+machine ReliableStorage
 {
     var s: MyState;
     start state Init {

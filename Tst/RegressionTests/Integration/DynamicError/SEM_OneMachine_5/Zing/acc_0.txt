@@ -1,30 +1,24 @@
 =================================
          Console output          
 =================================
-OUT: ##################
-OUT: Check Failed
-OUT: ##################
-OUT: 4 distinct states explored
+OUT: Writing SendInExitUnhandledEvent.zing ...
+OUT: Compiling SendInExitUnhandledEvent.zing to SendInExitUnhandledEvent.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: Exception from Zing model checker:
+OUT: System.ArgumentException: invalid assembly
+OUT:    at Microsoft.Zing.StateImpl.Load(Assembly zingAssembly)
+OUT:    at Microsoft.Zing.StateImpl.Load(String zingAssemblyPath)
+OUT:    at Microsoft.Zing.ZingExplorer..ctor()
+OUT:    at Microsoft.Zing.ZingExplorerExhaustiveSearch..ctor()
+OUT:    at Microsoft.Zing.Zinger.Main(String[] args)
 OUT: 
-EXIT: 3
+EXIT: 5
 
 =================================
 SendInExitUnhandledEvent.trace
 =================================
-Safety Error Trace
-Trace-Log 0:
-<CreateLog> Created Machine Main-0
-<StateLog> Machine Main-0 entering State Real1_Init
-<EnqueueLog> Enqueued Event < ____E1, null > in Machine ____Main-0 by ____Main-0
-<DequeueLog> Dequeued Event < ____E1, null > at Machine ____Main-0
-<StateLog> Machine Main-0 exiting State Real1_Init
-<EnqueueLog> Enqueued Event < ____E2, null > in Machine ____Main-0 by ____Main-0
-<StateLog> Machine Main-0 entering State Real1_S1
-<DequeueLog> Dequeued Event < ____E2, null > at Machine ____Main-0
-<StateLog> Machine Main-0 exiting State Real1_S1
-<StateLog> Unhandled event exception by machine Main-0
-
-Error:
-P Assertion failed:
-Expression: assert(false)
-Comment: Unhandled event exception by machine Main

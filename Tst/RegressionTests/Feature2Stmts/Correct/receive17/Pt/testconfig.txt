@@ -1,0 +1,2 @@
+dsc: ptester, receive labels generated correctly
+

@@ -4,7 +4,7 @@ This state machine implements the hashset data-structure.
 In the case of fault-tolerant list data-structure, the HashSetMachine is replicated using SMR protocol
 */
 
-machine HashSetMachine: SMRReplicatedMachineInterface
+machine HashSetMachine
 sends eSMRResponse;
 {
     var localStore: map[data, bool];
@@ -14,7 +14,7 @@ sends eSMRResponse;
     var currClientOpId : int;
     var currRespId: int;
     start state Init {
-        entry {
+        entry (payload: (client:SMRClientInterface, val: data)){
             isLeader = false;
             raise local;
         }

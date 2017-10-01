@@ -35,23 +35,16 @@ namespace Microsoft.Pc
 
         public List<P_Root.ObservesDecl> Observes { get; } = new List<P_Root.ObservesDecl>();
 
-        public List<P_Root.InterfaceTypeDef> InterfaceTypeDef { get; } = new List<P_Root.InterfaceTypeDef>();
+        public List<P_Root.InterfaceDef> InterfaceDef { get; } = new List<P_Root.InterfaceDef>();
 
         public List<P_Root.EventSetDecl> EventSetDecl { get; } = new List<P_Root.EventSetDecl>();
 
         public List<P_Root.EventSetContains> EventSetContains { get; } = new List<P_Root.EventSetContains>();
 
-        public List<P_Root.MachineExports> MachineExports { get; } = new List<P_Root.MachineExports>();
-
-        public List<P_Root.FunProtoDecl> FunProtoDecls { get; } = new List<P_Root.FunProtoDecl>();
-
-        public List<P_Root.MachineProtoDecl> MachineProtoDecls { get; } = new List<P_Root.MachineProtoDecl>();
 
         public List<P_Root.MachineReceives> MachineReceives { get; } = new List<P_Root.MachineReceives>();
 
         public List<P_Root.MachineSends> MachineSends { get; } = new List<P_Root.MachineSends>();
-
-        public List<P_Root.FunProtoCreatesDecl> FunProtoCreates { get; } = new List<P_Root.FunProtoCreatesDecl>();
 
         public List<P_Root.MachineKind> MachineKinds { get; } = new List<P_Root.MachineKind>();
 
@@ -153,24 +146,9 @@ namespace Microsoft.Pc
                     yield return ev;
                 }
 
-                foreach (P_Root.InterfaceTypeDef inter in InterfaceTypeDef)
+                foreach (P_Root.InterfaceDef inter in InterfaceDef)
                 {
                     yield return inter;
-                }
-
-                foreach (P_Root.MachineExports ex in MachineExports)
-                {
-                    yield return ex;
-                }
-
-                foreach (P_Root.FunProtoDecl fp in FunProtoDecls)
-                {
-                    yield return fp;
-                }
-
-                foreach (P_Root.MachineProtoDecl mp in MachineProtoDecls)
-                {
-                    yield return mp;
                 }
 
                 foreach (P_Root.MachineReceives mr in MachineReceives)
@@ -181,11 +159,6 @@ namespace Microsoft.Pc
                 foreach (P_Root.MachineSends ms in MachineSends)
                 {
                     yield return ms;
-                }
-
-                foreach (P_Root.FunProtoCreatesDecl fp in FunProtoCreates)
-                {
-                    yield return fp;
                 }
 
                 foreach (P_Root.DependsOn d in DependsOn)
@@ -209,18 +182,6 @@ namespace Microsoft.Pc
             {
                 MachineReceives.Add(item as P_Root.MachineReceives);
             }
-            else if (item is P_Root.MachineProtoDecl)
-            {
-                MachineProtoDecls.Add(item as P_Root.MachineProtoDecl);
-            }
-            else if (item is P_Root.FunProtoDecl)
-            {
-                FunProtoDecls.Add(item as P_Root.FunProtoDecl);
-            }
-            else if (item is P_Root.MachineExports)
-            {
-                MachineExports.Add(item as P_Root.MachineExports);
-            }
             else if (item is P_Root.EventSetContains)
             {
                 EventSetContains.Add(item as P_Root.EventSetContains);
@@ -229,9 +190,9 @@ namespace Microsoft.Pc
             {
                 EventSetDecl.Add(item as P_Root.EventSetDecl);
             }
-            else if (item is P_Root.InterfaceTypeDef)
+            else if (item is P_Root.InterfaceDef)
             {
-                InterfaceTypeDef.Add(item as P_Root.InterfaceTypeDef);
+                InterfaceDef.Add(item as P_Root.InterfaceDef);
             }
             else if (item is P_Root.ObservesDecl)
             {
@@ -296,10 +257,6 @@ namespace Microsoft.Pc
             else if (item is P_Root.DependsOn)
             {
                 DependsOn.Add(item as P_Root.DependsOn);
-            }
-            else if (item is P_Root.FunProtoCreatesDecl)
-            {
-                FunProtoCreates.Add(item as P_Root.FunProtoCreatesDecl);
             }
             else
             {

@@ -1,0 +1,99 @@
+=================================
+         Console output          
+=================================
+OUT: Writing Timer.cs ...
+OUT: Writing Timer.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Init
+OUT: <CreateLog> Created Machine client-1
+OUT: <StateLog> Machine client-1 entering State client_Init
+OUT: <CreateLog> Created Machine Timer-1
+OUT: <RaiseLog> Machine client-1 raised Event unit
+OUT: <StateLog> Machine client-1 exiting State client_Init
+OUT: <StateLog> Machine client-1 entering State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <START, 3> in Timer-1 by client-1
+OUT: <StateLog> Machine Timer-1 entering State Timer_Init
+OUT: <RaiseLog> Machine Timer-1 raised Event UNIT
+OUT: <StateLog> Machine Timer-1 exiting State Timer_Init
+OUT: <StateLog> Machine Timer-1 entering State Timer_WaitForReq
+OUT: <DequeueLog> Dequeued Event <START, 3> at Machine Timer-1
+OUT: <ActionLog> Machine Timer-1 executing action for Event START in State Timer_WaitForReq
+OUT: <EnqueueLog> Enqueued Event <TIMEOUT, Timer(1)> in client-1 by Timer-1
+OUT: <DequeueLog> Dequeued Event <TIMEOUT, Timer(1)> at Machine client-1
+OUT: <ActionLog> Machine client-1 executing action for Event TIMEOUT in State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <req, null> in Main-1 by client-1
+OUT: <DequeueLog> Dequeued Event <req, null> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 executing action for Event req in State Main_Init
+OUT: <FunctionLog> Machine Main-1 executing Function PrintTime
+OUT: <FunctionLog> Machine Main-1 executing Function GetRandomVal
+OUT: <EnqueueLog> Enqueued Event <resp, <first:0, second:0, >> in client-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <resp, <first:0, second:0, >> at Machine client-1
+OUT: <RaiseLog> Machine client-1 raised Event next
+OUT: <StateLog> Machine client-1 exiting State client_StartReqResp
+OUT: <StateLog> Machine client-1 entering State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <START, 3> in Timer-1 by client-1
+OUT: <DequeueLog> Dequeued Event <START, 3> at Machine Timer-1
+OUT: <ActionLog> Machine Timer-1 executing action for Event START in State Timer_WaitForReq
+OUT: <EnqueueLog> Enqueued Event <TIMEOUT, Timer(1)> in client-1 by Timer-1
+OUT: <DequeueLog> Dequeued Event <TIMEOUT, Timer(1)> at Machine client-1
+OUT: <ActionLog> Machine client-1 executing action for Event TIMEOUT in State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <req, null> in Main-1 by client-1
+OUT: <DequeueLog> Dequeued Event <req, null> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 executing action for Event req in State Main_Init
+OUT: <FunctionLog> Machine Main-1 executing Function PrintTime
+OUT: <FunctionLog> Machine Main-1 executing Function GetRandomVal
+OUT: <EnqueueLog> Enqueued Event <resp, <first:0, second:0, >> in client-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <resp, <first:0, second:0, >> at Machine client-1
+OUT: <RaiseLog> Machine client-1 raised Event next
+OUT: <StateLog> Machine client-1 exiting State client_StartReqResp
+OUT: <StateLog> Machine client-1 entering State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <START, 3> in Timer-1 by client-1
+OUT: <DequeueLog> Dequeued Event <START, 3> at Machine Timer-1
+OUT: <ActionLog> Machine Timer-1 executing action for Event START in State Timer_WaitForReq
+OUT: <EnqueueLog> Enqueued Event <TIMEOUT, Timer(1)> in client-1 by Timer-1
+OUT: <DequeueLog> Dequeued Event <TIMEOUT, Timer(1)> at Machine client-1
+OUT: <ActionLog> Machine client-1 executing action for Event TIMEOUT in State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <req, null> in Main-1 by client-1
+OUT: <DequeueLog> Dequeued Event <req, null> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 executing action for Event req in State Main_Init
+OUT: <FunctionLog> Machine Main-1 executing Function PrintTime
+OUT: <FunctionLog> Machine Main-1 executing Function GetRandomVal
+OUT: <EnqueueLog> Enqueued Event <resp, <first:0, second:0, >> in client-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <resp, <first:0, second:0, >> at Machine client-1
+OUT: <RaiseLog> Machine client-1 raised Event next
+OUT: <StateLog> Machine client-1 exiting State client_StartReqResp
+OUT: <StateLog> Machine client-1 entering State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <START, 3> in Timer-1 by client-1
+OUT: <DequeueLog> Dequeued Event <START, 3> at Machine Timer-1
+OUT: <ActionLog> Machine Timer-1 executing action for Event START in State Timer_WaitForReq
+OUT: <EnqueueLog> Enqueued Event <TIMEOUT, Timer(1)> in client-1 by Timer-1
+OUT: <DequeueLog> Dequeued Event <TIMEOUT, Timer(1)> at Machine client-1
+OUT: <ActionLog> Machine client-1 executing action for Event TIMEOUT in State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <req, null> in Main-1 by client-1
+OUT: <DequeueLog> Dequeued Event <req, null> at Machine Main-1
+OUT: <ActionLog> Machine Main-1 executing action for Event req in State Main_Init
+OUT: <FunctionLog> Machine Main-1 executing Function PrintTime
+OUT: <FunctionLog> Machine Main-1 executing Function GetRandomVal
+OUT: <EnqueueLog> Enqueued Event <resp, <first:0, second:0, >> in client-1 by Main-1
+OUT: <DequeueLog> Dequeued Event <resp, <first:0, second:0, >> at Machine client-1
+OUT: <RaiseLog> Machine client-1 raised Event next
+OUT: <StateLog> Machine client-1 exiting State client_StartReqResp
+OUT: <StateLog> Machine client-1 entering State client_StartReqResp
+OUT: <EnqueueLog> Enqueued Event <halt, null> in Main-1 by client-1
+OUT: <DequeueLog> Dequeued Event <halt, null> at Machine Main-1
+OUT: <StateLog> Machine Main-1 exiting State Main_Init
+OUT: <HaltLog> Machine Main-1 HALTED
+OUT: 
+OUT: ERROR: typedef2.p(57,5,57,11): error PC1001: Assert failed
+OUT: 
+EXIT: -1

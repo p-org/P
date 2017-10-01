@@ -1,10 +1,5 @@
 #include "PrtTypes.h"
-
-/* The number of foreign type decls */
-PRT_UINT32 prtNumForeignTypeDecls = 0;
-
-/* The active set of foreign type decls */
-PRT_FOREIGNTYPEDECL **prtForeignTypeDecls = NULL;
+#include "PrtProgram.h"
 
 PRT_TYPE * PRT_CALL_CONV PrtMkPrimitiveType(_In_ PRT_TYPE_KIND primType)
 {
@@ -414,7 +409,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtIsValidType(_In_ PRT_TYPE *type)
 			return PRT_TRUE;
 		case PRT_KIND_FOREIGN:
 		{
-			return type->typeUnion.foreignType->declIndex < prtNumForeignTypeDecls;
+			return type->typeUnion.foreignType->declIndex < program->nForeignTypes;
 		}
 		case PRT_KIND_MAP:
 		{

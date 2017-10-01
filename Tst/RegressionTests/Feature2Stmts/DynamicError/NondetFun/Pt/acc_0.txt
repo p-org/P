@@ -1,0 +1,22 @@
+=================================
+         Console output          
+=================================
+OUT: Writing NondetFun.cs ...
+OUT: Writing NondetFun.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_Init
+OUT: <FunctionLog> Machine Main-1 executing Function Foo
+OUT: 
+OUT: ERROR: NondetFun.p(32,3,32,9): error PC1001: Assert failed
+OUT: 
+EXIT: -1

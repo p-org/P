@@ -90,9 +90,8 @@ domain PData
 	EventSetDecl ::= fun (name : String -> id: any Id).
 	EventSetContains ::= new (evset: any EventSetDecl, ev: NonNullEventName).
 	EventSet ::= fun (name: String -> list: any EventNameList + { NIL }).
-	InterfaceTypeDef ::= fun (name: String -> evsetName: String, argType: any TypeExpr, id: any Id).
-	InterfaceTypeDecl ::= new (name: String, evList: any InterfaceType, argType: any TypeExpr, id: any Id).
-	MachineExports ::= fun (mach: String -> iname: String).
+	InterfaceDef ::= fun (name: String -> evsetName: String + { ALL, NIL }, argType: any TypeExpr, id: any Id).
+	InterfaceDecl ::= new (name: String, evList: any InterfaceType + { ALL, NIL }, argType: any TypeExpr, id: any Id).
 	MachineReceives ::= new (mach: String, ev: NonNullEventName + { ALL }).
 	MachineSends ::= new (mach: String, ev: NonNullEventName + { ALL }).
 
@@ -118,8 +117,7 @@ domain PData
 	// Thus, the numbering of variables is consistent across nested scopes.
     FunDecl        ::= fun (name: String, owner: String + { NIL } -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt + { NIL }, id: any Id).
     FunProtoDecl   ::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
-	FunProtoCreatesDecl ::= fun (fp: FunProtoDecl -> iormlist: StringList).
-	GlobalFunCreates ::= new (name: String, iorm: String).
+	GlobalFunCreates ::= new (name: String, m: String).
 
 	AnonFunDecl    ::= new (owner: String + { NIL }, ownerFun: String + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType, id: any Id).
     
@@ -127,7 +125,7 @@ domain PData
     TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
     DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
 
-    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceTypeDef + InterfaceTypeDecl + MachineExports + MachineSends + MachineReceives + FunProtoCreatesDecl  + TypeDef + EnumTypeDef.            
+    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceDef + InterfaceDecl + MachineSends + MachineReceives  + TypeDef + EnumTypeDef.            
 
     AssumeMaxInstances ::= new (bound: Natural).
     AssertMaxInstances ::= new (bound: Natural).
@@ -160,8 +158,8 @@ domain PStructuralTyping extends PData, PError
     TwoDeclError ::= (PDecl, PDecl).
     DeclFunError ::= (PDecl, String).
 	
-	//// List representation of interfacetypedecl
-    InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
+	//// List representation of InterfaceDecl
+    InterfaceDecl(name, it, ctype, id) :- InterfaceDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
                                        it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
 
     ERROR2(f1.id, f2.id, "Multiple functions with same name"),
@@ -273,19 +271,8 @@ domain PStructuralTyping extends PData, PError
 	ERROR1(atype.id, "eventset not declared"),
 	OneDeclError(atype) :- no EventSetDecl(es, _), atype is AnyTypeDecl, atype.perm = es.
 
-	//eventset in interface type
-	ERROR1(inter.id, "Unknown eventset in interface declaration"),
-	OneDeclError(inter) :- inter is InterfaceTypeDef(_, es, _, _), no EventSetDecl(es, _).
-
-	//interface declared in the exports
-	ERROR1(id, "Interface in exports is not declared"),
-	OneDeclError(me) :- decl is MachineDecl(mach, id), me is MachineExports(mach, i), no InterfaceTypeDecl(i, _, _, _), no InterfaceTypeDef(i, _, _, _).
-
 	MemberOfStringList ::= sub (StringList, String).
-	//interfaces or machine names in the creates of a fun proto
-	ERROR1(NIL, "Interface or machine in creates of extern fun is not declared"),
-	OneDeclError(fp) :- fp is FunProtoCreatesDecl(f, list), MemberOfStringList(list, name), no InterfaceTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _).
-
+	
 	//events in sends
 	ERROR1(id, "Event in sends list is not declared"),
 	OneDeclError(ms) :- decl is MachineDecl(mach, id), ms is MachineSends(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
@@ -298,9 +285,9 @@ domain PStructuralTyping extends PData, PError
 	ERROR2(ev.id, ev'.id, "Multiple declarations of the same event"),
 	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
 
-	/* Rules for separate compilation checks */
-	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceTypeDecl).
-	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceTypeDecl.
+	//rules for separate compilation checks
+	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceDecl).
+	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceDecl.
 
 	//multiple declarations of the same type
 	ERROR2(td.id, td'.id, "Multiple declarations of named types have same name"),
@@ -327,8 +314,6 @@ domain PStaticTyping extends PData, PError
 	conforms no UnavailableVarAccessError(_, _, _).
 	conforms no UnavailableParameterError(_, _).
 	conforms no FunRetError(_).
-	conforms no ExportInterfaceError(_).
-	conforms no InferredCreatesError(_).
     /*************************************************************/
 	
 	//populate the depends on
@@ -338,10 +323,13 @@ domain PStaticTyping extends PData, PError
 	/*		Computation related to module system					  */
 	/******************************************************************/
 
-	//// List representation of interfacetypedecl
-    InterfaceTypeDecl(name, it, ctype, id) :- InterfaceTypeDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
-                                       it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
-    
+	//// List representation of InterfaceDecl
+    InterfaceDecl(name, it, ctype, id) :- InterfaceDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
+                                       it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev : NonNullEventName }), it : InterfaceType.
+
+	InterfaceDecl(name, ALL, ctype, id) :- InterfaceDef(name, ALL, ctype, id).
+	InterfaceDecl(name, NIL, ctype, id) :- InterfaceDef(name, NIL, ctype, id).
+
     //// List representation of EventSet
     EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
                               list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), list : EventNameList.
@@ -349,71 +337,54 @@ domain PStaticTyping extends PData, PError
 	MemberOfInterfaceType ::= sub (InterfaceType, NonNullEventName).
 
 
-	InferredMachineCreates ::= (mname: String, iorM: String).
+	InferredMachineCreates ::= (mname: String, ICreated: String).
 	
 	
-	LocalFunCreates ::= (f: FunDecl, iorm: String).
-	LocalAnonFunCreates ::= (af: AnonFunDecl, iorm : String).
+	LocalFunCreates ::= (f: FunDecl, ICreated: String).
+	LocalAnonFunCreates ::= (af: AnonFunDecl, ICreated : String).
 
 	//// Populate the inferred creates for each machine
-	InferredMachineCreates (m, iorm) :-
-		MachineDecl(m, _), af is AnonFunDecl, LocalAnonFunCreates(af, iorm), af.owner = m;
-		StateDecl(_, m, ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, no LocalFunCreates(fdecl, _), GlobalFunCreates(ent, iorm);
-		StateDecl(_, m, ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, LocalFunCreates(fdecl, iorm);
-		StateDecl(_, m, _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, no LocalFunCreates(fdecl, _), GlobalFunCreates(ext, iorm);
-		StateDecl(_, m, _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, LocalFunCreates(fdecl, iorm);
-		DoDecl(src, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, no LocalFunCreates(fdecl, _), GlobalFunCreates(act, iorm);
-		DoDecl(src, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, FunAvailable(fdecl, m), fdecl.name = act, LocalFunCreates(fdecl, iorm);
-		TransDecl(src, _, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, no LocalFunCreates(fdecl, _), GlobalFunCreates(act, iorm);
-		TransDecl(src, _, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, FunAvailable(fdecl, m), fdecl.name = act, LocalFunCreates(fdecl, iorm).
-
-	InferredCreatesError ::= (m: FunDecl).
-
-	MemberOfStringList ::= sub (StringList, String).
-	ERROR1(f.id, "Creates list of the function prototype is not a subset of the inferred creates list for the function"),
-	InferredCreatesError(f) :- f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, iorm), FunProtoCreatesDecl(fd, list), no MemberOfStringList(list, iorm);
-							   f is FunDecl, fd is FunProtoDecl, f.owner = NIL, f.name = fd.name, GlobalFunCreates(f.name, _), no FunProtoCreatesDecl(fd, _).
+	InferredMachineCreates (m, ICreated) :-
+		MachineDecl(m, _), af is AnonFunDecl, LocalAnonFunCreates(af, ICreated), af.owner = m;
+		StateDecl(_, m, ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, no LocalFunCreates(fdecl, _), GlobalFunCreates(ent, ICreated);
+		StateDecl(_, m, ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, LocalFunCreates(fdecl, ICreated);
+		StateDecl(_, m, _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, no LocalFunCreates(fdecl, _), GlobalFunCreates(ext, ICreated);
+		StateDecl(_, m, _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, LocalFunCreates(fdecl, ICreated);
+		DoDecl(src, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, no LocalFunCreates(fdecl, _), GlobalFunCreates(act, ICreated);
+		DoDecl(src, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, FunAvailable(fdecl, m), fdecl.name = act, LocalFunCreates(fdecl, ICreated);
+		TransDecl(src, _, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, no LocalFunCreates(fdecl, _), GlobalFunCreates(act, ICreated);
+		TransDecl(src, _, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, FunAvailable(fdecl, m), fdecl.name = act, LocalFunCreates(fdecl, ICreated).
 
 	//// Compute the FunCreates
-	GlobalFunCreates(f.name, iorm) :-
-		f is FunDecl, f.owner = NIL, SubSE(f, NewStmt(iorm, _, _, _));
-		f is FunDecl, f.owner = NIL, SubSE(f, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunDecl, f.owner = NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, NewStmt(iorm, _, _, _));
-		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, iorm);
-		f is FunProtoDecl, no FunDecl(f.name, NIL, _, _, _, _, _), FunProtoCreatesDecl(f, list), MemberOfStringList(list, iorm).
+	GlobalFunCreates(f.name, ICreated) :-
+		f is FunDecl, f.owner = NIL, SubSE(f, NewStmt(ICreated, _, _, _));
+		f is FunDecl, f.owner = NIL, SubSE(f, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, ICreated);
+		f is FunDecl, f.owner = NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, ICreated);
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, NewStmt(ICreated, _, _, _));
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, ICreated);
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, ICreated).
 
-	LocalFunCreates(f, iorm) :-
-		f is FunDecl, f.owner != NIL, SubSE(f, NewStmt(iorm, _, _, _));
-		f is FunDecl, f.owner != NIL, SubSE(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		f is FunDecl, f.owner != NIL, SubSE(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
-		f is FunDecl, f.owner != NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		f is FunDecl, f.owner != NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, NewStmt(iorm, _, _, _));
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm).
+	LocalFunCreates(f, ICreated) :-
+		f is FunDecl, f.owner != NIL, SubSE(f, NewStmt(ICreated, _, _, _));
+		f is FunDecl, f.owner != NIL, SubSE(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, NewStmt(ICreated, _, _, _));
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated).
 
-	LocalAnonFunCreates(af, iorm) :-
-		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, NewStmt(iorm, _, _, _));
-		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm);
-		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, iorm);
-		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, iorm).
+	LocalAnonFunCreates(af, ICreated) :-
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, NewStmt(ICreated, _, _, _));
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated);
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated).
 		
 	
-	//populate the receive set if the machine exports an interface
-	MachineReceives(m, ev) :- MachineExports(m, i), InterfaceTypeDecl(i, it, _, _), MemberOfInterfaceType(it, ev).
-
-	//Checking the constructor type error for each exported interface
-	CompTypeRel(t1, t2) :- MachineExports(name, i), InterfaceTypeDecl(i, _, t1', _), TypeExpansion(t1', t1), ConstructorType(name, _, t2).
-
-	ExportInterfaceError ::= (m: MachineDecl).
-	ERROR1(id, "the exported interface argument type is not a subtype of the constructor argument type"),
-	ExportInterfaceError(m) :- m is MachineDecl(name, id), MachineExports(name, i), ConstructorType(name, _, ct),
-	                           InterfaceTypeDecl(i, _, iargt, _), TypeExpansion(iargt, eargt), ct != eargt, TypeRel(eargt, ct, k), k != SUB. 						 
-    
+	
+	
 	PFile ::= (fileName: String).
 	PFile(fileName) :- PUnit(unitName), PUnitContains(unitName, fileName).
 
@@ -426,7 +397,7 @@ domain PStaticTyping extends PData, PError
 	TypeDefError ::= (name: String).
 
 	ERROR0(errorMsg),
-	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceTypeDecl(name, _, _, _),
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceDecl(name, _, _, _), no MachineDecl(name, _),
 						  errorMsg = strJoin("Undefined type: ", name).
 	
 	ERROR2(td1.id, td2.id, "Multiple type definitions for a type name"),
@@ -480,11 +451,12 @@ domain PStaticTyping extends PData, PError
 	TypeExpansion(type, type)  :- TypeDef(typeName, NIL, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceTypeDecl(name, eType, _, _).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ev), ev: NonNullEventName, type = NameType(name), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(name, ev), ev: NonNullEventName}), eType : InterfaceType.
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineReceives(name, ALL), type = NameType(name), eType = BaseType(MACHINE).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineExports(name, iname), type = NameType(iname), InterfaceTypeDecl(iname, eType, _, _).
-	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- MachineProtoDecl(name, _), type = NameType(name), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, eType, _, _), eType : InterfaceType.
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, ALL, _, _), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, NIL, _, _), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), MachineDecl(name, _), no MachineReceives(name, _), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), MachineReceives(name, ALL), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), no MachineReceives(name, ALL), MachineReceives(name, _), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(name, ev), ev : NonNullEventName }), eType : InterfaceType.
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
 	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).
@@ -505,13 +477,16 @@ domain PStaticTyping extends PData, PError
 	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
 	ExportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
 	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
-	ExportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val = fileName.
+	ExportedType(name, eType) :- InterfaceDecl(name, eType, _, id), eType: InterfaceType, PFile(fileName), id.tl.val = fileName.
+	ExportedType(name, BaseType(MACHINE)) :- InterfaceDecl(name, eType, _, id), toSymbol(eType) != #InterfaceType, PFile(fileName), id.tl.val = fileName.
+	ExportedType(name, eType) :- MachineDecl(name, id), TypeExpansion(NameType(name), eType), PFile(fileName), id.tl.val = fileName.
 
 	ImportedType ::= (String, TypeExpr).
 	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
 	ImportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
 	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
-	ImportedType(name, eType) :- InterfaceTypeDecl(name, eType, _, id), PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
+	ImportedType(name, eType) :- InterfaceDecl(name, eType, _, id), eType: InterfaceType, PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
+	ImportedType(name, eType) :- InterfaceDecl(name, ALL, _, id), eType = BaseType(MACHINE), PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
 
 	NotImportedType ::= (type: TypeExpr).
 	NotImportedType(type) :- OldTranslatedTypeExpr(type), no ImportedType(_, type).
@@ -1032,6 +1007,11 @@ domain PStaticTyping extends PData, PError
 	ERROR2(e.id, decl.id, "Parameter passed with swap not available at callee return"),
 	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
 									   FunAvailable(decl, c.owner), e.name = decl.name, UnavailableAtReturn(decl, n).
+
+	ERROR2(e.id, decl.id, "Type of argument passed with swap must be identical to parameter type"),
+	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, arg, _), NmdTupType(NmdTupTypeField(n, paramType), _)), 
+									   FunAvailable(decl, c.owner), e.name = decl.name,
+	                                   TypeOf(c, arg, argType), argType: TypeExpr, TypeExpansion(paramType, eParamType), argType != eParamType.
 	
 	/*************************************************************/
     /*            Permissions Embedded in Types                  */
@@ -1104,32 +1084,30 @@ domain PStaticTyping extends PData, PError
 	ERROR1(e.id, "Cannot create a spec machine"),
     TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineKind(n, SPEC).
 
-	ERROR1(e.id, "Undefined machine or interface type"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
-									  no MachineProtoDecl(n, _), no InterfaceTypeDecl(n, _, _, _).
+	ERROR1(e.id, "Undefined interface or machine name"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no InterfaceDecl(n, _, _, _), no MachineDecl(n, _).
 
-    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineKind(n, kind), kind != SPEC,
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), InterfaceDecl(n, _, _, _),
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+
+	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, _),
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
 	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
-    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineKind(n, kind), kind != SPEC,
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), InterfaceDecl(n, _, _, _),
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), no MachineDecl(n, _),
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), InterfaceDecl(n, _, _, _),
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 
 	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), m is MachineProtoDecl(n, _), 
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
 
-	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
-									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, _), 
 									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
 	
-	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
-	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), no MachineDecl(n, _), 
-									  no MachineProtoDecl(n, _), InterfaceTypeDecl(n, _, _, _), 
-									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
+
 
 	//// Error rules for pop.
 	ERROR1(e.id, "Global function must not use pop statement"),
@@ -1990,21 +1968,13 @@ domain PStaticTyping extends PData, PError
 	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
 	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), ConstructorType(name, _, ft), TypeOfArg1(c, n, type), type: TypeExpr,
 					   TypeRel(type, ft, k), type != ft, k != SUB.
-	
-	// for creation of machines proto
-	ERROR1(n.id, "Entry function of start state expects an argument"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _), ft != BaseType(NULL).
-	
-	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), MachineProtoDecl(name, ft), no MachineDecl(name, _), TypeOfArg1(c, n, type), type: TypeExpr,
-					   TypeRel(type, ft, k), type != ft, k != SUB.
 					   			   
-	//for creation of interfaces
+	//for creation of machines
 	ERROR1(n.id, "Created interface expects an argument"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), ft != BaseType(NULL).
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), InterfaceDecl(name, _, ft, _), ft != BaseType(NULL).
 	
 	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of the created interface"),
-	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), no MachineDecl(name, _), no MachineProtoDecl(name, _), InterfaceTypeDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), InterfaceDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
 					   TypeRel(type, ft, k), type != ft, k != SUB.	
 
 	//Entry function of spec machine must have null constructor type

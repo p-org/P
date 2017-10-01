@@ -1,13 +1,8 @@
-module System
-private START, TIMEOUT;
+module System = 
 {
-    Client, Server, Timer
-}
+    IClient -> Client, IServer -> Server, Timer
+};
 
-module Main0 { TestMachine0 }
+test Test0: main TestMachine0 in (assert Safety in (union { TestMachine0 }, System));
 
-module Main1 { TestMachine1 }
-
-test Test0: (rename TestMachine0 to Main in (assert Safety in (compose Main0, System)));
-
-test Test1: (rename TestMachine1 to Main in (assert Liveness in (compose Main1, System)));
+test Test1: main TestMachine1 in (assert Liveness in (union { TestMachine1 }, System));

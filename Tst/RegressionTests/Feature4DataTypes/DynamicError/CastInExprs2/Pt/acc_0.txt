@@ -1,0 +1,21 @@
+=================================
+         Console output          
+=================================
+OUT: Writing CastInExprsDynError.cs ...
+OUT: Writing CastInExprsDynError.4ml ...
+OUT: Writing linker.cs ...
+OUT: Writing linker.dll ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+EXIT (csc.exe): 0
+OUT: -----------------------------------------------------
+OUT: Total Schedules Explored: 0
+OUT: -----------------------------------------------------
+OUT: <CreateLog> Created Machine Main-1
+OUT: <StateLog> Machine Main-1 entering State Main_S
+OUT: 
+OUT: ERROR: value null is not a member of type BOOL
+OUT: 
+EXIT: -1

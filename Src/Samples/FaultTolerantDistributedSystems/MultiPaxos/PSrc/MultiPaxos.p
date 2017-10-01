@@ -1,5 +1,4 @@
-machine MultiPaxosNodeMachine : MultiPaxosNodeInterface, SMRServerInterface
-receives eTimeOut, eCancelSuccess, eCancelFailure;
+machine MultiPaxosNodeMachine
 sends eSMRLeaderUpdated, eSMRReplicatedMachineOperation, eStartTimer, eCancelTimer;
 {
 

@@ -3,11 +3,11 @@ event ACQUIRE_RESP: any;
 event RELEASE: any;
 
 machine Lock {
-	var data: any;
+	var data_v: any;
 
 	start state Unheld {
 		entry (v: any) {
-			data = v move;
+			data_v = v move;
 		}
 		on ACQUIRE_REQ goto Held;
 	}
@@ -15,7 +15,7 @@ machine Lock {
 	state Held {
 		entry (client: machine) {
 			var v: any;
-			data = v swap;
+			data_v = v swap;
 			send client, ACQUIRE_RESP, v move;
 		}
 		defer ACQUIRE_REQ;
@@ -36,16 +36,16 @@ machine Client {
 	}
 
 	fun Work() {
-		var data: seq[int];
+		var data_v: seq[int];
 		var i: int;
 		i = 0;
 		while (i < iter) {
 			send lock, ACQUIRE_REQ, this;
 			receive {
 				case ACQUIRE_RESP: (v: any) {
-					v = data swap;
-					Process(data swap);
-					v = data swap;
+					v = data_v swap;
+					Process(data_v swap);
+					v = data_v swap;
 					send lock, RELEASE, v move;
 				}
 			}
@@ -53,8 +53,8 @@ machine Client {
 		}
 	}
 
-	fun Process(data: seq[int]) {
-		data += (0, 1);
+	fun Process(data_v: seq[int]) {
+		data_v += (0, 1);
 	}
 }
 
@@ -64,9 +64,9 @@ machine Main {
 			var lock: machine;
 			var client1: machine;
 			var client2: machine;
-			var data:seq[int];
+			var data_v:seq[int];
 
-			lock = new Lock(data);
+			lock = new Lock(data_v);
 			client1 = new Client(lock, 3);
 			client2 = new Client(lock, 2);
 		}

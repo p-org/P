@@ -1,4 +1,4 @@
-machine ChainReplicationMasterMachine : ChainReplicationMasterInterface
+machine ChainReplicationMasterMachine
 sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor, eMonitorUpdateNodes;
 {
 	var client : SMRClientInterface;
@@ -126,8 +126,7 @@ sends eBecomeHead, eBecomeTail, eFaultCorrected, eNewPredecessor, eNewSuccessor,
 }
 
 
-machine ChainReplicationFaultDetectionMachine : ChainReplicationFaultDetectorInterface
-receives eTimeOut, eCancelSuccess, eCancelFailure;
+machine ChainReplicationFaultDetectionMachine
 sends eCRPing, eFaultDetected,  eStartTimer, eCancelTimer, halt;
 {
 	var nodes : seq[ChainReplicationNodeInterface]; 

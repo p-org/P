@@ -1,0 +1,2 @@
+dsc: zinger.exe, receive labels generated correctly
+

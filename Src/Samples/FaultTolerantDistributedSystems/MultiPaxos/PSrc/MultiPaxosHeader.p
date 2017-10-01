@@ -34,6 +34,6 @@ type LEContructorType = (servers: seq[any<MultiPaxosLEEvents>], parentServer:any
 Interface types
 **********************************************/
 eventset MultiPaxosLEEvents = { eSMROperation,  eNewLeader, eFwdPing };
-type LeaderElectionClientInterface() = { eNewLeader, eFwdPing };
-type LeaderElectionInterface(LEContructorType) = { ePing };
-type MultiPaxosNodeInterface(SMRServerConstrutorType) = { eChosen, eGoPropose, eAccepted, eSuccess, eReject, eAgree, eAccept, ePrepare, eNewLeader, eFwdPing };
+interface LeaderElectionClientInterface(SMRServerConstrutorType) receives eNewLeader, eFwdPing;
+interface LeaderElectionInterface(LEContructorType) receives ePing;
+interface MultiPaxosNodeInterface(SMRServerConstrutorType) receives eChosen, eGoPropose, eAccepted, eSuccess, eReject, eAgree, eAccept, ePrepare, eNewLeader, eFwdPing;

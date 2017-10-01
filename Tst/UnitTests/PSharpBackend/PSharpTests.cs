@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
@@ -72,6 +73,7 @@ namespace UnitTests.PSharpBackend
         [Test]
         public void TestAnalyzeAllTests()
         {
+            Thread.Sleep(10000);
             var testCases = TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
             foreach (TestCaseData testCase in testCases)
             {
@@ -80,11 +82,12 @@ namespace UnitTests.PSharpBackend
                     .MakeRelativeUri(new Uri(testDir.FullName))
                     .ToString();
 
-                if (testWhitelist.Contains(testName))
+                //if (testWhitelist.Contains(testName))
                 {
                     RunTest(testName, testDir.GetFiles("*.p"));
                 }
             }
+            Thread.Sleep(10000);
         }
 
         [Test]

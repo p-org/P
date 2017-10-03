@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST;
+using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -76,7 +78,6 @@ namespace Microsoft.Pc.TypeChecker
                 }
 
                 throw handler.MissingDeclaration(context.name, "enum, typedef, or interface", typeName);
-                throw new Exception("unreachable");
             }
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)

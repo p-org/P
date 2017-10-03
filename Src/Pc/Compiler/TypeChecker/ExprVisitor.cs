@@ -4,13 +4,16 @@ using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST;
+using Microsoft.Pc.TypeChecker.AST.Expressions;
+using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {
     public class ExprVisitor : PParserBaseVisitor<IPExpr>
     {
-        private readonly DeclarationTable table;
         private readonly ITranslationErrorHandler handler;
+        private readonly DeclarationTable table;
 
         public ExprVisitor(DeclarationTable table, ITranslationErrorHandler handler)
         {
@@ -44,7 +47,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), subExpr.Type, TypeKind.NamedTuple);
             }
             string fieldName = context.field.GetText();
-            if (!tuple.LookupEntry(fieldName, out var entry))
+            if (!tuple.LookupEntry(fieldName, out NamedTupleEntry entry))
             {
                 throw handler.MissingNamedTupleEntry(context.field, context.field.GetText(), tuple);
             }
@@ -146,14 +149,14 @@ namespace Microsoft.Pc.TypeChecker
             if (PrimitiveType.Null.IsAssignableFrom(machine.PayloadType) && arguments.Length != 0)
             {
                 throw handler.IncorrectArgumentCount(
-                    (ParserRuleContext)context.rvalueList() ?? context,
-                    arguments.Length,
-                    0);
+                                                     (ParserRuleContext) context.rvalueList() ?? context,
+                                                     arguments.Length,
+                                                     0);
             }
 
             if (!PrimitiveType.Null.IsAssignableFrom(machine.PayloadType) && arguments.Length != 1)
             {
-                throw handler.IncorrectArgumentCount((ParserRuleContext)context.rvalueList() ?? context,
+                throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
                                                      arguments.Length,
                                                      1);
             }
@@ -206,9 +209,13 @@ namespace Microsoft.Pc.TypeChecker
             switch (context.op.Text)
             {
                 case "-":
-                    if (!PrimitiveType.Int.IsAssignableFrom(subExpr.Type) && !PrimitiveType.Float.IsAssignableFrom(subExpr.Type))
+                    if (!PrimitiveType.Int.IsAssignableFrom(subExpr.Type) &&
+                        !PrimitiveType.Float.IsAssignableFrom(subExpr.Type))
                     {
-                        throw handler.TypeMismatch(context.expr(), subExpr.Type, PrimitiveType.Int, PrimitiveType.Float);
+                        throw handler.TypeMismatch(context.expr(),
+                                                   subExpr.Type,
+                                                   PrimitiveType.Int,
+                                                   PrimitiveType.Float);
                     }
                     return new SignNegateExpr(subExpr);
                 case "!":
@@ -262,8 +269,10 @@ namespace Microsoft.Pc.TypeChecker
                 case ">":
                 case ">=":
                 case "<=":
-                    if (!(PrimitiveType.Int.IsAssignableFrom(lhs.Type) && PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
-                          PrimitiveType.Float.IsAssignableFrom(lhs.Type) && PrimitiveType.Float.IsAssignableFrom(rhs.Type)))
+                    if (!(PrimitiveType.Int.IsAssignableFrom(lhs.Type) &&
+                          PrimitiveType.Int.IsAssignableFrom(rhs.Type) ||
+                          PrimitiveType.Float.IsAssignableFrom(lhs.Type) &&
+                          PrimitiveType.Float.IsAssignableFrom(rhs.Type)))
                     {
                         throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
                     }
@@ -493,7 +502,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitMapOrSeqLvalue(PParser.MapOrSeqLvalueContext context)
         {
             IPExpr lvalue = Visit(context.lvalue());
-            var type = lvalue.Type.Canonicalize();
+            PLanguageType type = lvalue.Type.Canonicalize();
             if (type is MapType mapType)
             {
                 IPExpr index = Visit(context.expr());
@@ -514,505 +523,5 @@ namespace Microsoft.Pc.TypeChecker
             }
             throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Sequence, TypeKind.Map);
         }
-    }
-
-    public class MapAccessExpr : IPExpr
-    {
-        public IPExpr MapExpr { get; }
-        public IPExpr IndexExpr { get; }
-        public PLanguageType Type { get; }
-
-        public MapAccessExpr(IPExpr mapExpr, IPExpr indexExpr, PLanguageType type)
-        {
-            MapExpr = mapExpr;
-            IndexExpr = indexExpr;
-            Type = type;
-        }
-    }
-
-    public class EnumElemRefExpr : IPExpr
-    {
-        public EnumElemRefExpr(EnumElem enumElem)
-        {
-            EnumElem = enumElem;
-            Type = new EnumType(EnumElem.ParentEnum);
-        }
-
-        public EnumElem EnumElem { get; }
-        public PLanguageType Type { get; }
-    }
-
-    public enum LinearType
-    {
-        Move,
-        Swap
-    }
-
-    public interface IVarRef : IPExpr
-    {
-        Variable Variable { get; }
-    }
-
-    public interface ILinearRef : IVarRef
-    {
-        LinearType LinearType { get; }
-    }
-
-    public class LinearAccessRefExpr : ILinearRef
-    {
-        public LinearAccessRefExpr(Variable variable, LinearType linearType)
-        {
-            Variable = variable;
-            LinearType = linearType;
-            Type = variable.Type;
-        }
-
-        public Variable Variable { get; }
-        public PLanguageType Type { get; }
-        public LinearType LinearType { get; }
-    }
-
-    public class UnnamedTupleExpr : IPExpr
-    {
-        public UnnamedTupleExpr(IPExpr[] tupleFields, PLanguageType type)
-        {
-            TupleFields = tupleFields;
-            Type = type;
-        }
-
-        public IPExpr[] TupleFields { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class NamedTupleExpr : IPExpr
-    {
-        public NamedTupleExpr(IPExpr[] tupleFields, PLanguageType type)
-        {
-            TupleFields = tupleFields;
-            Type = type;
-        }
-
-        public IPExpr[] TupleFields { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class FloatLiteralExpr : IPExpr
-    {
-        public FloatLiteralExpr(double value) { Value = value; }
-        public double Value { get; }
-        public PLanguageType Type { get; } = PrimitiveType.Float;
-    }
-
-    public class CompareSameExpr : IPExpr
-    {
-        public CompareSameExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class CompareDiffExpr : IPExpr
-    {
-        public CompareDiffExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-
-    public class LogicalOrExpr : IPExpr
-    {
-        public LogicalOrExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class LogicalAndExpr : IPExpr
-    {
-        public LogicalAndExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class ContainsKeyExpr : IPExpr
-    {
-        public ContainsKeyExpr(IPExpr key, IPExpr map)
-        {
-            Key = key;
-            Map = map;
-        }
-
-        public IPExpr Key { get; }
-        public IPExpr Map { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class LessThanExpr : IPExpr
-    {
-        public LessThanExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class LessEqualsExpr : IPExpr
-    {
-        public LessEqualsExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class GreaterThanExpr : IPExpr
-    {
-        public GreaterThanExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class GreaterEqualsExpr : IPExpr
-    {
-        public GreaterEqualsExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class DivExpr : IPExpr
-    {
-        public DivExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-            Debug.Assert(Lhs.Type.IsSameTypeAs(Rhs.Type));
-            Type = Lhs.Type;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class AddExpr : IPExpr
-    {
-        public AddExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-            Debug.Assert(Lhs.Type.IsSameTypeAs(Rhs.Type));
-            Type = Lhs.Type;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class SubExpr : IPExpr
-    {
-        public SubExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-            Debug.Assert(Lhs.Type.IsSameTypeAs(Rhs.Type));
-            Type = Lhs.Type;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class MultExpr : IPExpr
-    {
-        public MultExpr(IPExpr lhs, IPExpr rhs)
-        {
-            Lhs = lhs;
-            Rhs = rhs;
-            Debug.Assert(Lhs.Type.IsSameTypeAs(Rhs.Type));
-            Type = Lhs.Type;
-        }
-
-        public IPExpr Lhs { get; }
-        public IPExpr Rhs { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class ThisRefExpr : IPExpr
-    {
-        public ThisRefExpr(Machine machine) { Machine = machine; }
-
-        public Machine Machine { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Machine;
-    }
-
-    public class EventRefExpr : IPExpr
-    {
-        public EventRefExpr(PEvent pEvent) { PEvent = pEvent; }
-
-        public PEvent PEvent { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Event;
-    }
-
-    public class FairNondetExpr : IPExpr
-    {
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class NondetExpr : IPExpr
-    {
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class NullLiteralExpr : IPExpr
-    {
-        public PLanguageType Type { get; } = PrimitiveType.Null;
-    }
-
-    public class IntLiteralExpr : IPExpr
-    {
-        public IntLiteralExpr(int value) { Value = value; }
-
-        public int Value { get; }
-        public PLanguageType Type { get; } = PrimitiveType.Int;
-    }
-
-    public class BoolLiteralExpr : IPExpr
-    {
-        public BoolLiteralExpr(bool value) { Value = value; }
-
-        public bool Value { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Bool;
-    }
-
-    public class VariableAccessExpr : IVarRef
-    {
-        public VariableAccessExpr(Variable variable)
-        {
-            Variable = variable;
-            Type = variable.Type;
-        }
-
-        public Variable Variable { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class CastExpr : IPExpr
-    {
-        public CastExpr(IPExpr subExpr, PLanguageType type)
-        {
-            Type = type;
-            SubExpr = subExpr;
-        }
-
-        public IPExpr SubExpr { get; }
-        public PLanguageType Type { get; }
-    }
-
-    public class LogicalNegateExpr : IPExpr
-    {
-        public LogicalNegateExpr(IPExpr subExpr)
-        {
-            SubExpr = subExpr;
-            Type = subExpr.Type;
-        }
-
-        public IPExpr SubExpr { get; }
-        public PLanguageType Type { get; }
-    }
-
-    public class SignNegateExpr : IPExpr
-    {
-        public SignNegateExpr(IPExpr subExpr)
-        {
-            SubExpr = subExpr;
-            Type = subExpr.Type;
-        }
-
-        public IPExpr SubExpr { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class FunCallExpr : IPExpr
-    {
-        public FunCallExpr(Function function, IPExpr[] arguments)
-        {
-            Function = function;
-            Arguments = arguments;
-            Type = function.Signature.ReturnType;
-        }
-
-        public Function Function { get; }
-        public IPExpr[] Arguments { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class CtorExpr : IPExpr
-    {
-        public CtorExpr(Machine machine, IPExpr[] arguments)
-        {
-            Machine = machine;
-            Arguments = arguments;
-        }
-
-        public Machine Machine { get; }
-        public IPExpr[] Arguments { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Machine;
-    }
-
-    public class DefaultExpr : IPExpr
-    {
-        public DefaultExpr(PLanguageType type) { Type = type; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class SizeofExpr : IPExpr
-    {
-        public SizeofExpr(IPExpr expr) { Expr = expr; }
-
-        public IPExpr Expr { get; }
-
-        public PLanguageType Type { get; } = PrimitiveType.Int;
-    }
-
-    public class ValuesExpr : IPExpr
-    {
-        public ValuesExpr(IPExpr expr, PLanguageType type)
-        {
-            Expr = expr;
-            Type = type;
-        }
-
-        public IPExpr Expr { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class KeysExpr : IPExpr
-    {
-        public KeysExpr(IPExpr expr, PLanguageType type)
-        {
-            Expr = expr;
-            Type = type;
-        }
-
-        public IPExpr Expr { get; }
-        public PLanguageType Type { get; }
-    }
-
-    public class SeqAccessExpr : IPExpr
-    {
-        public SeqAccessExpr(IPExpr seqExpr, IPExpr indexExpr, PLanguageType type)
-        {
-            SeqExpr = seqExpr;
-            IndexExpr = indexExpr;
-            Type = type;
-        }
-
-        public IPExpr SeqExpr { get; }
-        public IPExpr IndexExpr { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public class NamedTupleAccessExpr : IPExpr
-    {
-        public NamedTupleAccessExpr(IPExpr subExpr, NamedTupleEntry entry)
-        {
-            SubExpr = subExpr;
-            Entry = entry;
-        }
-
-        public IPExpr SubExpr { get; }
-        public NamedTupleEntry Entry { get; }
-        public string FieldName => Entry.Name;
-        public PLanguageType Type => Entry.Type;
-    }
-
-    public class TupleAccessExpr : IPExpr
-    {
-        public TupleAccessExpr(IPExpr subExpr, int fieldNo, PLanguageType type)
-        {
-            SubExpr = subExpr;
-            FieldNo = fieldNo;
-            Type = type;
-        }
-
-        public IPExpr SubExpr { get; }
-        public int FieldNo { get; }
-
-        public PLanguageType Type { get; }
-    }
-
-    public interface IPExpr
-    {
-        PLanguageType Type { get; }
     }
 }

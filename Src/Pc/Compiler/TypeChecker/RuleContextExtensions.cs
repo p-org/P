@@ -1,12 +1,10 @@
 using Antlr4.Runtime;
 
-namespace Microsoft.Pc.TypeChecker {
+namespace Microsoft.Pc.TypeChecker
+{
     internal static class RuleContextExtensions
     {
-        public static T GetParent<T>(this RuleContext ctx) where T : RuleContext
-        {
-            return GetParent<T>(ctx, 0);
-        }
+        public static T GetParent<T>(this RuleContext ctx) where T : RuleContext { return GetParent<T>(ctx, 0); }
 
         public static T GetParent<T>(this RuleContext ctx, int i) where T : RuleContext
         {

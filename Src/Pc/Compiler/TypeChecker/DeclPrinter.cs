@@ -3,7 +3,8 @@ using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 
-namespace Microsoft.Pc.TypeChecker {
+namespace Microsoft.Pc.TypeChecker
+{
     public class DeclPrinter : IParseTreeListener
     {
         private readonly ParseTreeProperty<DeclarationTable> programDeclarations;
@@ -15,10 +16,7 @@ namespace Microsoft.Pc.TypeChecker {
 
         public void VisitTerminal(ITerminalNode node) { }
 
-        public void VisitErrorNode(IErrorNode node)
-        {
-            throw new NotImplementedException();
-        }
+        public void VisitErrorNode(IErrorNode node) { throw new NotImplementedException(); }
 
         public void EnterEveryRule(ParserRuleContext ctx)
         {
@@ -27,7 +25,8 @@ namespace Microsoft.Pc.TypeChecker {
             DeclarationTable decls = programDeclarations.Get(ctx);
             if (decls != null)
             {
-                string declList = string.Join(", ", decls.AllDecls.Select(decl => $"{decl.Name}: {decl.GetType().Name}"));
+                string declList = string.Join(", ",
+                                              decls.AllDecls.Select(decl => $"{decl.Name}: {decl.GetType().Name}"));
                 output = $"{output} [{declList}]";
             }
             Console.WriteLine($"{padding}{output}");

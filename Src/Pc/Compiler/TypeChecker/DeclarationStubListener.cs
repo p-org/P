@@ -1,7 +1,7 @@
 using System;
-using System.Diagnostics;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -12,11 +12,15 @@ namespace Microsoft.Pc.TypeChecker
     public class DeclarationStubListener : PParserBaseListener
     {
         private readonly ParseTreeProperty<DeclarationTable> declarationTables;
+        private readonly ITranslationErrorHandler handler;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
         private DeclarationTable currentTable;
-        private readonly ITranslationErrorHandler handler;
 
-        public DeclarationStubListener(DeclarationTable topLevelTable, ParseTreeProperty<DeclarationTable> declarationTables, ParseTreeProperty<IPDecl> nodesToDeclarations, ITranslationErrorHandler handler)
+        public DeclarationStubListener(
+            DeclarationTable topLevelTable,
+            ParseTreeProperty<DeclarationTable> declarationTables,
+            ParseTreeProperty<IPDecl> nodesToDeclarations,
+            ITranslationErrorHandler handler)
         {
             this.declarationTables = declarationTables;
             this.nodesToDeclarations = nodesToDeclarations;
@@ -30,43 +34,6 @@ namespace Microsoft.Pc.TypeChecker
             // which represents the global namespace, spanning all files
             declarationTables.Put(context, currentTable);
         }
-
-        #region Typedef processing
-        public override void EnterPTypeDef(PParser.PTypeDefContext context)
-        {
-            string symbolName = context.name.GetText();
-            TypeDef typeDef = currentTable.Put(symbolName, context);
-            nodesToDeclarations.Put(context, typeDef);
-        }
-
-        public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
-        {
-            throw new NotImplementedException("TODO: foreign types");
-        }
-        #endregion
-
-        #region Enum declaration processing
-        public override void EnterEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
-        {
-            string symbolName = context.name.GetText();
-            PEnum pEnum = currentTable.Put(symbolName, context);
-            nodesToDeclarations.Put(context, pEnum);
-        }
-
-        public override void EnterEnumElem(PParser.EnumElemContext context)
-        {
-            string symbolName = context.name.GetText();
-            EnumElem elem = currentTable.Put(symbolName, context);
-            nodesToDeclarations.Put(context, elem);
-        }
-
-        public override void EnterNumberedEnumElem(PParser.NumberedEnumElemContext context)
-        {
-            string symbolName = context.name.GetText();
-            EnumElem elem = currentTable.Put(symbolName, context);
-            nodesToDeclarations.Put(context, elem);
-        }
-        #endregion
 
         public override void EnterEventDecl(PParser.EventDeclContext context)
         {
@@ -97,10 +64,7 @@ namespace Microsoft.Pc.TypeChecker
             PushTable(context);
         }
 
-        public override void ExitImplMachineDecl(PParser.ImplMachineDeclContext context)
-        {
-            PopTable();
-        }
+        public override void ExitImplMachineDecl(PParser.ImplMachineDeclContext context) { PopTable(); }
 
         public override void EnterStateDecl(PParser.StateDeclContext context)
         {
@@ -117,10 +81,7 @@ namespace Microsoft.Pc.TypeChecker
             PushTable(context);
         }
 
-        public override void ExitGroup(PParser.GroupContext context)
-        {
-            PopTable();
-        }
+        public override void ExitGroup(PParser.GroupContext context) { PopTable(); }
 
         public override void EnterVarDecl(PParser.VarDeclContext context)
         {
@@ -146,10 +107,7 @@ namespace Microsoft.Pc.TypeChecker
             PushTable(context);
         }
 
-        public override void ExitSpecMachineDecl(PParser.SpecMachineDeclContext context)
-        {
-            PopTable();
-        }
+        public override void ExitSpecMachineDecl(PParser.SpecMachineDeclContext context) { PopTable(); }
 
         public override void EnterFunDecl(PParser.FunDeclContext context)
         {
@@ -159,10 +117,7 @@ namespace Microsoft.Pc.TypeChecker
             PushTable(context);
         }
 
-        public override void ExitFunDecl(PParser.FunDeclContext context)
-        {
-            PopTable();
-        }
+        public override void ExitFunDecl(PParser.FunDeclContext context) { PopTable(); }
 
         public override void EnterFunParam(PParser.FunParamContext context)
         {
@@ -178,37 +133,68 @@ namespace Microsoft.Pc.TypeChecker
             nodesToDeclarations.Put(context, decl);
         }
 
-        public override void EnterAnonEventHandler(PParser.AnonEventHandlerContext context)
-        {
-            PushTable(context);
-        }
+        public override void EnterAnonEventHandler(PParser.AnonEventHandlerContext context) { PushTable(context); }
 
-        public override void ExitAnonEventHandler(PParser.AnonEventHandlerContext context)
-        {
-            PopTable();
-        }
+        public override void ExitAnonEventHandler(PParser.AnonEventHandlerContext context) { PopTable(); }
 
         public override void EnterNoParamAnonEventHandler(PParser.NoParamAnonEventHandlerContext context)
         {
             PushTable(context);
         }
 
-        public override void ExitNoParamAnonEventHandler(PParser.NoParamAnonEventHandlerContext context)
+        public override void ExitNoParamAnonEventHandler(PParser.NoParamAnonEventHandlerContext context) { PopTable(); }
+
+        #region Typedef processing
+
+        public override void EnterPTypeDef(PParser.PTypeDefContext context)
         {
-            PopTable();
+            string symbolName = context.name.GetText();
+            TypeDef typeDef = currentTable.Put(symbolName, context);
+            nodesToDeclarations.Put(context, typeDef);
         }
 
+        public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
+        {
+            throw new NotImplementedException("TODO: foreign types");
+        }
+
+        #endregion
+
+        #region Enum declaration processing
+
+        public override void EnterEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
+        {
+            string symbolName = context.name.GetText();
+            PEnum pEnum = currentTable.Put(symbolName, context);
+            nodesToDeclarations.Put(context, pEnum);
+        }
+
+        public override void EnterEnumElem(PParser.EnumElemContext context)
+        {
+            string symbolName = context.name.GetText();
+            EnumElem elem = currentTable.Put(symbolName, context);
+            nodesToDeclarations.Put(context, elem);
+        }
+
+        public override void EnterNumberedEnumElem(PParser.NumberedEnumElemContext context)
+        {
+            string symbolName = context.name.GetText();
+            EnumElem elem = currentTable.Put(symbolName, context);
+            nodesToDeclarations.Put(context, elem);
+        }
+
+        #endregion
+
         #region Table Management
+
         private void PushTable(IParseTree context)
         {
             currentTable = new DeclarationTable(handler) {Parent = currentTable};
             declarationTables.Put(context, currentTable);
         }
 
-        private void PopTable()
-        {
-            currentTable = currentTable.Parent;
-        }
+        private void PopTable() { currentTable = currentTable.Parent; }
+
         #endregion
     }
 }

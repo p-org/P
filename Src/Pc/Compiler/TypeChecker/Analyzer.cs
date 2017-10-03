@@ -4,15 +4,20 @@ using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST;
 
 namespace Microsoft.Pc.TypeChecker
 {
     public class FunctionBodyListener : PParserBaseListener
     {
-        private readonly ParseTreeProperty<DeclarationTable> nodesToScopes;
-        private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
         private readonly ITranslationErrorHandler handler;
-        public FunctionBodyListener(ITranslationErrorHandler handler, ParseTreeProperty<IPDecl> nodesToDeclarations, ParseTreeProperty<DeclarationTable> nodesToScopes)
+        private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
+        private readonly ParseTreeProperty<DeclarationTable> nodesToScopes;
+
+        public FunctionBodyListener(
+            ITranslationErrorHandler handler,
+            ParseTreeProperty<IPDecl> nodesToDeclarations,
+            ParseTreeProperty<DeclarationTable> nodesToScopes)
         {
             this.handler = handler;
             this.nodesToDeclarations = nodesToDeclarations;
@@ -32,7 +37,9 @@ namespace Microsoft.Pc.TypeChecker
 
     public static class Analyzer
     {
-        public static void AnalyzeCompilationUnit(ITranslationErrorHandler handler, params PParser.ProgramContext[] programUnits)
+        public static void AnalyzeCompilationUnit(
+            ITranslationErrorHandler handler,
+            params PParser.ProgramContext[] programUnits)
         {
             var walker = new ParseTreeWalker();
             var topLevelTable = new DeclarationTable(handler);
@@ -48,7 +55,9 @@ namespace Microsoft.Pc.TypeChecker
 
             // Step 1: Create mapping of names to declaration stubs
             foreach (PParser.ProgramContext programUnit in programUnits)
+            {
                 walker.Walk(stubListener, programUnit);
+            }
 
             // NOW: no declarations have ambiguous names.
             // NOW: there is exactly one declaration object for each declaration.
@@ -57,7 +66,9 @@ namespace Microsoft.Pc.TypeChecker
 
             // Step 2: Validate declarations and fill with types
             foreach (PParser.ProgramContext programUnit in programUnits)
+            {
                 walker.Walk(declListener, programUnit);
+            }
 
             //ValidateDeclarations(nodesToScopes, nodesToDeclarations, topLevelTable);
 
@@ -65,7 +76,9 @@ namespace Microsoft.Pc.TypeChecker
 
             // Step 3: Fill in method bodies
             foreach (PParser.ProgramContext programUnit in programUnits)
+            {
                 walker.Walk(funcBodyListener, programUnit);
+            }
 
             // NOW: AST Complete, pass to StringTemplate
         }
@@ -80,18 +93,24 @@ namespace Microsoft.Pc.TypeChecker
             foreach (var decl in AllDeclarations(topLevelTable))
             {
                 if (!validator.IsValid((dynamic) decl.Item1, decl.Item2))
+                {
                     throw new ArgumentException($"malformed declaration {decl.Item1.Name}");
+                }
             }
         }
 
         private static IEnumerable<Tuple<IPDecl, DeclarationTable>> AllDeclarations(DeclarationTable root)
         {
             foreach (IPDecl decl in root.AllDecls)
+            {
                 yield return Tuple.Create(decl, root);
+            }
             foreach (DeclarationTable child in root.Children)
             {
                 foreach (var subdecl in AllDeclarations(child))
+                {
                     yield return subdecl;
+                }
             }
         }
     }
@@ -151,10 +170,14 @@ namespace Microsoft.Pc.TypeChecker
             foreach (StateGroup group in groups)
             {
                 foreach (State groupState in group.States)
+                {
                     yield return groupState;
+                }
 
                 foreach (State subState in Flatten(group.Groups))
+                {
                     yield return subState;
+                }
             }
         }
 
@@ -174,7 +197,7 @@ namespace Microsoft.Pc.TypeChecker
         public bool IsValid(MachineProto machineProto, DeclarationTable sourceTable)
         {
             return machineProto.PayloadType != null &&
-                _nodesToDeclarations.Get(machineProto.SourceNode) == machineProto;
+                   _nodesToDeclarations.Get(machineProto.SourceNode) == machineProto;
         }
 
         public bool IsValid(PEnum pEnum, DeclarationTable sourceTable)
@@ -183,16 +206,18 @@ namespace Microsoft.Pc.TypeChecker
             // There is a zero element
             // All elements are distinct
             return pEnum.Values.All(val => val.ParentEnum == pEnum) &&
-                pEnum.Values.Any(val => val.Value == 0) &&
-                pEnum.Values.Select(val => val.Value).Distinct().Count() == pEnum.Values.Count() &&
-                _nodesToDeclarations.Get(pEnum.SourceNode) == pEnum;
+                   pEnum.Values.Any(val => val.Value == 0) &&
+                   pEnum.Values.Select(val => val.Value).Distinct().Count() == pEnum.Values.Count() &&
+                   _nodesToDeclarations.Get(pEnum.SourceNode) == pEnum;
         }
 
         public bool IsValid(PEvent pEvent, DeclarationTable sourceTable)
         {
             // special handling for special events
             if (pEvent.SourceNode == null)
+            {
                 return pEvent.Name.Equals("halt") || pEvent.Name.Equals("null");
+            }
 
             // check that reverse trips works
             return _nodesToDeclarations.Get(pEvent.SourceNode) == pEvent;
@@ -201,30 +226,30 @@ namespace Microsoft.Pc.TypeChecker
         public bool IsValid(State state, DeclarationTable sourceTable)
         {
             return state.Container.States.Contains(state) &&
-                state.Actions.All(kv => kv.Value.Trigger == kv.Key) &&
-                _nodesToDeclarations.Get(state.SourceNode) == state;
+                   state.Actions.All(kv => kv.Value.Trigger == kv.Key) &&
+                   _nodesToDeclarations.Get(state.SourceNode) == state;
         }
 
         public bool IsValid(StateGroup stateGroup, DeclarationTable sourceTable)
         {
             return stateGroup.ParentStateContainer.Groups.Contains(stateGroup) &&
-                stateGroup.States.All(state => state.Container == stateGroup) &&
-                stateGroup.States.All(state => state.OwningMachine == stateGroup.OwningMachine) &&
-                stateGroup.Groups.All(group => group.OwningMachine == stateGroup.OwningMachine) &&
-                stateGroup.Groups.All(group => group.ParentStateContainer == stateGroup) &&
-                _nodesToDeclarations.Get(stateGroup.SourceNode) == stateGroup;
+                   stateGroup.States.All(state => state.Container == stateGroup) &&
+                   stateGroup.States.All(state => state.OwningMachine == stateGroup.OwningMachine) &&
+                   stateGroup.Groups.All(group => group.OwningMachine == stateGroup.OwningMachine) &&
+                   stateGroup.Groups.All(group => group.ParentStateContainer == stateGroup) &&
+                   _nodesToDeclarations.Get(stateGroup.SourceNode) == stateGroup;
         }
 
         public bool IsValid(TypeDef typeDef, DeclarationTable sourceTable)
         {
             return typeDef.Type != null &&
-                _nodesToDeclarations.Get(typeDef.SourceNode) == typeDef;
+                   _nodesToDeclarations.Get(typeDef.SourceNode) == typeDef;
         }
 
         public bool IsValid(Variable variable, DeclarationTable sourceTable)
         {
             return variable.Type != null &&
-                _nodesToDeclarations.Get(variable.SourceNode) == variable;
+                   _nodesToDeclarations.Get(variable.SourceNode) == variable;
         }
     }
 }

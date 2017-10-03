@@ -36,7 +36,7 @@ namespace UnitTests.PSharpBackend
             {
                 var trees = new PParser.ProgramContext[inputFiles.Length];
                 var originalFiles = new ParseTreeProperty<FileInfo>();
-                ITranslationErrorHandler handler = new DefaultTranslationHandler(originalFiles);
+                ITranslationErrorHandler handler = new DefaultTranslationErrorHandler(originalFiles);
 
                 for (var i = 0; i < inputFiles.Length; i++)
                 {

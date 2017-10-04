@@ -41,7 +41,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         public ParserRuleContext SourceNode { get; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
 
-        public DeclarationTable Table { get; set; }
+        public Scope Table { get; set; }
         public IStateContainer ParentStateContainer { get; } = null;
         public IEnumerable<State> States => _states.Values;
         public IEnumerable<StateGroup> Groups => _groups.Values;

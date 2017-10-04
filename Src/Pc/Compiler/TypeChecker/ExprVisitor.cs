@@ -13,9 +13,9 @@ namespace Microsoft.Pc.TypeChecker
     public class ExprVisitor : PParserBaseVisitor<IPExpr>
     {
         private readonly ITranslationErrorHandler handler;
-        private readonly DeclarationTable table;
+        private readonly Scope table;
 
-        public ExprVisitor(DeclarationTable table, ITranslationErrorHandler handler)
+        public ExprVisitor(Scope table, ITranslationErrorHandler handler)
         {
             this.table = table;
             this.handler = handler;

@@ -9,15 +9,41 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {
+    public class StackProperty<T>
+        where T : class
+    {
+        public T Value { get; private set; }
+
+        public IDisposable Use(T newValue)
+        {
+            return new ContextManager(this, newValue);
+        }
+
+        private class ContextManager : IDisposable
+        {
+            private readonly StackProperty<T> stackProperty;
+            private readonly T oldValue;
+
+            public ContextManager(StackProperty<T> stackProperty, T newValue)
+            {
+                this.stackProperty = stackProperty;
+                oldValue = stackProperty.Value;
+                stackProperty.Value = newValue;
+            }
+
+            public void Dispose() { stackProperty.Value = oldValue; }
+        }
+    }
+
     public class DeclarationListener : PParserBaseListener
     {
         public DeclarationListener(
             ITranslationErrorHandler handler,
-            ParseTreeProperty<DeclarationTable> programDeclarations,
+            ParseTreeProperty<Scope> nodesToScopes,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             this.handler = handler;
-            this.programDeclarations = programDeclarations;
+            this.nodesToScopes = nodesToScopes;
             this.nodesToDeclarations = nodesToDeclarations;
         }
 
@@ -36,7 +62,7 @@ namespace Microsoft.Pc.TypeChecker
             pEvent.Assert = hasAssert ? cardinality : -1;
 
             // (COLON type)?
-            pEvent.PayloadType = TypeResolver.ResolveType(context.type(), table, handler);
+            pEvent.PayloadType = TypeResolver.ResolveType(context.type(), currentScope, handler);
 
             // annotationSet?
             if (context.annotationSet() != null)
@@ -57,21 +83,22 @@ namespace Microsoft.Pc.TypeChecker
             var mInterface = (Interface) nodesToDeclarations.Get(context);
 
             // LPAREN type? RPAREN
-            mInterface.PayloadType = TypeResolver.ResolveType(context.type(), table, handler);
+            mInterface.PayloadType = TypeResolver.ResolveType(context.type(), currentScope, handler);
 
             if (context.eventSet == null)
             {
                 // ASSIGN LBRACE eventSetLiteral RBRACE
                 // Let the eventSetLiteral handler fill in a newly created event set...
-                Debug.Assert(context.eventSetLiteral() != null);
-                mInterface.ReceivableEvents = new EventSet($"{mInterface.Name}$eventset", context.eventSetLiteral());
+                PParser.EventSetLiteralContext eventSetLiteral = context.eventSetLiteral();
+                Debug.Assert(eventSetLiteral != null);
+                mInterface.ReceivableEvents = new EventSet($"{mInterface.Name}$eventset", eventSetLiteral);
             }
             else
             {
                 // ASSIGN eventSet=Iden
                 // ...or look up the event set and establish the link by name.
                 string eventSetName = context.eventSet.GetText();
-                if (!table.Lookup(eventSetName, out EventSet eventSet))
+                if (!currentScope.Lookup(eventSetName, out EventSet eventSet))
                 {
                     throw handler.MissingDeclaration(context.eventSet, "event set", eventSetName);
                 }
@@ -84,6 +111,7 @@ namespace Microsoft.Pc.TypeChecker
 
         #endregion
 
+#region Functions
         public override void EnterFunDecl(PParser.FunDeclContext context)
         {
             // FUN name=Iden
@@ -95,7 +123,7 @@ namespace Microsoft.Pc.TypeChecker
             functionStack.Push(fun); // funParamList builds signature
 
             // (COLON type)?
-            fun.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table, handler);
+            fun.Signature.ReturnType = TypeResolver.ResolveType(context.type(), currentScope, handler);
 
             // annotationSet?
             if (context.annotationSet() != null)
@@ -120,7 +148,7 @@ namespace Microsoft.Pc.TypeChecker
             // name=Iden
             string name = context.name.GetText();
             // COLON type ;
-            PLanguageType type = TypeResolver.ResolveType(context.type(), table, handler);
+            PLanguageType type = TypeResolver.ResolveType(context.type(), currentScope, handler);
 
             ITypedName param;
             if (currentFunctionProto != null)
@@ -135,7 +163,7 @@ namespace Microsoft.Pc.TypeChecker
             else
             {
                 // Otherwise, we're in a (possibly anonymous) function, and we add the variable to its signature
-                bool success = table.Get(name, out Variable variable);
+                bool success = currentScope.Get(name, out Variable variable);
                 Debug.Assert(success);
                 variable.Type = type;
                 param = variable;
@@ -143,13 +171,14 @@ namespace Microsoft.Pc.TypeChecker
 
             CurrentFunction.Signature.Parameters.Add(param);
         }
+#endregion
 
         public override void EnterVarDecl(PParser.VarDeclContext context)
         {
             // VAR idenList
             var varNames = context.idenList()._names;
             // COLON type 
-            PLanguageType type = TypeResolver.ResolveType(context.type(), table, handler);
+            PLanguageType type = TypeResolver.ResolveType(context.type(), currentScope, handler);
             // annotationSet?
             if (context.annotationSet() != null)
             {
@@ -251,9 +280,9 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // ENTRY funName=Iden)
                 string funName = context.funName.GetText();
-                if (!table.Lookup(funName, out fun))
+                if (!currentScope.Lookup(funName, out fun))
                 {
-                    if (table.Lookup(funName, out FunctionProto proto))
+                    if (currentScope.Lookup(funName, out FunctionProto proto))
                     {
                         throw new NotImplementedException("function prototypes for state entries");
                     }
@@ -290,9 +319,9 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // DO funName=Iden
                 string funName = context.funName.GetText();
-                if (!table.Lookup(funName, out fun))
+                if (!currentScope.Lookup(funName, out fun))
                 {
-                    if (table.Lookup(funName, out FunctionProto proto))
+                    if (currentScope.Lookup(funName, out FunctionProto proto))
                     {
                         throw new NotImplementedException("function prototypes for state actions");
                     }
@@ -303,7 +332,7 @@ namespace Microsoft.Pc.TypeChecker
             // ON eventList
             foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
             {
-                if (!table.Lookup(eventIdContext.GetText(), out PEvent evt))
+                if (!currentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
                 {
                     throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
@@ -336,9 +365,9 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // funName=Iden
                 string funName = context.funName.GetText();
-                if (!table.Lookup(funName, out fun))
+                if (!currentScope.Lookup(funName, out fun))
                 {
-                    if (table.Lookup(funName, out FunctionProto proto))
+                    if (currentScope.Lookup(funName, out FunctionProto proto))
                     {
                         throw new NotImplementedException("function prototypes for state exits");
                     }
@@ -370,7 +399,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // WITH funName=Iden
                 string funName = context.funName.GetText();
-                if (!table.Lookup(funName, out transitionFunction))
+                if (!currentScope.Lookup(funName, out transitionFunction))
                 {
                     throw handler.MissingDeclaration(context.funName, "function", funName);
                 }
@@ -394,7 +423,7 @@ namespace Microsoft.Pc.TypeChecker
             // ON eventList
             foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
             {
-                if (!table.Lookup(eventIdContext.GetText(), out PEvent evt))
+                if (!currentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
                 {
                     throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
@@ -420,7 +449,7 @@ namespace Microsoft.Pc.TypeChecker
             // IGNORE nonDefaultEventList
             foreach (PParser.NonDefaultEventContext token in context.nonDefaultEventList()._events)
             {
-                if (!table.Lookup(token.GetText(), out PEvent evt))
+                if (!currentScope.Lookup(token.GetText(), out PEvent evt))
                 {
                     throw handler.MissingDeclaration(token, "event", token.GetText());
                 }
@@ -443,7 +472,7 @@ namespace Microsoft.Pc.TypeChecker
             // DEFER nonDefaultEventList 
             foreach (PParser.NonDefaultEventContext token in context.nonDefaultEventList()._events)
             {
-                if (!table.Lookup(token.GetText(), out PEvent evt))
+                if (!currentScope.Lookup(token.GetText(), out PEvent evt))
                 {
                     throw handler.MissingDeclaration(token, "event", token.GetText());
                 }
@@ -469,7 +498,7 @@ namespace Microsoft.Pc.TypeChecker
             // ON eventList
             foreach (PParser.EventIdContext token in context.eventList().eventId())
             {
-                if (!table.Lookup(token.GetText(), out PEvent evt))
+                if (!currentScope.Lookup(token.GetText(), out PEvent evt))
                 {
                     throw handler.MissingDeclaration(token, "event", token.GetText());
                 }
@@ -484,14 +513,14 @@ namespace Microsoft.Pc.TypeChecker
 
         private State FindState(PParser.StateNameContext context)
         {
-            DeclarationTable curTable = programDeclarations.Get(currentMachine.SourceNode);
+            Scope curTable = nodesToScopes.Get(currentMachine.SourceNode);
             foreach (PParser.IdenContext groupToken in context._groups)
             {
                 if (!curTable.Get(groupToken.GetText(), out StateGroup group))
                 {
                     throw handler.MissingDeclaration(groupToken, "group", groupToken.GetText());
                 }
-                curTable = programDeclarations.Get(group.SourceNode);
+                curTable = nodesToScopes.Get(group.SourceNode);
             }
             if (!curTable.Get(context.state.GetText(), out State state))
             {
@@ -503,7 +532,7 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterImplMachineProtoDecl(PParser.ImplMachineProtoDeclContext context)
         {
             var proto = (MachineProto) nodesToDeclarations.Get(context);
-            proto.PayloadType = TypeResolver.ResolveType(context.type(), table, handler);
+            proto.PayloadType = TypeResolver.ResolveType(context.type(), currentScope, handler);
         }
 
         public override void EnterSpecMachineDecl(PParser.SpecMachineDeclContext context)
@@ -540,7 +569,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 foreach (PParser.IdenContext machineNameToken in context.idenList()._names)
                 {
-                    if (!table.Lookup(machineNameToken.GetText(), out Machine machine))
+                    if (!currentScope.Lookup(machineNameToken.GetText(), out Machine machine))
                     {
                         throw handler.MissingDeclaration(machineNameToken, "machine", machineNameToken.GetText());
                     }
@@ -550,7 +579,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // (COLON type)?
-            proto.Signature.ReturnType = TypeResolver.ResolveType(context.type(), table, handler);
+            proto.Signature.ReturnType = TypeResolver.ResolveType(context.type(), currentScope, handler);
 
             // LPAREN funParamList? RPAREN 
             currentFunctionProto = proto;
@@ -560,20 +589,20 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterEveryRule(ParserRuleContext ctx)
         {
-            DeclarationTable thisTable = programDeclarations.Get(ctx);
+            Scope thisTable = nodesToScopes.Get(ctx);
             if (thisTable != null)
             {
-                table = thisTable;
+                currentScope = thisTable;
             }
         }
 
         public override void ExitEveryRule(ParserRuleContext context)
         {
-            if (programDeclarations.Get(context) != null)
+            if (nodesToScopes.Get(context) != null)
             {
-                Debug.Assert(table != null);
+                Debug.Assert(currentScope != null);
                 // pop the stack
-                table = table.Parent;
+                currentScope = currentScope.Parent;
             }
         }
 
@@ -606,7 +635,7 @@ namespace Microsoft.Pc.TypeChecker
                 foreach (PParser.IdenContext pInterfaceNameCtx in interfaces)
                 {
                     string pInterfaceName = pInterfaceNameCtx.GetText();
-                    if (!table.Lookup(pInterfaceName, out Interface pInterface))
+                    if (!currentScope.Lookup(pInterfaceName, out Interface pInterface))
                     {
                         throw handler.MissingDeclaration(pInterfaceNameCtx, "interface", pInterfaceName);
                     }
@@ -665,12 +694,15 @@ namespace Microsoft.Pc.TypeChecker
         /// </summary>
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
 
+        /// <summary>
+        /// Handles errors in AST construction and type checking
+        /// </summary>
         private readonly ITranslationErrorHandler handler;
 
         /// <summary>
         ///     Maps source nodes to the scope objects they produced.
         /// </summary>
-        private readonly ParseTreeProperty<DeclarationTable> programDeclarations;
+        private readonly ParseTreeProperty<Scope> nodesToScopes;
 
         #endregion
 
@@ -713,10 +745,10 @@ namespace Microsoft.Pc.TypeChecker
         private State currentState;
 
         /// <summary>
-        ///     This keeps track of the current declaration table. The "on every entry/exit" rules handle popping the
+        ///     This keeps track of the current scope. The "on every entry/exit" rules handle popping the
         ///     stack using its Parent pointer.
         /// </summary>
-        private DeclarationTable table;
+        private Scope currentScope;
 
         /// <summary>
         ///     Gets the current function or null if not in a function context.
@@ -739,7 +771,7 @@ namespace Microsoft.Pc.TypeChecker
             var typedef = (TypeDef) nodesToDeclarations.Get(context);
 
             // ASSIGN type
-            typedef.Type = TypeResolver.ResolveType(context.type(), table, handler);
+            typedef.Type = TypeResolver.ResolveType(context.type(), currentScope, handler);
         }
 
         public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
@@ -799,7 +831,7 @@ namespace Microsoft.Pc.TypeChecker
             foreach (PParser.NonDefaultEventContext token in context._events)
             {
                 string eventName = token.GetText();
-                if (!table.Lookup(eventName, out PEvent evt))
+                if (!currentScope.Lookup(eventName, out PEvent evt))
                 {
                     throw handler.MissingDeclaration(token, "event", eventName);
                 }

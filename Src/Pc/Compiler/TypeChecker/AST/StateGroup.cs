@@ -17,7 +17,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         }
 
         public Machine OwningMachine { get; set; }
-        public DeclarationTable Table { get; set; }
+        public Scope Table { get; set; }
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }

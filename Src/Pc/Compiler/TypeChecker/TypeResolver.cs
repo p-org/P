@@ -12,7 +12,7 @@ namespace Microsoft.Pc.TypeChecker
     {
         public static PLanguageType ResolveType(
             ParserRuleContext context,
-            DeclarationTable table,
+            Scope table,
             ITranslationErrorHandler handler)
         {
             return context == null ? PrimitiveType.Null : new TypeVisitor(table, handler).Visit(context);
@@ -20,11 +20,11 @@ namespace Microsoft.Pc.TypeChecker
 
         private class TypeVisitor : PParserBaseVisitor<PLanguageType>
         {
-            private readonly DeclarationTable declarations;
+            private readonly Scope declarations;
             private readonly ITranslationErrorHandler handler;
             private readonly HashSet<TypeDef> visitedTypeDefs = new HashSet<TypeDef>();
 
-            public TypeVisitor(DeclarationTable declarations, ITranslationErrorHandler handler)
+            public TypeVisitor(Scope declarations, ITranslationErrorHandler handler)
             {
                 this.declarations = declarations;
                 this.handler = handler;

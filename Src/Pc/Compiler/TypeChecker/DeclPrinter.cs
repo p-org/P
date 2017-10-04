@@ -7,9 +7,9 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class DeclPrinter : IParseTreeListener
     {
-        private readonly ParseTreeProperty<DeclarationTable> programDeclarations;
+        private readonly ParseTreeProperty<Scope> programDeclarations;
 
-        public DeclPrinter(ParseTreeProperty<DeclarationTable> programDeclarations)
+        public DeclPrinter(ParseTreeProperty<Scope> programDeclarations)
         {
             this.programDeclarations = programDeclarations;
         }
@@ -22,7 +22,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             string padding = "".PadLeft(ctx.Depth());
             string output = ctx.GetType().Name;
-            DeclarationTable decls = programDeclarations.Get(ctx);
+            Scope decls = programDeclarations.Get(ctx);
             if (decls != null)
             {
                 string declList = string.Join(", ",

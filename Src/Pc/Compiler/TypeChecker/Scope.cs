@@ -7,9 +7,9 @@ namespace Microsoft.Pc.TypeChecker
 {
     // Note: the lack of generic support over method out parameters makes this class very large.
     // Not much is actually going on here, though.
-    public class DeclarationTable
+    public class Scope
     {
-        private readonly HashSet<DeclarationTable> children = new HashSet<DeclarationTable>();
+        private readonly HashSet<Scope> children = new HashSet<Scope>();
         private readonly IDictionary<string, EnumElem> enumElems = new Dictionary<string, EnumElem>();
         private readonly IDictionary<string, PEnum> enums = new Dictionary<string, PEnum>();
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
@@ -25,10 +25,10 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
-        private DeclarationTable parent;
-        public DeclarationTable(ITranslationErrorHandler handler) { this.handler = handler; }
+        private Scope parent;
+        public Scope(ITranslationErrorHandler handler) { this.handler = handler; }
 
-        public DeclarationTable Parent
+        public Scope Parent
         {
             get => parent;
             set
@@ -39,22 +39,22 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public IEnumerable<DeclarationTable> Children => children;
+        public IEnumerable<Scope> Children => children;
 
-        public IEnumerable<IPDecl> AllDecls => enumElems
-            .Values.Cast<IPDecl>()
-            .Concat(enums.Values)
-            .Concat(events.Values)
-            .Concat(eventSets.Values)
-            .Concat(functionProtos.Values)
-            .Concat(functions.Values)
-            .Concat(interfaces.Values)
-            .Concat(machineProtos.Values)
-            .Concat(machines.Values)
-            .Concat(stateGroups.Values)
-            .Concat(states.Values)
-            .Concat(typedefs.Values)
-            .Concat(variables.Values);
+        public IEnumerable<IPDecl> AllDecls =>
+            EnumElems.Cast<IPDecl>()
+                     .Concat(Enums)
+                     .Concat(Events)
+                     .Concat(EventSets)
+                     .Concat(FunctionProtos)
+                     .Concat(Functions)
+                     .Concat(Interfaces)
+                     .Concat(MachineProtos)
+                     .Concat(Machines)
+                     .Concat(StateGroups)
+                     .Concat(States)
+                     .Concat(Typedefs)
+                     .Concat(Variables);
 
         public IEnumerable<EnumElem> EnumElems => enumElems.Values;
         public IEnumerable<PEnum> Enums => enums.Values;
@@ -104,7 +104,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out EnumElem tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -121,7 +121,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out PEnum tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -138,7 +138,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out PEvent tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -155,7 +155,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out EventSet tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -172,7 +172,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out FunctionProto tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -189,7 +189,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out Function tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -206,7 +206,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out Interface tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -223,7 +223,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out MachineProto tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -240,7 +240,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out Machine tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -257,7 +257,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out StateGroup tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -274,7 +274,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out State tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -291,7 +291,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out TypeDef tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))
@@ -308,7 +308,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Lookup(string name, out Variable tree)
         {
-            DeclarationTable current = this;
+            Scope current = this;
             while (current != null)
             {
                 if (current.Get(name, out tree))

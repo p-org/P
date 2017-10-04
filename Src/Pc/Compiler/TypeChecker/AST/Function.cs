@@ -31,6 +31,6 @@ namespace Microsoft.Pc.TypeChecker.AST
 
         public string Name { get; }
         public ParserRuleContext SourceNode { get; }
-        public DeclarationTable Table { get; set; }
+        public Scope Table { get; set; }
     }
 }

@@ -15,9 +15,9 @@ namespace Microsoft.Pc.TypeChecker
     {
         private readonly ITranslationErrorHandler handler;
         private readonly Machine machine;
-        private readonly DeclarationTable table;
+        private readonly Scope table;
 
-        public StatementVisitor(DeclarationTable table, Machine machine, ITranslationErrorHandler handler)
+        public StatementVisitor(Scope table, Machine machine, ITranslationErrorHandler handler)
         {
             this.table = table;
             this.machine = machine;

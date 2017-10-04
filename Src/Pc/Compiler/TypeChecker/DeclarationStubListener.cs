@@ -6,60 +6,60 @@ using Microsoft.Pc.TypeChecker.AST;
 namespace Microsoft.Pc.TypeChecker
 {
     /// <summary>
-    ///     The declaration collector walks the parse tree and associates names with parse tree fragments.
-    ///     These are grouped hierarchically in DeclarationTables, which are associated with nodes that introduce scope.
+    ///     The declaration stub collector walks the parse tree and associates names with parse tree fragments.
+    ///     These are grouped hierarchically in Scopes, which are associated with nodes that introduce scope.
     /// </summary>
-    public class DeclarationStubListener : PParserBaseListener
+    internal class DeclarationStubListener : PParserBaseListener
     {
-        private readonly ParseTreeProperty<DeclarationTable> declarationTables;
+        private readonly ParseTreeProperty<Scope> scopes;
         private readonly ITranslationErrorHandler handler;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
-        private DeclarationTable currentTable;
+        private Scope currentScope;
 
         public DeclarationStubListener(
-            DeclarationTable topLevelTable,
-            ParseTreeProperty<DeclarationTable> declarationTables,
+            Scope globalScope,
+            ParseTreeProperty<Scope> scopes,
             ParseTreeProperty<IPDecl> nodesToDeclarations,
             ITranslationErrorHandler handler)
         {
-            this.declarationTables = declarationTables;
+            this.scopes = scopes;
             this.nodesToDeclarations = nodesToDeclarations;
             this.handler = handler;
-            currentTable = topLevelTable;
+            currentScope = globalScope;
         }
 
         public override void EnterProgram(PParser.ProgramContext context)
         {
             // special case - we get the top level table externally,
             // which represents the global namespace, spanning all files
-            declarationTables.Put(context, currentTable);
+            scopes.Put(context, currentScope);
         }
 
         public override void EnterEventDecl(PParser.EventDeclContext context)
         {
             string symbolName = context.name.GetText();
-            PEvent decl = currentTable.Put(symbolName, context);
+            PEvent decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
         }
 
         public override void EnterEventSetDecl(PParser.EventSetDeclContext context)
         {
             string symbolName = context.name.GetText();
-            EventSet decl = currentTable.Put(symbolName, context);
+            EventSet decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
         }
 
         public override void EnterInterfaceDecl(PParser.InterfaceDeclContext context)
         {
             string symbolName = context.name.GetText();
-            Interface decl = currentTable.Put(symbolName, context);
+            Interface decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
         }
 
         public override void EnterImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
             string symbolName = context.name.GetText();
-            Machine decl = currentTable.Put(symbolName, context);
+            Machine decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             PushTable(context);
         }
@@ -69,14 +69,14 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterStateDecl(PParser.StateDeclContext context)
         {
             string symbolName = context.name.GetText();
-            State decl = currentTable.Put(symbolName, context);
+            State decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
         }
 
         public override void EnterGroup(PParser.GroupContext context)
         {
             string symbolName = context.name.GetText();
-            StateGroup group = currentTable.Put(symbolName, context);
+            StateGroup group = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, group);
             PushTable(context);
         }
@@ -87,7 +87,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             foreach (PParser.IdenContext varName in context.idenList()._names)
             {
-                Variable decl = currentTable.Put(varName.GetText(), context, varName);
+                Variable decl = currentScope.Put(varName.GetText(), context, varName);
                 nodesToDeclarations.Put(varName, decl);
             }
         }
@@ -95,14 +95,14 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterImplMachineProtoDecl(PParser.ImplMachineProtoDeclContext context)
         {
             string symbolName = context.name.GetText();
-            MachineProto decl = currentTable.Put(symbolName, context);
+            MachineProto decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
         }
 
         public override void EnterSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
             string symbolName = context.name.GetText();
-            Machine decl = currentTable.Put(symbolName, context);
+            Machine decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             PushTable(context);
         }
@@ -112,7 +112,7 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterFunDecl(PParser.FunDeclContext context)
         {
             string symbolName = context.name.GetText();
-            Function decl = currentTable.Put(symbolName, context);
+            Function decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             PushTable(context);
         }
@@ -122,14 +122,14 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterFunParam(PParser.FunParamContext context)
         {
             string symbolName = context.name.GetText();
-            Variable decl = currentTable.Put(symbolName, context);
+            Variable decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
         }
 
         public override void EnterFunProtoDecl(PParser.FunProtoDeclContext context)
         {
             string symbolName = context.name.GetText();
-            FunctionProto decl = currentTable.Put(symbolName, context);
+            FunctionProto decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
         }
 
@@ -149,7 +149,7 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterPTypeDef(PParser.PTypeDefContext context)
         {
             string symbolName = context.name.GetText();
-            TypeDef typeDef = currentTable.Put(symbolName, context);
+            TypeDef typeDef = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, typeDef);
         }
 
@@ -165,21 +165,21 @@ namespace Microsoft.Pc.TypeChecker
         public override void EnterEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
         {
             string symbolName = context.name.GetText();
-            PEnum pEnum = currentTable.Put(symbolName, context);
+            PEnum pEnum = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, pEnum);
         }
 
         public override void EnterEnumElem(PParser.EnumElemContext context)
         {
             string symbolName = context.name.GetText();
-            EnumElem elem = currentTable.Put(symbolName, context);
+            EnumElem elem = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, elem);
         }
 
         public override void EnterNumberedEnumElem(PParser.NumberedEnumElemContext context)
         {
             string symbolName = context.name.GetText();
-            EnumElem elem = currentTable.Put(symbolName, context);
+            EnumElem elem = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, elem);
         }
 
@@ -189,11 +189,11 @@ namespace Microsoft.Pc.TypeChecker
 
         private void PushTable(IParseTree context)
         {
-            currentTable = new DeclarationTable(handler) {Parent = currentTable};
-            declarationTables.Put(context, currentTable);
+            currentScope = new Scope(handler) {Parent = currentScope};
+            scopes.Put(context, currentScope);
         }
 
-        private void PopTable() { currentTable = currentTable.Parent; }
+        private void PopTable() { currentScope = currentScope.Parent; }
 
         #endregion
     }

@@ -342,9 +342,10 @@
     <Compile Include="TypeChecker\Analyzer.cs" />
     <Compile Include="TypeChecker\DeclarationListener.cs" />
     <Compile Include="TypeChecker\DeclarationStubListener.cs" />
-    <Compile Include="TypeChecker\DeclarationTable.cs" />
+    <Compile Include="TypeChecker\Scope.cs" />
     <Compile Include="TypeChecker\DeclPrinter.cs" />
     <Compile Include="TypeChecker\ExprVisitor.cs" />
+    <Compile Include="TypeChecker\FunctionBodyListener.cs" />
     <Compile Include="TypeChecker\ITranslationErrorHandler.cs" />
     <Compile Include="TypeChecker\TranslationException.cs" />
     <Compile Include="TypeChecker\RuleContextExtensions.cs" />
@@ -360,6 +361,7 @@
     <Compile Include="TypeChecker\Types\TupleType.cs" />
     <Compile Include="TypeChecker\Types\TypeDefType.cs" />
     <Compile Include="TypeChecker\Types\TypeKind.cs" />
+    <Compile Include="TypeChecker\Validator.cs" />
     <Compile Include="VariableInfo.cs" />
     <Compile Include="XmlProfiler.cs" />
     <Compile Include="ZingData.cs" />

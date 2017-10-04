@@ -171,7 +171,7 @@ namespace P.Runtime
             else
             {
                 stateImpl.TraceLine(
-                    @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
+                    @"<EnqueueLog> Enqueued Event <{0}, {1}> in machine {2}-{3} by machine {4}-{5}",
                     ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
                 this.eventQueue.EnqueueEvent(e, arg, source.Name, source.CurrentState.name);
                 if (this.maxBufferSize != DefaultMaxBufferSize && this.eventQueue.Size() > this.maxBufferSize)

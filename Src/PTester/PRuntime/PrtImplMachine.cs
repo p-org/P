@@ -165,7 +165,7 @@ namespace P.Runtime
             if (currentStatus == PrtMachineStatus.Halted)
             {
                 stateImpl.TraceLine(
-                    @"<EnqueueLog> {0}-{1} Machine has been halted and Event {2} is dropped",
+                    @"<EnqueueLog> Machine {0}-{1} has been halted and Event {2} is dropped",
                     this.Name, this.instanceNumber, ev.evt.name);
             }
             else

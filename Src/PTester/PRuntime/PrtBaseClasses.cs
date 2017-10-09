@@ -127,7 +127,16 @@ namespace P.Runtime
                 }
                 else
                 {
-                    stateImpl.TraceLine("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
+                    if (this as PrtImplMachine != null)
+                    {
+                        stateImpl.TraceLine("<HaltLog> Machine {0}-{1} HALTED with {2} events in the queue", this.Name, this.instanceNumber, (((PrtImplMachine)this).eventQueue).Size());
+                    }
+                    else
+                    {
+                        //SpecMachine case:
+                        //TODO: is it even possible to send "halt" event to a spec machine?
+                        stateImpl.TraceLine("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
+                    }
                     currentStatus = PrtMachineStatus.Halted;
                 }
             }

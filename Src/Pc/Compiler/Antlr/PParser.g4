@@ -54,10 +54,8 @@ topDecl : typeDefDecl
         | eventSetDecl
         | interfaceDecl
         | implMachineDecl
-        | implMachineProtoDecl
         | specMachineDecl
         | funDecl
-        | funProtoDecl
         ;
 
 annotationSet : LBRACK (annotations+=annotation (COMMA annotations+=annotation)*)? RBRACK;
@@ -99,8 +97,6 @@ receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
               | SENDS eventSetLiteral? SEMI    # MachineSend
               ;
 
-implMachineProtoDecl : EXTERN MACHINE name=iden LPAREN type? RPAREN SEMI;
-
 specMachineDecl : SPEC name=iden OBSERVES eventSetLiteral machineBody ;
 
 machineBody : LBRACE machineEntry* RBRACE;
@@ -112,8 +108,9 @@ machineEntry : varDecl
 
 varDecl : VAR idenList COLON type annotationSet? SEMI ;
 
-funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? (SEMI | functionBody) ;
-funProtoDecl : EXTERN FUN name=iden (CREATES idenList? SEMI)? LPAREN funParamList? RPAREN (COLON type)? annotationSet? SEMI;
+funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? SEMI # ForeignFunDecl
+        | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? functionBody # PFunDecl
+        ;
 
 group : GROUP name=iden LBRACE groupItem* RBRACE ;
 groupItem : stateDecl

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
@@ -11,20 +12,14 @@ namespace Microsoft.Pc.TypeChecker.AST
         private readonly Dictionary<string, StateGroup> _groups = new Dictionary<string, StateGroup>();
         private readonly Dictionary<string, State> _states = new Dictionary<string, State>();
 
-        public Machine(string name, PParser.ImplMachineDeclContext sourceNode)
+        public Machine(string name, ParserRuleContext sourceNode)
         {
+            Debug.Assert(sourceNode is PParser.ImplMachineDeclContext || sourceNode is PParser.SpecMachineDeclContext);
             Name = name;
-            SourceNode = sourceNode;
-            IsSpec = false;
+            SourceLocation = sourceNode;
+            IsSpec = sourceNode is PParser.SpecMachineDeclContext;
         }
-
-        public Machine(string name, PParser.SpecMachineDeclContext sourceNode)
-        {
-            Name = name;
-            SourceNode = sourceNode;
-            IsSpec = true;
-        }
-
+        
         public bool IsSpec { get; }
         public int Assume { get; set; } = -1;
         public int Assert { get; set; } = -1;
@@ -38,13 +33,16 @@ namespace Microsoft.Pc.TypeChecker.AST
 
         public EventSet Observes { get; set; }
         public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
+        public ParserRuleContext SourceLocation { get; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
 
         public Scope Table { get; set; }
         public IStateContainer ParentStateContainer { get; } = null;
         public IEnumerable<State> States => _states.Values;
         public IEnumerable<StateGroup> Groups => _groups.Values;
+
+        public IList<IPAST> Children => throw new NotImplementedException("ast children");
+
 
         public IStateContainer GetGroup(string groupName)
         {

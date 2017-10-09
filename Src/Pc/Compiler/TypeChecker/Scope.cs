@@ -19,7 +19,6 @@ namespace Microsoft.Pc.TypeChecker
 
         private readonly ITranslationErrorHandler handler;
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
-        private readonly IDictionary<string, MachineProto> machineProtos = new Dictionary<string, MachineProto>();
         private readonly IDictionary<string, Machine> machines = new Dictionary<string, Machine>();
         private readonly IDictionary<string, StateGroup> stateGroups = new Dictionary<string, StateGroup>();
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
@@ -49,7 +48,6 @@ namespace Microsoft.Pc.TypeChecker
                      .Concat(FunctionProtos)
                      .Concat(Functions)
                      .Concat(Interfaces)
-                     .Concat(MachineProtos)
                      .Concat(Machines)
                      .Concat(StateGroups)
                      .Concat(States)
@@ -63,7 +61,6 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<FunctionProto> FunctionProtos => functionProtos.Values;
         public IEnumerable<Function> Functions => functions.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
-        public IEnumerable<MachineProto> MachineProtos => machineProtos.Values;
         public IEnumerable<Machine> Machines => machines.Values;
         public IEnumerable<StateGroup> StateGroups => stateGroups.Values;
         public IEnumerable<State> States => states.Values;
@@ -85,9 +82,7 @@ namespace Microsoft.Pc.TypeChecker
         public bool Get(string name, out Function tree) { return functions.TryGetValue(name, out tree); }
 
         public bool Get(string name, out Interface tree) { return interfaces.TryGetValue(name, out tree); }
-
-        public bool Get(string name, out MachineProto tree) { return machineProtos.TryGetValue(name, out tree); }
-
+        
         public bool Get(string name, out Machine tree) { return machines.TryGetValue(name, out tree); }
 
         public bool Get(string name, out StateGroup tree) { return stateGroups.TryGetValue(name, out tree); }
@@ -220,24 +215,7 @@ namespace Microsoft.Pc.TypeChecker
             tree = null;
             return false;
         }
-
-        public bool Lookup(string name, out MachineProto tree)
-        {
-            Scope current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
-        }
-
+        
         public bool Lookup(string name, out Machine tree)
         {
             Scope current = this;
@@ -335,8 +313,7 @@ namespace Microsoft.Pc.TypeChecker
                            Namespace(typedefs),
                            Namespace(enums),
                            Namespace(interfaces),
-                           Namespace(machines),
-                           Namespace(machineProtos));
+                           Namespace(machines));
             typedefs.Add(name, typedef);
             return typedef;
         }
@@ -349,8 +326,7 @@ namespace Microsoft.Pc.TypeChecker
                            Namespace(enums),
                            Namespace(interfaces),
                            Namespace(typedefs),
-                           Namespace(machines),
-                           Namespace(machineProtos));
+                           Namespace(machines));
             enums.Add(name, @enum);
             return @enum;
         }
@@ -379,8 +355,7 @@ namespace Microsoft.Pc.TypeChecker
                            Namespace(interfaces),
                            Namespace(enums),
                            Namespace(typedefs),
-                           Namespace(machines),
-                           Namespace(machineProtos));
+                           Namespace(machines));
             interfaces.Add(name, machineInterface);
             return machineInterface;
         }
@@ -392,20 +367,7 @@ namespace Microsoft.Pc.TypeChecker
             machines.Add(name, machine);
             return machine;
         }
-
-        public MachineProto Put(string name, PParser.ImplMachineProtoDeclContext tree)
-        {
-            var machineProto = new MachineProto(name, tree);
-            CheckConflicts(
-                           machineProto,
-                           Namespace(machineProtos),
-                           Namespace(interfaces),
-                           Namespace(enums),
-                           Namespace(typedefs));
-            machineProtos.Add(name, machineProto);
-            return machineProto;
-        }
-
+        
         public Machine Put(string name, PParser.SpecMachineDeclContext tree)
         {
             var specMachine = new Machine(name, tree);
@@ -426,15 +388,7 @@ namespace Microsoft.Pc.TypeChecker
             functions.Add(name, function);
             return function;
         }
-
-        public FunctionProto Put(string name, PParser.FunProtoDeclContext tree)
-        {
-            var functionProto = new FunctionProto(name, tree);
-            CheckConflicts(functionProto, Namespace(functionProtos));
-            functionProtos.Add(name, functionProto);
-            return functionProto;
-        }
-
+        
         public StateGroup Put(string name, PParser.GroupContext tree)
         {
             var group = new StateGroup(name, tree);
@@ -495,7 +449,7 @@ namespace Microsoft.Pc.TypeChecker
             IPDecl existingDecl = null;
             if (namespaces.Any(table => table(decl.Name, out existingDecl)))
             {
-                throw handler.DuplicateDeclaration(decl.SourceNode, decl, existingDecl);
+                throw handler.DuplicateDeclaration(decl.SourceLocation, decl, existingDecl);
             }
         }
 

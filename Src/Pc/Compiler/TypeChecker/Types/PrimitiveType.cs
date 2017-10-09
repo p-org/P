@@ -10,10 +10,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         public static readonly PrimitiveType Float = new PrimitiveType("float");
         public static readonly PrimitiveType Event = new PrimitiveType("event");
         public static readonly PrimitiveType Machine = new PrimitiveType("machine");
-
-        public static readonly BoundedType Data =
-            new BoundedType(new EventSet("", (PParser.EventSetLiteralContext) null));
-
+        public static readonly BoundedType Data = new BoundedType(new EventSet("", null));
         public static readonly PrimitiveType Any = new PrimitiveType("any");
         public static readonly PrimitiveType Null = new PrimitiveType("null");
 

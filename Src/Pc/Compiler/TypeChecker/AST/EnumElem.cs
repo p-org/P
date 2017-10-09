@@ -1,3 +1,7 @@
+using System.Collections;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 
@@ -5,22 +9,18 @@ namespace Microsoft.Pc.TypeChecker.AST
 {
     public class EnumElem : IPDecl
     {
-        public EnumElem(string name, PParser.EnumElemContext sourceNode)
+        public EnumElem(string name, ParserRuleContext sourceNode)
         {
+            Debug.Assert(sourceNode is PParser.EnumElemContext || sourceNode is PParser.NumberedEnumElemContext);
             Name = name;
-            SourceNode = sourceNode;
+            SourceLocation = sourceNode;
         }
-
-        public EnumElem(string name, PParser.NumberedEnumElemContext sourceNode)
-        {
-            Name = name;
-            SourceNode = sourceNode;
-        }
-
+        
         public int Value { get; set; }
         public PEnum ParentEnum { get; set; }
 
+        public ParserRuleContext SourceLocation { get; }
+        public IList<IPAST> Children { get; } = new List<IPAST>();
         public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
     }
 }

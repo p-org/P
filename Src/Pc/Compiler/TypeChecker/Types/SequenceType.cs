@@ -4,7 +4,7 @@ namespace Microsoft.Pc.TypeChecker.Types
     {
         public SequenceType(PLanguageType elementType) : base(TypeKind.Sequence) { ElementType = elementType; }
 
-        public PLanguageType ElementType { get; set; }
+        public PLanguageType ElementType { get; }
 
         public override string OriginalRepresentation => $"seq[{ElementType.OriginalRepresentation}]";
         public override string CanonicalRepresentation => $"seq[{ElementType.CanonicalRepresentation}]";
@@ -12,8 +12,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             // Copying semantics: Can assign to a sequence variable if the other sequence's elements are subtypes of this sequence's elements.
-            var other = otherType.Canonicalize() as SequenceType;
-            return other != null && ElementType.IsAssignableFrom(other.ElementType);
+            return otherType.Canonicalize() is SequenceType other && ElementType.IsAssignableFrom(other.ElementType);
         }
 
         public override PLanguageType Canonicalize() { return new SequenceType(ElementType.Canonicalize()); }

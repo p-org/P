@@ -65,7 +65,7 @@ namespace Microsoft.Pc.TypeChecker
                     if (typeDef.Type == null)
                     {
                         visitedTypeDefs.Add(typeDef);
-                        var typeDefContext = (PParser.PTypeDefContext) typeDef.SourceNode;
+                        var typeDefContext = (PParser.PTypeDefContext) typeDef.SourceLocation;
                         typeDef.Type = Visit(typeDefContext.type());
                     }
 

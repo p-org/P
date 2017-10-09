@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 
@@ -6,10 +8,11 @@ namespace Microsoft.Pc.TypeChecker.AST
 {
     public class State : IPDecl
     {
-        public State(string name, PParser.StateDeclContext sourceNode)
+        public State(string name, ParserRuleContext sourceNode)
         {
+            Debug.Assert(sourceNode is PParser.StateDeclContext);
             Name = name;
-            SourceNode = sourceNode;
+            SourceLocation = sourceNode;
         }
 
         public StateTemperature Temperature { get; set; }
@@ -21,6 +24,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         public IStateContainer Container { get; set; }
 
         public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
+        public ParserRuleContext SourceLocation { get; }
+        public IList<IPAST> Children => throw new NotImplementedException("ast children");
     }
 }

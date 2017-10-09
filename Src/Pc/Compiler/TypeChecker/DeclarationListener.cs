@@ -9,32 +9,6 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    public class StackProperty<T>
-        where T : class
-    {
-        public T Value { get; private set; }
-
-        public IDisposable Use(T newValue)
-        {
-            return new ContextManager(this, newValue);
-        }
-
-        private class ContextManager : IDisposable
-        {
-            private readonly StackProperty<T> stackProperty;
-            private readonly T oldValue;
-
-            public ContextManager(StackProperty<T> stackProperty, T newValue)
-            {
-                this.stackProperty = stackProperty;
-                oldValue = stackProperty.Value;
-                stackProperty.Value = newValue;
-            }
-
-            public void Dispose() { stackProperty.Value = oldValue; }
-        }
-    }
-
     public class DeclarationListener : PParserBaseListener
     {
         public DeclarationListener(
@@ -112,7 +86,7 @@ namespace Microsoft.Pc.TypeChecker
         #endregion
 
 #region Functions
-        public override void EnterFunDecl(PParser.FunDeclContext context)
+        public override void EnterPFunDecl(PParser.PFunDeclContext context)
         {
             // FUN name=Iden
             var fun = (Function) nodesToDeclarations.Get(context);
@@ -141,7 +115,7 @@ namespace Microsoft.Pc.TypeChecker
             // handled in EnterFunctionBody
         }
 
-        public override void ExitFunDecl(PParser.FunDeclContext context) { functionStack.Pop(); }
+        public override void ExitPFunDecl(PParser.PFunDeclContext context) { functionStack.Pop(); }
 
         public override void EnterFunParam(PParser.FunParamContext context)
         {
@@ -177,18 +151,16 @@ namespace Microsoft.Pc.TypeChecker
         {
             // VAR idenList
             var varNames = context.idenList()._names;
-            // COLON type 
-            PLanguageType type = TypeResolver.ResolveType(context.type(), currentScope, handler);
             // annotationSet?
             if (context.annotationSet() != null)
             {
                 throw new NotImplementedException("variable annotations");
             }
-            // SEMI
             foreach (PParser.IdenContext varName in varNames)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varName);
-                variable.Type = type;
+                // COLON type
+                variable.Type = TypeResolver.ResolveType(context.type(), currentScope, handler);
 
                 if (CurrentFunction != null)
                 {
@@ -200,6 +172,7 @@ namespace Microsoft.Pc.TypeChecker
                     currentMachine.Fields.Add(variable);
                 }
             }
+            // SEMI
         }
 
         public override void EnterGroup(PParser.GroupContext context)
@@ -513,14 +486,14 @@ namespace Microsoft.Pc.TypeChecker
 
         private State FindState(PParser.StateNameContext context)
         {
-            Scope curTable = nodesToScopes.Get(currentMachine.SourceNode);
+            Scope curTable = nodesToScopes.Get(currentMachine.SourceLocation);
             foreach (PParser.IdenContext groupToken in context._groups)
             {
                 if (!curTable.Get(groupToken.GetText(), out StateGroup group))
                 {
                     throw handler.MissingDeclaration(groupToken, "group", groupToken.GetText());
                 }
-                curTable = nodesToScopes.Get(group.SourceNode);
+                curTable = nodesToScopes.Get(group.SourceLocation);
             }
             if (!curTable.Get(context.state.GetText(), out State state))
             {
@@ -528,13 +501,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             return state;
         }
-
-        public override void EnterImplMachineProtoDecl(PParser.ImplMachineProtoDeclContext context)
-        {
-            var proto = (MachineProto) nodesToDeclarations.Get(context);
-            proto.PayloadType = TypeResolver.ResolveType(context.type(), currentScope, handler);
-        }
-
+        
         public override void EnterSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
             // SPEC name=Iden 
@@ -559,34 +526,6 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public override void EnterFunProtoDecl(PParser.FunProtoDeclContext context)
-        {
-            // EXTERN FUN name=Iden annotationSet?
-            var proto = (FunctionProto) nodesToDeclarations.Get(context);
-
-            // (CREATES idenList? SEMI)?
-            if (context.idenList() != null)
-            {
-                foreach (PParser.IdenContext machineNameToken in context.idenList()._names)
-                {
-                    if (!currentScope.Lookup(machineNameToken.GetText(), out Machine machine))
-                    {
-                        throw handler.MissingDeclaration(machineNameToken, "machine", machineNameToken.GetText());
-                    }
-
-                    proto.Creates.Add(machine);
-                }
-            }
-
-            // (COLON type)?
-            proto.Signature.ReturnType = TypeResolver.ResolveType(context.type(), currentScope, handler);
-
-            // LPAREN funParamList? RPAREN 
-            currentFunctionProto = proto;
-        }
-
-        public override void ExitFunProtoDecl(PParser.FunProtoDeclContext context) { currentFunctionProto = null; }
-
         public override void EnterEveryRule(ParserRuleContext ctx)
         {
             Scope thisTable = nodesToScopes.Get(ctx);
@@ -605,7 +544,6 @@ namespace Microsoft.Pc.TypeChecker
                 currentScope = currentScope.Parent;
             }
         }
-
 
         public override void ExitInterfaceDecl(PParser.InterfaceDeclContext context) { currentEventSet = null; }
 

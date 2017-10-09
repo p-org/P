@@ -176,13 +176,9 @@ namespace Microsoft.Pc.TypeChecker
                     yield return new CtorStmt(machine, new List<IPExpr>());
                 }
             }
-            else if (table.Lookup(machineName, out MachineProto machineProto))
-            {
-                throw new NotImplementedException("machine prototype constructor statements");
-            }
             else
             {
-                throw handler.MissingDeclaration(context.iden(), "machine or machine prototype", machineName);
+                throw handler.MissingDeclaration(context.iden(), "machine", machineName);
             }
         }
 

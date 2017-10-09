@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
@@ -30,8 +29,32 @@ namespace UnitTests.PSharpBackend
             "RegressionTests/Integration/Correct/German"
         };
 
+        private class PParserErrorListener : IAntlrErrorListener<IToken>
+        {
+            private readonly FileInfo inputFile;
+            private readonly ITranslationErrorHandler handler;
+
+            public PParserErrorListener(FileInfo inputFile, ITranslationErrorHandler handler)
+            {
+                this.inputFile = inputFile;
+                this.handler = handler;
+            }
+
+            public void SyntaxError(
+                IRecognizer recognizer,
+                IToken offendingSymbol,
+                int line,
+                int charPositionInLine,
+                string msg,
+                RecognitionException e)
+            {
+                throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
+            }
+        }
+
         private static void RunTest(string testName, params FileInfo[] inputFiles)
         {
+            bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
             try
             {
                 var trees = new PParser.ProgramContext[inputFiles.Length];
@@ -46,34 +69,34 @@ namespace UnitTests.PSharpBackend
                     var tokens = new CommonTokenStream(lexer);
                     var parser = new PParser(tokens);
                     parser.RemoveErrorListeners();
+                    parser.AddErrorListener(new PParserErrorListener(inputFile, handler));
 
                     trees[i] = parser.program();
-
-                    if (parser.NumberOfSyntaxErrors != 0)
-                    {
-                        throw handler.ParseFailure(inputFile);
-                    }
-
                     originalFiles.Put(trees[i], inputFile);
                 }
 
                 Analyzer.AnalyzeCompilationUnit(handler, trees);
-                Console.WriteLine($"[{testName}] Success!");
+                if (!expectCorrect)
+                {
+                    Console.Error.WriteLine($"[{testName}] Expected error, but none were found!");
+                }
             }
             catch (TranslationException e)
             {
-                Console.Error.WriteLine($"[{testName}] {e.Message}");
+                if (expectCorrect)
+                {
+                    Console.Error.WriteLine($"[{testName}] Expected correct, but error was found: {e.Message}");
+                }
             }
             catch (NotImplementedException e)
             {
-                Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
+                // Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
             }
         }
 
         [Test]
         public void TestAnalyzeAllTests()
         {
-            Thread.Sleep(10000);
             var testCases = TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
             foreach (TestCaseData testCase in testCases)
             {
@@ -82,12 +105,8 @@ namespace UnitTests.PSharpBackend
                     .MakeRelativeUri(new Uri(testDir.FullName))
                     .ToString();
 
-                //if (testWhitelist.Contains(testName))
-                {
-                    RunTest(testName, testDir.GetFiles("*.p"));
-                }
+                RunTest(testName, testDir.GetFiles("*.p"));
             }
-            Thread.Sleep(10000);
         }
 
         [Test]

@@ -4,18 +4,17 @@ using Microsoft.Pc.TypeChecker.AST;
 
 namespace Microsoft.Pc.TypeChecker.Types
 {
-    public class NamedTupleType : PLanguageType
+    public class NamedTupleType : TupleType
     {
         private readonly IDictionary<string, NamedTupleEntry> lookupTable;
 
-        public NamedTupleType(IReadOnlyList<NamedTupleEntry> fields) : base(TypeKind.NamedTuple)
+        public NamedTupleType(IReadOnlyList<NamedTupleEntry> fields) : base(fields.Select(f => f.Type).ToArray())
         {
             Fields = fields;
             lookupTable = fields.ToDictionary(f => f.Name, f => f);
         }
-
-        public IEnumerable<PLanguageType> Types => Fields.Select(f => f.Type);
-        public IEnumerable<string> Names => Fields.Select(f => f.Name);
+        
+        public string[] Names => Fields.Select(f => f.Name).ToArray();
         public IReadOnlyList<NamedTupleEntry> Fields { get; }
 
         public override string OriginalRepresentation =>
@@ -26,8 +25,7 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
-            var other = otherType.Canonicalize() as NamedTupleType;
-            return other != null &&
+            return otherType.Canonicalize() is NamedTupleType other &&
                    Fields.Count == other.Fields.Count &&
                    Names.SequenceEqual(other.Names) &&
                    Types.Zip(other.Types, (myT, otherT) => myT.IsAssignableFrom(otherT)).All(x => x);

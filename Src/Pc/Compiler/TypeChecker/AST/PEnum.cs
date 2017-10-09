@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
@@ -10,17 +11,20 @@ namespace Microsoft.Pc.TypeChecker.AST
         private readonly HashSet<EnumElem> elements = new HashSet<EnumElem>();
         private readonly HashSet<int> values = new HashSet<int>();
 
-        public PEnum(string name, PParser.EnumTypeDefDeclContext sourceNode)
+        public PEnum(string name, ParserRuleContext sourceNode)
         {
+            Debug.Assert(sourceNode is PParser.EnumTypeDefDeclContext);
             Name = name;
-            SourceNode = sourceNode;
+            SourceLocation = sourceNode;
         }
 
         public IEnumerable<EnumElem> Values => elements;
         public int Count => elements.Count;
 
         public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
+        public ParserRuleContext SourceLocation { get; }
+        public IList<IPAST> Children => throw new NotImplementedException("ast children");
+
 
         public bool AddElement(EnumElem elem)
         {

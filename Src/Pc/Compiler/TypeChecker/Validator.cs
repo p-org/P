@@ -21,31 +21,30 @@ namespace Microsoft.Pc.TypeChecker
             // every enum element should be found among its parent's elements
             // and the map should point to the correct declaration
             return enumElem.ParentEnum.Values.Contains(enumElem) &&
-                   _nodesToDeclarations.Get(enumElem.SourceNode) == enumElem;
+                   _nodesToDeclarations.Get(enumElem.SourceLocation) == enumElem;
         }
 
-        private bool IsValid(EventSet eventSet) { return _nodesToDeclarations.Get(eventSet.SourceNode) == eventSet; }
+        private bool IsValid(EventSet eventSet) { return _nodesToDeclarations.Get(eventSet.SourceLocation) == eventSet; }
 
         private bool IsValid(Function function)
         {
             return function.Owner?.Methods.Contains(function) != false && // function properly registered with machine
                    function.Signature.ReturnType != null && // function signature has return type
                    function.Signature.Parameters.All(param => param.Type != null) && // function signature parameters have types
-                   _nodesToDeclarations.Get(function.SourceNode) == function; // map is bi-directional
+                   _nodesToDeclarations.Get(function.SourceLocation) == function; // map is bi-directional
         }
 
         private bool IsValid(FunctionProto functionProto)
         {
             return functionProto.Signature.ReturnType != null && // function proto has return type
-                   functionProto.Signature.Parameters
-                                .All(p => p.Type != null) && // function parameters have known types
-                   _nodesToDeclarations.Get(functionProto.SourceNode) == functionProto;
+                   functionProto.Signature.Parameters.All(p => p.Type != null) && // function parameters have known types
+                   _nodesToDeclarations.Get(functionProto.SourceLocation) == functionProto;
         }
 
         private bool IsValid(Interface pInterface)
         {
             return pInterface.PayloadType != null && // interface has known payload type
-                   _nodesToDeclarations.Get(pInterface.SourceNode) == pInterface;
+                   _nodesToDeclarations.Get(pInterface.SourceLocation) == pInterface;
         }
 
         private static IEnumerable<State> Flatten(IEnumerable<StateGroup> groups)
@@ -73,16 +72,10 @@ namespace Microsoft.Pc.TypeChecker
             success &= allStates.Contains(machine.StartState);
             success &= allStates.All(st => !st.IsStart || st.IsStart && st == machine.StartState);
             success &= machine.Fields.All(v => v.IsParam == false);
-            success &= _nodesToDeclarations.Get(machine.SourceNode) == machine;
+            success &= _nodesToDeclarations.Get(machine.SourceLocation) == machine;
             return success;
         }
-
-        private bool IsValid(MachineProto machineProto)
-        {
-            return machineProto.PayloadType != null &&
-                   _nodesToDeclarations.Get(machineProto.SourceNode) == machineProto;
-        }
-
+        
         private bool IsValid(PEnum pEnum)
         {
             // All of its values have the correct parent registered
@@ -91,26 +84,26 @@ namespace Microsoft.Pc.TypeChecker
             return pEnum.Values.All(val => val.ParentEnum == pEnum) &&
                    pEnum.Values.Any(val => val.Value == 0) &&
                    pEnum.Values.Select(val => val.Value).Distinct().Count() == pEnum.Values.Count() &&
-                   _nodesToDeclarations.Get(pEnum.SourceNode) == pEnum;
+                   _nodesToDeclarations.Get(pEnum.SourceLocation) == pEnum;
         }
 
         private bool IsValid(PEvent pEvent)
         {
             // special handling for special events
-            if (pEvent.SourceNode == null)
+            if (pEvent.SourceLocation == null)
             {
                 return pEvent.Name.Equals("halt") || pEvent.Name.Equals("null");
             }
 
             // check that reverse trips works
-            return _nodesToDeclarations.Get(pEvent.SourceNode) == pEvent;
+            return _nodesToDeclarations.Get(pEvent.SourceLocation) == pEvent;
         }
 
         private bool IsValid(State state)
         {
             return state.Container.States.Contains(state) &&
                    state.Actions.All(kv => kv.Value.Trigger == kv.Key) &&
-                   _nodesToDeclarations.Get(state.SourceNode) == state;
+                   _nodesToDeclarations.Get(state.SourceLocation) == state;
         }
 
         private bool IsValid(StateGroup stateGroup)
@@ -120,19 +113,19 @@ namespace Microsoft.Pc.TypeChecker
                    stateGroup.States.All(state => state.OwningMachine == stateGroup.OwningMachine) &&
                    stateGroup.Groups.All(group => group.OwningMachine == stateGroup.OwningMachine) &&
                    stateGroup.Groups.All(group => group.ParentStateContainer == stateGroup) &&
-                   _nodesToDeclarations.Get(stateGroup.SourceNode) == stateGroup;
+                   _nodesToDeclarations.Get(stateGroup.SourceLocation) == stateGroup;
         }
 
         private bool IsValid(TypeDef typeDef)
         {
             return typeDef.Type != null &&
-                   _nodesToDeclarations.Get(typeDef.SourceNode) == typeDef;
+                   _nodesToDeclarations.Get(typeDef.SourceLocation) == typeDef;
         }
 
         private bool IsValid(Variable variable)
         {
             return variable.Type != null &&
-                   _nodesToDeclarations.Get(variable.SourceNode) == variable;
+                   _nodesToDeclarations.Get(variable.SourceLocation) == variable;
         }
 
         [Conditional("DEBUG")]

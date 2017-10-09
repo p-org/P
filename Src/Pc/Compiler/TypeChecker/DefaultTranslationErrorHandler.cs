@@ -45,19 +45,19 @@ namespace Microsoft.Pc.TypeChecker
         public Exception DuplicateStateExitHandler(ParserRuleContext location, Function existingHandler, State state)
         {
             return IssueError(location,
-                              $"exit handler in state '{state.Name}' duplicates exit handler at {GetLocation(existingHandler.SourceNode)}");
+                              $"exit handler in state '{state.Name}' duplicates exit handler at {GetLocation(existingHandler.SourceLocation)}");
         }
 
         public Exception DuplicateStateEntry(ParserRuleContext location, Function existingHandler, State state)
         {
             return IssueError(location,
-                              $"entry handler in state '{state.Name}' duplicates entry handler at {GetLocation(existingHandler.SourceNode)}");
+                              $"entry handler in state '{state.Name}' duplicates entry handler at {GetLocation(existingHandler.SourceLocation)}");
         }
 
         public Exception DuplicateDeclaration(ParserRuleContext location, IPDecl duplicate, IPDecl existing)
         {
             return IssueError(location,
-                              $"'{duplicate.Name}' duplicates declaration '{existing.Name}' at {GetLocation(existing.SourceNode)}");
+                              $"'{duplicate.Name}' duplicates declaration '{existing.Name}' at {GetLocation(existing.SourceLocation)}");
         }
 
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)
@@ -128,9 +128,9 @@ namespace Microsoft.Pc.TypeChecker
                               $"expected either both float or both int; got {lhsType.OriginalRepresentation} and {rhsType.OriginalRepresentation}");
         }
 
-        public Exception ParseFailure(FileInfo file)
+        public Exception ParseFailure(FileInfo file, string message)
         {
-            return new TranslationException($"failed to parse {file.Name}");
+            return new TranslationException($"[{file.Name}] parse error: {message}");
         }
 
         public Exception EmittedNullEvent(ParserRuleContext location)

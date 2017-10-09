@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
@@ -10,17 +11,20 @@ namespace Microsoft.Pc.TypeChecker.AST
         private readonly Dictionary<string, StateGroup> _groups = new Dictionary<string, StateGroup>();
         private readonly Dictionary<string, State> _states = new Dictionary<string, State>();
 
-        public StateGroup(string name, PParser.GroupContext sourceNode)
+        public StateGroup(string name, ParserRuleContext sourceNode)
         {
+            Debug.Assert(sourceNode is PParser.GroupContext);
             Name = name;
-            SourceNode = sourceNode;
+            SourceLocation = sourceNode;
         }
 
         public Machine OwningMachine { get; set; }
         public Scope Table { get; set; }
 
         public string Name { get; }
-        public ParserRuleContext SourceNode { get; }
+        public ParserRuleContext SourceLocation { get; }
+        public IList<IPAST> Children => throw new NotImplementedException("ast children");
+
         public IStateContainer ParentStateContainer { get; set; }
         public IEnumerable<State> States => _states.Values;
         public IEnumerable<StateGroup> Groups => _groups.Values;

@@ -286,8 +286,8 @@
     <Compile Include="TypeChecker\AST\IStateContainer.cs" />
     <Compile Include="TypeChecker\AST\ITypedName.cs" />
     <Compile Include="TypeChecker\AST\Machine.cs" />
-    <Compile Include="TypeChecker\AST\MachineProto.cs" />
     <Compile Include="TypeChecker\AST\NamedTupleEntry.cs" />
+    <Compile Include="TypeChecker\AST\IPAST.cs" />
     <Compile Include="TypeChecker\AST\PEnum.cs" />
     <Compile Include="TypeChecker\AST\PEvent.cs" />
     <Compile Include="TypeChecker\AST\State.cs" />
@@ -347,6 +347,7 @@
     <Compile Include="TypeChecker\ExprVisitor.cs" />
     <Compile Include="TypeChecker\FunctionBodyListener.cs" />
     <Compile Include="TypeChecker\ITranslationErrorHandler.cs" />
+    <Compile Include="TypeChecker\StackProperty.cs" />
     <Compile Include="TypeChecker\TranslationException.cs" />
     <Compile Include="TypeChecker\RuleContextExtensions.cs" />
     <Compile Include="TypeChecker\StatementVisitor.cs" />

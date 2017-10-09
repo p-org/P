@@ -91,14 +91,7 @@ namespace Microsoft.Pc.TypeChecker
                 nodesToDeclarations.Put(varName, decl);
             }
         }
-
-        public override void EnterImplMachineProtoDecl(PParser.ImplMachineProtoDeclContext context)
-        {
-            string symbolName = context.name.GetText();
-            MachineProto decl = currentScope.Put(symbolName, context);
-            nodesToDeclarations.Put(context, decl);
-        }
-
+        
         public override void EnterSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
             string symbolName = context.name.GetText();
@@ -109,7 +102,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void ExitSpecMachineDecl(PParser.SpecMachineDeclContext context) { PopTable(); }
 
-        public override void EnterFunDecl(PParser.FunDeclContext context)
+        public override void EnterPFunDecl(PParser.PFunDeclContext context)
         {
             string symbolName = context.name.GetText();
             Function decl = currentScope.Put(symbolName, context);
@@ -117,19 +110,12 @@ namespace Microsoft.Pc.TypeChecker
             PushTable(context);
         }
 
-        public override void ExitFunDecl(PParser.FunDeclContext context) { PopTable(); }
+        public override void ExitPFunDecl(PParser.PFunDeclContext context) { PopTable(); }
 
         public override void EnterFunParam(PParser.FunParamContext context)
         {
             string symbolName = context.name.GetText();
             Variable decl = currentScope.Put(symbolName, context);
-            nodesToDeclarations.Put(context, decl);
-        }
-
-        public override void EnterFunProtoDecl(PParser.FunProtoDeclContext context)
-        {
-            string symbolName = context.name.GetText();
-            FunctionProto decl = currentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
         }
 

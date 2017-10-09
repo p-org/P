@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Windows.Forms;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
@@ -41,8 +42,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitNamedTupleAccessExpr(PParser.NamedTupleAccessExprContext context)
         {
             IPExpr subExpr = Visit(context.expr());
-            var tuple = subExpr.Type.Canonicalize() as NamedTupleType;
-            if (tuple == null)
+            if (!(subExpr.Type.Canonicalize() is NamedTupleType tuple))
             {
                 throw handler.TypeMismatch(context.expr(), subExpr.Type, TypeKind.NamedTuple);
             }
@@ -57,13 +57,12 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitTupleAccessExpr(PParser.TupleAccessExprContext context)
         {
             IPExpr subExpr = Visit(context.expr());
-            var tuple = subExpr.Type.Canonicalize() as TupleType;
-            if (tuple == null)
-            {
-                throw handler.TypeMismatch(context.expr(), subExpr.Type, TypeKind.Tuple);
-            }
             int fieldNo = int.Parse(context.field.GetText());
-            if (fieldNo >= tuple.Types.Length)
+            if (!(subExpr.Type.Canonicalize() is TupleType tuple))
+            {
+                throw handler.TypeMismatch(context.expr(), subExpr.Type, TypeKind.Tuple, TypeKind.NamedTuple);
+            }
+            if (fieldNo >= tuple.Types.Count)
             {
                 throw handler.OutOfBoundsTupleAccess(context.field, fieldNo, tuple);
             }
@@ -73,62 +72,65 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitSeqAccessExpr(PParser.SeqAccessExprContext context)
         {
             IPExpr seqOrMap = Visit(context.seq);
-            PLanguageType canonicalType = seqOrMap.Type.Canonicalize();
-            if (canonicalType is SequenceType seqType)
+            IPExpr indexExpr = Visit(context.index);
+            switch (seqOrMap.Type.Canonicalize())
             {
-                IPExpr indexExpr = Visit(context.index);
-                if (!PrimitiveType.Int.IsAssignableFrom(indexExpr.Type))
-                {
-                    throw handler.TypeMismatch(context.index, indexExpr.Type, PrimitiveType.Int);
-                }
-                return new SeqAccessExpr(seqOrMap, indexExpr, seqType.ElementType);
-            }
-            if (canonicalType is MapType mapType)
-            {
-                IPExpr indexExpr = Visit(context.index);
-                if (!mapType.KeyType.IsAssignableFrom(indexExpr.Type))
-                {
-                    throw handler.TypeMismatch(context.index, indexExpr.Type, mapType.KeyType);
-                }
-                return new MapAccessExpr(seqOrMap, indexExpr, mapType.ValueType);
+                case SequenceType seqType:
+                    if (!PrimitiveType.Int.IsAssignableFrom(indexExpr.Type))
+                    {
+                        throw handler.TypeMismatch(context.index, indexExpr.Type, PrimitiveType.Int);
+                    }
+                    return new SeqAccessExpr(seqOrMap, indexExpr, seqType.ElementType);
+                case MapType mapType:
+                    if (!mapType.KeyType.IsAssignableFrom(indexExpr.Type))
+                    {
+                        throw handler.TypeMismatch(context.index, indexExpr.Type, mapType.KeyType);
+                    }
+                    return new MapAccessExpr(seqOrMap, indexExpr, mapType.ValueType);
             }
             throw handler.TypeMismatch(context.seq, seqOrMap.Type, TypeKind.Sequence, TypeKind.Map);
         }
 
         public override IPExpr VisitKeywordExpr(PParser.KeywordExprContext context)
         {
-            IPExpr expr;
-            MapType mapType;
             switch (context.fun.Text)
             {
                 case "keys":
-                    expr = Visit(context.expr());
-                    mapType = expr.Type.Canonicalize() as MapType;
-                    if (mapType == null)
+                {
+                    IPExpr expr = Visit(context.expr());
+                    if (!(expr.Type.Canonicalize() is MapType mapType))
                     {
                         throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map);
                     }
                     return new KeysExpr(expr, new SequenceType(mapType.KeyType));
+                }
                 case "values":
-                    expr = Visit(context.expr());
-                    mapType = expr.Type.Canonicalize() as MapType;
-                    if (mapType == null)
+                {
+                    IPExpr expr = Visit(context.expr());
+                    if (!(expr.Type.Canonicalize() is MapType mapType))
                     {
                         throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map);
                     }
                     return new ValuesExpr(expr, new SequenceType(mapType.ValueType));
+                }
                 case "sizeof":
-                    expr = Visit(context.expr());
+                {
+                    IPExpr expr = Visit(context.expr());
                     if (!(expr.Type.Canonicalize() is SequenceType) && !(expr.Type.Canonicalize() is MapType))
                     {
                         throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map, TypeKind.Sequence);
                     }
                     return new SizeofExpr(expr);
+                }
                 case "default":
+                {
                     PLanguageType type = TypeResolver.ResolveType(context.type(), table, handler);
                     return new DefaultExpr(type.Canonicalize());
+                }
                 default:
+                {
                     throw new ArgumentException($"Unknown keyword expression {context.fun.Text}", nameof(context));
+                }
             }
         }
 
@@ -138,10 +140,6 @@ namespace Microsoft.Pc.TypeChecker
             string machineName = context.machineName.GetText();
             if (!table.Lookup(machineName, out Machine machine))
             {
-                if (!table.Lookup(machineName, out MachineProto proto))
-                {
-                    throw new NotImplementedException($"constructing machine prototypes ({machineName})");
-                }
                 throw handler.MissingDeclaration(context.machineName, "machine", machineName);
             }
 
@@ -278,8 +276,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     return arithCtors[op](lhs, rhs);
                 case "in":
-                    var rhsMap = rhs.Type.Canonicalize() as MapType;
-                    if (rhsMap == null)
+                    if (!(rhs.Type.Canonicalize() is MapType rhsMap))
                     {
                         throw handler.TypeMismatch(context.rhs, rhs.Type, TypeKind.Map);
                     }
@@ -381,24 +378,15 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.THIS() != null)
             {
-                // TODO: this is somewhat inelegant.
-                RuleContext ctx = context;
-                var hasMachineParent = false;
-                while (ctx != null)
-                {
-                    if (ctx is PParser.ImplMachineDeclContext || ctx is PParser.SpecMachineDeclContext)
-                    {
-                        hasMachineParent = true;
-                        break;
-                    }
-                    ctx = ctx.Parent;
-                }
-                if (!hasMachineParent)
+                var implParent = context.GetParent<PParser.ImplMachineDeclContext>();
+                var specParent = context.GetParent<PParser.SpecMachineDeclContext>();
+                if (!(implParent != null || specParent != null))
                 {
                     throw handler.MisplacedThis(context);
                 }
-                string machineName = (ctx as PParser.ImplMachineDeclContext)?.name.GetText() ??
-                                     (ctx as PParser.SpecMachineDeclContext)?.name.GetText();
+                // TODO: this is somewhat inelegant
+                string machineName = implParent?.name.GetText() ?? specParent?.name.GetText();
+                Debug.Assert(machineName != null);
                 bool success = table.Lookup(machineName, out Machine machine);
                 Debug.Assert(success);
                 return new ThisRefExpr(machine);
@@ -441,19 +429,20 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPExpr VisitRvalue(PParser.RvalueContext context)
         {
-            if (context.linear != null)
+            if (context.linear == null)
             {
-                string varName = context.iden().GetText();
-                if (!table.Lookup(varName, out Variable variable))
-                {
-                    throw handler.MissingDeclaration(context.iden(), "variable", varName);
-                }
-
-                return context.linear.Text.Equals("move")
-                           ? new LinearAccessRefExpr(variable, LinearType.Move)
-                           : new LinearAccessRefExpr(variable, LinearType.Swap);
+                return Visit(context.expr());
             }
-            return Visit(context.expr());
+
+            string varName = context.iden().GetText();
+            if (!table.Lookup(varName, out Variable variable))
+            {
+                throw handler.MissingDeclaration(context.iden(), "variable", varName);
+            }
+
+            return context.linear.Text.Equals("move")
+                       ? new LinearAccessRefExpr(variable, LinearType.Move)
+                       : new LinearAccessRefExpr(variable, LinearType.Swap);
         }
 
         public override IPExpr VisitVarLvalue(PParser.VarLvalueContext context)
@@ -469,8 +458,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitNamedTupleLvalue(PParser.NamedTupleLvalueContext context)
         {
             IPExpr lvalue = Visit(context.lvalue());
-            var type = lvalue.Type.Canonicalize() as NamedTupleType;
-            if (type == null)
+            if (!(lvalue.Type.Canonicalize() is NamedTupleType type))
             {
                 throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.NamedTuple);
             }
@@ -484,15 +472,13 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPExpr VisitTupleLvalue(PParser.TupleLvalueContext context)
         {
-            // TODO: adapt to named tuples. Numbers map to positions
             IPExpr lvalue = Visit(context.lvalue());
-            var type = lvalue.Type.Canonicalize() as TupleType;
-            if (type == null)
+            if (!(lvalue.Type.Canonicalize() is TupleType type))
             {
                 throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Tuple);
             }
             int field = int.Parse(context.@int().GetText());
-            if (field >= type.Types.Length)
+            if (field >= type.Types.Count)
             {
                 throw handler.OutOfBoundsTupleAccess(context.@int(), field, type);
             }
@@ -502,26 +488,25 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitMapOrSeqLvalue(PParser.MapOrSeqLvalueContext context)
         {
             IPExpr lvalue = Visit(context.lvalue());
-            PLanguageType type = lvalue.Type.Canonicalize();
-            if (type is MapType mapType)
+            IPExpr index = Visit(context.expr());
+            PLanguageType indexType = index.Type;
+            switch (lvalue.Type.Canonicalize())
             {
-                IPExpr index = Visit(context.expr());
-                if (!mapType.KeyType.IsAssignableFrom(index.Type))
-                {
-                    throw handler.TypeMismatch(context.expr(), index.Type, mapType.KeyType);
-                }
-                return new MapAccessExpr(lvalue, index, mapType.ValueType);
+                case MapType mapType:
+                    if (!mapType.KeyType.IsAssignableFrom(indexType))
+                    {
+                        throw handler.TypeMismatch(context.expr(), indexType, mapType.KeyType);
+                    }
+                    return new MapAccessExpr(lvalue, index, mapType.ValueType);
+                case SequenceType seqType:
+                    if (!PrimitiveType.Int.IsAssignableFrom(indexType))
+                    {
+                        throw handler.TypeMismatch(context.expr(), indexType, PrimitiveType.Int);
+                    }
+                    return new SeqAccessExpr(lvalue, index, seqType.ElementType);
+                default:
+                    throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Sequence, TypeKind.Map);
             }
-            if (type is SequenceType seqType)
-            {
-                IPExpr index = Visit(context.expr());
-                if (!PrimitiveType.Int.IsAssignableFrom(index.Type))
-                {
-                    throw handler.TypeMismatch(context.expr(), index.Type, PrimitiveType.Int);
-                }
-                return new SeqAccessExpr(lvalue, index, seqType.ElementType);
-            }
-            throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Sequence, TypeKind.Map);
         }
     }
 }

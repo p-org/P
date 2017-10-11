@@ -134,7 +134,7 @@ namespace P.Runtime
                     else
                     {
                         //SpecMachine case:
-                        //TODO: is it even possible to send "halt" event to a spec machine?
+                        //TODO: is it possible to send "halt" event to a spec machine?
                         stateImpl.TraceLine("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
                     }
                     currentStatus = PrtMachineStatus.Halted;

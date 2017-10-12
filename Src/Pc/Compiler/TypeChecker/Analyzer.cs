@@ -6,21 +6,21 @@ namespace Microsoft.Pc.TypeChecker
 {
     public static class Analyzer
     {
-        public static void AnalyzeCompilationUnit(
+        public static PProgramModel AnalyzeCompilationUnit(
             ITranslationErrorHandler handler,
             params PParser.ProgramContext[] programUnits)
         {
             var walker = new ParseTreeWalker();
-            var topLevelTable = new Scope(handler);
+            var globalScope = new Scope(handler);
             var nodesToScopes = new ParseTreeProperty<Scope>();
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
-            var stubListener = new DeclarationStubListener(topLevelTable, nodesToScopes, nodesToDeclarations, handler);
+            var stubListener = new DeclarationStubListener(globalScope, nodesToScopes, nodesToDeclarations, handler);
             var declListener = new DeclarationListener(handler, nodesToScopes, nodesToDeclarations);
             var funcBodyListener = new FunctionBodyListener(handler, nodesToScopes, nodesToDeclarations);
 
             // Add built-in events to the table.
-            topLevelTable.Put("halt", (PParser.EventDeclContext) null);
-            topLevelTable.Put("null", (PParser.EventDeclContext) null);
+            globalScope.Put("halt", (PParser.EventDeclContext) null);
+            globalScope.Put("null", (PParser.EventDeclContext) null);
 
             // Step 1: Create mapping of names to declaration stubs
             foreach (PParser.ProgramContext programUnit in programUnits)
@@ -50,6 +50,10 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // NOW: AST Complete, pass to StringTemplate
+            return new PProgramModel
+            {
+                GlobalScope = globalScope
+            };
         }
     }
 }

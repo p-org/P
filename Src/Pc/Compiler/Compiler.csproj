@@ -219,6 +219,8 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Backend\CodeGen.cs" />
+    <Compile Include="Backend\TargetLanguage.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="CompilerOutput.cs" />
     <Compile Include="CompilerOutputStream.cs" />
@@ -345,7 +347,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PToCSharpCompiler.cs" />
     <Compile Include="PToCSharpLinker.cs" />
-    <Compile Include="PToPSharpCompiler.cs" />
     <Compile Include="PToZing.cs" />
     <Compile Include="PToZing.TypeTranslationContext.cs" />
     <Compile Include="PToZing.ZingFoldContext.cs" />
@@ -360,6 +361,7 @@
     <Compile Include="TypeChecker\Analyzer.cs" />
     <Compile Include="TypeChecker\DeclarationListener.cs" />
     <Compile Include="TypeChecker\DeclarationStubListener.cs" />
+    <Compile Include="PProgramModel.cs" />
     <Compile Include="TypeChecker\Scope.cs" />
     <Compile Include="TypeChecker\DeclPrinter.cs" />
     <Compile Include="TypeChecker\ExprVisitor.cs" />

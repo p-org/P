@@ -2,7 +2,7 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public abstract class PLanguageType
     {
-        public PLanguageType(TypeKind kind) { TypeKind = kind; }
+        protected PLanguageType(TypeKind kind) { TypeKind = kind; }
 
         /// <summary>
         ///     The category of type this is (eg. sequence, map, base)

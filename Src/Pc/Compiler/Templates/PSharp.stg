@@ -1,5 +1,10 @@
 ﻿delimiters "%", "%"
-concat(a,b) ::= "%a%%b%"
+temperatureAnnotation ::= [
+    "HOT": "[HOT]\n",
+	"COLD": "[COLD]\n",
+	default: ""
+]
+
 topLevel(pgm) ::= <<
 using System;
 using System.Collections.Generic;
@@ -8,25 +13,31 @@ using Microsoft.PSharp;
 
 namespace %pgm.Namespace%
 {
-    %pgm.Types:typeDfn();separator="\n\n"%
+    %pgm.GlobalScope.Machines:machineDecl();separator="\n\n"%
 
-    %pgm.Machines:machineDecl();separator="\n\n"%
-
-    %pgm.Events:eventDecl();separator="\n\n"%
+    %pgm.GlobalScope.Events:eventDecl();separator="\n\n"%
 }
 >>
 
-decltype(ty) ::= <%%(concat("decl_", ty.TypeKind))(ty)%%>
-decl_base(ty) ::= <%%(concat("decl_base_", ty.TypeName))()%%>
-decl_base_machine() ::= "Machine"
-decl_base_event() ::= "Event"
-decl_base_int() ::= "int"
+decltype(ty) ::= <%%(["decl_", ty.TypeKind])(ty)%%>
+decl_base(ty) ::= <%%(["decl_base_", ty.CanonicalRepresentation])()%%>
 decl_base_bool() ::= "bool"
+decl_base_int() ::= "int"
+decl_base_float() ::= "float"
+decl_base_event() ::= "Event"
+decl_base_machine() ::= "Machine"
 decl_base_null() ::= "void"
+decl_base_any() ::= "object"
 decl_sequence(ty) ::= "List<%decltype(ty.ElementType)%>"
-decl_namedtuple(ty) ::= "%ty.TypeName%"
+decl_map(ty) ::= "Dictionary<%decltype(ty.KeyType)%, %decltype(ty.ValueType)%>"
+decl_tuple(ty) ::= "TuPlE"
+decl_namedtuple(ty) ::= "NaMeD tUpLe"
+decl_foreign(ty) ::= "%ty.CanonicalRepresentation%"
+decl_enum(ty) ::= "%ty.EnumDecl.Name%"
+decl_typedef(ty) ::= "%decltype(ty.TypeDefDecl.Type)%"
+decl_bounded(ty) ::= "object"
 
-typeDfn(ty) ::= <%%(concat("ty_dfn_", ty.TypeKind))(ty)%%>
+typeDfn(ty) ::= <%%(["ty_dfn_", ty.TypeKind])(ty)%%>
 ty_dfn_base(ty) ::= ""
 ty_dfn_sequence(ty) ::= ""
 ty_dfn_map(ty) ::= ""
@@ -93,26 +104,20 @@ stateDecl(state) ::= <%
 %if(state.IsStart)%
 [Start]%\n%
 %endif%
-%if(state.IsHot)%
-[Hot]%\n%
-%elseif(state.IsCold)%
-[Cold]%\n%
+%temperatureAnnotation.(state.Temperature)%
+%if(state.Entry)%
+[OnEntry(nameof(%state.Entry.Name%))]%\n%
 %endif%
-%if(state.EntryFun)%
-[OnEntry(nameof(%state.EntryFun%))]%\n%
+%if(state.Exit)%
+[OnExit(nameof(%state.Exit.Name%))]%\n%
 %endif%
-%if(state.ExitFun)%
-[OnExit(nameof(%state.ExitFun%))]%\n%
-%endif%
-%if(state.IgnoredEvents)%
-[IgnoreEvents(%state.IgnoredEvents:{evt|typeof(%evt%)};wrap,anchor,separator=", "%)]%\n%
-%endif%
-%if(state.DeferredEvents)%
-[DeferEvents(%state.DeferredEvents:{evt|typeof(%evt%)};wrap,anchor,separator=", "%)]%\n%
-%endif%
-%state.Transitions:stateTransition();separator="\n"%
-%if(state.Transitions)%%\n%%endif%
+%state.Actions:stateAction();separator="\n"%
+%if(state.Actions)%%\n%%endif%
 class %state.Name% : MachineState {}
+%>
+
+stateAction(action) ::= <%
+[Action]
 %>
 
 stateTransition(t) ::= <%
@@ -128,7 +133,7 @@ stateTransition(t) ::= <%
 %>
 
 methodDecl(m) ::= <<
-internal %decltype(m.ReturnType)% %m.Name%(%argumentList(m.Parameters)%)
+internal %decltype(m.Signature.ReturnType)% %m.Name%(%argumentList(m.Signature.Parameters)%)
 {
     // variable declarations
     %m.LocalVariables:{v|%decltype(v.Type)% %v.Name%;}; separator="\n"%

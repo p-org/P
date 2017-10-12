@@ -16,6 +16,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         }
 
         public StateTemperature Temperature { get; set; }
+        
         public bool IsStart { get; set; }
         public Function Entry { get; set; }
         public IDictionary<PEvent, IStateAction> Actions { get; } = new Dictionary<PEvent, IStateAction>();

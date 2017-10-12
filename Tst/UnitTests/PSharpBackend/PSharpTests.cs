@@ -4,7 +4,9 @@ using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Microsoft.Pc;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.Backend;
 using Microsoft.Pc.TypeChecker;
 using NUnit.Framework;
 using UnitTests.CBackend;
@@ -31,8 +33,8 @@ namespace UnitTests.PSharpBackend
 
         private class PParserErrorListener : IAntlrErrorListener<IToken>
         {
-            private readonly FileInfo inputFile;
             private readonly ITranslationErrorHandler handler;
+            private readonly FileInfo inputFile;
 
             public PParserErrorListener(FileInfo inputFile, ITranslationErrorHandler handler)
             {
@@ -75,7 +77,15 @@ namespace UnitTests.PSharpBackend
                     originalFiles.Put(trees[i], inputFile);
                 }
 
-                Analyzer.AnalyzeCompilationUnit(handler, trees);
+                PProgramModel program = Analyzer.AnalyzeCompilationUnit(handler, trees);
+                string generatedCode = CodeGen.GenerateCode(TargetLanguage.PSharp,
+                                                            new PSharpProgramModel
+                                                            {
+                                                                GlobalScope = program.GlobalScope,
+                                                                Namespace = "Program"
+                                                            });
+                Console.WriteLine(generatedCode);
+
                 if (!expectCorrect)
                 {
                     Console.Error.WriteLine($"[{testName}] Expected error, but none were found!");

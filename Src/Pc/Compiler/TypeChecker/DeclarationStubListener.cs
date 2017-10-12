@@ -1,8 +1,6 @@
-using System;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -12,9 +10,9 @@ namespace Microsoft.Pc.TypeChecker
     /// </summary>
     internal class DeclarationStubListener : PParserBaseListener
     {
-        private readonly ParseTreeProperty<Scope> scopes;
         private readonly ITranslationErrorHandler handler;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
+        private readonly ParseTreeProperty<Scope> scopes;
         private Scope currentScope;
 
         public DeclarationStubListener(
@@ -92,7 +90,7 @@ namespace Microsoft.Pc.TypeChecker
                 nodesToDeclarations.Put(varName, decl);
             }
         }
-        
+
         public override void EnterSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
             string symbolName = context.name.GetText();

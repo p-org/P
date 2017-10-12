@@ -6,7 +6,7 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class BoundedType : PLanguageType
     {
-        public BoundedType(EventSet eventSet) : base(TypeKind.Base) { EventSet = eventSet; }
+        public BoundedType(EventSet eventSet) : base(TypeKind.Bounded) { EventSet = eventSet; }
 
         public EventSet EventSet { get; }
         public override string OriginalRepresentation => EventSet == null ? "data" : $"any<{EventSet.Name}>";

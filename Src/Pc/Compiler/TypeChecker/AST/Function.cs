@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST.Statements;
 
 namespace Microsoft.Pc.TypeChecker.AST
 {
@@ -22,7 +23,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         public Machine Owner { get; set; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
         public List<Variable> LocalVariables { get; } = new List<Variable>();
-        public List<IPStmt> Body { get; set; }
+        public CompoundStmt Body { get; set; }
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }

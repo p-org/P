@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
@@ -43,10 +44,9 @@ namespace Microsoft.Pc.TypeChecker
 
             public override PLanguageType VisitSeqType(PParser.SeqTypeContext context)
             {
-                PLanguageType elemType = Visit(context.type());
-                return new SequenceType(elemType);
+                return new SequenceType(Visit(context.type()));
             }
-
+            
             public override PLanguageType VisitNamedType(PParser.NamedTypeContext context)
             {
                 string typeName = context.name.GetText();
@@ -65,8 +65,17 @@ namespace Microsoft.Pc.TypeChecker
                     if (typeDef.Type == null)
                     {
                         visitedTypeDefs.Add(typeDef);
-                        var typeDefContext = (PParser.PTypeDefContext) typeDef.SourceLocation;
-                        typeDef.Type = Visit(typeDefContext.type());
+                        switch (typeDef.SourceLocation)
+                        {
+                            case PParser.ForeignTypeDefContext foreignType:
+                                typeDef.Type = new ForeignType(foreignType.name.GetText());
+                                break;
+                            case PParser.PTypeDefContext typedefDecl:
+                                typeDef.Type = Visit(typedefDecl.type());
+                                break;
+                            default:
+                                throw handler.InternalError(typeDef.SourceLocation, $"Grammar changed without updating {nameof(TypeVisitor)}");
+                        }
                     }
 
                     return new TypeDefType(typeDef);
@@ -82,8 +91,7 @@ namespace Microsoft.Pc.TypeChecker
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
             {
-                var tupleTypes = context._tupTypes.Select(Visit).ToArray();
-                return new TupleType(tupleTypes);
+                return new TupleType(context._tupTypes.Select(Visit).ToArray());
             }
 
             public override PLanguageType VisitNamedTupleType(PParser.NamedTupleTypeContext context)

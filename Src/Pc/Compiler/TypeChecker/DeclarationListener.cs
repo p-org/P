@@ -85,7 +85,7 @@ namespace Microsoft.Pc.TypeChecker
 
         #endregion
 
-#region Functions
+        #region Functions
         public override void EnterPFunDecl(PParser.PFunDeclContext context)
         {
             // FUN name=Iden
@@ -104,18 +104,16 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw new NotImplementedException("function annotations");
             }
-
-            // (SEMI |
-            if (context.functionBody() == null)
-            {
-                throw new NotImplementedException("foreign functions");
-            }
-
-            // functionBody) ;
-            // handled in EnterFunctionBody
+            
+            // functionBody handled in EnterFunctionBody
         }
 
         public override void ExitPFunDecl(PParser.PFunDeclContext context) { functionStack.Pop(); }
+
+        public override void EnterForeignFunDecl(PParser.ForeignFunDeclContext context)
+        {
+            throw new NotImplementedException("foreign functions");
+        }
 
         public override void EnterFunParam(PParser.FunParamContext context)
         {
@@ -145,7 +143,7 @@ namespace Microsoft.Pc.TypeChecker
 
             CurrentFunction.Signature.Parameters.Add(param);
         }
-#endregion
+        #endregion
 
         public override void EnterVarDecl(PParser.VarDeclContext context)
         {
@@ -156,11 +154,13 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw new NotImplementedException("variable annotations");
             }
+
+            PLanguageType variableType = TypeResolver.ResolveType(context.type(), currentScope, handler);
             foreach (PParser.IdenContext varName in varNames)
             {
                 var variable = (Variable) nodesToDeclarations.Get(varName);
                 // COLON type
-                variable.Type = TypeResolver.ResolveType(context.type(), currentScope, handler);
+                variable.Type = variableType;
 
                 if (CurrentFunction != null)
                 {
@@ -714,8 +714,11 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
         {
-            // TYPE name=Iden SEMI
-            throw new NotImplementedException("foreign types");
+            // TYPE name=Iden
+            var typedef = (TypeDef)nodesToDeclarations.Get(context);
+
+            // SEMI
+            typedef.Type = TypeResolver.ResolveType(context, currentScope, handler);
         }
 
         #endregion

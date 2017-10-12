@@ -11,6 +11,7 @@ namespace Microsoft.Pc.TypeChecker
     {
         void IssueWarning(ParserRuleContext location, string message);
         Exception IssueError(ParserRuleContext location, string message);
+        Exception IssueError(ParserRuleContext ctx, IToken location, string message);
 
         Exception DuplicateEnumValue(PParser.NumberedEnumElemContext location, PEnum pEnum);
 
@@ -37,5 +38,6 @@ namespace Microsoft.Pc.TypeChecker
         Exception BinOpTypeMismatch(PParser.BinExprContext location, PLanguageType lhsType, PLanguageType rhsType);
         Exception ParseFailure(FileInfo file, string message);
         Exception EmittedNullEvent(ParserRuleContext location);
+        Exception InternalError(ParserRuleContext location, string message);
     }
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Pc.Antlr;
@@ -308,8 +309,19 @@ namespace Microsoft.Pc.TypeChecker
         public TypeDef Put(string name, PParser.PTypeDefContext tree)
         {
             var typedef = new TypeDef(name, tree);
-            CheckConflicts(
-                           typedef,
+            CheckConflicts(typedef,
+                           Namespace(typedefs),
+                           Namespace(enums),
+                           Namespace(interfaces),
+                           Namespace(machines));
+            typedefs.Add(name, typedef);
+            return typedef;
+        }
+
+        internal TypeDef Put(string name, PParser.ForeignTypeDefContext tree)
+        {
+            var typedef = new TypeDef(name, tree);
+            CheckConflicts(typedef,
                            Namespace(typedefs),
                            Namespace(enums),
                            Namespace(interfaces),

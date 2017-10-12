@@ -2,6 +2,7 @@ using System;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
+using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -141,7 +142,9 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterForeignTypeDef(PParser.ForeignTypeDefContext context)
         {
-            throw new NotImplementedException("TODO: foreign types");
+            string symbolName = context.name.GetText();
+            TypeDef typeDef = currentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, typeDef);
         }
 
         #endregion

@@ -138,6 +138,11 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(location, "cannot send null events");
         }
 
+        public Exception InternalError(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"internal error: {message}");
+        }
+
         public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
         {
             return new TranslationException($"[{GetLocation(ctx, location)}] {message}");

@@ -16,7 +16,7 @@ namespace Microsoft.Pc.TypeChecker
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
             var stubListener = new DeclarationStubListener(topLevelTable, nodesToScopes, nodesToDeclarations, handler);
             var declListener = new DeclarationListener(handler, nodesToScopes, nodesToDeclarations);
-            var funcBodyListener = new FunctionBodyListener(handler, nodesToDeclarations, nodesToScopes);
+            var funcBodyListener = new FunctionBodyListener(handler, nodesToScopes, nodesToDeclarations);
 
             // Add built-in events to the table.
             topLevelTable.Put("halt", (PParser.EventDeclContext) null);

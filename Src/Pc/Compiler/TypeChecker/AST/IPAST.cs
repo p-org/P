@@ -8,5 +8,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         ParserRuleContext SourceLocation { get; }
 
         IList<IPAST> Children { get; }
+
+        IPAST Parent { get; }
     }
 }

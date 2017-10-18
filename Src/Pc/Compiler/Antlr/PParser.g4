@@ -113,9 +113,7 @@ funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? annotationSet?
         ;
 
 group : GROUP name=iden LBRACE groupItem* RBRACE ;
-groupItem : stateDecl
-          | group
-          ;
+groupItem : stateDecl | group ;
 
 stateDecl : START? temperature=(HOT | COLD)? STATE name=iden annotationSet? LBRACE stateBodyItem* RBRACE ;
 

@@ -14,7 +14,6 @@ namespace Microsoft.Pc.TypeChecker
             var globalScope = new Scope(handler);
             var nodesToScopes = new ParseTreeProperty<Scope>();
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
-            var stubListener = new DeclarationStubListener(globalScope, nodesToScopes, nodesToDeclarations, handler);
             var declListener = new DeclarationListener(handler, nodesToScopes, nodesToDeclarations);
             var funcBodyListener = new FunctionBodyListener(handler, nodesToScopes, nodesToDeclarations);
 
@@ -25,7 +24,7 @@ namespace Microsoft.Pc.TypeChecker
             // Step 1: Create mapping of names to declaration stubs
             foreach (PParser.ProgramContext programUnit in programUnits)
             {
-                walker.Walk(stubListener, programUnit);
+                DeclarationStubVisitor.PopulateStubs(globalScope, nodesToScopes, nodesToDeclarations, handler, programUnit);
             }
 
             // NOW: no declarations have ambiguous names.

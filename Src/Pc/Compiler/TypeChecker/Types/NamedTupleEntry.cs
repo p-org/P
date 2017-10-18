@@ -1,6 +1,6 @@
-using Microsoft.Pc.TypeChecker.Types;
+using Microsoft.Pc.TypeChecker.AST;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.Types
 {
     public class NamedTupleEntry : ITypedName
     {

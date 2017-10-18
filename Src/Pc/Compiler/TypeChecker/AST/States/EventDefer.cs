@@ -1,4 +1,6 @@
-namespace Microsoft.Pc.TypeChecker.AST
+using Microsoft.Pc.TypeChecker.AST.Declarations;
+
+namespace Microsoft.Pc.TypeChecker.AST.States
 {
     public class EventDefer : IStateAction
     {

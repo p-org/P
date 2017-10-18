@@ -1,5 +1,6 @@
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
 {

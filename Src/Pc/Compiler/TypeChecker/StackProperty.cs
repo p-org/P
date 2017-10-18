@@ -5,6 +5,8 @@ namespace Microsoft.Pc.TypeChecker
     public class StackProperty<T>
         where T : class
     {
+        public StackProperty(T initial) { Value = initial; }
+
         public T Value { get; private set; }
 
         public IDisposable NewContext(T newValue)

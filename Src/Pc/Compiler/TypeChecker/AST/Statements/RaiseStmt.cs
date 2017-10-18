@@ -1,3 +1,4 @@
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
 
 namespace Microsoft.Pc.TypeChecker.AST.Statements

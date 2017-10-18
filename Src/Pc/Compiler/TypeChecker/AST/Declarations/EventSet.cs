@@ -4,7 +4,7 @@ using System.Diagnostics;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class EventSet : IPDecl
     {
@@ -24,6 +24,7 @@ namespace Microsoft.Pc.TypeChecker.AST
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
-        public IList<IPAST> Children => new List<IPAST>(Events);
+        public IList<IPAST> Children => throw new NotImplementedException();
+        public IPAST Parent => throw new NotImplementedException();
     }
 }

@@ -5,9 +5,9 @@ using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class Interface : IConstructibleDecl
+    public class Interface : IConstructible, IPDecl
     {
         public Interface(string name, ParserRuleContext sourceNode)
         {
@@ -23,5 +23,6 @@ namespace Microsoft.Pc.TypeChecker.AST
         public ParserRuleContext SourceLocation { get; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
         public IList<IPAST> Children => throw new NotImplementedException("ast children");
+        public IPAST Parent => throw new NotImplementedException();
     }
 }

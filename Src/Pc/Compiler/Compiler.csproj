@@ -226,13 +226,18 @@
     <Compile Include="CompilerOutputStream.cs" />
     <Compile Include="ConsoleProfiler.cs" />
     <Compile Include="CSharpHelper.cs" />
-    <Compile Include="TypeChecker\AST\EnumElem.cs" />
-    <Compile Include="TypeChecker\AST\EventDefer.cs" />
-    <Compile Include="TypeChecker\AST\EventDoAction.cs" />
-    <Compile Include="TypeChecker\AST\EventGotoState.cs" />
-    <Compile Include="TypeChecker\AST\EventIgnore.cs" />
-    <Compile Include="TypeChecker\AST\EventPushState.cs" />
-    <Compile Include="TypeChecker\AST\EventSet.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\EnumElem.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\EventSet.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\Function.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\Interface.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\Machine.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\PEvent.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\Variable.cs" />
+    <Compile Include="TypeChecker\AST\States\EventDefer.cs" />
+    <Compile Include="TypeChecker\AST\States\EventDoAction.cs" />
+    <Compile Include="TypeChecker\AST\States\EventGotoState.cs" />
+    <Compile Include="TypeChecker\AST\States\EventIgnore.cs" />
+    <Compile Include="TypeChecker\AST\States\EventPushState.cs" />
     <Compile Include="TypeChecker\AST\Expressions\AddExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\BoolLiteralExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\CastExpr.cs" />
@@ -277,23 +282,20 @@
     <Compile Include="TypeChecker\AST\Expressions\ValuesExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\VariableAccessExpr.cs" />
     <Compile Include="TypeChecker\AST\FormalParameter.cs" />
-    <Compile Include="TypeChecker\AST\Function.cs" />
     <Compile Include="TypeChecker\AST\FunctionProto.cs" />
     <Compile Include="TypeChecker\AST\FunctionSignature.cs" />
-    <Compile Include="TypeChecker\AST\IConstructibleDecl.cs" />
+    <Compile Include="TypeChecker\AST\IConstructible.cs" />
     <Compile Include="TypeChecker\AST\IHasScope.cs" />
-    <Compile Include="TypeChecker\AST\Interface.cs" />
     <Compile Include="TypeChecker\AST\IPDecl.cs" />
     <Compile Include="TypeChecker\AST\IStateAction.cs" />
     <Compile Include="TypeChecker\AST\IStateContainer.cs" />
     <Compile Include="TypeChecker\AST\ITypedName.cs" />
-    <Compile Include="TypeChecker\AST\Machine.cs" />
-    <Compile Include="TypeChecker\AST\NamedTupleEntry.cs" />
+    <Compile Include="TypeChecker\DeclarationStubVisitor.cs" />
+    <Compile Include="TypeChecker\Types\NamedTupleEntry.cs" />
     <Compile Include="TypeChecker\AST\IPAST.cs" />
-    <Compile Include="TypeChecker\AST\PEnum.cs" />
-    <Compile Include="TypeChecker\AST\PEvent.cs" />
-    <Compile Include="TypeChecker\AST\State.cs" />
-    <Compile Include="TypeChecker\AST\StateGroup.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\PEnum.cs" />
+    <Compile Include="TypeChecker\AST\States\State.cs" />
+    <Compile Include="TypeChecker\AST\States\StateGroup.cs" />
     <Compile Include="TypeChecker\AST\Statements\AnnounceStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\AssertStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\AssignStmt.cs" />
@@ -312,8 +314,7 @@
     <Compile Include="TypeChecker\AST\Statements\SendStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\SwapAssignStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\WhileStmt.cs" />
-    <Compile Include="TypeChecker\AST\TypeDef.cs" />
-    <Compile Include="TypeChecker\AST\Variable.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\TypeDef.cs" />
     <Compile Include="TypeChecker\DefaultTranslationErrorHandler.cs" />
     <Compile Include="Domains\P.4ml.g.cs">
       <AutoGen>True</AutoGen>
@@ -360,7 +361,6 @@
     <Compile Include="TransitionInfo.cs" />
     <Compile Include="TypeChecker\Analyzer.cs" />
     <Compile Include="TypeChecker\DeclarationListener.cs" />
-    <Compile Include="TypeChecker\DeclarationStubListener.cs" />
     <Compile Include="PProgramModel.cs" />
     <Compile Include="TypeChecker\Scope.cs" />
     <Compile Include="TypeChecker\DeclPrinter.cs" />
@@ -448,9 +448,7 @@
     <Analyzer Include="..\..\..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
     <Analyzer Include="..\..\..\packages\Microsoft.CodeAnalysis.Analyzers.1.1.0\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="TypeChecker\AST\Declarations\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(PTargets)\compiler.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using Microsoft.Pc.TypeChecker.AST.States;
 
 namespace Microsoft.Pc.TypeChecker.AST
 {
-    public interface IStateContainer : IPDecl
+    public interface IStateContainer
     {
         IStateContainer ParentStateContainer { get; }
         IEnumerable<State> States { get; }

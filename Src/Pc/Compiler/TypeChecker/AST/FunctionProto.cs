@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.AST
 {
@@ -21,5 +22,6 @@ namespace Microsoft.Pc.TypeChecker.AST
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
         public IList<IPAST> Children => throw new NotImplementedException("ast children");
+        public IPAST Parent => throw new NotImplementedException();
     }
 }

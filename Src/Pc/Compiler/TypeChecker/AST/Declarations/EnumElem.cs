@@ -1,11 +1,10 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class EnumElem : IPDecl
     {
@@ -20,7 +19,8 @@ namespace Microsoft.Pc.TypeChecker.AST
         public PEnum ParentEnum { get; set; }
 
         public ParserRuleContext SourceLocation { get; }
-        public IList<IPAST> Children { get; } = new List<IPAST>();
+        public IList<IPAST> Children => throw new NotImplementedException();
+        public IPAST Parent => throw new NotImplementedException();
         public string Name { get; }
     }
 }

@@ -5,9 +5,9 @@ using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST.Statements;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class Function : IHasScope
+    public class Function : IPDecl, IHasScope
     {
         public Function(string name, ParserRuleContext sourceNode)
         {
@@ -28,6 +28,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
         public IList<IPAST> Children => throw new NotImplementedException("ast children");
+        public IPAST Parent => throw new NotImplementedException();
         public Scope Table { get; set; }
     }
 }

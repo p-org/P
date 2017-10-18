@@ -5,7 +5,7 @@ using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class PEvent : IPDecl
     {
@@ -25,6 +25,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         public int Assert { get; set; }
         public PLanguageType PayloadType { get; set; }
         public IList<IPAST> Children => throw new NotImplementedException("ast children");
+        public IPAST Parent => throw new NotImplementedException();
 
 
         public string Name { get; }

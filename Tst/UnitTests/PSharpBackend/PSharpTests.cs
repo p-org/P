@@ -78,13 +78,13 @@ namespace UnitTests.PSharpBackend
                 }
 
                 PProgramModel program = Analyzer.AnalyzeCompilationUnit(handler, trees);
-                string generatedCode = CodeGen.GenerateCode(TargetLanguage.PSharp,
-                                                            new PSharpProgramModel
-                                                            {
-                                                                GlobalScope = program.GlobalScope,
-                                                                Namespace = "Program"
-                                                            });
-                Console.WriteLine(generatedCode);
+//                string generatedCode = CodeGen.GenerateCode(TargetLanguage.PSharp,
+//                                                            new PSharpProgramModel
+//                                                            {
+//                                                                GlobalScope = program.GlobalScope,
+//                                                                Namespace = "Program"
+//                                                            });
+//                Console.WriteLine(generatedCode);
 
                 if (!expectCorrect)
                 {

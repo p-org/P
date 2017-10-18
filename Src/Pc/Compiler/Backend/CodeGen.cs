@@ -2,7 +2,6 @@
 using System.IO;
 using System.Reflection;
 using Antlr4.StringTemplate;
-using Microsoft.Pc.TypeChecker;
 
 namespace Microsoft.Pc.Backend
 {

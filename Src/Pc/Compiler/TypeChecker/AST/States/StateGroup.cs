@@ -3,10 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.States
 {
-    public class StateGroup : IStateContainer, IHasScope
+    public class StateGroup : IStateContainer, IHasScope, IPDecl
     {
         private readonly Dictionary<string, StateGroup> _groups = new Dictionary<string, StateGroup>();
         private readonly Dictionary<string, State> _states = new Dictionary<string, State>();
@@ -24,6 +25,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
         public IList<IPAST> Children => throw new NotImplementedException("ast children");
+        public IPAST Parent => throw new NotImplementedException();
 
         public IStateContainer ParentStateContainer { get; set; }
         public IEnumerable<State> States => _states.Values;

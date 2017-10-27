@@ -9,7 +9,6 @@ namespace Microsoft.Pc.TypeChecker
 {
     internal class DeclarationStubVisitor : PParserBaseVisitor<object>
     {
-        private readonly ITranslationErrorHandler handler;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
         private readonly StackProperty<Scope> scope;
         private readonly ParseTreeProperty<Scope> scopes;
@@ -17,12 +16,10 @@ namespace Microsoft.Pc.TypeChecker
         private DeclarationStubVisitor(
             Scope globalScope,
             ParseTreeProperty<Scope> scopes,
-            ParseTreeProperty<IPDecl> nodesToDeclarations,
-            ITranslationErrorHandler handler)
+            ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             this.scopes = scopes;
             this.nodesToDeclarations = nodesToDeclarations;
-            this.handler = handler;
             scope = new StackProperty<Scope>(globalScope);
         }
 
@@ -33,7 +30,7 @@ namespace Microsoft.Pc.TypeChecker
             ITranslationErrorHandler handler,
             PParser.ProgramContext context)
         {
-            var visitor = new DeclarationStubVisitor(globalScope, nodesToScopes, nodesToDeclarations, handler);
+            var visitor = new DeclarationStubVisitor(globalScope, nodesToScopes, nodesToDeclarations);
             visitor.Visit(context);
         }
 
@@ -133,6 +130,14 @@ namespace Microsoft.Pc.TypeChecker
             return VisitChildrenWithNewScope(context);
         }
 
+        public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
+        {
+            string symbolName = context.name.GetText();
+            Function decl = scope.Value.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return VisitChildrenWithNewScope(context);
+        }
+
         public override object VisitFunParam(PParser.FunParamContext context)
         {
             string symbolName = context.name.GetText();
@@ -179,7 +184,7 @@ namespace Microsoft.Pc.TypeChecker
 
         private object VisitChildrenWithNewScope(IRuleNode context)
         {
-            using (scope.NewContext(new Scope(handler) {Parent = scope.Value}))
+            using (scope.NewContext(scope.Value.MakeChildScope()))
             {
                 scopes.Put(context, scope.Value);
                 return VisitChildren(context);

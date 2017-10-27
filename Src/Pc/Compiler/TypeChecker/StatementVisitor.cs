@@ -194,10 +194,6 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 return new FunCallStmt(fun, argsList);
             }
-            if (table.Lookup(funName, out FunctionProto proto))
-            {
-                throw new NotImplementedException("function prototype call statement");
-            }
             throw handler.MissingDeclaration(context.fun, "function or function prototype", funName);
         }
 

@@ -179,10 +179,6 @@ namespace Microsoft.Pc.TypeChecker
             string funName = context.fun.GetText();
             if (!table.Lookup(funName, out Function function))
             {
-                if (table.Lookup(funName, out FunctionProto proto))
-                {
-                    throw new NotImplementedException($"function proto calls ({proto.Name})");
-                }
                 throw handler.MissingDeclaration(context.fun, "function", funName);
             }
 

@@ -5,19 +5,18 @@ namespace Microsoft.Pc.TypeChecker
     public class StackProperty<T>
         where T : class
     {
+        public StackProperty() : this(null) { }
+
         public StackProperty(T initial) { Value = initial; }
 
         public T Value { get; private set; }
 
-        public IDisposable NewContext(T newValue)
-        {
-            return new ContextManager(this, newValue);
-        }
+        public IDisposable NewContext(T newValue) { return new ContextManager(this, newValue); }
 
         private class ContextManager : IDisposable
         {
-            private readonly StackProperty<T> stackProperty;
             private readonly T oldValue;
+            private readonly StackProperty<T> stackProperty;
 
             public ContextManager(StackProperty<T> stackProperty, T newValue)
             {

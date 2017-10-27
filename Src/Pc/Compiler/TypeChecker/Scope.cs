@@ -13,33 +13,33 @@ namespace Microsoft.Pc.TypeChecker
     public class Scope
     {
         private readonly HashSet<Scope> children = new HashSet<Scope>();
+        private readonly ITranslationErrorHandler handler;
+
         private readonly IDictionary<string, EnumElem> enumElems = new Dictionary<string, EnumElem>();
         private readonly IDictionary<string, PEnum> enums = new Dictionary<string, PEnum>();
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
         private readonly IDictionary<string, EventSet> eventSets = new Dictionary<string, EventSet>();
-        private readonly IDictionary<string, FunctionProto> functionProtos = new Dictionary<string, FunctionProto>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
-
-        private readonly ITranslationErrorHandler handler;
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
         private readonly IDictionary<string, Machine> machines = new Dictionary<string, Machine>();
         private readonly IDictionary<string, StateGroup> stateGroups = new Dictionary<string, StateGroup>();
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
-        private Scope parent;
-        public Scope(ITranslationErrorHandler handler) { this.handler = handler; }
 
-        public Scope Parent
+        public Scope(ITranslationErrorHandler handler) : this(handler, null) { }
+
+        public Scope(ITranslationErrorHandler handler, Scope parent)
         {
-            get => parent;
-            set
-            {
-                parent?.children.Remove(this);
-                parent = value;
-                parent?.children.Add(this);
-            }
+            this.handler = handler;
+            parent?.children.Remove(this);
+            Parent = parent;
+            parent?.children.Add(this);
         }
+
+        public Scope Parent { get; set; }
+
+        public Scope MakeChildScope() { return new Scope(handler, this); }
 
         public IEnumerable<Scope> Children => children;
 
@@ -48,7 +48,6 @@ namespace Microsoft.Pc.TypeChecker
                      .Concat(Enums)
                      .Concat(Events)
                      .Concat(EventSets)
-                     .Concat(FunctionProtos)
                      .Concat(Functions)
                      .Concat(Interfaces)
                      .Concat(Machines)
@@ -61,7 +60,6 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<PEnum> Enums => enums.Values;
         public IEnumerable<PEvent> Events => events.Values;
         public IEnumerable<EventSet> EventSets => eventSets.Values;
-        public IEnumerable<FunctionProto> FunctionProtos => functionProtos.Values;
         public IEnumerable<Function> Functions => functions.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
         public IEnumerable<Machine> Machines => machines.Values;
@@ -79,8 +77,6 @@ namespace Microsoft.Pc.TypeChecker
         public bool Get(string name, out PEvent tree) { return events.TryGetValue(name, out tree); }
 
         public bool Get(string name, out EventSet tree) { return eventSets.TryGetValue(name, out tree); }
-
-        public bool Get(string name, out FunctionProto tree) { return functionProtos.TryGetValue(name, out tree); }
 
         public bool Get(string name, out Function tree) { return functions.TryGetValue(name, out tree); }
 
@@ -152,23 +148,6 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public bool Lookup(string name, out EventSet tree)
-        {
-            Scope current = this;
-            while (current != null)
-            {
-                if (current.Get(name, out tree))
-                {
-                    return true;
-                }
-
-                current = current.Parent;
-            }
-
-            tree = null;
-            return false;
-        }
-
-        public bool Lookup(string name, out FunctionProto tree)
         {
             Scope current = this;
             while (current != null)

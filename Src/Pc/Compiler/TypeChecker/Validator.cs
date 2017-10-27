@@ -35,14 +35,7 @@ namespace Microsoft.Pc.TypeChecker
                    function.Signature.Parameters.All(param => param.Type != null) && // function signature parameters have types
                    _nodesToDeclarations.Get(function.SourceLocation) == function; // map is bi-directional
         }
-
-        private bool IsValid(FunctionProto functionProto)
-        {
-            return functionProto.Signature.ReturnType != null && // function proto has return type
-                   functionProto.Signature.Parameters.All(p => p.Type != null) && // function parameters have known types
-                   _nodesToDeclarations.Get(functionProto.SourceLocation) == functionProto;
-        }
-
+        
         private bool IsValid(Interface pInterface)
         {
             return pInterface.PayloadType != null && // interface has known payload type

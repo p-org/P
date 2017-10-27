@@ -124,26 +124,11 @@ namespace Microsoft.Pc.TypeChecker
             // COLON type ;
             PLanguageType type = TypeResolver.ResolveType(context.type(), currentScope, handler);
 
-            ITypedName param;
-            if (currentFunctionProto != null)
-            {
-                // If we're in a prototype, then we don't look up a variable, we just create a formal parameter
-                param = new FormalParameter
-                {
-                    Name = name,
-                    Type = type
-                };
-            }
-            else
-            {
-                // Otherwise, we're in a (possibly anonymous) function, and we add the variable to its signature
-                bool success = currentScope.Get(name, out Variable variable);
-                Debug.Assert(success);
-                variable.Type = type;
-                param = variable;
-            }
-
-            CurrentFunction.Signature.Parameters.Add(param);
+            // Otherwise, we're in a (possibly anonymous) function, and we add the variable to its signature
+            bool success = currentScope.Get(name, out Variable variable);
+            Debug.Assert(success);
+            variable.Type = type;
+            CurrentFunction.Signature.Parameters.Add(variable);
         }
         #endregion
 
@@ -257,10 +242,6 @@ namespace Microsoft.Pc.TypeChecker
                 string funName = context.funName.GetText();
                 if (!currentScope.Lookup(funName, out fun))
                 {
-                    if (currentScope.Lookup(funName, out FunctionProto proto))
-                    {
-                        throw new NotImplementedException("function prototypes for state entries");
-                    }
                     throw handler.MissingDeclaration(context.funName, "function", funName);
                 }
             }
@@ -296,10 +277,6 @@ namespace Microsoft.Pc.TypeChecker
                 string funName = context.funName.GetText();
                 if (!currentScope.Lookup(funName, out fun))
                 {
-                    if (currentScope.Lookup(funName, out FunctionProto proto))
-                    {
-                        throw new NotImplementedException("function prototypes for state actions");
-                    }
                     throw handler.MissingDeclaration(context.funName, "function", funName);
                 }
             }
@@ -342,10 +319,6 @@ namespace Microsoft.Pc.TypeChecker
                 string funName = context.funName.GetText();
                 if (!currentScope.Lookup(funName, out fun))
                 {
-                    if (currentScope.Lookup(funName, out FunctionProto proto))
-                    {
-                        throw new NotImplementedException("function prototypes for state exits");
-                    }
                     throw handler.MissingDeclaration(context.funName, "function", funName);
                 }
             }
@@ -627,7 +600,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void ExitMachineSend(PParser.MachineSendContext context) { currentEventSet = null; }
 
-        #region Parse tree propertoes
+        #region Parse tree properties
 
         /// <summary>
         ///     Maps source nodes to the unique declarations they produced.
@@ -668,12 +641,7 @@ namespace Microsoft.Pc.TypeChecker
         ///     Event sets cannot be nested, so we keep track only of the most recent one.
         /// </summary>
         private EventSet currentEventSet;
-
-        /// <summary>
-        ///     Function prototypes cannot be nested, so we keep track only of the most recent one.
-        /// </summary>
-        private FunctionProto currentFunctionProto;
-
+        
         /// <summary>
         ///     Machines cannot be nested, so we keep track of only the most recent one.
         /// </summary>

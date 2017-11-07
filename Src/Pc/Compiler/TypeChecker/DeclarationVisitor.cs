@@ -161,7 +161,7 @@ namespace Microsoft.Pc.TypeChecker
             // EVENTSET name=iden 
             var es = (EventSet) nodesToDeclarations.Get(context);
             // ASSIGN LBRACE eventSetLiteral RBRACE 
-            es.Events.UnionWith((PEvent[]) Visit(context.eventSetLiteral()));
+            es.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
             // SEMI
             return es;
         }
@@ -201,7 +201,7 @@ namespace Microsoft.Pc.TypeChecker
                 // ASSIGN LBRACE eventSetLiteral RBRACE
                 // Let the eventSetLiteral handler fill in a newly created event set...
                 eventSet = new EventSet($"{mInterface.Name}$eventset", eventSetLiteral);
-                eventSet.Events.UnionWith((PEvent[]) Visit(eventSetLiteral));
+                eventSet.AddEvents((PEvent[]) Visit(eventSetLiteral));
             }
             else
             {
@@ -250,8 +250,7 @@ namespace Microsoft.Pc.TypeChecker
                         throw Handler.MissingDeclaration(pInterfaceNameCtx, "interface", pInterfaceName);
                     }
 
-                    pInterface.Implementations.Add(machine);
-                    machine.Interfaces.Add(pInterface);
+                    machine.AddInterface(pInterface);
                 }
             }
 
@@ -266,7 +265,7 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         machine.Receives = new EventSet($"{machine.Name}$receives", receivesSends);
                     }
-                    machine.Receives.Events.UnionWith(recvSendTuple.Item2);
+                    machine.Receives.AddEvents(recvSendTuple.Item2);
                 }
                 else if (eventSetType.Equals("SEND", StringComparison.InvariantCulture))
                 {
@@ -274,7 +273,7 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         machine.Sends = new EventSet($"{machine.Name}$sends", receivesSends);
                     }
-                    machine.Sends.Events.UnionWith(recvSendTuple.Item2);
+                    machine.Sends.AddEvents(recvSendTuple.Item2);
                 }
                 else
                 {
@@ -314,7 +313,7 @@ namespace Microsoft.Pc.TypeChecker
             var specMachine = (Machine) nodesToDeclarations.Get(context);
             // OBSERVES eventSetLiteral
             specMachine.Observes = new EventSet($"{specMachine.Name}$eventset", context.eventSetLiteral());
-            specMachine.Observes.Events.UnionWith((PEvent[]) Visit(context.eventSetLiteral()));
+            specMachine.Observes.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
             // machineBody
             using (currentScope.NewContext(specMachine.Scope))
             using (currentMachine.NewContext(specMachine))
@@ -332,11 +331,10 @@ namespace Microsoft.Pc.TypeChecker
                 switch (Visit(machineEntryContext))
                 {
                     case Variable[] fields:
-                        CurrentMachine.Fields.AddRange(fields);
+                        CurrentMachine.AddFields(fields);
                         break;
                     case Function method:
-                        CurrentMachine.Methods.Add(method);
-                        method.Owner = CurrentMachine;
+                        CurrentMachine.AddMethod(method);
                         break;
                     case State state:
                         CurrentMachine.AddState(state);
@@ -448,14 +446,14 @@ namespace Microsoft.Pc.TypeChecker
                     case IStateAction[] actions:
                         foreach (IStateAction action in actions)
                         {
-                            if (state.Actions.ContainsKey(action.Trigger))
+                            if (state.HasHandler(action.Trigger))
                             {
                                 // TODO: get the exact EventIdContext instead of stateBodyItemContext
                                 throw Handler.DuplicateEventAction(stateBodyItemContext, 
-                                                                   state.Actions[action.Trigger],
+                                                                   state[action.Trigger],
                                                                    state);
                             }
-                            state.Actions.Add(action.Trigger, action);
+                            state[action.Trigger] = action;
                         }
                         break;
                     case Tuple<string, Function> entryOrExit:

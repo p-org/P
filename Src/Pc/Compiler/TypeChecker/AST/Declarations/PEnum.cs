@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
@@ -23,9 +22,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
-        public IList<IPAST> Children => throw new NotImplementedException("ast children");
-        public IPAST Parent => throw new NotImplementedException();
-
 
         public bool AddElement(EnumElem elem)
         {

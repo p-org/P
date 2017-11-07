@@ -19,8 +19,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public PEnum ParentEnum { get; set; }
 
         public ParserRuleContext SourceLocation { get; }
-        public IList<IPAST> Children => throw new NotImplementedException();
-        public IPAST Parent => throw new NotImplementedException();
         public string Name { get; }
     }
 }

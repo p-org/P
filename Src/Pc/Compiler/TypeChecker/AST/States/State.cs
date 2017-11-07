@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
@@ -9,6 +8,8 @@ namespace Microsoft.Pc.TypeChecker.AST.States
 {
     public class State : IPDecl
     {
+        private readonly IDictionary<PEvent, IStateAction> actions = new Dictionary<PEvent, IStateAction>();
+
         public State(string name, ParserRuleContext sourceNode)
         {
             Debug.Assert(sourceNode is PParser.StateDeclContext);
@@ -17,17 +18,20 @@ namespace Microsoft.Pc.TypeChecker.AST.States
         }
 
         public StateTemperature Temperature { get; set; }
-        
+
         public bool IsStart { get; set; }
         public Function Entry { get; set; }
-        public IDictionary<PEvent, IStateAction> Actions { get; } = new Dictionary<PEvent, IStateAction>();
+        public IEnumerable<KeyValuePair<PEvent, IStateAction>> AllEventHandlers => actions;
+
         public Function Exit { get; set; }
         public Machine OwningMachine { get; set; }
         public IStateContainer Container { get; set; }
 
+        public IStateAction this[PEvent index] { get => actions[index]; set => actions[index] = value; }
+
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
-        public IList<IPAST> Children => throw new NotImplementedException("ast children");
-        public IPAST Parent => throw new NotImplementedException();
+
+        public bool HasHandler(PEvent pEvent) { return actions.ContainsKey(pEvent); }
     }
 }

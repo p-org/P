@@ -99,7 +99,7 @@ namespace Microsoft.Pc.TypeChecker
         private bool IsValid(State state)
         {
             return state.Container.States.Contains(state) &&
-                   state.Actions.All(kv => kv.Value.Trigger == kv.Key) &&
+                   state.AllEventHandlers.All(kv => kv.Value.Trigger == kv.Key) &&
                    nodesToDeclarations.Get(state.SourceLocation) == state;
         }
 

@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.Types;
@@ -27,7 +25,5 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public string Name { get; set; }
         public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type { get; set; }
-        public IList<IPAST> Children => throw new NotImplementedException("ast children");
-        public IPAST Parent => throw new NotImplementedException();
     }
 }

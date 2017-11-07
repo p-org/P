@@ -90,8 +90,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             // FUN name=Iden
             var fun = (Function) nodesToDeclarations.Get(context);
-            currentMachine?.Methods.Add(fun);
-            fun.Owner = currentMachine;
+            currentMachine?.AddMethod(fun);
 
             // LPAREN funParamList? RPAREN
             functionStack.Push(fun); // funParamList builds signature
@@ -149,12 +148,12 @@ namespace Microsoft.Pc.TypeChecker
 
                 if (CurrentFunction != null)
                 {
-                    CurrentFunction.LocalVariables.Add(variable);
+                    CurrentFunction.AddLocalVariable(variable);
                 }
                 else
                 {
                     Debug.Assert(currentMachine != null);
-                    currentMachine.Fields.Add(variable);
+                    currentMachine.AddField(variable);
                 }
             }
             // SEMI
@@ -295,12 +294,12 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
 
-                if (currentState.Actions.ContainsKey(evt))
+                if (currentState.HasHandler(evt))
                 {
-                    throw handler.DuplicateEventAction(eventIdContext, currentState.Actions[evt], currentState);
+                    throw handler.DuplicateEventAction(eventIdContext, currentState[evt], currentState);
                 }
 
-                currentState.Actions.Add(evt, new EventDoAction(evt, fun));
+                currentState[evt] = new EventDoAction(evt, fun);
             }
 
             // SEMI
@@ -390,12 +389,12 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
 
-                if (currentState.Actions.ContainsKey(evt))
+                if (currentState.HasHandler(evt))
                 {
-                    throw handler.DuplicateEventAction(eventIdContext, currentState.Actions[evt], currentState);
+                    throw handler.DuplicateEventAction(eventIdContext, currentState[evt], currentState);
                 }
 
-                currentState.Actions.Add(evt, new EventGotoState(evt, target, transitionFunction));
+                currentState[evt] = new EventGotoState(evt, target, transitionFunction);
             }
         }
 
@@ -415,12 +414,12 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw handler.MissingDeclaration(token, "event", token.GetText());
                 }
-                if (currentState.Actions.ContainsKey(evt))
+                if (currentState.HasHandler(evt))
                 {
-                    throw handler.DuplicateEventAction(token, currentState.Actions[evt], currentState);
+                    throw handler.DuplicateEventAction(token, currentState[evt], currentState);
                 }
 
-                currentState.Actions.Add(evt, new EventIgnore(evt));
+                currentState[evt] = new EventIgnore(evt);
             }
         }
 
@@ -438,11 +437,11 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw handler.MissingDeclaration(token, "event", token.GetText());
                 }
-                if (currentState.Actions.ContainsKey(evt))
+                if (currentState.HasHandler(evt))
                 {
-                    throw handler.DuplicateEventAction(token, currentState.Actions[evt], currentState);
+                    throw handler.DuplicateEventAction(token, currentState[evt], currentState);
                 }
-                currentState.Actions.Add(evt, new EventDefer(evt));
+                currentState[evt] = new EventDefer(evt);
             }
         }
 
@@ -464,12 +463,12 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw handler.MissingDeclaration(token, "event", token.GetText());
                 }
-                if (currentState.Actions.ContainsKey(evt))
+                if (currentState.HasHandler(evt))
                 {
-                    throw handler.DuplicateEventAction(token, currentState.Actions[evt], currentState);
+                    throw handler.DuplicateEventAction(token, currentState[evt], currentState);
                 }
 
-                currentState.Actions.Add(evt, new EventPushState(evt, targetState));
+                currentState[evt] = new EventPushState(evt, targetState);
             }
         }
 
@@ -565,9 +564,8 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.MissingDeclaration(pInterfaceNameCtx, "interface", pInterfaceName);
                     }
-
-                    pInterface.Implementations.Add(currentMachine);
-                    currentMachine.Interfaces.Add(pInterface);
+                    
+                    currentMachine.AddInterface(pInterface);
                 }
             }
 
@@ -755,7 +753,7 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.MissingDeclaration(token, "event", eventName);
                 }
 
-                currentEventSet.Events.Add(evt);
+                currentEventSet.AddEvent(evt);
             }
         }
 

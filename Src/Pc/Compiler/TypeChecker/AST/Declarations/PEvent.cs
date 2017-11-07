@@ -1,5 +1,3 @@
-using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
@@ -24,8 +22,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public int Assume { get; set; }
         public int Assert { get; set; }
         public PLanguageType PayloadType { get; set; }
-        public IList<IPAST> Children => throw new NotImplementedException("ast children");
-        public IPAST Parent => throw new NotImplementedException();
 
 
         public string Name { get; }

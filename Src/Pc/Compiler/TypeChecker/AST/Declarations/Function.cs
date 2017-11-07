@@ -29,6 +29,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public ParserRuleContext SourceLocation { get; }
         public IList<IPAST> Children => throw new NotImplementedException("ast children");
         public IPAST Parent => throw new NotImplementedException();
-        public Scope Table { get; set; }
+        public Scope Scope { get; set; }
     }
 }

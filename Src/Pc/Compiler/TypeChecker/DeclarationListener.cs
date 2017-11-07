@@ -15,11 +15,9 @@ namespace Microsoft.Pc.TypeChecker
     {
         public DeclarationListener(
             ITranslationErrorHandler handler,
-            ParseTreeProperty<Scope> nodesToScopes,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             this.handler = handler;
-            this.nodesToScopes = nodesToScopes;
             this.nodesToDeclarations = nodesToDeclarations;
         }
 
@@ -233,7 +231,11 @@ namespace Microsoft.Pc.TypeChecker
             if (context.anonEventHandler() != null)
             {
                 // ENTRY anonEventHandler 
-                fun = new Function(context.anonEventHandler()) {Owner = currentMachine};
+                fun = new Function(context.anonEventHandler())
+                {
+                    Owner = currentMachine,
+                    Scope = currentScope.MakeChildScope()
+                };
                 nodesToDeclarations.Put(context.anonEventHandler(), fun);
             }
             else // |
@@ -268,7 +270,11 @@ namespace Microsoft.Pc.TypeChecker
             if (context.anonEventHandler() != null)
             {
                 // DO [...] anonEventHandler
-                fun = new Function(context.anonEventHandler()) {Owner = currentMachine};
+                fun = new Function(context.anonEventHandler())
+                {
+                    Owner = currentMachine,
+                    Scope = currentScope.MakeChildScope()
+                };
                 nodesToDeclarations.Put(context.anonEventHandler(), fun);
             }
             else
@@ -310,7 +316,11 @@ namespace Microsoft.Pc.TypeChecker
             if (context.noParamAnonEventHandler() != null)
             {
                 // noParamAnonEventHandler
-                fun = new Function(context.noParamAnonEventHandler()) {Owner = currentMachine};
+                fun = new Function(context.noParamAnonEventHandler())
+                {
+                    Owner = currentMachine,
+                    Scope = currentScope.MakeChildScope()
+                };
                 nodesToDeclarations.Put(context.noParamAnonEventHandler(), fun);
             }
             else
@@ -355,7 +365,11 @@ namespace Microsoft.Pc.TypeChecker
             else if (context.anonEventHandler() != null)
             {
                 // WITH anonEventHandler
-                transitionFunction = new Function(context.anonEventHandler()) {Owner = currentMachine};
+                transitionFunction = new Function(context.anonEventHandler())
+                {
+                    Owner = currentMachine,
+                    Scope = currentScope.MakeChildScope()
+                };
                 nodesToDeclarations.Put(context.anonEventHandler(), transitionFunction);
             }
             else
@@ -461,14 +475,14 @@ namespace Microsoft.Pc.TypeChecker
 
         private State FindState(PParser.StateNameContext context)
         {
-            Scope curTable = nodesToScopes.Get(currentMachine.SourceLocation);
+            Scope curTable = currentMachine.Scope;
             foreach (PParser.IdenContext groupToken in context._groups)
             {
                 if (!curTable.Get(groupToken.GetText(), out StateGroup group))
                 {
                     throw handler.MissingDeclaration(groupToken, "group", groupToken.GetText());
                 }
-                curTable = nodesToScopes.Get(group.SourceLocation);
+                curTable = group.Scope;
             }
             if (!curTable.Get(context.state.GetText(), out State state))
             {
@@ -503,19 +517,18 @@ namespace Microsoft.Pc.TypeChecker
 
         public override void EnterEveryRule(ParserRuleContext ctx)
         {
-            Scope thisTable = nodesToScopes.Get(ctx);
-            if (thisTable != null)
+            if (nodesToDeclarations.Get(ctx) is IHasScope scopedDecl)
             {
-                currentScope = thisTable;
+                Debug.Assert(scopedDecl.Scope != null);
+                currentScope = scopedDecl.Scope;
             }
         }
 
         public override void ExitEveryRule(ParserRuleContext context)
         {
-            if (nodesToScopes.Get(context) != null)
+            if (nodesToDeclarations.Get(context) is IHasScope)
             {
                 Debug.Assert(currentScope != null);
-                // pop the stack
                 currentScope = currentScope.Parent;
             }
         }
@@ -611,11 +624,6 @@ namespace Microsoft.Pc.TypeChecker
         /// Handles errors in AST construction and type checking
         /// </summary>
         private readonly ITranslationErrorHandler handler;
-
-        /// <summary>
-        ///     Maps source nodes to the scope objects they produced.
-        /// </summary>
-        private readonly ParseTreeProperty<Scope> nodesToScopes;
 
         #endregion
 

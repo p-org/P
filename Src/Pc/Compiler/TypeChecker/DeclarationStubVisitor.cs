@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
@@ -11,41 +10,32 @@ namespace Microsoft.Pc.TypeChecker
     {
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
         private readonly StackProperty<Scope> scope;
-        private readonly ParseTreeProperty<Scope> scopes;
+
+        private Scope CurrentScope => scope.Value;
 
         private DeclarationStubVisitor(
             Scope globalScope,
-            ParseTreeProperty<Scope> scopes,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
-            this.scopes = scopes;
             this.nodesToDeclarations = nodesToDeclarations;
             scope = new StackProperty<Scope>(globalScope);
         }
 
         public static void PopulateStubs(
             Scope globalScope,
-            ParseTreeProperty<Scope> nodesToScopes,
-            ParseTreeProperty<IPDecl> nodesToDeclarations,
-            ITranslationErrorHandler handler,
-            PParser.ProgramContext context)
+            PParser.ProgramContext context,
+            ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
-            var visitor = new DeclarationStubVisitor(globalScope, nodesToScopes, nodesToDeclarations);
+            var visitor = new DeclarationStubVisitor(globalScope, nodesToDeclarations);
             visitor.Visit(context);
         }
-
-        public override object VisitProgram(PParser.ProgramContext context)
-        {
-            // special case - we get the top level table externally,
-            // which represents the global namespace, spanning all files
-            scopes.Put(context, scope.Value);
-            return VisitChildren(context);
-        }
+        
+        #region Typedefs
 
         public override object VisitPTypeDef(PParser.PTypeDefContext context)
         {
             string symbolName = context.name.GetText();
-            TypeDef typeDef = scope.Value.Put(symbolName, context);
+            TypeDef typeDef = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, typeDef);
             return null;
         }
@@ -53,15 +43,19 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitForeignTypeDef(PParser.ForeignTypeDefContext context)
         {
             string symbolName = context.name.GetText();
-            TypeDef typeDef = scope.Value.Put(symbolName, context);
+            TypeDef typeDef = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, typeDef);
             return null;
         }
 
+        #endregion
+
+        #region Enum typedef
+
         public override object VisitEnumTypeDefDecl(PParser.EnumTypeDefDeclContext context)
         {
             string symbolName = context.name.GetText();
-            PEnum pEnum = scope.Value.Put(symbolName, context);
+            PEnum pEnum = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, pEnum);
             return VisitChildren(context);
         }
@@ -69,7 +63,7 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitEnumElem(PParser.EnumElemContext context)
         {
             string symbolName = context.name.GetText();
-            EnumElem elem = scope.Value.Put(symbolName, context);
+            EnumElem elem = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, elem);
             return null;
         }
@@ -77,116 +71,131 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitNumberedEnumElem(PParser.NumberedEnumElemContext context)
         {
             string symbolName = context.name.GetText();
-            EnumElem elem = scope.Value.Put(symbolName, context);
+            EnumElem elem = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, elem);
             return null;
         }
 
+        #endregion
+
+        #region Events
+
         public override object VisitEventDecl(PParser.EventDeclContext context)
         {
             string symbolName = context.name.GetText();
-            PEvent decl = scope.Value.Put(symbolName, context);
+            PEvent decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
+
+        #endregion
+
+        #region Event sets
 
         public override object VisitEventSetDecl(PParser.EventSetDeclContext context)
         {
             string symbolName = context.name.GetText();
-            EventSet decl = scope.Value.Put(symbolName, context);
+            EventSet decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
+
+        #endregion
+
+        #region Interfaces
 
         public override object VisitInterfaceDecl(PParser.InterfaceDeclContext context)
         {
             string symbolName = context.name.GetText();
-            Interface decl = scope.Value.Put(symbolName, context);
+            Interface decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }
 
+        #endregion
+
+        #region Machines
+
         public override object VisitImplMachineDecl(PParser.ImplMachineDeclContext context)
         {
             string symbolName = context.name.GetText();
-            Machine decl = scope.Value.Put(symbolName, context);
+            Machine decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
-            return VisitChildrenWithNewScope(context);
+            return VisitChildrenWithNewScope(decl, context);
         }
 
         public override object VisitSpecMachineDecl(PParser.SpecMachineDeclContext context)
         {
             string symbolName = context.name.GetText();
-            Machine decl = scope.Value.Put(symbolName, context);
+            Machine decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
-            return VisitChildrenWithNewScope(context);
-        }
-
-        public override object VisitPFunDecl(PParser.PFunDeclContext context)
-        {
-            string symbolName = context.name.GetText();
-            Function decl = scope.Value.Put(symbolName, context);
-            nodesToDeclarations.Put(context, decl);
-            return VisitChildrenWithNewScope(context);
-        }
-
-        public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
-        {
-            string symbolName = context.name.GetText();
-            Function decl = scope.Value.Put(symbolName, context);
-            nodesToDeclarations.Put(context, decl);
-            return VisitChildrenWithNewScope(context);
-        }
-
-        public override object VisitFunParam(PParser.FunParamContext context)
-        {
-            string symbolName = context.name.GetText();
-            Variable decl = scope.Value.Put(symbolName, context);
-            nodesToDeclarations.Put(context, decl);
-            return null;
-        }
-
-        public override object VisitStateDecl(PParser.StateDeclContext context)
-        {
-            string symbolName = context.name.GetText();
-            State decl = scope.Value.Put(symbolName, context);
-            nodesToDeclarations.Put(context, decl);
-            return VisitChildren(context);
-        }
-
-        public override object VisitGroup(PParser.GroupContext context)
-        {
-            string symbolName = context.name.GetText();
-            StateGroup group = scope.Value.Put(symbolName, context);
-            nodesToDeclarations.Put(context, group);
-            return VisitChildrenWithNewScope(context);
+            return VisitChildrenWithNewScope(decl, context);
         }
 
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
             foreach (PParser.IdenContext varName in context.idenList()._names)
             {
-                Variable decl = scope.Value.Put(varName.GetText(), context, varName);
+                Variable decl = CurrentScope.Put(varName.GetText(), context, varName);
                 nodesToDeclarations.Put(varName, decl);
             }
             return null;
         }
 
-        public override object VisitAnonEventHandler(PParser.AnonEventHandlerContext context)
+        public override object VisitGroup(PParser.GroupContext context)
         {
-            return VisitChildrenWithNewScope(context);
+            string symbolName = context.name.GetText();
+            StateGroup group = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, group);
+            return VisitChildrenWithNewScope(group, context);
         }
 
-        public override object VisitNoParamAnonEventHandler(PParser.NoParamAnonEventHandlerContext context)
+        public override object VisitStateDecl(PParser.StateDeclContext context)
         {
-            return VisitChildrenWithNewScope(context);
+            string symbolName = context.name.GetText();
+            State decl = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
         }
 
-        private object VisitChildrenWithNewScope(IRuleNode context)
+        #endregion
+
+        #region Functions
+
+        public override object VisitPFunDecl(PParser.PFunDeclContext context)
         {
-            using (scope.NewContext(scope.Value.MakeChildScope()))
+            string symbolName = context.name.GetText();
+            Function decl = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return VisitChildrenWithNewScope(decl, context);
+        }
+
+        public override object VisitFunParam(PParser.FunParamContext context)
+        {
+            string symbolName = context.name.GetText();
+            Variable decl = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
+        public override object VisitFunctionBody(PParser.FunctionBodyContext context) { return null; }
+
+        public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
+        {
+            string symbolName = context.name.GetText();
+            Function decl = CurrentScope.Put(symbolName, context);
+            decl.Scope = CurrentScope.MakeChildScope();
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
+        #endregion
+
+        private object VisitChildrenWithNewScope(IHasScope decl, IRuleNode context)
+        {
+            using (scope.NewContext(CurrentScope.MakeChildScope()))
             {
-                scopes.Put(context, scope.Value);
+                decl.Scope = CurrentScope;
                 return VisitChildren(context);
             }
         }

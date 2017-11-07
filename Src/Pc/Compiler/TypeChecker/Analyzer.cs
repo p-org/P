@@ -10,12 +10,8 @@ namespace Microsoft.Pc.TypeChecker
             ITranslationErrorHandler handler,
             params PParser.ProgramContext[] programUnits)
         {
-            var walker = new ParseTreeWalker();
             var globalScope = new Scope(handler);
-            var nodesToScopes = new ParseTreeProperty<Scope>();
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
-            var declListener = new DeclarationListener(handler, nodesToScopes, nodesToDeclarations);
-            var funcBodyListener = new FunctionBodyListener(handler, nodesToScopes, nodesToDeclarations);
 
             // Add built-in events to the table.
             globalScope.Put("halt", (PParser.EventDeclContext) null);
@@ -24,7 +20,7 @@ namespace Microsoft.Pc.TypeChecker
             // Step 1: Create mapping of names to declaration stubs
             foreach (PParser.ProgramContext programUnit in programUnits)
             {
-                DeclarationStubVisitor.PopulateStubs(globalScope, nodesToScopes, nodesToDeclarations, handler, programUnit);
+                DeclarationStubVisitor.PopulateStubs(globalScope, programUnit, nodesToDeclarations);
             }
 
             // NOW: no declarations have ambiguous names.
@@ -35,17 +31,15 @@ namespace Microsoft.Pc.TypeChecker
             // Step 2: Validate declarations and fill with types
             foreach (PParser.ProgramContext programUnit in programUnits)
             {
-                walker.Walk(declListener, programUnit);
+                DeclarationVisitor.PopulateDeclarations(handler, globalScope, programUnit, nodesToDeclarations);
             }
-
-            //Validator.ValidateDeclarations(nodesToScopes, nodesToDeclarations, topLevelTable);
 
             // NOW: all declarations are valid, with appropriate links and types resolved.
 
-            // Step 3: Fill in method bodies
-            foreach (PParser.ProgramContext programUnit in programUnits)
+            // Step 3: Validate machine specifications
+            foreach (var machine in globalScope.Machines)
             {
-                walker.Walk(funcBodyListener, programUnit);
+                Validator.ValidateMachine(machine, handler);
             }
 
             // NOW: AST Complete, pass to StringTemplate

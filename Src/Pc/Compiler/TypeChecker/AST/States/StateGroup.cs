@@ -20,7 +20,7 @@ namespace Microsoft.Pc.TypeChecker.AST.States
         }
 
         public Machine OwningMachine { get; set; }
-        public Scope Table { get; set; }
+        public Scope Scope { get; set; }
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }

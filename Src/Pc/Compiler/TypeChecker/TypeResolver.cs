@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
-using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.Types;
 
@@ -14,28 +12,28 @@ namespace Microsoft.Pc.TypeChecker
     {
         public static PLanguageType ResolveType(
             ParserRuleContext context,
-            Scope table,
+            Scope scope,
             ITranslationErrorHandler handler)
         {
-            return context == null ? PrimitiveType.Null : new TypeVisitor(table, handler).Visit(context);
+            return context == null ? PrimitiveType.Null : new TypeVisitor(scope, handler).Visit(context);
         }
 
         private class TypeVisitor : PParserBaseVisitor<PLanguageType>
         {
-            private readonly Scope declarations;
+            private readonly Scope scope;
             private readonly ITranslationErrorHandler handler;
             private readonly HashSet<TypeDef> visitedTypeDefs = new HashSet<TypeDef>();
 
-            public TypeVisitor(Scope declarations, ITranslationErrorHandler handler)
+            public TypeVisitor(Scope scope, ITranslationErrorHandler handler)
             {
-                this.declarations = declarations;
+                this.scope = scope;
                 this.handler = handler;
             }
 
             public override PLanguageType VisitBoundedType(PParser.BoundedTypeContext context)
             {
                 string eventSetName = context.eventSet.GetText();
-                if (!declarations.Lookup(eventSetName, out EventSet eventSet))
+                if (!scope.Lookup(eventSetName, out EventSet eventSet))
                 {
                     throw handler.MissingDeclaration(context.eventSet, "event set", eventSetName);
                 }
@@ -47,16 +45,16 @@ namespace Microsoft.Pc.TypeChecker
             {
                 return new SequenceType(Visit(context.type()));
             }
-            
+
             public override PLanguageType VisitNamedType(PParser.NamedTypeContext context)
             {
                 string typeName = context.name.GetText();
-                if (declarations.Lookup(typeName, out PEnum pEnum))
+                if (scope.Lookup(typeName, out PEnum pEnum))
                 {
                     return new EnumType(pEnum);
                 }
 
-                if (declarations.Lookup(typeName, out TypeDef typeDef))
+                if (scope.Lookup(typeName, out TypeDef typeDef))
                 {
                     if (visitedTypeDefs.Contains(typeDef))
                     {
@@ -75,14 +73,15 @@ namespace Microsoft.Pc.TypeChecker
                                 typeDef.Type = Visit(typedefDecl.type());
                                 break;
                             default:
-                                throw handler.InternalError(typeDef.SourceLocation, $"Grammar changed without updating {nameof(TypeVisitor)}");
+                                throw handler.InternalError(typeDef.SourceLocation,
+                                                            $"Grammar changed without updating {nameof(TypeVisitor)}");
                         }
                     }
 
                     return new TypeDefType(typeDef);
                 }
 
-                if (declarations.Lookup(typeName, out Interface pInterface))
+                if (scope.Lookup(typeName, out Interface pInterface))
                 {
                     throw new NotImplementedException("interface types");
                 }
@@ -136,9 +135,7 @@ namespace Microsoft.Pc.TypeChecker
 
             public override PLanguageType VisitMapType(PParser.MapTypeContext context)
             {
-                PLanguageType keyType = Visit(context.keyType);
-                PLanguageType valueType = Visit(context.valueType);
-                return new MapType(keyType, valueType);
+                return new MapType(Visit(context.keyType), Visit(context.valueType));
             }
         }
     }

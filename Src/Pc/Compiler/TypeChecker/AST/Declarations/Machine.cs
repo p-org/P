@@ -37,7 +37,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public ParserRuleContext SourceLocation { get; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
 
-        public Scope Table { get; set; }
+        public Scope Scope { get; set; }
         public IStateContainer ParentStateContainer { get; } = null;
         public IEnumerable<State> States => _states.Values;
         public IEnumerable<StateGroup> Groups => _groups.Values;

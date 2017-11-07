@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
@@ -20,16 +19,6 @@ namespace UnitTests.PSharpBackend
         {
             return new FileInfo(Path.Combine(new[] {Constants.SolutionDirectory}.Concat(names).ToArray()));
         }
-
-        private static readonly HashSet<string> testWhitelist = new HashSet<string>
-        {
-            "RegressionTests/Feature2Stmts/Correct/receive1",
-            "RegressionTests/Feature2Stmts/Correct/receive17",
-            "RegressionTests/Feature2Stmts/DynamicError/receive2",
-            "RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes12",
-            "RegressionTests/Feature4DataTypes/Correct/nonAtomicDataTypes13",
-            "RegressionTests/Integration/Correct/German"
-        };
 
         private class PParserErrorListener : IAntlrErrorListener<IToken>
         {
@@ -100,7 +89,7 @@ namespace UnitTests.PSharpBackend
             }
             catch (NotImplementedException e)
             {
-                // Console.Error.WriteLine($"[{testName}] Still have to implement {e.Message}");
+                Console.Error.WriteLine($"[{testName}] {e.Message} not implemented.");
             }
         }
 

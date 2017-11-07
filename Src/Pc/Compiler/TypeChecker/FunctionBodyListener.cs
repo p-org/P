@@ -12,25 +12,22 @@ namespace Microsoft.Pc.TypeChecker
     {
         private readonly ITranslationErrorHandler handler;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
-        private readonly ParseTreeProperty<Scope> nodesToScopes;
 
         public FunctionBodyListener(
             ITranslationErrorHandler handler,
-            ParseTreeProperty<Scope> nodesToScopes,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
             this.handler = handler;
             this.nodesToDeclarations = nodesToDeclarations;
-            this.nodesToScopes = nodesToScopes;
         }
 
         public override void EnterFunctionBody(PParser.FunctionBodyContext context)
         {
-            var fun = (Function) nodesToDeclarations.Get(context.Parent);
-            Scope table = nodesToScopes.Get(context.Parent);
-            Debug.Assert(table != null);
-            var statementVisitor = new StatementVisitor(table, fun.Owner, handler);
-            fun.Body = new CompoundStmt(context.statement().Select(s => statementVisitor.Visit(s)).ToList());
+            if (nodesToDeclarations.Get(context.Parent) is Function fun)
+            {
+                var statementVisitor = new StatementVisitor(fun.Scope, fun.Owner, handler);
+                fun.Body = new CompoundStmt(context.statement().Select(s => statementVisitor.Visit(s)).ToList());
+            }
         }
     }
 }

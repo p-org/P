@@ -143,9 +143,9 @@ namespace Microsoft.Pc.TypeChecker
         {
             var exprVisitor = new ExprVisitor(table, handler);
             string machineName = context.iden().GetText();
-            if (table.Lookup(machineName, out Machine machine))
+            if (table.Lookup(machineName, out Machine targetMachine))
             {
-                bool hasArguments = machine.PayloadType != PrimitiveType.Null;
+                bool hasArguments = targetMachine.PayloadType != PrimitiveType.Null;
                 var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
                            Enumerable.Empty<IPExpr>();
                 if (hasArguments)
@@ -157,14 +157,14 @@ namespace Microsoft.Pc.TypeChecker
                                                              argsList.Count,
                                                              1);
                     }
-                    return new CtorStmt(machine, argsList);
+                    return new CtorStmt(targetMachine, argsList);
                 }
                 if (args.Count() != 0)
                 {
                     handler.IssueWarning((ParserRuleContext) context.rvalueList() ?? context,
                                          "ignoring extra parameters passed to machine constructor");
                 }
-                return new CtorStmt(machine, new List<IPExpr>());
+                return new CtorStmt(targetMachine, new List<IPExpr>());
             }
             throw handler.MissingDeclaration(context.iden(), "machine", machineName);
         }

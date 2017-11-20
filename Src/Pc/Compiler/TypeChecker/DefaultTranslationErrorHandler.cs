@@ -188,7 +188,7 @@ namespace Microsoft.Pc.TypeChecker
             };
         }
 
-        private Location GetLocation(ParserRuleContext ctx, IToken tok)
+        private Location GetLocation(IParseTree ctx, IToken tok)
         {
             return new Location
             {

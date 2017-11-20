@@ -1,6 +1,7 @@
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -37,7 +38,7 @@ namespace Microsoft.Pc.TypeChecker
             // NOW: all declarations are valid, with appropriate links and types resolved.
 
             // Step 3: Validate machine specifications
-            foreach (var machine in globalScope.Machines)
+            foreach (Machine machine in globalScope.Machines)
             {
                 Validator.ValidateMachine(machine, handler);
             }

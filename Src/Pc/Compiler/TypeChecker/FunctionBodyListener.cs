@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;

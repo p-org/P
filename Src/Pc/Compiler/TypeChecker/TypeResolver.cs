@@ -81,7 +81,7 @@ namespace Microsoft.Pc.TypeChecker
                     return new TypeDefType(typeDef);
                 }
 
-                if (scope.Lookup(typeName, out Interface pInterface))
+                if (scope.Lookup(typeName, out Interface _))
                 {
                     throw new NotImplementedException("interface types");
                 }

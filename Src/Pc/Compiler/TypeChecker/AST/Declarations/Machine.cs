@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST.States;
@@ -41,6 +42,24 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public IStateContainer ParentStateContainer { get; } = null;
         public IEnumerable<State> States => states.Values;
         public IEnumerable<StateGroup> Groups => groups.Values;
+
+        public IEnumerable<State> AllStates()
+        {
+            var containers = new Stack<IStateContainer>();
+            containers.Push(this);
+            while (containers.Any())
+            {
+                var container = containers.Pop();
+                foreach (State state in container.States)
+                {
+                    yield return state;
+                }
+                foreach (var group in container.Groups)
+                {
+                    containers.Push(group);
+                }
+            }
+        }
 
         public IStateContainer GetGroup(string groupName)
         {

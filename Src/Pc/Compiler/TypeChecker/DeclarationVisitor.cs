@@ -25,8 +25,8 @@ namespace Microsoft.Pc.TypeChecker
             Scope topLevelScope,
             ParseTreeProperty<IPDecl> nodesToDeclarations)
         {
-            this.Handler = handler;
-            this.currentScope = new StackProperty<Scope>(topLevelScope);
+            Handler = handler;
+            currentScope = new StackProperty<Scope>(topLevelScope);
             this.nodesToDeclarations = nodesToDeclarations;
         }
 
@@ -76,7 +76,7 @@ namespace Microsoft.Pc.TypeChecker
                 var elems = (EnumElem[]) Visit(elemList);
                 for (var i = 0; i < elems.Length; i++)
                 {
-                    EnumElem elem = elems[i];
+                    var elem = elems[i];
                     elem.Value = i;
                     pEnum.AddElement(elem);
                 }
@@ -85,7 +85,7 @@ namespace Microsoft.Pc.TypeChecker
             else if (context.numberedEnumElemList() is PParser.NumberedEnumElemListContext numberedElemList)
             {
                 var numberedElems = (EnumElem[]) Visit(numberedElemList);
-                foreach (EnumElem elem in numberedElems)
+                foreach (var elem in numberedElems)
                 {
                     pEnum.AddElement(elem);
                 }
@@ -133,9 +133,9 @@ namespace Microsoft.Pc.TypeChecker
             var pEvent = (PEvent) nodesToDeclarations.Get(context);
 
             // cardinality?
-            bool hasAssume = context.cardinality()?.ASSUME() != null;
-            bool hasAssert = context.cardinality()?.ASSERT() != null;
-            int cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            var hasAssume = context.cardinality()?.ASSUME() != null;
+            var hasAssert = context.cardinality()?.ASSERT() != null;
+            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
             pEvent.Assume = hasAssume ? cardinality : -1;
             pEvent.Assert = hasAssert ? cardinality : -1;
 
@@ -175,7 +175,7 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitNonDefaultEvent(PParser.NonDefaultEventContext context)
         {
             // HALT | iden
-            string eventName = context.GetText();
+            var eventName = context.GetText();
             if (!CurrentScope.Lookup(eventName, out PEvent pEvent))
             {
                 throw Handler.MissingDeclaration(context, "event", eventName);
@@ -207,7 +207,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // ASSIGN eventSet=Iden
                 // ...or look up the event set and establish the link by name.
-                string eventSetName = context.eventSet.GetText();
+                var eventSetName = context.eventSet.GetText();
                 if (!CurrentScope.Lookup(eventSetName, out eventSet))
                 {
                     throw Handler.MissingDeclaration(context.eventSet, "event set", eventSetName);
@@ -227,9 +227,9 @@ namespace Microsoft.Pc.TypeChecker
             var machine = (Machine) nodesToDeclarations.Get(context);
 
             // cardinality? 
-            bool hasAssume = context.cardinality()?.ASSUME() != null;
-            bool hasAssert = context.cardinality()?.ASSERT() != null;
-            int cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            var hasAssume = context.cardinality()?.ASSUME() != null;
+            var hasAssert = context.cardinality()?.ASSERT() != null;
+            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
             machine.Assume = hasAssume ? cardinality : -1;
             machine.Assert = hasAssert ? cardinality : -1;
 
@@ -242,9 +242,9 @@ namespace Microsoft.Pc.TypeChecker
             // (COLON idenList)?
             if (context.idenList() is PParser.IdenListContext interfaces)
             {
-                foreach (PParser.IdenContext pInterfaceNameCtx in interfaces._names)
+                foreach (var pInterfaceNameCtx in interfaces._names)
                 {
-                    string pInterfaceName = pInterfaceNameCtx.GetText();
+                    var pInterfaceName = pInterfaceNameCtx.GetText();
                     if (!CurrentScope.Lookup(pInterfaceName, out Interface pInterface))
                     {
                         throw Handler.MissingDeclaration(pInterfaceNameCtx, "interface", pInterfaceName);
@@ -255,10 +255,10 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // receivesSends*
-            foreach (PParser.ReceivesSendsContext receivesSends in context.receivesSends())
+            foreach (var receivesSends in context.receivesSends())
             {
                 var recvSendTuple = (Tuple<string, PEvent[]>) Visit(receivesSends);
-                string eventSetType = recvSendTuple.Item1;
+                var eventSetType = recvSendTuple.Item1;
                 if (eventSetType.Equals("RECV", StringComparison.InvariantCulture))
                 {
                     if (machine.Receives == null)
@@ -369,7 +369,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // COLON type
-            PLanguageType variableType = ResolveType(context.type());
+            var variableType = ResolveType(context.type());
 
             // VAR idenList
             var variables = new Variable[context.idenList()._names.Count];
@@ -444,7 +444,7 @@ namespace Microsoft.Pc.TypeChecker
                 switch (Visit(stateBodyItemContext))
                 {
                     case IStateAction[] actions:
-                        foreach (IStateAction action in actions)
+                        foreach (var action in actions)
                         {
                             if (state.HasHandler(action.Trigger))
                             {
@@ -501,7 +501,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             else
             {
-                string funName = context.funName.GetText();
+                var funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
@@ -519,7 +519,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             else
             {
-                string funName = context.funName.GetText();
+                var funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
@@ -541,7 +541,7 @@ namespace Microsoft.Pc.TypeChecker
             var actions = new IStateAction[eventContexts.Count];
             for (var i = 0; i < eventContexts.Count; i++)
             {
-                PParser.NonDefaultEventContext token = eventContexts[i];
+                var token = eventContexts[i];
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
                 {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
@@ -561,7 +561,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // IGNORE nonDefaultEventList
             var actions = new List<IStateAction>();
-            foreach (PParser.NonDefaultEventContext token in context.nonDefaultEventList()._events)
+            foreach (var token in context.nonDefaultEventList()._events)
             {
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
                 {
@@ -589,7 +589,7 @@ namespace Microsoft.Pc.TypeChecker
             else
             {
                 // DO funName=Iden
-                string funName = context.funName.GetText();
+                var funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
@@ -598,7 +598,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // ON eventList
             var actions = new List<IStateAction>();
-            foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
+            foreach (var eventIdContext in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
                 {
@@ -618,11 +618,11 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // PUSH stateName 
-            State targetState = FindState(context.stateName());
+            var targetState = FindState(context.stateName());
 
             // ON eventList
             var actions = new List<IStateAction>();
-            foreach (PParser.EventIdContext token in context.eventList().eventId())
+            foreach (var token in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
                 {
@@ -646,7 +646,7 @@ namespace Microsoft.Pc.TypeChecker
             if (context.funName != null)
             {
                 // WITH funName=Iden
-                string funName = context.funName.GetText();
+                var funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out transitionFunction))
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
@@ -664,11 +664,11 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // GOTO stateName 
-            State target = FindState(context.stateName());
+            var target = FindState(context.stateName());
 
             // ON eventList
             var actions = new List<IStateAction>();
-            foreach (PParser.EventIdContext eventIdContext in context.eventList().eventId())
+            foreach (var eventIdContext in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
                 {
@@ -785,8 +785,8 @@ namespace Microsoft.Pc.TypeChecker
 
         private State FindState(PParser.StateNameContext context)
         {
-            Scope scope = CurrentMachine.Scope;
-            foreach (PParser.IdenContext groupToken in context._groups)
+            var scope = CurrentMachine.Scope;
+            foreach (var groupToken in context._groups)
             {
                 if (!scope.Get(groupToken.GetText(), out StateGroup group))
                 {

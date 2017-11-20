@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types

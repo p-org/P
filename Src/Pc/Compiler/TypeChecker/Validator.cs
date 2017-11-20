@@ -159,9 +159,12 @@ namespace Microsoft.Pc.TypeChecker
 
         public static void ValidateMachine(Machine machine, ITranslationErrorHandler handler)
         {
-            if (machine.StartState == null)
+            State startState = FindStartState(machine, handler);
+            PLanguageType startStatePayloadType = GetStatePayload(startState, handler);
+            if (!startStatePayloadType.IsSameTypeAs(machine.PayloadType))
             {
-                throw new NotImplementedException("machines with no start state");
+                throw handler.InternalError(machine.SourceLocation,
+                                            "machine payload type is not the same as start state's entry payload type");
             }
 
             foreach (Interface machineInterface in machine.Interfaces)
@@ -174,6 +177,58 @@ namespace Microsoft.Pc.TypeChecker
                                                machineInterface.PayloadType);
                 }
             }
+        }
+
+        private static PLanguageType GetStatePayload(State startState, ITranslationErrorHandler handler)
+        {
+            PLanguageType startStatePayloadType;
+            if (startState.Entry?.Signature.Parameters.Count > 0)
+            {
+                if (startState.Entry.Signature.Parameters.Count != 1)
+                {
+                    throw handler.InternalError(startState.OwningMachine.SourceLocation,
+                                                "Allowed start state entry with multiple parameters");
+                }
+                startStatePayloadType = startState.Entry.Signature.Parameters[0].Type;
+            }
+            else
+            {
+                startStatePayloadType = PrimitiveType.Null;
+            }
+            return startStatePayloadType;
+        }
+
+        private static State FindStartState(Machine machine, ITranslationErrorHandler handler)
+        {
+            bool foundStartState = false;
+            foreach (State state in machine.AllStates())
+            {
+                if (state == machine.StartState || state.IsStart)
+                {
+                    if (!foundStartState)
+                    {
+                        foundStartState = true;
+                    }
+                    else
+                    {
+                        // TODO add source location to states
+                        throw handler.InternalError(machine.SourceLocation,
+                                                    $"Two start states {state.Name} occurs twice in all states list");
+                    }
+                }
+            }
+
+            if (foundStartState && machine.StartState == null)
+            {
+                throw handler.InternalError(machine.SourceLocation, "machine has unregistered start state");
+            }
+
+            if (!foundStartState || machine.StartState == null)
+            {
+                throw new NotImplementedException("machines with no start state");
+            }
+
+            return machine.StartState;
         }
     }
 }

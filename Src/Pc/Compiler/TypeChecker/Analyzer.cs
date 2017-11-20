@@ -1,4 +1,3 @@
-using System;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime.Tree;
@@ -98,8 +97,19 @@ namespace Microsoft.Pc.TypeChecker
         }
     }
 
-    public class FunctionBodyVisitor
+    public class FunctionBodyVisitor : PParserBaseVisitor<object>
     {
+        private readonly ITranslationErrorHandler handler;
+        private readonly Machine machine;
+        private readonly Function method;
+
+        private FunctionBodyVisitor(ITranslationErrorHandler handler, Machine machine, Function method)
+        {
+            this.handler = handler;
+            this.machine = machine;
+            this.method = method;
+        }
+
         public static void PopulateMethod(ITranslationErrorHandler handler, Function fun)
         {
             PopulateMethod(handler, null, fun);
@@ -107,47 +117,53 @@ namespace Microsoft.Pc.TypeChecker
 
         public static void PopulateMethod(ITranslationErrorHandler handler, Machine machine, Function method)
         {
+            Debug.Assert(method.Owner == machine);
             if (method.Body != null)
             {
                 return;
             }
 
-            Debug.Assert(method.Owner == machine);
-            AddLocalVariables(handler, method);
+            var visitor = new FunctionBodyVisitor(handler, machine, method);
+            visitor.Visit(method.SourceLocation);
+        }
+
+        public override object VisitAnonEventHandler(PParser.AnonEventHandlerContext context)
+        {
+            return Visit(context.functionBody());
+        }
+
+        public override object VisitNoParamAnonEventHandler(PParser.NoParamAnonEventHandlerContext context)
+        {
+            return Visit(context.functionBody());
+        }
+
+        public override object VisitPFunDecl(PParser.PFunDeclContext context) { return Visit(context.functionBody()); }
+
+        public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context) { return null; }
+
+        public override object VisitFunctionBody(PParser.FunctionBodyContext context)
+        {
+            // TODO: check that parameters have been added to internal scope?
+
+            // Add all local variables to scope.
+            foreach (PParser.VarDeclContext varDeclContext in context.varDecl())
+            {
+                Visit(varDeclContext);
+            }
+
             var statementVisitor = new StatementVisitor(method.Scope, machine, handler);
-            method.Body = statementVisitor.Visit(method.SourceLocation);
+            method.Body = new CompoundStmt(context.statement().Select(statementVisitor.Visit).ToList());
+            return null;
         }
 
-        private static void AddLocalVariables(ITranslationErrorHandler handler, Function method)
+        public override object VisitVarDecl(PParser.VarDeclContext context)
         {
-            if (GetFunctionBody(handler, method)?.varDecl() is PParser.VarDeclContext[] varDecls)
+            foreach (PParser.IdenContext varName in context.idenList()._names)
             {
-                foreach (var varDecl in varDecls)
-                {
-                    foreach (var varName in varDecl.idenList()._names)
-                    {
-                        var variable = method.Scope.Put(varName.GetText(), varDecl, varName);
-                        variable.Type = TypeResolver.ResolveType(varDecl.type(), method.Scope, handler);
-                    }
-                }
+                Variable variable = method.Scope.Put(varName.GetText(), context, varName);
+                variable.Type = TypeResolver.ResolveType(context.type(), method.Scope, handler);
             }
-        }
-
-        private static PParser.FunctionBodyContext GetFunctionBody(ITranslationErrorHandler handler, Function fun)
-        {
-            switch (fun.SourceLocation)
-            {
-                case PParser.AnonEventHandlerContext ctx:
-                    return ctx.functionBody();
-                case PParser.NoParamAnonEventHandlerContext ctx:
-                    return ctx.functionBody();
-                case PParser.PFunDeclContext ctx:
-                    return ctx.functionBody();
-                case PParser.ForeignFunDeclContext ctx:
-                    return null;
-                default:
-                    throw handler.InternalError(fun.SourceLocation, "function is of unexpected parse tree node type");
-            }
+            return null;
         }
     }
 }

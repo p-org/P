@@ -220,6 +220,10 @@ namespace UnitTests.CBackend
             //tmpWriter.Write(stdout);
             //tmpWriter.Write(stderr);
             tmpWriter.WriteLine($"EXIT (csc.exe): {exitCode}");
+            if (exitCode != 0)
+            {
+                throw new Exception("csc.exe failed");
+            }
 
             // Append includes
             foreach (string include in config.Includes)
@@ -541,6 +545,10 @@ namespace UnitTests.CBackend
                                     TestPt(config, tmpWriter, workDirectory, activeDirectory, origTestDir);
                                     CheckResult(activeDirectory, origTestDir, testType, sb, true);
                                 }
+                                else
+                                {
+                                    throw new Exception("TestPc failed");
+                                }
                             }
                             break;
                         case TestType.Zing:
@@ -554,6 +562,10 @@ namespace UnitTests.CBackend
                                     WriteHeader(tmpWriter);
                                     TestZing(config, tmpWriter, workDirectory, activeDirectory);
                                     CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                                }
+                                else
+                                {
+                                    throw new Exception("TestPc failed");
                                 }
                             }
                             break;

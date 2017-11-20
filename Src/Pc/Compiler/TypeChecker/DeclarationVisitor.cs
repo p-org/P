@@ -764,10 +764,8 @@ namespace Microsoft.Pc.TypeChecker
             };
             if (context.funParam() is PParser.FunParamContext paramContext)
             {
-                var param = new Variable(paramContext.name.GetText(), paramContext)
-                {
-                    Type = ResolveType(paramContext.type())
-                };
+                Variable param = fun.Scope.Put(paramContext.name.GetText(), paramContext);
+                param.Type = ResolveType(paramContext.type());
                 nodesToDeclarations.Put(paramContext, param);
                 fun.Signature.Parameters.Add(param);
             }
@@ -777,9 +775,12 @@ namespace Microsoft.Pc.TypeChecker
 
         private Function CreateAnonFunction(PParser.NoParamAnonEventHandlerContext context)
         {
-            var fun = new Function(context) {Owner = CurrentMachine};
+            var fun = new Function(context)
+            {
+                Owner = CurrentMachine,
+                Scope = CurrentScope.MakeChildScope()
+            };
             nodesToDeclarations.Put(context, fun);
-            fun.Scope = CurrentScope.MakeChildScope();
             return fun;
         }
 

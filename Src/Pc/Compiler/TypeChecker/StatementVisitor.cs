@@ -26,6 +26,31 @@ namespace Microsoft.Pc.TypeChecker
             this.handler = handler;
         }
 
+        public override IPStmt VisitPFunDecl(PParser.PFunDeclContext context)
+        {
+            return Visit(context.functionBody());
+        }
+
+        public override IPStmt VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
+        {
+            throw new NotImplementedException("foreign functions");
+        }
+
+        public override IPStmt VisitAnonEventHandler(PParser.AnonEventHandlerContext context)
+        {
+            return Visit(context.functionBody());
+        }
+
+        public override IPStmt VisitNoParamAnonEventHandler(PParser.NoParamAnonEventHandlerContext context)
+        {
+            return Visit(context.functionBody());
+        }
+
+        public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
+        {
+            return new CompoundStmt(context.statement().Select(Visit).ToList());
+        }
+
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
             var statements = context.statement().Select(Visit);

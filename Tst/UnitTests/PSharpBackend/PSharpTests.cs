@@ -89,7 +89,7 @@ namespace UnitTests.PSharpBackend
             }
             catch (NotImplementedException e)
             {
-                Console.Error.WriteLine($"[{testName}] {e.Message} not implemented.");
+                // Console.Error.WriteLine($"[{testName}] {e.Message} not implemented.");
             }
         }
 

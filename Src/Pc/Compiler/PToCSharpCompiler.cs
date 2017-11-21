@@ -355,10 +355,10 @@ namespace Microsoft.Pc
             }
 
             // log
-            fields.Add(
+            /*fields.Add(
                 CSharpHelper.MkCSharpTrace(
                     $"<CreateLog> Created Machine {machineName}-{{0}}",
-                    CSharpHelper.MkCSharpDot("machine", "instanceNumber")));
+                    CSharpHelper.MkCSharpDot("machine", "instanceNumber")));*/
 
             //initialize the permission set for self
             if (allMachines[machineName].receiveSet == null)

@@ -158,7 +158,7 @@ namespace P.Runtime
                                         .Select(monName => specMachinesMap[monName]).ToList();
             return allSpecMachines;
         }
-        public PrtInterfaceValue CreateInterface(string currMachRenameName, string interfaceOrMachineName, PrtValue payload)
+        public PrtInterfaceValue CreateInterface(PrtImplMachine currMach, string interfaceOrMachineName, PrtValue payload)
         {
             //add visible action to trace
             if(visibleInterfaces.Contains(interfaceOrMachineName))
@@ -166,7 +166,7 @@ namespace P.Runtime
                 currentVisibleTrace.AddAction(interfaceOrMachineName, payload.ToString());
             }
 
-            var renamedImpMachine = linkMap[currMachRenameName][interfaceOrMachineName];
+            var renamedImpMachine = linkMap[currMach.renamedName][interfaceOrMachineName];
             var impMachineName = machineDefMap[renamedImpMachine];
             var machine = createMachineMap[impMachineName](this, payload);
             machine.isSafe = isSafeMap[renamedImpMachine];
@@ -174,6 +174,8 @@ namespace P.Runtime
             AddImplMachineToStateImpl(machine);
 
             CreateMachineCallback?.Invoke(machine);
+
+            TraceLine("<CreateLog> Machine {0}-{1} was created by machine {2}-{3}", currMach.renamedName, currMach.instanceNumber, machine.renamedName, machine.instanceNumber);
 
             if (interfaceMap.ContainsKey(interfaceOrMachineName))
             {
@@ -187,6 +189,7 @@ namespace P.Runtime
 
         public void CreateMainMachine(string mainInterface)
         {
+            TraceLine("<CreateLog> Machine Main was created by machine Runtime");
 
             if (!machineDefMap.ContainsKey(mainInterface))
             {
@@ -202,6 +205,7 @@ namespace P.Runtime
 
         public void CreateSpecMachine(string renamedSpecName)
         {
+            TraceLine("<CreateLog> Spec Machine {0} was created by machine Runtime", renamedSpecName);
             var impSpecMachine = machineDefMap[renamedSpecName];
             var machine = createSpecMap[impSpecMachine](this);
             machine.isSafe = isSafeMap[renamedSpecName];

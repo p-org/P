@@ -10,17 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Real_Init
-OUT: <CreateLog> Created Machine Ghost-1
-OUT: <RaiseLog> Machine Main-1 raised Event unit
-OUT: <StateLog> Machine Main-1 entering State Main_Real_S1
-OUT: <EnqueueLog> Enqueued Event <E1, null> in Ghost-1 by Main-1
-OUT: <EnqueueLog> Enqueued Event <E1, null> in Ghost-1 by Main-1
-OUT: 
 OUT: ERROR: < Exception > Attempting to enqueue event E1 more than max instance of 1\n
 OUT: 
 EXIT: -1

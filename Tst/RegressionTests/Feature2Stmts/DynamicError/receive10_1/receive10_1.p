@@ -32,7 +32,7 @@ machine B {
 			receive {
 				case F: { 
 					send this, E, 10; 
-					/*assert(false);*/
+					assert(false);
 				}
 				case null : {raise F;}
 			}

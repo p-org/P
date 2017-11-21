@@ -10,12 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_User_Init
-OUT: 
 OUT: ERROR: value False is not a member of type INT
 OUT: 
 EXIT: -1

@@ -175,7 +175,8 @@ namespace P.Runtime
 
             CreateMachineCallback?.Invoke(machine);
 
-            TraceLine("<CreateLog> Machine {0}-{1} was created by machine {2}-{3}", currMach.renamedName, currMach.instanceNumber, machine.renamedName, machine.instanceNumber);
+            //TraceLine("<CreateLog> Machine {0}-{1} was created by machine {2}-{3}", currMach.renamedName, currMach.instanceNumber, machine.renamedName, machine.instanceNumber);
+            TraceLine("<CreateLog> Machine {0}-{1} was created by machine {2}-{3}", machine.renamedName, machine.instanceNumber, currMach.renamedName, currMach.instanceNumber);
 
             if (interfaceMap.ContainsKey(interfaceOrMachineName))
             {
@@ -189,7 +190,7 @@ namespace P.Runtime
 
         public void CreateMainMachine(string mainInterface)
         {
-            TraceLine("<CreateLog> Machine Main was created by machine Runtime");
+            TraceLine("<CreateLog> Machine Main-1 was created by machine Runtime");
 
             if (!machineDefMap.ContainsKey(mainInterface))
             {

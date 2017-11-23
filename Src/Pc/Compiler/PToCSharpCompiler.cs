@@ -433,7 +433,7 @@ namespace Microsoft.Pc
                         new List<SyntaxNode> {generator.IdentifierName("application")})));
 
             //log
-            fields.Add(CSharpHelper.MkCSharpTrace($"<CreateLog> Created spec Machine {machineName}"));
+            //fields.Add(CSharpHelper.MkCSharpTrace($"<CreateLog> Created spec Machine {machineName}"));
 
             fields.AddRange(allMachines[machineName].observesEvents.Select(x => CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), GetEventVar(x))));
 

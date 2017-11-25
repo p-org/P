@@ -190,7 +190,7 @@ namespace P.Runtime
 
         public void CreateMainMachine(string mainInterface)
         {
-            TraceLine("<CreateLog> Machine Main-1 was created by machine Runtime");
+            TraceLine("<CreateLog> Machine Main was created by machine Runtime");
 
             if (!machineDefMap.ContainsKey(mainInterface))
             {

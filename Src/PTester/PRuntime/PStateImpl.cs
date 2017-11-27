@@ -190,7 +190,7 @@ namespace P.Runtime
 
         public void CreateMainMachine(string mainInterface)
         {
-            TraceLine("<CreateLog> Main machine Main was created by machine Runtime");
+            
 
             if (!machineDefMap.ContainsKey(mainInterface))
             {
@@ -201,7 +201,8 @@ namespace P.Runtime
             machine.isSafe = isSafeMap[mainInterface];
             machine.renamedName = mainInterface;
             AddImplMachineToStateImpl(machine);
-            
+            TraceLine("<CreateLog> Main machine {0} was created by machine Runtime", impMachineName);
+
         }
 
         public void CreateSpecMachine(string renamedSpecName)

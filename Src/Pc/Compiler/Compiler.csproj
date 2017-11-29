@@ -291,6 +291,7 @@
     <Compile Include="TypeChecker\AST\ITypedName.cs" />
     <Compile Include="TypeChecker\DeclarationStubVisitor.cs" />
     <Compile Include="TypeChecker\DeclarationVisitor.cs" />
+    <Compile Include="TypeChecker\InsertStmt.cs" />
     <Compile Include="TypeChecker\Types\NamedTupleEntry.cs" />
     <Compile Include="TypeChecker\AST\IPAST.cs" />
     <Compile Include="TypeChecker\AST\Declarations\PEnum.cs" />

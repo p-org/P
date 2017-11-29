@@ -145,6 +145,11 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(location, $"internal error: {message}");
         }
 
+        public Exception MissingStartState(Machine machine)
+        {
+            return IssueError(machine.SourceLocation, $"Machine {machine.Name} has no start state");
+        }
+
         public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
         {
             return new TranslationException($"[{GetLocation(ctx, location)}] {message}");

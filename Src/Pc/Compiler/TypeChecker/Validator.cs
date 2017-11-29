@@ -220,7 +220,8 @@ namespace Microsoft.Pc.TypeChecker
 
             if (!foundStartState || machine.StartState == null)
             {
-                throw new NotImplementedException("machines with no start state");
+                // Allow machines with no start state so long as there are no other states.
+                throw handler.MissingStartState(machine);
             }
 
             return machine.StartState;

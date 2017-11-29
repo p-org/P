@@ -114,7 +114,61 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitInsertStmt(PParser.InsertStmtContext context)
         {
-            throw new NotImplementedException("insert statements");
+            var exprVisitor = new ExprVisitor(table, handler);
+            IPExpr variable = exprVisitor.Visit(context.lvalue());
+            IPExpr value = exprVisitor.Visit(context.rvalue());
+
+            if (!(value.Type.Canonicalize() is TupleType valueTuple))
+            {
+                throw handler.TypeMismatch(context.rvalue(), value.Type, TypeKind.Tuple);
+            }
+
+            if (valueTuple.Types.Count != 2)
+            {
+                throw handler.IssueError(context.rvalue(), "Insertion tuple must be of length two: (key/index, value)");
+            }
+
+            PLanguageType keyType = valueTuple.Types[0];
+            PLanguageType valueType = valueTuple.Types[1];
+
+            if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Sequence))
+            {
+                if (!(variable.Type.Canonicalize() is SequenceType sequenceType))
+                {
+                    throw handler.InternalError(context.lvalue(),
+                                                $"Type {variable.Type.OriginalRepresentation} is of sequence kind, but is not a SequenceType");
+                }
+                if (!PrimitiveType.Int.IsAssignableFrom(keyType))
+                {
+                    throw handler.TypeMismatch(context.rvalue(), keyType, PrimitiveType.Int);
+                }
+                if (!sequenceType.ElementType.IsAssignableFrom(valueType))
+                {
+                    throw handler.TypeMismatch(context.rvalue(), valueTuple, sequenceType.ElementType);
+                }
+            }
+            else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Map))
+            {
+                if (!(variable.Type.Canonicalize() is MapType mapType))
+                {
+                    throw handler.InternalError(context.lvalue(),
+                                                $"Type {variable.Type.OriginalRepresentation} is of map kind, but is not a MapType");
+                }
+                if (!mapType.KeyType.IsAssignableFrom(keyType))
+                {
+                    throw handler.TypeMismatch(context.rvalue(), keyType, mapType.KeyType);
+                }
+                if (!mapType.ValueType.IsAssignableFrom(valueType))
+                {
+                    throw handler.TypeMismatch(context.rvalue(), valueTuple, mapType.ValueType);
+                }
+            }
+            else
+            {
+                throw handler.TypeMismatch(context.lvalue(), variable.Type, TypeKind.Sequence, TypeKind.Map);
+            }
+
+            return new InsertStmt(variable, value);
         }
 
         public override IPStmt VisitRemoveStmt(PParser.RemoveStmtContext context)

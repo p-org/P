@@ -41,5 +41,6 @@ namespace Microsoft.Pc.TypeChecker
         Exception ParseFailure(FileInfo file, string message);
         Exception EmittedNullEvent(ParserRuleContext location);
         Exception InternalError(ParserRuleContext location, string message);
+        Exception MissingStartState(Machine machine);
     }
 }

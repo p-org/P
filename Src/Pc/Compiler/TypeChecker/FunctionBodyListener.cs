@@ -24,7 +24,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             if (nodesToDeclarations.Get(context.Parent) is Function fun)
             {
-                var statementVisitor = new StatementVisitor(fun.Scope, fun.Owner, handler);
+                var statementVisitor = new StatementVisitor(handler, fun.Owner, fun);
                 fun.Body = new CompoundStmt(context.statement().Select(s => statementVisitor.Visit(s)).ToList());
             }
         }

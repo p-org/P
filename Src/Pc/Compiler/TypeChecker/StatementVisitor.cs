@@ -18,12 +18,14 @@ namespace Microsoft.Pc.TypeChecker
         private readonly ITranslationErrorHandler handler;
         private readonly Machine machine;
         private readonly Scope table;
+        private readonly Function method;
 
-        public StatementVisitor(Scope table, Machine machine, ITranslationErrorHandler handler)
+        public StatementVisitor(ITranslationErrorHandler handler, Machine machine, Function method)
         {
-            this.table = table;
-            this.machine = machine;
             this.handler = handler;
+            this.machine = machine;
+            this.method = method;
+            this.table = method.Scope;
         }
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
@@ -77,7 +79,13 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitReturnStmt(PParser.ReturnStmtContext context)
         {
             var exprVisitor = new ExprVisitor(table, handler);
-            return new ReturnStmt(context.expr() == null ? null : exprVisitor.Visit(context.expr()));
+            IPExpr returnValue = context.expr() == null ? null : exprVisitor.Visit(context.expr());
+            PLanguageType returnType = returnValue?.Type ?? PrimitiveType.Null;
+            if (!method.Signature.ReturnType.IsAssignableFrom(returnType))
+            {
+                throw handler.TypeMismatch(context, returnType, method.Signature.ReturnType);
+            }
+            return new ReturnStmt(returnValue);
         }
 
         public override IPStmt VisitAssignStmt(PParser.AssignStmtContext context)
@@ -200,28 +208,23 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitRaiseStmt(PParser.RaiseStmtContext context)
         {
             var exprVisitor = new ExprVisitor(table, handler);
-            IPExpr pExpr = exprVisitor.Visit(context.expr());
-            if (!(pExpr is EventRefExpr eventRef))
-            {
-                throw new NotImplementedException("raising dynamic events");
-            }
 
-            var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                        Enumerable.Empty<IPExpr>()).ToList();
-            PEvent evt = eventRef.PEvent;
-            if (evt.Name.Equals("null"))
+            IPExpr pExpr = exprVisitor.Visit(context.expr());
+            if (IsDefinitelyNullEvent(pExpr))
             {
                 throw handler.EmittedNullEvent(context.expr());
             }
 
-            if (evt.PayloadType == PrimitiveType.Null && args.Count == 0 ||
-                evt.PayloadType != PrimitiveType.Null && args.Count == 1)
+            if (!PrimitiveType.Event.IsAssignableFrom(pExpr.Type))
             {
-                return new RaiseStmt(eventRef.PEvent, args.Count == 0 ? null : args[0]);
+                throw handler.TypeMismatch(context.expr(), pExpr.Type, PrimitiveType.Event);
             }
-            throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
-                                                 args.Count,
-                                                 evt.PayloadType == PrimitiveType.Null ? 0 : 1);
+
+            var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
+                        Enumerable.Empty<IPExpr>()).ToList();
+
+            // TODO: wot?
+            return new RaiseStmt(pExpr, args.Count == 0 ? null : args[0]);
         }
 
         public override IPStmt VisitSendStmt(PParser.SendStmtContext context)
@@ -232,57 +235,46 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context.machine, machineExpr.Type, PrimitiveType.Machine);
             }
-            IPExpr evtExpr = exprVisitor.Visit(context.@event);
-            if (!(evtExpr is EventRefExpr evtRef))
-            {
-                throw new NotImplementedException("sending dynamic events");
-            }
 
-            PEvent evt = evtRef.PEvent;
-            if (evt.Name.Equals("null"))
+            IPExpr evtExpr = exprVisitor.Visit(context.@event);
+            if (IsDefinitelyNullEvent(evtExpr))
             {
                 throw handler.EmittedNullEvent(context.@event);
             }
 
+            if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
+            {
+                throw handler.TypeMismatch(context.@event, evtExpr.Type, PrimitiveType.Event);
+            }
+
             var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ?? Enumerable.Empty<IPExpr>();
             var argsList = args.ToList();
-            if (evt.PayloadType != PrimitiveType.Null && argsList.Count == 1)
-            {
-                if (!evt.PayloadType.IsAssignableFrom(argsList[0].Type))
-                {
-                    throw handler.TypeMismatch(context.rvalueList().rvalue(0), argsList[0].Type, evt.PayloadType);
-                }
-                return new SendStmt(machineExpr, evt, argsList);
-            }
-            if (evt.PayloadType == PrimitiveType.Null && argsList.Count == 0)
-            {
-                return new SendStmt(machineExpr, evt, argsList);
-            }
-            throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
-                                                 argsList.Count,
-                                                 evt.PayloadType == PrimitiveType.Null ? 0 : 1);
+            return new SendStmt(machineExpr, evtExpr, argsList);
+        }
+
+        private static bool IsDefinitelyNullEvent(IPExpr evtExpr)
+        {
+            return evtExpr is NullLiteralExpr || evtExpr is EventRefExpr evtRef && evtRef.PEvent.Name.Equals("null");
         }
 
         public override IPStmt VisitAnnounceStmt(PParser.AnnounceStmtContext context)
         {
             var exprVisitor = new ExprVisitor(table, handler);
-            IPExpr pExpr = exprVisitor.Visit(context.expr());
-            if (!(pExpr is EventRefExpr eventRef))
+
+            IPExpr evtExpr = exprVisitor.Visit(context.expr());
+            if (IsDefinitelyNullEvent(evtExpr))
             {
-                throw new NotImplementedException("announcing dynamic events");
+                throw handler.EmittedNullEvent(context.expr());
+            }
+
+            if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
+            {
+                throw handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event);
             }
 
             var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
                         Enumerable.Empty<IPExpr>()).ToList();
-            PEvent evt = eventRef.PEvent;
-            if (evt.PayloadType == PrimitiveType.Null && args.Count == 0 ||
-                evt.PayloadType != PrimitiveType.Null && args.Count == 1)
-            {
-                return new AnnounceStmt(eventRef.PEvent, args.Count == 0 ? null : args[0]);
-            }
-            throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
-                                                 args.Count,
-                                                 evt.PayloadType == PrimitiveType.Null ? 0 : 1);
+            return new AnnounceStmt(evtExpr, args.Count == 0 ? null : args[0]);
         }
 
         public override IPStmt VisitGotoStmt(PParser.GotoStmtContext context)

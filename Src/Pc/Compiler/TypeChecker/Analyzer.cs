@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime.Tree;
@@ -15,6 +17,30 @@ namespace Microsoft.Pc.TypeChecker
             ITranslationErrorHandler handler,
             params PParser.ProgramContext[] programUnits)
         {
+            // Step 1: Build the global scope of declarations
+            Scope globalScope = BuildGlobalScope(handler, programUnits);
+
+            // Step 2: Validate machine specifications
+            foreach (Machine machine in globalScope.Machines)
+            {
+                Validator.ValidateMachine(handler, machine);
+            }
+            
+            // Step 3: Fill function bodies
+            foreach (var machineFunction in AllFunctions(globalScope))
+            {
+                FunctionBodyVisitor.PopulateMethod(handler, machineFunction.Item1, machineFunction.Item2);
+            }
+
+            // NOW: AST Complete, pass to StringTemplate
+            return new PProgramModel
+            {
+                GlobalScope = globalScope
+            };
+        }
+
+        private static Scope BuildGlobalScope(ITranslationErrorHandler handler, PParser.ProgramContext[] programUnits)
+        {
             var globalScope = new Scope(handler);
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
 
@@ -28,49 +54,26 @@ namespace Microsoft.Pc.TypeChecker
                 DeclarationStubVisitor.PopulateStubs(globalScope, programUnit, nodesToDeclarations);
             }
 
-            // NOW: no declarations have ambiguous names.
-            // NOW: there is exactly one declaration object for each declaration.
-            // NOW: every declaration object is associated in both directions with its corresponding parse tree node.
-            // NOW: enums and their elements are related to one another
-
             // Step 2: Validate declarations and fill with types
             foreach (PParser.ProgramContext programUnit in programUnits)
             {
                 DeclarationVisitor.PopulateDeclarations(handler, globalScope, programUnit, nodesToDeclarations);
             }
-
-            // NOW: all declarations are valid, with appropriate links and types resolved.
-
-            // Step 3: Validate machine specifications
-            foreach (Machine machine in globalScope.Machines)
-            {
-                Validator.ValidateMachine(machine, handler);
-            }
-
-            // NOW: everything except for function bodies have been filled and validated.
-
-            // Step 4: Fill function bodies
-            PopulateFunctionBodies(handler, globalScope);
-
-            // NOW: AST Complete, pass to StringTemplate
-            return new PProgramModel
-            {
-                GlobalScope = globalScope
-            };
+            return globalScope;
         }
 
-        private static void PopulateFunctionBodies(ITranslationErrorHandler handler, Scope globalScope)
+        private static IEnumerable<Tuple<Machine, Function>> AllFunctions(Scope globalScope)
         {
             foreach (Function fun in globalScope.Functions)
             {
-                FunctionBodyVisitor.PopulateMethod(handler, fun);
+                yield return Tuple.Create((Machine) null, fun);
             }
 
             foreach (Machine machine in globalScope.Machines)
             {
                 foreach (Function method in machine.Methods)
                 {
-                    FunctionBodyVisitor.PopulateMethod(handler, machine, method);
+                    yield return Tuple.Create(machine, method);
                 }
                 foreach (State state in machine.AllStates())
                 {
@@ -81,13 +84,13 @@ namespace Microsoft.Pc.TypeChecker
                             case EventDoAction action:
                                 if (action.Target != null)
                                 {
-                                    FunctionBodyVisitor.PopulateMethod(handler, machine, action.Target);
+                                    yield return Tuple.Create(machine, action.Target);
                                 }
                                 break;
                             case EventGotoState action:
                                 if (action.TransitionFunction != null)
                                 {
-                                    FunctionBodyVisitor.PopulateMethod(handler, machine, action.TransitionFunction);
+                                    yield return Tuple.Create(machine, action.TransitionFunction);
                                 }
                                 break;
                         }
@@ -151,7 +154,8 @@ namespace Microsoft.Pc.TypeChecker
                 Visit(varDeclContext);
             }
 
-            var statementVisitor = new StatementVisitor(method.Scope, machine, handler);
+            // Build the statement trees
+            var statementVisitor = new StatementVisitor(handler, machine, method);
             method.Body = new CompoundStmt(context.statement().Select(statementVisitor.Visit).ToList());
             return null;
         }

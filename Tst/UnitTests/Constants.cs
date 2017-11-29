@@ -19,6 +19,7 @@ namespace UnitTests
         internal const string DiffTool = "kdiff3";
         internal const string DisplayDiffsFile = "display-diffs.bat";
         internal const string ActualOutputFileName = "check-output.log";
+        internal const string FrontEndRegressionFileName = "frontend-regression.txt";
 #if DEBUG
         internal const string Configuration = "Debug";
 #else

@@ -6,7 +6,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class SendStmt : IPStmt
     {
-        public SendStmt(IPExpr machineExpr, PEvent evt, List<IPExpr> argsList)
+        public SendStmt(IPExpr machineExpr, IPExpr evt, List<IPExpr> argsList)
         {
             MachineExpr = machineExpr;
             Evt = evt;
@@ -14,7 +14,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
         }
 
         public IPExpr MachineExpr { get; }
-        public PEvent Evt { get; }
+        public IPExpr Evt { get; }
         public List<IPExpr> ArgsList { get; }
     }
 }

@@ -157,7 +157,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public static void ValidateMachine(Machine machine, ITranslationErrorHandler handler)
+        public static void ValidateMachine(ITranslationErrorHandler handler, Machine machine)
         {
             State startState = FindStartState(machine, handler);
             PLanguageType startStatePayloadType = GetStatePayload(startState, handler);
@@ -181,21 +181,16 @@ namespace Microsoft.Pc.TypeChecker
 
         private static PLanguageType GetStatePayload(State startState, ITranslationErrorHandler handler)
         {
-            PLanguageType startStatePayloadType;
-            if (startState.Entry?.Signature.Parameters.Count > 0)
+            if (!(startState.Entry?.Signature.Parameters.Count > 0))
             {
-                if (startState.Entry.Signature.Parameters.Count != 1)
-                {
-                    throw handler.InternalError(startState.OwningMachine.SourceLocation,
-                                                "Allowed start state entry with multiple parameters");
-                }
-                startStatePayloadType = startState.Entry.Signature.Parameters[0].Type;
+                return PrimitiveType.Null;
             }
-            else
+            if (startState.Entry.Signature.Parameters.Count != 1)
             {
-                startStatePayloadType = PrimitiveType.Null;
+                throw handler.InternalError(startState.OwningMachine.SourceLocation,
+                                            "Allowed start state entry with multiple parameters");
             }
-            return startStatePayloadType;
+            return startState.Entry.Signature.Parameters[0].Type;
         }
 
         private static State FindStartState(Machine machine, ITranslationErrorHandler handler)

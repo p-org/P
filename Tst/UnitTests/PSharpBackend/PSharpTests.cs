@@ -66,7 +66,7 @@ namespace UnitTests.PSharpBackend
             return result;
         }
 
-        private void SaveRegressionsFile(IDictionary<string, string> set)
+        private static void SaveRegressionsFile(IDictionary<string, string> set)
         {
             string setPath = Path.Combine(Constants.TestDirectory, Constants.FrontEndRegressionFileName);
             using (var file = new StreamWriter(setPath))
@@ -102,7 +102,7 @@ namespace UnitTests.PSharpBackend
                     originalFiles.Put(trees[i], inputFile);
                 }
 
-                PProgramModel program = Analyzer.AnalyzeCompilationUnit(handler, trees);
+                var program = Analyzer.AnalyzeCompilationUnit(handler, trees);
                 if (!expectCorrect)
                 {
                     return $"[{testName}] Expected error, but none were found!";

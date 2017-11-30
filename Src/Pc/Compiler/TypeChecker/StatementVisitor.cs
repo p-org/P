@@ -133,11 +133,7 @@ namespace Microsoft.Pc.TypeChecker
 
             if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Sequence))
             {
-                if (!(variable.Type.Canonicalize() is SequenceType sequenceType))
-                {
-                    throw handler.InternalError(context.lvalue(),
-                                                $"Type {variable.Type.OriginalRepresentation} is of sequence kind, but is not a SequenceType");
-                }
+                SequenceType sequenceType = (SequenceType) variable.Type.Canonicalize();
                 if (!PrimitiveType.Int.IsAssignableFrom(keyType))
                 {
                     throw handler.TypeMismatch(context.rvalue(), keyType, PrimitiveType.Int);
@@ -149,11 +145,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Map))
             {
-                if (!(variable.Type.Canonicalize() is MapType mapType))
-                {
-                    throw handler.InternalError(context.lvalue(),
-                                                $"Type {variable.Type.OriginalRepresentation} is of map kind, but is not a MapType");
-                }
+                MapType mapType = (MapType) variable.Type.Canonicalize();
                 if (!mapType.KeyType.IsAssignableFrom(keyType))
                 {
                     throw handler.TypeMismatch(context.rvalue(), keyType, mapType.KeyType);
@@ -173,7 +165,31 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitRemoveStmt(PParser.RemoveStmtContext context)
         {
-            throw new NotImplementedException("remove statements");
+            var exprVisitor = new ExprVisitor(table, handler);
+            IPExpr variable = exprVisitor.Visit(context.lvalue());
+            IPExpr value = exprVisitor.Visit(context.expr());
+
+            if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Sequence))
+            {
+                if (!PrimitiveType.Int.IsAssignableFrom(value.Type))
+                {
+                    throw handler.TypeMismatch(context.expr(), value.Type, PrimitiveType.Int);
+                }
+            }
+            else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Map))
+            {
+                MapType map = (MapType) variable.Type.Canonicalize();
+                if (!map.KeyType.IsAssignableFrom(value.Type))
+                {
+                    throw handler.TypeMismatch(context.expr(), value.Type, map.KeyType);
+                }
+            }
+            else
+            {
+                throw handler.TypeMismatch(context.lvalue(), variable.Type, TypeKind.Sequence, TypeKind.Map);
+            }
+
+            return new RemoveStmt(variable, value);
         }
 
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
@@ -350,17 +366,68 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(stateNameContext.state, "state", stateName);
             }
             IPExpr payload = null;
-            if (context.rvalueList() != null)
+            PLanguageType expectedType =
+                state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
+            if (context.rvalueList()?.rvalue() is PParser.RvalueContext[] rvalues)
             {
-                throw new NotImplementedException("goto statement with payload");
+                var exprVisitor = new ExprVisitor(table, handler);
+                if (rvalues.Length == 1)
+                {
+                    payload = exprVisitor.Visit(rvalues[0]);
+                }
+                else
+                {
+                    IPExpr[] tupleFields = rvalues.Select(exprVisitor.Visit).ToArray();
+                    payload = new UnnamedTupleExpr(tupleFields,
+                        new TupleType(tupleFields.Select(f => f.Type).ToList()));
+                }
             }
-
+            PLanguageType payloadType = payload?.Type ?? PrimitiveType.Null;
+            if (!expectedType.IsAssignableFrom(payloadType))
+            {
+                throw handler.TypeMismatch(context, payloadType, expectedType);
+            }
             return new GotoStmt(state, payload);
         }
 
         public override IPStmt VisitReceiveStmt(PParser.ReceiveStmtContext context)
         {
-            throw new NotImplementedException("receive statements");
+            // TODO: can receive statements have event variables as their cases?
+            var cases = new Dictionary<PEvent, Function>();
+            foreach (PParser.RecvCaseContext caseContext in context.recvCase())
+            {
+                var recvHandler =
+                    new Function(caseContext.anonEventHandler()) {Scope = table.MakeChildScope(), Owner = method.Owner};
+                if (caseContext.anonEventHandler().funParam() is PParser.FunParamContext param)
+                {
+                    var paramVar = recvHandler.Scope.Put(param.name.GetText(), param);
+                    paramVar.Type = TypeResolver.ResolveType(param.type(), recvHandler.Scope, handler);
+                    recvHandler.Signature.Parameters.Add(paramVar);
+                }
+
+                FunctionBodyVisitor.PopulateMethod(handler, recvHandler);
+                
+                foreach (var eventIdContext in caseContext.eventList().eventId())
+                {
+                    if (!table.Lookup(eventIdContext.GetText(), out PEvent pEvent))
+                    {
+                        throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
+                    }
+                    if (cases.ContainsKey(pEvent))
+                    {
+                        throw handler.IssueError(eventIdContext, $"duplicate case for event {pEvent.Name} in receive");
+                    }
+                    PLanguageType expectedType =
+                        recvHandler.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
+                    if (!expectedType.IsAssignableFrom(pEvent.PayloadType))
+                    {
+                        throw handler.TypeMismatch(caseContext.anonEventHandler().funParam(), expectedType,
+                            pEvent.PayloadType);
+                    }
+                    cases.Add(pEvent, recvHandler);
+                }
+            }
+            return new ReceiveStmt(cases);
         }
 
         public override IPStmt VisitNoStmt(PParser.NoStmtContext context) { return new NoStmt(); }

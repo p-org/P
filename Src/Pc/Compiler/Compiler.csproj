@@ -233,6 +233,8 @@
     <Compile Include="TypeChecker\AST\Declarations\Machine.cs" />
     <Compile Include="TypeChecker\AST\Declarations\PEvent.cs" />
     <Compile Include="TypeChecker\AST\Declarations\Variable.cs" />
+    <Compile Include="TypeChecker\AST\ReceiveStmt.cs" />
+    <Compile Include="TypeChecker\AST\RemoveStmt.cs" />
     <Compile Include="TypeChecker\AST\States\EventDefer.cs" />
     <Compile Include="TypeChecker\AST\States\EventDoAction.cs" />
     <Compile Include="TypeChecker\AST\States\EventGotoState.cs" />
@@ -281,7 +283,6 @@
     <Compile Include="TypeChecker\AST\Expressions\UnnamedTupleExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\ValuesExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\VariableAccessExpr.cs" />
-    <Compile Include="TypeChecker\AST\FormalParameter.cs" />
     <Compile Include="TypeChecker\AST\FunctionSignature.cs" />
     <Compile Include="TypeChecker\AST\IConstructible.cs" />
     <Compile Include="TypeChecker\AST\IHasScope.cs" />
@@ -291,6 +292,7 @@
     <Compile Include="TypeChecker\AST\ITypedName.cs" />
     <Compile Include="TypeChecker\DeclarationStubVisitor.cs" />
     <Compile Include="TypeChecker\DeclarationVisitor.cs" />
+    <Compile Include="TypeChecker\FunctionBodyVisitor.cs" />
     <Compile Include="TypeChecker\InsertStmt.cs" />
     <Compile Include="TypeChecker\Types\NamedTupleEntry.cs" />
     <Compile Include="TypeChecker\AST\IPAST.cs" />

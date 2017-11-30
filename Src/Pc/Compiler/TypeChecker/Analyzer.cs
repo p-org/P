@@ -1,8 +1,6 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Windows.Forms;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
@@ -25,7 +23,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 Validator.ValidateMachine(handler, machine);
             }
-            
+
             // Step 3: Fill function bodies
             foreach (var machineFunction in AllFunctions(globalScope))
             {

@@ -101,19 +101,27 @@ namespace Microsoft.Pc.TypeChecker
             var exprVisitor = new ExprVisitor(table, handler);
             IPExpr variable = exprVisitor.Visit(context.lvalue());
             IPExpr value = exprVisitor.Visit(context.rvalue());
+            if (!variable.Type.IsAssignableFrom(value.Type))
+            {
+                throw handler.TypeMismatch(context.rvalue(), value.Type, variable.Type);
+            }
             if (!(value is ILinearRef linearRef))
             {
                 return new AssignStmt(variable, value);
             }
-            if (!variable.Type.IsAssignableFrom(linearRef.Variable.Type))
-            {
-                throw handler.TypeMismatch(context.rvalue(), linearRef.Variable.Type, variable.Type);
-            }
             switch (linearRef.LinearType)
             {
                 case LinearType.Move:
+                    if (!variable.Type.IsAssignableFrom(linearRef.Variable.Type))
+                    {
+                        throw handler.TypeMismatch(context.rvalue(), linearRef.Variable.Type, variable.Type);
+                    }
                     return new MoveAssignStmt(variable, linearRef.Variable);
                 case LinearType.Swap:
+                    if (!variable.Type.IsSameTypeAs(linearRef.Variable.Type))
+                    {
+                        throw handler.TypeMismatch(context.rvalue(), linearRef.Variable.Type, variable.Type);
+                    }
                     return new SwapAssignStmt(variable, linearRef.Variable);
                 default:
                     throw new ArgumentOutOfRangeException();

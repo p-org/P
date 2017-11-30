@@ -100,6 +100,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         {
             methods.Add(method);
             method.Owner = this;
+            method.Role |= FunctionRole.Method;
         }
 
         public void AddFields(IEnumerable<Variable> variables) { fields.AddRange(variables); }

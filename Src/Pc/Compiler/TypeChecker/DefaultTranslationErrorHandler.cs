@@ -150,6 +150,23 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(machine.SourceLocation, $"Machine {machine.Name} has no start state");
         }
 
+        public Exception ChangedStateMidTransition(ParserRuleContext location, Function method)
+        {
+            return IssueError(location,
+                $"Method {MethodName(method)} is used as a transition function, but might change state here.");
+        }
+
+        public Exception NonDeterministicFunctionInSpecMachine(Function machineFunction)
+        {
+            return IssueError(machineFunction.SourceLocation,
+                $"Method {MethodName(machineFunction)} is non-deterministic, but used in spec machine.");
+        }
+
+        private string MethodName(Function method)
+        {
+            return method.Name.Length > 0 ? method.Name : $"at {GetLocation(method.SourceLocation)}";
+        }
+
         public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
         {
             return new TranslationException($"[{GetLocation(ctx, location)}] {message}");

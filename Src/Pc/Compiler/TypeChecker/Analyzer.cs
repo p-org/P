@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Windows.Forms;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
@@ -31,11 +32,78 @@ namespace Microsoft.Pc.TypeChecker
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
             }
 
+            // Step 4: Propagate purity/dataflow properties
+            ApplyPropagations(AllFunctions(globalScope),
+                CreatePropagation(fn => fn.CanCommunicate, (fn, value) => fn.CanCommunicate = value, true),
+                CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value, true));
+
+            // Step 5: Verify purity/dataflow invariants
+            foreach (var machineFunction in AllFunctions(globalScope))
+            {
+                if (machineFunction.Owner?.IsSpec == true && machineFunction.IsNondeterministic == true)
+                {
+                    throw handler.NonDeterministicFunctionInSpecMachine(machineFunction);
+                }
+                if (machineFunction.CanChangeState == true &&
+                    (machineFunction.Role.HasFlag(FunctionRole.TransitionFunction) ||
+                     machineFunction.Role.HasFlag(FunctionRole.EntryHandler) ||
+                     machineFunction.Role.HasFlag(FunctionRole.ExitHandler)))
+                {
+                    throw handler.ChangedStateMidTransition(machineFunction.SourceLocation, machineFunction);
+                }
+            }
+
             // NOW: AST Complete, pass to StringTemplate
             return new PProgramModel
             {
                 GlobalScope = globalScope
             };
+        }
+
+        private class Propagation<T>
+        {
+            public Stack<Function> PropertyStack { get; } = new Stack<Function>();
+            public Func<Function, T> PropertyGetter { get; set; }
+            public Action<Function,T> PropertySetter { get; set; }
+            public T ActiveValue { get; set; }
+        }
+
+        private static Propagation<T> CreatePropagation<T>(Func<Function, T> getter, Action<Function, T> setter, T value)
+        {
+            return new Propagation<T>()
+            {
+                PropertyGetter = getter,
+                PropertySetter = setter,
+                ActiveValue = value
+            };
+        }
+
+        private static void ApplyPropagations<T>(IEnumerable<Function> functions, params Propagation<T>[] propagations)
+        {
+            foreach (Function function in functions)
+            {
+                foreach (Propagation<T> propagation in propagations)
+                {
+                    if (propagation.PropertyGetter(function).Equals(propagation.ActiveValue))
+                    {
+                        propagation.PropertyStack.Push(function);
+                    }
+                }
+            }
+            foreach (Propagation<T> propagation in propagations)
+            {
+                while (propagation.PropertyStack.Any())
+                {
+                    foreach (Function caller in propagation.PropertyStack.Pop().Callers)
+                    {
+                        if (!propagation.PropertyGetter(caller).Equals(propagation.ActiveValue))
+                        {
+                            propagation.PropertySetter(caller, propagation.ActiveValue);
+                            propagation.PropertyStack.Push(caller);
+                        }
+                    }
+                }
+            }
         }
 
         private static Scope BuildGlobalScope(ITranslationErrorHandler handler, PParser.ProgramContext[] programUnits)

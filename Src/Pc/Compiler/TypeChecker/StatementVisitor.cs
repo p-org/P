@@ -34,7 +34,15 @@ namespace Microsoft.Pc.TypeChecker
             return new CompoundStmt(statements.ToList());
         }
 
-        public override IPStmt VisitPopStmt(PParser.PopStmtContext context) { return new PopStmt(); }
+        public override IPStmt VisitPopStmt(PParser.PopStmtContext context)
+        {
+            method.CanChangeState = true;
+            if (method.Role.HasFlag(FunctionRole.TransitionFunction))
+            {
+                throw handler.ChangedStateMidTransition(context, method);
+            }
+            return new PopStmt();
+        }
 
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
         {
@@ -221,30 +229,28 @@ namespace Microsoft.Pc.TypeChecker
         {
             var exprVisitor = new ExprVisitor(table, handler);
             string machineName = context.iden().GetText();
-            if (table.Lookup(machineName, out Machine targetMachine))
+            if (!table.Lookup(machineName, out Machine targetMachine))
             {
-                bool hasArguments = targetMachine.PayloadType != PrimitiveType.Null;
-                var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                           Enumerable.Empty<IPExpr>();
-                if (hasArguments)
-                {
-                    var argsList = args.ToList();
-                    if (argsList.Count != 1)
-                    {
-                        throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
-                                                             argsList.Count,
-                                                             1);
-                    }
-                    return new CtorStmt(targetMachine, argsList);
-                }
-                if (args.Count() != 0)
-                {
-                    handler.IssueWarning((ParserRuleContext) context.rvalueList() ?? context,
-                                         "ignoring extra parameters passed to machine constructor");
-                }
-                return new CtorStmt(targetMachine, new List<IPExpr>());
+                throw handler.MissingDeclaration(context.iden(), "machine", machineName);
             }
-            throw handler.MissingDeclaration(context.iden(), "machine", machineName);
+
+            bool hasArguments = targetMachine.PayloadType != PrimitiveType.Null;
+            List<IPExpr> args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
+                                 Enumerable.Empty<IPExpr>()).ToList();
+            if (hasArguments)
+            {
+                if (args.Count != 1)
+                {
+                    throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context, args.Count, 1);
+                }
+            }
+            else if (args.Count != 0)
+            {
+                handler.IssueWarning((ParserRuleContext) context.rvalueList() ?? context,
+                    "ignoring extra parameters passed to machine constructor");
+            }
+            method.AddCallee(targetMachine.StartState.Entry);
+            return new CtorStmt(targetMachine, args);
         }
 
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)
@@ -253,26 +259,30 @@ namespace Microsoft.Pc.TypeChecker
             string funName = context.fun.GetText();
             var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ?? Enumerable.Empty<IPExpr>();
             var argsList = args.ToList();
-            if (table.Lookup(funName, out Function fun))
+            if (!table.Lookup(funName, out Function fun))
             {
-                if (fun.Signature.Parameters.Count != argsList.Count)
-                {
-                    throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
-                                                         argsList.Count,
-                                                         fun.Signature.Parameters.Count);
-                }
-                foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
-                {
-                    ITypedName param = pair.Item1;
-                    IPExpr arg = pair.Item2;
-                    if (!param.Type.IsAssignableFrom(arg.Type))
-                    {
-                        throw handler.TypeMismatch(context, arg.Type, param.Type);
-                    }
-                }
-                return new FunCallStmt(fun, argsList);
+                throw handler.MissingDeclaration(context.fun, "function or function prototype", funName);
             }
-            throw handler.MissingDeclaration(context.fun, "function or function prototype", funName);
+
+            if (fun.Signature.Parameters.Count != argsList.Count)
+            {
+                throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
+                    argsList.Count,
+                    fun.Signature.Parameters.Count);
+            }
+
+            foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
+            {
+                ITypedName param = pair.Item1;
+                IPExpr arg = pair.Item2;
+                if (!param.Type.IsAssignableFrom(arg.Type))
+                {
+                    throw handler.TypeMismatch(context, arg.Type, param.Type);
+                }
+            }
+
+            method.AddCallee(fun);
+            return new FunCallStmt(fun, argsList);
         }
 
         public override IPStmt VisitRaiseStmt(PParser.RaiseStmtContext context)
@@ -289,6 +299,8 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context.expr(), pExpr.Type, PrimitiveType.Event);
             }
+
+            method.CanCommunicate = true;
 
             var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
                         Enumerable.Empty<IPExpr>()).ToList();

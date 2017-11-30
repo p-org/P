@@ -506,6 +506,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
                 }
+                fun.Role |= FunctionRole.EntryHandler;
             }
             return Tuple.Create("ENTRY", fun);
         }
@@ -524,6 +525,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
                 }
+                fun.Role |= FunctionRole.ExitHandler;
             }
             return Tuple.Create("EXIT", fun);
         }
@@ -595,6 +597,8 @@ namespace Microsoft.Pc.TypeChecker
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
                 }
             }
+            // TODO: is this correct?
+            fun.Role |= FunctionRole.EventHandler;
 
             // ON eventList
             var actions = new List<IStateAction>();
@@ -651,11 +655,13 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
                 }
+                transitionFunction.Role |= FunctionRole.TransitionFunction;
             }
             else if (context.anonEventHandler() != null)
             {
                 // WITH anonEventHandler
                 transitionFunction = CreateAnonFunction(context.anonEventHandler());
+                transitionFunction.Role |= FunctionRole.TransitionFunction;
             }
             else
             {
@@ -731,6 +737,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // SEMI
             // no function body
+            fun.Role |= FunctionRole.Foreign;
             return fun;
         }
 

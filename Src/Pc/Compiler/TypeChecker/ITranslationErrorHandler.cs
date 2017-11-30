@@ -42,5 +42,7 @@ namespace Microsoft.Pc.TypeChecker
         Exception EmittedNullEvent(ParserRuleContext location);
         Exception InternalError(ParserRuleContext location, string message);
         Exception MissingStartState(Machine machine);
+        Exception ChangedStateMidTransition(ParserRuleContext location, Function method);
+        Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
     }
 }

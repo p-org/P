@@ -44,7 +44,6 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 if (machineFunction.CanChangeState == true &&
                     (machineFunction.Role.HasFlag(FunctionRole.TransitionFunction) ||
-                     machineFunction.Role.HasFlag(FunctionRole.EntryHandler) ||
                      machineFunction.Role.HasFlag(FunctionRole.ExitHandler)))
                 {
                     throw handler.ChangedStateMidTransition(machineFunction.SourceLocation, machineFunction);

@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -12,12 +11,14 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class ExprVisitor : PParserBaseVisitor<IPExpr>
     {
+        private readonly Function method;
         private readonly ITranslationErrorHandler handler;
         private readonly Scope table;
 
-        public ExprVisitor(Scope table, ITranslationErrorHandler handler)
+        public ExprVisitor(Function method, ITranslationErrorHandler handler)
         {
-            this.table = table;
+            this.table = method.Scope;
+            this.method = method;
             this.handler = handler;
         }
 
@@ -199,6 +200,7 @@ namespace Microsoft.Pc.TypeChecker
             // Check the arguments
             // TODO: linearly typed arguments
             var arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
+            ISet<Variable> linearVariables = new HashSet<Variable>();
             for (var i = 0; i < arguments.Length; i++)
             {
                 IPExpr argument = arguments[i];
@@ -206,6 +208,18 @@ namespace Microsoft.Pc.TypeChecker
                 if (!paramType.IsAssignableFrom(argument.Type))
                 {
                     throw handler.TypeMismatch(context.rvalueList().rvalue(i), argument.Type, paramType);
+                }
+                if (argument is ILinearRef linearRef)
+                {
+                    if (linearRef.LinearType == LinearType.Swap && !linearRef.Type.IsSameTypeAs(paramType))
+                    {
+                        throw handler.TypeMismatch(context, linearRef.Type, paramType);
+                    }
+                    if (linearVariables.Contains(linearRef.Variable))
+                    {
+                        throw handler.RelinquishedWithoutOwnership(context.rvalueList().rvalue(i), linearRef);
+                    }
+                    linearVariables.Add(linearRef.Variable);
                 }
             }
 
@@ -410,10 +424,12 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.NONDET() != null)
             {
+                method.IsNondeterministic = true;
                 return new NondetExpr();
             }
             if (context.FAIRNONDET() != null)
             {
+                method.IsNondeterministic = true;
                 return new FairNondetExpr();
             }
             if (context.HALT() != null)
@@ -424,18 +440,11 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.THIS() != null)
             {
-                var implParent = context.GetParent<PParser.ImplMachineDeclContext>();
-                var specParent = context.GetParent<PParser.SpecMachineDeclContext>();
-                if (!(implParent != null || specParent != null))
+                if (method.Owner == null)
                 {
                     throw handler.MisplacedThis(context);
                 }
-                // TODO: this is somewhat inelegant
-                string machineName = implParent?.name.GetText() ?? specParent?.name.GetText();
-                Debug.Assert(machineName != null);
-                bool success = table.Lookup(machineName, out Machine machine);
-                Debug.Assert(success);
-                return new ThisRefExpr(machine);
+                return new ThisRefExpr(method.Owner);
             }
 
             throw new ArgumentException("unknown primitive", nameof(context));

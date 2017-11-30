@@ -14,8 +14,6 @@ namespace Microsoft.Pc.Parser
 
     using Domains;
     using Microsoft.Pc;
-    using Microsoft.Formula.API.Generators;
-    using Microsoft.Formula.API.Nodes;
 
 
     public enum PProgramTopDecl { Event, EventSet, Interface, Machine, TypeDef, Enum };

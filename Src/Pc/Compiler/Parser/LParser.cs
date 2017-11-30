@@ -9,8 +9,6 @@
     using Domains;
     using Microsoft.Formula.API;
     using Microsoft.Pc;
-    using Microsoft.Formula.API.Generators;
-    using Microsoft.Formula.API.Nodes;
 
     public enum LProgramTopDecl { Module, Test };
     public class LProgramTopDeclNames

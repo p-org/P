@@ -19,6 +19,7 @@ namespace Microsoft.Pc.TypeChecker
         private readonly Machine machine;
         private readonly Scope table;
         private readonly Function method;
+        private readonly ExprVisitor exprVisitor;
 
         public StatementVisitor(ITranslationErrorHandler handler, Machine machine, Function method)
         {
@@ -26,6 +27,7 @@ namespace Microsoft.Pc.TypeChecker
             this.machine = machine;
             this.method = method;
             this.table = method.Scope;
+            this.exprVisitor = new ExprVisitor(method, handler);
         }
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
@@ -46,7 +48,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr assertion = exprVisitor.Visit(context.expr());
             if (assertion.Type != PrimitiveType.Bool)
             {
@@ -58,7 +59,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             string message = context.StringLiteral().GetText();
             int numNecessaryArgs = (from Match match in Regex.Matches(message, @"(?:{{|}}|{(\d+)}|[^{}]+|{|})")
                                     where match.Groups[1].Success
@@ -70,8 +70,7 @@ namespace Microsoft.Pc.TypeChecker
             var args = argsExprs.ToList();
             if (args.Count < numNecessaryArgs)
             {
-                throw handler.IncorrectArgumentCount(
-                                                     (ParserRuleContext) context.rvalueList() ?? context,
+                throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
                                                      args.Count,
                                                      numNecessaryArgs);
             }
@@ -86,7 +85,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitReturnStmt(PParser.ReturnStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr returnValue = context.expr() == null ? null : exprVisitor.Visit(context.expr());
             PLanguageType returnType = returnValue?.Type ?? PrimitiveType.Null;
             if (!method.Signature.ReturnType.IsAssignableFrom(returnType))
@@ -98,7 +96,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitAssignStmt(PParser.AssignStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr variable = exprVisitor.Visit(context.lvalue());
             IPExpr value = exprVisitor.Visit(context.rvalue());
             if (!variable.Type.IsAssignableFrom(value.Type))
@@ -130,7 +127,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitInsertStmt(PParser.InsertStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr variable = exprVisitor.Visit(context.lvalue());
             IPExpr value = exprVisitor.Visit(context.rvalue());
 
@@ -181,7 +177,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitRemoveStmt(PParser.RemoveStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr variable = exprVisitor.Visit(context.lvalue());
             IPExpr value = exprVisitor.Visit(context.expr());
 
@@ -210,7 +205,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr condition = exprVisitor.Visit(context.expr());
             if (condition.Type != PrimitiveType.Bool)
             {
@@ -222,7 +216,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr condition = exprVisitor.Visit(context.expr());
             if (condition.Type != PrimitiveType.Bool)
             {
@@ -235,7 +228,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitCtorStmt(PParser.CtorStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             string machineName = context.iden().GetText();
             if (!table.Lookup(machineName, out Machine targetMachine))
             {
@@ -263,7 +255,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             string funName = context.fun.GetText();
             var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ?? Enumerable.Empty<IPExpr>();
             var argsList = args.ToList();
@@ -279,6 +270,7 @@ namespace Microsoft.Pc.TypeChecker
                     fun.Signature.Parameters.Count);
             }
 
+            ISet<Variable> linearVariables = new HashSet<Variable>();
             foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
             {
                 ITypedName param = pair.Item1;
@@ -286,6 +278,18 @@ namespace Microsoft.Pc.TypeChecker
                 if (!param.Type.IsAssignableFrom(arg.Type))
                 {
                     throw handler.TypeMismatch(context, arg.Type, param.Type);
+                }
+                if (arg is ILinearRef linearRef)
+                {
+                    if (linearRef.LinearType == LinearType.Swap && !linearRef.Type.IsSameTypeAs(param.Type))
+                    {
+                        throw handler.TypeMismatch(context, linearRef.Type, param.Type);
+                    }
+                    if (linearVariables.Contains(linearRef.Variable))
+                    {
+                        throw handler.RelinquishedWithoutOwnership(context, linearRef);
+                    }
+                    linearVariables.Add(linearRef.Variable);
                 }
             }
 
@@ -295,8 +299,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitRaiseStmt(PParser.RaiseStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
-
             IPExpr pExpr = exprVisitor.Visit(context.expr());
             if (IsDefinitelyNullEvent(pExpr))
             {
@@ -309,6 +311,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             method.CanCommunicate = true;
+            method.CanChangeState = true;
 
             var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
                         Enumerable.Empty<IPExpr>()).ToList();
@@ -319,7 +322,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitSendStmt(PParser.SendStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
             IPExpr machineExpr = exprVisitor.Visit(context.machine);
             if (machineExpr.Type != PrimitiveType.Machine)
             {
@@ -349,8 +351,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitAnnounceStmt(PParser.AnnounceStmtContext context)
         {
-            var exprVisitor = new ExprVisitor(table, handler);
-
             IPExpr evtExpr = exprVisitor.Visit(context.expr());
             if (IsDefinitelyNullEvent(evtExpr))
             {
@@ -390,7 +390,6 @@ namespace Microsoft.Pc.TypeChecker
                 state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
             if (context.rvalueList()?.rvalue() is PParser.RvalueContext[] rvalues)
             {
-                var exprVisitor = new ExprVisitor(table, handler);
                 if (rvalues.Length == 1)
                 {
                     payload = exprVisitor.Visit(rvalues[0]);

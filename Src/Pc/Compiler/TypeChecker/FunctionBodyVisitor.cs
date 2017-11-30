@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Linq;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST.Declarations;

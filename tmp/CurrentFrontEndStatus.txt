@@ -1,0 +1,92 @@
+[RegressionTests/Feature2Stmts/StaticError/NondetFun] Expected error, but none were found!
+[RegressionTests/Combined/StaticError/ControlImpureInDoDecl] Expected error, but none were found!
+[RegressionTests/Combined/StaticError/ControlImpureInExpr] Expected error, but none were found!
+[RegressionTests/Feature1SMLevelDecls/StaticError/DataPurity] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_1] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_10] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_11] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_12] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_13] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_2] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_3] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_4] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_5] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_7] Expected error, but none were found!
+[RegressionTests/Feature3Exprs/StaticError/NonDetFunctionInExpr_9] Expected error, but none were found!
+
+    I haven't implemented this because I don't understand the rationale. Why are impure functions not allowed
+    in most contexts? all of these programs can be rewritten in a form that is "obviously" semantically
+    identical, but will be accepted by the old compiler.
+
+    e.g. i = i + Action4() + Action5() - Action6();
+    becomes: tmp_1 = Action4();
+             i = i + tmp1;
+             tmp_2 = Action5();
+             i = i + tmp_2;
+             tmp_3 = Action6();
+             i = i - tmp_3;
+
+    e.g. while(impure()) {
+             // ...
+         }
+    becomes: tmp_cond = impure();
+             while(tmp_cond) {
+                 // ...
+                 tmp_cond = impure();
+             }
+
+    Checking this in-depth is most likely the halting problem. Is there some reason for this restriction?
+
+[RegressionTests/Feature2Stmts/Correct/lock] Expected correct, but error was found: [lock.p:46,10] got type: seq[int], expected: any
+[RegressionTests/Feature2Stmts/DynamicError/LinearBugRepro2] Expected correct, but error was found: [LinearBugRepro2.p:10,17] got type: (x:int), expected: (x:any)
+[RegressionTests/Feature2Stmts/DynamicError/LinearBugRepro3] Expected correct, but error was found: [LinearBugRepro3.p:10,17] got type: int, expected: any
+
+    These tests are broken.
+
+    In lock, the following fragment swaps seq[int] and any.
+
+    var data_v: seq[int];
+    // ...
+    case ACQUIRE_RESP: (v: any) {
+        v = data_v swap;
+        Process(data_v swap);
+        v = data_v swap;
+        send lock, RELEASE, v move;
+    }
+
+    In LinearBugRepro[23], int and any can't be swapped for the same reason as in LinearBugRepro1. We catch this statically, rather than dynamically.
+
+[RegressionTests/Feature2Stmts/StaticError/linear] Expected error, but none were found!
+
+    I haven't finished implementing linear types. Need to track moves. Also how does this work:
+
+    x = 3;
+    if ($) {
+        f(x move);
+        // x is not available
+    } else {
+        f(4);
+        // x is available
+    }
+    // Is x available?
+
+[RegressionTests/Feature2Stmts/StaticError/linear2] Expected error, but none were found!
+
+    Is this test correct? It's complaining about impure functions being called in ifs. I guess ownership transfer is impure?
+
+[RegressionTests/Feature2Stmts/StaticError/linear4] Expected error, but none were found!
+
+    I haven't finished implementing linear types. Need to track which function parameters are still owned by the function after calls.
+
+[RegressionTests/Feature2Stmts/StaticError/TransactionType] interface types not implemented.
+
+    Have we settled on semantics for interface types / nominal typing?
+
+[RegressionTests/Integration/Correct/RadioManager] Expected correct, but error was found: [RadioManager.p] parse error: line 14:59 no viable alternative at input 'fun_anon__goto_function(_anon__goto_function_payload:null'
+
+    I'm not allowing null-typed variables. Just leave them out.
+
+[RegressionTests/Zinger/Correct/ZingSealingRR] function annotations not implemented.
+[RegressionTests/Zinger/Correct/ZingSealingRTC] function annotations not implemented.
+
+    We're getting rid of Zing, so I'm not bothering with these.

@@ -76,6 +76,10 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 foreach (State state in machine.AllStates())
                 {
+                    if (state.Entry != null)
+                    {
+                        yield return state.Entry;
+                    }
                     foreach (IStateAction stateAction in state.AllEventHandlers.Select(kv => kv.Value))
                     {
                         switch (stateAction)
@@ -93,6 +97,10 @@ namespace Microsoft.Pc.TypeChecker
                                 }
                                 break;
                         }
+                    }
+                    if (state.Exit != null)
+                    {
+                        yield return state.Exit;
                     }
                 }
             }

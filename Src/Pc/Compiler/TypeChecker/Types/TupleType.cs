@@ -5,7 +5,14 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class TupleType : PLanguageType
     {
-        public TupleType(IReadOnlyList<PLanguageType> types) : base(TypeKind.Tuple) { Types = types; }
+        public TupleType(params PLanguageType[] types) : this(new List<PLanguageType>(types))
+        {
+        }
+
+        public TupleType(IReadOnlyList<PLanguageType> types) : base(TypeKind.Tuple)
+        {
+            Types = types;
+        }
 
         public IReadOnlyList<PLanguageType> Types { get; }
 
@@ -21,7 +28,7 @@ namespace Microsoft.Pc.TypeChecker.Types
             return otherType.Canonicalize() is TupleType other &&
                    Types.Count == other.Types.Count &&
                    Types.Zip(other.Types, (myT, otherT) => myT.IsAssignableFrom(otherT))
-                        .All(x => x);
+                       .All(x => x);
         }
 
         public override PLanguageType Canonicalize()

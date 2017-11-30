@@ -233,8 +233,9 @@
     <Compile Include="TypeChecker\AST\Declarations\Machine.cs" />
     <Compile Include="TypeChecker\AST\Declarations\PEvent.cs" />
     <Compile Include="TypeChecker\AST\Declarations\Variable.cs" />
-    <Compile Include="TypeChecker\AST\ReceiveStmt.cs" />
-    <Compile Include="TypeChecker\AST\RemoveStmt.cs" />
+    <Compile Include="TypeChecker\AST\Expressions\CoerceExpr.cs" />
+    <Compile Include="TypeChecker\AST\Statements\ReceiveStmt.cs" />
+    <Compile Include="TypeChecker\AST\Statements\RemoveStmt.cs" />
     <Compile Include="TypeChecker\AST\States\EventDefer.cs" />
     <Compile Include="TypeChecker\AST\States\EventDoAction.cs" />
     <Compile Include="TypeChecker\AST\States\EventGotoState.cs" />

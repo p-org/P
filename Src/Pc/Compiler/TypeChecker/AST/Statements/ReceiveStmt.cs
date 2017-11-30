@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.Statements;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class ReceiveStmt : IPStmt
     {

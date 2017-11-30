@@ -1,7 +1,6 @@
 using Microsoft.Pc.TypeChecker.AST.Expressions;
-using Microsoft.Pc.TypeChecker.AST.Statements;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class RemoveStmt : IPStmt
     {

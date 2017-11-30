@@ -133,6 +133,15 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
+        private static bool ArgListMatchesTupleType(PLanguageType expected, IReadOnlyList<IPExpr> arguments)
+        {
+            if (arguments.Count == 1 && expected.IsAssignableFrom(arguments[0].Type))
+            {
+                return true;
+            }
+            return expected.IsAssignableFrom(new TupleType(arguments.Select(arg => arg.Type).ToArray()));
+        }
+
         public override IPExpr VisitCtorExpr(PParser.CtorExprContext context)
         {
             // TODO: roll arguments into tuple automatically if that would match constructor
@@ -142,27 +151,34 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(context.machineName, "machine", machineName);
             }
 
-            var arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
-            if (PrimitiveType.Null.IsAssignableFrom(machine.PayloadType) && arguments.Length != 0)
-            {
-                throw handler.IncorrectArgumentCount(
-                                                     (ParserRuleContext) context.rvalueList() ?? context,
-                                                     arguments.Length,
-                                                     0);
-            }
+            IPExpr[] arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
 
-            if (!PrimitiveType.Null.IsAssignableFrom(machine.PayloadType) && arguments.Length != 1)
+            PLanguageType expectedType = machine.PayloadType;
+            if (PrimitiveType.Null.IsAssignableFrom(expectedType))
             {
-                throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
-                                                     arguments.Length,
-                                                     1);
+                // expect no arguments
+                if (arguments.Length > 0)
+                {
+                    throw handler.IncorrectArgumentCount(context, arguments.Length, 0);
+                }
             }
-
-            if (!PrimitiveType.Null.IsAssignableFrom(machine.PayloadType))
+            else if (PLanguageType.TypeIsOfKind(expectedType, TypeKind.Tuple) /* || PLanguageType.TypeIsOfKind(machine.PayloadType, TypeKind.NamedTuple) */)
             {
-                // check the argument types
+                // Can either be agreeing tuple, or list that becomes an agreeing tuple
+                var tuple = (TupleType) expectedType.Canonicalize();
+                if (!ArgListMatchesTupleType(tuple, arguments))
+                {
+                    throw handler.TypeMismatch(context, new TupleType(arguments.Select(arg => arg.Type).ToArray()), expectedType);
+                }
+            }
+            else
+            {
+                if (arguments.Length != 1)
+                {
+                    throw handler.IncorrectArgumentCount(context, arguments.Length, 1);
+                }
+
                 PLanguageType actualType = arguments[0].Type;
-                PLanguageType expectedType = machine.PayloadType;
                 if (!expectedType.IsAssignableFrom(actualType))
                 {
                     throw handler.TypeMismatch(context.rvalueList().rvalue(0), actualType, expectedType);
@@ -306,18 +322,53 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitCastExpr(PParser.CastExprContext context)
         {
             IPExpr subExpr = Visit(context.expr());
+            PLanguageType oldType = subExpr.Type;
             PLanguageType newType = TypeResolver.ResolveType(context.type(), table, handler);
             if (context.cast.Text.Equals("as"))
             {
-                if (!newType.IsAssignableFrom(subExpr.Type) && !subExpr.Type.IsAssignableFrom(newType))
+                if (!newType.IsAssignableFrom(oldType) && !oldType.IsAssignableFrom(newType))
                 {
-                    throw handler.IncomparableTypes(context, subExpr.Type, newType);
+                    throw handler.IncomparableTypes(context, oldType, newType);
                 }
                 return new CastExpr(subExpr, newType);
             }
             if (context.cast.Text.Equals("to"))
             {
-                throw new NotImplementedException("to conversions");
+                if (oldType.IsSameTypeAs(PrimitiveType.Int))
+                {
+                    if (newType.IsSameTypeAs(PrimitiveType.Int))
+                    {
+                        return subExpr;
+                    }
+                    if (newType.IsSameTypeAs(PrimitiveType.Float) || PLanguageType.TypeIsOfKind(newType, TypeKind.Enum))
+                    {
+                        return new CoerceExpr(subExpr, newType);
+                    }
+                }
+                else if (oldType.IsSameTypeAs(PrimitiveType.Float))
+                {
+                    if (newType.IsSameTypeAs(PrimitiveType.Float))
+                    {
+                        return subExpr;
+                    }
+                    if (newType.IsSameTypeAs(PrimitiveType.Int))
+                    {
+                        return new CoerceExpr(subExpr, newType);
+                    }
+                }
+                else if (PLanguageType.TypeIsOfKind(oldType, TypeKind.Enum))
+                {
+                    // TODO: are enum-to-enum coersions allowed?
+                    if (newType.IsSameTypeAs(oldType))
+                    {
+                        return subExpr;
+                    }
+                    if (newType.IsSameTypeAs(PrimitiveType.Int))
+                    {
+                        return new CoerceExpr(subExpr, newType);
+                    }
+                }
+                throw handler.IncomparableTypes(context, oldType, newType);
             }
             throw new ArgumentException(nameof(context));
         }

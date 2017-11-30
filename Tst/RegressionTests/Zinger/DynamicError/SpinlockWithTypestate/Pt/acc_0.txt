@@ -10,22 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 10
-OUT: -----------------------------------------------------
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 20
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created spec Machine Spinlock
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Init
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseGuard
-OUT: <FunctionLog> Machine Main-1 executing Function ChooseEvent
-OUT: <AnnounceLog> Enqueued Event <ACQ, 0> to Spec Machine Spinlock
-OUT: 
 OUT: ERROR: SpinlockWithTypestate.p(30,5,30,11): error PC1001: Assert failed
 OUT: 
 EXIT: -1

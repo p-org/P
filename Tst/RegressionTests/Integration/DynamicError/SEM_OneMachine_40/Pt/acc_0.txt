@@ -10,14 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_S
-OUT: <FunctionLog> Machine Main-1 executing Function foo
-OUT: <FunctionLog> Machine Main-1 executing Function IncY
-OUT: 
 OUT: ERROR: Illegal index for Update
 OUT: 
 EXIT: -1

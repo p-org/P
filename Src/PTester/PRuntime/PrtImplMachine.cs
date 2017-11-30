@@ -165,13 +165,13 @@ namespace P.Runtime
             if (currentStatus == PrtMachineStatus.Halted)
             {
                 stateImpl.TraceLine(
-                    @"<EnqueueLog> {0}-{1} Machine has been halted and Event {2} is dropped",
+                    @"<EnqueueLog> Machine {0}-{1} has been halted and Event '{2}' is dropped",
                     this.Name, this.instanceNumber, ev.evt.name);
             }
             else
             {
                 stateImpl.TraceLine(
-                    @"<EnqueueLog> Enqueued Event <{0}, {1}> in {2}-{3} by {4}-{5}",
+                    @"<EnqueueLog> Enqueued Event <{0},{1}> in machine {2}-{3} by machine {4}-{5}",
                     ev.evt.name, arg.ToString(), this.Name, this.instanceNumber, source.Name, source.instanceNumber);
                 this.eventQueue.EnqueueEvent(e, arg, source.Name, source.CurrentState.name);
                 if (this.maxBufferSize != DefaultMaxBufferSize && this.eventQueue.Size() > this.maxBufferSize)
@@ -207,7 +207,7 @@ namespace P.Runtime
                 }
 
                 stateImpl.TraceLine(
-                    "<DequeueLog> Dequeued Event <{0}, {1}> at Machine {2}-{3}",
+                    "<DequeueLog> Dequeued Event <{0},{1}> at Machine {2}-{3}",
                     (currentTrigger as PrtEventValue).evt.name, currentPayload.ToString(), Name, instanceNumber);
                 stateImpl.DequeueCallback?.Invoke(this, (currentTrigger as PrtEventValue).evt.name, currentTriggerSenderInfo.Item1, currentTriggerSenderInfo.Item2);
 
@@ -333,7 +333,7 @@ namespace P.Runtime
             currAction = PrtFindActionHandler(eventValue);
             if (currAction == PrtFun.IgnoreFun)
             {
-                stateImpl.TraceLine("<ActionLog> Machine {0}-{1} ignoring Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
+                stateImpl.TraceLine("<ActionLog> Machine {0}-{1} ignoring Event '{2}' in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                 PrtResetTriggerAndPayload();
                 nextSMOperation = PrtNextStatemachineOperation.DequeueOperation;
                 hasMoreWork = true;
@@ -343,7 +343,7 @@ namespace P.Runtime
             {
                 if (invertedFunStack.TopOfStack == null)
                 {
-                    stateImpl.TraceLine("<ActionLog> Machine {0}-{1} executing action for Event {2} in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
+                    stateImpl.TraceLine("<ActionLog> Machine {0}-{1} executing action for Event '{2}' in State {3}", this.Name, this.instanceNumber, eventValue, CurrentState.name);
                     if (currAction.IsAnonFun)
                     {
                         PrtPushFunStackFrame(currAction, currAction.CreateLocals(currentPayload));

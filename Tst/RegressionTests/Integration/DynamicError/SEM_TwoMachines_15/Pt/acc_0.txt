@@ -10,14 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created spec Machine M
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
-OUT: <AnnounceLog> Enqueued Event <E2, False> to Spec Machine M
-OUT: 
 OUT: ERROR: MonitorInvocationEventExprPayload.p(20,30,20,36): error PC1001: Assert failed
 OUT: 
 EXIT: -1

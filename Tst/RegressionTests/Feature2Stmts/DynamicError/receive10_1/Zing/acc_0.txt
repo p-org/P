@@ -34,7 +34,7 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_5.bl,)
+Expression: assert(tmp_6.bl,)
 Comment: receive10_1.p(42,22,42,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 1:
@@ -52,7 +52,7 @@ Trace-Log 1:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_5.bl,)
+Expression: assert(tmp_6.bl,)
 Comment: receive10_1.p(42,22,42,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 2:
@@ -70,7 +70,7 @@ Trace-Log 2:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_5.bl,)
+Expression: assert(tmp_6.bl,)
 Comment: receive10_1.p(42,22,42,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 3:
@@ -84,14 +84,11 @@ Trace-Log 3:
 <StateLog> Machine B-0 entering State X
 <DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
 <EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
-<DequeueLog> Dequeued Event < ____E, 10 > at Machine ____B-0
-<StateLog> Machine B-0 exiting State X
-<StateLog> Unhandled event exception by machine B-0
 
 Error:
 P Assertion failed:
-Expression: assert(false)
-Comment: Unhandled event exception by machine B
+Expression: assert(tmp_4.bl,)
+Comment: receive10_1.p(35,6,35,12): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 4:
 <CreateLog> Created Machine Main-0
@@ -104,11 +101,8 @@ Trace-Log 4:
 <StateLog> Machine B-0 entering State X
 <DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
 <EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
-<DequeueLog> Dequeued Event < ____E, 10 > at Machine ____B-0
-<StateLog> Machine B-0 exiting State X
-<StateLog> Unhandled event exception by machine B-0
 
 Error:
 P Assertion failed:
-Expression: assert(false)
-Comment: Unhandled event exception by machine B
+Expression: assert(tmp_4.bl,)
+Comment: receive10_1.p(35,6,35,12): error PC1001: Assert failed

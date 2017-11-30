@@ -10,14 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
-OUT: <CreateLog> Created Machine Real2-1
-OUT: <EnqueueLog> Enqueued Event <E2, False> in Real2-1 by Main-1
-OUT: 
 OUT: ERROR: RaisedNullDetected.p(17,4,17,9): error PC1001: Raised event must be non-null
 OUT: 
 EXIT: -1

@@ -33,4 +33,12 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public void AddLocalVariable(Variable local) { localVariables.Add(local); }
     }
+
+    public enum FunctionRole
+    {
+        EventHandler,
+        StaticFunction,
+        ImplMachineMethod,
+        SpecMachineMethod
+    }
 }

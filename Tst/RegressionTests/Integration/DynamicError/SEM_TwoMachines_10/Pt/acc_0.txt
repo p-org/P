@@ -10,24 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Real1_Init
-OUT: <CreateLog> Created Machine Real2-1
-OUT: <RaiseLog> Machine Main-1 raised Event E1
-OUT: <ActionLog> Machine Main-1 executing action for Event E1 in State Main_Real1_Init
-OUT: <FunctionLog> Machine Main-1 executing Function Action1
-OUT: <NullTransLog> Null transition taken by Machine Main-1
-OUT: <StateLog> Machine Main-1 exiting State Main_Real1_Init
-OUT: <EnqueueLog> Enqueued Event <E2, True> in Real2-1 by Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Real1_S1
-OUT: <StateLog> Machine Real2-1 entering State Real2_Real2_Init
-OUT: <DequeueLog> Dequeued Event <E2, True> at Machine Real2-1
-OUT: <ActionLog> Machine Real2-1 executing action for Event E2 in State Real2_Real2_Init
-OUT: <FunctionLog> Machine Real2-1 executing Function Action2
-OUT: 
 OUT: ERROR: NonConstantEventExpr1.p(49,3,49,9): error PC1001: Assert failed
 OUT: 
 EXIT: -1

@@ -11,24 +11,30 @@ namespace UnitTests.CBackend
     internal class TestCaseLoader
     {
         //private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
-        //TODO(debug only):
-        //private static readonly List<string> TestDirs = new List<string> { "Temp-PtTests" };
-        //private static readonly List<string> TestDirs =
-        //    new List<string> { "C:\\VanillaPLanguage\\P\\Tst\\RegressionTests\\Feature2Stmts\\Correct" };
         private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Combined",
            "RegressionTests\\Feature1SMLevelDecls",  "RegressionTests\\Feature2Stmts", "RegressionTests\\Feature3Exprs",
            "RegressionTests\\Feature4DataTypes", "RegressionTests\\Integration", "RegressionTests\\Zinger"
             };
-        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Combined",
-        //   "RegressionTests\\Feature1SMLevelDecls" };
-        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Feature2Stmts" };
-        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Feature3Exprs", "RegressionTests\\Zinger" };
-        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Feature4DataTypes" };
-        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Integration\\DynamicError" };
-        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Integration\\Correct", 
-        //                                                                  "RegressionTests\\Integration\\StaticError" };
+        //To run Liveness tests, set Settings.PtWithPSharp to true:
+        //private static readonly List<string> TestDirs = new List<string> { "Liveness" };
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName)
         {
+            //Remove previous TestResultsDirectory:
+            try
+            {
+                if (Directory.Exists(RegressionTests.TestResultsDirectory))
+                {
+                    Directory.Delete(RegressionTests.TestResultsDirectory, true);
+                }
+            }
+            catch (Exception e)
+            {
+                RegressionTests.WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
+            }
+
+            //Remove old file with diffs:
+            File.Delete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
+
             return from testDir in TestDirs
                    let baseDirectory = new DirectoryInfo(Path.Combine(directoryName, testDir))
                    from testCaseDir in baseDirectory.EnumerateDirectories("*.*", SearchOption.AllDirectories)

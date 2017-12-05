@@ -469,7 +469,7 @@ namespace Microsoft.Pc.TypeChecker
                         {
                             if (state.Exit != null)
                             {
-                                throw Handler.DuplicateStateExitHandler(stateBodyItemContext, state.Entry, state);
+                                throw Handler.DuplicateStateExitHandler(stateBodyItemContext, state.Exit, state);
                             }
                             state.Exit = entryOrExit.Item2;
                         }
@@ -506,8 +506,8 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
                 }
-                fun.Role |= FunctionRole.EntryHandler;
             }
+            fun.Role |= FunctionRole.EntryHandler;
             return Tuple.Create("ENTRY", fun);
         }
 
@@ -525,8 +525,8 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
                 }
-                fun.Role |= FunctionRole.ExitHandler;
             }
+            fun.Role |= FunctionRole.ExitHandler;
             return Tuple.Create("EXIT", fun);
         }
 

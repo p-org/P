@@ -34,8 +34,8 @@ Trace-Log 0:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_6.bl,)
-Comment: receive10.p(36,22,36,28): error PC1001: Assert failed
+Expression: assert(tmp_5.bl,)
+Comment: receive10.p(39,22,39,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 1:
 <CreateLog> Created Machine Main-0
@@ -52,8 +52,8 @@ Trace-Log 1:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_6.bl,)
-Comment: receive10.p(36,22,36,28): error PC1001: Assert failed
+Expression: assert(tmp_5.bl,)
+Comment: receive10.p(39,22,39,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 2:
 <CreateLog> Created Machine Main-0
@@ -70,8 +70,8 @@ Trace-Log 2:
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_6.bl,)
-Comment: receive10.p(36,22,36,28): error PC1001: Assert failed
+Expression: assert(tmp_5.bl,)
+Comment: receive10.p(39,22,39,28): error PC1001: Assert failed
 Safety Error Trace
 Trace-Log 3:
 <CreateLog> Created Machine Main-0
@@ -84,11 +84,14 @@ Trace-Log 3:
 <StateLog> Machine B-0 entering State X
 <DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
 <EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
+<DequeueLog> Dequeued Event < ____E, 10 > at Machine ____B-0
+<StateLog> Machine B-0 exiting State X
+<StateLog> Unhandled event exception by machine B-0
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_4.bl,)
-Comment: receive10.p(31,33,31,39): error PC1001: Assert failed
+Expression: assert(false)
+Comment: Unhandled event exception by machine B
 Safety Error Trace
 Trace-Log 4:
 <CreateLog> Created Machine Main-0
@@ -101,8 +104,11 @@ Trace-Log 4:
 <StateLog> Machine B-0 entering State X
 <DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
 <EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
+<DequeueLog> Dequeued Event < ____E, 10 > at Machine ____B-0
+<StateLog> Machine B-0 exiting State X
+<StateLog> Unhandled event exception by machine B-0
 
 Error:
 P Assertion failed:
-Expression: assert(tmp_4.bl,)
-Comment: receive10.p(31,33,31,39): error PC1001: Assert failed
+Expression: assert(false)
+Comment: Unhandled event exception by machine B

@@ -12,12 +12,15 @@ using NUnit.Framework;
 namespace UnitTests.CBackend
 {
     [TestFixture]
+    //Parallel execution is not working:
     //[Parallelizable(ParallelScope.Children)]
+    [NonParallelizable]
     public class RegressionTests
     {
         private ThreadLocal<Compiler> PCompiler { get; } = new ThreadLocal<Compiler>(() => new Compiler(true));
-
-        private static string TestResultsDirectory { get; } = Path.Combine(
+        //If running PCompilerService:
+        private ThreadLocal<ICompiler> PCompilerService { get; }  = new ThreadLocal<ICompiler>(() => new CompilerServiceClient());
+        public static string TestResultsDirectory { get; } = Path.Combine(
             Constants.TestDirectory,
             $"TestResult_{Constants.Configuration}_{Constants.Platform}");
 
@@ -29,23 +32,26 @@ namespace UnitTests.CBackend
             var curTest = new Uri(testDir.FullName);
             Uri relativePath = testRoot.MakeRelativeUri(curTest);
             string destinationDir = Path.GetFullPath(Path.Combine(TestResultsDirectory, relativePath.OriginalString));
-            try
-            {
-                if (Directory.Exists(destinationDir))
-                {
-                    Directory.Delete(destinationDir, true);
-                }
-            }
-            catch (Exception e)
-            {
-                WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
-            }
+            //Why below is commented out:
+            //Some tests failed to copy without any exception
+            //Removing TestResult_Debug_x86 dir in FindTestCasesInDirectory instead
+            //try
+            //{
+            //    if (Directory.Exists(destinationDir))
+            //    {
+            //        Directory.Delete(destinationDir, true);
+            //    }
+            //}
+            //catch (Exception e)
+            //{
+            //    WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
+            //}
 
             FileHelper.DeepCopy(testDir, destinationDir);
             return new DirectoryInfo(destinationDir);
         }
 
-        private static void WriteError(string format, params object[] args)
+        public static void WriteError(string format, params object[] args)
         {
             ConsoleColor saved = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
@@ -85,6 +91,7 @@ namespace UnitTests.CBackend
 
             // Compile
             if (!PCompiler.Value.Compile(compilerOutput, compileArgs))
+            //if (!PCompilerService.Value.Compile(compilerOutput, compileArgs))
             {
                 tmpWriter.WriteLine("EXIT: -1");
                 return -1;
@@ -101,6 +108,7 @@ namespace UnitTests.CBackend
             }
 
             if (!PCompiler.Value.Link(compilerOutput, compileArgs))
+            //if(!PCompilerService.Value.Link(compilerOutput, compileArgs))
             {
                 tmpWriter.WriteLine("EXIT: -1");
                 return -1;
@@ -212,6 +220,10 @@ namespace UnitTests.CBackend
             //tmpWriter.Write(stdout);
             //tmpWriter.Write(stderr);
             tmpWriter.WriteLine($"EXIT (csc.exe): {exitCode}");
+            if (exitCode != 0)
+            {
+                throw new Exception("csc.exe failed");
+            }
 
             // Append includes
             foreach (string include in config.Includes)
@@ -267,36 +279,35 @@ namespace UnitTests.CBackend
                 arguments = new List<string>(config.Arguments) { outputDllPath };
             }
             int exitCode1 = ProcessHelper.RunWithOutput(ptExePath, activeDirectory, arguments, out stdout, out stderr);
-            tmpWriter.Write(stdout);
-            tmpWriter.Write(stderr);
-            tmpWriter.WriteLine($"EXIT: {exitCode1}");
-
-            // Append includes
-            foreach (string include in config.Includes)
+            
+            if (!(exitCode1 == 0))
             {
-                tmpWriter.WriteLine();
-                tmpWriter.WriteLine("=================================");
-                tmpWriter.WriteLine(include);
-                tmpWriter.WriteLine("=================================");
-
-                try
+                //Only copy into accceptor the lines with error reporting:
+                bool copy = false;
+                using (StringReader sr = new StringReader(stdout))
                 {
-                    using (var sr = new StreamReader(Path.Combine(activeDirectory, include)))
+                    string line;
+                    while ((line = sr.ReadLine()) != null)
                     {
-                        while (!sr.EndOfStream)
+                        if (line.Contains("ERROR"))
                         {
-                            tmpWriter.WriteLine(sr.ReadLine());
+                            copy = true;
+                        }
+                        if (copy)
+                        {
+                            tmpWriter.WriteLine(line);
                         }
                     }
                 }
-                catch (FileNotFoundException)
-                {
-                    if (!include.EndsWith("trace"))
-                    {
-                        throw;
-                    }
-                }
+                tmpWriter.Write(stderr);
+                tmpWriter.WriteLine($"EXIT: {exitCode1}");
             }
+            else
+            {
+                tmpWriter.Write(stdout);
+                tmpWriter.Write(stderr);
+                tmpWriter.WriteLine($"EXIT: {exitCode1}");
+            } 
         }
 
         private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
@@ -479,8 +490,6 @@ namespace UnitTests.CBackend
             // First step: clone test folder to new spot
             DirectoryInfo workDirectory = PrepareTestDir(origTestDir);
 
-            File.Delete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
-
             foreach (KeyValuePair<TestType, TestConfig> kv in testConfigs.OrderBy(kv => kv.Key))
             {
                 TestType testType = kv.Key;
@@ -536,6 +545,10 @@ namespace UnitTests.CBackend
                                     TestPt(config, tmpWriter, workDirectory, activeDirectory, origTestDir);
                                     CheckResult(activeDirectory, origTestDir, testType, sb, true);
                                 }
+                                else
+                                {
+                                    throw new Exception("TestPc failed");
+                                }
                             }
                             break;
                         case TestType.Zing:
@@ -549,6 +562,10 @@ namespace UnitTests.CBackend
                                     WriteHeader(tmpWriter);
                                     TestZing(config, tmpWriter, workDirectory, activeDirectory);
                                     CheckResult(activeDirectory, origTestDir, testType, sb, true);
+                                }
+                                else
+                                {
+                                    throw new Exception("TestPc failed");
                                 }
                             }
                             break;

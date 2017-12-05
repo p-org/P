@@ -10,16 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_S
-OUT: <RaiseLog> Machine Main-1 raised Event x
-OUT: <ActionLog> Machine Main-1 executing action for Event x in State Main_S
-OUT: <RaiseLog> Machine Main-1 raised Event a
-OUT: <StateLog> Machine Main-1 exiting State Main_S
-OUT: 
 OUT: ERROR: Main failed to handle event a
 OUT: 
 EXIT: -1

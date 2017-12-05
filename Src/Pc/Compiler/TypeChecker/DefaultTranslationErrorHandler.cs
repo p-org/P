@@ -6,6 +6,7 @@ using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
@@ -160,6 +161,11 @@ namespace Microsoft.Pc.TypeChecker
         {
             return IssueError(machineFunction.SourceLocation,
                 $"Method {MethodName(machineFunction)} is non-deterministic, but used in spec machine.");
+        }
+
+        public Exception RelinquishedWithoutOwnership(ParserRuleContext location, ILinearRef linearRef)
+        {
+            return IssueError(location, $"cannot give up ownership of variable {linearRef.Variable.Name} twice");
         }
 
         private string MethodName(Function method)

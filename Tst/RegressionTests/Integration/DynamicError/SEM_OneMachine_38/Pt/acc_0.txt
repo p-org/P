@@ -10,18 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Init
-OUT: <RaiseLog> Machine Main-1 raised Event E
-OUT: <StateLog> Machine Main-1 entering State Main_Call
-OUT: <RaiseLog> Machine Main-1 raised Event E
-OUT: <ActionLog> Machine Main-1 ignoring Event E in State Main_Call
-OUT: <NullActionLog> Null action taken by Machine Main-1
-OUT: <ActionLog> Machine Main-1 executing action for Event null in State Main_Call
-OUT: 
 OUT: ERROR: NullHandlerInheritedByPushTr.p(14,15,14,21): error PC1001: Assert failed
 OUT: 
 EXIT: -1

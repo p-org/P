@@ -1,0 +1,105 @@
+=================================
+         Console output          
+=================================
+OUT: Writing receive10_2.zing ...
+OUT: Compiling receive10_2.zing to receive10_2.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Failed
+OUT: ##################
+OUT: 15 distinct states explored
+OUT: 
+EXIT: 3
+
+=================================
+receive10.trace
+=================================
+Safety Error Trace
+Trace-Log 0:
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<CreateLog> Created Machine B-0
+<StateLog> Machine B-0 entering State Init
+<RaiseLog> Machine B-0 raised Event ____Unit
+<StateLog> Machine B-0 exiting State Init
+<StateLog> Machine B-0 entering State X
+<NullTransLog> Null transition taken by Machine ____B-0
+<RaiseLog> Machine B-0 raised Event ____F
+<StateLog> Machine B-0 exiting State X
+<StateLog> Machine B-0 entering State X
+<NullTransLog> Null transition taken by Machine ____B-0
+<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____Main-0
+<RaiseLog> Machine B-0 raised Event ____F
+<StateLog> Machine B-0 exiting State X
+<StateLog> Machine B-0 entering State X
+<DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
+<EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_4.bl,)
+Comment: receive10_2.p(33,8,33,14): error PC1001: Assert failed
+Safety Error Trace
+Trace-Log 1:
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<CreateLog> Created Machine B-0
+<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____Main-0
+<StateLog> Machine B-0 entering State Init
+<RaiseLog> Machine B-0 raised Event ____Unit
+<StateLog> Machine B-0 exiting State Init
+<StateLog> Machine B-0 entering State X
+<DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
+<EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_4.bl,)
+Comment: receive10_2.p(33,8,33,14): error PC1001: Assert failed
+Safety Error Trace
+Trace-Log 2:
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<CreateLog> Created Machine B-0
+<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____Main-0
+<StateLog> Machine B-0 entering State Init
+<RaiseLog> Machine B-0 raised Event ____Unit
+<StateLog> Machine B-0 exiting State Init
+<StateLog> Machine B-0 entering State X
+<DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
+<EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_4.bl,)
+Comment: receive10_2.p(33,8,33,14): error PC1001: Assert failed
+Safety Error Trace
+Trace-Log 3:
+<CreateLog> Created Machine Main-0
+<StateLog> Machine Main-0 entering State Init
+<CreateLog> Created Machine B-0
+<StateLog> Machine B-0 entering State Init
+<RaiseLog> Machine B-0 raised Event ____Unit
+<StateLog> Machine B-0 exiting State Init
+<StateLog> Machine B-0 entering State X
+<NullTransLog> Null transition taken by Machine ____B-0
+<RaiseLog> Machine B-0 raised Event ____F
+<StateLog> Machine B-0 exiting State X
+<StateLog> Machine B-0 entering State X
+<NullTransLog> Null transition taken by Machine ____B-0
+<EnqueueLog> Enqueued Event < ____F, null > in Machine ____B-0 by ____Main-0
+<RaiseLog> Machine B-0 raised Event ____F
+<StateLog> Machine B-0 exiting State X
+<StateLog> Machine B-0 entering State X
+<DequeueLog> Dequeued Event < ____F, null > at Machine ____B-0
+<EnqueueLog> Enqueued Event < ____E, 10 > in Machine ____B-0 by ____B-0
+
+Error:
+P Assertion failed:
+Expression: assert(tmp_4.bl,)
+Comment: receive10_2.p(33,8,33,14): error PC1001: Assert failed

@@ -1,12 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics.Contracts;
-using System.IO;
 using System.Linq;
 using System.Diagnostics;
 
 using Microsoft.Formula.API;
-using Microsoft.Formula.API.ASTQueries;
 using Microsoft.Formula.API.Nodes;
 
 namespace Microsoft.Pc

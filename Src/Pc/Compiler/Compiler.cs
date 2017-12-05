@@ -14,13 +14,11 @@
     using Microsoft.Formula.API.Nodes;
     using Microsoft.Formula.Compiler;
     using Microsoft.Pc.Parser;
-    using Microsoft.Pc.Domains;
     using System.Diagnostics;
     using Formula.Common.Terms;
 #if DEBUG_DGML
     using VisualStudio.GraphModel;
 #endif
-    using System.Windows.Forms;
 
 
     public class Compiler : ICompiler

@@ -4,6 +4,7 @@ using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
@@ -44,5 +45,6 @@ namespace Microsoft.Pc.TypeChecker
         Exception MissingStartState(Machine machine);
         Exception ChangedStateMidTransition(ParserRuleContext location, Function method);
         Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
+        Exception RelinquishedWithoutOwnership(ParserRuleContext location, ILinearRef linearRef);
     }
 }

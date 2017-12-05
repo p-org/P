@@ -10,30 +10,6 @@ EXIT: 0
          Console output          
 =================================
 EXIT (csc.exe): 0
-OUT: -----------------------------------------------------
-OUT: Total Schedules Explored: 0
-OUT: -----------------------------------------------------
-OUT: <CreateLog> Created Machine Main-1
-OUT: <StateLog> Machine Main-1 entering State Main_Real_Init
-OUT: <CreateLog> Created Machine Ghost-1
-OUT: <StateLog> Machine Ghost-1 entering State Ghost_Ghost_Init
-OUT: <EnqueueLog> Enqueued Event <E1, null> in Ghost-1 by Main-1
-OUT: <DequeueLog> Dequeued Event <E1, null> at Machine Ghost-1
-OUT: <StateLog> Machine Ghost-1 exiting State Ghost_Ghost_Init
-OUT: <StateLog> Machine Ghost-1 entering State Ghost_Ghost_S1
-OUT: <EnqueueLog> Enqueued Event <E2, null> in Main-1 by Ghost-1
-OUT: <DequeueLog> Dequeued Event <E2, null> at Machine Main-1
-OUT: <ActionLog> Machine Main-1 executing action for Event E2 in State Main_Real_Init
-OUT: <FunctionLog> Machine Main-1 executing Function Action1
-OUT: <EnqueueLog> Enqueued Event <E3, null> in Ghost-1 by Main-1
-OUT: <DequeueLog> Dequeued Event <E3, null> at Machine Ghost-1
-OUT: <StateLog> Machine Ghost-1 exiting State Ghost_Ghost_S1
-OUT: <StateLog> Machine Ghost-1 entering State Ghost_Ghost_S2
-OUT: <EnqueueLog> Enqueued Event <E4, null> in Main-1 by Ghost-1
-OUT: <DequeueLog> Dequeued Event <E4, null> at Machine Main-1
-OUT: <StateLog> Machine Main-1 exiting State Main_Real_Init
-OUT: <StateLog> Machine Main-1 entering State Main_Real_S2
-OUT: 
 OUT: ERROR: Actions_3.p(31,6,31,12): error PC1001: Assert failed
 OUT: 
 EXIT: -1

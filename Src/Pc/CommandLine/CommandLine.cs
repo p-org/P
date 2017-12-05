@@ -2,16 +2,28 @@
 {
     public class CommandLine
     {
-        private static int Main(string[] args)
+        private static ICompiler GetCompiler(CommandLineOptions options)
+        {
+            if (options.compilerOutput == CompilerOutput.PSharp)
+            {
+                return new AntlrCompiler();
+            }
+            if (options.compilerService)
+            {
+                return new CompilerServiceClient();
+            }
+            return new Compiler(options.shortFileNames);
+        }
+
+        public static int Main(string[] args)
         {
             if (CommandLineOptions.ParseArguments(args, out CommandLineOptions options))
             {
-                ICompiler compiler = options.compilerService
-                    ? (ICompiler) new CompilerServiceClient()
-                    : new Compiler(options.shortFileNames);
+                ICompiler compiler = GetCompiler(options);
+                var output = new StandardOutput();
                 bool result = options.isLinkerPhase
-                    ? compiler.Link(new StandardOutput(), options)
-                    : compiler.Compile(new StandardOutput(), options);
+                                  ? compiler.Link(output, options)
+                                  : compiler.Compile(output, options);
                 return result ? 0 : -1;
             }
 

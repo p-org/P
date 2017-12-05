@@ -219,6 +219,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="ANTLRCompiler.cs" />
     <Compile Include="Backend\CodeGen.cs" />
     <Compile Include="Backend\TargetLanguage.cs" />
     <Compile Include="Compiler.cs" />

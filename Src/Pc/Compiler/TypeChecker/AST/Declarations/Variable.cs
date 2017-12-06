@@ -6,24 +6,24 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class Variable : IPDecl, ITypedName
     {
-        public Variable(string name, PParser.VarDeclContext containingVarDecl, PParser.IdenContext sourceNode)
-        {
-            Name = name;
-            ContainingVarDecl = containingVarDecl;
-            SourceLocation = sourceNode;
-        }
-
-        public Variable(string name, PParser.FunParamContext sourceNode)
+        public Variable(string name, ParserRuleContext sourceNode, VariableRole role)
         {
             Name = name;
             SourceLocation = sourceNode;
+            Role = role;
         }
-
-        public PParser.VarDeclContext ContainingVarDecl { get; }
-        public bool IsParam => ContainingVarDecl == null;
+        
+        public VariableRole Role { get; }
 
         public string Name { get; set; }
         public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type { get; set; }
+    }
+
+    public enum VariableRole
+    {
+        Local,
+        Param,
+        Field
     }
 }

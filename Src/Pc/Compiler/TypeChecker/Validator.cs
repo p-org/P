@@ -67,7 +67,7 @@ namespace Microsoft.Pc.TypeChecker
             success &= machine.StartState != null;
             success &= allStates.Contains(machine.StartState);
             success &= allStates.All(st => !st.IsStart || st.IsStart && st == machine.StartState);
-            success &= machine.Fields.All(v => v.IsParam == false);
+            success &= machine.Fields.All(v => v.Role.Equals(VariableRole.Param));
             success &= nodesToDeclarations.Get(machine.SourceLocation) == machine;
             return success;
         }

@@ -136,7 +136,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             foreach (PParser.IdenContext varName in context.idenList()._names)
             {
-                Variable decl = CurrentScope.Put(varName.GetText(), context, varName);
+                Variable decl = CurrentScope.Put(varName.GetText(), varName, VariableRole.Field);
                 nodesToDeclarations.Put(varName, decl);
             }
             return null;
@@ -173,7 +173,7 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitFunParam(PParser.FunParamContext context)
         {
             string symbolName = context.name.GetText();
-            Variable decl = CurrentScope.Put(symbolName, context);
+            Variable decl = CurrentScope.Put(symbolName, context, VariableRole.Param);
             nodesToDeclarations.Put(context, decl);
             return null;
         }

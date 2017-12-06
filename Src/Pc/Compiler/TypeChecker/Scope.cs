@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -405,17 +406,9 @@ namespace Microsoft.Pc.TypeChecker
             return enumElem;
         }
 
-        public Variable Put(string name, PParser.VarDeclContext tree, PParser.IdenContext varName)
+        public Variable Put(string name, ParserRuleContext tree, VariableRole role)
         {
-            var variable = new Variable(name, tree, varName);
-            CheckConflicts(variable, Namespace(variables));
-            variables.Add(name, variable);
-            return variable;
-        }
-
-        public Variable Put(string name, PParser.FunParamContext tree)
-        {
-            var variable = new Variable(name, tree);
+            var variable = new Variable(name, tree, role);
             CheckConflicts(variable, Namespace(variables));
             variables.Add(name, variable);
             return variable;

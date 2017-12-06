@@ -771,7 +771,7 @@ namespace Microsoft.Pc.TypeChecker
             };
             if (context.funParam() is PParser.FunParamContext paramContext)
             {
-                Variable param = fun.Scope.Put(paramContext.name.GetText(), paramContext);
+                Variable param = fun.Scope.Put(paramContext.name.GetText(), paramContext, VariableRole.Param);
                 param.Type = ResolveType(paramContext.type());
                 nodesToDeclarations.Put(paramContext, param);
                 fun.Signature.Parameters.Add(param);

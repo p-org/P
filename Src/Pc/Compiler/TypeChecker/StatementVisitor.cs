@@ -419,7 +419,7 @@ namespace Microsoft.Pc.TypeChecker
                     new Function(caseContext.anonEventHandler()) {Scope = table.MakeChildScope(), Owner = method.Owner};
                 if (caseContext.anonEventHandler().funParam() is PParser.FunParamContext param)
                 {
-                    var paramVar = recvHandler.Scope.Put(param.name.GetText(), param);
+                    var paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
                     paramVar.Type = TypeResolver.ResolveType(param.type(), recvHandler.Scope, handler);
                     recvHandler.Signature.Parameters.Add(paramVar);
                 }

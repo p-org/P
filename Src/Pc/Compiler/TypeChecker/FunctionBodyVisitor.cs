@@ -68,7 +68,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             foreach (PParser.IdenContext varName in context.idenList()._names)
             {
-                Variable variable = method.Scope.Put(varName.GetText(), context, varName);
+                Variable variable = method.Scope.Put(varName.GetText(), varName, VariableRole.Local);
                 variable.Type = TypeResolver.ResolveType(context.type(), method.Scope, handler);
             }
             return null;

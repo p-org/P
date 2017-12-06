@@ -12,7 +12,7 @@ namespace UnitTests.PSharpBackend
     [Parallelizable(ParallelScope.Children)]
     public class PSharpTests
     {
-        public static IEnumerable<TestCaseData> TestCases =>
+        private static IEnumerable<TestCaseData> TestCases =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
 
         private static FileInfo SolutionPath(params string[] names)
@@ -23,14 +23,12 @@ namespace UnitTests.PSharpBackend
         private static bool RunTest(out string output, params FileInfo[] inputFiles)
         {
             var compiler = new AntlrCompiler();
-
             var compilerOutput = new StringWriter();
             bool success = compiler.Compile(new CompilerOutputStream(compilerOutput), new CommandLineOptions
             {
                 compilerOutput = CompilerOutput.PSharp,
                 inputFileNames = inputFiles.Select(file => file.FullName).ToList()
             });
-
             output = compilerOutput.ToString().Trim();
             return success;
         }
@@ -43,21 +41,24 @@ namespace UnitTests.PSharpBackend
                 .MakeRelativeUri(new Uri(testDir.FullName))
                 .ToString();
             bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
-            bool result = RunTest(out string output, testDir.GetFiles("*.p"));
+            FileInfo[] inputFiles = testDir.GetFiles("*.p");
+            bool result = RunTest(out string output, inputFiles);
+            string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
             if (expectCorrect && !result)
             {
-                Assert.Fail($"Expected correct, but error was found: {output}");
+                Assert.Fail($"Expected correct, but error was found: {output}\n\t{fileList}\n");
             }
             else if (!expectCorrect && result)
             {
-                Assert.Fail("Expected error, but none were found!");
+                Assert.Fail($"Expected error, but none were found!\n\t{fileList}\n");
             }
         }
-        
+
         [Test]
         public void TestAnalyzeTemp()
         {
-            RunTest(out string _, SolutionPath("tmp", "tupOrder.p"), SolutionPath("tmp", "N.p"));
+            bool success = RunTest(out string output, SolutionPath("tmp", "tupOrder.p"), SolutionPath("tmp", "N.p"));
+            Assert.IsTrue(success, output);
         }
     }
 }

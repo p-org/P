@@ -25,18 +25,19 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // Step 3: Fill function bodies
-            foreach (var machineFunction in AllFunctions(globalScope))
+            var allFunctions = AllFunctions(globalScope).ToList();
+            foreach (var machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
             }
 
             // Step 4: Propagate purity/dataflow properties
-            ApplyPropagations(AllFunctions(globalScope),
+            ApplyPropagations(allFunctions,
                 CreatePropagation(fn => fn.CanCommunicate, (fn, value) => fn.CanCommunicate = value, true),
                 CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value, true));
 
             // Step 5: Verify purity/dataflow invariants
-            foreach (var machineFunction in AllFunctions(globalScope))
+            foreach (var machineFunction in allFunctions)
             {
                 if (machineFunction.Owner?.IsSpec == true && machineFunction.IsNondeterministic == true)
                 {
@@ -61,13 +62,14 @@ namespace Microsoft.Pc.TypeChecker
         {
             public Stack<Function> PropertyStack { get; } = new Stack<Function>();
             public Func<Function, T> PropertyGetter { get; set; }
-            public Action<Function,T> PropertySetter { get; set; }
+            public Action<Function, T> PropertySetter { get; set; }
             public T ActiveValue { get; set; }
         }
 
-        private static Propagation<T> CreatePropagation<T>(Func<Function, T> getter, Action<Function, T> setter, T value)
+        private static Propagation<T> CreatePropagation<T>(Func<Function, T> getter, Action<Function, T> setter,
+            T value)
         {
-            return new Propagation<T>()
+            return new Propagation<T>
             {
                 PropertyGetter = getter,
                 PropertySetter = setter,

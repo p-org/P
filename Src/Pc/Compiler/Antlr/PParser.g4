@@ -146,7 +146,7 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | PRINT StringLiteral (COMMA rvalueList)? SEMI  # PrintStmt
           | RETURN expr? SEMI                             # ReturnStmt
           | lvalue ASSIGN rvalue SEMI                     # AssignStmt
-          | lvalue INSERT rvalue SEMI                     # InsertStmt
+          | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI # InsertStmt
           | lvalue REMOVE expr SEMI                       # RemoveStmt
           | WHILE LPAREN expr RPAREN statement            # WhileStmt
           | IF LPAREN expr RPAREN thenBranch=statement 

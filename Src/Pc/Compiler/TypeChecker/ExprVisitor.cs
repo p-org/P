@@ -134,15 +134,6 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        private static bool ArgListMatchesTupleType(PLanguageType expected, IReadOnlyList<IPExpr> arguments)
-        {
-            if (arguments.Count == 1 && expected.IsAssignableFrom(arguments[0].Type))
-            {
-                return true;
-            }
-            return expected.IsAssignableFrom(new TupleType(arguments.Select(arg => arg.Type).ToArray()));
-        }
-
         public override IPExpr VisitCtorExpr(PParser.CtorExprContext context)
         {
             // TODO: roll arguments into tuple automatically if that would match constructor
@@ -163,11 +154,11 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.IncorrectArgumentCount(context, arguments.Length, 0);
                 }
             }
-            else if (PLanguageType.TypeIsOfKind(expectedType, TypeKind.Tuple) /* || PLanguageType.TypeIsOfKind(machine.PayloadType, TypeKind.NamedTuple) */)
+            else if (PLanguageType.TypeIsOfKind(expectedType, TypeKind.Tuple) || PLanguageType.TypeIsOfKind(machine.PayloadType, TypeKind.NamedTuple))
             {
                 // Can either be agreeing tuple, or list that becomes an agreeing tuple
                 var tuple = (TupleType) expectedType.Canonicalize();
-                if (!ArgListMatchesTupleType(tuple, arguments))
+                if (!TypeCheckingUtils.ArgListMatchesTupleType(tuple, arguments))
                 {
                     throw handler.TypeMismatch(context, new TupleType(arguments.Select(arg => arg.Type).ToArray()), expectedType);
                 }

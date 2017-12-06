@@ -220,6 +220,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="ANTLRCompiler.cs" />
+    <Compile Include="Antlr\PParserErrorListener.cs" />
     <Compile Include="Backend\CodeGen.cs" />
     <Compile Include="Backend\TargetLanguage.cs" />
     <Compile Include="Compiler.cs" />
@@ -296,6 +297,7 @@
     <Compile Include="TypeChecker\DeclarationVisitor.cs" />
     <Compile Include="TypeChecker\FunctionBodyVisitor.cs" />
     <Compile Include="TypeChecker\InsertStmt.cs" />
+    <Compile Include="TypeChecker\TypeCheckingUtils.cs" />
     <Compile Include="TypeChecker\Types\NamedTupleEntry.cs" />
     <Compile Include="TypeChecker\AST\IPAST.cs" />
     <Compile Include="TypeChecker\AST\Declarations\PEnum.cs" />
@@ -365,12 +367,10 @@
     <Compile Include="StateTemperature.cs" />
     <Compile Include="TransitionInfo.cs" />
     <Compile Include="TypeChecker\Analyzer.cs" />
-    <Compile Include="TypeChecker\DeclarationListener.cs" />
     <Compile Include="PProgramModel.cs" />
     <Compile Include="TypeChecker\Scope.cs" />
     <Compile Include="TypeChecker\DeclPrinter.cs" />
     <Compile Include="TypeChecker\ExprVisitor.cs" />
-    <Compile Include="TypeChecker\FunctionBodyListener.cs" />
     <Compile Include="TypeChecker\ITranslationErrorHandler.cs" />
     <Compile Include="TypeChecker\StackProperty.cs" />
     <Compile Include="TypeChecker\TranslationException.cs" />

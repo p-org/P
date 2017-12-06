@@ -20,6 +20,7 @@ namespace Microsoft.Pc.TypeChecker
         private readonly Scope table;
         private readonly Function method;
         private readonly ExprVisitor exprVisitor;
+        private ISet<Variable> ownedVariables;
 
         public StatementVisitor(ITranslationErrorHandler handler, Machine machine, Function method)
         {
@@ -28,12 +29,14 @@ namespace Microsoft.Pc.TypeChecker
             this.method = method;
             this.table = method.Scope;
             this.exprVisitor = new ExprVisitor(method, handler);
+            this.ownedVariables = new HashSet<Variable>();
+            this.ownedVariables.UnionWith(method.LocalVariables);
+            this.ownedVariables.UnionWith(method.Signature.Parameters);
         }
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
-            var statements = context.statement().Select(Visit);
-            return new CompoundStmt(statements.ToList());
+            return new CompoundStmt(context.statement().Select(Visit).ToList());
         }
 
         public override IPStmt VisitPopStmt(PParser.PopStmtContext context)
@@ -49,7 +52,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
         {
             IPExpr assertion = exprVisitor.Visit(context.expr());
-            if (assertion.Type != PrimitiveType.Bool)
+            if (!PrimitiveType.Bool.IsSameTypeAs(assertion.Type))
             {
                 throw handler.TypeMismatch(context.expr(), assertion.Type, PrimitiveType.Bool);
             }
@@ -106,6 +109,12 @@ namespace Microsoft.Pc.TypeChecker
             {
                 return new AssignStmt(variable, value);
             }
+            var linearRefVariable = linearRef.Variable;
+            if (linearRefVariable.Role.Equals(VariableRole.Field))
+            {
+                throw handler.RelinquishedWithoutOwnership(context.rvalue(), linearRef);
+            }
+
             switch (linearRef.LinearType)
             {
                 case LinearType.Move:
@@ -115,7 +124,10 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     return new MoveAssignStmt(variable, linearRef.Variable);
                 case LinearType.Swap:
-                    if (!variable.Type.IsSameTypeAs(linearRef.Variable.Type))
+                    // within a function, swaps must only be subtyped in either direction
+                    // the actual types are checked at runtime. This is to allow swapping 
+                    // with the `any` type.
+                    if (!variable.Type.IsAssignableFrom(linearRef.Variable.Type) && !linearRef.Variable.Type.IsAssignableFrom(variable.Type))
                     {
                         throw handler.TypeMismatch(context.rvalue(), linearRef.Variable.Type, variable.Type);
                     }
@@ -128,43 +140,34 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitInsertStmt(PParser.InsertStmtContext context)
         {
             IPExpr variable = exprVisitor.Visit(context.lvalue());
+            IPExpr index = exprVisitor.Visit(context.expr());
             IPExpr value = exprVisitor.Visit(context.rvalue());
 
-            if (!(value.Type.Canonicalize() is TupleType valueTuple))
-            {
-                throw handler.TypeMismatch(context.rvalue(), value.Type, TypeKind.Tuple);
-            }
-
-            if (valueTuple.Types.Count != 2)
-            {
-                throw handler.IssueError(context.rvalue(), "Insertion tuple must be of length two: (key/index, value)");
-            }
-
-            PLanguageType keyType = valueTuple.Types[0];
-            PLanguageType valueType = valueTuple.Types[1];
+            PLanguageType keyType = index.Type;
+            PLanguageType valueType = value.Type;
 
             if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Sequence))
             {
-                SequenceType sequenceType = (SequenceType) variable.Type.Canonicalize();
+                var sequenceType = (SequenceType) variable.Type.Canonicalize();
                 if (!PrimitiveType.Int.IsAssignableFrom(keyType))
                 {
                     throw handler.TypeMismatch(context.rvalue(), keyType, PrimitiveType.Int);
                 }
                 if (!sequenceType.ElementType.IsAssignableFrom(valueType))
                 {
-                    throw handler.TypeMismatch(context.rvalue(), valueTuple, sequenceType.ElementType);
+                    throw handler.TypeMismatch(context.rvalue(), valueType, sequenceType.ElementType);
                 }
             }
             else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Map))
             {
-                MapType mapType = (MapType) variable.Type.Canonicalize();
+                var mapType = (MapType) variable.Type.Canonicalize();
                 if (!mapType.KeyType.IsAssignableFrom(keyType))
                 {
                     throw handler.TypeMismatch(context.rvalue(), keyType, mapType.KeyType);
                 }
                 if (!mapType.ValueType.IsAssignableFrom(valueType))
                 {
-                    throw handler.TypeMismatch(context.rvalue(), valueTuple, mapType.ValueType);
+                    throw handler.TypeMismatch(context.rvalue(), valueType, mapType.ValueType);
                 }
             }
             else
@@ -172,7 +175,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.lvalue(), variable.Type, TypeKind.Sequence, TypeKind.Map);
             }
 
-            return new InsertStmt(variable, value);
+            return new InsertStmt(variable, index, value);
         }
 
         public override IPStmt VisitRemoveStmt(PParser.RemoveStmtContext context)
@@ -270,7 +273,7 @@ namespace Microsoft.Pc.TypeChecker
                     fun.Signature.Parameters.Count);
             }
 
-            ISet<Variable> linearVariables = new HashSet<Variable>();
+            var linearVariables = new HashSet<Variable>();
             foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
             {
                 ITypedName param = pair.Item1;

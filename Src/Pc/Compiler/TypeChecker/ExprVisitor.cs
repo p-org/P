@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -136,7 +137,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPExpr VisitCtorExpr(PParser.CtorExprContext context)
         {
-            // TODO: roll arguments into tuple automatically if that would match constructor
             string machineName = context.machineName.GetText();
             if (!table.Lookup(machineName, out Machine machine))
             {
@@ -144,39 +144,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             IPExpr[] arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
-
-            PLanguageType expectedType = machine.PayloadType;
-            if (PrimitiveType.Null.IsAssignableFrom(expectedType))
-            {
-                // expect no arguments
-                if (arguments.Length > 0)
-                {
-                    throw handler.IncorrectArgumentCount(context, arguments.Length, 0);
-                }
-            }
-            else if (PLanguageType.TypeIsOfKind(expectedType, TypeKind.Tuple) || PLanguageType.TypeIsOfKind(machine.PayloadType, TypeKind.NamedTuple))
-            {
-                // Can either be agreeing tuple, or list that becomes an agreeing tuple
-                var tuple = (TupleType) expectedType.Canonicalize();
-                if (!TypeCheckingUtils.ArgListMatchesTupleType(tuple, arguments))
-                {
-                    throw handler.TypeMismatch(context, new TupleType(arguments.Select(arg => arg.Type).ToArray()), expectedType);
-                }
-            }
-            else
-            {
-                if (arguments.Length != 1)
-                {
-                    throw handler.IncorrectArgumentCount(context, arguments.Length, 1);
-                }
-
-                PLanguageType actualType = arguments[0].Type;
-                if (!expectedType.IsAssignableFrom(actualType))
-                {
-                    throw handler.TypeMismatch(context.rvalueList().rvalue(0), actualType, expectedType);
-                }
-            }
-
+            TypeCheckingUtils.ValidatePayloadTypes(handler, context, machine.PayloadType, arguments);
             return new CtorExpr(machine, arguments);
         }
 
@@ -475,15 +443,22 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPExpr VisitRvalue(PParser.RvalueContext context)
         {
+            // If it's just an expr, then there's no special handling
             if (context.linear == null)
             {
                 return Visit(context.expr());
             }
 
+            // In the linear case, it must be a local variable or parameter
             string varName = context.iden().GetText();
             if (!table.Lookup(varName, out Variable variable))
             {
                 throw handler.MissingDeclaration(context.iden(), "variable", varName);
+            }
+
+            if (variable.Role.Equals(VariableRole.Field))
+            {
+                throw handler.RelinquishedWithoutOwnership(context, null);
             }
 
             return context.linear.Text.Equals("move")

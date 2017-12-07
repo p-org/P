@@ -168,6 +168,16 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(location, $"cannot give up ownership of variable {linearRef.Variable.Name} twice");
         }
 
+        public Exception InvalidSwap(ParserRuleContext context, ILinearRef linearRef, string message)
+        {
+            return IssueError(context, $"invalid swap of {linearRef.Variable.Name}. Reason: {message}");
+        }
+
+        public Exception UseWithoutOwnership(ParserRuleContext location, Variable variable)
+        {
+            return IssueError(location, $"used variable {variable.Name} after a move or during a swap");
+        }
+
         private string MethodName(Function method)
         {
             return method.Name.Length > 0 ? method.Name : $"at {GetLocation(method.SourceLocation)}";

@@ -46,5 +46,7 @@ namespace Microsoft.Pc.TypeChecker
         Exception ChangedStateMidTransition(ParserRuleContext location, Function method);
         Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
         Exception RelinquishedWithoutOwnership(ParserRuleContext location, ILinearRef linearRef);
+        Exception InvalidSwap(ParserRuleContext context, ILinearRef linearRef, string message);
+        Exception UseWithoutOwnership(ParserRuleContext location, Variable variable);
     }
 }

@@ -17,21 +17,16 @@ namespace Microsoft.Pc.TypeChecker
             this.machine = machine;
             this.method = method;
         }
-
+        
         public static void PopulateMethod(ITranslationErrorHandler handler, Function fun)
         {
-            PopulateMethod(handler, fun.Owner, fun);
-        }
-
-        public static void PopulateMethod(ITranslationErrorHandler handler, Machine machine, Function method)
-        {
-            if (method.Body != null)
+            if (fun.Body != null)
             {
                 return;
             }
-
-            var visitor = new FunctionBodyVisitor(handler, machine, method);
-            visitor.Visit(method.SourceLocation);
+            
+            var visitor = new FunctionBodyVisitor(handler, fun.Owner, fun);
+            visitor.Visit(fun.SourceLocation);
         }
 
         public override object VisitAnonEventHandler(PParser.AnonEventHandlerContext context)
@@ -70,6 +65,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 Variable variable = method.Scope.Put(varName.GetText(), varName, VariableRole.Local);
                 variable.Type = TypeResolver.ResolveType(context.type(), method.Scope, handler);
+                method.AddLocalVariable(variable);
             }
             return null;
         }

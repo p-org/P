@@ -15,23 +15,19 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class StatementVisitor : PParserBaseVisitor<IPStmt>
     {
+        private readonly ExprVisitor exprVisitor;
         private readonly ITranslationErrorHandler handler;
         private readonly Machine machine;
-        private readonly Scope table;
         private readonly Function method;
-        private readonly ExprVisitor exprVisitor;
-        private ISet<Variable> ownedVariables;
+        private readonly Scope table;
 
         public StatementVisitor(ITranslationErrorHandler handler, Machine machine, Function method)
         {
             this.handler = handler;
             this.machine = machine;
             this.method = method;
-            this.table = method.Scope;
-            this.exprVisitor = new ExprVisitor(method, handler);
-            this.ownedVariables = new HashSet<Variable>();
-            this.ownedVariables.UnionWith(method.LocalVariables);
-            this.ownedVariables.UnionWith(method.Signature.Parameters);
+            table = method.Scope;
+            exprVisitor = new ExprVisitor(method, handler);
         }
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
@@ -64,24 +60,31 @@ namespace Microsoft.Pc.TypeChecker
         {
             string message = context.StringLiteral().GetText();
             int numNecessaryArgs = (from Match match in Regex.Matches(message, @"(?:{{|}}|{(\d+)}|[^{}]+|{|})")
-                                    where match.Groups[1].Success
-                                    select int.Parse(match.Groups[1].Value) + 1)
+                    where match.Groups[1].Success
+                    select int.Parse(match.Groups[1].Value) + 1)
                 .Concat(new[] {0})
                 .Max();
-            var argsExprs = context.rvalueList()?.rvalue().Select(rvalue => exprVisitor.Visit(rvalue)) ??
-                            Enumerable.Empty<IPExpr>();
-            var args = argsExprs.ToList();
-            if (args.Count < numNecessaryArgs)
+
+            var args = new List<IPExpr>();
+            foreach (PParser.RvalueContext arg in context.rvalueList()?.rvalue() ??
+                                                  Enumerable.Empty<PParser.RvalueContext>())
+            {
+                IPExpr rvalue = exprVisitor.Visit(arg);
+                if (rvalue is ILinearRef linearRef)
+                {
+                    if (linearRef.LinearType.Equals(LinearType.Swap))
+                    {
+                        throw handler.InvalidSwap(context, linearRef, "cannot swap with print");
+                    }
+                }
+                args.Add(rvalue);
+            }
+
+            if (args.Count != numNecessaryArgs)
             {
                 throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
                                                      args.Count,
                                                      numNecessaryArgs);
-            }
-            if (args.Count > numNecessaryArgs)
-            {
-                handler.IssueWarning((ParserRuleContext) context.rvalueList() ?? context,
-                                     "ignoring extra arguments to print expression");
-                args = args.Take(numNecessaryArgs).ToList();
             }
             return new PrintStmt(message, args);
         }
@@ -101,40 +104,42 @@ namespace Microsoft.Pc.TypeChecker
         {
             IPExpr variable = exprVisitor.Visit(context.lvalue());
             IPExpr value = exprVisitor.Visit(context.rvalue());
+
+            // If we're doing a move/swap assignment
+            if (value is ILinearRef linearRef)
+            {
+                Variable refVariable = linearRef.Variable;
+                switch (linearRef.LinearType)
+                {
+                    case LinearType.Move:
+                        // Moved values must be subtypes of their destinations
+                        if (!variable.Type.IsAssignableFrom(refVariable.Type))
+                        {
+                            throw handler.TypeMismatch(context.rvalue(), refVariable.Type, variable.Type);
+                        }
+                        return new MoveAssignStmt(variable, refVariable);
+                    case LinearType.Swap:
+                        // Within a function, swaps must only be subtyped in either direction
+                        // the actual types are checked at runtime. This is to allow swapping 
+                        // with the `any` type.
+                        if (!variable.Type.IsAssignableFrom(refVariable.Type) &&
+                            !refVariable.Type.IsAssignableFrom(variable.Type))
+                        {
+                            throw handler.TypeMismatch(context.rvalue(), refVariable.Type, variable.Type);
+                        }
+                        return new SwapAssignStmt(variable, refVariable);
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+
+            // If this is a value assignment, we just need subtyping
             if (!variable.Type.IsAssignableFrom(value.Type))
             {
                 throw handler.TypeMismatch(context.rvalue(), value.Type, variable.Type);
             }
-            if (!(value is ILinearRef linearRef))
-            {
-                return new AssignStmt(variable, value);
-            }
-            var linearRefVariable = linearRef.Variable;
-            if (linearRefVariable.Role.Equals(VariableRole.Field))
-            {
-                throw handler.RelinquishedWithoutOwnership(context.rvalue(), linearRef);
-            }
 
-            switch (linearRef.LinearType)
-            {
-                case LinearType.Move:
-                    if (!variable.Type.IsAssignableFrom(linearRef.Variable.Type))
-                    {
-                        throw handler.TypeMismatch(context.rvalue(), linearRef.Variable.Type, variable.Type);
-                    }
-                    return new MoveAssignStmt(variable, linearRef.Variable);
-                case LinearType.Swap:
-                    // within a function, swaps must only be subtyped in either direction
-                    // the actual types are checked at runtime. This is to allow swapping 
-                    // with the `any` type.
-                    if (!variable.Type.IsAssignableFrom(linearRef.Variable.Type) && !linearRef.Variable.Type.IsAssignableFrom(variable.Type))
-                    {
-                        throw handler.TypeMismatch(context.rvalue(), linearRef.Variable.Type, variable.Type);
-                    }
-                    return new SwapAssignStmt(variable, linearRef.Variable);
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
+            return new AssignStmt(variable, value);
         }
 
         public override IPStmt VisitInsertStmt(PParser.InsertStmtContext context)
@@ -143,36 +148,43 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr index = exprVisitor.Visit(context.expr());
             IPExpr value = exprVisitor.Visit(context.rvalue());
 
+            // Check linear types
+            var valueIsInvariant = false;
+            if (value is ILinearRef linearRef)
+            {
+                valueIsInvariant = linearRef.LinearType.Equals(LinearType.Swap);
+            }
+
+            // Check subtyping
             PLanguageType keyType = index.Type;
             PLanguageType valueType = value.Type;
 
-            if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Sequence))
+            PLanguageType expectedKeyType;
+            PLanguageType expectedValueType;
+
+            switch (variable.Type.Canonicalize())
             {
-                var sequenceType = (SequenceType) variable.Type.Canonicalize();
-                if (!PrimitiveType.Int.IsAssignableFrom(keyType))
-                {
-                    throw handler.TypeMismatch(context.rvalue(), keyType, PrimitiveType.Int);
-                }
-                if (!sequenceType.ElementType.IsAssignableFrom(valueType))
-                {
-                    throw handler.TypeMismatch(context.rvalue(), valueType, sequenceType.ElementType);
-                }
+                case SequenceType sequenceType:
+                    expectedKeyType = PrimitiveType.Int;
+                    expectedValueType = sequenceType.ElementType;
+                    break;
+                case MapType mapType:
+                    expectedKeyType = mapType.KeyType;
+                    expectedValueType = mapType.ValueType;
+                    break;
+                default:
+                    throw handler.TypeMismatch(context.lvalue(), variable.Type, TypeKind.Sequence, TypeKind.Map);
             }
-            else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Map))
+
+            if (!expectedKeyType.IsAssignableFrom(keyType))
             {
-                var mapType = (MapType) variable.Type.Canonicalize();
-                if (!mapType.KeyType.IsAssignableFrom(keyType))
-                {
-                    throw handler.TypeMismatch(context.rvalue(), keyType, mapType.KeyType);
-                }
-                if (!mapType.ValueType.IsAssignableFrom(valueType))
-                {
-                    throw handler.TypeMismatch(context.rvalue(), valueType, mapType.ValueType);
-                }
+                throw handler.TypeMismatch(context.rvalue(), keyType, expectedKeyType);
             }
-            else
+
+            if (valueIsInvariant && !expectedValueType.IsSameTypeAs(valueType)
+                || !valueIsInvariant && !expectedValueType.IsAssignableFrom(valueType))
             {
-                throw handler.TypeMismatch(context.lvalue(), variable.Type, TypeKind.Sequence, TypeKind.Map);
+                throw handler.TypeMismatch(context.rvalue(), valueType, expectedValueType);
             }
 
             return new InsertStmt(variable, index, value);
@@ -192,7 +204,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             else if (PLanguageType.TypeIsOfKind(variable.Type, TypeKind.Map))
             {
-                MapType map = (MapType) variable.Type.Canonicalize();
+                var map = (MapType) variable.Type.Canonicalize();
                 if (!map.KeyType.IsAssignableFrom(value.Type))
                 {
                     throw handler.TypeMismatch(context.expr(), value.Type, map.KeyType);
@@ -237,21 +249,14 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(context.iden(), "machine", machineName);
             }
 
-            bool hasArguments = targetMachine.PayloadType != PrimitiveType.Null;
-            List<IPExpr> args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                                 Enumerable.Empty<IPExpr>()).ToList();
-            if (hasArguments)
+            var args = new List<IPExpr>();
+            foreach (PParser.RvalueContext arg in context.rvalueList()?.rvalue() ??
+                                                  Enumerable.Empty<PParser.RvalueContext>())
             {
-                if (args.Count != 1)
-                {
-                    throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context, args.Count, 1);
-                }
+                args.Add(exprVisitor.Visit(arg));
             }
-            else if (args.Count != 0)
-            {
-                handler.IssueWarning((ParserRuleContext) context.rvalueList() ?? context,
-                    "ignoring extra parameters passed to machine constructor");
-            }
+
+            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, args);
             method.AddCallee(targetMachine.StartState.Entry);
             return new CtorStmt(targetMachine, args);
         }
@@ -259,8 +264,9 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)
         {
             string funName = context.fun.GetText();
-            var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ?? Enumerable.Empty<IPExpr>();
-            var argsList = args.ToList();
+            IEnumerable<IPExpr> args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
+                                       Enumerable.Empty<IPExpr>();
+            List<IPExpr> argsList = args.ToList();
             if (!table.Lookup(funName, out Function fun))
             {
                 throw handler.MissingDeclaration(context.fun, "function or function prototype", funName);
@@ -269,31 +275,13 @@ namespace Microsoft.Pc.TypeChecker
             if (fun.Signature.Parameters.Count != argsList.Count)
             {
                 throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
-                    argsList.Count,
-                    fun.Signature.Parameters.Count);
+                                                     argsList.Count,
+                                                     fun.Signature.Parameters.Count);
             }
 
-            var linearVariables = new HashSet<Variable>();
-            foreach (var pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
+            foreach (Tuple<Variable, IPExpr> pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
             {
-                ITypedName param = pair.Item1;
-                IPExpr arg = pair.Item2;
-                if (!param.Type.IsAssignableFrom(arg.Type))
-                {
-                    throw handler.TypeMismatch(context, arg.Type, param.Type);
-                }
-                if (arg is ILinearRef linearRef)
-                {
-                    if (linearRef.LinearType == LinearType.Swap && !linearRef.Type.IsSameTypeAs(param.Type))
-                    {
-                        throw handler.TypeMismatch(context, linearRef.Type, param.Type);
-                    }
-                    if (linearVariables.Contains(linearRef.Variable))
-                    {
-                        throw handler.RelinquishedWithoutOwnership(context, linearRef);
-                    }
-                    linearVariables.Add(linearRef.Variable);
-                }
+                TypeCheckingUtils.CheckArgument(handler, context, ((ITypedName) pair.Item1).Type, pair.Item2);
             }
 
             method.AddCallee(fun);
@@ -316,8 +304,8 @@ namespace Microsoft.Pc.TypeChecker
             method.CanCommunicate = true;
             method.CanChangeState = true;
 
-            var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                        Enumerable.Empty<IPExpr>()).ToList();
+            List<IPExpr> args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
+                                 Enumerable.Empty<IPExpr>()).ToList();
 
             // TODO: wot?
             return new RaiseStmt(pExpr, args.Count == 0 ? null : args[0]);
@@ -342,8 +330,9 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.@event, evtExpr.Type, PrimitiveType.Event);
             }
 
-            var args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ?? Enumerable.Empty<IPExpr>();
-            var argsList = args.ToList();
+            IEnumerable<IPExpr> args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
+                                       Enumerable.Empty<IPExpr>();
+            List<IPExpr> argsList = args.ToList();
             return new SendStmt(machineExpr, evtExpr, argsList);
         }
 
@@ -365,8 +354,8 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event);
             }
 
-            var args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                        Enumerable.Empty<IPExpr>()).ToList();
+            List<IPExpr> args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
+                                 Enumerable.Empty<IPExpr>()).ToList();
             return new AnnounceStmt(evtExpr, args.Count == 0 ? null : args[0]);
         }
 
@@ -401,7 +390,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     IPExpr[] tupleFields = rvalues.Select(exprVisitor.Visit).ToArray();
                     payload = new UnnamedTupleExpr(tupleFields,
-                        new TupleType(tupleFields.Select(f => f.Type).ToList()));
+                                                   new TupleType(tupleFields.Select(f => f.Type).ToList()));
                 }
             }
             PLanguageType payloadType = payload?.Type ?? PrimitiveType.Null;
@@ -422,14 +411,14 @@ namespace Microsoft.Pc.TypeChecker
                     new Function(caseContext.anonEventHandler()) {Scope = table.MakeChildScope(), Owner = method.Owner};
                 if (caseContext.anonEventHandler().funParam() is PParser.FunParamContext param)
                 {
-                    var paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
+                    Variable paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
                     paramVar.Type = TypeResolver.ResolveType(param.type(), recvHandler.Scope, handler);
                     recvHandler.Signature.Parameters.Add(paramVar);
                 }
 
                 FunctionBodyVisitor.PopulateMethod(handler, recvHandler);
-                
-                foreach (var eventIdContext in caseContext.eventList().eventId())
+
+                foreach (PParser.EventIdContext eventIdContext in caseContext.eventList().eventId())
                 {
                     if (!table.Lookup(eventIdContext.GetText(), out PEvent pEvent))
                     {
@@ -444,7 +433,7 @@ namespace Microsoft.Pc.TypeChecker
                     if (!expectedType.IsAssignableFrom(pEvent.PayloadType))
                     {
                         throw handler.TypeMismatch(caseContext.anonEventHandler().funParam(), expectedType,
-                            pEvent.PayloadType);
+                                                   pEvent.PayloadType);
                     }
                     cases.Add(pEvent, recvHandler);
                 }
@@ -452,6 +441,9 @@ namespace Microsoft.Pc.TypeChecker
             return new ReceiveStmt(cases);
         }
 
-        public override IPStmt VisitNoStmt(PParser.NoStmtContext context) { return new NoStmt(); }
+        public override IPStmt VisitNoStmt(PParser.NoStmtContext context)
+        {
+            return new NoStmt();
+        }
     }
 }

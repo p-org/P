@@ -22,7 +22,7 @@ options { tokenVocab=PLexer; }
 // tokens or productions of the same type into a list (list+=part). The `type`
 // production below uses this feature, too.
 
-program : (topDecl | annotationSet)* ;
+program : (topDecl | annotationSet)* EOF ;
 
 iden : Iden ;
 int  : IntLiteral ;

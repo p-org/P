@@ -52,6 +52,10 @@ namespace UnitTests.PSharpBackend
             {
                 Assert.Fail($"Expected error, but none were found!\n\t{fileList}\n");
             }
+            else
+            {
+                Assert.Pass(output);
+            }
         }
 
         [Test]

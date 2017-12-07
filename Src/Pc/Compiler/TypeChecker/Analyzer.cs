@@ -31,12 +31,12 @@ namespace Microsoft.Pc.TypeChecker
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
             }
 
-            // Step 4: Propagate purity/dataflow properties
+            // Step 4: Propagate purity properties
             ApplyPropagations(allFunctions,
                 CreatePropagation(fn => fn.CanCommunicate, (fn, value) => fn.CanCommunicate = value, true),
                 CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value, true));
 
-            // Step 5: Verify purity/dataflow invariants
+            // Step 5: Verify purity invariants
             foreach (var machineFunction in allFunctions)
             {
                 if (machineFunction.Owner?.IsSpec == true && machineFunction.IsNondeterministic == true)
@@ -50,6 +50,9 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.ChangedStateMidTransition(machineFunction.SourceLocation, machineFunction);
                 }
             }
+
+            // Step 6: Check linear type ownership
+            LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
 
             // NOW: AST Complete, pass to StringTemplate
             return new PProgramModel

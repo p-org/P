@@ -21,7 +21,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public Exception IssueError(ParserRuleContext location, string message)
         {
-            return IssueError(location, location.Start, message);
+            return IssueError(location, location?.Start, message);
         }
 
         public Exception DuplicateEnumValue(PParser.NumberedEnumElemContext location, PEnum pEnum)
@@ -203,7 +203,7 @@ namespace Microsoft.Pc.TypeChecker
             public int Column { get; set; }
             public FileInfo File { get; set; }
 
-            public override string ToString() { return File == null ? "<built-in>" : $"{File.Name}:{Line},{Column}"; }
+            public override string ToString() { return File == null ? "???" : $"{File.Name}:{Line},{Column}"; }
         }
 
         private Location GetLocation(ParserRuleContext decl)
@@ -228,6 +228,16 @@ namespace Microsoft.Pc.TypeChecker
 
         private Location GetLocation(IParseTree ctx, IToken tok)
         {
+            if (ctx == null || tok == null)
+            {
+                return new Location
+                {
+                    Line = -1,
+                    Column = -1,
+                    File = null
+                };
+            }
+
             return new Location
             {
                 Line = tok.Line,

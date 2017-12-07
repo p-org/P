@@ -237,7 +237,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
             IPStmt thenBody = Visit(context.thenBranch);
-            IPStmt elseBody = context.elseBranch == null ? null : Visit(context.elseBranch);
+            IPStmt elseBody = context.elseBranch == null ? new NoStmt() : Visit(context.elseBranch);
             return new IfStmt(condition, thenBody, elseBody);
         }
 

@@ -43,11 +43,6 @@ namespace Microsoft.Pc
                 log.WriteMessage(e.Message, SeverityKind.Error);
                 return false;
             }
-            catch (NotImplementedException e)
-            {
-                log.WriteMessage($"{e.Message} not implemented", SeverityKind.Error);
-                return false;
-            }
         }
 
         public bool Link(ICompilerOutput log, CommandLineOptions options)

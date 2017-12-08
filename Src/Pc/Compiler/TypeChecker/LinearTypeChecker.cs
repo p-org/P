@@ -9,6 +9,7 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class LinearTypeChecker
     {
+        private readonly HashSet<Variable> allUnavailableParams = new HashSet<Variable>();
         private readonly List<FunCallExpr> funCallExprs = new List<FunCallExpr>();
         private readonly List<FunCallStmt> funCallStmts = new List<FunCallStmt>();
         private readonly ITranslationErrorHandler handler;
@@ -21,41 +22,39 @@ namespace Microsoft.Pc.TypeChecker
         public static void AnalyzeMethods(ITranslationErrorHandler handler, IEnumerable<Function> allFunctions)
         {
             var checker = new LinearTypeChecker(handler);
-            var allUnavailableParams = new HashSet<Variable>();
             foreach (Function function in allFunctions)
             {
-                ISet<Variable> unavailable = checker.CheckFunction(function);
-                allUnavailableParams.UnionWith(unavailable.Where(var => var.Role.Equals(VariableRole.Param)));
+                checker.CheckFunction(function);
             }
-            checker.CheckInterproceduralCalls(allUnavailableParams);
+            checker.CheckInterproceduralCalls();
         }
 
-        private ISet<Variable> CheckFunction(Function method)
+        private void CheckFunction(Function method)
         {
-            return ProcessStatement(method.Body, new HashSet<Variable>());
+            ISet<Variable> unavailable = ProcessStatement(method.Body, new HashSet<Variable>());
+            allUnavailableParams.UnionWith(unavailable.Where(var => var.Role.Equals(VariableRole.Param)));
         }
 
-        private void CheckInterproceduralCalls(ICollection<Variable> unavailableParams)
+        private void CheckInterproceduralCalls()
         {
             foreach (FunCallExpr funCallExpr in funCallExprs)
             {
-                CheckFunctionCall(unavailableParams, funCallExpr.Function, funCallExpr.Arguments);
+                CheckFunctionCall(funCallExpr.Function, funCallExpr.Arguments);
             }
             foreach (FunCallStmt funCallStmt in funCallStmts)
             {
-                CheckFunctionCall(unavailableParams, funCallStmt.Fun, funCallStmt.ArgsList);
+                CheckFunctionCall(funCallStmt.Fun, funCallStmt.ArgsList);
             }
         }
 
-        private void CheckFunctionCall(ICollection<Variable> unavailableParams, Function function,
-                                       IEnumerable<IPExpr> arguments)
+        private void CheckFunctionCall(Function function, IEnumerable<IPExpr> arguments)
         {
             var i = 0;
             foreach (Tuple<Variable, IPExpr> pair in function.Signature.Parameters.Zip(arguments, Tuple.Create))
             {
                 if (pair.Item2 is ILinearRef linearRef)
                 {
-                    if (linearRef.LinearType.Equals(LinearType.Swap) && unavailableParams.Contains(pair.Item1))
+                    if (linearRef.LinearType.Equals(LinearType.Swap) && allUnavailableParams.Contains(pair.Item1))
                     {
                         throw handler.InvalidSwap(null, linearRef,
                                                   $"function {function.Name} relinquishes argument #{i} and therefore cannot be swapped.");

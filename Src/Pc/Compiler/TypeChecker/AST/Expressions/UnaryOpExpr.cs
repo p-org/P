@@ -2,14 +2,16 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
-    public class SignNegateExpr : IPExpr
+    public class UnaryOpExpr : IPExpr
     {
-        public SignNegateExpr(IPExpr subExpr)
+        public UnaryOpExpr(UnaryOpType operation, IPExpr subExpr)
         {
+            Operation = operation;
             SubExpr = subExpr;
             Type = subExpr.Type;
         }
 
+        public UnaryOpType Operation { get; }
         public IPExpr SubExpr { get; }
 
         public PLanguageType Type { get; }

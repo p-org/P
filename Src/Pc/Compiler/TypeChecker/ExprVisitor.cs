@@ -199,13 +199,13 @@ namespace Microsoft.Pc.TypeChecker
                                                    PrimitiveType.Int,
                                                    PrimitiveType.Float);
                     }
-                    return new SignNegateExpr(subExpr);
+                    return new UnaryOpExpr(UnaryOpType.Negate, subExpr);
                 case "!":
                     if (!PrimitiveType.Bool.IsAssignableFrom(subExpr.Type))
                     {
                         throw handler.TypeMismatch(context.expr(), subExpr.Type, PrimitiveType.Bool);
                     }
-                    return new LogicalNegateExpr(subExpr);
+                    return new UnaryOpExpr(UnaryOpType.Not, subExpr);
                 default:
                     throw new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context));
             }
@@ -219,26 +219,26 @@ namespace Microsoft.Pc.TypeChecker
 
             var arithCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
-                {"*", (elhs, erhs) => new MultExpr(elhs, erhs)},
-                {"/", (elhs, erhs) => new DivExpr(elhs, erhs)},
-                {"+", (elhs, erhs) => new AddExpr(elhs, erhs)},
-                {"-", (elhs, erhs) => new SubExpr(elhs, erhs)},
-                {"<", (elhs, erhs) => new LessThanExpr(elhs, erhs)},
-                {"<=", (elhs, erhs) => new LessEqualsExpr(elhs, erhs)},
-                {">", (elhs, erhs) => new GreaterThanExpr(elhs, erhs)},
-                {">=", (elhs, erhs) => new GreaterEqualsExpr(elhs, erhs)}
+                {"*", (elhs, erhs) => new BinOpExpr(BinOpType.Mul, elhs, erhs)},
+                {"/", (elhs, erhs) => new BinOpExpr(BinOpType.Div, elhs, erhs)},
+                {"+", (elhs, erhs) => new BinOpExpr(BinOpType.Add, elhs, erhs)},
+                {"-", (elhs, erhs) => new BinOpExpr(BinOpType.Sub, elhs, erhs)},
+                {"<", (elhs, erhs) => new BinOpExpr(BinOpType.Lt, elhs, erhs)},
+                {"<=", (elhs, erhs) => new BinOpExpr(BinOpType.Le, elhs, erhs)},
+                {">", (elhs, erhs) => new BinOpExpr(BinOpType.Gt, elhs, erhs)},
+                {">=", (elhs, erhs) => new BinOpExpr(BinOpType.Ge, elhs, erhs)}
             };
 
             var logicCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
-                {"&&", (elhs, erhs) => new LogicalAndExpr(elhs, erhs)},
-                {"||", (elhs, erhs) => new LogicalOrExpr(elhs, erhs)}
+                {"&&", (elhs, erhs) => new BinOpExpr(BinOpType.And, elhs, erhs)},
+                {"||", (elhs, erhs) => new BinOpExpr(BinOpType.Or, elhs, erhs)}
             };
 
             var compCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
-                {"==", (elhs, erhs) => new CompareSameExpr(elhs, erhs)},
-                {"!=", (elhs, erhs) => new CompareDiffExpr(elhs, erhs)}
+                {"==", (elhs, erhs) => new BinOpExpr(BinOpType.Eq, elhs, erhs)},
+                {"!=", (elhs, erhs) => new BinOpExpr(BinOpType.Neq, elhs, erhs)}
             };
 
             switch (op)

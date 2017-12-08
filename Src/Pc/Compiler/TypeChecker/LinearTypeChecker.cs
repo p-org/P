@@ -220,10 +220,6 @@ namespace Microsoft.Pc.TypeChecker
             {
                 case null:
                     throw new ArgumentOutOfRangeException(nameof(expression));
-                case AddExpr addExpr:
-                    unavailable = ProcessExpr(addExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(addExpr.Rhs, unavailable);
-                    break;
                 case BoolLiteralExpr _:
                     // nothing to do
                     break;
@@ -232,14 +228,6 @@ namespace Microsoft.Pc.TypeChecker
                     break;
                 case CoerceExpr coerceExpr:
                     unavailable = ProcessExpr(coerceExpr.SubExpr, unavailable);
-                    break;
-                case CompareDiffExpr compareDiffExpr:
-                    unavailable = ProcessExpr(compareDiffExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(compareDiffExpr.Rhs, unavailable);
-                    break;
-                case CompareSameExpr compareSameExpr:
-                    unavailable = ProcessExpr(compareSameExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(compareSameExpr.Rhs, unavailable);
                     break;
                 case ContainsKeyExpr containsKeyExpr:
                     unavailable = ProcessExpr(containsKeyExpr.Map, unavailable);
@@ -250,10 +238,6 @@ namespace Microsoft.Pc.TypeChecker
                     break;
                 case DefaultExpr _:
                     // nothing to do
-                    break;
-                case DivExpr divExpr:
-                    unavailable = ProcessExpr(divExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(divExpr.Rhs, unavailable);
                     break;
                 case EnumElemRefExpr _:
                     // nothing to do
@@ -270,27 +254,11 @@ namespace Microsoft.Pc.TypeChecker
                 case FunCallExpr funCallExpr:
                     unavailable = ProcessArgList(funCallExpr.Arguments, unavailable);
                     break;
-                case GreaterEqualsExpr greaterEqualsExpr:
-                    unavailable = ProcessExpr(greaterEqualsExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(greaterEqualsExpr.Rhs, unavailable);
-                    break;
-                case GreaterThanExpr greaterThanExpr:
-                    unavailable = ProcessExpr(greaterThanExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(greaterThanExpr.Rhs, unavailable);
-                    break;
                 case IntLiteralExpr _:
                     // nothing to do
                     break;
                 case KeysExpr keysExpr:
                     unavailable = ProcessExpr(keysExpr.Expr, unavailable);
-                    break;
-                case LessEqualsExpr lessEqualsExpr:
-                    unavailable = ProcessExpr(lessEqualsExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(lessEqualsExpr.Rhs, unavailable);
-                    break;
-                case LessThanExpr lessThanExpr:
-                    unavailable = ProcessExpr(lessThanExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(lessThanExpr.Rhs, unavailable);
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
                     if (unavailable.Contains(linearAccessRefExpr.Variable))
@@ -302,24 +270,16 @@ namespace Microsoft.Pc.TypeChecker
                         unavailable.Add(linearAccessRefExpr.Variable);
                     }
                     break;
-                case LogicalAndExpr logicalAndExpr:
-                    unavailable = ProcessExpr(logicalAndExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(logicalAndExpr.Rhs, unavailable);
-                    break;
-                case LogicalNegateExpr logicalNegateExpr:
-                    unavailable = ProcessExpr(logicalNegateExpr.SubExpr, unavailable);
-                    break;
-                case LogicalOrExpr logicalOrExpr:
-                    unavailable = ProcessExpr(logicalOrExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(logicalOrExpr.Rhs, unavailable);
+                case UnaryOpExpr unaryOp:
+                    unavailable = ProcessExpr(unaryOp.SubExpr, unavailable);
                     break;
                 case MapAccessExpr mapAccessExpr:
                     unavailable = ProcessExpr(mapAccessExpr.MapExpr, unavailable);
                     unavailable = ProcessExpr(mapAccessExpr.IndexExpr, unavailable);
                     break;
-                case MultExpr multExpr:
-                    unavailable = ProcessExpr(multExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(multExpr.Rhs, unavailable);
+                case BinOpExpr binOp:
+                    unavailable = ProcessExpr(binOp.Lhs, unavailable);
+                    unavailable = ProcessExpr(binOp.Rhs, unavailable);
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     unavailable = ProcessExpr(namedTupleAccessExpr.SubExpr, unavailable);
@@ -337,15 +297,8 @@ namespace Microsoft.Pc.TypeChecker
                     unavailable = ProcessExpr(seqAccessExpr.SeqExpr, unavailable);
                     unavailable = ProcessExpr(seqAccessExpr.IndexExpr, unavailable);
                     break;
-                case SignNegateExpr signNegateExpr:
-                    unavailable = ProcessExpr(signNegateExpr.SubExpr, unavailable);
-                    break;
                 case SizeofExpr sizeofExpr:
                     unavailable = ProcessExpr(sizeofExpr.Expr, unavailable);
-                    break;
-                case SubExpr subExpr:
-                    unavailable = ProcessExpr(subExpr.Lhs, unavailable);
-                    unavailable = ProcessExpr(subExpr.Rhs, unavailable);
                     break;
                 case ThisRefExpr _:
                     // nothing to do

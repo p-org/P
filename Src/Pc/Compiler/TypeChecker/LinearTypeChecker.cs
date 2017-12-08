@@ -10,24 +10,57 @@ namespace Microsoft.Pc.TypeChecker
     public class LinearTypeChecker
     {
         private readonly ITranslationErrorHandler handler;
+        private readonly List<FunCallExpr> funCallExprs = new List<FunCallExpr>();
+        private readonly List<FunCallStmt> funCallStmts = new List<FunCallStmt>();
 
         private LinearTypeChecker(ITranslationErrorHandler handler)
         {
             this.handler = handler;
         }
 
-        public static void AnalyzeMethods(ITranslationErrorHandler handler, List<Function> allFunctions)
+        public static void AnalyzeMethods(ITranslationErrorHandler handler, IEnumerable<Function> allFunctions)
         {
             var checker = new LinearTypeChecker(handler);
-            var needToCheckCallSites = new List<Function>();
+            var allUnavailableParams = new HashSet<Variable>();
             foreach (Function function in allFunctions)
             {
-                ISet<Variable> unavailable = checker.ProcessStatement(function.Body, new HashSet<Variable>());
-                if (unavailable.Any(var => var.Role.Equals(VariableRole.Param)))
+                ISet<Variable> unavailable = checker.CheckFunction(function);
+                allUnavailableParams.UnionWith(unavailable.Where(var => var.Role.Equals(VariableRole.Param)));
+            }
+            checker.CheckInterproceduralCalls(allUnavailableParams);
+        }
+
+        private ISet<Variable> CheckFunction(Function method)
+        {
+            return ProcessStatement(method.Body, new HashSet<Variable>());
+        }
+
+        private void CheckInterproceduralCalls(ICollection<Variable> unavailableParams)
+        {
+            foreach (FunCallExpr funCallExpr in funCallExprs)
+            {
+                CheckFunctionCall(unavailableParams, funCallExpr.Function, funCallExpr.Arguments);
+            }
+            foreach (FunCallStmt funCallStmt in funCallStmts)
+            {
+                CheckFunctionCall(unavailableParams, funCallStmt.Fun, funCallStmt.ArgsList);
+            }
+        }
+
+        private void CheckFunctionCall(ICollection<Variable> unavailableParams, Function function, IEnumerable<IPExpr> arguments)
+        {
+            int i = 0;
+            foreach (var pair in function.Signature.Parameters.Zip(arguments, Tuple.Create))
+            {
+                if (pair.Item2 is ILinearRef linearRef)
                 {
-                    // TODO: mark parameters as available / unavailable
-                    needToCheckCallSites.Add(function);
+                    if (linearRef.LinearType.Equals(LinearType.Swap) && unavailableParams.Contains(pair.Item1))
+                    {
+                        throw handler.InvalidSwap(null, linearRef,
+                                                  $"function {function.Name} relinquishes argument #{i} and therefore cannot be swapped.");
+                    }
                 }
+                i++;
             }
         }
 
@@ -38,13 +71,7 @@ namespace Microsoft.Pc.TypeChecker
                 case null:
                     throw new ArgumentOutOfRangeException(nameof(statement));
                 case CompoundStmt compoundStmt:
-                    foreach (IPStmt stmtStatement in compoundStmt.Statements)
-                    {
-                        unavailable = ProcessStatement(stmtStatement, unavailable);
-                    }
-                    break;
-                case PopStmt _:
-                    // nothing to check
+                    unavailable = compoundStmt.Statements.Aggregate(unavailable, (current, stmtStatement) => ProcessStatement(stmtStatement, current));
                     break;
                 case AssertStmt assertStmt:
                     unavailable = ProcessExpr(assertStmt.Assertion, unavailable);
@@ -140,6 +167,7 @@ namespace Microsoft.Pc.TypeChecker
                     break;
                 case FunCallStmt funCallStmt:
                     unavailable = ProcessArgList(funCallStmt.ArgsList, unavailable);
+                    funCallStmts.Add(funCallStmt);
                     break;
                 case RaiseStmt raiseStmt:
                     unavailable = ProcessExpr(raiseStmt.PEvent, unavailable);
@@ -179,8 +207,9 @@ namespace Microsoft.Pc.TypeChecker
                     unavailable = postUnavailable;
                     unavailable.ExceptWith(caseVariables);
                     break;
-                case NoStmt noStmt:
-                    // no-op. no effect
+                case PopStmt _:
+                case NoStmt _:
+                    // nothing to check
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));
@@ -220,9 +249,6 @@ namespace Microsoft.Pc.TypeChecker
             {
                 case null:
                     throw new ArgumentOutOfRangeException(nameof(expression));
-                case BoolLiteralExpr _:
-                    // nothing to do
-                    break;
                 case CastExpr castExpr:
                     unavailable = ProcessExpr(castExpr.SubExpr, unavailable);
                     break;
@@ -236,26 +262,9 @@ namespace Microsoft.Pc.TypeChecker
                 case CtorExpr ctorExpr:
                     unavailable = ProcessArgList(ctorExpr.Arguments, unavailable);
                     break;
-                case DefaultExpr _:
-                    // nothing to do
-                    break;
-                case EnumElemRefExpr _:
-                    // nothing to do
-                    break;
-                case EventRefExpr _:
-                    // nothing to do
-                    break;
-                case FairNondetExpr _:
-                    // nothing to do
-                    break;
-                case FloatLiteralExpr _:
-                    // nothing to do
-                    break;
                 case FunCallExpr funCallExpr:
                     unavailable = ProcessArgList(funCallExpr.Arguments, unavailable);
-                    break;
-                case IntLiteralExpr _:
-                    // nothing to do
+                    funCallExprs.Add(funCallExpr);
                     break;
                 case KeysExpr keysExpr:
                     unavailable = ProcessExpr(keysExpr.Expr, unavailable);
@@ -287,21 +296,12 @@ namespace Microsoft.Pc.TypeChecker
                 case NamedTupleExpr namedTupleExpr:
                     unavailable = ProcessArgList(namedTupleExpr.TupleFields, unavailable, false);
                     break;
-                case NondetExpr _:
-                    // nothing to do
-                    break;
-                case NullLiteralExpr _:
-                    // nothing to do
-                    break;
                 case SeqAccessExpr seqAccessExpr:
                     unavailable = ProcessExpr(seqAccessExpr.SeqExpr, unavailable);
                     unavailable = ProcessExpr(seqAccessExpr.IndexExpr, unavailable);
                     break;
                 case SizeofExpr sizeofExpr:
                     unavailable = ProcessExpr(sizeofExpr.Expr, unavailable);
-                    break;
-                case ThisRefExpr _:
-                    // nothing to do
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     unavailable = ProcessExpr(tupleAccessExpr.SubExpr, unavailable);
@@ -317,6 +317,18 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.IssueError(null, $"variable {variableAccessExpr.Variable.Name} not available");
                     }
+                    break;
+                case BoolLiteralExpr _:
+                case DefaultExpr _:
+                case EnumElemRefExpr _:
+                case EventRefExpr _:
+                case FairNondetExpr _:
+                case FloatLiteralExpr _:
+                case IntLiteralExpr _:
+                case NondetExpr _:
+                case NullLiteralExpr _:
+                case ThisRefExpr _:
+                    // nothing to do
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expression));

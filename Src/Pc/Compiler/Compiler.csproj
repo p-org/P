@@ -360,12 +360,10 @@
     <Compile Include="TypeChecker\Analyzer.cs" />
     <Compile Include="PProgramModel.cs" />
     <Compile Include="TypeChecker\Scope.cs" />
-    <Compile Include="TypeChecker\DeclPrinter.cs" />
     <Compile Include="TypeChecker\ExprVisitor.cs" />
     <Compile Include="TypeChecker\ITranslationErrorHandler.cs" />
     <Compile Include="TypeChecker\StackProperty.cs" />
     <Compile Include="TypeChecker\TranslationException.cs" />
-    <Compile Include="TypeChecker\RuleContextExtensions.cs" />
     <Compile Include="TypeChecker\StatementVisitor.cs" />
     <Compile Include="TypeChecker\TypeResolver.cs" />
     <Compile Include="TypeChecker\Types\BoundedType.cs" />

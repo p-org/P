@@ -17,14 +17,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         EventHandler = 1 << 4,
         ExitHandler = 1 << 5,
         ReceiveHandler = 1 << 6,
-        Foreign = 1 << 7,
+        Foreign = 1 << 7
     }
 
     public class Function : IPDecl, IHasScope
     {
-        private readonly List<Variable> localVariables = new List<Variable>();
-        private readonly HashSet<Function> callers = new HashSet<Function>();
         private readonly HashSet<Function> callees = new HashSet<Function>();
+        private readonly HashSet<Function> callers = new HashSet<Function>();
+        private readonly List<Variable> localVariables = new List<Variable>();
 
         public Function(string name, ParserRuleContext sourceNode)
         {
@@ -35,7 +35,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
         }
 
-        public Function(ParserRuleContext sourceNode) : this("", sourceNode) { }
+        public Function(ParserRuleContext sourceNode) : this("", sourceNode)
+        {
+        }
 
         public Machine Owner { get; set; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
@@ -48,22 +50,28 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
 
-        public void AddLocalVariable(Variable local) { localVariables.Add(local); }
+        public void AddLocalVariable(Variable local)
+        {
+            localVariables.Add(local);
+        }
 
         public void AddCallee(Function callee)
         {
             callee.callers.Add(this);
-            this.callees.Add(callee);
+            callees.Add(callee);
         }
 
         #region Analysis results
+
         // TODO: decouple this? turn it into flags? a mix?
         public bool? IsPure { get; set; }
+
         public bool? CanChangeState { get; set; }
         public bool? CanCommunicate { get; set; }
         public bool? IsNondeterministic { get; set; }
         public IImmutableSet<Function> Callers => callers.ToImmutableHashSet();
         public IImmutableSet<Function> Callees => callees.ToImmutableHashSet();
+
         #endregion
     }
 }

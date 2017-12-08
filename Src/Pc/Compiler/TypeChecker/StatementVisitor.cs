@@ -248,16 +248,8 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.MissingDeclaration(context.iden(), "machine", machineName);
             }
-
-            var args = new List<IPExpr>();
-            foreach (PParser.RvalueContext arg in context.rvalueList()?.rvalue() ??
-                                                  Enumerable.Empty<PParser.RvalueContext>())
-            {
-                args.Add(exprVisitor.Visit(arg));
-            }
-
+            var args = (from arg in context.rvalueList()?.rvalue() ?? Enumerable.Empty<PParser.RvalueContext>() select exprVisitor.Visit(arg)).ToList();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, args);
-            method.AddCallee(targetMachine.StartState.Entry);
             return new CtorStmt(targetMachine, args);
         }
 
@@ -283,7 +275,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 TypeCheckingUtils.CheckArgument(handler, context, ((ITypedName) pair.Item1).Type, pair.Item2);
             }
-
+            
             method.AddCallee(fun);
             return new FunCallStmt(fun, argsList);
         }
@@ -307,7 +299,12 @@ namespace Microsoft.Pc.TypeChecker
             List<IPExpr> args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
                                  Enumerable.Empty<IPExpr>()).ToList();
 
-            // TODO: wot?
+            if (pExpr is EventRefExpr eventRef)
+            {
+                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
+            }
+
+            // TODO: check as tuple payload
             return new RaiseStmt(pExpr, args.Count == 0 ? null : args[0]);
         }
 

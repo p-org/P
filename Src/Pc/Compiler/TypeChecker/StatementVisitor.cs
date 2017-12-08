@@ -296,16 +296,15 @@ namespace Microsoft.Pc.TypeChecker
             method.CanCommunicate = true;
             method.CanChangeState = true;
 
-            List<IPExpr> args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                                 Enumerable.Empty<IPExpr>()).ToList();
+            IPExpr[] args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
+                             Enumerable.Empty<IPExpr>()).ToArray();
 
             if (pExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
             }
-
-            // TODO: check as tuple payload
-            return new RaiseStmt(pExpr, args.Count == 0 ? null : args[0]);
+            
+            return new RaiseStmt(pExpr, args);
         }
 
         public override IPStmt VisitSendStmt(PParser.SendStmtContext context)

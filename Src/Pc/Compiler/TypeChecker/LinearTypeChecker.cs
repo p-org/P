@@ -9,9 +9,9 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class LinearTypeChecker
     {
-        private readonly ITranslationErrorHandler handler;
         private readonly List<FunCallExpr> funCallExprs = new List<FunCallExpr>();
         private readonly List<FunCallStmt> funCallStmts = new List<FunCallStmt>();
+        private readonly ITranslationErrorHandler handler;
 
         private LinearTypeChecker(ITranslationErrorHandler handler)
         {
@@ -47,10 +47,11 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        private void CheckFunctionCall(ICollection<Variable> unavailableParams, Function function, IEnumerable<IPExpr> arguments)
+        private void CheckFunctionCall(ICollection<Variable> unavailableParams, Function function,
+                                       IEnumerable<IPExpr> arguments)
         {
-            int i = 0;
-            foreach (var pair in function.Signature.Parameters.Zip(arguments, Tuple.Create))
+            var i = 0;
+            foreach (Tuple<Variable, IPExpr> pair in function.Signature.Parameters.Zip(arguments, Tuple.Create))
             {
                 if (pair.Item2 is ILinearRef linearRef)
                 {
@@ -71,7 +72,10 @@ namespace Microsoft.Pc.TypeChecker
                 case null:
                     throw new ArgumentOutOfRangeException(nameof(statement));
                 case CompoundStmt compoundStmt:
-                    unavailable = compoundStmt.Statements.Aggregate(unavailable, (current, stmtStatement) => ProcessStatement(stmtStatement, current));
+                    foreach (IPStmt stmtStatement in compoundStmt.Statements)
+                    {
+                        unavailable = ProcessStatement(stmtStatement, unavailable);
+                    }
                     break;
                 case AssertStmt assertStmt:
                     unavailable = ProcessExpr(assertStmt.Assertion, unavailable);
@@ -163,7 +167,7 @@ namespace Microsoft.Pc.TypeChecker
                     unavailable = thenUnavailable;
                     break;
                 case CtorStmt ctorStmt:
-                    unavailable = ProcessArgList(ctorStmt.Arguments, unavailable);
+                    unavailable = ProcessArgList(ctorStmt.Arguments, unavailable, false);
                     break;
                 case FunCallStmt funCallStmt:
                     unavailable = ProcessArgList(funCallStmt.ArgsList, unavailable);
@@ -171,10 +175,7 @@ namespace Microsoft.Pc.TypeChecker
                     break;
                 case RaiseStmt raiseStmt:
                     unavailable = ProcessExpr(raiseStmt.PEvent, unavailable);
-                    if (raiseStmt.Payload != null)
-                    {
-                        unavailable = ProcessExpr(raiseStmt.Payload, unavailable);
-                    }
+                    unavailable = ProcessArgList(raiseStmt.Payload, unavailable, false);
                     break;
                 case SendStmt sendStmt:
                     unavailable = ProcessExpr(sendStmt.MachineExpr, unavailable);
@@ -260,7 +261,7 @@ namespace Microsoft.Pc.TypeChecker
                     unavailable = ProcessExpr(containsKeyExpr.Key, unavailable);
                     break;
                 case CtorExpr ctorExpr:
-                    unavailable = ProcessArgList(ctorExpr.Arguments, unavailable);
+                    unavailable = ProcessArgList(ctorExpr.Arguments, unavailable, false);
                     break;
                 case FunCallExpr funCallExpr:
                     unavailable = ProcessArgList(funCallExpr.Arguments, unavailable);

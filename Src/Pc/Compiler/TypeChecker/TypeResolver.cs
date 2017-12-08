@@ -86,7 +86,12 @@ namespace Microsoft.Pc.TypeChecker
                     throw new NotImplementedException("interface types");
                 }
 
-                throw handler.MissingDeclaration(context.name, "enum, typedef, or interface", typeName);
+                if (scope.Lookup(typeName, out Machine _))
+                {
+                    throw new NotImplementedException("machine types");
+                }
+
+                throw handler.MissingDeclaration(context.name, "enum, typedef, machine, or interface", typeName);
             }
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)

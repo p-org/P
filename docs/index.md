@@ -1,4 +1,6 @@
 # The P Manual
+Ethan Jackson: ejackson@microsoft.com
+Shaz Qadeer: qadeer@microsoft.com
 
 ## 1. Introduction
 

@@ -33,7 +33,7 @@ namespace Microsoft.Pc.TypeChecker
             public override PLanguageType VisitBoundedType(PParser.BoundedTypeContext context)
             {
                 string eventSetName = context.eventSet.GetText();
-                if (!scope.Lookup(eventSetName, out EventSet eventSet))
+                if (!scope.Lookup(eventSetName, out NamedEventSet eventSet))
                 {
                     throw handler.MissingDeclaration(context.eventSet, "event set", eventSetName);
                 }
@@ -81,17 +81,22 @@ namespace Microsoft.Pc.TypeChecker
                     return new TypeDefType(typeDef);
                 }
 
-                if (scope.Lookup(typeName, out Interface _))
+                if (scope.Lookup(typeName, out NamedEventSet eventSet))
                 {
-                    throw new NotImplementedException("interface types");
+                    return new PermissionType(eventSet);
                 }
 
-                if (scope.Lookup(typeName, out Machine _))
+                if (scope.Lookup(typeName, out Interface pInterface))
                 {
-                    throw new NotImplementedException("machine types");
+                    return new PermissionType(pInterface);
                 }
 
-                throw handler.MissingDeclaration(context.name, "enum, typedef, machine, or interface", typeName);
+                if (scope.Lookup(typeName, out Machine machine))
+                {
+                    return new PermissionType(machine);
+                }
+
+                throw handler.MissingDeclaration(context.name, "enum, typedef, event set, machine, or interface", typeName);
             }
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)

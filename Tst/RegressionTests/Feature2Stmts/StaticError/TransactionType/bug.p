@@ -1,6 +1,6 @@
 //Defines the transaction type 
-type IC() = { E1, E2 };
-type IC1() = { E2 };
+interface IC() receives E1, E2;
+interface IC1() receives E2;
 event E2;
 type TransactionType =
 (

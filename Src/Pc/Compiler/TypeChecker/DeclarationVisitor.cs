@@ -159,7 +159,7 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitEventSetDecl(PParser.EventSetDeclContext context)
         {
             // EVENTSET name=iden 
-            var es = (EventSet) nodesToDeclarations.Get(context);
+            var es = (NamedEventSet) nodesToDeclarations.Get(context);
             // ASSIGN LBRACE eventSetLiteral RBRACE 
             es.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
             // SEMI
@@ -195,12 +195,12 @@ namespace Microsoft.Pc.TypeChecker
             // LPAREN type? RPAREN
             mInterface.PayloadType = ResolveType(context.type());
 
-            EventSet eventSet;
+            NamedEventSet eventSet;
             if (context.eventSetLiteral() is PParser.EventSetLiteralContext eventSetLiteral)
             {
                 // ASSIGN LBRACE eventSetLiteral RBRACE
                 // Let the eventSetLiteral handler fill in a newly created event set...
-                eventSet = new EventSet($"{mInterface.Name}$eventset", eventSetLiteral);
+                eventSet = new NamedEventSet($"{mInterface.Name}$eventset", eventSetLiteral);
                 eventSet.AddEvents((PEvent[]) Visit(eventSetLiteral));
             }
             else
@@ -263,7 +263,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     if (machine.Receives == null)
                     {
-                        machine.Receives = new EventSet($"{machine.Name}$receives", receivesSends);
+                        machine.Receives = new NamedEventSet($"{machine.Name}$receives", receivesSends);
                     }
                     machine.Receives.AddEvents(recvSendTuple.Item2);
                 }
@@ -271,7 +271,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     if (machine.Sends == null)
                     {
-                        machine.Sends = new EventSet($"{machine.Name}$sends", receivesSends);
+                        machine.Sends = new NamedEventSet($"{machine.Name}$sends", receivesSends);
                     }
                     machine.Sends.AddEvents(recvSendTuple.Item2);
                 }
@@ -312,7 +312,7 @@ namespace Microsoft.Pc.TypeChecker
             // SPEC name=Iden 
             var specMachine = (Machine) nodesToDeclarations.Get(context);
             // OBSERVES eventSetLiteral
-            specMachine.Observes = new EventSet($"{specMachine.Name}$eventset", context.eventSetLiteral());
+            specMachine.Observes = new NamedEventSet($"{specMachine.Name}$eventset", context.eventSetLiteral());
             specMachine.Observes.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
             // machineBody
             using (currentScope.NewContext(specMachine.Scope))

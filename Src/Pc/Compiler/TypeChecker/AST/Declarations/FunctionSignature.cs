@@ -1,9 +1,8 @@
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class FunctionSignature
     {

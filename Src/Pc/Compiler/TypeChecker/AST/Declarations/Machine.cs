@@ -27,13 +27,13 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool IsSpec { get; }
         public int Assume { get; set; } = -1;
         public int Assert { get; set; } = -1;
-        public EventSet Receives { get; set; }
-        public EventSet Sends { get; set; }
+        public NamedEventSet Receives { get; set; }
+        public NamedEventSet Sends { get; set; }
         public IEnumerable<Interface> Interfaces => interfaces;
         public IEnumerable<Variable> Fields => fields;
         public IEnumerable<Function> Methods => methods;
         public State StartState { get; set; }
-        public EventSet Observes { get; set; }
+        public NamedEventSet Observes { get; set; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
         public ParserRuleContext SourceLocation { get; }
 

@@ -229,7 +229,8 @@
     <Compile Include="ConsoleProfiler.cs" />
     <Compile Include="CSharpHelper.cs" />
     <Compile Include="TypeChecker\AST\Declarations\EnumElem.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\EventSet.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\FunctionSignature.cs" />
+    <Compile Include="TypeChecker\AST\Declarations\NamedEventSet.cs" />
     <Compile Include="TypeChecker\AST\Declarations\Function.cs" />
     <Compile Include="TypeChecker\AST\Declarations\Interface.cs" />
     <Compile Include="TypeChecker\AST\Declarations\Machine.cs" />
@@ -276,7 +277,6 @@
     <Compile Include="TypeChecker\AST\Expressions\UnnamedTupleExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\ValuesExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\VariableAccessExpr.cs" />
-    <Compile Include="TypeChecker\AST\FunctionSignature.cs" />
     <Compile Include="TypeChecker\AST\IConstructible.cs" />
     <Compile Include="TypeChecker\AST\IHasScope.cs" />
     <Compile Include="TypeChecker\AST\IPDecl.cs" />
@@ -371,6 +371,7 @@
     <Compile Include="TypeChecker\Types\ForeignType.cs" />
     <Compile Include="TypeChecker\Types\MapType.cs" />
     <Compile Include="TypeChecker\Types\NamedTupleType.cs" />
+    <Compile Include="TypeChecker\Types\PermissionType.cs" />
     <Compile Include="TypeChecker\Types\PLanguageType.cs" />
     <Compile Include="TypeChecker\Types\PrimitiveType.cs" />
     <Compile Include="TypeChecker\Types\SequenceType.cs" />

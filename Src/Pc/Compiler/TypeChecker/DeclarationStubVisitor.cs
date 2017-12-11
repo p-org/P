@@ -85,6 +85,7 @@ namespace Microsoft.Pc.TypeChecker
             string symbolName = context.name.GetText();
             PEvent decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
+            UniversalEventSet.Instance.AddEvent(decl); // TODO: do we actually want to do this?
             return null;
         }
 
@@ -95,7 +96,7 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitEventSetDecl(PParser.EventSetDeclContext context)
         {
             string symbolName = context.name.GetText();
-            EventSet decl = CurrentScope.Put(symbolName, context);
+            NamedEventSet decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
             return null;
         }

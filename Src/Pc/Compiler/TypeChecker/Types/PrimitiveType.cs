@@ -1,5 +1,3 @@
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-
 namespace Microsoft.Pc.TypeChecker.Types
 {
     public class PrimitiveType : PLanguageType
@@ -9,7 +7,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         public static readonly PrimitiveType Float = new PrimitiveType("float");
         public static readonly PrimitiveType Event = new PrimitiveType("event");
         public static readonly PrimitiveType Machine = new PrimitiveType("machine");
-        public static readonly BoundedType Data = new BoundedType(new EventSet("", null));
+        public static readonly BoundedType Data = new BoundedType(null);
         public static readonly PrimitiveType Any = new PrimitiveType("any");
         public static readonly PrimitiveType Null = new PrimitiveType("null");
 
@@ -32,7 +30,8 @@ namespace Microsoft.Pc.TypeChecker.Types
             if (CanonicalRepresentation.Equals("machine"))
             {
                 return otherType.CanonicalRepresentation.Equals("machine") ||
-                       otherType.CanonicalRepresentation.Equals("null");
+                       otherType.CanonicalRepresentation.Equals("null") ||
+                       otherType is PermissionType;
             }
             if (CanonicalRepresentation.Equals("int"))
             {
@@ -46,6 +45,9 @@ namespace Microsoft.Pc.TypeChecker.Types
             return CanonicalRepresentation.Equals(otherType.CanonicalRepresentation);
         }
 
-        public override PLanguageType Canonicalize() { return this; }
+        public override PLanguageType Canonicalize()
+        {
+            return this;
+        }
     }
 }

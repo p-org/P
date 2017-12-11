@@ -17,7 +17,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
         }
 
-        public EventSet ReceivableEvents { get; set; }
+        public NamedEventSet ReceivableEvents { get; set; }
         public IEnumerable<Machine> Implementations => implementations;
 
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
@@ -27,11 +27,12 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public void AddImplementation(Machine machine)
         {
-            if (!implementations.Contains(machine))
+            if (implementations.Contains(machine))
             {
-                implementations.Add(machine);
-                machine.AddInterface(this);
+                return;
             }
+            implementations.Add(machine);
+            machine.AddInterface(this);
         }
     }
 }

@@ -18,7 +18,7 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, EnumElem> enumElems = new Dictionary<string, EnumElem>();
         private readonly IDictionary<string, PEnum> enums = new Dictionary<string, PEnum>();
         private readonly IDictionary<string, PEvent> events = new Dictionary<string, PEvent>();
-        private readonly IDictionary<string, EventSet> eventSets = new Dictionary<string, EventSet>();
+        private readonly IDictionary<string, NamedEventSet> eventSets = new Dictionary<string, NamedEventSet>();
         private readonly IDictionary<string, Function> functions = new Dictionary<string, Function>();
         private readonly IDictionary<string, Interface> interfaces = new Dictionary<string, Interface>();
         private readonly IDictionary<string, Machine> machines = new Dictionary<string, Machine>();
@@ -59,7 +59,7 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<EnumElem> EnumElems => enumElems.Values;
         public IEnumerable<PEnum> Enums => enums.Values;
         public IEnumerable<PEvent> Events => events.Values;
-        public IEnumerable<EventSet> EventSets => eventSets.Values;
+        public IEnumerable<NamedEventSet> EventSets => eventSets.Values;
         public IEnumerable<Function> Functions => functions.Values;
         public IEnumerable<Interface> Interfaces => interfaces.Values;
         public IEnumerable<Machine> Machines => machines.Values;
@@ -76,7 +76,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Get(string name, out PEvent tree) { return events.TryGetValue(name, out tree); }
 
-        public bool Get(string name, out EventSet tree) { return eventSets.TryGetValue(name, out tree); }
+        public bool Get(string name, out NamedEventSet tree) { return eventSets.TryGetValue(name, out tree); }
 
         public bool Get(string name, out Function tree) { return functions.TryGetValue(name, out tree); }
 
@@ -147,7 +147,7 @@ namespace Microsoft.Pc.TypeChecker
             return false;
         }
 
-        public bool Lookup(string name, out EventSet tree)
+        public bool Lookup(string name, out NamedEventSet tree)
         {
             Scope current = this;
             while (current != null)
@@ -332,9 +332,9 @@ namespace Microsoft.Pc.TypeChecker
             return @event;
         }
 
-        public EventSet Put(string name, PParser.EventSetDeclContext tree)
+        public NamedEventSet Put(string name, PParser.EventSetDeclContext tree)
         {
-            var eventSet = new EventSet(name, tree);
+            var eventSet = new NamedEventSet(name, tree);
             CheckConflicts(eventSet, Namespace(eventSets));
             eventSets.Add(name, eventSet);
             return eventSet;

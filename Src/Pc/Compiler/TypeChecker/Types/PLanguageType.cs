@@ -21,7 +21,7 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         public abstract bool IsAssignableFrom(PLanguageType otherType);
 
-        public virtual bool IsSameTypeAs(PLanguageType otherType)
+        public bool IsSameTypeAs(PLanguageType otherType)
         {
             return IsAssignableFrom(otherType) && otherType.IsAssignableFrom(this);
         }

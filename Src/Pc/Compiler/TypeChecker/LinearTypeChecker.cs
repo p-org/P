@@ -31,7 +31,7 @@ namespace Microsoft.Pc.TypeChecker
 
         private void CheckFunction(Function method)
         {
-            ISet<Variable> unavailable = ProcessStatement(method.Body, new HashSet<Variable>());
+            ISet<Variable> unavailable = ProcessStatement(new HashSet<Variable>(), method.Body);
             allUnavailableParams.UnionWith(unavailable.Where(var => var.Role.Equals(VariableRole.Param)));
         }
 
@@ -64,20 +64,17 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        private ISet<Variable> ProcessStatement(IPStmt statement, ISet<Variable> unavailable)
+        private ISet<Variable> ProcessStatement(ISet<Variable> unavailable, IPStmt statement)
         {
             switch (statement)
             {
                 case null:
                     throw new ArgumentOutOfRangeException(nameof(statement));
                 case CompoundStmt compoundStmt:
-                    foreach (IPStmt stmtStatement in compoundStmt.Statements)
-                    {
-                        unavailable = ProcessStatement(stmtStatement, unavailable);
-                    }
+                    unavailable = compoundStmt.Statements.Aggregate(unavailable, ProcessStatement);
                     break;
                 case AssertStmt assertStmt:
-                    unavailable = ProcessExpr(assertStmt.Assertion, unavailable);
+                    unavailable = ProcessExpr(unavailable, assertStmt.Assertion);
                     break;
                 case PrintStmt printStmt:
                     unavailable = ProcessArgList(printStmt.Args, unavailable, false);
@@ -85,18 +82,18 @@ namespace Microsoft.Pc.TypeChecker
                 case ReturnStmt returnStmt:
                     if (returnStmt.ReturnValue != null)
                     {
-                        unavailable = ProcessExpr(returnStmt.ReturnValue, unavailable);
+                        unavailable = ProcessExpr(unavailable, returnStmt.ReturnValue);
                     }
                     break;
                 case AssignStmt assignStmt:
-                    unavailable = ProcessExpr(assignStmt.Value, unavailable);
+                    unavailable = ProcessExpr(unavailable, assignStmt.Value);
                     if (assignStmt.Variable is VariableAccessExpr assignAccess)
                     {
                         unavailable.Remove(assignAccess.Variable);
                     }
                     else
                     {
-                        unavailable = ProcessExpr(assignStmt.Variable, unavailable);
+                        unavailable = ProcessExpr(unavailable, assignStmt.Variable);
                     }
                     break;
                 case MoveAssignStmt moveAssignStmt:
@@ -112,7 +109,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     else
                     {
-                        unavailable = ProcessExpr(moveAssignStmt.ToLocation, unavailable);
+                        unavailable = ProcessExpr(unavailable, moveAssignStmt.ToLocation);
                     }
                     break;
                 case SwapAssignStmt swapAssignStmt:
@@ -127,7 +124,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     else
                     {
-                        unavailable = ProcessExpr(swapAssignStmt.NewLocation, unavailable);
+                        unavailable = ProcessExpr(unavailable, swapAssignStmt.NewLocation);
                     }
 
                     if (unavailable.Contains(swapAssignStmt.OldLocation) ||
@@ -138,30 +135,34 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     break;
                 case InsertStmt insertStmt:
-                    unavailable = ProcessExpr(insertStmt.Variable, unavailable);
-                    unavailable = ProcessExpr(insertStmt.Index, unavailable);
-                    unavailable = ProcessExpr(insertStmt.Value, unavailable);
+                    unavailable = ProcessExpr(unavailable, insertStmt.Variable);
+                    unavailable = ProcessExpr(unavailable, insertStmt.Index);
+                    unavailable = ProcessExpr(unavailable, insertStmt.Value);
                     break;
                 case RemoveStmt removeStmt:
-                    unavailable = ProcessExpr(removeStmt.Variable, unavailable);
-                    unavailable = ProcessExpr(removeStmt.Value, unavailable);
+                    unavailable = ProcessExpr(unavailable, removeStmt.Variable);
+                    unavailable = ProcessExpr(unavailable, removeStmt.Value);
                     break;
                 case WhileStmt whileStmt:
-                    unavailable = ProcessExpr(whileStmt.Condition, unavailable);
+                    unavailable = ProcessExpr(unavailable, whileStmt.Condition);
+                    // process running the body twice. on the first go, the loop can potentially relinquish additional variables
+                    // on the second go, either the body will use one of these variables and throw or reach a fixed point since all
+                    // paths are considered simultaneously. Then, we continue our overapproximation by taking the union of no runs
+                    // and one or more runs.
                     ISet<Variable> bodyUnavailable =
-                        ProcessStatement(whileStmt.Body, new HashSet<Variable>(unavailable));
-                    bodyUnavailable = ProcessExpr(whileStmt.Condition, bodyUnavailable);
-                    if (bodyUnavailable.IsProperSupersetOf(unavailable))
-                    {
-                        throw handler.IssueError(null, "while loops must not relinquish variables");
-                    }
+                        ProcessStatement(new HashSet<Variable>(unavailable), whileStmt.Body);
+                    bodyUnavailable = ProcessExpr(bodyUnavailable, whileStmt.Condition);
+                    // TODO: more efficient way of doing this?
+                    bodyUnavailable = ProcessStatement(bodyUnavailable, whileStmt.Body);
+                    bodyUnavailable = ProcessExpr(bodyUnavailable, whileStmt.Condition);
+                    unavailable.UnionWith(bodyUnavailable);
                     break;
                 case IfStmt ifStmt:
-                    unavailable = ProcessExpr(ifStmt.Condition, unavailable);
+                    unavailable = ProcessExpr(unavailable, ifStmt.Condition);
                     ISet<Variable> thenUnavailable =
-                        ProcessStatement(ifStmt.ThenBranch, new HashSet<Variable>(unavailable));
+                        ProcessStatement(new HashSet<Variable>(unavailable), ifStmt.ThenBranch);
                     ISet<Variable> elseUnavailable =
-                        ProcessStatement(ifStmt.ElseBranch, new HashSet<Variable>(unavailable));
+                        ProcessStatement(new HashSet<Variable>(unavailable), ifStmt.ElseBranch);
                     thenUnavailable.UnionWith(elseUnavailable);
                     unavailable = thenUnavailable;
                     break;
@@ -173,25 +174,25 @@ namespace Microsoft.Pc.TypeChecker
                     funCallStmts.Add(funCallStmt);
                     break;
                 case RaiseStmt raiseStmt:
-                    unavailable = ProcessExpr(raiseStmt.PEvent, unavailable);
+                    unavailable = ProcessExpr(unavailable, raiseStmt.PEvent);
                     unavailable = ProcessArgList(raiseStmt.Payload, unavailable, false);
                     break;
                 case SendStmt sendStmt:
-                    unavailable = ProcessExpr(sendStmt.MachineExpr, unavailable);
-                    unavailable = ProcessExpr(sendStmt.Evt, unavailable);
+                    unavailable = ProcessExpr(unavailable, sendStmt.MachineExpr);
+                    unavailable = ProcessExpr(unavailable, sendStmt.Evt);
                     unavailable = ProcessArgList(sendStmt.ArgsList, unavailable, false);
                     break;
                 case AnnounceStmt announceStmt:
-                    unavailable = ProcessExpr(announceStmt.PEvent, unavailable);
+                    unavailable = ProcessExpr(unavailable, announceStmt.PEvent);
                     if (announceStmt.Payload != null)
                     {
-                        unavailable = ProcessExpr(announceStmt.Payload, unavailable);
+                        unavailable = ProcessExpr(unavailable, announceStmt.Payload);
                     }
                     break;
                 case GotoStmt gotoStmt:
                     if (gotoStmt.Payload != null)
                     {
-                        unavailable = ProcessExpr(gotoStmt.Payload, unavailable);
+                        unavailable = ProcessExpr(unavailable, gotoStmt.Payload);
                     }
                     break;
                 case ReceiveStmt receiveStmt:
@@ -200,7 +201,7 @@ namespace Microsoft.Pc.TypeChecker
                     foreach (KeyValuePair<PEvent, Function> recvCase in receiveStmt.Cases)
                     {
                         ISet<Variable> caseUnavailable =
-                            ProcessStatement(recvCase.Value.Body, new HashSet<Variable>(unavailable));
+                            ProcessStatement(new HashSet<Variable>(unavailable), recvCase.Value.Body);
                         postUnavailable.UnionWith(caseUnavailable);
                         caseVariables.UnionWith(recvCase.Value.Signature.Parameters);
                     }
@@ -233,31 +234,27 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 else
                 {
-                    unavailable = ProcessExpr(argument, unavailable);
+                    unavailable = ProcessExpr(unavailable, argument);
                 }
             }
-            foreach (ILinearRef linearRef in remainingLinearRefs)
-            {
-                unavailable = ProcessExpr(linearRef, unavailable);
-            }
-            return unavailable;
+            return remainingLinearRefs.Aggregate(unavailable, ProcessExpr);
         }
 
-        private ISet<Variable> ProcessExpr(IPExpr expression, ISet<Variable> unavailable)
+        private ISet<Variable> ProcessExpr(ISet<Variable> unavailable, IPExpr expression)
         {
             switch (expression)
             {
                 case null:
                     throw new ArgumentOutOfRangeException(nameof(expression));
                 case CastExpr castExpr:
-                    unavailable = ProcessExpr(castExpr.SubExpr, unavailable);
+                    unavailable = ProcessExpr(unavailable, castExpr.SubExpr);
                     break;
                 case CoerceExpr coerceExpr:
-                    unavailable = ProcessExpr(coerceExpr.SubExpr, unavailable);
+                    unavailable = ProcessExpr(unavailable, coerceExpr.SubExpr);
                     break;
                 case ContainsKeyExpr containsKeyExpr:
-                    unavailable = ProcessExpr(containsKeyExpr.Map, unavailable);
-                    unavailable = ProcessExpr(containsKeyExpr.Key, unavailable);
+                    unavailable = ProcessExpr(unavailable, containsKeyExpr.Map);
+                    unavailable = ProcessExpr(unavailable, containsKeyExpr.Key);
                     break;
                 case CtorExpr ctorExpr:
                     unavailable = ProcessArgList(ctorExpr.Arguments, unavailable, false);
@@ -267,7 +264,7 @@ namespace Microsoft.Pc.TypeChecker
                     funCallExprs.Add(funCallExpr);
                     break;
                 case KeysExpr keysExpr:
-                    unavailable = ProcessExpr(keysExpr.Expr, unavailable);
+                    unavailable = ProcessExpr(unavailable, keysExpr.Expr);
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
                     if (unavailable.Contains(linearAccessRefExpr.Variable))
@@ -280,37 +277,37 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     break;
                 case UnaryOpExpr unaryOp:
-                    unavailable = ProcessExpr(unaryOp.SubExpr, unavailable);
+                    unavailable = ProcessExpr(unavailable, unaryOp.SubExpr);
                     break;
                 case MapAccessExpr mapAccessExpr:
-                    unavailable = ProcessExpr(mapAccessExpr.MapExpr, unavailable);
-                    unavailable = ProcessExpr(mapAccessExpr.IndexExpr, unavailable);
+                    unavailable = ProcessExpr(unavailable, mapAccessExpr.MapExpr);
+                    unavailable = ProcessExpr(unavailable, mapAccessExpr.IndexExpr);
                     break;
                 case BinOpExpr binOp:
-                    unavailable = ProcessExpr(binOp.Lhs, unavailable);
-                    unavailable = ProcessExpr(binOp.Rhs, unavailable);
+                    unavailable = ProcessExpr(unavailable, binOp.Lhs);
+                    unavailable = ProcessExpr(unavailable, binOp.Rhs);
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    unavailable = ProcessExpr(namedTupleAccessExpr.SubExpr, unavailable);
+                    unavailable = ProcessExpr(unavailable, namedTupleAccessExpr.SubExpr);
                     break;
                 case NamedTupleExpr namedTupleExpr:
                     unavailable = ProcessArgList(namedTupleExpr.TupleFields, unavailable, false);
                     break;
                 case SeqAccessExpr seqAccessExpr:
-                    unavailable = ProcessExpr(seqAccessExpr.SeqExpr, unavailable);
-                    unavailable = ProcessExpr(seqAccessExpr.IndexExpr, unavailable);
+                    unavailable = ProcessExpr(unavailable, seqAccessExpr.SeqExpr);
+                    unavailable = ProcessExpr(unavailable, seqAccessExpr.IndexExpr);
                     break;
                 case SizeofExpr sizeofExpr:
-                    unavailable = ProcessExpr(sizeofExpr.Expr, unavailable);
+                    unavailable = ProcessExpr(unavailable, sizeofExpr.Expr);
                     break;
                 case TupleAccessExpr tupleAccessExpr:
-                    unavailable = ProcessExpr(tupleAccessExpr.SubExpr, unavailable);
+                    unavailable = ProcessExpr(unavailable, tupleAccessExpr.SubExpr);
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
                     unavailable = ProcessArgList(unnamedTupleExpr.TupleFields, unavailable, false);
                     break;
                 case ValuesExpr valuesExpr:
-                    unavailable = ProcessExpr(valuesExpr.Expr, unavailable);
+                    unavailable = ProcessExpr(unavailable, valuesExpr.Expr);
                     break;
                 case VariableAccessExpr variableAccessExpr:
                     if (unavailable.Contains(variableAccessExpr.Variable))

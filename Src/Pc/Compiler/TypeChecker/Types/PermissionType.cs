@@ -26,17 +26,14 @@ namespace Microsoft.Pc.TypeChecker.Types
         private readonly IPDecl origin;
         public IEventSet EventSet { get; }
 
-        public override string OriginalRepresentation { get; }
-        public override string CanonicalRepresentation { get; }
+        public override string OriginalRepresentation => origin.Name;
+        public override string CanonicalRepresentation => origin.Name;
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             if (otherType is PermissionType permission)
             {
-                if (permission.EventSet.IsSupersetOf(this.EventSet))
-                {
-                    return true;
-                }
+                return permission.EventSet.IsSame(EventSet);
             }
             return false;
         }

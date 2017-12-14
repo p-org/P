@@ -263,17 +263,23 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     if (machine.Receives == null)
                     {
-                        machine.Receives = new NamedEventSet($"{machine.Name}$receives", receivesSends);
+                        machine.Receives = new EventSet();
                     }
-                    machine.Receives.AddEvents(recvSendTuple.Item2);
+                    foreach (PEvent @event in recvSendTuple.Item2)
+                    {
+                        machine.Receives.AddEvent(@event);
+                    }
                 }
                 else if (eventSetType.Equals("SEND", StringComparison.InvariantCulture))
                 {
                     if (machine.Sends == null)
                     {
-                        machine.Sends = new NamedEventSet($"{machine.Name}$sends", receivesSends);
+                        machine.Sends = new EventSet();
                     }
-                    machine.Sends.AddEvents(recvSendTuple.Item2);
+                    foreach (PEvent @event in recvSendTuple.Item2)
+                    {
+                        machine.Sends.AddEvent(@event);
+                    }
                 }
                 else
                 {

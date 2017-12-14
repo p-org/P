@@ -266,9 +266,7 @@ namespace Microsoft.Pc.TypeChecker
         #endregion
 
         #region Tree clipping types
-
-        public override object VisitBoundedType(PParser.BoundedTypeContext context) { return null; }
-
+        
         public override object VisitSeqType(PParser.SeqTypeContext context) { return null; }
 
         public override object VisitNamedType(PParser.NamedTypeContext context) { return null; }

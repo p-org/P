@@ -23,26 +23,22 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             // if this type is "any", then it's always good. Otherwise, the types have to match exactly.
-            if (CanonicalRepresentation.Equals("any"))
+            switch (CanonicalRepresentation)
             {
-                return true;
+                case "any":
+                    return true;
+                case "machine":
+                    return otherType.CanonicalRepresentation.Equals("machine") ||
+                           otherType.CanonicalRepresentation.Equals("null") ||
+                           otherType is PermissionType;
+                case "int":
+                    return TypeIsOfKind(otherType, TypeKind.Enum) || otherType.CanonicalRepresentation.Equals("int");
+                case "event":
+                    return otherType.CanonicalRepresentation.Equals("event") ||
+                           otherType.CanonicalRepresentation.Equals("null");
+                default:
+                    return CanonicalRepresentation.Equals(otherType.CanonicalRepresentation);
             }
-            if (CanonicalRepresentation.Equals("machine"))
-            {
-                return otherType.CanonicalRepresentation.Equals("machine") ||
-                       otherType.CanonicalRepresentation.Equals("null") ||
-                       otherType is PermissionType;
-            }
-            if (CanonicalRepresentation.Equals("int"))
-            {
-                return TypeIsOfKind(otherType, TypeKind.Enum) || otherType.CanonicalRepresentation.Equals("int");
-            }
-            if (CanonicalRepresentation.Equals("event"))
-            {
-                return otherType.CanonicalRepresentation.Equals("event") ||
-                       otherType.CanonicalRepresentation.Equals("null");
-            }
-            return CanonicalRepresentation.Equals(otherType.CanonicalRepresentation);
         }
 
         public override PLanguageType Canonicalize()

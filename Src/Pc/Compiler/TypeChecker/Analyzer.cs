@@ -11,9 +11,7 @@ namespace Microsoft.Pc.TypeChecker
 {
     public static class Analyzer
     {
-        public static PProgramModel AnalyzeCompilationUnit(
-            ITranslationErrorHandler handler,
-            params PParser.ProgramContext[] programUnits)
+        public static Scope AnalyzeCompilationUnit(ITranslationErrorHandler handler, params PParser.ProgramContext[] programUnits)
         {
             // Step 1: Build the global scope of declarations
             Scope globalScope = BuildGlobalScope(handler, programUnits);
@@ -25,19 +23,21 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // Step 3: Fill function bodies
-            var allFunctions = AllFunctions(globalScope).ToList();
-            foreach (var machineFunction in allFunctions)
+            List<Function> allFunctions = AllFunctions(globalScope).ToList();
+            foreach (Function machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
             }
 
             // Step 4: Propagate purity properties
             ApplyPropagations(allFunctions,
-                CreatePropagation(fn => fn.CanCommunicate, (fn, value) => fn.CanCommunicate = value, true),
-                CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value, true));
+                              CreatePropagation(fn => fn.CanCommunicate, (fn, value) => fn.CanCommunicate = value,
+                                                true),
+                              CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value,
+                                                true));
 
             // Step 5: Verify purity invariants
-            foreach (var machineFunction in allFunctions)
+            foreach (Function machineFunction in allFunctions)
             {
                 if (machineFunction.Owner?.IsSpec == true && machineFunction.IsNondeterministic == true)
                 {
@@ -54,23 +54,11 @@ namespace Microsoft.Pc.TypeChecker
             // Step 6: Check linear type ownership
             LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
 
-            // NOW: AST Complete, pass to StringTemplate
-            return new PProgramModel
-            {
-                GlobalScope = globalScope
-            };
-        }
-
-        private class Propagation<T>
-        {
-            public Stack<Function> PropertyStack { get; } = new Stack<Function>();
-            public Func<Function, T> PropertyGetter { get; set; }
-            public Action<Function, T> PropertySetter { get; set; }
-            public T ActiveValue { get; set; }
+            return globalScope;
         }
 
         private static Propagation<T> CreatePropagation<T>(Func<Function, T> getter, Action<Function, T> setter,
-            T value)
+                                                           T value)
         {
             return new Propagation<T>
             {
@@ -144,6 +132,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     yield return method;
                 }
+                // TODO: save these to field containing anonymous methods
                 foreach (State state in machine.AllStates())
                 {
                     if (state.Entry != null)
@@ -174,6 +163,14 @@ namespace Microsoft.Pc.TypeChecker
                     }
                 }
             }
+        }
+
+        private class Propagation<T>
+        {
+            public Stack<Function> PropertyStack { get; } = new Stack<Function>();
+            public Func<Function, T> PropertyGetter { get; set; }
+            public Action<Function, T> PropertySetter { get; set; }
+            public T ActiveValue { get; set; }
         }
     }
 }

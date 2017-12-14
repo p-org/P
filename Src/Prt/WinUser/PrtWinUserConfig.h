@@ -33,30 +33,19 @@ extern "C"{
 #endif
 
 #ifdef PRT_DEBUG
-#ifndef _DEBUG
-#define _DEBUG
+	#ifndef _DEBUG
+	#define _DEBUG
+	#endif
+	#define _CRTDBG_MAP_ALLOC
+	#include <crtdbg.h>
 #endif
 
-#define _CRTDBG_MAP_ALLOC
-
-#include <stdlib.h>
-#include <malloc.h>
-#include <crtdbg.h>
-#include <sal.h>
-#include <stddef.h>
-#include <windows.h>
-#include <stdio.h>
-
-#else
-
-#include <sal.h>
-#include <stddef.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <windows.h>
-#include <malloc.h>
-
-#endif
+	#include <malloc.h>
+	#include <sal.h>
+	#include <stddef.h>
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <windows.h>
 
 	/** PRT uses these definitions for boolean values */
 	typedef enum PRT_BOOLEAN

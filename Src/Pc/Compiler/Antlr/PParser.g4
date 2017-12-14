@@ -27,8 +27,7 @@ program : (topDecl | annotationSet)* EOF ;
 iden : Iden ;
 int  : IntLiteral ;
 
-type : ANY LT eventSet=iden GT    # BoundedType
-     | SEQ LBRACK type RBRACK     # SeqType
+type : SEQ LBRACK type RBRACK     # SeqType
      | MAP LBRACK keyType=type COMMA valueType=type RBRACK  # MapType
      | LPAREN tupTypes+=type (COMMA tupTypes+=type)* RPAREN # TupleType
      | LPAREN idenTypeList RPAREN # NamedTupleType

@@ -29,18 +29,7 @@ namespace Microsoft.Pc.TypeChecker
                 this.scope = scope;
                 this.handler = handler;
             }
-
-            public override PLanguageType VisitBoundedType(PParser.BoundedTypeContext context)
-            {
-                string eventSetName = context.eventSet.GetText();
-                if (!scope.Lookup(eventSetName, out NamedEventSet eventSet))
-                {
-                    throw handler.MissingDeclaration(context.eventSet, "event set", eventSetName);
-                }
-
-                return new BoundedType(eventSet);
-            }
-
+            
             public override PLanguageType VisitSeqType(PParser.SeqTypeContext context)
             {
                 return new SequenceType(Visit(context.type()));

@@ -9,11 +9,12 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
         {
             Machine = machine;
             Arguments = arguments;
+            Type = new PermissionType(machine);
         }
 
         public Machine Machine { get; }
         public IPExpr[] Arguments { get; }
 
-        public PLanguageType Type { get; } = PrimitiveType.Machine;
+        public PLanguageType Type { get; }
     }
 }

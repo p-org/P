@@ -310,7 +310,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitSendStmt(PParser.SendStmtContext context)
         {
             IPExpr machineExpr = exprVisitor.Visit(context.machine);
-            if (machineExpr.Type != PrimitiveType.Machine)
+            if (!PrimitiveType.Machine.IsAssignableFrom(machineExpr.Type))
             {
                 throw handler.TypeMismatch(context.machine, machineExpr.Type, PrimitiveType.Machine);
             }
@@ -325,11 +325,16 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context.@event, evtExpr.Type, PrimitiveType.Event);
             }
+            
+            IPExpr[] args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
+                             Enumerable.Empty<IPExpr>()).ToArray();
 
-            IEnumerable<IPExpr> args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                                       Enumerable.Empty<IPExpr>();
-            List<IPExpr> argsList = args.ToList();
-            return new SendStmt(machineExpr, evtExpr, argsList);
+            if (evtExpr is EventRefExpr eventRef)
+            {
+                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
+            }
+
+            return new SendStmt(machineExpr, evtExpr, args);
         }
 
         private static bool IsDefinitelyNullEvent(IPExpr evtExpr)

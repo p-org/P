@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 
@@ -11,7 +12,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         IEnumerable<PEvent> Events { get; }
         bool AddEvent(PEvent pEvent);
         bool Contains(PEvent pEvent);
-        bool IsSupersetOf(IEventSet eventSet);
+        bool IsSame(IEventSet eventSet);
     }
 
     public class EventSet : IEventSet
@@ -33,9 +34,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             return events.Contains(pEvent);
         }
 
-        public bool IsSupersetOf(IEventSet eventSet)
+        public bool IsSame(IEventSet eventSet)
         {
-            return events.IsSupersetOf(eventSet.Events);
+            return events.SetEquals(eventSet.Events);
         }
     }
 
@@ -46,13 +47,16 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         private readonly SortedSet<PEvent> events = new SortedSet<PEvent>(EventNameComparer);
 
+        private static readonly Lazy<UniversalEventSet> LazyInstance =
+            new Lazy<UniversalEventSet>(() => new UniversalEventSet());
+
         private UniversalEventSet()
         {
         }
 
-        public static UniversalEventSet Instance { get; } = new UniversalEventSet();
+        public static UniversalEventSet Instance => LazyInstance.Value;
 
-        public IEnumerable<PEvent> Events { get; }
+        public IEnumerable<PEvent> Events => events;
 
         public bool AddEvent(PEvent pEvent)
         {
@@ -64,9 +68,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             return true;
         }
 
-        public bool IsSupersetOf(IEventSet eventSet)
+        public bool IsSame(IEventSet eventSet)
         {
-            return true;
+            return this == Instance && eventSet == this;
         }
     }
 
@@ -95,9 +99,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             return events.Contains(pEvent);
         }
 
-        public bool IsSupersetOf(IEventSet eventSet)
+        public bool IsSame(IEventSet eventSet)
         {
-            return events.IsSupersetOf(eventSet);
+            return events.IsSame(eventSet);
         }
 
         public string Name { get; }

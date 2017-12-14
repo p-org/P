@@ -1,0 +1,9 @@
+*.zing
+*.c
+*.h
+*.log
+*.dll
+*.trace
+*.4ml
+*display-diffs.bat
+*failed-tests.txt

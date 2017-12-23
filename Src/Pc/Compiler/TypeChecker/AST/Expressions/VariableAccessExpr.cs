@@ -13,8 +13,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             Type = variable.Type;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public Variable Variable { get; }
+
+        public ParserRuleContext SourceLocation { get; }
 
         public PLanguageType Type { get; }
     }

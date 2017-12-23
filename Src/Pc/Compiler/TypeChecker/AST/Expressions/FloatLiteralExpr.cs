@@ -10,6 +10,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             Value = value;
             SourceLocation = sourceLocation;
         }
+
         public double Value { get; }
         public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type { get; } = PrimitiveType.Float;

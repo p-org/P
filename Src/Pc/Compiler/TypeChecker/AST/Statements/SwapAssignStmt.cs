@@ -13,8 +13,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
             OldLocation = oldLocation;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public IPExpr NewLocation { get; }
         public Variable OldLocation { get; }
+
+        public ParserRuleContext SourceLocation { get; }
     }
 }

@@ -13,9 +13,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
             ElseBranch = elseBranch;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public IPExpr Condition { get; }
         public IPStmt ThenBranch { get; }
         public IPStmt ElseBranch { get; }
+
+        public ParserRuleContext SourceLocation { get; }
     }
 }

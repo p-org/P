@@ -13,8 +13,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
             FromVariable = fromVariable;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public IPExpr ToLocation { get; }
         public Variable FromVariable { get; }
+
+        public ParserRuleContext SourceLocation { get; }
     }
 }

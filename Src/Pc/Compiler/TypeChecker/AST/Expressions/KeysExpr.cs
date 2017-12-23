@@ -12,8 +12,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             Type = type;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public IPExpr Expr { get; }
+
+        public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type { get; }
     }
 }

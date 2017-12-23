@@ -14,9 +14,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             Type = function.Signature.ReturnType;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public Function Function { get; }
         public IPExpr[] Arguments { get; }
+
+        public ParserRuleContext SourceLocation { get; }
 
         public PLanguageType Type { get; }
     }

@@ -12,8 +12,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             Machine = machine;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public Machine Machine { get; }
+
+        public ParserRuleContext SourceLocation { get; }
 
         public PLanguageType Type { get; } = PrimitiveType.Machine;
     }

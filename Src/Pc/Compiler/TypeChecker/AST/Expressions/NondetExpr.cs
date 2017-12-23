@@ -5,12 +5,12 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
     public class NondetExpr : IPExpr
     {
-        public ParserRuleContext SourceLocation { get; }
-
         public NondetExpr(ParserRuleContext sourceLocation)
         {
             SourceLocation = sourceLocation;
         }
+
+        public ParserRuleContext SourceLocation { get; }
 
         public PLanguageType Type { get; } = PrimitiveType.Bool;
     }

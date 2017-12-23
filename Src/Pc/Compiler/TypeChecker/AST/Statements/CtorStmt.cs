@@ -14,8 +14,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
             Arguments = arguments;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public Machine Machine { get; }
         public List<IPExpr> Arguments { get; }
+
+        public ParserRuleContext SourceLocation { get; }
     }
 }

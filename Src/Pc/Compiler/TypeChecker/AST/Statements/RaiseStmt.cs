@@ -12,8 +12,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
             Payload = payload;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public IPExpr PEvent { get; }
         public IPExpr[] Payload { get; }
+
+        public ParserRuleContext SourceLocation { get; }
     }
 }

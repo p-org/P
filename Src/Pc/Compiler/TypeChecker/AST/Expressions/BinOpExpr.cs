@@ -23,10 +23,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             }
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public BinOpType Operation { get; }
         public IPExpr Lhs { get; }
         public IPExpr Rhs { get; }
+
+        public ParserRuleContext SourceLocation { get; }
 
         public PLanguageType Type { get; }
 

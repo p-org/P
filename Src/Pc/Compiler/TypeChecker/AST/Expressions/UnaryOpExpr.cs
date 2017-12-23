@@ -13,9 +13,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             Type = subExpr.Type;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public UnaryOpType Operation { get; }
         public IPExpr SubExpr { get; }
+
+        public ParserRuleContext SourceLocation { get; }
 
         public PLanguageType Type { get; }
     }

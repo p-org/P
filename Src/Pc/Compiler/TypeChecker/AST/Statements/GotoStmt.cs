@@ -13,8 +13,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
             Payload = payload;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public State State { get; }
         public IPExpr Payload { get; }
+
+        public ParserRuleContext SourceLocation { get; }
     }
 }

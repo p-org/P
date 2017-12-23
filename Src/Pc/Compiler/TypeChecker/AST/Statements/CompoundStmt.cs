@@ -11,7 +11,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
             Statements = statements;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public List<IPStmt> Statements { get; }
+
+        public ParserRuleContext SourceLocation { get; }
     }
 }

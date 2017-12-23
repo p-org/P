@@ -12,10 +12,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             Entry = entry;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public IPExpr SubExpr { get; }
         public NamedTupleEntry Entry { get; }
         public string FieldName => Entry.Name;
+
+        public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type => Entry.Type;
     }
 }

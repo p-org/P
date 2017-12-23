@@ -12,8 +12,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
             Value = value;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public IPExpr Variable { get; }
         public IPExpr Value { get; }
+
+        public ParserRuleContext SourceLocation { get; }
     }
 }

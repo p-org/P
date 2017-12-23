@@ -11,8 +11,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             Value = value;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public int Value { get; }
+
+        public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type { get; } = PrimitiveType.Int;
     }
 }

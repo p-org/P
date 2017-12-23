@@ -56,7 +56,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     if (linearRef.LinearType.Equals(LinearType.Swap) && allUnavailableParams.Contains(pair.Item1))
                     {
-                        throw handler.InvalidSwap(null, linearRef,
+                        throw handler.InvalidSwap(linearRef,
                                                   $"function {function.Name} relinquishes argument #{i} and therefore cannot be swapped.");
                     }
                 }
@@ -99,7 +99,7 @@ namespace Microsoft.Pc.TypeChecker
                 case MoveAssignStmt moveAssignStmt:
                     if (moveAssignStmt.FromVariable.Role.Equals(VariableRole.Field))
                     {
-                        throw handler.IssueError(null, $"cannot move field {moveAssignStmt.FromVariable.Name}");
+                        throw handler.MovedField(moveAssignStmt);
                     }
                     unavailable.Add(moveAssignStmt.FromVariable);
 
@@ -115,11 +115,9 @@ namespace Microsoft.Pc.TypeChecker
                 case SwapAssignStmt swapAssignStmt:
                     if (swapAssignStmt.NewLocation is VariableAccessExpr swapAssignAccess)
                     {
-                        if (unavailable.Contains(swapAssignAccess.Variable) ||
-                            swapAssignStmt.OldLocation.Role.Equals(VariableRole.Field))
+                        if (unavailable.Contains(swapAssignAccess.Variable))
                         {
-                            throw handler.IssueError(
-                                null, $"cannot swap unavailable variable {swapAssignAccess.Variable.Name}");
+                            throw handler.SwapAssignUnavailable(swapAssignStmt, swapAssignAccess.Variable);
                         }
                     }
                     else
@@ -127,11 +125,9 @@ namespace Microsoft.Pc.TypeChecker
                         unavailable = ProcessExpr(unavailable, swapAssignStmt.NewLocation);
                     }
 
-                    if (unavailable.Contains(swapAssignStmt.OldLocation) ||
-                        swapAssignStmt.OldLocation.Role.Equals(VariableRole.Field))
+                    if (unavailable.Contains(swapAssignStmt.OldLocation))
                     {
-                        throw handler.IssueError(
-                            null, $"cannot swap unavailable variable {swapAssignStmt.OldLocation.Name}");
+                        throw handler.SwapAssignUnavailable(swapAssignStmt, swapAssignStmt.OldLocation);
                     }
                     break;
                 case InsertStmt insertStmt:
@@ -145,10 +141,11 @@ namespace Microsoft.Pc.TypeChecker
                     break;
                 case WhileStmt whileStmt:
                     unavailable = ProcessExpr(unavailable, whileStmt.Condition);
-                    // process running the body twice. on the first go, the loop can potentially relinquish additional variables
-                    // on the second go, either the body will use one of these variables and throw or reach a fixed point since all
-                    // paths are considered simultaneously. Then, we continue our overapproximation by taking the union of no runs
-                    // and one or more runs.
+                    // process running the body twice. on the first go, the loop can potentially 
+                    // relinquish additional variables on the second go, either the body will use
+                    // one of these variables and throw or reach a fixed point since all paths are
+                    // considered simultaneously. Then, we continue our overapproximation by taking
+                    // the union of no runs and one or more runs.
                     ISet<Variable> bodyUnavailable =
                         ProcessStatement(new HashSet<Variable>(unavailable), whileStmt.Body);
                     bodyUnavailable = ProcessExpr(bodyUnavailable, whileStmt.Condition);
@@ -228,7 +225,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     if (linearRef.LinearType.Equals(LinearType.Swap) && !swapAllowed)
                     {
-                        throw handler.InvalidSwap(null, linearRef, "swap not allowed in this context");
+                        throw handler.InvalidSwap(linearRef, "swap not allowed in this context");
                     }
                     remainingLinearRefs.Add(linearRef);
                 }
@@ -267,10 +264,11 @@ namespace Microsoft.Pc.TypeChecker
                     unavailable = ProcessExpr(unavailable, keysExpr.Expr);
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
-                    if (unavailable.Contains(linearAccessRefExpr.Variable))
+                    if (unavailable.Contains(linearAccessRefExpr.Variable) || linearAccessRefExpr.Variable.Role.Equals(VariableRole.Field))
                     {
-                        throw handler.IssueError(null, $"variable {linearAccessRefExpr.Variable} is not available");
+                        throw handler.RelinquishedWithoutOwnership(linearAccessRefExpr);
                     }
+
                     if (linearAccessRefExpr.LinearType.Equals(LinearType.Move))
                     {
                         unavailable.Add(linearAccessRefExpr.Variable);
@@ -312,7 +310,7 @@ namespace Microsoft.Pc.TypeChecker
                 case VariableAccessExpr variableAccessExpr:
                     if (unavailable.Contains(variableAccessExpr.Variable))
                     {
-                        throw handler.IssueError(null, $"variable {variableAccessExpr.Variable.Name} not available");
+                        throw handler.UseWithoutOwnership(variableAccessExpr);
                     }
                     break;
                 case BoolLiteralExpr _:

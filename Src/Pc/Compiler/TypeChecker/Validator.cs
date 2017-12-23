@@ -55,8 +55,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     else
                     {
-                        // TODO add source location to states
-                        throw handler.InternalError(machine.SourceLocation,
+                        throw handler.InternalError(state.SourceLocation,
                                                     $"Two start states {state.Name} occurs twice in all states list");
                     }
                 }

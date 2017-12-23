@@ -65,20 +65,7 @@ namespace Microsoft.Pc.TypeChecker
                 .Concat(new[] {0})
                 .Max();
 
-            var args = new List<IPExpr>();
-            foreach (PParser.RvalueContext arg in context.rvalueList()?.rvalue() ??
-                                                  Enumerable.Empty<PParser.RvalueContext>())
-            {
-                IPExpr rvalue = exprVisitor.Visit(arg);
-                if (rvalue is ILinearRef linearRef)
-                {
-                    if (linearRef.LinearType.Equals(LinearType.Swap))
-                    {
-                        throw handler.InvalidSwap(context, linearRef, "cannot swap with print");
-                    }
-                }
-                args.Add(rvalue);
-            }
+            var args = (from arg in context.rvalueList()?.rvalue() ?? Enumerable.Empty<PParser.RvalueContext>() select exprVisitor.Visit(arg)).ToList();
 
             if (args.Count != numNecessaryArgs)
             {
@@ -173,7 +160,7 @@ namespace Microsoft.Pc.TypeChecker
                     expectedValueType = mapType.ValueType;
                     break;
                 default:
-                    throw handler.TypeMismatch(context.lvalue(), variable.Type, TypeKind.Sequence, TypeKind.Map);
+                    throw handler.TypeMismatch(variable, TypeKind.Sequence, TypeKind.Map);
             }
 
             if (!expectedKeyType.IsAssignableFrom(keyType))
@@ -212,7 +199,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             else
             {
-                throw handler.TypeMismatch(context.lvalue(), variable.Type, TypeKind.Sequence, TypeKind.Map);
+                throw handler.TypeMismatch(variable, TypeKind.Sequence, TypeKind.Map);
             }
 
             return new RemoveStmt(context, variable, value);
@@ -282,15 +269,15 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitRaiseStmt(PParser.RaiseStmtContext context)
         {
-            IPExpr pExpr = exprVisitor.Visit(context.expr());
-            if (IsDefinitelyNullEvent(pExpr))
+            IPExpr evtExpr = exprVisitor.Visit(context.expr());
+            if (IsDefinitelyNullEvent(evtExpr))
             {
-                throw handler.EmittedNullEvent(context.expr());
+                throw handler.EmittedNullEvent(evtExpr);
             }
 
-            if (!PrimitiveType.Event.IsAssignableFrom(pExpr.Type))
+            if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
             {
-                throw handler.TypeMismatch(context.expr(), pExpr.Type, PrimitiveType.Event);
+                throw handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event);
             }
 
             method.CanCommunicate = true;
@@ -299,12 +286,12 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr[] args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
                              Enumerable.Empty<IPExpr>()).ToArray();
 
-            if (pExpr is EventRefExpr eventRef)
+            if (evtExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
             }
             
-            return new RaiseStmt(context, pExpr, args);
+            return new RaiseStmt(context, evtExpr, args);
         }
 
         public override IPStmt VisitSendStmt(PParser.SendStmtContext context)
@@ -318,7 +305,7 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr evtExpr = exprVisitor.Visit(context.@event);
             if (IsDefinitelyNullEvent(evtExpr))
             {
-                throw handler.EmittedNullEvent(context.@event);
+                throw handler.EmittedNullEvent(evtExpr);
             }
 
             if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))
@@ -347,7 +334,7 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr evtExpr = exprVisitor.Visit(context.expr());
             if (IsDefinitelyNullEvent(evtExpr))
             {
-                throw handler.EmittedNullEvent(context.expr());
+                throw handler.EmittedNullEvent(evtExpr);
             }
 
             if (!PrimitiveType.Event.IsAssignableFrom(evtExpr.Type))

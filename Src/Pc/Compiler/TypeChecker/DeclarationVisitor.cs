@@ -455,9 +455,7 @@ namespace Microsoft.Pc.TypeChecker
                             if (state.HasHandler(action.Trigger))
                             {
                                 // TODO: get the exact EventIdContext instead of stateBodyItemContext
-                                throw Handler.DuplicateEventAction(stateBodyItemContext, 
-                                                                   state[action.Trigger],
-                                                                   state);
+                                throw Handler.DuplicateEventAction(action.SourceLocation, state[action.Trigger], state);
                             }
                             state[action.Trigger] = action;
                         }
@@ -554,7 +552,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
                 }
-                actions[i] = new EventDefer(evt);
+                actions[i] = new EventDefer(token, evt);
             }
             return actions;
         }
@@ -575,7 +573,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
                 }
-                actions.Add(new EventIgnore(evt));
+                actions.Add(new EventIgnore(token, evt));
             }
             return actions.ToArray();
         }
@@ -614,7 +612,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
-                actions.Add(new EventDoAction(evt, fun));
+                actions.Add(new EventDoAction(eventIdContext, evt, fun));
             }
             return actions.ToArray();
         }
@@ -639,7 +637,7 @@ namespace Microsoft.Pc.TypeChecker
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
                 }
 
-                actions.Add(new EventPushState(evt, targetState));
+                actions.Add(new EventPushState(token, evt, targetState));
             }
             return actions.ToArray();
         }
@@ -687,7 +685,7 @@ namespace Microsoft.Pc.TypeChecker
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
 
-                actions.Add(new EventGotoState(evt, target, transitionFunction));
+                actions.Add(new EventGotoState(eventIdContext, evt, target, transitionFunction));
             }
             return actions.ToArray();
         }

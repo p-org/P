@@ -416,7 +416,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public State Put(string name, PParser.StateDeclContext tree)
         {
-            var state = new State(name, tree);
+            var state = new State(tree, name);
             CheckConflicts(state, Namespace(states));
             states.Add(name, state);
             return state;

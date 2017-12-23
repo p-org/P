@@ -45,12 +45,12 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr subExpr = Visit(context.expr());
             if (!(subExpr.Type.Canonicalize() is NamedTupleType tuple))
             {
-                throw handler.TypeMismatch(context.expr(), subExpr.Type, TypeKind.NamedTuple);
+                throw handler.TypeMismatch(subExpr, TypeKind.NamedTuple);
             }
             string fieldName = context.field.GetText();
             if (!tuple.LookupEntry(fieldName, out NamedTupleEntry entry))
             {
-                throw handler.MissingNamedTupleEntry(context.field, context.field.GetText(), tuple);
+                throw handler.MissingNamedTupleEntry(context.field, tuple);
             }
             return new NamedTupleAccessExpr(context, subExpr, entry);
         }
@@ -61,11 +61,11 @@ namespace Microsoft.Pc.TypeChecker
             int fieldNo = int.Parse(context.field.GetText());
             if (!(subExpr.Type.Canonicalize() is TupleType tuple))
             {
-                throw handler.TypeMismatch(context.expr(), subExpr.Type, TypeKind.Tuple, TypeKind.NamedTuple);
+                throw handler.TypeMismatch(subExpr, TypeKind.Tuple, TypeKind.NamedTuple);
             }
             if (fieldNo >= tuple.Types.Count)
             {
-                throw handler.OutOfBoundsTupleAccess(context.field, fieldNo, tuple);
+                throw handler.OutOfBoundsTupleAccess(context.field, tuple);
             }
             return new TupleAccessExpr(context, subExpr, fieldNo, tuple.Types[fieldNo]);
         }
@@ -89,7 +89,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     return new MapAccessExpr(context, seqOrMap, indexExpr, mapType.ValueType);
             }
-            throw handler.TypeMismatch(context.seq, seqOrMap.Type, TypeKind.Sequence, TypeKind.Map);
+            throw handler.TypeMismatch(seqOrMap, TypeKind.Sequence, TypeKind.Map);
         }
 
         public override IPExpr VisitKeywordExpr(PParser.KeywordExprContext context)
@@ -101,7 +101,7 @@ namespace Microsoft.Pc.TypeChecker
                     IPExpr expr = Visit(context.expr());
                     if (!(expr.Type.Canonicalize() is MapType mapType))
                     {
-                        throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map);
+                        throw handler.TypeMismatch(expr, TypeKind.Map);
                     }
                     return new KeysExpr(context, expr, new SequenceType(mapType.KeyType));
                 }
@@ -110,7 +110,7 @@ namespace Microsoft.Pc.TypeChecker
                     IPExpr expr = Visit(context.expr());
                     if (!(expr.Type.Canonicalize() is MapType mapType))
                     {
-                        throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map);
+                        throw handler.TypeMismatch(expr, TypeKind.Map);
                     }
                     return new ValuesExpr(context, expr, new SequenceType(mapType.ValueType));
                 }
@@ -119,7 +119,7 @@ namespace Microsoft.Pc.TypeChecker
                     IPExpr expr = Visit(context.expr());
                     if (!(expr.Type.Canonicalize() is SequenceType) && !(expr.Type.Canonicalize() is MapType))
                     {
-                        throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map, TypeKind.Sequence);
+                        throw handler.TypeMismatch(expr, TypeKind.Map, TypeKind.Sequence);
                     }
                     return new SizeofExpr(context, expr);
                 }
@@ -176,7 +176,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     if (linearVariables.Contains(linearRef.Variable))
                     {
-                        throw handler.RelinquishedWithoutOwnership(context.rvalueList().rvalue(i), linearRef);
+                        throw handler.RelinquishedWithoutOwnership(linearRef);
                     }
                     linearVariables.Add(linearRef.Variable);
                 }
@@ -262,7 +262,7 @@ namespace Microsoft.Pc.TypeChecker
                 case "in":
                     if (!(rhs.Type.Canonicalize() is MapType rhsMap))
                     {
-                        throw handler.TypeMismatch(context.rhs, rhs.Type, TypeKind.Map);
+                        throw handler.TypeMismatch(rhs, TypeKind.Map);
                     }
                     if (!rhsMap.KeyType.IsAssignableFrom(lhs.Type))
                     {
@@ -456,11 +456,6 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(context.iden(), "variable", varName);
             }
 
-            if (variable.Role.Equals(VariableRole.Field))
-            {
-                throw handler.RelinquishedWithoutOwnership(context, null);
-            }
-
             return context.linear.Text.Equals("move")
                        ? new LinearAccessRefExpr(context, variable, LinearType.Move)
                        : new LinearAccessRefExpr(context, variable, LinearType.Swap);
@@ -481,12 +476,12 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr lvalue = Visit(context.lvalue());
             if (!(lvalue.Type.Canonicalize() is NamedTupleType type))
             {
-                throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.NamedTuple);
+                throw handler.TypeMismatch(lvalue, TypeKind.NamedTuple);
             }
             string field = context.field.GetText();
             if (!type.LookupEntry(field, out NamedTupleEntry entry))
             {
-                throw handler.MissingNamedTupleEntry(context.field, field, type);
+                throw handler.MissingNamedTupleEntry(context.field, type);
             }
             return new NamedTupleAccessExpr(context, lvalue, entry);
         }
@@ -496,12 +491,12 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr lvalue = Visit(context.lvalue());
             if (!(lvalue.Type.Canonicalize() is TupleType type))
             {
-                throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Tuple);
+                throw handler.TypeMismatch(lvalue, TypeKind.Tuple);
             }
             int field = int.Parse(context.@int().GetText());
             if (field >= type.Types.Count)
             {
-                throw handler.OutOfBoundsTupleAccess(context.@int(), field, type);
+                throw handler.OutOfBoundsTupleAccess(context.@int(), type);
             }
             return new TupleAccessExpr(context, lvalue, field, type.Types[field]);
         }
@@ -526,7 +521,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     return new SeqAccessExpr(context, lvalue, index, seqType.ElementType);
                 default:
-                    throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Sequence, TypeKind.Map);
+                    throw handler.TypeMismatch(lvalue, TypeKind.Sequence, TypeKind.Map);
             }
         }
     }

@@ -5,6 +5,7 @@ using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
+using Microsoft.Pc.TypeChecker.AST.Statements;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
@@ -33,20 +34,23 @@ namespace Microsoft.Pc.TypeChecker
         Exception CircularTypeDef(ParserRuleContext location, TypeDef typeDef);
         Exception DuplicateNamedTupleEntry(ParserRuleContext location, string duplicateName);
         Exception TypeMismatch(ParserRuleContext location, PLanguageType actual, params PLanguageType[] expected);
-        Exception TypeMismatch(ParserRuleContext location, PLanguageType actual, params TypeKind[] expected);
-        Exception MissingNamedTupleEntry(ParserRuleContext location, string missingField, NamedTupleType namedTuple);
-        Exception OutOfBoundsTupleAccess(ParserRuleContext location, int field, TupleType tuple);
+        Exception TypeMismatch(IPExpr expr, params TypeKind[] expected);
+        Exception MissingNamedTupleEntry(PParser.IdenContext location, NamedTupleType namedTuple);
+        Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple);
         Exception IncomparableTypes(ParserRuleContext location, PLanguageType lhsType, PLanguageType rhsType);
         Exception MisplacedThis(PParser.PrimitiveContext location);
         Exception BinOpTypeMismatch(PParser.BinExprContext location, PLanguageType lhsType, PLanguageType rhsType);
         Exception ParseFailure(FileInfo file, string message);
-        Exception EmittedNullEvent(ParserRuleContext location);
+        Exception EmittedNullEvent(IPExpr evtExpr);
         Exception InternalError(ParserRuleContext location, string message);
         Exception MissingStartState(Machine machine);
         Exception ChangedStateMidTransition(ParserRuleContext location, Function method);
         Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
-        Exception RelinquishedWithoutOwnership(ParserRuleContext location, ILinearRef linearRef);
-        Exception InvalidSwap(ParserRuleContext context, ILinearRef linearRef, string message);
-        Exception UseWithoutOwnership(ParserRuleContext location, Variable variable);
+        Exception RelinquishedWithoutOwnership(ILinearRef linearRef);
+        Exception InvalidSwap(ILinearRef linearRef, string message);
+        Exception UseWithoutOwnership(VariableAccessExpr variable);
+        Exception MovedField(MoveAssignStmt moveAssignStmt);
+        Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable);
+        Exception SwappedField(SwapAssignStmt swapAssignStmt, Variable variable);
     }
 }

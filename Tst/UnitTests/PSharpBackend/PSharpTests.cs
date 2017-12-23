@@ -9,7 +9,7 @@ using UnitTests.CBackend;
 namespace UnitTests.PSharpBackend
 {
     [TestFixture]
-    [Parallelizable(ParallelScope.Children)]
+    //[Parallelizable(ParallelScope.Children)]
     public class PSharpTests
     {
         private static IEnumerable<TestCaseData> TestCases =>
@@ -47,7 +47,9 @@ namespace UnitTests.PSharpBackend
             {
                 Assert.Fail($"Expected error, but none were found!\n\t{fileList}\n");
             }
-            Assert.Pass($"{output}\n\t{fileList}\n");
+
+            Console.Error.WriteLine($"{output}\n\t{fileList}\n");
+            Console.Error.WriteLine(File.ReadAllText(Path.Combine(testDir.FullName, "Pc", "acc_0.txt")));
         }
     }
 }

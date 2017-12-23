@@ -10,7 +10,7 @@ namespace Microsoft.Pc.TypeChecker.AST.States
     {
         private readonly IDictionary<PEvent, IStateAction> actions = new Dictionary<PEvent, IStateAction>();
 
-        public State(string name, ParserRuleContext sourceNode)
+        public State(ParserRuleContext sourceNode, string name)
         {
             Debug.Assert(sourceNode is PParser.StateDeclContext);
             Name = name;

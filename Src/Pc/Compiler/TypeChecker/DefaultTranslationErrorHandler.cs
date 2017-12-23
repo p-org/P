@@ -3,10 +3,12 @@ using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Microsoft.Formula.API;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
+using Microsoft.Pc.TypeChecker.AST.Statements;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
@@ -16,12 +18,12 @@ namespace Microsoft.Pc.TypeChecker
     {
         public void IssueWarning(ParserRuleContext location, string message)
         {
-            Console.Error.WriteLine($"[{GetLocation(location)}] {message}");
+            compilerOutput.WriteMessage($"[{GetLocation(location)}] {message}", SeverityKind.Warning);
         }
 
         public Exception IssueError(ParserRuleContext location, string message)
         {
-            return IssueError(location, location?.Start, message);
+            return IssueError(location, location.Start, message);
         }
 
         public Exception DuplicateEnumValue(PParser.NumberedEnumElemContext location, PEnum pEnum)
@@ -42,7 +44,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public Exception DuplicateEventAction(ParserRuleContext location, IStateAction existingAction, State state)
         {
-            return IssueError(location, $"event handler in state '{state.Name}' duplicates another handler");
+            return IssueError(location, $"event handler in state '{state.Name}' duplicates handler at {GetLocation(existingAction.SourceLocation)}");
         }
 
         public Exception DuplicateStateExitHandler(ParserRuleContext location, Function existingHandler, State state)
@@ -90,24 +92,23 @@ namespace Microsoft.Pc.TypeChecker
                               $"got type: {actual.OriginalRepresentation}, expected: {string.Join("; ", expected.Select(t => t.OriginalRepresentation))}");
         }
 
-        public Exception TypeMismatch(ParserRuleContext location, PLanguageType actual, params TypeKind[] expected)
+        public Exception TypeMismatch(IPExpr expr, params TypeKind[] expected)
         {
-            return IssueError(location,
-                              $"got type: {actual.OriginalRepresentation}, expected: {string.Join(", ", expected.Select(e => e.Name))}");
+            return IssueError(expr.SourceLocation,
+                              $"got type: {expr.Type.OriginalRepresentation}, expected: {string.Join(", ", expected.Select(e => e.Name))}");
         }
 
-        public Exception MissingNamedTupleEntry(
-            ParserRuleContext location,
-            string missingField,
-            NamedTupleType namedTuple)
+        public Exception MissingNamedTupleEntry(PParser.IdenContext location,
+                                                NamedTupleType namedTuple)
         {
             return IssueError(location,
-                              $"named tuple type {namedTuple.OriginalRepresentation} has no '{missingField}' field");
+                              $"named tuple type {namedTuple.OriginalRepresentation} has no '{location.GetText()}' field");
         }
 
-        public Exception OutOfBoundsTupleAccess(ParserRuleContext location, int field, TupleType tuple)
+        public Exception OutOfBoundsTupleAccess(PParser.IntContext location, TupleType tuple)
         {
-            return IssueError(location, $"tuple type {tuple.OriginalRepresentation} has no '{field}' field");
+            return IssueError(
+                location, $"tuple type {tuple.OriginalRepresentation} has no '{location.GetText()}' field");
         }
 
         public Exception IncomparableTypes(ParserRuleContext location, PLanguageType lhsType, PLanguageType rhsType)
@@ -136,9 +137,9 @@ namespace Microsoft.Pc.TypeChecker
             return new TranslationException($"[{file.Name}] parse error: {message}");
         }
 
-        public Exception EmittedNullEvent(ParserRuleContext location)
+        public Exception EmittedNullEvent(IPExpr evtExpr)
         {
-            return IssueError(location, "cannot send null events");
+            return IssueError(evtExpr.SourceLocation, "cannot send null events");
         }
 
         public Exception InternalError(ParserRuleContext location, string message)
@@ -154,33 +155,46 @@ namespace Microsoft.Pc.TypeChecker
         public Exception ChangedStateMidTransition(ParserRuleContext location, Function method)
         {
             return IssueError(location,
-                $"Method {MethodName(method)} is used as a transition function, but might change state here.");
+                              $"Method {DeclarationName(method)} is used as a transition function, but might change state here.");
         }
 
         public Exception NonDeterministicFunctionInSpecMachine(Function machineFunction)
         {
             return IssueError(machineFunction.SourceLocation,
-                $"Method {MethodName(machineFunction)} is non-deterministic, but used in spec machine.");
+                              $"Method {DeclarationName(machineFunction)} is non-deterministic, but used in spec machine.");
         }
 
-        public Exception RelinquishedWithoutOwnership(ParserRuleContext location, ILinearRef linearRef)
+        public Exception RelinquishedWithoutOwnership(ILinearRef linearRef)
         {
-            return IssueError(location, $"cannot give up ownership of variable {linearRef.Variable.Name} twice");
+            return IssueError(linearRef.SourceLocation,
+                              $"cannot give up ownership of variable {linearRef.Variable.Name} twice");
         }
 
-        public Exception InvalidSwap(ParserRuleContext context, ILinearRef linearRef, string message)
+        public Exception InvalidSwap(ILinearRef linearRef, string message)
         {
-            return IssueError(context, $"invalid swap of {linearRef.Variable.Name}. Reason: {message}");
+            return IssueError(linearRef.SourceLocation,
+                              $"invalid swap of {linearRef.Variable.Name}. Reason: {message}");
         }
 
-        public Exception UseWithoutOwnership(ParserRuleContext location, Variable variable)
+        public Exception UseWithoutOwnership(VariableAccessExpr variable)
         {
-            return IssueError(location, $"used variable {variable.Name} after a move or during a swap");
+            return IssueError(variable.SourceLocation,
+                              $"used variable {variable.Variable.Name} after a move or during a swap");
         }
 
-        private string MethodName(Function method)
+        public Exception MovedField(MoveAssignStmt moveAssignStmt)
         {
-            return method.Name.Length > 0 ? method.Name : $"at {GetLocation(method.SourceLocation)}";
+            return IssueError(moveAssignStmt.SourceLocation, $"attempted to move field {moveAssignStmt.FromVariable}");
+        }
+
+        public Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable)
+        {
+            return IssueError(swapAssignStmt.SourceLocation, $"variable {variable.Name} unavailable during swap");
+        }
+
+        public Exception SwappedField(SwapAssignStmt swapAssignStmt, Variable variable)
+        {
+            return IssueError(swapAssignStmt.SourceLocation, $"cannot swap field {variable.Name}");
         }
 
         public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
@@ -188,13 +202,25 @@ namespace Microsoft.Pc.TypeChecker
             return new TranslationException($"[{GetLocation(ctx, location)}] {message}");
         }
 
+        private string DeclarationName(IPDecl method)
+        {
+            return method.Name.Length > 0 ? method.Name : $"at {GetLocation(method.SourceLocation)}";
+        }
+
         #region Internal book keeping
 
         private readonly ParseTreeProperty<FileInfo> originalFiles;
+        private readonly ICompilerOutput compilerOutput;
 
         public DefaultTranslationErrorHandler(ParseTreeProperty<FileInfo> originalFiles)
+            : this(originalFiles, new StandardOutput())
+        {
+        }
+
+        public DefaultTranslationErrorHandler(ParseTreeProperty<FileInfo> originalFiles, ICompilerOutput compilerOutput)
         {
             this.originalFiles = originalFiles;
+            this.compilerOutput = compilerOutput;
         }
 
         private class Location
@@ -203,7 +229,10 @@ namespace Microsoft.Pc.TypeChecker
             public int Column { get; set; }
             public FileInfo File { get; set; }
 
-            public override string ToString() { return File == null ? "???" : $"{File.Name}:{Line},{Column}"; }
+            public override string ToString()
+            {
+                return File == null ? throw new ArgumentException() : $"{File.Name}:{Line},{Column}";
+            }
         }
 
         private Location GetLocation(ParserRuleContext decl)

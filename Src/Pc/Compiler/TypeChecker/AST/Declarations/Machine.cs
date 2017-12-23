@@ -45,7 +45,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public IEnumerable<State> AllStates()
         {
-            yield return StartState;
+            if (StartState != null)
+            {
+                yield return StartState;
+            }
 
             var containers = new Stack<IStateContainer>();
             containers.Push(this);

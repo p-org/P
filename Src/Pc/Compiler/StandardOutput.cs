@@ -7,6 +7,7 @@ namespace Microsoft.Pc
     {
         public void WriteMessage(string msg, SeverityKind severity)
         {
+            ConsoleColor defaultColor = Console.ForegroundColor;
             switch (severity)
             {
                 case SeverityKind.Info:
@@ -24,7 +25,7 @@ namespace Microsoft.Pc
             }
 
             Console.WriteLine(msg);
-            Console.ForegroundColor = ConsoleColor.Gray;
+            Console.ForegroundColor = defaultColor;
         }
     }
 }

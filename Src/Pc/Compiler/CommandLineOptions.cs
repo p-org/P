@@ -36,6 +36,7 @@ namespace Microsoft.Pc
         public static bool ParseArguments(IEnumerable<string> args, out CommandLineOptions options)
         {
             options = new CommandLineOptions();
+
             var commandLineFileNames = new List<string>();
             var dependencyFileNames = new List<string>();
             string targetName = null;
@@ -51,6 +52,7 @@ namespace Microsoft.Pc
                         arg = x.Substring(0, colonIndex);
                         colonArg = x.Substring(colonIndex + 1);
                     }
+
                     switch (arg.Substring(1).ToLowerInvariant())
                     {
                         case "profile":
@@ -101,13 +103,15 @@ namespace Microsoft.Pc
                             {
                                 Console.WriteLine("Only one target must be specified");
                             }
+
                             break;
 
                         case "generate":
                             switch (colonArg)
                             {
                                 case null:
-                                    Console.WriteLine("Missing generation argument, expecting generate:[C,C#,P#,P3,Zing]");
+                                    Console.WriteLine(
+                                        "Missing generation argument, expecting generate:[C,C#,P#,P3,Zing]");
                                     return false;
                                 case "C":
                                     options.compilerOutput = CompilerOutput.C;
@@ -125,7 +129,9 @@ namespace Microsoft.Pc
                                     options.compilerOutput = CompilerOutput.PThree;
                                     break;
                                 default:
-                                    Console.WriteLine("Unrecognized generate option '{0}', expecting C, C#, P#, P3, or Zing", colonArg);
+                                    Console.WriteLine(
+                                        "Unrecognized generate option '{0}', expecting C, C#, P#, P3, or Zing",
+                                        colonArg);
                                     return false;
                             }
 
@@ -177,8 +183,7 @@ namespace Microsoft.Pc
             // target name should be legal .4ml file name
             if (targetName != null)
             {
-                string fullPathName;
-                if (IsLegal4mlFile(targetName, out fullPathName))
+                if (IsLegal4mlFile(targetName, out string fullPathName))
                 {
                     targetName = fullPathName;
                 }
@@ -191,8 +196,7 @@ namespace Microsoft.Pc
             // Each command line file name must be a legal P file name
             foreach (string inputFileName in commandLineFileNames)
             {
-                string fullPathName;
-                if (IsLegalPFile(inputFileName, out fullPathName))
+                if (IsLegalPFile(inputFileName, out string fullPathName))
                 {
                     options.inputFileNames.Add(fullPathName);
                 }
@@ -205,8 +209,7 @@ namespace Microsoft.Pc
             // Each dependency file name must be a legal .4ml file name
             foreach (string dependencyFileName in dependencyFileNames)
             {
-                string fullPathName;
-                if (IsLegal4mlFile(dependencyFileName, out fullPathName))
+                if (IsLegal4mlFile(dependencyFileName, out string fullPathName))
                 {
                     options.dependencies.Add(fullPathName);
                 }
@@ -283,6 +286,7 @@ namespace Microsoft.Pc
             {
                 fullPathName = fullPathName.ToLowerInvariant();
             }
+
             return true;
         }
 
@@ -300,6 +304,7 @@ namespace Microsoft.Pc
             {
                 fullPathName = fullPathName.ToLowerInvariant();
             }
+
             return true;
         }
 
@@ -307,7 +312,8 @@ namespace Microsoft.Pc
         {
             Console.WriteLine(" ------------ Compiler Phase ------------");
             Console.WriteLine("USAGE: Pc.exe file1.p [file2.p ...] [/t:tfile.4ml] [/r:rfile.4ml ...] [options]");
-            Console.WriteLine("Compiles *.p programs and produces .4ml summary file which can then be passed to PLink.exe");
+            Console.WriteLine(
+                "Compiles *.p programs and produces .4ml summary file which can then be passed to PLink.exe");
             Console.WriteLine(
                 "/t:file.4ml             -- name of summary file produced for this compilation unit; if not supplied then file1.4ml");
             Console.WriteLine("/r:file.4ml             -- refer to another summary file");
@@ -323,7 +329,8 @@ namespace Microsoft.Pc
             Console.WriteLine("/dumpFormulaModel       -- write the entire formula model to a file named 'output.4ml'");
             Console.WriteLine(" ------------ Linker Phase ------------");
             Console.WriteLine("USAGE: Pc.exe [linkfile.p] /link /r:file1.4ml [/r:file2.4ml ...] [options]");
-            Console.WriteLine("Links *.4ml summary files against an optional linkfile.p and generates linker.{h,c,dll}");
+            Console.WriteLine(
+                "Links *.4ml summary files against an optional linkfile.p and generates linker.{h,c,dll}");
             Console.WriteLine("/outputDir:path  -- where to write the generated files");
             Console.WriteLine("/shared          -- use the compiler service");
             Console.WriteLine("/profile         -- print detailed timing information");

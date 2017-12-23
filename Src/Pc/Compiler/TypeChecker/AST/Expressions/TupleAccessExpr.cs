@@ -1,16 +1,19 @@
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
     public class TupleAccessExpr : IPExpr
     {
-        public TupleAccessExpr(IPExpr subExpr, int fieldNo, PLanguageType type)
+        public TupleAccessExpr(ParserRuleContext sourceLocation, IPExpr subExpr, int fieldNo, PLanguageType type)
         {
+            SourceLocation = sourceLocation;
             SubExpr = subExpr;
             FieldNo = fieldNo;
             Type = type;
         }
 
+        public ParserRuleContext SourceLocation { get; }
         public IPExpr SubExpr { get; }
         public int FieldNo { get; }
 

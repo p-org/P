@@ -1,16 +1,19 @@
 using System.Collections.Generic;
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
 
 namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class PrintStmt : IPStmt
     {
-        public PrintStmt(string message, List<IPExpr> args)
+        public PrintStmt(ParserRuleContext sourceLocation, string message, List<IPExpr> args)
         {
+            SourceLocation = sourceLocation;
             Message = message;
             Args = args;
         }
 
+        public ParserRuleContext SourceLocation { get; }
         public string Message { get; }
         public List<IPExpr> Args { get; }
     }

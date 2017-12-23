@@ -145,7 +145,7 @@ namespace PBuild
         {
             var compileArgs = new CommandLineOptions
             {
-                inputFileNames = new List<string>(project.psources.Select(Path.GetFullPath).ToList())
+                inputFileNames = project.psources.Select(Path.GetFullPath).ToList()
             };
             //populate all dependencies
             var depFiles = (from depFile in project.depends let outDir = Path.GetFullPath(CurrentSolution.projects.First(x => x.Name == depFile).outputDir) select Path.Combine(outDir, depFile + ".4ml")).ToList();

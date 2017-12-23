@@ -1,15 +1,18 @@
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
 
 namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class AssertStmt : IPStmt
     {
-        public AssertStmt(IPExpr assertion, string message)
+        public AssertStmt(ParserRuleContext sourceLocation, IPExpr assertion, string message)
         {
+            SourceLocation = sourceLocation;
             Assertion = assertion;
             Message = message;
         }
 
+        public ParserRuleContext SourceLocation { get; }
         public IPExpr Assertion { get; }
         public string Message { get; }
     }

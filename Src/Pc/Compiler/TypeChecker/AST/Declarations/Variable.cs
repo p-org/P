@@ -3,7 +3,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class Variable : IPDecl, ITypedName
+    public class Variable : IPDecl
     {
         public Variable(string name, ParserRuleContext sourceNode, VariableRole role)
         {
@@ -11,12 +11,12 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
             Role = role;
         }
-        
-        public VariableRole Role { get; }
 
-        public string Name { get; set; }
-        public ParserRuleContext SourceLocation { get; }
+        public VariableRole Role { get; }
         public PLanguageType Type { get; set; }
+
+        public string Name { get; }
+        public ParserRuleContext SourceLocation { get; }
     }
 
     public enum VariableRole

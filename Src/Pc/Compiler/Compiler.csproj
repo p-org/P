@@ -239,6 +239,7 @@
     <Compile Include="TypeChecker\AST\Expressions\BinOpType.cs" />
     <Compile Include="TypeChecker\AST\Expressions\CoerceExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\UnaryOpType.cs" />
+    <Compile Include="TypeChecker\AST\Statements\InsertStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\ReceiveStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\RemoveStmt.cs" />
     <Compile Include="TypeChecker\AST\States\EventDefer.cs" />
@@ -259,7 +260,6 @@
     <Compile Include="TypeChecker\AST\Expressions\ILinearRef.cs" />
     <Compile Include="TypeChecker\AST\Expressions\IntLiteralExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\IPExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\IVarRef.cs" />
     <Compile Include="TypeChecker\AST\Expressions\KeysExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\LinearAccessRefExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\LinearType.cs" />
@@ -277,16 +277,13 @@
     <Compile Include="TypeChecker\AST\Expressions\UnnamedTupleExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\ValuesExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\VariableAccessExpr.cs" />
-    <Compile Include="TypeChecker\AST\IConstructible.cs" />
     <Compile Include="TypeChecker\AST\IHasScope.cs" />
     <Compile Include="TypeChecker\AST\IPDecl.cs" />
     <Compile Include="TypeChecker\AST\IStateAction.cs" />
     <Compile Include="TypeChecker\AST\IStateContainer.cs" />
-    <Compile Include="TypeChecker\AST\ITypedName.cs" />
     <Compile Include="TypeChecker\DeclarationStubVisitor.cs" />
     <Compile Include="TypeChecker\DeclarationVisitor.cs" />
     <Compile Include="TypeChecker\FunctionBodyVisitor.cs" />
-    <Compile Include="TypeChecker\InsertStmt.cs" />
     <Compile Include="TypeChecker\LinearTypeChecker.cs" />
     <Compile Include="TypeChecker\TypeCheckingUtils.cs" />
     <Compile Include="TypeChecker\Types\NamedTupleEntry.cs" />
@@ -418,6 +415,8 @@
       <SubType>Designer</SubType>
     </None>
     <EmbeddedResource Include="Templates\PSharp.stg" />
+    <None Include="Templates\Prt.stg" />
+    <None Include="Templates\Prt_h.stg" />
   </ItemGroup>
   <ItemGroup>
     <MPLexCompile Include="Parser\Lexer.lex" />

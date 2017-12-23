@@ -1,11 +1,13 @@
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
     public class ContainsKeyExpr : IPExpr
     {
-        public ContainsKeyExpr(IPExpr key, IPExpr map)
+        public ContainsKeyExpr(ParserRuleContext sourceLocation, IPExpr key, IPExpr map)
         {
+            SourceLocation = sourceLocation;
             Key = key;
             Map = map;
         }
@@ -14,5 +16,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
         public IPExpr Map { get; }
 
         public PLanguageType Type { get; } = PrimitiveType.Bool;
+        public ParserRuleContext SourceLocation { get; }
     }
 }

@@ -1,12 +1,14 @@
 using System.Diagnostics;
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
     public class BinOpExpr : IPExpr
     {
-        public BinOpExpr(BinOpType operation, IPExpr lhs, IPExpr rhs)
+        public BinOpExpr(ParserRuleContext sourceLocation, BinOpType operation, IPExpr lhs, IPExpr rhs)
         {
+            SourceLocation = sourceLocation;
             Operation = operation;
             Lhs = lhs;
             Rhs = rhs;
@@ -21,6 +23,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
             }
         }
 
+        public ParserRuleContext SourceLocation { get; }
         public BinOpType Operation { get; }
         public IPExpr Lhs { get; }
         public IPExpr Rhs { get; }

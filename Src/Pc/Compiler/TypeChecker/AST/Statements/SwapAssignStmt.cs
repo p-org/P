@@ -1,3 +1,4 @@
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
 
@@ -5,12 +6,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class SwapAssignStmt : IPStmt
     {
-        public SwapAssignStmt(IPExpr newLocation, Variable oldLocation)
+        public SwapAssignStmt(ParserRuleContext sourceLocation, IPExpr newLocation, Variable oldLocation)
         {
+            SourceLocation = sourceLocation;
             NewLocation = newLocation;
             OldLocation = oldLocation;
         }
 
+        public ParserRuleContext SourceLocation { get; }
         public IPExpr NewLocation { get; }
         public Variable OldLocation { get; }
     }

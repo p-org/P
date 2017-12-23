@@ -6,7 +6,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class Interface : IConstructible, IPDecl
+    public class Interface : IPDecl
     {
         private readonly HashSet<Machine> implementations = new HashSet<Machine>();
 

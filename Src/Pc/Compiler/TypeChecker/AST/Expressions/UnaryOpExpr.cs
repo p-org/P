@@ -1,16 +1,19 @@
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
     public class UnaryOpExpr : IPExpr
     {
-        public UnaryOpExpr(UnaryOpType operation, IPExpr subExpr)
+        public UnaryOpExpr(ParserRuleContext sourceLocation, UnaryOpType operation, IPExpr subExpr)
         {
+            SourceLocation = sourceLocation;
             Operation = operation;
             SubExpr = subExpr;
             Type = subExpr.Type;
         }
 
+        public ParserRuleContext SourceLocation { get; }
         public UnaryOpType Operation { get; }
         public IPExpr SubExpr { get; }
 

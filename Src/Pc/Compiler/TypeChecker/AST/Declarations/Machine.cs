@@ -8,7 +8,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class Machine : IConstructible, IStateContainer, IHasScope, IPDecl
+    public class Machine : IStateContainer, IHasScope, IPDecl
     {
         private readonly List<Variable> fields = new List<Variable>();
         private readonly Dictionary<string, StateGroup> groups = new Dictionary<string, StateGroup>();
@@ -45,6 +45,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public IEnumerable<State> AllStates()
         {
+            yield return StartState;
+
             var containers = new Stack<IStateContainer>();
             containers.Push(this);
             while (containers.Any())
@@ -52,7 +54,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
                 var container = containers.Pop();
                 foreach (State state in container.States)
                 {
-                    yield return state;
+                    if (!state.IsStart)
+                    {
+                        yield return state;
+                    }
                 }
                 foreach (var group in container.Groups)
                 {

@@ -1,3 +1,4 @@
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
@@ -7,12 +8,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
         public IPExpr SubExpr { get; }
         public PLanguageType NewType { get; }
 
-        public CoerceExpr(IPExpr subExpr, PLanguageType newType)
+        public CoerceExpr(ParserRuleContext sourceLocation, IPExpr subExpr, PLanguageType newType)
         {
+            SourceLocation = sourceLocation;
             SubExpr = subExpr;
             NewType = newType;
         }
 
         public PLanguageType Type => NewType;
+        public ParserRuleContext SourceLocation { get; }
     }
 }

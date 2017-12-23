@@ -15,11 +15,6 @@ namespace UnitTests.PSharpBackend
         private static IEnumerable<TestCaseData> TestCases =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
 
-        private static FileInfo SolutionPath(params string[] names)
-        {
-            return new FileInfo(Path.Combine(new[] {Constants.SolutionDirectory}.Concat(names).ToArray()));
-        }
-
         private static bool RunTest(out string output, params FileInfo[] inputFiles)
         {
             var compiler = new AntlrCompiler();
@@ -53,13 +48,6 @@ namespace UnitTests.PSharpBackend
                 Assert.Fail($"Expected error, but none were found!\n\t{fileList}\n");
             }
             Assert.Pass($"{output}\n\t{fileList}\n");
-        }
-
-        [Test]
-        public void TestAnalyzeTemp()
-        {
-            bool success = RunTest(out string output, SolutionPath("tmp", "tupOrder.p"), SolutionPath("tmp", "N.p"));
-            Assert.IsTrue(success, output);
         }
     }
 }

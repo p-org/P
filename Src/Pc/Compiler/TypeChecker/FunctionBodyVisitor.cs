@@ -55,7 +55,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // Build the statement trees
             var statementVisitor = new StatementVisitor(handler, machine, method);
-            method.Body = new CompoundStmt(context.statement().Select(statementVisitor.Visit).ToList());
+            method.Body = new CompoundStmt(context, context.statement().Select(statementVisitor.Visit).ToList());
             return null;
         }
 

@@ -3,17 +3,19 @@ using Microsoft.Pc.TypeChecker.AST.Expressions;
 
 namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
-    public class AssignStmt : IPStmt
+    public class InsertStmt : IPStmt
     {
-        public AssignStmt(ParserRuleContext sourceLocation, IPExpr variable, IPExpr value)
+        public InsertStmt(ParserRuleContext sourceLocation, IPExpr variable, IPExpr index, IPExpr value)
         {
             SourceLocation = sourceLocation;
             Variable = variable;
+            Index = index;
             Value = value;
         }
 
-        public ParserRuleContext SourceLocation { get; }
         public IPExpr Variable { get; }
+        public IPExpr Index { get; }
         public IPExpr Value { get; }
+        public ParserRuleContext SourceLocation { get; }
     }
 }

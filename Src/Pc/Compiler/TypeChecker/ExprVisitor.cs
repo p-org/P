@@ -52,7 +52,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.MissingNamedTupleEntry(context.field, context.field.GetText(), tuple);
             }
-            return new NamedTupleAccessExpr(subExpr, entry);
+            return new NamedTupleAccessExpr(context, subExpr, entry);
         }
 
         public override IPExpr VisitTupleAccessExpr(PParser.TupleAccessExprContext context)
@@ -67,7 +67,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.OutOfBoundsTupleAccess(context.field, fieldNo, tuple);
             }
-            return new TupleAccessExpr(subExpr, fieldNo, tuple.Types[fieldNo]);
+            return new TupleAccessExpr(context, subExpr, fieldNo, tuple.Types[fieldNo]);
         }
 
         public override IPExpr VisitSeqAccessExpr(PParser.SeqAccessExprContext context)
@@ -81,13 +81,13 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.TypeMismatch(context.index, indexExpr.Type, PrimitiveType.Int);
                     }
-                    return new SeqAccessExpr(seqOrMap, indexExpr, seqType.ElementType);
+                    return new SeqAccessExpr(context, seqOrMap, indexExpr, seqType.ElementType);
                 case MapType mapType:
                     if (!mapType.KeyType.IsAssignableFrom(indexExpr.Type))
                     {
                         throw handler.TypeMismatch(context.index, indexExpr.Type, mapType.KeyType);
                     }
-                    return new MapAccessExpr(seqOrMap, indexExpr, mapType.ValueType);
+                    return new MapAccessExpr(context, seqOrMap, indexExpr, mapType.ValueType);
             }
             throw handler.TypeMismatch(context.seq, seqOrMap.Type, TypeKind.Sequence, TypeKind.Map);
         }
@@ -103,7 +103,7 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map);
                     }
-                    return new KeysExpr(expr, new SequenceType(mapType.KeyType));
+                    return new KeysExpr(context, expr, new SequenceType(mapType.KeyType));
                 }
                 case "values":
                 {
@@ -112,7 +112,7 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map);
                     }
-                    return new ValuesExpr(expr, new SequenceType(mapType.ValueType));
+                    return new ValuesExpr(context, expr, new SequenceType(mapType.ValueType));
                 }
                 case "sizeof":
                 {
@@ -121,12 +121,12 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.TypeMismatch(context.expr(), expr.Type, TypeKind.Map, TypeKind.Sequence);
                     }
-                    return new SizeofExpr(expr);
+                    return new SizeofExpr(context, expr);
                 }
                 case "default":
                 {
                     PLanguageType type = TypeResolver.ResolveType(context.type(), table, handler);
-                    return new DefaultExpr(type.Canonicalize());
+                    return new DefaultExpr(context, type.Canonicalize());
                 }
                 default:
                 {
@@ -145,7 +145,7 @@ namespace Microsoft.Pc.TypeChecker
 
             IPExpr[] arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, machine.PayloadType, arguments);
-            return new CtorExpr(machine, arguments);
+            return new CtorExpr(context, machine, arguments);
         }
 
         public override IPExpr VisitFunCallExpr(PParser.FunCallExprContext context)
@@ -182,7 +182,7 @@ namespace Microsoft.Pc.TypeChecker
                 }
             }
 
-            return new FunCallExpr(function, arguments);
+            return new FunCallExpr(context, function, arguments);
         }
 
         public override IPExpr VisitUnaryExpr(PParser.UnaryExprContext context)
@@ -199,13 +199,13 @@ namespace Microsoft.Pc.TypeChecker
                                                    PrimitiveType.Int,
                                                    PrimitiveType.Float);
                     }
-                    return new UnaryOpExpr(UnaryOpType.Negate, subExpr);
+                    return new UnaryOpExpr(context, UnaryOpType.Negate, subExpr);
                 case "!":
                     if (!PrimitiveType.Bool.IsAssignableFrom(subExpr.Type))
                     {
                         throw handler.TypeMismatch(context.expr(), subExpr.Type, PrimitiveType.Bool);
                     }
-                    return new UnaryOpExpr(UnaryOpType.Not, subExpr);
+                    return new UnaryOpExpr(context, UnaryOpType.Not, subExpr);
                 default:
                     throw new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context));
             }
@@ -219,26 +219,26 @@ namespace Microsoft.Pc.TypeChecker
 
             var arithCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
-                {"*", (elhs, erhs) => new BinOpExpr(BinOpType.Mul, elhs, erhs)},
-                {"/", (elhs, erhs) => new BinOpExpr(BinOpType.Div, elhs, erhs)},
-                {"+", (elhs, erhs) => new BinOpExpr(BinOpType.Add, elhs, erhs)},
-                {"-", (elhs, erhs) => new BinOpExpr(BinOpType.Sub, elhs, erhs)},
-                {"<", (elhs, erhs) => new BinOpExpr(BinOpType.Lt, elhs, erhs)},
-                {"<=", (elhs, erhs) => new BinOpExpr(BinOpType.Le, elhs, erhs)},
-                {">", (elhs, erhs) => new BinOpExpr(BinOpType.Gt, elhs, erhs)},
-                {">=", (elhs, erhs) => new BinOpExpr(BinOpType.Ge, elhs, erhs)}
+                {"*", (elhs, erhs) => new BinOpExpr(context, BinOpType.Mul, elhs, erhs)},
+                {"/", (elhs, erhs) => new BinOpExpr(context, BinOpType.Div, elhs, erhs)},
+                {"+", (elhs, erhs) => new BinOpExpr(context, BinOpType.Add, elhs, erhs)},
+                {"-", (elhs, erhs) => new BinOpExpr(context, BinOpType.Sub, elhs, erhs)},
+                {"<", (elhs, erhs) => new BinOpExpr(context, BinOpType.Lt, elhs, erhs)},
+                {"<=", (elhs, erhs) => new BinOpExpr(context, BinOpType.Le, elhs, erhs)},
+                {">", (elhs, erhs) => new BinOpExpr(context, BinOpType.Gt, elhs, erhs)},
+                {">=", (elhs, erhs) => new BinOpExpr(context, BinOpType.Ge, elhs, erhs)}
             };
 
             var logicCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
-                {"&&", (elhs, erhs) => new BinOpExpr(BinOpType.And, elhs, erhs)},
-                {"||", (elhs, erhs) => new BinOpExpr(BinOpType.Or, elhs, erhs)}
+                {"&&", (elhs, erhs) => new BinOpExpr(context, BinOpType.And, elhs, erhs)},
+                {"||", (elhs, erhs) => new BinOpExpr(context, BinOpType.Or, elhs, erhs)}
             };
 
             var compCtors = new Dictionary<string, Func<IPExpr, IPExpr, IPExpr>>
             {
-                {"==", (elhs, erhs) => new BinOpExpr(BinOpType.Eq, elhs, erhs)},
-                {"!=", (elhs, erhs) => new BinOpExpr(BinOpType.Neq, elhs, erhs)}
+                {"==", (elhs, erhs) => new BinOpExpr(context, BinOpType.Eq, elhs, erhs)},
+                {"!=", (elhs, erhs) => new BinOpExpr(context, BinOpType.Neq, elhs, erhs)}
             };
 
             switch (op)
@@ -268,7 +268,7 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.TypeMismatch(context.lhs, lhs.Type, rhsMap.KeyType);
                     }
-                    return new ContainsKeyExpr(lhs, rhs);
+                    return new ContainsKeyExpr(context, lhs, rhs);
                 case "==":
                 case "!=":
                     if (!lhs.Type.IsAssignableFrom(rhs.Type) && !rhs.Type.IsAssignableFrom(lhs.Type))
@@ -303,7 +303,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw handler.IncomparableTypes(context, oldType, newType);
                 }
-                return new CastExpr(subExpr, newType);
+                return new CastExpr(context, subExpr, newType);
             }
             if (context.cast.Text.Equals("to"))
             {
@@ -315,7 +315,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     if (newType.IsSameTypeAs(PrimitiveType.Float) || PLanguageType.TypeIsOfKind(newType, TypeKind.Enum))
                     {
-                        return new CoerceExpr(subExpr, newType);
+                        return new CoerceExpr(context, subExpr, newType);
                     }
                 }
                 else if (oldType.IsSameTypeAs(PrimitiveType.Float))
@@ -326,7 +326,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     if (newType.IsSameTypeAs(PrimitiveType.Int))
                     {
-                        return new CoerceExpr(subExpr, newType);
+                        return new CoerceExpr(context, subExpr, newType);
                     }
                 }
                 else if (PLanguageType.TypeIsOfKind(oldType, TypeKind.Enum))
@@ -338,7 +338,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     if (newType.IsSameTypeAs(PrimitiveType.Int))
                     {
-                        return new CoerceExpr(subExpr, newType);
+                        return new CoerceExpr(context, subExpr, newType);
                     }
                 }
                 throw handler.IncomparableTypes(context, oldType, newType);
@@ -353,15 +353,15 @@ namespace Microsoft.Pc.TypeChecker
                 string symbolName = context.iden().GetText();
                 if (table.Lookup(symbolName, out Variable variable))
                 {
-                    return new VariableAccessExpr(variable);
+                    return new VariableAccessExpr(context, variable);
                 }
                 if (table.Lookup(symbolName, out EnumElem enumElem))
                 {
-                    return new EnumElemRefExpr(enumElem);
+                    return new EnumElemRefExpr(context, enumElem);
                 }
                 if (table.Lookup(symbolName, out PEvent evt))
                 {
-                    return new EventRefExpr(evt);
+                    return new EventRefExpr(context, evt);
                 }
                 throw handler.MissingDeclaration(context.iden(), "variable, enum element, or event", symbolName);
             }
@@ -371,31 +371,31 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.BoolLiteral() != null)
             {
-                return new BoolLiteralExpr(context.BoolLiteral().GetText().Equals("true"));
+                return new BoolLiteralExpr(context, context.BoolLiteral().GetText().Equals("true"));
             }
             if (context.IntLiteral() != null)
             {
-                return new IntLiteralExpr(int.Parse(context.IntLiteral().GetText()));
+                return new IntLiteralExpr(context, int.Parse(context.IntLiteral().GetText()));
             }
             if (context.NullLiteral() != null)
             {
-                return new NullLiteralExpr();
+                return new NullLiteralExpr(context);
             }
             if (context.NONDET() != null)
             {
                 method.IsNondeterministic = true;
-                return new NondetExpr();
+                return new NondetExpr(context);
             }
             if (context.FAIRNONDET() != null)
             {
                 method.IsNondeterministic = true;
-                return new FairNondetExpr();
+                return new FairNondetExpr(context);
             }
             if (context.HALT() != null)
             {
                 bool success = table.Lookup("halt", out PEvent haltEvent);
                 Debug.Assert(success);
-                return new EventRefExpr(haltEvent);
+                return new EventRefExpr(context, haltEvent);
             }
             if (context.THIS() != null)
             {
@@ -403,7 +403,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw handler.MisplacedThis(context);
                 }
-                return new ThisRefExpr(method.Owner);
+                return new ThisRefExpr(context, method.Owner);
             }
 
             throw new ArgumentException("unknown primitive", nameof(context));
@@ -413,7 +413,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             var fields = context._fields.Select(Visit).ToArray();
             var type = new TupleType(fields.Select(e => e.Type).ToArray());
-            return new UnnamedTupleExpr(fields, type);
+            return new UnnamedTupleExpr(context, fields, type);
         }
 
         public override IPExpr VisitNamedTupleBody(PParser.NamedTupleBodyContext context)
@@ -427,7 +427,7 @@ namespace Microsoft.Pc.TypeChecker
                                              })
                                  .ToArray();
             var type = new NamedTupleType(entries);
-            return new NamedTupleExpr(fields, type);
+            return new NamedTupleExpr(context, fields, type);
         }
 
         public override IPExpr VisitExpFloat(PParser.ExpFloatContext context)
@@ -438,7 +438,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitDecimalFloat(PParser.DecimalFloatContext context)
         {
             double value = double.Parse($"{context.pre?.Text ?? ""}.{context.post.Text}");
-            return new FloatLiteralExpr(value);
+            return new FloatLiteralExpr(context, value);
         }
 
         public override IPExpr VisitRvalue(PParser.RvalueContext context)
@@ -462,8 +462,8 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             return context.linear.Text.Equals("move")
-                       ? new LinearAccessRefExpr(variable, LinearType.Move)
-                       : new LinearAccessRefExpr(variable, LinearType.Swap);
+                       ? new LinearAccessRefExpr(context, variable, LinearType.Move)
+                       : new LinearAccessRefExpr(context, variable, LinearType.Swap);
         }
 
         public override IPExpr VisitVarLvalue(PParser.VarLvalueContext context)
@@ -473,7 +473,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.MissingDeclaration(context, "variable", varName);
             }
-            return new VariableAccessExpr(variable);
+            return new VariableAccessExpr(context, variable);
         }
 
         public override IPExpr VisitNamedTupleLvalue(PParser.NamedTupleLvalueContext context)
@@ -488,7 +488,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.MissingNamedTupleEntry(context.field, field, type);
             }
-            return new NamedTupleAccessExpr(lvalue, entry);
+            return new NamedTupleAccessExpr(context, lvalue, entry);
         }
 
         public override IPExpr VisitTupleLvalue(PParser.TupleLvalueContext context)
@@ -503,7 +503,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.OutOfBoundsTupleAccess(context.@int(), field, type);
             }
-            return new TupleAccessExpr(lvalue, field, type.Types[field]);
+            return new TupleAccessExpr(context, lvalue, field, type.Types[field]);
         }
 
         public override IPExpr VisitMapOrSeqLvalue(PParser.MapOrSeqLvalueContext context)
@@ -518,13 +518,13 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.TypeMismatch(context.expr(), indexType, mapType.KeyType);
                     }
-                    return new MapAccessExpr(lvalue, index, mapType.ValueType);
+                    return new MapAccessExpr(context, lvalue, index, mapType.ValueType);
                 case SequenceType seqType:
                     if (!PrimitiveType.Int.IsAssignableFrom(indexType))
                     {
                         throw handler.TypeMismatch(context.expr(), indexType, PrimitiveType.Int);
                     }
-                    return new SeqAccessExpr(lvalue, index, seqType.ElementType);
+                    return new SeqAccessExpr(context, lvalue, index, seqType.ElementType);
                 default:
                     throw handler.TypeMismatch(context.lvalue(), lvalue.Type, TypeKind.Sequence, TypeKind.Map);
             }

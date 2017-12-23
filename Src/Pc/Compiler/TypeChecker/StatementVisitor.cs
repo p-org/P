@@ -32,7 +32,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
-            return new CompoundStmt(context.statement().Select(Visit).ToList());
+            return new CompoundStmt(context, context.statement().Select(Visit).Where(stmt => !(stmt is NoStmt)).ToList());
         }
 
         public override IPStmt VisitPopStmt(PParser.PopStmtContext context)
@@ -42,7 +42,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.ChangedStateMidTransition(context, method);
             }
-            return new PopStmt();
+            return new PopStmt(context);
         }
 
         public override IPStmt VisitAssertStmt(PParser.AssertStmtContext context)
@@ -53,7 +53,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), assertion.Type, PrimitiveType.Bool);
             }
             string message = context.StringLiteral()?.GetText() ?? "";
-            return new AssertStmt(assertion, message);
+            return new AssertStmt(context, assertion, message);
         }
 
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
@@ -86,7 +86,7 @@ namespace Microsoft.Pc.TypeChecker
                                                      args.Count,
                                                      numNecessaryArgs);
             }
-            return new PrintStmt(message, args);
+            return new PrintStmt(context, message, args);
         }
 
         public override IPStmt VisitReturnStmt(PParser.ReturnStmtContext context)
@@ -97,7 +97,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context, returnType, method.Signature.ReturnType);
             }
-            return new ReturnStmt(returnValue);
+            return new ReturnStmt(context, returnValue);
         }
 
         public override IPStmt VisitAssignStmt(PParser.AssignStmtContext context)
@@ -117,7 +117,7 @@ namespace Microsoft.Pc.TypeChecker
                         {
                             throw handler.TypeMismatch(context.rvalue(), refVariable.Type, variable.Type);
                         }
-                        return new MoveAssignStmt(variable, refVariable);
+                        return new MoveAssignStmt(context, variable, refVariable);
                     case LinearType.Swap:
                         // Within a function, swaps must only be subtyped in either direction
                         // the actual types are checked at runtime. This is to allow swapping 
@@ -127,7 +127,7 @@ namespace Microsoft.Pc.TypeChecker
                         {
                             throw handler.TypeMismatch(context.rvalue(), refVariable.Type, variable.Type);
                         }
-                        return new SwapAssignStmt(variable, refVariable);
+                        return new SwapAssignStmt(context, variable, refVariable);
                     default:
                         throw new ArgumentOutOfRangeException();
                 }
@@ -139,7 +139,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.rvalue(), value.Type, variable.Type);
             }
 
-            return new AssignStmt(variable, value);
+            return new AssignStmt(context, variable, value);
         }
 
         public override IPStmt VisitInsertStmt(PParser.InsertStmtContext context)
@@ -187,7 +187,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.rvalue(), valueType, expectedValueType);
             }
 
-            return new InsertStmt(variable, index, value);
+            return new InsertStmt(context, variable, index, value);
         }
 
         public override IPStmt VisitRemoveStmt(PParser.RemoveStmtContext context)
@@ -215,7 +215,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.lvalue(), variable.Type, TypeKind.Sequence, TypeKind.Map);
             }
 
-            return new RemoveStmt(variable, value);
+            return new RemoveStmt(context, variable, value);
         }
 
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
@@ -226,7 +226,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
             IPStmt body = Visit(context.statement());
-            return new WhileStmt(condition, body);
+            return new WhileStmt(context, condition, body);
         }
 
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
@@ -237,8 +237,8 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
             IPStmt thenBody = Visit(context.thenBranch);
-            IPStmt elseBody = context.elseBranch == null ? new NoStmt() : Visit(context.elseBranch);
-            return new IfStmt(condition, thenBody, elseBody);
+            IPStmt elseBody = context.elseBranch == null ? new NoStmt(context) : Visit(context.elseBranch);
+            return new IfStmt(context, condition, thenBody, elseBody);
         }
 
         public override IPStmt VisitCtorStmt(PParser.CtorStmtContext context)
@@ -250,7 +250,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             var args = (from arg in context.rvalueList()?.rvalue() ?? Enumerable.Empty<PParser.RvalueContext>() select exprVisitor.Visit(arg)).ToList();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, args);
-            return new CtorStmt(targetMachine, args);
+            return new CtorStmt(context, targetMachine, args);
         }
 
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)
@@ -273,11 +273,11 @@ namespace Microsoft.Pc.TypeChecker
 
             foreach (Tuple<Variable, IPExpr> pair in fun.Signature.Parameters.Zip(argsList, Tuple.Create))
             {
-                TypeCheckingUtils.CheckArgument(handler, context, ((ITypedName) pair.Item1).Type, pair.Item2);
+                TypeCheckingUtils.CheckArgument(handler, context, pair.Item1.Type, pair.Item2);
             }
             
             method.AddCallee(fun);
-            return new FunCallStmt(fun, argsList);
+            return new FunCallStmt(context, fun, argsList);
         }
 
         public override IPStmt VisitRaiseStmt(PParser.RaiseStmtContext context)
@@ -304,7 +304,7 @@ namespace Microsoft.Pc.TypeChecker
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
             }
             
-            return new RaiseStmt(pExpr, args);
+            return new RaiseStmt(context, pExpr, args);
         }
 
         public override IPStmt VisitSendStmt(PParser.SendStmtContext context)
@@ -334,7 +334,7 @@ namespace Microsoft.Pc.TypeChecker
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
             }
 
-            return new SendStmt(machineExpr, evtExpr, args);
+            return new SendStmt(context, machineExpr, evtExpr, args);
         }
 
         private static bool IsDefinitelyNullEvent(IPExpr evtExpr)
@@ -357,7 +357,7 @@ namespace Microsoft.Pc.TypeChecker
 
             List<IPExpr> args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
                                  Enumerable.Empty<IPExpr>()).ToList();
-            return new AnnounceStmt(evtExpr, args.Count == 0 ? null : args[0]);
+            return new AnnounceStmt(context, evtExpr, args.Count == 0 ? null : args[0]);
         }
 
         public override IPStmt VisitGotoStmt(PParser.GotoStmtContext context)
@@ -390,7 +390,7 @@ namespace Microsoft.Pc.TypeChecker
                 else
                 {
                     IPExpr[] tupleFields = rvalues.Select(exprVisitor.Visit).ToArray();
-                    payload = new UnnamedTupleExpr(tupleFields,
+                    payload = new UnnamedTupleExpr(context, tupleFields,
                                                    new TupleType(tupleFields.Select(f => f.Type).ToList()));
                 }
             }
@@ -399,7 +399,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context, payloadType, expectedType);
             }
-            return new GotoStmt(state, payload);
+            return new GotoStmt(context, state, payload);
         }
 
         public override IPStmt VisitReceiveStmt(PParser.ReceiveStmtContext context)
@@ -409,7 +409,13 @@ namespace Microsoft.Pc.TypeChecker
             foreach (PParser.RecvCaseContext caseContext in context.recvCase())
             {
                 var recvHandler =
-                    new Function(caseContext.anonEventHandler()) {Scope = table.MakeChildScope(), Owner = method.Owner};
+                    new Function(caseContext.anonEventHandler())
+                    {
+                        Scope = table.MakeChildScope(),
+                        Owner = method.Owner,
+                        Role = FunctionRole.ReceiveHandler
+                    };
+
                 if (caseContext.anonEventHandler().funParam() is PParser.FunParamContext param)
                 {
                     Variable paramVar = recvHandler.Scope.Put(param.name.GetText(), param, VariableRole.Param);
@@ -439,12 +445,12 @@ namespace Microsoft.Pc.TypeChecker
                     cases.Add(pEvent, recvHandler);
                 }
             }
-            return new ReceiveStmt(cases);
+            return new ReceiveStmt(context, cases);
         }
 
         public override IPStmt VisitNoStmt(PParser.NoStmtContext context)
         {
-            return new NoStmt();
+            return new NoStmt(context);
         }
     }
 }

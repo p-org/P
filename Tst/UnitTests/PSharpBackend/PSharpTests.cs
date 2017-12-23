@@ -49,7 +49,6 @@ namespace UnitTests.PSharpBackend
             }
 
             Console.Error.WriteLine($"{output}\n\t{fileList}\n");
-            Console.Error.WriteLine(File.ReadAllText(Path.Combine(testDir.FullName, "Pc", "acc_0.txt")));
         }
     }
 }

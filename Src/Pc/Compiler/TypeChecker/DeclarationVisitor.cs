@@ -195,24 +195,23 @@ namespace Microsoft.Pc.TypeChecker
             // LPAREN type? RPAREN
             mInterface.PayloadType = ResolveType(context.type());
 
-            NamedEventSet eventSet;
-            if (context.eventSetLiteral() is PParser.EventSetLiteralContext eventSetLiteral)
+            IEventSet eventSet;
+            if (context.RECEIVES() == null)
             {
-                // ASSIGN LBRACE eventSetLiteral RBRACE
-                // Let the eventSetLiteral handler fill in a newly created event set...
-                eventSet = new NamedEventSet($"{mInterface.Name}$eventset", eventSetLiteral);
-                eventSet.AddEvents((PEvent[]) Visit(eventSetLiteral));
+                eventSet = UniversalEventSet.Instance;
             }
             else
             {
-                // ASSIGN eventSet=Iden
-                // ...or look up the event set and establish the link by name.
-                var eventSetName = context.eventSet.GetText();
-                if (!CurrentScope.Lookup(eventSetName, out eventSet))
+                eventSet = new EventSet();
+                if (context.nonDefaultEventList()?._events is IList<PParser.NonDefaultEventContext> events)
                 {
-                    throw Handler.MissingDeclaration(context.eventSet, "event set", eventSetName);
+                    foreach (var eventContext in events)
+                    {
+                        eventSet.AddEvent((PEvent) Visit(eventContext));
+                    }
                 }
             }
+            
             mInterface.ReceivableEvents = eventSet;
             return mInterface;
         }

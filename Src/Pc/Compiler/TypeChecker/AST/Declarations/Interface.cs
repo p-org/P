@@ -17,7 +17,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
         }
 
-        public NamedEventSet ReceivableEvents { get; set; }
+        public IEventSet ReceivableEvents { get; set; }
         public IEnumerable<Machine> Implementations => implementations;
 
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;

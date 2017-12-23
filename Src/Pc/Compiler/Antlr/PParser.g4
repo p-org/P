@@ -84,9 +84,7 @@ cardinality : ASSERT IntLiteral
 eventSetDecl : EVENTSET name=iden ASSIGN LBRACE eventSetLiteral RBRACE SEMI ;
 eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
 
-interfaceDecl : TYPE name=iden LPAREN type? RPAREN ASSIGN eventSet=iden  SEMI
-              | TYPE name=iden LPAREN type? RPAREN ASSIGN LBRACE eventSetLiteral RBRACE SEMI
-              ;
+interfaceDecl : INTERFACE name=iden LPAREN type? RPAREN (RECEIVES nonDefaultEventList?) SEMI ;
 
 // has scope
 implMachineDecl : MACHINE name=iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;

@@ -13,7 +13,7 @@ namespace Microsoft.Pc.TypeChecker.Types
             lookupTable = fields.ToDictionary(f => f.Name, f => f);
         }
         
-        public string[] Names => Fields.Select(f => f.Name).ToArray();
+        public IEnumerable<string> Names => Fields.Select(f => f.Name);
         public IReadOnlyList<NamedTupleEntry> Fields { get; }
 
         public override string OriginalRepresentation =>

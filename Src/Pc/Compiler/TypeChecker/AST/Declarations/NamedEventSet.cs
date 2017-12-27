@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
@@ -46,6 +47,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             Comparer<PEvent>.Create((ev1, ev2) => string.Compare(ev1.Name, ev2.Name, StringComparison.Ordinal));
 
         private readonly SortedSet<PEvent> events = new SortedSet<PEvent>(EventNameComparer);
+        private readonly object setUpdateLock = new object();
 
         private static readonly Lazy<UniversalEventSet> LazyInstance =
             new Lazy<UniversalEventSet>(() => new UniversalEventSet());
@@ -60,7 +62,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public bool AddEvent(PEvent pEvent)
         {
-            return events.Add(pEvent);
+            lock (setUpdateLock)
+            {
+                return events.Add(pEvent);
+            }
         }
 
         public bool Contains(PEvent pEvent)

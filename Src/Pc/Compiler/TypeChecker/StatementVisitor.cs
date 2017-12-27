@@ -60,19 +60,17 @@ namespace Microsoft.Pc.TypeChecker
         {
             string message = context.StringLiteral().GetText();
             int numNecessaryArgs = (from Match match in Regex.Matches(message, @"(?:{{|}}|{(\d+)}|[^{}]+|{|})")
-                    where match.Groups[1].Success
-                    select int.Parse(match.Groups[1].Value) + 1)
-                .Concat(new[] {0})
-                .Max();
+                                       where match.Groups[1].Success
+                                       select int.Parse(match.Groups[1].Value) + 1)
+                                   .Concat(new[] {0})
+                                   .Max();
 
-            var args = (from arg in context.rvalueList()?.rvalue() ?? Enumerable.Empty<PParser.RvalueContext>() select exprVisitor.Visit(arg)).ToList();
-
+            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             if (args.Count != numNecessaryArgs)
             {
-                throw handler.IncorrectArgumentCount((ParserRuleContext) context.rvalueList() ?? context,
-                                                     args.Count,
-                                                     numNecessaryArgs);
+                throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);
             }
+
             return new PrintStmt(context, message, args);
         }
 
@@ -235,7 +233,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.MissingDeclaration(context.iden(), "machine", machineName);
             }
-            var args = (from arg in context.rvalueList()?.rvalue() ?? Enumerable.Empty<PParser.RvalueContext>() select exprVisitor.Visit(arg)).ToList();
+            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, args);
             return new CtorStmt(context, targetMachine, args);
         }
@@ -243,9 +241,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)
         {
             string funName = context.fun.GetText();
-            IEnumerable<IPExpr> args = context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                                       Enumerable.Empty<IPExpr>();
-            List<IPExpr> argsList = args.ToList();
+            List<IPExpr> argsList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             if (!table.Lookup(funName, out Function fun))
             {
                 throw handler.MissingDeclaration(context.fun, "function or function prototype", funName);
@@ -283,9 +279,7 @@ namespace Microsoft.Pc.TypeChecker
             method.CanCommunicate = true;
             method.CanChangeState = true;
 
-            IPExpr[] args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                             Enumerable.Empty<IPExpr>()).ToArray();
-
+            IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             if (evtExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
@@ -313,8 +307,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.@event, evtExpr.Type, PrimitiveType.Event);
             }
             
-            IPExpr[] args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                             Enumerable.Empty<IPExpr>()).ToArray();
+            IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
 
             if (evtExpr is EventRefExpr eventRef)
             {
@@ -342,8 +335,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event);
             }
 
-            List<IPExpr> args = (context.rvalueList()?.rvalue().Select(rv => exprVisitor.Visit(rv)) ??
-                                 Enumerable.Empty<IPExpr>()).ToList();
+            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             return new AnnounceStmt(context, evtExpr, args.Count == 0 ? null : args[0]);
         }
 
@@ -360,38 +352,39 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.MissingDeclaration(token, "group", token.GetText());
                 }
             }
+
             State state = current?.GetState(stateName);
             if (state == null)
             {
                 throw handler.MissingDeclaration(stateNameContext.state, "state", stateName);
             }
-            IPExpr payload = null;
-            PLanguageType expectedType =
-                state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
-            if (context.rvalueList()?.rvalue() is PParser.RvalueContext[] rvalues)
+
+            PLanguageType expectedType = state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
+            IPExpr[] rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            IPExpr payload;
+            if (rvaluesList.Length == 0)
             {
-                if (rvalues.Length == 1)
-                {
-                    payload = exprVisitor.Visit(rvalues[0]);
-                }
-                else
-                {
-                    IPExpr[] tupleFields = rvalues.Select(exprVisitor.Visit).ToArray();
-                    payload = new UnnamedTupleExpr(context, tupleFields,
-                                                   new TupleType(tupleFields.Select(f => f.Type).ToList()));
-                }
+                payload = new NullLiteralExpr(context);
             }
-            PLanguageType payloadType = payload?.Type ?? PrimitiveType.Null;
-            if (!expectedType.IsAssignableFrom(payloadType))
+            else if (rvaluesList.Length == 1)
             {
-                throw handler.TypeMismatch(context, payloadType, expectedType);
+                payload = rvaluesList[0];
             }
+            else
+            {
+                payload = new UnnamedTupleExpr(context, rvaluesList);
+            }
+
+            if (!expectedType.IsAssignableFrom(payload.Type))
+            {
+                throw handler.TypeMismatch(context, payload.Type, expectedType);
+            }
+
             return new GotoStmt(context, state, payload);
         }
 
         public override IPStmt VisitReceiveStmt(PParser.ReceiveStmtContext context)
         {
-            // TODO: can receive statements have event variables as their cases?
             var cases = new Dictionary<PEvent, Function>();
             foreach (PParser.RecvCaseContext caseContext in context.recvCase())
             {

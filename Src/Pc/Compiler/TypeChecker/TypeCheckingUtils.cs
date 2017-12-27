@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
+using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.Types;
 
@@ -25,9 +27,9 @@ namespace Microsoft.Pc.TypeChecker
             }
             else if (payloadType.Canonicalize() is TupleType tuple)
             {
-                foreach (Tuple<IPExpr, PLanguageType> pair in arguments.Zip(tuple.Types, Tuple.Create))
+                foreach (Tuple<PLanguageType, IPExpr> pair in tuple.Types.Zip(arguments, Tuple.Create))
                 {
-                    CheckArgument(handler, context, pair.Item2, pair.Item1);
+                    CheckArgument(handler, context, pair.Item1, pair.Item2);
                 }
             }
             else
@@ -50,6 +52,11 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context, arg.Type, argumentType);
             }
+        }
+
+        public static IEnumerable<IPExpr> VisitRvalueList(PParser.RvalueListContext context, ExprVisitor visitor)
+        {
+            return context?.rvalue().Select(visitor.Visit) ?? Enumerable.Empty<IPExpr>();
         }
     }
 }

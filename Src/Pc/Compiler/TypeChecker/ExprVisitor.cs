@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.Types;
@@ -143,7 +144,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(context.machineName, "machine", machineName);
             }
 
-            IPExpr[] arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
+            IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, machine.PayloadType, arguments);
             return new CtorExpr(context, machine, arguments);
         }
@@ -157,8 +158,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // Check the arguments
-            // TODO: linearly typed arguments
-            var arguments = (context.rvalueList()?.rvalue().Select(Visit) ?? Enumerable.Empty<IPExpr>()).ToArray();
+            IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             ISet<Variable> linearVariables = new HashSet<Variable>();
             for (var i = 0; i < arguments.Length; i++)
             {
@@ -412,8 +412,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitUnnamedTupleBody(PParser.UnnamedTupleBodyContext context)
         {
             var fields = context._fields.Select(Visit).ToArray();
-            var type = new TupleType(fields.Select(e => e.Type).ToArray());
-            return new UnnamedTupleExpr(context, fields, type);
+            return new UnnamedTupleExpr(context, fields);
         }
 
         public override IPExpr VisitNamedTupleBody(PParser.NamedTupleBodyContext context)

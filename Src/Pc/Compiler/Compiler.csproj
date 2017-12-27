@@ -239,6 +239,9 @@
     <Compile Include="TypeChecker\AST\Expressions\BinOpType.cs" />
     <Compile Include="TypeChecker\AST\Expressions\CoerceExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\UnaryOpType.cs" />
+    <Compile Include="TypeChecker\AST\ILinearRef.cs" />
+    <Compile Include="TypeChecker\AST\IPExpr.cs" />
+    <Compile Include="TypeChecker\AST\IPStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\InsertStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\ReceiveStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\RemoveStmt.cs" />
@@ -257,9 +260,7 @@
     <Compile Include="TypeChecker\AST\Expressions\FairNondetExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\FloatLiteralExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\FunCallExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\ILinearRef.cs" />
     <Compile Include="TypeChecker\AST\Expressions\IntLiteralExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\IPExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\KeysExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\LinearAccessRefExpr.cs" />
     <Compile Include="TypeChecker\AST\Expressions\LinearType.cs" />
@@ -299,7 +300,6 @@
     <Compile Include="TypeChecker\AST\Statements\FunCallStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\GotoStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\IfStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\IPStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\MoveAssignStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\NoStmt.cs" />
     <Compile Include="TypeChecker\AST\Statements\PopStmt.cs" />

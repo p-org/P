@@ -1,4 +1,4 @@
-namespace Microsoft.Pc.TypeChecker.AST.Statements
+namespace Microsoft.Pc.TypeChecker.AST
 {
     public interface IPStmt : IPAST
     {

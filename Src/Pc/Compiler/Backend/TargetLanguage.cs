@@ -6,6 +6,7 @@ namespace Microsoft.Pc.Backend
     {
         private static readonly List<TargetLanguage> AllLanguagesList = new List<TargetLanguage>();
 
+        public static TargetLanguage Prt = new TargetLanguage("Prt");
         public static TargetLanguage PSharp = new TargetLanguage("PSharp");
         public static TargetLanguage P3 = new TargetLanguage("P3");
 

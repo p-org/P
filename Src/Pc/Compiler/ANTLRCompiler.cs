@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
@@ -6,7 +7,9 @@ using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Tree;
 using Microsoft.Formula.API;
 using Microsoft.Pc.Antlr;
+using Microsoft.Pc.Backend;
 using Microsoft.Pc.TypeChecker;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc
 {
@@ -28,7 +31,12 @@ namespace Microsoft.Pc
                     originalFiles.Put(trees[i], inputFile);
                 }
 
-                Analyzer.AnalyzeCompilationUnit(handler, trees);
+                var scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
+                foreach (Function fun in AllFunctions(scope))
+                {
+                    IRTransformer.SimplifyMethod(fun);
+                }
+
                 log.WriteMessage("Program valid. Code generation not implemented.", SeverityKind.Info);
                 return true;
             }
@@ -36,6 +44,22 @@ namespace Microsoft.Pc
             {
                 log.WriteMessage(e.Message, SeverityKind.Error);
                 return false;
+            }
+        }
+
+        private static IEnumerable<Function> AllFunctions(Scope globalScope)
+        {
+            foreach (Function fun in globalScope.Functions)
+            {
+                yield return fun;
+            }
+
+            foreach (Machine machine in globalScope.Machines)
+            {
+                foreach (Function method in machine.Methods)
+                {
+                    yield return method;
+                }
             }
         }
 

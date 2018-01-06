@@ -5,13 +5,13 @@ using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.States;
 
 namespace Microsoft.Pc.TypeChecker
 {
     public static class Analyzer
     {
-        public static Scope AnalyzeCompilationUnit(ITranslationErrorHandler handler, params PParser.ProgramContext[] programUnits)
+        public static Scope AnalyzeCompilationUnit(ITranslationErrorHandler handler,
+                                                   params PParser.ProgramContext[] programUnits)
         {
             // Step 1: Build the global scope of declarations
             Scope globalScope = BuildGlobalScope(handler, programUnits);
@@ -43,6 +43,7 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw handler.NonDeterministicFunctionInSpecMachine(machineFunction);
                 }
+
                 if (machineFunction.CanChangeState == true &&
                     (machineFunction.Role.HasFlag(FunctionRole.TransitionFunction) ||
                      machineFunction.Role.HasFlag(FunctionRole.ExitHandler)))
@@ -62,8 +63,8 @@ namespace Microsoft.Pc.TypeChecker
         {
             return new Propagation<T>
             {
-                PropertyGetter = getter,
-                PropertySetter = setter,
+                Getter = getter,
+                Setter = setter,
                 ActiveValue = value
             };
         }
@@ -74,21 +75,22 @@ namespace Microsoft.Pc.TypeChecker
             {
                 foreach (Propagation<T> propagation in propagations)
                 {
-                    if (propagation.PropertyGetter(function).Equals(propagation.ActiveValue))
+                    if (propagation.Getter(function).Equals(propagation.ActiveValue))
                     {
                         propagation.PropertyStack.Push(function);
                     }
                 }
             }
+
             foreach (Propagation<T> propagation in propagations)
             {
                 while (propagation.PropertyStack.Any())
                 {
                     foreach (Function caller in propagation.PropertyStack.Pop().Callers)
                     {
-                        if (!propagation.PropertyGetter(caller).Equals(propagation.ActiveValue))
+                        if (!propagation.Getter(caller).Equals(propagation.ActiveValue))
                         {
-                            propagation.PropertySetter(caller, propagation.ActiveValue);
+                            propagation.Setter(caller, propagation.ActiveValue);
                             propagation.PropertyStack.Push(caller);
                         }
                     }
@@ -116,6 +118,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 DeclarationVisitor.PopulateDeclarations(handler, globalScope, programUnit, nodesToDeclarations);
             }
+
             return globalScope;
         }
 
@@ -132,44 +135,14 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     yield return method;
                 }
-                // TODO: save these to field containing anonymous methods
-                foreach (State state in machine.AllStates())
-                {
-                    if (state.Entry != null)
-                    {
-                        yield return state.Entry;
-                    }
-                    foreach (IStateAction stateAction in state.AllEventHandlers.Select(kv => kv.Value))
-                    {
-                        switch (stateAction)
-                        {
-                            case EventDoAction action:
-                                if (action.Target != null)
-                                {
-                                    yield return action.Target;
-                                }
-                                break;
-                            case EventGotoState action:
-                                if (action.TransitionFunction != null)
-                                {
-                                    yield return action.TransitionFunction;
-                                }
-                                break;
-                        }
-                    }
-                    if (state.Exit != null)
-                    {
-                        yield return state.Exit;
-                    }
-                }
             }
         }
 
         private class Propagation<T>
         {
             public Stack<Function> PropertyStack { get; } = new Stack<Function>();
-            public Func<Function, T> PropertyGetter { get; set; }
-            public Action<Function, T> PropertySetter { get; set; }
+            public Func<Function, T> Getter { get; set; }
+            public Action<Function, T> Setter { get; set; }
             public T ActiveValue { get; set; }
         }
     }

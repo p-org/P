@@ -453,7 +453,6 @@ namespace Microsoft.Pc.TypeChecker
                         {
                             if (state.HasHandler(action.Trigger))
                             {
-                                // TODO: get the exact EventIdContext instead of stateBodyItemContext
                                 throw Handler.DuplicateEventAction(action.SourceLocation, state[action.Trigger], state);
                             }
                             state[action.Trigger] = action;
@@ -772,6 +771,9 @@ namespace Microsoft.Pc.TypeChecker
                 Owner = CurrentMachine,
                 Scope = CurrentScope.MakeChildScope()
             };
+
+            CurrentMachine.AddMethod(fun);
+
             if (context.funParam() is PParser.FunParamContext paramContext)
             {
                 Variable param = fun.Scope.Put(paramContext.name.GetText(), paramContext, VariableRole.Param);
@@ -790,6 +792,9 @@ namespace Microsoft.Pc.TypeChecker
                 Owner = CurrentMachine,
                 Scope = CurrentScope.MakeChildScope()
             };
+
+            CurrentMachine.AddMethod(fun);
+
             nodesToDeclarations.Put(context, fun);
             return fun;
         }

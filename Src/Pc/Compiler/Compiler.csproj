@@ -285,6 +285,7 @@
     <Compile Include="TypeChecker\DeclarationStubVisitor.cs" />
     <Compile Include="TypeChecker\DeclarationVisitor.cs" />
     <Compile Include="TypeChecker\FunctionBodyVisitor.cs" />
+    <Compile Include="TypeChecker\IRTransformer.cs" />
     <Compile Include="TypeChecker\LinearTypeChecker.cs" />
     <Compile Include="TypeChecker\TypeCheckingUtils.cs" />
     <Compile Include="TypeChecker\Types\NamedTupleEntry.cs" />

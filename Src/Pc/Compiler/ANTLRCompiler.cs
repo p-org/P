@@ -31,11 +31,15 @@ namespace Microsoft.Pc
                     originalFiles.Put(trees[i], inputFile);
                 }
 
-                var scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
+                Scope scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
+                Console.WriteLine(IrDumper.Dump(scope));
                 foreach (Function fun in AllFunctions(scope))
                 {
                     IRTransformer.SimplifyMethod(fun);
                 }
+
+                Console.WriteLine("-----------------------------------------");
+                Console.WriteLine(IrDumper.Dump(scope));
 
                 log.WriteMessage("Program valid. Code generation not implemented.", SeverityKind.Info);
                 return true;
@@ -45,6 +49,12 @@ namespace Microsoft.Pc
                 log.WriteMessage(e.Message, SeverityKind.Error);
                 return false;
             }
+        }
+
+        public bool Link(ICompilerOutput log, CommandLineOptions options)
+        {
+            log.WriteMessage("Linking not yet implemented in Antlr toolchain.", SeverityKind.Info);
+            return true;
         }
 
         private static IEnumerable<Function> AllFunctions(Scope globalScope)
@@ -87,12 +97,6 @@ namespace Microsoft.Pc
                 parser.ErrorHandler = new DefaultErrorStrategy();
                 return parser.program();
             }
-        }
-
-        public bool Link(ICompilerOutput log, CommandLineOptions options)
-        {
-            log.WriteMessage("Linking not yet implemented in Antlr toolchain.", SeverityKind.Info);
-            return true;
         }
     }
 }

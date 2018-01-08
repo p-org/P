@@ -9,7 +9,7 @@ using UnitTests.CBackend;
 namespace UnitTests.PSharpBackend
 {
     [TestFixture]
-    [Parallelizable(ParallelScope.Children)]
+    //[Parallelizable(ParallelScope.Children)]
     public class PSharpTests
     {
         private static IEnumerable<TestCaseData> TestCases =>

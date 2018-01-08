@@ -26,7 +26,8 @@ namespace Microsoft.Pc.Backend
         private (Variable, IPStmt) SaveInTemporary(IPExpr expr)
         {
             ParserRuleContext location = expr.SourceLocation;
-            var temp = new Variable($"$tmp{numTemp++}", location, VariableRole.Local) {Type = expr.Type};
+            var temp = function.Scope.Put($"$tmp{numTemp++}", expr.SourceLocation, VariableRole.Local);
+            temp.Type = expr.Type;
             function.AddLocalVariable(temp);
             var stmt = new AssignStmt(location, new VariableAccessExpr(location, temp), expr);
             return (temp, stmt);
@@ -38,8 +39,6 @@ namespace Microsoft.Pc.Backend
             PLanguageType type = expr.Type;
             switch (expr)
             {
-                case null:
-                    throw new ArgumentOutOfRangeException(nameof(expr));
                 case MapAccessExpr mapAccessExpr:
                     var (mapExpr, mapExprDeps) = SimplifyLvalue(mapAccessExpr.MapExpr);
                     var (mapIndex, mapIndexDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
@@ -412,7 +411,7 @@ namespace Microsoft.Pc.Backend
                 case ReceiveStmt receiveStmt:
                     foreach (Function recvCase in receiveStmt.Cases.Values)
                     {
-                        SimplifyMethod(recvCase);
+                        recvCase.Body = SimplifyFunctionBody(recvCase.Body);
                     }
 
                     return new List<IPStmt> {receiveStmt};

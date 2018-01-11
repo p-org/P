@@ -430,7 +430,7 @@ namespace PBuild
             public PProjectInfo()
             {
                 Name = "";
-                depends = new List<string>();
+                depends = new List<string>();   
                 psources = new List<string>();
                 testscripts = new List<string>();
                 outputDir = null;

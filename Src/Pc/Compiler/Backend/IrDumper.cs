@@ -39,7 +39,7 @@ namespace Microsoft.Pc.Backend
 
         private void WriteLine(string line)
         {
-            writer.WriteLine($"{this.padding}{line.TrimEnd()}");
+            writer.WriteLine($"{padding}{line.TrimEnd()}");
         }
 
         private void WalkTree(IPAST tree)

@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
-using Microsoft.Pc.TypeChecker.AST.Statements;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
@@ -35,9 +33,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
         }
 
-        public Function(ParserRuleContext sourceNode) : this("", sourceNode)
-        {
-        }
+        public Function(ParserRuleContext sourceNode) : this("", sourceNode) { }
 
         public Machine Owner { get; set; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
@@ -50,10 +46,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
 
-        public void AddLocalVariable(Variable local)
-        {
-            localVariables.Add(local);
-        }
+        public void AddLocalVariable(Variable local) { localVariables.Add(local); }
 
         public void AddCallee(Function callee)
         {
@@ -69,8 +62,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool? CanChangeState { get; set; }
         public bool? CanCommunicate { get; set; }
         public bool? IsNondeterministic { get; set; }
-        public IImmutableSet<Function> Callers => callers.ToImmutableHashSet();
-        public IImmutableSet<Function> Callees => callees.ToImmutableHashSet();
+        public IReadOnlyCollection<Function> Callers => callers;
+        public IReadOnlyCollection<Function> Callees => callees;
 
         #endregion
     }

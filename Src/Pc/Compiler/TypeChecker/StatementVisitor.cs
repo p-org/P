@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Antlr4.Runtime;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
@@ -59,13 +58,9 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
         {
             string message = context.StringLiteral().GetText();
-            int numNecessaryArgs = (from Match match in Regex.Matches(message, @"(?:{{|}}|{(\d+)}|[^{}]+|{|})")
-                                       where match.Groups[1].Success
-                                       select int.Parse(match.Groups[1].Value) + 1)
-                                   .Concat(new[] {0})
-                                   .Max();
+            int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(message);
 
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             if (args.Count != numNecessaryArgs)
             {
                 throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);

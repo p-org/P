@@ -5,22 +5,18 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class TupleType : PLanguageType
     {
-        public TupleType(params PLanguageType[] types) : this(new List<PLanguageType>(types))
+        public TupleType(params PLanguageType[] types) : base(TypeKind.Tuple)
         {
-        }
-
-        public TupleType(IReadOnlyList<PLanguageType> types) : base(TypeKind.Tuple)
-        {
-            Types = types;
+            Types = new List<PLanguageType>(types);
+            OriginalRepresentation = $"({string.Join(",", Types.Select(type => type.OriginalRepresentation))})";
+            CanonicalRepresentation = $"({string.Join(",", Types.Select(type => type.CanonicalRepresentation))})";
         }
 
         public IReadOnlyList<PLanguageType> Types { get; }
 
-        public override string OriginalRepresentation =>
-            $"({string.Join(",", Types.Select(type => type.OriginalRepresentation))})";
+        public override string OriginalRepresentation { get; }
 
-        public override string CanonicalRepresentation =>
-            $"({string.Join(",", Types.Select(type => type.CanonicalRepresentation))})";
+        public override string CanonicalRepresentation { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
@@ -28,7 +24,7 @@ namespace Microsoft.Pc.TypeChecker.Types
             return otherType.Canonicalize() is TupleType other &&
                    Types.Count == other.Types.Count &&
                    Types.Zip(other.Types, (myT, otherT) => myT.IsAssignableFrom(otherT))
-                       .All(x => x);
+                        .All(x => x);
         }
 
         public override PLanguageType Canonicalize()

@@ -11,16 +11,17 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             Fields = fields;
             lookupTable = fields.ToDictionary(f => f.Name, f => f);
+            OriginalRepresentation =
+                $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.OriginalRepresentation}"))})";
+            CanonicalRepresentation =
+                $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.CanonicalRepresentation}"))})";
         }
-        
+
         public IEnumerable<string> Names => Fields.Select(f => f.Name);
         public IReadOnlyList<NamedTupleEntry> Fields { get; }
 
-        public override string OriginalRepresentation =>
-            $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.OriginalRepresentation}"))})";
-
-        public override string CanonicalRepresentation =>
-            $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.CanonicalRepresentation}"))})";
+        public override string OriginalRepresentation { get; }
+        public override string CanonicalRepresentation { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

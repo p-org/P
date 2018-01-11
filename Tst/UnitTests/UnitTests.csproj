@@ -124,6 +124,7 @@
   <ItemGroup>
     <Compile Include="CompilerTestOutputStream.cs" />
     <Compile Include="Constants.cs" />
+    <Compile Include="General\TypeCheckingUtilsTest.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>
       <DesignTimeSharedInput>True</DesignTimeSharedInput>

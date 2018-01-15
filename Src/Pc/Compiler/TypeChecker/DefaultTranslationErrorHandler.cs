@@ -197,6 +197,13 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(swapAssignStmt.SourceLocation, $"cannot swap field {variable.Name}");
         }
 
+        public Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol)
+        {
+            return IssueError(context,
+                              symbol,
+                              "Print format placeholders must contain only digits. Escape braces by doubling them.");
+        }
+
         public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
         {
             return new TranslationException($"[{GetLocation(ctx, location)}] {message}");

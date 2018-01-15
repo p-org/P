@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Antlr4.Runtime;
+using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -52,5 +53,6 @@ namespace Microsoft.Pc.TypeChecker
         Exception MovedField(MoveAssignStmt moveAssignStmt);
         Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable);
         Exception SwappedField(SwapAssignStmt swapAssignStmt, Variable variable);
+        Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
     }
 }

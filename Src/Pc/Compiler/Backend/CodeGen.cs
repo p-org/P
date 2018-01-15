@@ -19,7 +19,7 @@ namespace Microsoft.Pc.Backend
             return t.Render(LineWidth);
         }
 
-        public static TemplateGroup GetTemplateGroup(TargetLanguage language)
+        private static TemplateGroup GetTemplateGroup(TargetLanguage language)
         {
             Assembly asm = Assembly.GetExecutingAssembly();
             Stream stream = asm.GetManifestResourceStream(BaseNamespace + "." + language.LanguageName + ".stg");

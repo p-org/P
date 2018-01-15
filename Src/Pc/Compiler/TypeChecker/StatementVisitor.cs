@@ -59,6 +59,10 @@ namespace Microsoft.Pc.TypeChecker
         {
             string message = context.StringLiteral().GetText();
             int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(message);
+            if (numNecessaryArgs == -1)
+            {
+                throw handler.InvalidPrintFormat(context, context.StringLiteral().Symbol);
+            }
 
             var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             if (args.Count != numNecessaryArgs)
@@ -274,7 +278,7 @@ namespace Microsoft.Pc.TypeChecker
             method.CanCommunicate = true;
             method.CanChangeState = true;
 
-            IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             if (evtExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);

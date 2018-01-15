@@ -35,16 +35,19 @@ namespace Microsoft.Pc.Backend
         private void Indent() { padding = new string(' ', ++depth * 4); }
 
         private void Dedent() { padding = new string(' ', --depth * 4); }
+        
+        private void WriteParts(string part) { writer.Append(part); }
 
-        private void WriteLine(string line)
+        private void WriteParts(params string[] parts)
         {
-            writer.Append(padding);
-            writer.AppendLine(line);
+            foreach (string part in parts)
+            {
+                writer.Append(part);
+            }
         }
 
-        private void WriteStmt(params object[] parts)
+        private void WriteParts(params object[] parts)
         {
-            writer.Append(padding);
             foreach (object part in parts)
             {
                 switch (part)
@@ -54,6 +57,9 @@ namespace Microsoft.Pc.Backend
                         break;
                     case IEnumerable<IPExpr> exprs:
                         JoinExprs(exprs);
+                        break;
+                    case IEnumerable<string> strs:
+                        JoinObjects(strs);
                         break;
                     case IPDecl decl:
                         writer.Append(decl.Name);
@@ -66,8 +72,13 @@ namespace Microsoft.Pc.Backend
                         break;
                 }
             }
+        }
 
-            writer.AppendLine();
+        private void WriteStmt(params object[] parts)
+        {
+            WriteParts(padding);
+            WriteParts(parts);
+            WriteParts(Environment.NewLine);
         }
 
         private void WalkTree(IPAST tree)
@@ -88,7 +99,7 @@ namespace Microsoft.Pc.Backend
                               DumpParams(function.Signature.Parameters),
                               ") : ",
                               function.Signature.ReturnType);
-                    WriteLine("{");
+                    WriteStmt("{");
                     Indent();
                     foreach (Variable localVariable in function.LocalVariables)
                     {
@@ -97,7 +108,7 @@ namespace Microsoft.Pc.Backend
 
                     WalkTree(function.Body);
                     Dedent();
-                    WriteLine("}");
+                    WriteStmt("}");
                     break;
                 case Interface @interface:
                     WriteStmt("interface ",
@@ -114,15 +125,15 @@ namespace Microsoft.Pc.Backend
                               machine,
                               " : ",
                               string.Join(", ", machine.Interfaces.Select(x => x.Name)));
-                    WriteLine($"  assert {machine.Assert} assume {machine.Assume}");
-                    WriteLine($"  receives {DumpEventSet(machine.Receives)}");
-                    WriteLine($"  sends {DumpEventSet(machine.Sends)}");
+                    WriteStmt("  assert ", machine.Assert, " assume ", machine.Assume);
+                    WriteStmt("  receives ", DumpEventSet(machine.Receives));
+                    WriteStmt("  sends ", DumpEventSet(machine.Sends));
                     if (machine.IsSpec)
                     {
-                        WriteLine($"  observes {DumpEventSet(machine.Observes)}");
+                        WriteStmt("  observes ", DumpEventSet(machine.Observes));
                     }
 
-                    WriteLine("{");
+                    WriteStmt("{");
                     Indent();
                     foreach (Variable machineField in machine.Fields)
                     {
@@ -145,7 +156,7 @@ namespace Microsoft.Pc.Backend
                     }
 
                     Dedent();
-                    WriteLine("}");
+                    WriteStmt("}");
                     break;
                 case NamedEventSet namedEventSet:
                     WriteStmt("eventset ",
@@ -158,7 +169,7 @@ namespace Microsoft.Pc.Backend
                     WriteStmt("enum ",
                               pEnum,
                               " = { ",
-                              string.Join(", ", pEnum.Values.Select(x => $"{x.Name} = {x.Value}")),
+                              pEnum.Values.SelectMany(x => new object[] {x.Name, " = ", x.Value}),
                               " };");
                     break;
                 case PEvent pEvent:
@@ -169,7 +180,8 @@ namespace Microsoft.Pc.Backend
                               " assume ",
                               pEvent.Assume,
                               " : ",
-                              pEvent.PayloadType);
+                              pEvent.PayloadType,
+                              ";");
                     break;
                 case TypeDef typeDef:
                     WriteStmt("type ", typeDef, " = ", typeDef.Type, ";");
@@ -204,17 +216,17 @@ namespace Microsoft.Pc.Backend
                     break;
                 case IfStmt ifStmt:
                     WriteStmt("if (", ifStmt.Condition, ")");
-                    WriteLine("{");
+                    WriteStmt("{");
                     Indent();
                     WalkTree(ifStmt.ThenBranch);
                     Dedent();
-                    WriteLine("}");
-                    WriteLine("else");
-                    WriteLine("{");
+                    WriteStmt("}");
+                    WriteStmt("else");
+                    WriteStmt("{");
                     Indent();
                     WalkTree(ifStmt.ElseBranch);
                     Dedent();
-                    WriteLine("}");
+                    WriteStmt("}");
                     break;
                 case InsertStmt insertStmt:
                     WriteStmt(insertStmt.Variable, " += (", insertStmt.Index, ", ", insertStmt.Value, ");");
@@ -223,10 +235,10 @@ namespace Microsoft.Pc.Backend
                     WriteStmt(moveAssignStmt.ToLocation, " = ", moveAssignStmt.FromVariable, " move;");
                     break;
                 case NoStmt _:
-                    WriteLine("; // no action");
+                    WriteStmt("; // no action");
                     break;
                 case PopStmt _:
-                    WriteLine("pop;");
+                    WriteStmt("pop;");
                     break;
                 case PrintStmt printStmt:
                     WriteStmt("print \"", printStmt.Message, "\", ", printStmt.Args, ";");
@@ -235,19 +247,23 @@ namespace Microsoft.Pc.Backend
                     WriteStmt("raise ", raiseStmt.PEvent, ", ", raiseStmt.Payload, ";");
                     break;
                 case ReceiveStmt receiveStmt:
-                    WriteLine("receive {");
+                    WriteStmt("receive {");
                     Indent();
                     foreach (var recvCase in receiveStmt.Cases)
                     {
-                        WriteLine($"case {recvCase.Key.Name} : ({DumpParams(recvCase.Value.Signature.Parameters)}) {{");
+                        WriteStmt("case ",
+                                  recvCase.Key,
+                                  " : (",
+                                  DumpParams(recvCase.Value.Signature.Parameters),
+                                  ") {");
                         Indent();
                         WalkTree(recvCase.Value.Body);
                         Dedent();
-                        WriteLine("}");
+                        WriteStmt("}");
                     }
 
                     Dedent();
-                    WriteLine("}");
+                    WriteStmt("}");
                     break;
                 case RemoveStmt removeStmt:
                     WriteStmt(removeStmt.Variable, " -= ", removeStmt.Value, ";");
@@ -266,17 +282,17 @@ namespace Microsoft.Pc.Backend
                     break;
                 case WhileStmt whileStmt:
                     WriteStmt("while (", whileStmt.Condition, ")");
-                    WriteLine("{");
+                    WriteStmt("{");
                     Indent();
                     WalkTree(whileStmt.Body);
                     Dedent();
-                    WriteLine("}");
+                    WriteStmt("}");
                     break;
                 case EventDefer eventDefer:
-                    WriteLine($"defer {eventDefer.Trigger.Name};");
+                    WriteStmt("defer ", eventDefer.Trigger, ";");
                     break;
                 case EventDoAction eventDoAction:
-                    WriteLine($"on {eventDoAction.Trigger.Name} do ");
+                    WriteParts(padding, "on ", eventDoAction.Trigger, " do ");
                     PrintFunctionRef(eventDoAction.Target);
                     break;
                 case EventGotoState eventGotoState:
@@ -284,43 +300,44 @@ namespace Microsoft.Pc.Backend
                     PrintFunctionRef(eventGotoState.TransitionFunction);
                     break;
                 case EventIgnore eventIgnore:
-                    WriteLine($"ignore {eventIgnore.Trigger.Name};");
+                    WriteStmt("ignore ", eventIgnore.Trigger, ";");
                     break;
                 case EventPushState eventPushState:
-                    WriteLine($"on {eventPushState.Trigger.Name} push {eventPushState.Target.Name};");
+                    WriteStmt("on ", eventPushState.Trigger, " push ", eventPushState.Target, ";");
                     break;
                 case State state:
-                    string temp = state.Temperature.Equals(StateTemperature.COLD) ? "cold" :
-                                  state.Temperature.Equals(StateTemperature.HOT) ? "hot" : "/* warm */";
-                    WriteLine($"{(state.IsStart ? "start " : "")}{temp} state {state.Name}");
-                    WriteLine("{");
+                    string start = state.IsStart ? "start " : "";
+                    string temp = state.Temperature.Equals(StateTemperature.COLD) ? "cold " :
+                                  state.Temperature.Equals(StateTemperature.HOT) ? "hot " : "warm ";
+                    WriteStmt(start, temp, "state ", state);
+                    WriteStmt("{");
                     Indent();
                     if (!string.IsNullOrEmpty(state.Entry?.Name))
                     {
-                        WriteLine($"entry {state.Entry.Name};");
+                        WriteStmt("entry ", state.Entry, ";");
                     }
                     else
                     {
-                        WriteLine("entry");
-                        WriteLine("{");
+                        WriteStmt("entry");
+                        WriteStmt("{");
                         Indent();
                         WalkTree(state.Entry?.Body ?? new NoStmt(state.SourceLocation));
                         Dedent();
-                        WriteLine("}");
+                        WriteStmt("}");
                     }
 
-                    if (state.Exit?.Name != null)
+                    if (!string.IsNullOrEmpty(state.Exit?.Name))
                     {
-                        WriteLine($"exit {state.Exit.Name};");
+                        WriteStmt("exit ", state.Exit, ";");
                     }
                     else
                     {
-                        WriteLine("exit");
-                        WriteLine("{");
+                        WriteStmt("exit");
+                        WriteStmt("{");
                         Indent();
                         WalkTree(state.Exit?.Body ?? new NoStmt(state.SourceLocation));
                         Dedent();
-                        WriteLine("}");
+                        WriteStmt("}");
                     }
 
                     foreach (var handler in state.AllEventHandlers)
@@ -329,11 +346,11 @@ namespace Microsoft.Pc.Backend
                     }
 
                     Dedent();
-                    WriteLine("}");
+                    WriteStmt("}");
                     break;
                 case StateGroup stateGroup:
-                    WriteLine($"group {stateGroup.Name}");
-                    WriteLine("{");
+                    WriteStmt("group ", stateGroup);
+                    WriteStmt("{");
                     Indent();
                     foreach (StateGroup subGroup in stateGroup.Groups)
                     {
@@ -346,7 +363,7 @@ namespace Microsoft.Pc.Backend
                     }
 
                     Dedent();
-                    WriteLine("}");
+                    WriteStmt("}");
                     break;
                 case EnumElem _:
                     break;
@@ -359,17 +376,42 @@ namespace Microsoft.Pc.Backend
         {
             if (target == null)
             {
-                WriteLine("  <<null>>");
+                WriteStmt("  <<null>>");
                 return;
             }
 
             if (string.IsNullOrEmpty(target.Name))
             {
-                WalkTree(target);
+                WriteParts("(",
+                          DumpParams(target.Signature.Parameters),
+                          ") : ",
+                          target.Signature.ReturnType,
+                          " {");
+                writer.AppendLine();
+                Indent();
+                WalkTree(target.Body);
+                Dedent();
+                WriteStmt("}");
             }
             else
             {
-                WriteLine($"  {target.Name}");
+                WriteStmt(target.Name);
+            }
+        }
+
+        private void JoinObjects(IEnumerable<object> items)
+        {
+            var actualSep = "";
+            foreach (IPExpr item in items)
+            {
+                writer.Append(actualSep);
+                writer.Append(item);
+                actualSep = ", ";
+            }
+
+            if (actualSep == "")
+            {
+                writer.Append("<<null>>");
             }
         }
 
@@ -394,147 +436,101 @@ namespace Microsoft.Pc.Backend
             switch (expr)
             {
                 case null:
-                    writer.Append("<<null>>");
+                    WriteParts("<<null>>");
                     break;
                 case BinOpExpr binOpExpr:
-                    writer.Append("(");
-                    DumpExpr(binOpExpr.Lhs);
-                    writer.Append($") {DumpBinOp(binOpExpr.Operation)} (");
-                    DumpExpr(binOpExpr.Rhs);
-                    writer.Append(")");
+                    WriteParts("(", binOpExpr.Lhs, ") ", DumpBinOp(binOpExpr.Operation), " (", binOpExpr.Rhs, ")");
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
-                    writer.Append(boolLiteralExpr.Value.ToString());
+                    WriteParts(boolLiteralExpr.Value);
                     break;
                 case CastExpr castExpr:
-                    writer.Append("(");
-                    DumpExpr(castExpr.SubExpr);
-                    writer.Append($") as {castExpr.Type.OriginalRepresentation}");
+                    WriteParts("(", castExpr.SubExpr, ") as ", castExpr.Type);
                     break;
                 case CoerceExpr coerceExpr:
-                    writer.Append("(");
-                    DumpExpr(coerceExpr.SubExpr);
-                    writer.Append($") to {coerceExpr.Type.OriginalRepresentation}");
+                    WriteParts("(", coerceExpr.SubExpr, ") to ", coerceExpr.Type);
                     break;
                 case ContainsKeyExpr containsKeyExpr:
-                    writer.Append("(");
-                    DumpExpr(containsKeyExpr.Key);
-                    writer.Append(") in (");
-                    DumpExpr(containsKeyExpr.Map);
-                    writer.Append(")");
+                    WriteParts("(", containsKeyExpr.Key, ") in (", containsKeyExpr.Map, ")");
                     break;
                 case CtorExpr ctorExpr:
-                    writer.Append($"new {ctorExpr.Machine.Name}(");
-                    JoinExprs(ctorExpr.Arguments);
-                    writer.Append(")");
+                    WriteParts("new ", ctorExpr.Machine, "(", ctorExpr.Arguments, ")");
                     break;
                 case DefaultExpr defaultExpr:
-                    writer.Append($"default({defaultExpr.Type.OriginalRepresentation})");
+                    WriteParts("default(", defaultExpr.Type, ")");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
-                    writer.Append(enumElemRefExpr.EnumElem.Name);
+                    WriteParts(enumElemRefExpr.EnumElem);
                     break;
                 case EventRefExpr eventRefExpr:
-                    writer.Append(eventRefExpr.PEvent.Name);
+                    WriteParts(eventRefExpr.PEvent);
                     break;
                 case FairNondetExpr _:
-                    writer.Append("$$");
+                    WriteParts("$$");
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
-                    writer.Append(floatLiteralExpr.Value.ToString(CultureInfo.InvariantCulture));
+                    WriteParts(floatLiteralExpr.Value.ToString(CultureInfo.InvariantCulture));
                     break;
                 case FunCallExpr funCallExpr:
-                    writer.Append(funCallExpr.Function.Name);
-                    writer.Append("(");
-                    JoinExprs(funCallExpr.Arguments);
-                    writer.Append(")");
+                    WriteParts(funCallExpr.Function, "(", funCallExpr.Arguments, ")");
                     break;
                 case IntLiteralExpr intLiteralExpr:
-                    writer.Append(intLiteralExpr.Value.ToString());
+                    WriteParts(intLiteralExpr.Value.ToString());
                     break;
                 case KeysExpr keysExpr:
-                    writer.Append("keys(");
-                    DumpExpr(keysExpr.Expr);
-                    writer.Append(")");
+                    WriteParts("keys(", keysExpr.Expr, ")");
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
-                    writer.Append(linearAccessRefExpr.Variable.Name);
-                    writer.Append(linearAccessRefExpr.LinearType.Equals(LinearType.Move) ? " move" : " swap");
+                    WriteParts(linearAccessRefExpr.Variable.Name,
+                               linearAccessRefExpr.LinearType.Equals(LinearType.Move) ? " move" : " swap");
                     break;
                 case MapAccessExpr mapAccessExpr:
-                    writer.Append("(");
-                    DumpExpr(mapAccessExpr.MapExpr);
-                    writer.Append(")[");
-                    DumpExpr(mapAccessExpr.IndexExpr);
-                    writer.Append("]");
+                    WriteParts("(", mapAccessExpr.MapExpr, ")[", mapAccessExpr.IndexExpr, "]");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    writer.Append("(");
-                    DumpExpr(namedTupleAccessExpr.SubExpr);
-                    writer.Append($").");
-                    writer.Append(namedTupleAccessExpr.FieldName);
+                    WriteParts("(", namedTupleAccessExpr.SubExpr, ").", namedTupleAccessExpr.FieldName);
                     break;
                 case NamedTupleExpr namedTupleExpr:
                     var ntType = (NamedTupleType) namedTupleExpr.Type;
-                    writer.Append("(");
+                    WriteParts("(");
                     var ntSep = "";
                     for (var i = 0; i < ntType.Fields.Count; i++)
                     {
-                        writer.Append(ntSep);
-                        writer.Append(ntType.Fields[i].Name);
-                        writer.Append(" = ");
-                        DumpExpr(namedTupleExpr.TupleFields[i]);
-
+                        WriteParts(ntSep, ntType.Fields[i].Name, " = ", namedTupleExpr.TupleFields[i]);
                         ntSep = ", ";
                     }
 
-                    writer.Append(")");
+                    WriteParts(")");
                     break;
                 case NondetExpr _:
-                    writer.Append("$");
+                    WriteParts("$");
                     break;
                 case NullLiteralExpr _:
-                    writer.Append("null");
+                    WriteParts("null");
                     break;
                 case SeqAccessExpr seqAccessExpr:
-                    writer.Append("(");
-                    DumpExpr(seqAccessExpr.SeqExpr);
-                    writer.Append(")[");
-                    DumpExpr(seqAccessExpr.IndexExpr);
-                    writer.Append("]");
+                    WriteParts("(", seqAccessExpr.SeqExpr, ")[", seqAccessExpr.IndexExpr, "]");
                     break;
                 case SizeofExpr sizeofExpr:
-                    writer.Append("sizeof(");
-                    DumpExpr(sizeofExpr.Expr);
-                    writer.Append(")");
+                    WriteParts("sizeof(", sizeofExpr.Expr, ")");
                     break;
                 case ThisRefExpr _:
-                    writer.Append("this");
+                    WriteParts("this");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
-                    writer.Append("(");
-                    DumpExpr(tupleAccessExpr.SubExpr);
-                    writer.Append(".");
-                    writer.Append(tupleAccessExpr.FieldNo.ToString());
+                    WriteParts("(", tupleAccessExpr.SubExpr, ").", tupleAccessExpr.FieldNo);
                     break;
                 case UnaryOpExpr unaryOpExpr:
-                    writer.Append(DumpUnOp(unaryOpExpr.Operation));
-                    writer.Append("(");
-                    DumpExpr(unaryOpExpr.SubExpr);
-                    writer.Append(")");
+                    WriteParts(DumpUnOp(unaryOpExpr.Operation), "(", unaryOpExpr.SubExpr, ")");
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
-                    writer.Append("(");
-                    JoinExprs(unnamedTupleExpr.TupleFields);
-                    writer.Append(")");
+                    WriteParts("(", unnamedTupleExpr.TupleFields, ")");
                     break;
                 case ValuesExpr valuesExpr:
-                    writer.Append("values(");
-                    DumpExpr(valuesExpr.Expr);   
-                    writer.Append(")");
+                    WriteParts("values(", valuesExpr.Expr, ")");
                     break;
                 case VariableAccessExpr variableAccessExpr:
-                    writer.Append(variableAccessExpr.Variable.Name);
+                    WriteParts(variableAccessExpr.Variable.Name);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
@@ -609,3 +605,4 @@ namespace Microsoft.Pc.Backend
         }
     }
 }
+

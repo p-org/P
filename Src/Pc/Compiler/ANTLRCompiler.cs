@@ -8,6 +8,7 @@ using Antlr4.Runtime.Tree;
 using Microsoft.Formula.API;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.Backend;
+using Microsoft.Pc.Backend.Debugging;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
@@ -32,14 +33,14 @@ namespace Microsoft.Pc
                 }
 
                 Scope scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
-                Console.WriteLine(IrDumper.Dump(scope));
+                Console.WriteLine(IrToPseudoP.Dump(scope));
                 foreach (Function fun in AllFunctions(scope))
                 {
                     IRTransformer.SimplifyMethod(fun);
                 }
 
                 Console.WriteLine("-----------------------------------------");
-                Console.WriteLine(IrDumper.Dump(scope));
+                Console.WriteLine(IrToPseudoP.Dump(scope));
 
                 log.WriteMessage("Program valid. Code generation not implemented.", SeverityKind.Info);
                 return true;

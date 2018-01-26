@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Text;
+using Microsoft.Pc.Backend.ASTExt;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -11,77 +11,34 @@ using Microsoft.Pc.TypeChecker.AST.Statements;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
-namespace Microsoft.Pc.Backend
+namespace Microsoft.Pc.Backend.Debugging
 {
-    public class IrDumper
+    public class IrToPseudoP : IrRenderer
     {
-        private readonly StringBuilder writer = new StringBuilder();
-        private int depth;
-        private string padding;
-
-        private IrDumper() { }
+        private IrToPseudoP() { }
 
         public static string Dump(Scope scope)
         {
-            var dumper = new IrDumper();
-            foreach (IPDecl tree in scope.AllDecls)
-            {
-                dumper.WalkTree(tree);
-            }
-
-            return dumper.writer.ToString();
+            var dumper = new IrToPseudoP();
+            return dumper.Render(scope);
         }
 
-        private void Indent() { padding = new string(' ', ++depth * 4); }
+        protected override void WriteDecl(IPDecl decl) { WriteTree(decl); }
 
-        private void Dedent() { padding = new string(' ', --depth * 4); }
-        
-        private void WriteParts(string part) { writer.Append(part); }
+        protected override void WriteTypeRef(PLanguageType type) { WriteParts(type.OriginalRepresentation); }
 
-        private void WriteParts(params string[] parts)
-        {
-            foreach (string part in parts)
-            {
-                writer.Append(part);
-            }
-        }
+        protected override void WriteDeclRef(IPDecl decl) { WriteParts(decl.Name); }
 
-        private void WriteParts(params object[] parts)
-        {
-            foreach (object part in parts)
-            {
-                switch (part)
-                {
-                    case IPExpr expr:
-                        DumpExpr(expr);
-                        break;
-                    case IEnumerable<IPExpr> exprs:
-                        JoinExprs(exprs);
-                        break;
-                    case IEnumerable<string> strs:
-                        JoinObjects(strs);
-                        break;
-                    case IPDecl decl:
-                        writer.Append(decl.Name);
-                        break;
-                    case PLanguageType type:
-                        writer.Append(type.OriginalRepresentation);
-                        break;
-                    default:
-                        writer.Append(part);
-                        break;
-                }
-            }
-        }
+        protected override void WriteStringList(IEnumerable<string> strs) { JoinObjects(strs); }
 
         private void WriteStmt(params object[] parts)
         {
-            WriteParts(padding);
+            WriteParts(Padding);
             WriteParts(parts);
             WriteParts(Environment.NewLine);
         }
 
-        private void WalkTree(IPAST tree)
+        private void WriteTree(IPAST tree)
         {
             switch (tree)
             {
@@ -96,17 +53,17 @@ namespace Microsoft.Pc.Backend
                     WriteStmt("fun ",
                               function,
                               "(",
-                              DumpParams(function.Signature.Parameters),
+                              WriteParams(function.Signature.Parameters),
                               ") : ",
                               function.Signature.ReturnType);
                     WriteStmt("{");
                     Indent();
                     foreach (Variable localVariable in function.LocalVariables)
                     {
-                        WalkTree(localVariable);
+                        WriteTree(localVariable);
                     }
 
-                    WalkTree(function.Body);
+                    WriteTree(function.Body);
                     Dedent();
                     WriteStmt("}");
                     break;
@@ -116,7 +73,7 @@ namespace Microsoft.Pc.Backend
                               "(",
                               @interface.PayloadType,
                               ") receives ",
-                              DumpEventSet(@interface.ReceivableEvents),
+                              WriteEventSet(@interface.ReceivableEvents),
                               ";");
                     break;
                 case Machine machine:
@@ -126,33 +83,33 @@ namespace Microsoft.Pc.Backend
                               " : ",
                               string.Join(", ", machine.Interfaces.Select(x => x.Name)));
                     WriteStmt("  assert ", machine.Assert, " assume ", machine.Assume);
-                    WriteStmt("  receives ", DumpEventSet(machine.Receives));
-                    WriteStmt("  sends ", DumpEventSet(machine.Sends));
+                    WriteStmt("  receives ", WriteEventSet(machine.Receives));
+                    WriteStmt("  sends ", WriteEventSet(machine.Sends));
                     if (machine.IsSpec)
                     {
-                        WriteStmt("  observes ", DumpEventSet(machine.Observes));
+                        WriteStmt("  observes ", WriteEventSet(machine.Observes));
                     }
 
                     WriteStmt("{");
                     Indent();
                     foreach (Variable machineField in machine.Fields)
                     {
-                        WalkTree(machineField);
+                        WriteTree(machineField);
                     }
 
                     foreach (Function machineMethod in machine.Methods)
                     {
-                        WalkTree(machineMethod);
+                        WriteTree(machineMethod);
                     }
 
                     foreach (StateGroup machineGroup in machine.Groups)
                     {
-                        WalkTree(machineGroup);
+                        WriteTree(machineGroup);
                     }
 
                     foreach (State machineState in machine.States)
                     {
-                        WalkTree(machineState);
+                        WriteTree(machineState);
                     }
 
                     Dedent();
@@ -169,7 +126,7 @@ namespace Microsoft.Pc.Backend
                     WriteStmt("enum ",
                               pEnum,
                               " = { ",
-                              pEnum.Values.SelectMany(x => new object[] {x.Name, " = ", x.Value}),
+                              pEnum.Values.Select(x => $"{x.Name} = {x.Value}"),
                               " };");
                     break;
                 case PEvent pEvent:
@@ -196,12 +153,12 @@ namespace Microsoft.Pc.Backend
                     WriteStmt("assert ", assertStmt.Assertion, ", \"", assertStmt.Message, "\";");
                     break;
                 case AssignStmt assignStmt:
-                    WriteStmt(assignStmt.Variable, " = ", assignStmt.Value, "; //plain assignment");
+                    WriteStmt(assignStmt.Variable, " = ", assignStmt.Value, ";");
                     break;
                 case CompoundStmt compoundStmt:
                     foreach (IPStmt stmt in compoundStmt.Statements)
                     {
-                        WalkTree(stmt);
+                        WriteTree(stmt);
                     }
 
                     break;
@@ -218,13 +175,13 @@ namespace Microsoft.Pc.Backend
                     WriteStmt("if (", ifStmt.Condition, ")");
                     WriteStmt("{");
                     Indent();
-                    WalkTree(ifStmt.ThenBranch);
+                    WriteTree(ifStmt.ThenBranch);
                     Dedent();
                     WriteStmt("}");
                     WriteStmt("else");
                     WriteStmt("{");
                     Indent();
-                    WalkTree(ifStmt.ElseBranch);
+                    WriteTree(ifStmt.ElseBranch);
                     Dedent();
                     WriteStmt("}");
                     break;
@@ -232,7 +189,7 @@ namespace Microsoft.Pc.Backend
                     WriteStmt(insertStmt.Variable, " += (", insertStmt.Index, ", ", insertStmt.Value, ");");
                     break;
                 case MoveAssignStmt moveAssignStmt:
-                    WriteStmt(moveAssignStmt.ToLocation, " = ", moveAssignStmt.FromVariable, " move;");
+                    WriteStmt(moveAssignStmt.ToLocation, " <- ", moveAssignStmt.FromVariable, " move;");
                     break;
                 case NoStmt _:
                     WriteStmt("; // no action");
@@ -254,10 +211,10 @@ namespace Microsoft.Pc.Backend
                         WriteStmt("case ",
                                   recvCase.Key,
                                   " : (",
-                                  DumpParams(recvCase.Value.Signature.Parameters),
+                                  WriteParams(recvCase.Value.Signature.Parameters),
                                   ") {");
                         Indent();
-                        WalkTree(recvCase.Value.Body);
+                        WriteTree(recvCase.Value.Body);
                         Dedent();
                         WriteStmt("}");
                     }
@@ -284,7 +241,7 @@ namespace Microsoft.Pc.Backend
                     WriteStmt("while (", whileStmt.Condition, ")");
                     WriteStmt("{");
                     Indent();
-                    WalkTree(whileStmt.Body);
+                    WriteTree(whileStmt.Body);
                     Dedent();
                     WriteStmt("}");
                     break;
@@ -292,7 +249,7 @@ namespace Microsoft.Pc.Backend
                     WriteStmt("defer ", eventDefer.Trigger, ";");
                     break;
                 case EventDoAction eventDoAction:
-                    WriteParts(padding, "on ", eventDoAction.Trigger, " do ");
+                    WriteParts(Padding, "on ", eventDoAction.Trigger, " do ");
                     PrintFunctionRef(eventDoAction.Target);
                     break;
                 case EventGotoState eventGotoState:
@@ -321,7 +278,20 @@ namespace Microsoft.Pc.Backend
                         WriteStmt("entry");
                         WriteStmt("{");
                         Indent();
-                        WalkTree(state.Entry?.Body ?? new NoStmt(state.SourceLocation));
+                        if (state.Entry is Function stateEntry)
+                        {
+                            foreach (Variable localVariable in stateEntry.LocalVariables)
+                            {
+                                WriteTree(localVariable);
+                            }
+
+                            WriteTree(stateEntry.Body);
+                        }
+                        else
+                        {
+                            WriteTree(new NoStmt(state.SourceLocation));
+                        }
+
                         Dedent();
                         WriteStmt("}");
                     }
@@ -335,14 +305,27 @@ namespace Microsoft.Pc.Backend
                         WriteStmt("exit");
                         WriteStmt("{");
                         Indent();
-                        WalkTree(state.Exit?.Body ?? new NoStmt(state.SourceLocation));
+                        if (state.Exit is Function stateExit)
+                        {
+                            foreach (Variable localVariable in stateExit.LocalVariables)
+                            {
+                                WriteTree(localVariable);
+                            }
+
+                            WriteTree(stateExit.Body);
+                        }
+                        else
+                        {
+                            WriteTree(new NoStmt(state.SourceLocation));
+                        }
+
                         Dedent();
                         WriteStmt("}");
                     }
 
                     foreach (var handler in state.AllEventHandlers)
                     {
-                        WalkTree(handler.Value);
+                        WriteTree(handler.Value);
                     }
 
                     Dedent();
@@ -354,12 +337,12 @@ namespace Microsoft.Pc.Backend
                     Indent();
                     foreach (StateGroup subGroup in stateGroup.Groups)
                     {
-                        WalkTree(subGroup);
+                        WriteTree(subGroup);
                     }
 
                     foreach (State state in stateGroup.States)
                     {
-                        WalkTree(state);
+                        WriteTree(state);
                     }
 
                     Dedent();
@@ -383,13 +366,13 @@ namespace Microsoft.Pc.Backend
             if (string.IsNullOrEmpty(target.Name))
             {
                 WriteParts("(",
-                          DumpParams(target.Signature.Parameters),
-                          ") : ",
-                          target.Signature.ReturnType,
-                          " {");
-                writer.AppendLine();
+                           WriteParams(target.Signature.Parameters),
+                           ") : ",
+                           target.Signature.ReturnType,
+                           " {",
+                           Environment.NewLine);
                 Indent();
-                WalkTree(target.Body);
+                WriteTree(target.Body);
                 Dedent();
                 WriteStmt("}");
             }
@@ -402,36 +385,36 @@ namespace Microsoft.Pc.Backend
         private void JoinObjects(IEnumerable<object> items)
         {
             var actualSep = "";
-            foreach (IPExpr item in items)
+            foreach (object item in items)
             {
-                writer.Append(actualSep);
-                writer.Append(item);
+                WriteParts(actualSep);
+                WriteParts(item);
                 actualSep = ", ";
             }
 
             if (actualSep == "")
             {
-                writer.Append("<<null>>");
+                WriteParts("<<null>>");
             }
         }
 
-        private void JoinExprs(IEnumerable<IPExpr> items)
+        protected override void WriteExprList(IEnumerable<IPExpr> items)
         {
             var actualSep = "";
             foreach (IPExpr item in items)
             {
-                writer.Append(actualSep);
-                DumpExpr(item);
+                WriteParts(actualSep);
+                WriteExpr(item);
                 actualSep = ", ";
             }
 
             if (actualSep == "")
             {
-                writer.Append("<<null>>");
+                WriteParts("<<null>>");
             }
         }
 
-        private void DumpExpr(IPExpr expr)
+        protected override void WriteExpr(IPExpr expr)
         {
             switch (expr)
             {
@@ -439,7 +422,7 @@ namespace Microsoft.Pc.Backend
                     WriteParts("<<null>>");
                     break;
                 case BinOpExpr binOpExpr:
-                    WriteParts("(", binOpExpr.Lhs, ") ", DumpBinOp(binOpExpr.Operation), " (", binOpExpr.Rhs, ")");
+                    WriteParts("(", binOpExpr.Lhs, ") ", WriteBinOp(binOpExpr.Operation), " (", binOpExpr.Rhs, ")");
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
                     WriteParts(boolLiteralExpr.Value);
@@ -452,6 +435,9 @@ namespace Microsoft.Pc.Backend
                     break;
                 case ContainsKeyExpr containsKeyExpr:
                     WriteParts("(", containsKeyExpr.Key, ") in (", containsKeyExpr.Map, ")");
+                    break;
+                case CloneExpr cloneExpr:
+                    WriteParts("$Clone(", cloneExpr.SubExpr, ")");
                     break;
                 case CtorExpr ctorExpr:
                     WriteParts("new ", ctorExpr.Machine, "(", ctorExpr.Arguments, ")");
@@ -521,7 +507,7 @@ namespace Microsoft.Pc.Backend
                     WriteParts("(", tupleAccessExpr.SubExpr, ").", tupleAccessExpr.FieldNo);
                     break;
                 case UnaryOpExpr unaryOpExpr:
-                    WriteParts(DumpUnOp(unaryOpExpr.Operation), "(", unaryOpExpr.SubExpr, ")");
+                    WriteParts(WriteUnOp(unaryOpExpr.Operation), "(", unaryOpExpr.SubExpr, ")");
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
                     WriteParts("(", unnamedTupleExpr.TupleFields, ")");
@@ -537,7 +523,7 @@ namespace Microsoft.Pc.Backend
             }
         }
 
-        private string DumpUnOp(UnaryOpType operation)
+        private string WriteUnOp(UnaryOpType operation)
         {
             switch (operation)
             {
@@ -550,7 +536,7 @@ namespace Microsoft.Pc.Backend
             }
         }
 
-        private string DumpBinOp(BinOpType operation)
+        private string WriteBinOp(BinOpType operation)
         {
             switch (operation)
             {
@@ -583,7 +569,7 @@ namespace Microsoft.Pc.Backend
             }
         }
 
-        private string DumpEventSet(IEventSet eventSet)
+        private string WriteEventSet(IEventSet eventSet)
         {
             switch (eventSet)
             {
@@ -599,10 +585,9 @@ namespace Microsoft.Pc.Backend
             }
         }
 
-        private static string DumpParams(IEnumerable<Variable> parameters)
+        private static string WriteParams(IEnumerable<Variable> parameters)
         {
             return string.Join(", ", parameters.Select(v => $"{v.Name}: {v.Type.OriginalRepresentation}"));
         }
     }
 }
-

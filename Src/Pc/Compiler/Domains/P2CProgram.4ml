@@ -112,8 +112,7 @@ transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.String
 	HConcatOut(m', cmp) :- HConcatOut(m, before), HOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
 	
 	Includes ::= (in.StringList + {NIL}, out.Cmp).
-	Includes(%importFileNames, Section(PpInclude("PrtUser.h", FALSE),
-									   PpInclude("PrtExecution.h", FALSE))).
+	Includes(%importFileNames, Section(PpInclude("Prt.h", FALSE))).
 	Includes(tl, inc') :- Includes(in.StringList(name, tl), inc), inc' = out.Section(PpInclude(strJoin(name, ".h"), FALSE), inc).
 
 	out.File(headerFileName, body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 

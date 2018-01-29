@@ -20,17 +20,13 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Prt\API\PrtUser.c" />
-    <ClCompile Include="..\Prt\Core\Prt.c" />
     <ClCompile Include="..\Prt\Core\PrtExecution.c" />
     <ClCompile Include="..\Prt\Core\PrtTypes.c" />
     <ClCompile Include="..\Prt\Core\PrtValues.c" />
     <ClCompile Include="..\Prt\WinUser\PrtWinUserConfig.c" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\Prt\API\Prt.h">
-      <CopyToHeaders>True</CopyToHeaders>
-    </ClInclude>
+    <ClInclude Include="..\Prt\API\Prt.h" />
     <ClInclude Include="..\Prt\API\PrtConfig.h">
       <CopyToHeaders>True</CopyToHeaders>
     </ClInclude>
@@ -38,9 +34,6 @@
       <CopyToHeaders>True</CopyToHeaders>
     </ClInclude>
     <ClInclude Include="..\Prt\API\PrtTypes.h">
-      <CopyToHeaders>True</CopyToHeaders>
-    </ClInclude>
-    <ClInclude Include="..\Prt\API\PrtUser.h">
       <CopyToHeaders>True</CopyToHeaders>
     </ClInclude>
     <ClInclude Include="..\Prt\API\PrtValues.h">

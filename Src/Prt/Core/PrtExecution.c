@@ -2213,3 +2213,1138 @@ _In_ PRT_VALUE *id
 		return;
 	PrtHandleError(PRT_STATUS_ILLEGAL_SEND, (PRT_MACHINEINST_PRIV *)context);
 }
+
+#include "PrtExecution.h"
+
+PRT_PROGRAMDECL *program;
+
+/*********************************************************************************
+
+Public Functions
+
+*********************************************************************************/
+
+void PrtTraverseEventset(PRT_EVENTSETDECL *evset, PRT_BOOLEAN doInstall)
+{
+	if (doInstall)
+	{
+		if (evset->packedEvents == NULL)
+		{
+			PRT_UINT32 unitSize = sizeof(PRT_UINT32) * 8;
+			PRT_UINT32 packedArraySize = program->nEvents / unitSize + 1;
+			evset->packedEvents = (PRT_UINT32 *)PrtCalloc(packedArraySize, sizeof(PRT_UINT32));
+			for (PRT_UINT32 i = 0; i < evset->nEvents; i++)
+			{
+				PRT_UINT32 eventIndex = evset->events[i]->value.valueUnion.ev;
+				PRT_UINT32 arrayOffset = eventIndex / unitSize;
+				PRT_UINT32 eventMask = 1 << (eventIndex % unitSize);
+				evset->packedEvents[arrayOffset] |= eventMask;
+			}
+		}
+	}
+	else
+	{
+		if (evset->packedEvents != NULL)
+		{
+			PrtFree(evset->packedEvents);
+			evset->packedEvents = NULL;
+		}
+	}
+}
+
+void PrtTraverseFun(PRT_FUNDECL *fun, PRT_BOOLEAN doInstall)
+{
+	for (PRT_UINT32 i = 0; i < fun->nReceives; i++)
+	{
+		PrtTraverseEventset(fun->receives[i].caseSet, doInstall);
+	}
+}
+
+void PrtTraverseState(PRT_STATEDECL *state, PRT_BOOLEAN doInstall)
+{
+	PrtTraverseEventset(state->defersSet, doInstall);
+	PrtTraverseEventset(state->doSet, doInstall);
+	PrtTraverseEventset(state->transSet, doInstall);
+
+	if (state->entryFun != NULL)
+	{
+		PrtTraverseFun(state->entryFun, doInstall);
+	}
+	if (state->exitFun != NULL)
+	{
+		PrtTraverseFun(state->exitFun, doInstall);
+	}
+	for (PRT_UINT32 i = 0; i < state->nDos; i++)
+	{
+		if (state->dos[i].doFun != NULL)
+		{
+			PrtTraverseFun(state->dos[i].doFun, doInstall);
+		}
+	}
+	for (PRT_UINT32 i = 0; i < state->nTransitions; i++)
+	{
+		if (state->transitions[i].transFun != NULL)
+		{
+			PrtTraverseFun(state->transitions[i].transFun, doInstall);
+		}
+	}
+}
+
+void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
+{
+	for (PRT_UINT32 i = 0; i < machine->nStates; i++)
+	{
+		PrtTraverseState(&machine->states[i], doInstall);
+	}
+	for (PRT_UINT32 i = 0; i < machine->nFuns; i++)
+	{
+		PrtTraverseFun(machine->funs[i], doInstall);
+	}
+}
+
+void PrtInstallProgram(_In_ PRT_PROGRAMDECL *p)
+{
+	PrtAssert(p != NULL && program == NULL, "p and program must be non-NULL");
+	program = p;
+	for (PRT_UINT32 i = 0; i < p->nEvents; i++)
+	{
+		p->events[i]->value.valueUnion.ev = i;
+	}
+	for (PRT_UINT32 i = 0; i < p->nMachines; i++)
+	{
+		p->machines[i]->declIndex = i;
+		PrtTraverseMachine(p->machines[i], PRT_TRUE);
+	}
+	for (PRT_UINT32 i = 0; i < p->nGlobalFuns; i++)
+	{
+		PrtTraverseFun(p->globalFuns[i], PRT_TRUE);
+	}
+	for (PRT_UINT32 i = 0; i < p->nForeignTypes; i++)
+	{
+		p->foreignTypes[i]->declIndex = i;
+	}
+}
+
+void PrtUninstallProgram()
+{
+	PrtAssert(program != NULL, "program must be non-NULL");
+	for (PRT_UINT32 i = 0; i < program->nEvents; i++)
+	{
+		program->events[i]->value.valueUnion.ev = 0;
+	}
+	for (PRT_UINT32 i = 0; i < program->nMachines; i++)
+	{
+		program->machines[i]->declIndex = 0;
+		PrtTraverseMachine(program->machines[i], PRT_FALSE);
+	}
+	for (PRT_UINT32 i = 0; i < program->nGlobalFuns; i++)
+	{
+		PrtTraverseFun(program->globalFuns[i], PRT_FALSE);
+	}
+	for (PRT_UINT32 i = 0; i < program->nForeignTypes; i++)
+	{
+		program->foreignTypes[i]->declIndex = 0;
+	}
+	program = NULL;
+}
+
+PRT_PROCESS *
+PrtStartProcess(
+	_In_ PRT_GUID guid,
+	_In_ PRT_PROGRAMDECL *p,
+	_In_ PRT_ERROR_FUN errorFun,
+	_In_ PRT_LOG_FUN logFun
+)
+{
+	PrtInstallProgram(p);
+
+	PRT_PROCESS_PRIV *process;
+	process = (PRT_PROCESS_PRIV *)PrtMalloc(sizeof(PRT_PROCESS_PRIV));
+	process->guid = guid;
+	process->errorHandler = errorFun;
+	process->logHandler = logFun;
+	process->processLock = PrtCreateMutex();
+	process->machineCount = 0;
+	process->machines = NULL;
+	process->numMachines = 0;
+	process->schedulingPolicy = PRT_SCHEDULINGPOLICY_TASKNEUTRAL;
+	process->schedulerInfo = NULL;
+	process->terminating = PRT_FALSE;
+	return (PRT_PROCESS *)process;
+}
+
+PRT_API PRT_BOOLEAN
+PrtWaitForWork(PRT_PROCESS* process)
+{
+	PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+	PrtLockMutex(privateProcess->processLock);
+
+	PrtAssert(privateProcess->schedulingPolicy == PRT_SCHEDULINGPOLICY_COOPERATIVE, "PrtWaitForWork can only be called when PrtSetSchedulingPolicy has set PRT_SCHEDULINGPOLICY_COOPERATIVE mode");
+	PRT_COOPERATIVE_SCHEDULER* info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
+
+	info->threadsWaiting++;
+
+	PrtUnlockMutex(privateProcess->processLock);
+
+	PrtWaitSemaphore(info->workAvailable, -1);
+
+	PrtLockMutex(privateProcess->processLock);
+	info->threadsWaiting--;
+	PRT_BOOLEAN terminating = privateProcess->terminating;
+	PRT_UINT32 threadsWaiting = info->threadsWaiting;
+	PrtUnlockMutex(privateProcess->processLock);
+
+	if (terminating && threadsWaiting == 0)
+	{
+		PrtReleaseSemaphore(info->allThreadsStopped);
+	}
+	return terminating;
+}
+
+static void PrtDestroyCooperativeScheduler(PRT_COOPERATIVE_SCHEDULER* info)
+{
+	if (info != NULL)
+	{
+		PrtDestroySemaphore(info->workAvailable);
+		PrtDestroySemaphore(info->allThreadsStopped);
+		PrtFree(info);
+	}
+}
+
+PRT_API void
+PrtSetSchedulingPolicy(PRT_PROCESS *process, PRT_SCHEDULINGPOLICY policy)
+{
+	PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+	if (privateProcess->schedulingPolicy != policy)
+	{
+		privateProcess->schedulingPolicy = policy;
+		if (policy == PRT_SCHEDULINGPOLICY_COOPERATIVE)
+		{
+			PRT_COOPERATIVE_SCHEDULER* info = (PRT_COOPERATIVE_SCHEDULER*)PrtMalloc(sizeof(PRT_COOPERATIVE_SCHEDULER));
+			PrtAssert(info != NULL, "Out of memory");
+
+			info->workAvailable = PrtCreateSemaphore(0, 32767);
+			info->threadsWaiting = 0;
+			info->allThreadsStopped = PrtCreateSemaphore(0, 32767);
+
+			privateProcess->schedulerInfo = info;
+		}
+		else if (policy == PRT_SCHEDULINGPOLICY_TASKNEUTRAL)
+		{
+			// this is where we could implement other policies...
+			PrtDestroyCooperativeScheduler(privateProcess->schedulerInfo);
+			privateProcess->schedulerInfo = NULL;
+		}
+		else
+		{
+			PrtAssert(PRT_FALSE, "PrtSetSchedulingPolicy must set either PRT_SCHEDULINGPOLICY_TASKNEUTRAL or PRT_SCHEDULINGPOLICY_COOPERATIVE");
+		}
+	}
+}
+
+PRT_API void
+PrtRunProcess(PRT_PROCESS *process
+)
+{
+	while (1)
+	{
+		PRT_STEP_RESULT result = PrtStepProcess(process);
+		switch (result) {
+		case PRT_STEP_TERMINATING:
+			return;
+		case PRT_STEP_IDLE:
+			if (PrtWaitForWork(process) == PRT_TRUE)
+			{
+				return;
+			}
+			break;
+		case PRT_STEP_MORE:
+			PrtYieldThread();
+			break;
+		}
+	}
+}
+
+void
+PrtStopProcess(
+	_Inout_ PRT_PROCESS* process
+)
+{
+	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+
+	PrtLockMutex(privateProcess->processLock);
+	privateProcess->terminating = PRT_TRUE;
+	PRT_BOOLEAN waitForThreads = PRT_FALSE;
+	PRT_COOPERATIVE_SCHEDULER* info = NULL;
+
+	if (privateProcess->schedulingPolicy == PRT_SCHEDULINGPOLICY_COOPERATIVE)
+	{
+		info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
+		int count = info->threadsWaiting;
+		if (count > 0)
+		{
+			waitForThreads = PRT_TRUE;
+			// unblock all threads so the PrtRunProcess call terminates.
+			for (int i = 0; i < count; i++)
+			{
+				PrtReleaseSemaphore(info->workAvailable);
+			}
+		}
+	}
+	PrtUnlockMutex(privateProcess->processLock);
+
+	if (waitForThreads)
+	{
+		PrtWaitSemaphore(info->allThreadsStopped, -1);
+	}
+
+	// ok, now we can safely start deleting things...
+	for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
+	{
+		PRT_MACHINEINST *context = privateProcess->machines[i];
+		PRT_MACHINEINST_PRIV * privContext = (PRT_MACHINEINST_PRIV *)context;
+		PrtCleanupMachine(privContext);
+		if (privContext->stateMachineLock != NULL)
+		{
+			PrtDestroyMutex(privContext->stateMachineLock);
+		}
+		PrtFree(context);
+	}
+
+	PrtFree(privateProcess->machines);
+	PrtDestroyCooperativeScheduler(info);
+	PrtDestroyMutex(privateProcess->processLock);
+	PrtUninstallProgram();
+	PrtFree(process);
+}
+
+PRT_MACHINEINST *
+PrtMkInterface(
+	_In_ PRT_MACHINEINST*		creator,
+	_In_ PRT_UINT32				IName,
+	_In_ PRT_UINT32				numArgs,
+	...
+)
+{
+	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
+	PRT_VALUE *payload = NULL;
+	PRT_UINT32 interfaceName = program->linkMap[context->interfaceBound][IName];
+	PRT_UINT32 instanceOf = program->machineDefMap[interfaceName];
+
+
+	if (numArgs == 0)
+	{
+		payload = PrtMkNullValue();
+	}
+	else
+	{
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkInterface");
+				break;
+			case PRT_FUN_PARAM_MOVE:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+
+		if (numArgs > 1)
+		{
+			PRT_MACHINEDECL *machineDecl = program->machines[instanceOf];
+			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
+			PRT_TYPE *payloadType = entryFun->payloadType;
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
+	}
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, interfaceName, instanceOf, payload);
+	// must now free this payload because PrtMkMachinePrivate clones it.
+	PrtFreeValue(payload);
+	return result;
+}
+
+PRT_MACHINEINST *
+PrtMkMachine(
+	_Inout_  PRT_PROCESS		*process,
+	_In_ PRT_UINT32				interfaceName,
+	_In_ PRT_UINT32				numArgs,
+	...
+)
+{
+	PRT_VALUE *payload = NULL;
+	PRT_UINT32 instanceOf = program->machineDefMap[interfaceName];
+
+	if (numArgs == 0)
+	{
+		payload = PrtMkNullValue();
+	}
+	else
+	{
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkMachine");
+				break;
+			case PRT_FUN_PARAM_MOVE:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+
+		if (numArgs > 1)
+		{
+			PRT_MACHINEDECL *machineDecl = program->machines[instanceOf];
+			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
+			PRT_TYPE *payloadType = entryFun->payloadType;
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
+	}
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, interfaceName, instanceOf, payload);
+	// free the payload since we cloned it here, and PrtMkMachinePrivate also clones it.
+	PrtFreeValue(payload);
+	return result;
+}
+
+PRT_MACHINEINST *
+PrtGetMachine(
+	_In_ PRT_PROCESS *process,
+	_In_ PRT_VALUE *id
+)
+{
+	PRT_MACHINEID *machineId;
+	PRT_PROCESS_PRIV *privateProcess;
+	PrtAssert(id->discriminator == PRT_VALUE_KIND_MID, "id is not legal PRT_MACHINEID");
+	machineId = id->valueUnion.mid;
+	//Comented out by Ankush Desai.
+	//PrtAssert(PrtAreGuidsEqual(process->guid, machineId->processId), "id does not belong to process");
+	privateProcess = (PRT_PROCESS_PRIV *)process;
+	PrtAssert((0 < machineId->machineId) && (machineId->machineId <= privateProcess->numMachines), "id out of bounds");
+	return privateProcess->machines[machineId->machineId - 1];
+}
+
+void PRT_CALL_CONV PrtGetMachineState(_In_ PRT_MACHINEINST *context, _Inout_ PRT_MACHINESTATE* state)
+{
+	PRT_MACHINEINST_PRIV *priv = (PRT_MACHINEINST_PRIV*)context;
+	state->machineId = context->id->valueUnion.mid->machineId;
+	state->machineName = program->machines[context->instanceOf]->name;
+	state->stateId = priv->currentState;
+	state->stateName = PrtGetCurrentStateDecl(priv)->name;
+}
+
+void
+PrtSend(
+	_Inout_ PRT_MACHINESTATE 		*senderState,
+	_Inout_ PRT_MACHINEINST			*receiver,
+	_In_ PRT_VALUE					*event,
+	_In_ PRT_UINT32					numArgs,
+	...
+)
+{
+	PRT_VALUE *payload = NULL;
+	if (numArgs == 0)
+	{
+		payload = PrtMkNullValue();
+	}
+	else
+	{
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSend");
+				break;
+			case PRT_FUN_PARAM_MOVE:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+		if (numArgs > 1)
+		{
+			PRT_TYPE *payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
+	}
+	PrtSendPrivate(senderState, (PRT_MACHINEINST_PRIV *)receiver, event, payload);
+}
+
+
+void
+PRT_CALL_CONV PrtSendInternal(
+	_Inout_ PRT_MACHINEINST *sender,
+	_Inout_ PRT_MACHINEINST *receiver,
+	_In_ PRT_VALUE *event,
+	_In_ PRT_UINT32	numArgs,
+	...
+)
+{
+	PRT_MACHINESTATE senderState;
+	PrtGetMachineState(sender, &senderState);
+
+	PRT_VALUE *payload = NULL;
+	if (numArgs == 0)
+	{
+		payload = PrtMkNullValue();
+	}
+	else
+	{
+		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		va_list argp;
+		va_start(argp, numArgs);
+		for (PRT_UINT32 i = 0; i < numArgs; i++)
+		{
+#if __PX4_NUTTX
+			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
+#else
+			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+#endif
+			PRT_VALUE *arg;
+			PRT_VALUE **argPtr;
+			switch (argStatus)
+			{
+			case PRT_FUN_PARAM_CLONE:
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = PrtCloneValue(arg);
+				break;
+			case PRT_FUN_PARAM_SWAP:
+				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSendInternal");
+				break;
+			case PRT_FUN_PARAM_MOVE:
+				argPtr = va_arg(argp, PRT_VALUE **);
+				args[i] = *argPtr;
+				*argPtr = NULL;
+				break;
+			}
+		}
+		va_end(argp);
+		payload = args[0];
+		if (numArgs > 1)
+		{
+			PRT_TYPE *payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
+			payload = MakeTupleFromArray(payloadType, args);
+		}
+		PrtFree(args);
+	}
+
+	PrtSendPrivate(&senderState, (PRT_MACHINEINST_PRIV *)receiver, event, payload);
+}
+
+static void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 numCharsWritten, PRT_UINT32 resizeNum)
+{
+	PRT_UINT32 padding = 100;
+	if (*buffer == NULL)
+	{
+		*bufferSize = resizeNum + 1 + padding;
+		*buffer = (char *)PrtCalloc(*bufferSize, sizeof(char));
+	}
+	else if (*bufferSize < numCharsWritten + resizeNum + 1)
+	{
+		PRT_UINT32 newBufferSize = numCharsWritten + resizeNum + 1 + padding;
+		char *newBuffer = (char *)PrtCalloc(newBufferSize, sizeof(char));
+		strcpy_s(newBuffer, newBufferSize, *buffer);
+		PrtFree(*buffer);
+		*buffer = newBuffer;
+		*bufferSize = newBufferSize;
+	}
+}
+
+static void PrtUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, 16);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%u", i);
+}
+static void PrtUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, 32);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%u", i);
+}
+
+static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, 64);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%llu", i);
+}
+
+static void PrtUserPrintFloat(_In_ PRT_FLOAT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	if (sizeof(PRT_FLOAT) == 4)
+	{
+		PRT_UINT32 written = *numCharsWritten;
+		ResizeBuffer(buffer, bufferSize, written, 32);
+		*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%f", i);
+	}
+	else
+	{
+		PRT_UINT32 written = *numCharsWritten;
+		ResizeBuffer(buffer, bufferSize, written, 64);
+		*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%lf", (double)i);
+	}
+}
+
+static void PrtUserPrintInt(_In_ PRT_INT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	if (sizeof(PRT_INT) == 4)
+	{
+		PrtUserPrintUint32((PRT_UINT32)i, buffer, bufferSize, numCharsWritten);
+	}
+	else
+	{
+		PrtUserPrintUint64(i, buffer, bufferSize, numCharsWritten);
+	}
+}
+
+static void PrtUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, (PRT_UINT32)strlen(s) + 1);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%s", s);
+}
+
+static void PrtUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	PrtUserPrintString("< (", buffer, bufferSize, numCharsWritten);
+	PrtUserPrintUint32(id.processId.data1, buffer, bufferSize, numCharsWritten);
+	PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+	PrtUserPrintUint16(id.processId.data2, buffer, bufferSize, numCharsWritten);
+	PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+	PrtUserPrintUint16(id.processId.data3, buffer, bufferSize, numCharsWritten);
+	PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+	PrtUserPrintUint64(id.processId.data4, buffer, bufferSize, numCharsWritten);
+	PrtUserPrintString("), ", buffer, bufferSize, numCharsWritten);
+	PrtUserPrintUint32(id.machineId, buffer, bufferSize, numCharsWritten);
+	PrtUserPrintString(">", buffer, bufferSize, numCharsWritten);
+}
+
+static void PrtUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	PRT_TYPE_KIND kind = type->typeKind;
+	switch (kind)
+	{
+	case PRT_KIND_NULL:
+		PrtUserPrintString("null", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_ANY:
+		PrtUserPrintString("any", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_BOOL:
+		PrtUserPrintString("bool", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_EVENT:
+		PrtUserPrintString("event", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_MACHINE:
+		PrtUserPrintString("machine", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_INT:
+		PrtUserPrintString("int", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_FLOAT:
+		PrtUserPrintString("float", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_FOREIGN:
+		PrtUserPrintString("foreign", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_KIND_MAP:
+	{
+		PRT_MAPTYPE *mtype = type->typeUnion.map;
+		PrtUserPrintString("map[", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintType(mtype->domType, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintType(mtype->codType, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
+		break;
+	}
+	case PRT_KIND_NMDTUP:
+	{
+		PRT_UINT32 i;
+		PRT_NMDTUPTYPE *ntype = type->typeUnion.nmTuple;
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		for (i = 0; i < ntype->arity; ++i)
+		{
+			PrtUserPrintString(ntype->fieldNames[i], buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(": ", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintType(ntype->fieldTypes[i], buffer, bufferSize, numCharsWritten);
+			if (i < ntype->arity - 1)
+			{
+				PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+			}
+			else
+			{
+				PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
+			}
+		}
+		break;
+	}
+	case PRT_KIND_SEQ:
+	{
+		PRT_SEQTYPE *stype = type->typeUnion.seq;
+		PrtUserPrintString("seq[", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintType(stype->innerType, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
+		break;
+	}
+	case PRT_KIND_TUPLE:
+	{
+		PRT_UINT32 i;
+		PRT_TUPTYPE *ttype = type->typeUnion.tuple;
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		if (ttype->arity == 1)
+		{
+			PrtUserPrintType(ttype->fieldTypes[0], buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(",)", buffer, bufferSize, numCharsWritten);
+		}
+		else
+		{
+			for (i = 0; i < ttype->arity; ++i)
+			{
+				PrtUserPrintType(ttype->fieldTypes[i], buffer, bufferSize, numCharsWritten);
+				if (i < ttype->arity - 1)
+				{
+					PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+				}
+				else
+				{
+					PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
+				}
+			}
+		}
+		break;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "PrtUserPrintType: Invalid type");
+		break;
+	}
+}
+
+static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	PRT_STRING frgnStr;
+	PRT_VALUE_KIND kind = value->discriminator;
+	switch (kind)
+	{
+	case PRT_VALUE_KIND_NULL:
+		PrtUserPrintString("null", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_VALUE_KIND_BOOL:
+		PrtUserPrintString(PrtPrimGetBool(value) == PRT_TRUE ? "true" : "false", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_VALUE_KIND_INT:
+		PrtUserPrintInt(PrtPrimGetInt(value), buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_VALUE_KIND_FLOAT:
+		PrtUserPrintFloat(PrtPrimGetFloat(value), buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_VALUE_KIND_EVENT:
+		PrtUserPrintString("<", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(PrtPrimGetEvent(value), buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(">", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_VALUE_KIND_MID:
+		PrtUserPrintMachineId(PrtPrimGetMachine(value), buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_VALUE_KIND_FOREIGN:
+		frgnStr = program->foreignTypes[value->valueUnion.frgn->typeTag]->toStringFun(value->valueUnion.frgn->value);
+		PrtUserPrintString(frgnStr, buffer, bufferSize, numCharsWritten);
+		PrtFree(frgnStr);
+		break;
+	case PRT_VALUE_KIND_MAP:
+	{
+		PRT_MAPVALUE *mval = value->valueUnion.map;
+		PRT_MAPNODE *next = mval->first;
+		PrtUserPrintString("{", buffer, bufferSize, numCharsWritten);
+		while (next != NULL)
+		{
+			PrtUserPrintValue(next->key, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(" --> ", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintValue(next->value, buffer, bufferSize, numCharsWritten);
+			if (next->bucketNext != NULL)
+			{
+				PrtUserPrintString("*", buffer, bufferSize, numCharsWritten);
+			}
+
+			if (next->insertNext != NULL)
+			{
+				PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+			}
+
+			next = next->insertNext;
+		}
+
+		PrtUserPrintString("} (", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(mval->size, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" / ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(PrtMapCapacity(value), buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
+		break;
+	}
+	case PRT_VALUE_KIND_SEQ:
+	{
+		PRT_UINT32 i;
+		PRT_SEQVALUE *sVal = value->valueUnion.seq;
+		PrtUserPrintString("[", buffer, bufferSize, numCharsWritten);
+		for (i = 0; i < sVal->size; ++i)
+		{
+			PrtUserPrintValue(sVal->values[i], buffer, bufferSize, numCharsWritten);
+			if (i < sVal->size - 1)
+			{
+				PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+			}
+		}
+
+		PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
+		break;
+	}
+	case PRT_VALUE_KIND_TUPLE:
+	{
+		PRT_UINT32 i;
+		PRT_TUPVALUE *tval = value->valueUnion.tuple;
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		if (tval->size == 1)
+		{
+			PrtUserPrintValue(tval->values[0], buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(",)", buffer, bufferSize, numCharsWritten);
+		}
+		else
+		{
+			for (i = 0; i < tval->size; ++i)
+			{
+				PrtUserPrintValue(tval->values[i], buffer, bufferSize, numCharsWritten);
+				if (i < tval->size - 1)
+				{
+					PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+				}
+				else
+				{
+					PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
+				}
+			}
+		}
+		break;
+	}
+	default:
+		PrtAssert(PRT_FALSE, "PrtUserPrintValue: Invalid value");
+		break;
+	}
+}
+
+static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload,
+	_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+{
+	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
+	PRT_STRING machineName = program->machines[c->instanceOf]->name;
+	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
+	PRT_STRING stateName = PrtGetCurrentStateDecl(c)->name;
+	PRT_STRING eventName;
+
+	switch (step)
+	{
+	case PRT_STEP_HALT:
+		PrtUserPrintString("<HaltLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") halted in state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_ENQUEUE:
+		eventName = program->events[PrtPrimGetEvent(event)]->name;
+		PrtUserPrintString("<EnqueueLog> Enqueued event ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" on Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(")\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_DEQUEUE:
+		eventName = program->events[PrtPrimGetEvent(event)]->name;
+		PrtUserPrintString("<DequeueLog> Dequeued event ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" by Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(")\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_ENTRY:
+		PrtUserPrintString("<StateLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") entered state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_CREATE:
+		PrtUserPrintString("<CreateLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") is created\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_GOTO:
+	{
+		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV *)receiver;
+		PRT_STRING destStateName = program->machines[context->instanceOf]->states[context->destStateIndex].name;
+		PrtUserPrintString("<GotoLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") goes to state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(destStateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	}
+	case PRT_STEP_RAISE:
+		eventName = program->events[PrtPrimGetEvent(event)]->name;
+		PrtUserPrintString("<RaiseLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") raised event ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_POP:
+		PrtUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") popped and reentered state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_PUSH:
+		PrtUserPrintString("<PushLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") pushed\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_UNHANDLED:
+		eventName = program->events[c->eventValue]->name;
+		PrtUserPrintString("<PopLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") popped with unhandled event ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" and reentered state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_DO:
+		PrtUserPrintString("<ActionLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") executed action in state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_EXIT:
+		PrtUserPrintString("<ExitLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") exiting state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	case PRT_STEP_IGNORE:
+		eventName = program->events[PrtPrimGetEvent(event)]->name;
+		PrtUserPrintString("<ActionLog> Machine ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(") ignored event ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(eventName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(" in state ", buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString(stateName, buffer, bufferSize, numCharsWritten);
+		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+		break;
+	default:
+		PrtAssert(PRT_FALSE, "Illegal PRT_STEP value");
+		break;
+	}
+}
+
+void PRT_CALL_CONV PrtPrintValue(_In_ PRT_VALUE *value)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtUserPrintValue(value, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	PrtPrintf(buffer);
+	PrtFree(buffer);
+}
+
+PRT_STRING PRT_CALL_CONV PrtToStringValue(_In_ PRT_VALUE *value)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtUserPrintValue(value, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	return buffer;
+}
+
+PRT_STRING PRT_CALL_CONV PrtCopyString(_In_ const PRT_STRING value)
+{
+	if (value == NULL)
+	{
+		return NULL;
+	}
+	size_t bufferSize = strlen(value) + 1;
+	PRT_STRING buffer = (PRT_STRING)PrtCalloc(bufferSize, sizeof(char));
+	strcpy_s(buffer, bufferSize, (const char*)value);
+	return buffer;
+}
+
+void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE *type)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtUserPrintType(type, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	PrtPrintf(buffer);
+	PrtFree(buffer);
+}
+
+PRT_STRING PRT_CALL_CONV PrtToStringType(_In_ PRT_TYPE *type)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtUserPrintType(type, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	return buffer;
+}
+
+void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtUserPrintStep(step, senderState, receiver, event, payload, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	PrtPrintf(buffer);
+	PrtFree(buffer);
+}
+
+PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
+{
+	char *buffer = NULL;
+	PRT_UINT32 bufferSize = 0;
+	PRT_UINT32 nChars = 0;
+
+	PrtUserPrintStep(step, senderState, receiver, event, payload, &buffer, &bufferSize, &nChars);
+	PRT_DBG_ASSERT(buffer[nChars] == '\0', "Expected null terminated result");
+	return buffer;
+}
+
+void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
+{
+	PrtPrintf(msg);
+	va_list argp;
+	va_start(argp, msg);
+	PRT_UINT32 numArgs, numSegs;
+	numArgs = va_arg(argp, PRT_UINT32);
+	PRT_VALUE **args = (PRT_VALUE **)PrtCalloc(numArgs, sizeof(PRT_VALUE *));
+	for (PRT_UINT32 i = 0; i < numArgs; i++)
+	{
+		// skip over arg status
+		PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+		args[i] = va_arg(argp, PRT_VALUE *);
+	}
+	numSegs = va_arg(argp, PRT_UINT32);
+	for (PRT_UINT32 i = 0; i < numSegs; i++)
+	{
+		PRT_UINT32 argIndex = va_arg(argp, PRT_UINT32);
+		PrtPrintValue(args[argIndex]);
+		PRT_CSTRING seg = va_arg(argp, PRT_CSTRING);
+		PrtPrintf(seg);
+	}
+	va_end(argp);
+	PrtFree(args);
+}

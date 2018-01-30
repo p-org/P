@@ -1,5 +1,4 @@
 #include "PrtExecution.h"
-#include "PrtUser.h"
 
 PRT_TYPE NullType =
 {

@@ -62,13 +62,5 @@ namespace P.Tester
         {
             CoverageInfo.AddTransition(machine.Name, from.name, reason, machine.Name, to.name);
         }
-
-        public void Dump(string fileNamePrefix)
-        {
-            var reporter = new Microsoft.PSharp.TestingServices.Coverage.CodeCoverageReporter(CoverageInfo);
-            reporter.EmitCoverageReport(fileNamePrefix + ".txt");
-            reporter.EmitVisualizationGraph(fileNamePrefix + ".dgml");
-        }
-
     }
 }

@@ -117,7 +117,7 @@ extern "C"{
     } PRT_COOPERATIVE_SCHEDULER;
 
 	typedef struct PRT_PROCESS_PRIV {
-		PRT_PROCESS;
+		PRT_GUID				guid;
 		PRT_ERROR_FUN	        errorHandler;
 		PRT_LOG_FUN				logHandler;
 		PRT_RECURSIVE_MUTEX		processLock;
@@ -208,7 +208,9 @@ extern "C"{
 	} PRT_EVENTSTACK;
 
 	typedef struct PRT_MACHINEINST_PRIV {
-		PRT_MACHINEINST;
+		PRT_PROCESS		    *process;     
+		PRT_UINT32			instanceOf;   
+		PRT_VALUE			*id;          
 		PRT_VALUE           *recvMap;
 		PRT_VALUE			**varValues;
 		PRT_RECURSIVE_MUTEX stateMachineLock;

@@ -181,6 +181,7 @@ namespace Microsoft.Pc.TypeChecker
                 }
             }
 
+            method.AddCallee(function);
             return new FunCallExpr(context, function, arguments);
         }
 

@@ -7,20 +7,10 @@ event a;
 event b;
 event c;
 
-machine Main {
-	start state S1 {
-	}
-}
-
-machine M {
-	var x : int;
-}
-
 machine m2 {	
-	state S1 {	
+	start state S1 {	
 	on a goto S2;
 	on b goto S1;
-	on a goto S1;
 	on x do { foo(); }	
 	}
 	state S2 {	
@@ -29,3 +19,4 @@ machine m2 {
 	}
 	fun foo() {}
 }
+

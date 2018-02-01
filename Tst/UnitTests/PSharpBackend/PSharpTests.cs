@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using Microsoft.Pc;
 using NUnit.Framework;
 using UnitTests.CBackend;
@@ -49,6 +50,33 @@ namespace UnitTests.PSharpBackend
             }
 
             Assert.Pass($"{output}\n\t{fileList}\n");
+        }
+
+        [Test]
+        public void DetectUnsplitTests()
+        {
+            var totalUnsplitTests = 0;
+            foreach (var test in TestCases)
+            {
+                var testDir = (DirectoryInfo) test.Arguments[0];
+                string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
+                                  .MakeRelativeUri(new Uri(testDir.FullName))
+                                  .ToString();
+                bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
+                if (!expectCorrect)
+                {
+                    string[] lines = File.ReadAllLines(Path.Combine(testDir.FullName, "Pc", "acc_0.txt"));
+                    if (lines.Count(line => line.StartsWith("OUT:")) != 2)
+                    {
+                        Console.WriteLine($"==== {testName} ====");
+                        Console.WriteLine(string.Join(Environment.NewLine, lines.Where(line => line.StartsWith("OUT:"))));
+                        Console.WriteLine();
+
+                        totalUnsplitTests++;
+                    }
+                }
+            }
+            Console.WriteLine($"Total remaining = {totalUnsplitTests} / {TestCases.Count()}");
         }
     }
 }

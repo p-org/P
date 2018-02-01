@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: ControlImpureInExit.p(13,5,13,10): error PC1001: Exit function may cause a change in current state
+OUT: Duplicates.p(8,6,8,9): error PC1001: Syntax error - A function with name foo already declared
 OUT: Compilation failed
 EXIT: -1

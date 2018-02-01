@@ -1,0 +1,7 @@
+=================================
+         Console output          
+=================================
+OUT: ControlImpureInExit.p(13,5,13,10): error PC1001: Exit function may cause a change in current state
+OUT: ControlImpureInExit.p(35,8,35,15): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: Compilation failed
+EXIT: -1

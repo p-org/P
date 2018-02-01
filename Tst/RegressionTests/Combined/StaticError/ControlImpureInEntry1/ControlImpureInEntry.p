@@ -22,14 +22,12 @@ machine Main {
 					Action4();
 					raise E;       //no error
 					Action5();
-
-					Actions6();    //error
 			}
             else
 			    {
-					i = i + Action1() +   //error
+					i = i + Action1() + //error
 							Action2() - 
-							Action3();    //error
+							Action2();
 			    }
 			     raise E; 
 			 }

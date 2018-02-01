@@ -1,0 +1,6 @@
+=================================
+         Console output          
+=================================
+OUT: ControlImpureInEntry.p(28,14,28,21): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
+OUT: Compilation failed
+EXIT: -1

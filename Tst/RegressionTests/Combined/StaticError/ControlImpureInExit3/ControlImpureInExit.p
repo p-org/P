@@ -20,21 +20,7 @@ machine Main {
 		             send this, E3; 
 					 }   
 		on E2 do Action1;   
-        on E1 do { } 	
-		
-        exit { 
-			pop;                            //no error - OK, only first one is reported
-			raise unit;                     //no error - OK
-			if (i == 3) {
-				    pop;                   //no error
-			}
-            else
-			    {
-					i = i + Action4() +   //error
-							Action5() -
-							Action6();    //error
-			    }
-			}
+        on E1 do { }
 	}
 	state Real1_S1 {
 		entry {}
@@ -45,7 +31,6 @@ machine Main {
     }
 	state Real1_S2 {
 		entry { }
-		exit { pop; }                        //error
 	}
 	state Real1_S3 {
 		entry { }
@@ -53,11 +38,9 @@ machine Main {
 	}
 	state Real1_S4 {
 		entry { }
-		exit { raise unit; }                 //error
 	}
 	state Real1_S5 {
 		entry { }
-		exit Action3;                        //error
 	}
 	fun Action1() {		                          
 		pop;                                 

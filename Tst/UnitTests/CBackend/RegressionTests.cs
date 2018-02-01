@@ -13,8 +13,8 @@ namespace UnitTests.CBackend
 {
     [TestFixture]
     //Parallel execution is not working:
-    //[Parallelizable(ParallelScope.Children)]
-    [NonParallelizable]
+    [Parallelizable(ParallelScope.Children)]
+    //[NonParallelizable]
     public class RegressionTests
     {
         private ThreadLocal<Compiler> PCompiler { get; } = new ThreadLocal<Compiler>(() => new Compiler(true));

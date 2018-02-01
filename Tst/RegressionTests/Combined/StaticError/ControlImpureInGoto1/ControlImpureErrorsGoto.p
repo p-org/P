@@ -22,26 +22,11 @@ machine Main {
 					 }   
 		on E2 goto Real1_S1 with { }
         on E1 goto Real1_S2 with { raise unit;}  	              //error
-		on E3 goto Real1_S3 with { pop;}                         //error
-		on E4 goto Real1_S3 with {
-			if (i == 3) {                   //error at a wrong line number (should be 28!)
-				    pop;                    //no error here: line 27 reported instead
-			}
-            else
-			    {
-					i = i + Action4() +   //error
-							Action5() - 
-							Action7() +   // no error!!!
-							Action6();    //error
-			    }
-		}
 	}
 	state Real1_S1 {
 		entry {
 			}
 		on E1 goto Real1_S1 with Action2; 
-	    on E2 goto Real1_S2 with Action3;                        //error
-		on E3 goto Real1_S3 with Action1;                        //error
     }
 	state Real1_S2 {
 		entry { }
@@ -55,14 +40,12 @@ machine Main {
 	state Real1_S5 {
 		entry { }
 	}
-	fun Action1() {		                          
-		pop;                                   //error                 
+	fun Action1() {		                                       
     }
 	fun Action2() {
 
     }
 	fun Action3() {
-		raise unit;                             //error
     }
 	fun Action4() : int {		                          
 		pop;                                   

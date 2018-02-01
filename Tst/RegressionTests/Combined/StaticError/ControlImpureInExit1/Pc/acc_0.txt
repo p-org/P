@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: bug.p(18,40,18,42): error PC1001: Cast can never succeed
+OUT: ControlImpureInExit.p(13,5,13,10): error PC1001: Exit function may cause a change in current state
 OUT: Compilation failed
 EXIT: -1

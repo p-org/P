@@ -56,6 +56,12 @@ namespace UnitTests.PSharpBackend
         public void DetectUnsplitTests()
         {
             var totalUnsplitTests = 0;
+            var exceptions = new HashSet<string>
+            {
+                "RegressionTests/Combined/StaticError/DuplicateActions",
+                "RegressionTests/Combined/StaticError/DuplicateTransitions",
+                "RegressionTests/Feature1SMLevelDecls/StaticError/DeferIgnoreSameEvent",
+            };
             foreach (var test in TestCases)
             {
                 var testDir = (DirectoryInfo) test.Arguments[0];
@@ -66,7 +72,7 @@ namespace UnitTests.PSharpBackend
                 if (!expectCorrect)
                 {
                     string[] lines = File.ReadAllLines(Path.Combine(testDir.FullName, "Pc", "acc_0.txt"));
-                    if (lines.Count(line => line.StartsWith("OUT:")) != 2)
+                    if (lines.Count(line => line.StartsWith("OUT:")) != 2 && !exceptions.Contains(testName))
                     {
                         Console.WriteLine($"==== {testName} ====");
                         Console.WriteLine(string.Join(Environment.NewLine, lines.Where(line => line.StartsWith("OUT:"))));

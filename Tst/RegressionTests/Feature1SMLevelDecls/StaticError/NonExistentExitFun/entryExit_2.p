@@ -34,19 +34,7 @@ machine Main {
 	
 	
 	state xyz {
-		entry football;
-		exit bar;
-	}
-	
-	state abc {
-		entry y;
-		exit football;
-	}
-	
-	state cde {
 		entry {}
 		exit x;
-	
 	}
-	
 }

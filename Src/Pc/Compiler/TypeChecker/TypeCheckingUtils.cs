@@ -41,6 +41,36 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
+        public static void ValidatePayloadTypes(
+            ITranslationErrorHandler handler,
+            ParserRuleContext context,
+            PLanguageType payloadType,
+            IReadOnlyList<PLanguageType> arguments)
+        {
+            if (arguments.Count == 0)
+            {
+                if (!payloadType.IsSameTypeAs(PrimitiveType.Null))
+                {
+                    throw handler.TypeMismatch(context, PrimitiveType.Null, payloadType);
+                }
+            }
+            else if (arguments.Count == 1)
+            {
+                CheckArgument(handler, context, payloadType, arguments[0]);
+            }
+            else if (payloadType.Canonicalize() is TupleType tuple)
+            {
+                foreach (var pair in tuple.Types.Zip(arguments, Tuple.Create))
+                {
+                    CheckArgument(handler, context, pair.Item1, pair.Item2);
+                }
+            }
+            else
+            {
+                throw handler.IncorrectArgumentCount(context, arguments.Count, 1);
+            }
+        }
+
         public static void CheckArgument(
             ITranslationErrorHandler handler,
             ParserRuleContext context,
@@ -58,6 +88,18 @@ namespace Microsoft.Pc.TypeChecker
             if (!argumentType.IsAssignableFrom(arg.Type))
             {
                 throw handler.TypeMismatch(context, arg.Type, argumentType);
+            }
+        }
+
+        public static void CheckArgument(
+            ITranslationErrorHandler handler,
+            ParserRuleContext context,
+            PLanguageType argumentType,
+            PLanguageType arg)
+        {
+            if (!argumentType.IsAssignableFrom(arg))
+            {
+                throw handler.TypeMismatch(context, arg, argumentType);
             }
         }
 

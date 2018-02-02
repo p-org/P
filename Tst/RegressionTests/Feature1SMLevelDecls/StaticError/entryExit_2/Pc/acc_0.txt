@@ -1,9 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: entryExit_2.p(36,2,33,3): error PC1001: Entry function cannot take arguments
-OUT: entryExit_2.p(41,2,39,3): error PC1001: Exit function cannot take arguments
-OUT: entryExit_2.p(41,2,39,3): error PC1001: Undefined function for entry
-OUT: entryExit_2.p(46,2,44,3): error PC1001: Undefined function for exit
-OUT: Compilation failed
-EXIT: -1

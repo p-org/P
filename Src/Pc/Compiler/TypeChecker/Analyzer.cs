@@ -5,6 +5,7 @@ using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {

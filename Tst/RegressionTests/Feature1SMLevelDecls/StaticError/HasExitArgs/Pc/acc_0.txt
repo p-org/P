@@ -1,0 +1,6 @@
+=================================
+         Console output          
+=================================
+OUT: entryExit_2.p(34,2,32,3): error PC1001: Exit function cannot take arguments
+OUT: Compilation failed
+EXIT: -1

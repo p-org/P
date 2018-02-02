@@ -610,6 +610,8 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
+
+                TypeCheckingUtils.ValidatePayloadTypes(Handler, eventIdContext, evt.PayloadType, fun.Signature.ParameterTypes.ToList());
                 actions.Add(new EventDoAction(eventIdContext, evt, fun));
             }
             return actions.ToArray();
@@ -681,6 +683,11 @@ namespace Microsoft.Pc.TypeChecker
                 if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
                 {
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
+                }
+
+                if (transitionFunction != null)
+                {
+                    TypeCheckingUtils.ValidatePayloadTypes(Handler, eventIdContext, evt.PayloadType, transitionFunction.Signature.ParameterTypes.ToList());
                 }
 
                 actions.Add(new EventGotoState(eventIdContext, evt, target, transitionFunction));

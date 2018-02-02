@@ -224,8 +224,11 @@
   <ItemGroup>
     <Compile Include="ANTLRCompiler.cs" />
     <Compile Include="Antlr\PParserErrorListener.cs" />
+    <Compile Include="Backend\ASTExt\CloneExpr.cs" />
     <Compile Include="Backend\CodeGen.cs" />
-    <Compile Include="Backend\IrDumper.cs" />
+    <Compile Include="Backend\Debugging\IrRenderer.cs" />
+    <Compile Include="Backend\Debugging\IrToPseudoP.cs" />
+    <Compile Include="Backend\Debugging\ModelDumper.cs" />
     <Compile Include="Backend\TargetLanguage.cs" />
     <Compile Include="Compiler.cs" />
     <Compile Include="CompilerOutput.cs" />

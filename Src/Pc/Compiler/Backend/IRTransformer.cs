@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
+using Microsoft.Pc.Backend.ASTExt;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -25,9 +27,15 @@ namespace Microsoft.Pc.Backend
 
         private (Variable, IPStmt) SaveInTemporary(IPExpr expr)
         {
+            return SaveInTemporary(expr, expr.Type);
+        }
+
+        private (Variable, IPStmt) SaveInTemporary(IPExpr expr, PLanguageType tempType)
+        {
             ParserRuleContext location = expr.SourceLocation;
             var temp = function.Scope.Put($"$tmp{numTemp++}", expr.SourceLocation, VariableRole.Local);
-            temp.Type = expr.Type;
+            Debug.Assert(tempType.IsAssignableFrom(expr.Type));
+            temp.Type = tempType;
             function.AddLocalVariable(temp);
             var stmt = new AssignStmt(location, new VariableAccessExpr(location, temp), expr);
             return (temp, stmt);
@@ -261,6 +269,8 @@ namespace Microsoft.Pc.Backend
             return Flatten(new CompoundStmt(functionBody.SourceLocation, SimplifyStatement(functionBody)));
         }
 
+        private IPExpr MakeClone(IPExpr expr) { return new CloneExpr(expr); }
+
         private List<IPStmt> SimplifyStatement(IPStmt statement)
         {
             ParserRuleContext location = statement?.SourceLocation;
@@ -292,7 +302,7 @@ namespace Microsoft.Pc.Backend
                     return assignLVDeps.Concat(assignRVDeps)
                                        .Concat(new[]
                                        {
-                                           new AssignStmt(location, assignLV, assignRV)
+                                           new AssignStmt(location, assignLV, MakeClone(assignRV))
                                        })
                                        .ToList();
                 case CompoundStmt compoundStmt:
@@ -367,9 +377,10 @@ namespace Microsoft.Pc.Backend
                     var (moveDest, moveDestDeps) = SimplifyLvalue(moveAssignStmt.ToLocation);
                     return moveDestDeps.Concat(new[]
                                        {
-                                           new MoveAssignStmt(location,
+                                           new AssignStmt(location,
                                                               moveDest,
-                                                              moveAssignStmt.FromVariable)
+                                                              new VariableAccessExpr(moveAssignStmt.SourceLocation,
+                                                                                     moveAssignStmt.FromVariable))
                                        })
                                        .ToList();
                 case NoStmt _:
@@ -457,9 +468,17 @@ namespace Microsoft.Pc.Backend
                                           .ToList();
                 case SwapAssignStmt swapAssignStmt:
                     var (swapVar, swapVarDeps) = SimplifyLvalue(swapAssignStmt.NewLocation);
+                    var (swapTmp, tmpAssn) = SaveInTemporary(swapVar, PrimitiveType.Any);
+                    Variable rhs = swapAssignStmt.OldLocation;
                     return swapVarDeps.Concat(new[]
                                       {
-                                          new SwapAssignStmt(location, swapVar, swapAssignStmt.OldLocation)
+                                          tmpAssn,
+                                          new AssignStmt(location,
+                                                         swapVar,
+                                                         MakeCast(new VariableAccessExpr(location, rhs), swapVar.Type)),
+                                          new AssignStmt(location,
+                                                         new VariableAccessExpr(location, rhs),
+                                                         MakeCast(new VariableAccessExpr(location, swapTmp), rhs.Type))
                                       })
                                       .ToList();
                 case WhileStmt whileStmt:
@@ -479,6 +498,11 @@ namespace Microsoft.Pc.Backend
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));
             }
+        }
+
+        private IPExpr MakeCast(IPExpr expr, PLanguageType newType)
+        {
+            return newType.IsAssignableFrom(expr.Type) ? expr : new CastExpr(expr.SourceLocation, expr, newType);
         }
     }
 }

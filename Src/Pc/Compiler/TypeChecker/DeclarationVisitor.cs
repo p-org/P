@@ -286,6 +286,16 @@ namespace Microsoft.Pc.TypeChecker
                 }
             }
 
+            if (machine.Receives == null)
+            {
+                machine.Receives = UniversalEventSet.Instance;
+            }
+
+            if (machine.Sends == null)
+            {
+                machine.Sends = UniversalEventSet.Instance;
+            }
+
             // machineBody
             using (currentScope.NewContext(machine.Scope))
             using (currentMachine.NewContext(machine))

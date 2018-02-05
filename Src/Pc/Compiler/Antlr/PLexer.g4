@@ -10,8 +10,10 @@ EVENTSET : 'eventset' ;
 FLOAT    : 'float' ;
 INT      : 'int' ;
 MACHINE  : 'machine' ;
+INTERFACE : 'interface' ;
 MAP      : 'map' ;
 SEQ      : 'seq' ;
+DATA      : 'data' ;
 
 // Keywords
 
@@ -21,14 +23,12 @@ ASSERT    : 'assert' ;
 ASSUME    : 'assume' ;
 CASE      : 'case' ;
 COLD      : 'cold' ;
-DATA      : 'data' ;
 DEFAULT   : 'default' ;
 DEFER     : 'defer' ;
 DO        : 'do' ;
 ELSE      : 'else' ;
 ENTRY     : 'entry' ;
 EXIT      : 'exit' ;
-EXTERN    : 'extern' ;
 FUN       : 'fun' ;
 GOTO      : 'goto' ;
 GROUP     : 'group' ;
@@ -37,7 +37,6 @@ HOT       : 'hot' ;
 IF        : 'if' ;
 IGNORE    : 'ignore' ;
 IN        : 'in' ;
-INTERFACE : 'interface' ;
 KEYS      : 'keys' ;
 MOVE      : 'move' ;
 NEW       : 'new' ;
@@ -48,10 +47,8 @@ PRINT     : 'print' ;
 PUSH      : 'push' ;
 RAISE     : 'raise' ;
 RECEIVE   : 'receive' ;
-RECEIVES  : 'receives' ;
 RETURN    : 'return' ;
 SEND      : 'send' ;
-SENDS     : 'sends' ;
 SIZEOF    : 'sizeof' ;
 SPEC      : 'spec' ;
 START     : 'start' ;
@@ -64,21 +61,27 @@ VAR       : 'var' ;
 WHILE     : 'while' ;
 WITH      : 'with' ;
 
-// Linker-specific keywords
+// module-system-specific keywords
 
-COMPOSE        : 'compose' ;
-EXPORT         : 'export' ;
-HIDE           : 'hide' ;
-IMPLEMENTATION : 'implementation' ;
+// module-test-implementation declarations
 MODULE         : 'module' ;
-PRIVATE        : 'private' ;
-REFINES        : 'refines' ;
-RENAME         : 'rename' ;
-SAFE           : 'safe' ;
+IMPLEMENTATION : 'implementation' ;
 TEST           : 'test' ;
+REFINES        : 'refines' ;
+
+// module constructors
+COMPOSE			: 'compose' ;
+UNION			: 'union'	;
+HIDEE			: 'hidee' ;
+HIDEI			: 'hidei' ;
+RENAME			: 'rename' ;
+SAFE			: 'safe' ;
+
+// machine annotations
+RECEIVES  : 'receives' ;
+SENDS     : 'sends' ;
 
 // Common keywords
-
 CREATES : 'creates' ;
 TO      : 'to' ;
 

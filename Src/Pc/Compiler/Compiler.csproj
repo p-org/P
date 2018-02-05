@@ -408,10 +408,6 @@
       <LastGenOutput>P.4ml.g.cs</LastGenOutput>
     </EmbeddedResource>
     <EmbeddedResource Include="Domains\Zing.4ml" />
-    <EmbeddedResource Include="Zing\Prt.zing" />
-    <EmbeddedResource Include="Zing\PrtTypes.zing" />
-    <EmbeddedResource Include="Zing\PrtValues.zing" />
-    <EmbeddedResource Include="Zing\Minimal.zing" />
     <EmbeddedResource Include="Domains\PLink.4ml">
       <Generator>FormulaCodeGenerator</Generator>
       <CustomToolNamespace>Microsoft.Pc.Domains</CustomToolNamespace>
@@ -440,10 +436,6 @@
     <ProjectReference Include="..\..\Parsers\CParser\CParser.csproj">
       <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
       <Name>CParser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Parsers\ZingParser\ZingParser.csproj">
-      <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
-      <Name>ZingParser</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

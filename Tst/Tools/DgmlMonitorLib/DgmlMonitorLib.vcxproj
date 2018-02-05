@@ -22,7 +22,7 @@
     <ProjectGuid>{B81F7E46-FF83-4534-ABA2-64A5C723FEDB}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>DgmlMonitorLib</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -1,5 +1,0 @@
-fun Continue() : bool
-{ 
-    return $;
-}
-

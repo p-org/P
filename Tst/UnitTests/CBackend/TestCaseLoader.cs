@@ -13,7 +13,7 @@ namespace UnitTests.CBackend
         //private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
         private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Combined",
            "RegressionTests\\Feature1SMLevelDecls",  "RegressionTests\\Feature2Stmts", "RegressionTests\\Feature3Exprs",
-           "RegressionTests\\Feature4DataTypes", "RegressionTests\\Integration", "RegressionTests\\Zinger"
+           "RegressionTests\\Feature4DataTypes", "RegressionTests\\Integration"
             };
         //To run Liveness tests, set Settings.PtWithPSharp to true:
         //private static readonly List<string> TestDirs = new List<string> { "Liveness" };

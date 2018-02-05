@@ -27,7 +27,6 @@
         private const string PLinkDomain = "PLink";
         private const string PLinkTransform = "PLink2C";
         private const string CDomain = "C";
-        private const string ZingDomain = "Zing";
         private const string P2InfTypesTransform = "P2PWithInferredTypes";
         private const string P2CTransform = "P2CProgram";
         private const string AliasPrefix = "p_compiler__";
@@ -42,7 +41,6 @@
                 {PDomain, "P.4ml"},
                 {PLinkDomain, "PLink.4ml"},
                 {CDomain, "C.4ml"},
-                {ZingDomain, "Zing.4ml"},
                 {P2InfTypesTransform, "PWithInferredTypes.4ml"},
                 {P2CTransform, "P2CProgram.4ml"}
             };
@@ -186,15 +184,8 @@
                 }
             }
 
-            bool rc;
-            if (Options.compilerOutput == CompilerOutput.Zing)
-            {
-                rc = GenerateZing(unitProgramName, unitModel, errorReporter.idToSourceInfo);
-            }
-            else
-            {
-                rc = GenerateCode(unitProgramName, unitModel, Options.dependencies, errorReporter.idToSourceInfo);
-            }
+            bool rc = false;
+            rc = GenerateCode(unitProgramName, unitModel, Options.dependencies, errorReporter.idToSourceInfo);
             UninstallProgram(unitProgramName);
             errorReporter.PrintErrors(Log, Options);
             if (!rc)
@@ -262,153 +253,6 @@
                 return first.Message;
             }
             return "";
-        }
-
-        public bool GenerateZing(ProgramName RootProgramName, AST<Model> RootModel, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
-        {
-            AST<Model> rootModelWithTypes;
-            using (this.Profiler.Start("Compiler generating model with types", Path.GetFileName(RootModel.Node.Name)))
-            {
-                ProgramName rootProgramNameWithTypes;
-                if (!CreateRootModelWithTypes(RootProgramName, RootModel, out rootProgramNameWithTypes, out rootModelWithTypes))
-                {
-                    return false;
-                }
-            }
-
-            string RootFileName = RootProgramName.ToString();
-            AST<Model> zingModel;
-            string fileName = Path.GetFileNameWithoutExtension(RootFileName);
-            string zingFileName = fileName + ".zing";
-            string dllFileName = fileName + ".dll";
-
-            using (this.Profiler.Start("Generating Zing", zingFileName))
-            {
-                // Load all dependencies of Zing.4ml in order
-                LoadManifestProgram("Zing.4ml");
-
-                zingModel = MkZingOutputModel();
-                var pToZing = new PToZing(this, rootModelWithTypes, idToSourceInfo);
-                bool success = pToZing.GenerateZing(zingFileName, ref zingModel);
-                if (!success)
-                {
-                    return false;
-                }
-            }
-
-            if (!RenderZing(zingModel, CompilerEnv))
-                return false;
-
-            Process zcProcess = null;
-
-            using (this.Profiler.Start("Compiling Zing", zingFileName))
-            {
-                var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
-                string zingCompiler = Path.Combine(binPath.FullName, "zc.exe");
-                if (!File.Exists(zingCompiler))
-                {
-                    Log.WriteMessage("Cannot find Zc.exe, did you build it ?", SeverityKind.Error);
-                    return false;
-                }
-                var zcProcessInfo = new System.Diagnostics.ProcessStartInfo(zingCompiler);
-                string zingFileNameFull = Path.Combine(Options.outputDir, zingFileName);
-                zcProcessInfo.Arguments = $"/nowarn:292 \"/out:{Options.outputDir}\\{dllFileName}\" \"{zingFileNameFull}\"";
-                zcProcessInfo.UseShellExecute = false;
-                zcProcessInfo.CreateNoWindow = true;
-                zcProcessInfo.RedirectStandardOutput = true;
-                Log.WriteMessage($"Compiling {zingFileName} to {dllFileName} ...", SeverityKind.Info);
-                zcProcess = System.Diagnostics.Process.Start(zcProcessInfo);
-                zcProcess.WaitForExit();
-            }
-
-            if (zcProcess.ExitCode != 0)
-            {
-                Log.WriteMessage("Zc failed to compile the generated code", SeverityKind.Error);
-                Log.WriteMessage(zcProcess.StandardOutput.ReadToEnd(), SeverityKind.Error);
-                return false;
-            }
-            return true;
-        }
-
-        private bool RenderZing(AST<Model> m, Env env)
-        {
-            var progName = new ProgramName(Path.Combine(Options.outputDir, m.Node.Name + "_ZingModel.4ml"));
-            var zingProgram = Factory.Instance.MkProgram(progName);
-            //// Set the renderer of the Zing program so terms can be converted to text.
-            var zingProgramConfig = (AST<Config>)zingProgram.FindAny(new NodePred[]
-                {
-                    NodePredFactory.Instance.MkPredicate(NodeKind.Program),
-                    NodePredFactory.Instance.MkPredicate(NodeKind.Config)
-                });
-            Contract.Assert(zingProgramConfig != null);
-            var binPath = new FileInfo(Assembly.GetExecutingAssembly().Location).Directory;
-            zingProgramConfig = Factory.Instance.AddSetting(
-                zingProgramConfig,
-                Factory.Instance.MkId(Configuration.Parse_ActiveRenderSetting),
-                Factory.Instance.MkCnst(typeof(ZingParser.Parser).Name + " at " + Path.Combine(binPath.FullName, "ZingParser.dll")));
-            zingProgram = (AST<Program>)Factory.Instance.ToAST(zingProgramConfig.Root);
-            zingProgram = Factory.Instance.AddModule(zingProgram, m);
-
-            List<FuncTerm> nodes = SortedFiles(zingProgram, m.Node.Name);
-            var success = true;
-            foreach (var node in nodes)
-            {
-                success = PrintZingFile(node) && success;
-            }
-            return success;
-        }
-
-        private bool PrintZingFile(FuncTerm file)
-        {
-            string fileName;
-            Quote fileBody;
-            using (var it = file.Args.GetEnumerator())
-            {
-                it.MoveNext();
-                fileName = ((Cnst)it.Current).GetStringValue();
-                it.MoveNext();
-                fileBody = (Quote)it.Current;
-            }
-            Log.WriteMessage($"Writing {fileName} ...", SeverityKind.Info);
-
-            try
-            {
-                var fullPath = Path.Combine(Options.outputDir, fileName);
-                using (var sw = new System.IO.StreamWriter(fullPath))
-                {
-                    foreach (var c in fileBody.Contents)
-                    {
-                        Factory.Instance.ToAST(c).Print(sw);
-                    }
-                    try
-                    {
-                        var asm = Assembly.GetExecutingAssembly();
-                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Microsoft.Pc.Zing.Prt.zing")))
-                        {
-                            sw.Write(sr.ReadToEnd());
-                        }
-                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Microsoft.Pc.Zing.PrtTypes.zing")))
-                        {
-                            sw.Write(sr.ReadToEnd());
-                        }
-                        using (var sr = new StreamReader(asm.GetManifestResourceStream("Microsoft.Pc.Zing.PrtValues.zing")))
-                        {
-                            sw.Write(sr.ReadToEnd());
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        throw new Exception("Unable to load resources: " + e.Message);
-                    }
-                }
-            }
-            catch (Exception e)
-            {
-                Log.WriteMessage($"Could not save file {fileName} - {e.Message}", SeverityKind.Error);
-                return false;
-            }
-
-            return true;
         }
 
         private void PrintResult(InstallResult result)
@@ -1210,34 +1054,6 @@
             }
 
             return true;
-        }
-
-        private AST<Model> MkZingOutputModel()
-        {
-            var mod = Factory.Instance.MkModel(
-                "OutputZing",
-                false,
-                Factory.Instance.MkModRef(ZingDomain, null, MkReservedModuleLocation(ZingDomain)),
-                ComposeKind.Extends);
-
-            var conf = (AST<Config>)mod.FindAny(
-                new NodePred[]
-                {
-                    NodePredFactory.Instance.MkPredicate(NodeKind.AnyNodeKind),
-                    NodePredFactory.Instance.MkPredicate(NodeKind.Config)
-                });
-
-            var myDir = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            conf = Factory.Instance.AddSetting(
-                conf,
-                Factory.Instance.MkId("parsers.Zing"),
-                Factory.Instance.MkCnst("Parser at " + myDir + "\\ZingParser.dll"));
-            conf = Factory.Instance.AddSetting(
-                conf,
-                Factory.Instance.MkId("parse_ActiveRenderer"),
-                Factory.Instance.MkCnst("Zing"));
-
-            return (AST<Model>)Factory.Instance.ToAST(conf.Root);
         }
     }
 }

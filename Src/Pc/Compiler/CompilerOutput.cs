@@ -4,7 +4,6 @@ namespace Microsoft.Pc
     {
         C,
         CSharp,
-        Zing,
         PSharp,
         PThree
     }

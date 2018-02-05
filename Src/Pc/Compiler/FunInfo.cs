@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Formula.API;
 using Microsoft.Formula.API.Nodes;
@@ -89,7 +90,7 @@ namespace Microsoft.Pc
             int localIndex = paramIndex;
             while (locals != null)
             {
-                var ft = (FuncTerm)PToZing.GetArgByIndex(locals, 0);
+                var ft = (FuncTerm)GetArgByIndex(locals, 0);
                 using (var enumerator = ft.Args.GetEnumerator())
                 {
                     enumerator.MoveNext();
@@ -99,9 +100,27 @@ namespace Microsoft.Pc
                     localNameToInfo[varName] = new LocalVariableInfo(varType, localIndex);
                     localNames.Add(varName);
                 }
-                locals = PToZing.GetArgByIndex(locals, 1) as FuncTerm;
+                locals = GetArgByIndex(locals, 1) as FuncTerm;
                 localIndex++;
             }
+        }
+
+        public static Node GetArgByIndex(FuncTerm ft, int index)
+        {
+            Contract.Requires(index >= 0 && index < ft.Args.Count);
+
+            var i = 0;
+            foreach (Node a in ft.Args)
+            {
+                if (i == index)
+                {
+                    return a;
+                }
+
+                ++i;
+            }
+
+            throw new KeyNotFoundException();
         }
 
         public string PayloadVarName

@@ -52,7 +52,6 @@ namespace UnitTests
         internal static bool RunPc => Properties.Settings.Default.RunPc;
         internal static bool RunPrt => Properties.Settings.Default.RunPrt;
         internal static bool RunPt => Properties.Settings.Default.RunPt;
-        internal static bool RunZing => Properties.Settings.Default.RunZing;
         internal static bool RunAll => Properties.Settings.Default.RunAll;
         internal static bool PtWithPSharp => Properties.Settings.Default.PtWithPSharp;
 

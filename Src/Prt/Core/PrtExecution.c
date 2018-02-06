@@ -2825,7 +2825,7 @@ static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_
 {
 	PRT_UINT32 written = *numCharsWritten;
 	ResizeBuffer(buffer, bufferSize, written, 64);
-	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%llu", i);
+    *numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%lu", i);
 }
 
 static void PrtUserPrintFloat(_In_ PRT_FLOAT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)

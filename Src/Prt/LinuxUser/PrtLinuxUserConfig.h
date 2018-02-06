@@ -5,6 +5,7 @@
 #ifndef PRTCONFIG_LINUXUSER_H
 #define PRTCONFIG_LINUXUSER_H
 
+
 #if defined(PRT_USE_CLANG)
 #define FORCEINLINE __attribute__((always_inline))
 #elif defined(PRT_USE_GCC)
@@ -17,16 +18,11 @@
 extern "C"{
 #endif
 
-	/** "unsafe" string functions are used safely. Allows for portability of code between operating systems. */
-#ifndef _CRT_SECURE_NO_WARNINGS
-#define _CRT_SECURE_NO_WARNINGS
-#endif
-
-	/** Calling convention */
-#define PRT_CALL_CONV 
+    /** Calling convention */
+#define PRT_CALL_CONV
 
 
-	/** Linking method */
+    /** Linking method */
 #ifdef PRT_API_IMPL
 #define PRT_API __declspec(dllexport)
 #else
@@ -39,30 +35,6 @@ extern "C"{
 #define PRT_API
 #endif
 #endif
-#endif
-
-#ifdef PRT_DEBUG
-#ifndef _DEBUG
-#define _DEBUG
-#endif
-
-#define _CRTDBG_MAP_ALLOC
-
-#include <stdlib.h>
-#include <stdint.h>
-#include <crtdbg.h>
-#include <sal.h>
-#include <stddef.h>
-#include <stdio.h>
-#include "ext_compat.h"
-
-	//#define PrtMalloc(size) malloc(size)
-	//#define PrtCalloc(nmemb, size) calloc(nmemb, size)
-#define PRT_DBG_ASSERT(condition, message) PrtAssert((condition), (message))
-#define PRT_DBG_START_MEM_BALANCED_REGION { _CrtMemState prtDbgMemStateInitial, prtDbgMemStateFinal, prtDbgMemStateDiff; _CrtMemCheckpoint(&prtDbgMemStateInitial);
-#define PRT_DBG_END_MEM_BALANCED_REGION _CrtMemCheckpoint(&prtDbgMemStateFinal); PrtAssert(!_CrtMemDifference(&prtDbgMemStateDiff, &prtDbgMemStateInitial, &prtDbgMemStateFinal), "Memory leak"); }
-
-#else
 
 #include <sal.h>
 #include <stddef.h>
@@ -77,7 +49,6 @@ extern "C"{
 #include <semaphore.h>
 #endif
 #include "ext_compat.h"
-#endif
 
 	/** PRT uses these definitions for boolean values */
 	typedef enum PRT_BOOLEAN
@@ -131,5 +102,5 @@ extern "C"{
 #ifdef __cplusplus
 }
 #endif
-
+#endif
 #endif

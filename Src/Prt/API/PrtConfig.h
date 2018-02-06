@@ -40,8 +40,6 @@ extern "C"{
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-
-
 #ifdef PRT_DEBUG
 #ifndef _DEBUG
 #define _DEBUG

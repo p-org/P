@@ -1,4 +1,4 @@
-#include "PrtLinuxUserConfig.h"
+#include "PrtSGXUserConfig.h"
 #include "Prt.h"
 
 PRT_RECURSIVE_MUTEX PRT_CALL_CONV PrtCreateMutex()

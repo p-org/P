@@ -18,7 +18,9 @@ if (NOT Win32)
 	endif()
 endif()
 
-if(Win32)
+if(SGX)
+    add_definitions( -DPRT_PLAT_SGX )
+elseif(Win32)
     add_definitions( -DPRT_PLAT_WINUSER )
 elseif(LINUX OR MACOSX)
     add_definitions( -DPRT_PLAT_LINUXUSER )
@@ -51,3 +53,4 @@ macro ( Publish_Library_Header target )
 endmacro()
 
 add_subdirectory ( Prt )
+

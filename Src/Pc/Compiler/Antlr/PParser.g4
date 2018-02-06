@@ -55,9 +55,9 @@ topDecl : typeDefDecl
         | implMachineDecl
         | specMachineDecl
         | funDecl
-//		| namedModuleDecl
-//		| testDecl
-//		| implementationDecl
+		| namedModuleDecl
+		| testDecl
+		| implementationDecl
         ;
 
 
@@ -216,3 +216,27 @@ rvalueList : rvalue (COMMA rvalue)* ;
 rvalue : iden linear=(SWAP | MOVE)
        | expr
        ;
+
+
+// module system related
+
+modExpr	: LBRACE bindExpr (COMMA bindExpr)* RBRACE						# PrimitiveModuleExpression
+		| iden															# NamedModule
+		| LPAREN op=COMPOSE  modExpr (COMMA modExpr)+ RPAREN			# ComposeModuleExpression
+		| LPAREN op=UNION  modExpr (COMMA modExpr)+ RPAREN				# UnionModuleExpression
+		| LPAREN op=HIDEE  nonDefaultEventList IN modExpr RPAREN	# HideEventsModuleExpression
+		| LPAREN op=HIDEI  idenList IN modExpr RPAREN				# HideInterfacesModuleExpression
+		| LPAREN op=ASSERT  idenList IN modExpr RPAREN				# AssertModuleExpression
+		| LPAREN op=RENAME  oldName=iden TO newName=iden IN modExpr RPAREN		# HideInterfacesModuleExpression
+		;
+
+
+bindExpr : (iden | iden RARROW iden) ;
+
+namedModuleDecl : MODULE name=iden ASSIGN modExpr SEMI	;
+
+testDecl : TEST testName=iden COLON modExpr SEMI 					# SafetyTestDeclaration
+		 | TEST testName=iden COLON modExpr REFINES modExpr SEMI	# RefinementTestDeclaration
+		 ;
+
+implementationDecl : IMPLEMENTATION modExpr SEMI ;

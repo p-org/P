@@ -113,6 +113,7 @@ LE     : '<=' ;
 GE     : '>=' ;
 LT     : '<'  ;
 GT     : '>'  ;
+RARROW : '->' ;
 
 ASSIGN : '=' ;
 INSERT : '+=' ;

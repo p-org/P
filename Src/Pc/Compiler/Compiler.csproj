@@ -486,10 +486,9 @@
       $(CpCmd) $(ProjectDir)\Domains\P.4ml $(OutDir)
       $(CpCmd) $(ProjectDir)\Domains\PLink.4ml $(OutDir)
       $(CpCmd) $(ProjectDir)\Domains\C.4ml $(OutDir)
-      $(CpCmd) $(ProjectDir)\Domains\Zing.4ml $(OutDir)
       $(CpCmd) $(ProjectDir)\Domains\P2CProgram.4ml $(OutDir)
       $(CpCmd) $(ProjectDir)\Domains\PWithInferredTypes.4ml $(OutDir)
-    </PostBuildEvent>
+</PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
     <GPPGCmd>"$(GPToolsPath)\GPPG\gppg45.exe"</GPPGCmd>

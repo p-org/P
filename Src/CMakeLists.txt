@@ -19,7 +19,7 @@ if (NOT Win32)
 endif()
 
 if(SGX)
-    add_definitions( -DPRT_PLAT_SGX )
+    add_definitions( -DPRT_PLAT_SGXUSER )
 elseif(Win32)
     add_definitions( -DPRT_PLAT_WINUSER )
 elseif(LINUX OR MACOSX)

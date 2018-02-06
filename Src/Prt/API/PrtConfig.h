@@ -54,7 +54,7 @@ extern "C"{
 #include "PrtLinuxUserConfig.h"
 #elif defined(PRT_PLAT_NUTTXUSER)
 #include "PrtNuttxUserConfig.h"
-#elif defined(PRT_PLAT_SGX)
+#elif defined(PRT_PLAT_SGXUSER)
 #include "PrtSGXUserConfig.h"
 #else
 #error An invalid platform was specified (see PrtConfig.h for details)

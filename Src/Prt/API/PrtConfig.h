@@ -40,23 +40,7 @@ extern "C"{
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
-/** Calling convention */
-#define PRT_CALL_CONV __cdecl
 
-/** Linking method */
-#ifdef PRT_API_IMPL
-#define PRT_API __declspec(dllexport)
-#else
-#ifdef PRT_STATIC
-#define PRT_API
-#else
-#ifdef _DLL
-#define PRT_API __declspec(dllimport)
-#else
-#define PRT_API
-#endif
-#endif
-#endif
 
 #ifdef PRT_DEBUG
 #ifndef _DEBUG

@@ -621,7 +621,7 @@ namespace Microsoft.Pc.TypeChecker
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
 
-                TypeCheckingUtils.ValidatePayloadTypes(Handler, eventIdContext, evt.PayloadType, fun.Signature.ParameterTypes.ToList());
+                // TODO: check that event and function signatures match. Need to do this after all events have had their payloads resolved.
                 actions.Add(new EventDoAction(eventIdContext, evt, fun));
             }
             return actions.ToArray();

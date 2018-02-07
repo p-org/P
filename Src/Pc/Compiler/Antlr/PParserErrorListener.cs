@@ -15,13 +15,8 @@ namespace Microsoft.Pc.Antlr
             this.handler = handler;
         }
 
-        public void SyntaxError(
-            IRecognizer recognizer,
-            IToken offendingSymbol,
-            int line,
-            int charPositionInLine,
-            string msg,
-            RecognitionException e)
+        public void SyntaxError(IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine,
+                                string msg, RecognitionException e)
         {
             throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
         }

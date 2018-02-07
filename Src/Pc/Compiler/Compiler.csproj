@@ -475,12 +475,5 @@
   </Target>
   <!-- Start Formula code generator MSBuild integration -->
   <Import Project="..\..\..\Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.Targets" />
-  <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
-    <PropertyGroup>
-      <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
-    </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\packages\Antlr4.CodeGenerator.4.6.5-beta001\build\Antlr4.CodeGenerator.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Antlr4.CodeGenerator.4.6.5-beta001\build\Antlr4.CodeGenerator.props'))" />
-    <Error Condition="!Exists('..\..\..\packages\Antlr4.CodeGenerator.4.6.5-beta001\build\Antlr4.CodeGenerator.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\packages\Antlr4.CodeGenerator.4.6.5-beta001\build\Antlr4.CodeGenerator.targets'))" />
-  </Target>
   <Import Project="..\..\..\packages\Antlr4.CodeGenerator.4.6.5-beta001\build\Antlr4.CodeGenerator.targets" Condition="Exists('..\..\..\packages\Antlr4.CodeGenerator.4.6.5-beta001\build\Antlr4.CodeGenerator.targets')" />
 </Project>

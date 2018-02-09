@@ -10,6 +10,21 @@ namespace Microsoft.Pc.Backend.Debugging
     {
         private readonly StringBuilder writer = new StringBuilder();
         private int depth;
+        
+        /*
+        public static void InferCreates(Scope scope)
+        {
+            foreach(var machine in scope.Machines)
+            {
+                var createdMachines = new HashSet<Machine>();
+                foreach(var method in machine.Methods)
+                {
+                    createdMachines.UnionWith(GatherMachines(method.Body));
+                }
+                machine.Creates = createdMachines;
+            }
+        }
+        */
 
         public string Render(Scope scope)
         {

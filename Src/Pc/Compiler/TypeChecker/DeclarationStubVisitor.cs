@@ -1,3 +1,4 @@
+using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
@@ -192,6 +193,12 @@ namespace Microsoft.Pc.TypeChecker
 
         #endregion
 
+        #region Modules Contructors
+        private override object VisitNamedModuleDecl(PParser.NamedModuleDeclContext context)
+        {
+            context.name
+        }
+        #endregion
         private object VisitChildrenWithNewScope(IHasScope decl, IRuleNode context)
         {
             using (scope.NewContext(CurrentScope.MakeChildScope()))

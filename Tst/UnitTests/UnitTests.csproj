@@ -155,9 +155,9 @@
       <Project>{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}</Project>
       <Name>CompilerService</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Src\Pc\Compiler\Compiler.csproj">
+    <ProjectReference Include="..\..\Src\Pc\LegacyCompiler\LegacyCompiler.csproj">
       <Project>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</Project>
-      <Name>Compiler</Name>
+      <Name>LegacyCompiler</Name>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
@@ -168,21 +168,9 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\Ext\Formula\Src\Core\Core.csproj">
-      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj">
       <Project>{3b52b4f5-52f5-4e19-88cd-6a4a78ea0bf1}</Project>
       <Name>FormulaCodeGeneratorTask</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Src\Parsers\CParser\CParser.csproj">
-      <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
-      <Name>CParser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Src\Pc\Compiler\Compiler.csproj">
-      <Project>{ed76217f-2452-4a35-90f6-6eb6ccf2d882}</Project>
-      <Name>Compiler</Name>
     </ProjectReference>
   </ItemGroup>
   <Choose>

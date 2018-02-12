@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2003
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtWinUser", "Src\PrtDist\PrtWinUser.vcxproj", "{F8C72C0E-450C-4AE1-9885-31B8565C1D63}"
 EndProject
@@ -9,7 +9,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Runtime", "Runtime", "{D641
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Compiler", "Compiler", "{89F15959-6264-40C0-90F9-8387B3EBAE54}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "Src\Pc\Compiler\Compiler.csproj", "{ED76217F-2452-4A35-90F6-6EB6CCF2D882}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegacyCompiler", "Src\Pc\LegacyCompiler\LegacyCompiler.csproj", "{ED76217F-2452-4A35-90F6-6EB6CCF2D882}"
 	ProjectSection(ProjectDependencies) = postProject
 		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1} = {3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}
 	EndProjectSection

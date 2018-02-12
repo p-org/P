@@ -73,9 +73,9 @@
       <Project>{9f8de18d-c64b-4d30-9cff-6793ffeafc04}</Project>
       <Name>CompilerService</Name>
     </ProjectReference>
-    <ProjectReference Include="..\Compiler\Compiler.csproj">
+    <ProjectReference Include="..\LegacyCompiler\LegacyCompiler.csproj">
       <Project>{ed76217f-2452-4a35-90f6-6eb6ccf2d882}</Project>
-      <Name>Compiler</Name>
+      <Name>LegacyCompiler</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -65,11 +65,7 @@
         "prefix": "module",
         "body": [
             "module ${1:name}",
-            "sends ${2:EventNames}",
-            "creates ${3:MachineNames}",
-            "{",
-            "    $0",
-            "}"
+            "= ${2:moduleExpr}"
         ],
         "description": "Module"
     },

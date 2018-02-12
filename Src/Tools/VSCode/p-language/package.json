@@ -1,9 +1,9 @@
 {
-    "name": "msr-vscode-p",
-    "displayName": "p",
+    "name": "p-language",
+    "displayName": "P Language: Syntax Highlighting",
     "description": "The P programming language ",
-    "version": "0.0.6",
-    "publisher": "lovettchris",
+    "version": "0.0.8",
+    "publisher": "ankushdesai",
 	"icon": "images/p-icon.png",
     "engines": {
         "vscode": "^1.10.0"

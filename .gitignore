@@ -220,6 +220,7 @@ $RECYCLE.BIN/
 # all P compiler generated output files.
 PGenerated/
 *.4ml
+!Src/**/Domains/*.4ml
 *.zing
 stubs.c
 

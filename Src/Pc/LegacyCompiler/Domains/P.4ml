@@ -1,0 +1,1983 @@
+﻿domain P extends PStaticTyping, PStructuralTyping
+{
+
+}
+
+domain PError extends PData
+{
+	ERROR0 ::= (String).
+	ERROR1  ::= (Id, String).
+	ERROR2  ::= (Id, Id, String).
+}
+
+domain PData
+{   
+	PUnit ::= new (name: String).
+	PUnitContains ::= new (unitName: String, fileName: String).
+	DependsOn ::= new (thisUnitName: String, thatUnitName: String + { NIL }).
+	IdList  ::= new (val: Integer + String, tl: any IdList + { NIL }).
+	Id ::= { NIL } + Integer + String + IdList.
+	Float ::= new (val: Real).
+
+    /*************************************************************/
+    /****************          Type Language          ************/
+    /*************************************************************/    
+    Qualifier       ::= { NONE, MOVE, SWAP }.
+    
+	StringList		::= new (hd: String, tl: any StringList + { NIL }).
+	IntegerList		::= new (hd: Integer, tl: any IntegerList + { NIL }).
+	EnumTypeDef		::= new (name: String, elems: any StringList, values: any IntegerList + { NIL }, id: any Id).
+	TypeDef         ::= new (name: String, type: any TypeExpr + { NIL }, id: any Id).
+
+	NameType        ::= new (name: String).
+    BaseType        ::= new ({ NULL, BOOL, INT, FLOAT, EVENT, MACHINE}).
+    AnyType			::= new (perm: String + { NIL, DATA }).
+	AnyTypeDecl		::= new (perm: String, id: Id).	
+	TupType         ::= new (hd: any TypeExpr, tl: any TupType + { NIL }).
+    NmdTupType      ::= new (hd: any NmdTupTypeField, tl: any NmdTupType + { NIL }).
+    SeqType         ::= new (x: any TypeExpr).
+    MapType         ::= new (k: any TypeExpr, v: any TypeExpr).
+    NmdTupTypeField ::= new (name: any String, type: any TypeExpr). 
+	InterfaceType	::= new (ev: any NonNullEventName, tail: any InterfaceType + { NIL }).
+    TypeExpr        ::= NameType + BaseType + AnyType + TupType + NmdTupType + SeqType + MapType + InterfaceType.
+        
+    /*************************************************************/
+    /****************          Action Language        ************/
+    /*************************************************************/    
+                               
+    //// Expressions
+    Name       ::= new (name: String, id: any Id).
+    New        ::= new (name: String, args: any Exprs + { NIL }, id: any Id).
+    FunApp     ::= new (name: String, args: any Exprs + { NIL }, label: Natural, id: any Id).
+    NulApp     ::= new (op: Integer + Boolean + Float + { THIS, NONDET, FAIRNONDET, NULL, HALT }, id: any Id).
+    UnApp      ::= new (op: { NOT, NEG, KEYS, VALUES, SIZEOF }, arg1: any Expr, id: any Id).
+    BinApp     ::= new (op: { ADD, SUB, MUL, DIV, AND, OR, EQ, NEQ, LT, LE, GT, GE, IDX, IN }, arg1: any Expr, arg2: any Expr, id: any Id).
+    Field      ::= new (arg: any Expr, name: String + Natural, id: any Id).
+    Default    ::= new (type: any TypeExpr, id: any Id). 
+    Cast       ::= new (arg: any Expr, type: any TypeExpr, id: any Id).
+	Convert    ::= new (arg: any Expr, type: any TypeExpr, id: any Id).
+    Tuple      ::= new (body: any Exprs, id: any Id).
+    NamedTuple ::= new (body: any NamedExprs, id: any Id).
+    Exprs      ::= new (qual: Qualifier, head: any Expr, tail: any Exprs + { NIL }).
+    NamedExprs ::= new (field: String, exp: any Expr, tail: any NamedExprs + { NIL }).
+    Expr       ::= Name + New + FunApp + NulApp + UnApp + BinApp + Field + Default + Cast + Convert + Tuple + NamedTuple.
+    ExprsExt   ::= Expr + Exprs + NamedExprs.
+
+    //// Statements
+    NewStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, id: any Id).
+    Raise    ::= new (ev: any Expr, args: any Exprs + { NIL }, id: any Id).
+    Send     ::= new (dest: any Expr, ev: any Expr, args: any Exprs + { NIL }, id: any Id).
+    Announce ::= new (ev: any Expr, args: any Exprs + { NIL }, id: any Id).
+    FunStmt  ::= new (name: String, args: any Exprs + { NIL }, aout: any Name + { NIL }, label: Natural, id: any Id).
+    NulStmt  ::= new (op: { SKIP, POP }, id: any Id).
+    BinStmt  ::= new (op: { REMOVE, ASSIGN, INSERT }, arg1: any Expr, qual: Qualifier, arg2: any Expr, id: any Id).
+    Return   ::= new (expr: any Expr + { NIL }, id: any Id).
+    While    ::= new (cond: any Expr, body: any Stmt, id: any Id).
+    Ite      ::= new (cond: any Expr, true: any Stmt, false: any Stmt, id: any Id).
+    Seq      ::= new (s1: any Stmt, s2: any Stmt, id: any Id).
+	Cases	 ::= new (trig: String + { NULL, HALT }, action: any AnonFunDecl, cases: any Cases + { NIL }, id: any Id).
+	Receive  ::= new (cases: any Cases, label: Natural, id: any Id).
+	Assert   ::= new (cond: any Expr, msg: String + { NIL }, id: any Id). 
+	Segments ::= new (formatArg: Natural, str: String, tl: any Segments + { NIL }).
+	Print    ::= new (msg: String, segs: any Segments + { NIL }, args: any Exprs + { NIL }, id: any Id).
+	Goto	 ::= new (dst: any QualifiedName, args: any Exprs + { NIL }, id: any Id).
+	
+    Stmt ::= NewStmt + Raise + Send + Announce + FunStmt + NulStmt + BinStmt + Return + While + Ite + Seq + Receive + Assert + Print + Goto. 
+
+	/**************************************************************/
+	/***********	Module system declarations	*******************/
+	/**************************************************************/
+	EventSetDecl ::= fun (name : String -> id: any Id).
+	EventSetContains ::= new (evset: any EventSetDecl, ev: NonNullEventName).
+	EventSet ::= fun (name: String -> list: any EventNameList + { NIL }).
+	InterfaceDef ::= fun (name: String -> evsetName: String + { ALL, NIL }, argType: any TypeExpr, id: any Id).
+	InterfaceDecl ::= new (name: String, evList: any InterfaceType + { ALL, NIL }, argType: any TypeExpr, id: any Id).
+	MachineReceives ::= new (mach: String, ev: NonNullEventName + { ALL }).
+	MachineSends ::= new (mach: String, ev: NonNullEventName + { ALL }).
+
+    /*************************************************************/
+    /****************  State Machine Declarations    *************/
+    /*************************************************************/
+
+    EventDecl      ::= new (name: String, card: any QueueConstraint, type: any TypeExpr + { NIL }, id: any Id).    
+    MachineKind    ::= fun (name: String -> kind: { REAL, SPEC }).
+	MachineCard    ::= fun (name: String -> card: any QueueConstraint).
+	MachineStart   ::= fun (name: String -> start: any QualifiedName).
+	MachineDecl    ::= new (name: String, id: any Id).
+	MachineProtoDecl ::= fun (name: String -> constType: any TypeExpr).
+
+	ObservesDecl   ::= new (spec: String, ev: NonNullEventName).
+
+    VarDecl        ::= fun (name: String, owner: String -> type: any TypeExpr, id: any Id).
+    
+	// For both FunDecl and AnonFunDecl, the order of locals in the input file is left to right 
+	// and top to bottom (since multiple variable declaration lists are allowed).
+	// For FunDecl, the order of params is left to right.
+	// For AnonFunDecl, the order of envVars is left to right and top to bottom.
+	// Thus, the numbering of variables is consistent across nested scopes.
+    FunDecl        ::= fun (name: String, owner: String + { NIL } -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt + { NIL }, id: any Id).
+    FunProtoDecl   ::= fun (name: String -> params: any NmdTupType + { NIL }, return: any TypeExpr + { NIL }).
+	GlobalFunCreates ::= new (name: String, m: String).
+
+	AnonFunDecl    ::= new (owner: String + { NIL }, ownerFun: String + { NIL }, locals: any NmdTupType + { NIL }, body: any Stmt, envVars: any NmdTupType, id: any Id).
+    
+    StateDecl      ::= fun (name: any QualifiedName, owner: String -> entryAction: any AnonFunDecl + String, exitFun: any AnonFunDecl + String, temperature: { HOT, WARM, COLD }, id: any Id).
+    TransDecl      ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> dst: any QualifiedName, action: any { PUSH } + AnonFunDecl + String, id: any Id).
+    DoDecl         ::= fun (src: StateDecl, trig: String + { NULL, HALT } -> action: any { DEFER, IGNORE } + AnonFunDecl + String, id: any Id).
+
+    PDecl          ::= AnyTypeDecl + EventDecl + MachineDecl + VarDecl + AnonFunDecl + FunDecl + StateDecl + TransDecl + DoDecl + EventSetDecl + InterfaceDef + InterfaceDecl + MachineSends + MachineReceives  + TypeDef + EnumTypeDef.            
+
+    AssumeMaxInstances ::= new (bound: Natural).
+    AssertMaxInstances ::= new (bound: Natural).
+    QualifiedName      ::= new (name: String, qualifier: any QualifiedName + { NIL }).
+    QueueConstraint    ::= AssumeMaxInstances + AssertMaxInstances + { NIL }.
+    EventName         ::= String + { NULL, HALT }.
+    EventNameList ::= new (hd: EventName, tl: any EventNameList + { NIL }).
+	NonNullEventName  ::= String + { HALT }.
+
+
+    /*************************************************************/
+    /****************          Annotations           *************/
+    /*************************************************************/
+
+    Annotation  ::= new (ant: Annotatable, key: String, value: any AnnotValue, id: any Id).
+    Annotatable ::= EventDecl + MachineDecl + VarDecl + FunDecl + FunProtoDecl + StateDecl + TransDecl + DoDecl + { NIL }.
+    AnnotValue  ::= Integer + String + Boolean + { NULL }.
+}
+
+domain PStructuralTyping extends PData, PError
+{
+    /*************************************************************/
+	conforms no OneDeclError(_).
+	conforms no TwoDeclError(_, _).
+	conforms no DeclFunError(_, _).
+    /*************************************************************/
+
+	////// Three kinds of declaration errors
+    OneDeclError ::= (PDecl).
+    TwoDeclError ::= (PDecl, PDecl).
+    DeclFunError ::= (PDecl, String).
+	
+	//// List representation of InterfaceDecl
+    InterfaceDecl(name, it, ctype, id) :- InterfaceDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
+                                       it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), it : InterfaceType.
+
+    ERROR2(f1.id, f2.id, "Multiple functions with same name"),
+	TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner != NIL.
+	
+	ERROR2(f1.id, f2.id, "Multiple functions with same name"),
+    TwoDeclError(f1, f2) :- f1 != f2, f1 is FunDecl, f2 is FunDecl, f1.name = f2.name, f1.owner = NIL, f2.owner = NIL.
+	
+	ERROR2(t1.id, t2.id, "Multiple transitions over the same event"),
+	TwoDeclError(t1, t2) :- t1 != t2, t1 is TransDecl, t2 is TransDecl, t1.src = t2.src, t1.trig = t2.trig.
+	
+	ERROR2(a1.id, a2.id, "Multiple actions over the same event"),
+	TwoDeclError(a1, a2) :- a1 != a2, a1 is DoDecl, a2 is DoDecl, a1.src = a2.src, a1.trig = a2.trig.
+	
+	ERROR2(t.id, a.id, "Action and transition over the same event"),
+	TwoDeclError(t, a)   :- t is TransDecl, a is DoDecl, t.src = a.src, t.trig = a.trig.
+
+	ERROR2(id, id', "Inconsistent partial annotations"),
+	TwoDeclError(m, m') :- m is MachineDecl(name, id), m' is MachineDecl(name, id'), id != id', Annotation(m, "partial", _, _), no Annotation(m', "partial", _, _).
+
+	ERROR2(id, id', "Another machine with same name declared"),
+	TwoDeclError(m, m') :- m is MachineDecl(name, id), m' is MachineDecl(name, id'), id != id', no Annotation(m, "partial", _, _), no Annotation(m', "partial", _, _).
+
+	ERROR1(id, "No start state in machine"),
+	OneDeclError(m) :- m is MachineDecl(name, id), no MachineStart(name, _).
+
+	ERROR1(id, "Multiple start states in machine"),
+	OneDeclError(m) :- m is MachineDecl(name, id), MachineStart(name, s1), MachineStart(name, s2), s1 != s2.
+
+	ERROR1(id, "Inconsistent machine kinds"),
+	OneDeclError(m) :- m is MachineDecl(name, id), MachineKind(name, k1), MachineKind(name, k2), k1 != k2.
+
+	ERROR1(id, "Multiple cardinality constraints in machine"),
+	OneDeclError(m) :- m is MachineDecl(name, id), MachineCard(name, c1), MachineCard(name, c2), c1 != c2.
+	
+	ERROR1(id1, "Another variable with same name declared"),
+	OneDeclError(m) :- m is VarDecl(name, owner, _, id1), VarDecl(name, owner, _, id2), id1 != id2.
+
+	ERROR1(id1, "Another state with same name declared"),
+	OneDeclError(m) :- m is StateDecl(name, owner, _, _, _, id1), StateDecl(name, owner, _, _, _, id2), id1 != id2.
+
+	ERROR1(id1, "Another function with same name declared"),
+	OneDeclError(m) :- m is FunDecl(name, owner, _, _, _, _, id1), FunDecl(name, owner, _, _, _, _, id2), owner != NIL, id1 != id2.
+
+	//Valid TransDecl
+	ERROR1(trns.id, "Transition on an undefined event"),
+	OneDeclError(trns) :- trns is TransDecl, no EventDecl(trns.trig, _, _, _), trns.trig != NULL, trns.trig != HALT.
+	
+	ERROR1(trns.id, "Transition to an undefined state"),
+	OneDeclError(trns) :- trns is TransDecl, no StateDecl(trns.dst, trns.src.owner, _, _, _, _).
+	
+	ERROR1(trns.id, "Transition function not defined"),
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, 
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _), no FunProtoDecl(act, _, _).
+	
+	ERROR1(trns.id, "Function cannot take arguments"),
+	OneDeclError(trns) :- trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, trns.src.owner, p, _, _, _, _), p != NIL;
+	                      trns is TransDecl(_, _, _, act, _), act : String, FunDecl(act, NIL, p, _, _, _, _), p != NIL.
+	
+	//Valid DoDecl
+	ERROR1(doD.id, "Action on an undefined event"),
+	OneDeclError(doD) :- doD is DoDecl, no EventDecl(doD.trig, _, _, _), doD.trig != HALT, doD.trig != NULL.
+	
+	ERROR1(trns.id, "Function not defined"),
+	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String, 
+	                      no FunDecl(act, trns.src.owner, _, _, _, _, _), no FunDecl(act, NIL, _, _, _, _, _), no FunProtoDecl(act, _, _).
+	
+	ERROR1(trns.id, "Function cannot take arguments"),
+	OneDeclError(trns) :- trns is DoDecl(_, _, act, _), act : String , FunDecl(act, trns.src.owner, p, _, _, _, _), p != NIL;
+	                      trns is DoDecl(_, _, act, _), act : String , FunDecl(act, NIL, p, _, _, _, _), p != NIL.
+	
+	//Entry Exit Functions
+	ERROR1(s.id, "Undefined function for entry"),
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String, 
+	                       no FunDecl(eF, s.owner, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _). 
+
+	ERROR1(s.id, "Undefined function for exit"),
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String, 
+	                       no FunDecl(eF, s.owner, _, _, _, _, _), no FunDecl(eF, NIL, _, _, _, _, _).
+	
+	ERROR1(s.id, "Entry function cannot take arguments"),
+	DeclFunError(s, eF) :- s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, s.owner, p, _, _, _, _), p != NIL;
+	                       s is StateDecl(_, _, eF, _, _, _), eF : String , FunDecl(eF, NIL, p, _, _, _, _), p != NIL.
+	
+	ERROR1(s.id, "Exit function cannot take arguments"),
+	DeclFunError(s, eF) :- s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, s.owner, p, _, _, _, _), p != NIL;
+	                       s is StateDecl(_, _, _, eF, _, _), eF : String , FunDecl(eF, NIL, p, _, _, _, _), p != NIL.
+	
+	//cannot have null in spec machines
+	ERROR1(t.id, "Transition on null event not allowed in spec machine"),
+	OneDeclError(t) :- t is TransDecl(s, NULL, _, _, _), m is MachineKind(s.owner, SPEC).
+	
+	ERROR1(t.id, "Push transition not allowed in spec machine"),
+	OneDeclError(t) :- t is TransDecl(s, _, _, PUSH, _), m is MachineKind(s.owner, SPEC).
+
+	//no defer in Spec
+	ERROR1(d.id, "Event cannot be deferred in spec machine"),
+	OneDeclError(d) :- d is DoDecl(s, _, DEFER, _), m is MachineKind(s.owner, SPEC).	
+
+	//event in spec is defined
+	ERROR1(id, "Event in observes list is undefined"),
+	OneDeclError(decl) :- obs is ObservesDecl, decl is MachineDecl(obs.spec, id), MachineKind(obs.spec, SPEC), no EventDecl(obs.ev, _, _, _).	
+
+	//event in eventset not declared
+	ERROR1(eventset.id, "Unknown event in eventset"),
+	OneDeclError(eventset) :- EventSetContains(eventset, ev), ev != HALT, no EventDecl(ev, _, _, _).
+
+	//eventset not declared
+	ERROR1(atype.id, "eventset not declared"),
+	OneDeclError(atype) :- no EventSetDecl(es, _), atype is AnyTypeDecl, atype.perm = es.
+
+	MemberOfStringList ::= sub (StringList, String).
+	
+	//events in sends
+	ERROR1(id, "Event in sends list is not declared"),
+	OneDeclError(ms) :- decl is MachineDecl(mach, id), ms is MachineSends(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
+
+	//events in receives
+	ERROR1(id, "Event in receives list is not declared"),
+	OneDeclError(mr) :- decl is MachineDecl(mach, id), mr is MachineReceives(mach, name), name: String, no EventDecl(name, _, _, _), name != NIL.
+
+	//multiple declarations of the same event
+	ERROR2(ev.id, ev'.id, "Multiple declarations of the same event"),
+	OneDeclError(ev) :- ev is EventDecl, ev' is EventDecl, ev.name = ev'.name, ev.id != ev'.id.
+
+	//rules for separate compilation checks
+	NamedTypes ::= (type: TypeDef + EnumTypeDef + InterfaceDecl).
+	NamedTypes(t) :- t is TypeDef; t is EnumTypeDef; t is EnumTypeDef; t is InterfaceDecl.
+
+	//multiple declarations of the same type
+	ERROR2(td.id, td'.id, "Multiple declarations of named types have same name"),
+	OneDeclError(td) :- NamedTypes(td), NamedTypes(td'), td != td', td.name = td'.name.
+}
+
+domain PStaticTyping extends PData, PError
+/*
+[
+    compiler_ProductivityCheck = "TypeOf[1]"
+]
+*/
+{
+    /*************************************************************/
+	conforms no TypeOf(_, _, ERROR). 
+	conforms no DupNmdSubE(_, _, _, _).
+	conforms no PurityError(_, _).
+	conforms no SpecError(_, _).
+	conforms no LValueError(_, _).
+	conforms no BadLabelError(_).
+	conforms no PayloadError(_).
+	conforms no TypeDefError(_).
+	conforms no QualifierError(_, _, _).
+	conforms no UnavailableVarAccessError(_, _, _).
+	conforms no UnavailableParameterError(_, _).
+	conforms no FunRetError(_).
+    /*************************************************************/
+	
+	//populate the depends on
+	DependsOn(n, NIL) :- PUnit(n).
+
+	/******************************************************************/
+	/*		Computation related to module system					  */
+	/******************************************************************/
+
+	//// List representation of InterfaceDecl
+    InterfaceDecl(name, it, ctype, id) :- InterfaceDef(name, esname, ctype, id), eventset is EventSetDecl(esname, _), 
+                                       it = toList(#InterfaceType, NIL, {ev | EventSetContains(eventset, ev), ev : NonNullEventName }), it : InterfaceType.
+
+	InterfaceDecl(name, ALL, ctype, id) :- InterfaceDef(name, ALL, ctype, id).
+	InterfaceDecl(name, NIL, ctype, id) :- InterfaceDef(name, NIL, ctype, id).
+
+    //// List representation of EventSet
+    EventSet(esname, list) :- eventset is EventSetDecl(esname, _), 
+                              list = toList(#EventNameList, NIL, {ev | EventSetContains(eventset, ev), ev != NULL }), list : EventNameList.
+
+	MemberOfInterfaceType ::= sub (InterfaceType, NonNullEventName).
+
+
+	InferredMachineCreates ::= (mname: String, ICreated: String).
+	
+	
+	LocalFunCreates ::= (f: FunDecl, ICreated: String).
+	LocalAnonFunCreates ::= (af: AnonFunDecl, ICreated : String).
+
+	//// Populate the inferred creates for each machine
+	InferredMachineCreates (m, ICreated) :-
+		MachineDecl(m, _), af is AnonFunDecl, LocalAnonFunCreates(af, ICreated), af.owner = m;
+		StateDecl(_, m, ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, no LocalFunCreates(fdecl, _), GlobalFunCreates(ent, ICreated);
+		StateDecl(_, m, ent, _, _, _), ent : String, FunAvailable(fdecl, m), fdecl.name = ent, LocalFunCreates(fdecl, ICreated);
+		StateDecl(_, m, _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, no LocalFunCreates(fdecl, _), GlobalFunCreates(ext, ICreated);
+		StateDecl(_, m, _, ext, _, _), ext : String, FunAvailable(fdecl, m), fdecl.name = ext, LocalFunCreates(fdecl, ICreated);
+		DoDecl(src, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, no LocalFunCreates(fdecl, _), GlobalFunCreates(act, ICreated);
+		DoDecl(src, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, FunAvailable(fdecl, m), fdecl.name = act, LocalFunCreates(fdecl, ICreated);
+		TransDecl(src, _, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, no LocalFunCreates(fdecl, _), GlobalFunCreates(act, ICreated);
+		TransDecl(src, _, _, act, _), src.owner = m, act : String, FunAvailable(fdecl, m), fdecl.name = act, FunAvailable(fdecl, m), fdecl.name = act, LocalFunCreates(fdecl, ICreated).
+
+	//// Compute the FunCreates
+	GlobalFunCreates(f.name, ICreated) :-
+		f is FunDecl, f.owner = NIL, SubSE(f, NewStmt(ICreated, _, _, _));
+		f is FunDecl, f.owner = NIL, SubSE(f, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, ICreated);
+		f is FunDecl, f.owner = NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, ICreated);
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, NewStmt(ICreated, _, _, _));
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunApp(fcall, _, _, _)), GlobalFunCreates(fcall, ICreated);
+		f is FunDecl, f.owner = NIL, af is AnonFunDecl, af.owner = NIL, af.ownerFun = f.name, SubSE(af, FunStmt(fcall, _, _, _, _)), GlobalFunCreates(fcall, ICreated).
+
+	LocalFunCreates(f, ICreated) :-
+		f is FunDecl, f.owner != NIL, SubSE(f, NewStmt(ICreated, _, _, _));
+		f is FunDecl, f.owner != NIL, SubSE(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		f is FunDecl, f.owner != NIL, SubSE(f, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, f.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, NewStmt(ICreated, _, _, _));
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		f is FunDecl, f.owner != NIL, af is AnonFunDecl, af.ownerFun = f.name, af.owner = f.owner, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated).
+
+	LocalAnonFunCreates(af, ICreated) :-
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, NewStmt(ICreated, _, _, _));
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunApp(fcall, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated);
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, GlobalFunCreates(fcalldecl.name, ICreated);
+		af is AnonFunDecl, af.owner != NIL, af.ownerFun = NIL, SubSE(af, FunStmt(fcall, _, _, _, _)), FunAvailable(fcalldecl, af.owner), fcalldecl.name = fcall, LocalFunCreates(fcalldecl, ICreated).
+		
+	
+	
+	
+	PFile ::= (fileName: String).
+	PFile(fileName) :- PUnit(unitName), PUnitContains(unitName, fileName).
+
+	ExportedEvent ::= (String).
+	ExportedEvent(e.name) :- e is EventDecl, PFile(fileName), e.id.tl.val = fileName.
+
+	//// Check that TypeDef's are used properly
+
+	AllTypeExprs ::= sub (TypeExpr).
+	TypeDefError ::= (name: String).
+
+	ERROR0(errorMsg),
+	TypeDefError(name) :- AllTypeExprs(type), type = NameType(name), no TypeDef(name, _, _), no EnumTypeDef(name, _, _, _), no InterfaceDecl(name, _, _, _), no MachineDecl(name, _),
+						  errorMsg = strJoin("Undefined type: ", name).
+	
+	ERROR2(td1.id, td2.id, "Multiple type definitions for a type name"),
+	TypeDefError(name) :- td1 is TypeDef(name, type1, _), td2 is TypeDef(name, type2, _), type1 != type2;
+	                      td1 is EnumTypeDef(name, list1, _, _), td2 is EnumTypeDef(name, list2, _, _), list1 != list2;
+						  td1 is EnumTypeDef(name, _, list1, _), td2 is EnumTypeDef(name, _, list2, _), list1 != list2;
+						  td1 is TypeDef(name, _, _), td2 is EnumTypeDef(name, _, _, _).
+
+	TypeDefDepends ::= sub (typeDef: TypeDef, type: NameType).
+	NameTypeDepends ::= (name1: String, name2: String).
+	NameTypeDepends(typeDef.name, type.name) :- TypeDefDepends(typeDef, type).
+	NameTypeDepends(name1, name3) :- NameTypeDepends(name1, name2), NameTypeDepends(name2, name3).
+	
+	ERROR1(td.id, "Type depends on itself"),
+	TypeDefError(name) :- NameTypeDepends(name, name), td is TypeDef(name, _, _).
+
+	EnumTypeElem ::= (EnumTypeDef, StringList, IntegerList + { NIL }).
+	EnumTypeElem(d, list1, list2) :- d is EnumTypeDef(_, list1, list2, _).
+	EnumTypeElem(d, list1, NIL) :- EnumTypeElem(d, StringList(_, list1), NIL), list1: StringList.
+	EnumTypeElem(d, list1, list2) :- EnumTypeElem(d, StringList(_, list1), IntegerList(_, list2)), list1: StringList.
+
+	ERROR1(def.id, "Multiple enum elements with the same name"),
+	TypeDefError(name) :- EnumTypeElem(def, list1, _), EnumTypeElem(def, list2, _), list1 != list2, list1.hd = list2.hd, name = def.name.
+	
+	ERROR2(def1.id, def2.id, "Element names of different enum types must be disjoint"),
+	TypeDefError(name) :- EnumTypeElem(def1, list1, _), EnumTypeElem(def2, list2, _), def1 != def2, list1.hd = list2.hd, name = def1.name.
+	
+	ERROR2(ed.id, def.id, "Enum element names must be disjoint from event names"),
+	TypeDefError(name) :- ed is EventDecl(name, _, _, _), EnumTypeElem(def, StringList(name, _), _).
+	
+	ERROR1(d.id, "At least one enum element should be numbered 0"),
+	TypeDefError(name) :- d is EnumTypeDef(name, _, _, _), no EnumTypeElemIndex(d, _, _, _, 0).
+
+	EnumTypeElemIndex ::= (EnumTypeDef, StringList, IntegerList + { NIL }, String, Integer).
+	EnumTypeElemIndex(d, list, NIL, str, i) :- EnumTypeElem(d, list, NIL), list = StringList(str, NIL), i = lstLength(#StringList, d.elems) - 1.
+	EnumTypeElemIndex(d, list, NIL, str, i) :- EnumTypeElem(d, list, NIL), list = StringList(str, list'), 
+											   EnumTypeElemIndex(d, list', NIL, _, j), i = j - 1.
+  	EnumTypeElemIndex(d, list1, list2, str, i) :- EnumTypeElem(d, list1, list2), 
+												  list1 = StringList(str, _), list2 = IntegerList(i, _).
+
+	TypeExpansion ::= (type: TypeExpr, eType: TypeExpr).
+	TypeExpansion(BaseType(NULL), BaseType(NULL)).
+	TypeExpansion(BaseType(BOOL), BaseType(BOOL)).
+	TypeExpansion(BaseType(INT), BaseType(INT)).
+	TypeExpansion(BaseType(FLOAT), BaseType(FLOAT)).
+	TypeExpansion(BaseType(EVENT), BaseType(EVENT)).
+	TypeExpansion(BaseType(MACHINE), BaseType(MACHINE)).
+	
+	TypeExpansion(type, type) :- AllTypeExprs(type), type : AnyType.
+	TypeExpansion(type, type)  :- AllTypeExprs(type), type : InterfaceType.
+	TypeExpansion(type, type)  :- TypeDef(typeName, NIL, _), no TypeDefError(typeName), type = NameType(typeName).
+	TypeExpansion(type, type)  :- EnumTypeDef(typeName, _, _, _), no TypeDefError(typeName), type = NameType(typeName).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- TypeDef(typeName, typeExpr, _), no TypeDefError(typeName), type = NameType(typeName), TypeExpansion(typeExpr, eType).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, eType, _, _), eType : InterfaceType.
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, ALL, _, _), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), InterfaceDecl(name, NIL, _, _), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), MachineDecl(name, _), no MachineReceives(name, _), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), MachineReceives(name, ALL), eType = BaseType(MACHINE).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- type = NameType(name), no MachineReceives(name, ALL), MachineReceives(name, _), eType = toList(#InterfaceType, NIL, {ev | MachineReceives(name, ev), ev : NonNullEventName }), eType : InterfaceType.
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, NIL), TypeExpansion(hd, hd'), eType = TupType(hd', NIL).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = TupType(hd, tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = TupType(hd', tl').
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), NIL), TypeExpansion(hd, hd'), eType = NmdTupType(NmdTupTypeField(name, hd'), NIL).
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, TypeExpansion(hd, hd'), TypeExpansion(tl, tl'), eType = NmdTupType(NmdTupTypeField(name, hd'), tl').
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = SeqType(x), TypeExpansion(x, x'), eType = SeqType(x').
+	TypeExpansion(type, eType), TypeExpansion(eType, eType) :- AllTypeExprs(type), type = MapType(k, v), TypeExpansion(k, k'), TypeExpansion(v, v'), eType = MapType(k', v').
+
+	OldTranslatedTypeExpr ::= (type: TypeExpr).
+	OldTranslatedTypeExpr(eType) :- TypeExpansion(_, eType).
+	OldTranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Tuple(_, _), t : TypeExpr.
+	OldTranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = NamedTuple(_, _), t : TypeExpr.
+	OldTranslatedTypeExpr(h)  :- OldTranslatedTypeExpr(t), t = TupType(h, _). 
+	OldTranslatedTypeExpr(t') :- OldTranslatedTypeExpr(t), t = TupType(_, t'), t' : TypeExpr. 
+	OldTranslatedTypeExpr(h)  :- OldTranslatedTypeExpr(t), t = NmdTupType(NmdTupTypeField(_, h), _). 
+	OldTranslatedTypeExpr(t') :- OldTranslatedTypeExpr(t), t = NmdTupType(_, t'), t' : TypeExpr. 
+
+	ExportedType ::= (String, TypeExpr).
+	ExportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
+	ExportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
+	ExportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val = fileName, eType = NameType(name).
+	ExportedType(name, eType) :- InterfaceDecl(name, eType, _, id), eType: InterfaceType, PFile(fileName), id.tl.val = fileName.
+	ExportedType(name, BaseType(MACHINE)) :- InterfaceDecl(name, eType, _, id), toSymbol(eType) != #InterfaceType, PFile(fileName), id.tl.val = fileName.
+	ExportedType(name, eType) :- MachineDecl(name, id), TypeExpansion(NameType(name), eType), PFile(fileName), id.tl.val = fileName.
+
+	ImportedType ::= (String, TypeExpr).
+	ImportedType(name, eType) :- TypeDef(name, type, id), PFile(fileName), id.tl.val != fileName, TypeExpansion(type, eType), no ExportedType(_, eType).
+	ImportedType(name, eType) :- TypeDef(name, NIL, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
+	ImportedType(name, eType) :- EnumTypeDef(name, _, _, id), PFile(fileName), id.tl.val != fileName, eType = NameType(name), no ExportedType(_, eType).
+	ImportedType(name, eType) :- InterfaceDecl(name, eType, _, id), eType: InterfaceType, PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
+	ImportedType(name, eType) :- InterfaceDecl(name, ALL, _, id), eType = BaseType(MACHINE), PFile(fileName), id.tl.val != fileName, no ExportedType(_, eType).
+
+	NotImportedType ::= (type: TypeExpr).
+	NotImportedType(type) :- OldTranslatedTypeExpr(type), no ImportedType(_, type).
+	
+	TranslatedTupType ::= (tupType: TupType).
+	TranslatedTupType(t) :- TranslatedTypeExpr(t), NotImportedType(t), t: TupType. 
+	TranslatedTupType(t) :- TranslatedTupType(TupType(_, t)), t: TupType.
+
+	TranslatedNmdTupType ::= (tupType: NmdTupType).
+	TranslatedNmdTupType(t) :- TranslatedTypeExpr(t), NotImportedType(t), t: NmdTupType.
+	TranslatedNmdTupType(t) :- TranslatedNmdTupType(NmdTupType(_, t)), t: NmdTupType.
+
+	TranslatedTypeExpr ::= (type: TypeExpr).
+	TranslatedTypeExpr(BaseType(NULL)).
+	TranslatedTypeExpr(BaseType(BOOL)).
+	TranslatedTypeExpr(BaseType(INT)).
+	TranslatedTypeExpr(BaseType(EVENT)).
+	TranslatedTypeExpr(BaseType(MACHINE)).
+	TranslatedTypeExpr(eType) :- ExportedType(_, eType).
+	TranslatedTypeExpr(eType) :- EventDecl(_, _, type, id), PFile(fileName), id.tl.val = fileName, TypeExpansion(type, eType).
+	TranslatedTypeExpr(eType) :- VarDecl(_, _, type, _), TypeExpansion(type, eType).
+	TranslatedTypeExpr(eType) :- decl is TypingContext, TypeExpansion(decl.locals, eType).
+	TranslatedTypeExpr(eType) :- decl is AnonFunDecl, r = lstReverse(#NmdTupType, decl.envVars), TypeExpansion(r.hd.type, eType).
+	TranslatedTypeExpr(eType) :- decl is FunDecl, TypeExpansion(decl.return, eType).
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Tuple(_, _), t : TypeExpr.
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = NamedTuple(_, _), t : TypeExpr.
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Default(_, _), t: TypeExpr.
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Cast(_, _, _), t: TypeExpr.
+	TranslatedTypeExpr(t) :- SubSE(c, e), TypeOf(c, e, t), e = Convert(_, _, _), t: TypeExpr.
+	TranslatedTypeExpr(t) :- TranslatedTupType(TupType(t, _)).
+	TranslatedTypeExpr(t) :- TranslatedNmdTupType(NmdTupType(NmdTupTypeField(_, t), _)). 
+	TranslatedTypeExpr(k), TranslatedTypeExpr(v) :- TranslatedTypeExpr(t), NotImportedType(t), t = MapType(k, v). 
+	TranslatedTypeExpr(x) :- TranslatedTypeExpr(t), NotImportedType(t), t = SeqType(x).
+
+	FunAvailable ::= (f: FunDecl + FunProtoDecl, name: String + { NIL }).
+    FunAvailable(f, name) :- f is FunDecl, m is MachineDecl(name, _), f.owner = NIL;
+	                         f is FunDecl, f.owner = name.
+	FunAvailable(f, name) :- f is FunProtoDecl, m is MachineDecl(name, _);
+						     f is FunProtoDecl, name = NIL.
+
+    //// The declarations that may contain expressions or statements that should be typed.
+    TypingContext ::= FunDecl + AnonFunDecl.
+    
+    //// The set of typeable expressions and statements.
+    Typeable ::= Expr + Stmt + Exprs + NamedExprs + Cases.
+    
+    //// The type judgement. NIL is a placeholder for untyped constructs.
+    TypeOf ::= (cntxt: TypingContext, expr: Typeable, type: TypeExpr + { ERROR, NIL }).
+
+    //// All typing contexts anywhere in the input program.
+	SubCntxt ::= sub (cntxt: TypingContext).
+    
+	SubSE0 ::= (cntxt: TypingContext, typeable: Typeable).
+	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = AnonFunDecl(_, _, _, typeable, _, _).
+	SubSE0(cntxt, typeable) :- SubCntxt(cntxt), cntxt = FunDecl(_, _, _, _, _, typeable, _), typeable: Stmt.
+	SubSE0(c, e), SubSE0(c, s) :- SubSE0(c, While(e, s, _)).
+	SubSE0(c, e), SubSE0(c, s1), SubSE0(c, s2) :- SubSE0(c, Ite(e, s1, s2, _)).
+	SubSE0(c, s1), SubSE0(c, s2) :- SubSE0(c, Seq(s1, s2, _)).
+	SubSE0(c, cases) :- SubSE0(c, Receive(cases, _, _)).
+	SubSE0(c, cases) :- SubSE0(c, Cases(_, _, cases, _)), cases: Cases.
+	SubSE0(c, e) :- SubSE0(c, Return(e, _)), e: Expr.
+	SubSE0(c, e1), SubSE0(c, e2) :- SubSE0(c, BinStmt(_, e1, _, e2, _)).
+	SubSE0(c, e) :- SubSE0(c, Assert(e, _, _)).
+	SubSE0(c, es) :- SubSE0(c, FunStmt(_, es, _, _, _)), es: Exprs.
+	SubSE0(c, e) :- SubSE0(c, FunStmt(_, _, e, _, _)), e: Name.
+	SubSE0(c, es) :- SubSE0(c, Print(_, _, es, _)), es: Exprs.
+	SubSE0(c, e) :- SubSE0(c, Announce(e, _, _)).
+	SubSE0(c, e) :- SubSE0(c, Announce(_, e, _)), e: Exprs.
+	SubSE0(c, e1), SubSE0(c, e2) :- SubSE0(c, Send(e1, e2, _, _)).
+	SubSE0(c, e) :- SubSE0(c, Send(_, _, e, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, Raise(e, _, _)).
+	SubSE0(c, e) :- SubSE0(c, Raise(_, e, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, Goto(_, e, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, NewStmt(_, e, _, _)), e: Exprs.
+	SubSE0(c, e) :- SubSE0(c, NewStmt(_, _, e, _)), e: Name.
+	SubSE0(c, e) :- SubSE0(c, New(_, e, _)), e: Exprs.
+	SubSE0(c, es) :- SubSE0(c, FunApp(_, es, _, _)), es: Exprs.
+	SubSE0(c, e) :- SubSE0(c, UnApp(_, e, _)).
+	SubSE0(c, e1), SubSE0(c, e2) :- SubSE0(c, BinApp(_, e1, e2, _)).
+	SubSE0(c, e) :- SubSE0(c, Field(e, _, _)).
+	SubSE0(c, e) :- SubSE0(c, Cast(e, _, _)).
+	SubSE0(c, e) :- SubSE0(c, Convert(e, _, _)).
+	SubSE0(c, es) :- SubSE0(c, Tuple(es, _)).
+	SubSE0(c, es) :- SubSE0(c, NamedTuple(es, _)).
+	SubSE0(c, e) :- SubSE0(c, Exprs(_, e, _)).
+	SubSE0(c, es) :- SubSE0(c, Exprs(_, _, es)), es: Exprs.
+    SubSE0(c, e) :- SubSE0(c, NamedExprs(_, e, _)).
+	SubSE0(c, es) :- SubSE0(c, NamedExprs(_, _, es)), es: NamedExprs.
+
+	ImpureExprsInFunApp ::= (TypingContext, Exprs).
+	ImpureExprsInFunApp(c, exprs) :- SubSE0(c, exprs), exprs: Exprs, exprs.qual != NONE.
+	ImpureExprsInFunApp(c, exprs) :- SubSE0(c, exprs), exprs = Exprs(_, _, exprs'), ImpureExprsInFunApp(c, exprs').
+
+	ImpureFunApp ::= (TypingContext, FunApp).
+	ImpureFunApp(c, e) :- 
+			SubSE0(c, e), e: FunApp, Impure(called), FunAvailable(called, c.owner), called.name = e.name;
+			SubSE0(c, e), e: FunApp, ImpureExprsInFunApp(c, e.args).
+
+	ImpureExprsInFunStmt ::= (TypingContext, Exprs).
+	ImpureExprsInFunStmt(c, exprs) :- SubSE0(c, exprs), exprs = Exprs(qual, Name(n, _), _), qual != NONE, no VarInLocalScope(c, _, n).
+	ImpureExprsInFunStmt(c, exprs) :- SubSE0(c, exprs), exprs = Exprs(_, _, exprs'), ImpureExprsInFunStmt(c, exprs').
+
+	ImpureFunStmt ::= (TypingContext, FunStmt).
+	ImpureFunStmt(c, e) :- 
+			SubSE0(c, e), e: FunStmt, Impure(called), FunAvailable(called, c.owner), called.name = e.name;
+			SubSE0(c, e), e: FunStmt, ImpureExprsInFunStmt(c, e.args).
+
+	SubSETrans ::= (cntxt: TypingContext, from: Typeable, to: Typeable).
+	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = While(e, s, id), SubSETrans(c, s, s'), stmt' = While(e, s', id).
+	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = Ite(e, s1, s2, id), SubSETrans(c, s1, s1'), SubSETrans(c, s2, s2'), stmt' = Ite(e, s1', s2', id).
+	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = Seq(s1, s2, id), SubSETrans(c, s1, s1'), SubSETrans(c, s2, s2'), stmt' = Seq(s1', s2', id).
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(op, _, _, _, _), op != ASSIGN.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(_, _, qual, _, _), qual != NONE.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, NONE, _, _), toSymbol(e1) != #Name.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, _, NONE, e2, _), toSymbol(e2) != #FunApp, toSymbol(e2) != #New.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, NONE, e2, _), e1: Name, e2: FunApp, no ImpureFunApp(c, e2).
+	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, NONE, e2, id), e1: Name, e2 = FunApp(name, args, label, _), ImpureFunApp(c, e2), stmt' = FunStmt(name, args, e1, label, id).
+	SubSETrans(c, stmt, stmt') :- SubSE0(c, stmt), stmt = BinStmt(ASSIGN, e1, NONE, e2, id), e1: Name, e2 = New(name, args, _), stmt' = NewStmt(name, args, e1, id).
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Receive.
+	SubSETrans(c, cases, cases) :- SubSE0(c, cases), cases: Cases.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Return.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Assert.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: FunStmt.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Print.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Announce.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Send.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Raise.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: Goto.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: NewStmt.
+	SubSETrans(c, stmt, stmt)  :- SubSE0(c, stmt), stmt: NulStmt.
+
+	SubSE ::= (cntxt: TypingContext, s: Typeable).
+    SubSE(c, s) :- SubSETrans(c, _, s).
+	SubSE(c, e) :- SubSE(c, While(e, _, _)).
+	SubSE(c, e) :- SubSE(c, Ite(e, _, _, _)).
+	SubSE(c, e) :- SubSE(c, Return(e, _)), e: Expr.
+	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, BinStmt(_, e1, _, e2, _)).
+	SubSE(c, e) :- SubSE(c, Assert(e, _, _)).
+	SubSE(c, es) :- SubSE(c, FunStmt(_, es, _, _, _)), es: Exprs.
+	SubSE(c, e) :- SubSE(c, FunStmt(_, _, e, _, _)), e: Name.
+	SubSE(c, es) :- SubSE(c, Print(_, _, es, _)), es: Exprs.
+	SubSE(c, e) :- SubSE(c, Announce(e, _, _)).
+	SubSE(c, e) :- SubSE(c, Announce(_, e, _)), e: Exprs.
+	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, Send(e1, e2, _, _)).
+	SubSE(c, es) :- SubSE(c, Send(_, _, es, _)), es: Exprs.
+	SubSE(c, e) :- SubSE(c, Raise(e, _, _)).
+	SubSE(c, es) :- SubSE(c, Raise(_, es, _)), es: Exprs.
+	SubSE(c, es) :- SubSE(c, Goto(_, es, _)), es: Exprs.
+	SubSE(c, es) :- SubSE(c, NewStmt(_, es, _, _)), es: Exprs.
+	SubSE(c, e) :- SubSE(c, NewStmt(_, _, e, _)), e: Name.
+	SubSE(c, es) :- SubSE(c, FunApp(_, es, _, _)), es: Exprs.
+	SubSE(c, e) :- SubSE(c, UnApp(_, e, _)).
+	SubSE(c, e1), SubSE(c, e2) :- SubSE(c, BinApp(_, e1, e2, _)).
+	SubSE(c, e) :- SubSE(c, Field(e, _, _)).
+	SubSE(c, e) :- SubSE(c, Cast(e, _, _)).
+	SubSE(c, e) :- SubSE(c, Convert(e, _, _)).
+	SubSE(c, es) :- SubSE(c, Tuple(es, _)).
+	SubSE(c, es) :- SubSE(c, NamedTuple(es, _)).
+	SubSE(c, e) :- SubSE(c, Exprs(_, e, _)).
+	SubSE(c, es) :- SubSE(c, Exprs(_, _, es)), es: Exprs.
+    SubSE(c, e) :- SubSE(c, NamedExprs(_, e, _)).
+	SubSE(c, es) :- SubSE(c, NamedExprs(_, _, es)), es: NamedExprs.
+
+	TranslatedBody ::= (cntxt: TypingContext, body: Stmt).
+	TranslatedBody(c, bodyTrans) :- SubSETrans(c, c.body, bodyTrans), bodyTrans: Stmt.
+
+	/*************************************************************/
+    /*                      Types of Expressions                 */
+    /*************************************************************/
+    
+    //// (1) The types of nullary expressions
+    TypeOf(c, e, BaseType(NULL))  :- SubSE(c, e), e = NulApp(NULL, _).
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = NulApp(HALT, _).
+	
+	
+    // Type of THIS is the receive set implemented by the machine, machine type if the receive set is empty.
+    TypeOf(c, e, i)  :- SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, no MachineReceives(c.owner, ALL), MachineReceives(c.owner, _), i = toList(#InterfaceType, NIL, {ev | MachineReceives(c.owner, ev), ev: NonNullEventName}), i : InterfaceType;
+						SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, no MachineReceives(c.owner, _), i = BaseType(MACHINE);
+						SubSE(c, e), e = NulApp(THIS, _), c.owner != NIL, MachineReceives(c.owner, ALL), i = BaseType(MACHINE).
+
+    // "this" is not allowed in global functions
+	ERROR1(e.id, "Keyword this is not allowed in global functions"),
+	TypeOf(c, e, ERROR)  :- SubSE(c, e), e = NulApp(THIS, _), c.owner = NIL.
+
+	
+	TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(NONDET, _).
+
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(FAIRNONDET, _).
+	    
+    TypeOf(c, e, BaseType(INT))   :- SubSE(c, e), e = NulApp(v, _), v : Integer.
+    TypeOf(c, e, BaseType(BOOL))  :- SubSE(c, e), e = NulApp(v, _), v : Boolean.
+	TypeOf(c, e, BaseType(FLOAT))  :- SubSE(c, e), e = NulApp(v, _), v : Float.
+    
+    //// (2) The types of unary expressions
+    TypeOf(c, e, et)              :- SubSE(c, e), e = Default(t, _), TypeExpansion(t, et). 
+	
+    TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : Tuple.     
+
+    TypeOf(c, e, t1)              :- TypeOfArg1(c, e, t1), e : NamedTuple.
+
+	// Names can hide other names in the following order: local variable hides machine variable hides (event name + enum name)
+    IsLocalVar ::= (TypingContext, String, TypeExpr).
+    IsLocalVar(c, n, et) :- SubSE(c, e), e = Name(n, _), TypeOfLocalVar(c, n, t), TypeExpansion(t, et).
+
+    VarDeclExp ::= (VarDecl, TypeExpr).
+    VarDeclExp(decl, et) :- decl is VarDecl(_, _, t, _), TypeExpansion(t, et).
+
+    IsMachineVar ::= (TypingContext, String, VarDecl, TypeExpr).
+    IsMachineVar(c, n, decl, et) :- SubSE(c, e), e = Name(n, _), VarDeclExp(decl, et), decl = VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _).
+
+    IsEventCnst ::= (TypingContext, String, TypeExpr).
+    IsEventCnst(c, n, BaseType(NULL)) :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, NIL, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _). 
+    IsEventCnst(c, n, pt)             :- SubSE(c, e), e = Name(n, _), EventDecl(n, _, t, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), TypeExpansion(t, pt).
+
+	IsEnumCnst ::= (TypingContext, String, TypeExpr).
+	IsEnumCnst(c, n, t) :- SubSE(c, e), e = Name(n, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), EnumTypeElem(d, StringList(n, _), _), t = NameType(d.name).
+
+	TypeOf(c, e, et)              :- SubSE(c, e), e = Name(n, _), IsLocalVar(c, n, et).
+    TypeOf(c, e, et)              :- SubSE(c, e), e = Name(n, _), IsMachineVar(c, n, _, et).
+    TypeOf(c, e, BaseType(EVENT)) :- SubSE(c, e), e = Name(n, _), IsEventCnst(c, n, _).
+	TypeOf(c, e, t)               :- SubSE(c, e), e = Name(n, _), IsEnumCnst(c, n, t).
+
+	ERROR1(e.id, "Undefined symbol"),
+    TypeOf(c, e, ERROR)           :- SubSE(c, e), e = Name(n, _), no EventDecl(n, _, _, _), no VarDecl(n, c.owner, _, _), no TypeOfLocalVar(c, n, _), no EnumTypeElem(_, StringList(n, _), _). 
+    
+    TypeOf(c, e, BaseType(BOOL))  :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _, _), t1 = BaseType(BOOL). 
+	
+	ERROR1(e.id, "Operator expected a boolean value"),
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NOT, _, _), t1 != BaseType(BOOL). 
+    
+    TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 = BaseType(INT).
+	TypeOf(c, e, BaseType(FLOAT))   :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 = BaseType(FLOAT).
+
+	ERROR1(e.id, "expected an integer or float value"),
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(NEG, _, _), t1 != BaseType(INT), t1 != BaseType(FLOAT). 
+    
+    TypeOf(c, e, SeqType(dom))    :- TypeOfArg1(c, e, t1), e = UnApp(KEYS, _, _), t1 = MapType(dom, _). 
+	
+	ERROR1(e.id, "Operator expected a map value"),
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(KEYS, _, _), toSymbol(t1) != #MapType. 
+
+    TypeOf(c, e, SeqType(cod))    :- TypeOfArg1(c, e, t1), e = UnApp(VALUES, _, _), t1 = MapType(_, cod). 
+	
+	ERROR1(e.id, "Operator expected a map value"),
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(VALUES, _, _), toSymbol(t1) != #MapType. 
+
+    TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), t1 : MapType. 
+    TypeOf(c, e, BaseType(INT))   :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), t1 : SeqType. 
+	
+	ERROR1(e.id, "Operator expected a map or sequence value"),
+    TypeOf(c, e, ERROR)           :- TypeOfArg1(c, e, t1), e = UnApp(SIZEOF, _, _), toSymbol(t1) != #MapType, toSymbol(t1) != #SeqType. 
+    
+    //// (3) The types of binary expressions
+    TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k != EMPTY.
+	
+	ERROR1(e.id, "Cast can never succeed"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2'), TypeRel(t1, t2', k), k = EMPTY.
+	
+	AllInterfaceTypes ::= sub(InterfaceType).
+	NotSubsetInterfaces ::= (InterfaceType, InterfaceType).
+	NotSubsetInterfaces(i1, i2) :- AllInterfaceTypes(i1), AllInterfaceTypes(i2), count({ ev | MemberOfInterfaceType(i1, ev), no MemberOfInterfaceType(i2, ev) }) != 0.
+	
+	ERROR1(e.id, "convert can be applied only to int, float or interface types"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), toSymbol(t2') != #InterfaceType, t2' != BaseType(INT), t2' != BaseType(FLOAT).
+
+	ERROR1(e.id, "convert to interface can never succeed"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, TypeRel(t1, BaseType(MACHINE), k), k = EMPTY;
+									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' : InterfaceType, t1 : InterfaceType, t2' != t1, NotSubsetInterfaces(t2', t1).
+	
+	ERROR1(e.id, "convert can never succeed"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(INT), t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType;
+									  TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2'), t2' = BaseType(FLOAT), t1 != BaseType(INT), t1 != BaseType(FLOAT).
+	
+	TypeOf(c, e, t2')              :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2').
+									  								  
+    TypeOf(c, e, t2)               :- TypeOfArg2(c, e, _, t2), e : Field, t2 != ERROR.
+	
+	ERROR1(e.id, "Bad field name"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Field, t2 = ERROR.
+	
+	ERROR1(e.id, "Operator expected a (named) tuple value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Field, toSymbol(t1) != #TupType, toSymbol(t1) != #NmdTupType.
+    
+    PureIntOrFloatOp ::= { ADD, SUB, MUL, DIV }.
+    TypeOf(c, e, BaseType(INT))             :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 = BaseType(INT), t2 = BaseType(INT).
+	TypeOf(c, e, BaseType(FLOAT))           :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 = BaseType(FLOAT), t2 = BaseType(FLOAT).
+
+	
+	ERROR1(e.id, "Operator expected both arguments to be of same type"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 != t2.
+
+	ERROR1(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOrFloatOp, t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType.    
+	
+	ERROR1(e.id, "Operator expected second argument to be an integer or float or enum constant value"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), op : PureIntOrFloatOp, TypeOf(c, e2, t2), t2 != BaseType(INT), t2 != BaseType(FLOAT), toSymbol(t2) != #NameType.     
+    
+    PureIntOrFloatRel ::= { LT, LE, GT, GE }.
+	TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntOrFloatRel, TypeRel(t1, BaseType(INT), SUB), TypeRel(t2, BaseType(INT), SUB).
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, e', e'', _), op : PureIntOrFloatRel, TypeRel(t1, BaseType(FLOAT), SUB), TypeRel(t2, BaseType(FLOAT), SUB).
+
+	ERROR1(e.id, "Operator expected first argument to be an integer or float or enum constant value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureIntOrFloatRel, t1 != BaseType(INT), t1 != BaseType(FLOAT), toSymbol(t1) != #NameType.    
+	
+	ERROR1(e.id, "Operator expected second argument to be an integer or float or enum constant value"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureIntOrFloatRel, t2 != BaseType(INT), t2 != BaseType(FLOAT), toSymbol(t2) != #NameType.    
+    
+    PureBoolOp ::= { AND, OR }.
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PureBoolOp, t1 = bbool, t2 = bbool, bbool = BaseType(BOOL).
+	
+	ERROR1(e.id, "Operator expected first argument to be a boolean value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(op, _, _, _), op : PureBoolOp, t1 != BaseType(BOOL).    
+	
+	ERROR1(e.id, "Operator expected second argument to be a boolean value"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(op, _, e2, _), TypeOf(c, e2, t2), op : PureBoolOp, t2 != BaseType(BOOL).    
+    
+    PolyRel ::= { EQ, NEQ }.
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PolyRel, TypeRel(t1, t2, k), k != EMPTY.
+	
+	ERROR1(e.id, "Values cannot be compared because their types are incompatible"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PolyRel, TypeRel(t1, t2, k), k = EMPTY.
+    
+    TypeOf(c, e, inner)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = SeqType(inner), TypeRel(t2, BaseType(INT), SUB).
+    TypeOf(c, e, cod)              :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).
+    
+	ERROR1(e.id, "Indexer must be applied to a sequence or map"),
+	TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinApp(IDX, _, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
+	
+	ERROR1(e.id, "Index must be an integer"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 : SeqType, t2 != BaseType(INT), toSymbol(t2) != #NameType.
+	
+	ERROR1(e.id, "Index may not be in the domain of the map"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
+    
+    TypeOf(c, e, BaseType(BOOL))   :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _, _), t2 = MapType(dom, _), TypeRel(t1, dom, k), k != EMPTY.        
+	
+	ERROR1(e.id, "Value can never be in the map"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _, _),  t2 = MapType(dom, _), TypeRel(t1, dom, EMPTY).        
+	
+	ERROR1(e.id, "Operator in expects a map"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = BinApp(IN, _, e2, _),  TypeOf(c, e2, t2), toSymbol(t2) != #MapType.
+    
+	///// (4) Exprs produces a tuple type
+	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = Exprs(_, _, NIL), t = TupType(t1, NIL).
+	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e : Exprs, t2 : TupType, t = TupType(t1, t2).
+		
+	//// (5) NamedExprs produces a named tuple type.
+	TypeOf(c, e, t) :- TypeOfArg1(c, e, t1), e = NamedExprs(n, _, NIL), t = NmdTupType(NmdTupTypeField(n, t1), NIL).
+	TypeOf(c, e, t) :- TypeOfArg2(c, e, t1, t2), e = NamedExprs(n, _, _), t2 : NmdTupType, t = NmdTupType(NmdTupTypeField(n, t1), t2).
+	
+	//// (6) FunApps must refer to a defined function that has a non-NIL return type and args must be sub-types of function signature. 
+	TypeOf(c, e, et) :- SubSE(c, e), e = FunApp(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, et), et != NIL.
+	TypeOf(c, e, et) :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), et != NIL, TypeRel(t1, inpt, SUB).
+
+	ERROR1(e.id, "Function not defined"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _), no FunProtoDecl(n, _, _).
+	
+	ERROR1(e.id, "Function does not return a value"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
+	
+	ERROR1(e.id, "Function requires arguments"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunApp(n, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
+	
+	ERROR1(e.id, "Function arguments have incorrect types"),
+	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
+	
+
+    /*************************************************************/
+	/*                      Qualifier Checking                   */
+    /*************************************************************/
+	StmtArgs ::= (TypingContext, FunApp + FunStmt + NewStmt + Goto + Print + Announce + Raise + Send, Exprs + { NIL }).
+	StmtArgs(c, e, e.args) :-	SubSE(c, e), e: FunApp; 
+								SubSE(c, e), e: FunStmt; 
+								SubSE(c, e), e: NewStmt; 
+								SubSE(c, e), e: Goto;
+								SubSE(c, e), e: Print;
+								SubSE(c, e), e: Announce;
+								SubSE(c, e), e: Raise;
+								SubSE(c, e), e: Send.
+	StmtArgs(c, e, exprs) :- StmtArgs(c, e, Exprs(_, _, exprs)).
+
+	QualifierError ::= (TypingContext, FunApp + FunStmt + NewStmt + Goto + Print + Announce + Raise + Send + BinStmt, Expr). 
+
+	ERROR1(e.id, "Argument should be a variable"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
+	ERROR1(e.id, "Argument should be a local variable"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), exprs = Exprs(qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
+	ERROR1(e.id, "Linear argument should be passed for exactly one parameter"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, Exprs(qual, expr, tl)), expr = Name(n, _), StmtArgs(c, e, Exprs(_, expr', tl')), expr' = Name(n, _), qual != NONE, tl != tl'.
+	ERROR1(e.id, "Keywords move or swap not allowed"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: FunApp, exprs = Exprs(qual, expr, _), qual != NONE.
+	ERROR1(e.id, "Keywords move or swap not allowed"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Announce, exprs = Exprs(qual, expr, _), qual != NONE.
+	ERROR1(e.id, "Keywords move or swap not allowed"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Print, exprs = Exprs(qual, expr, _), qual != NONE.
+	ERROR1(e.id, "Keyword swap not allowed"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: NewStmt, exprs = Exprs(qual, expr, _), qual = SWAP.
+	ERROR1(e.id, "Keyword swap not allowed"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Goto, exprs = Exprs(qual, expr, _), qual = SWAP.
+	ERROR1(e.id, "Keyword swap not allowed"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Raise, exprs = Exprs(qual, expr, _), qual = SWAP.
+	ERROR1(e.id, "Keyword swap not allowed"),
+	QualifierError(c, e, expr) :- StmtArgs(c, e, exprs), e: Send, exprs = Exprs(qual, expr, _), qual = SWAP.
+
+	ERROR1(e.id, "Argument should be a variable"),
+	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, toSymbol(expr) != #Name.
+	
+	ERROR1(e.id, "Argument should be a local variable"),
+	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(_, _, qual, expr, _), qual != NONE, expr = Name(n, _), no TypeOfLocalVar(c, n, _).
+	
+	ERROR1(e.id, "Keywords move or swap not allowed"),
+	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(REMOVE, _, qual, expr, _), qual != NONE.
+	
+	ERROR1(e.id, "Keywords move or swap not allowed"),
+	QualifierError(c, e, expr) :- SubSE(c, e), e = BinStmt(INSERT, _, qual, expr, _), qual != NONE.
+
+	EnvVars ::= (AnonFunDecl, String, NmdTupType + { NIL }).
+	EnvVars(c, n, envVars) :- c is AnonFunDecl, c.envVars.tl = NmdTupType(NmdTupTypeField(n, _), envVars).
+	EnvVars(c, n, envVars) :- EnvVars(c, _, NmdTupType(NmdTupTypeField(n, _), envVars)).
+
+	UnavailableBefore ::= (TypingContext, Stmt + Cases, String).
+	UnavailableAfter  ::= (TypingContext, Stmt + Cases, String).
+	
+	UnavailableBefore(c, s2, n)   :- SubSE(c, Seq(s1, s2, _)), UnavailableAfter(c, s1, n).
+	UnavailableAfter(c, s, n)     :- SubSE(c, s), s = Seq(_, s', _), UnavailableAfter(c, s', n).
+	UnavailableBefore(c, s', n)   :- SubSE(c, s), s = Seq(s', _, _), UnavailableBefore(c, s, n).
+
+	UnavailableBefore(c, s, n)  :- SubSE(c, s), s = While(_, s', _), UnavailableAfter(c, s', n).
+	UnavailableBefore(c, s, n)  :- SubSE(c, s'), s' = While(_, s, _), UnavailableBefore(c, s', n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: While, UnavailableBefore(c, s, n).
+	
+	UnavailableBefore(c, s, n)  :- SubSE(c, s'), s' = Ite(_, s, _, _), UnavailableBefore(c, s', n); 
+								   SubSE(c, s'), s' = Ite(_, _, s, _), UnavailableBefore(c, s', n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = Ite(_, s', _, _), UnavailableAfter(c, s', n); 
+								   SubSE(c, s), s = Ite(_, _, s', _), UnavailableAfter(c, s', n).
+
+	UnavailableBefore(c, cases, n)  :- ReceiveCases(c, s, cases), UnavailableBefore(c, s, n).
+	UnavailableBefore(c', s, n)     :- UnavailableBefore(c, cases, n), cases = Cases(_, c', _, _), TranslatedBody(c', s).
+	UnavailableAfter(c, s, n)       :- ReceiveCases(c, s, cases), cases = Cases(_, c', _, _), 
+	                                   TranslatedBody(c', bodyTrans), UnavailableAfter(c', bodyTrans, n), EnvVars(c', n, _).
+
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: NewStmt, UnavailableBefore(c, s, n), s.aout = NIL.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: NewStmt, UnavailableBefore(c, s, n), s.aout = Name(n', _), n' != n.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: NewStmt, s.aout = NIL.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: NewStmt, s.aout = Name(n', _), n' != n.
+
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Announce, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Assert, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Print, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = NulStmt(SKIP, _), UnavailableBefore(c, s, n).
+
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: FunStmt, UnavailableBefore(c, s, n), s.aout = NIL.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: FunStmt, UnavailableBefore(c, s, n), s.aout = Name(n', _), n' != n.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: FunStmt, s.aout = NIL.
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: FunStmt, s.aout = Name(n', _), n' != n.
+
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s: Send, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- StmtArgs(c, s, Exprs(MOVE, Name(n, _), _)), s: Send.
+
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(op, _, _, _, _), op != ASSIGN, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, e, _, _, _), toSymbol(e) != #Name, UnavailableBefore(c, s, n).
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n', _), _, _, _), UnavailableBefore(c, s, n), n' != n.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, e, MOVE, Name(n, _), _), toSymbol(e) != #Name.
+	UnavailableAfter(c, s, n)   :- SubSE(c, s), s = BinStmt(ASSIGN, Name(n', _), MOVE, Name(n, _), _), n' != n.
+
+	NeededBefore ::= (TypingContext, Stmt, ExprsExt + { NIL }).
+	NeededBefore(c, s, e) :- SubSE(c, s), s: NewStmt, e = s.args.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Raise, e = s.ev.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Raise, e = s.args.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Announce, e = s.ev.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Announce, e = s.args.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Send, e = s.dest.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Send, e = s.ev.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Send, e = s.args.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: FunStmt, e = s.args.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: BinStmt, s.op != ASSIGN, e = s.arg1.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: BinStmt, toSymbol(s.arg1) != #Name, e = s.arg1.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: BinStmt, e = s.arg2.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Return, e = s.expr.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: While, e = s.cond.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Ite, e = s.cond.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Assert, e = s.cond.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Print, e = s.args.
+	NeededBefore(c, s, e) :- SubSE(c, s), s: Goto, e = s.args.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': FunApp, e = e'.args.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': UnApp, e = e'.arg1.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': BinApp, e = e'.arg1.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': BinApp, e = e'.arg2.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Field, e = e'.arg.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Cast, e = e'.arg.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Convert, e = e'.arg.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Tuple, e = e'.body.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': NamedTuple, e = e'.body.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Exprs, e = e'.head.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': Exprs, e = e'.tail.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': NamedExprs, e = e'.exp.
+	NeededBefore(c, s, e) :- NeededBefore(c, s, e'), e': NamedExprs, e = e'.tail.
+
+	UnavailableVarAccessError ::= (TypingContext, Stmt, String).
+	ERROR2(s.id, e.id, "Variable is not available"),
+	UnavailableVarAccessError(c, s, n) :- NeededBefore(c, s, e), e: Name, n = e.name, UnavailableBefore(c, s, n).
+
+	UnavailableAtReturn ::= (TypingContext, String).
+	UnavailableAtReturn(c, n) :- FormalParam(c, n), TranslatedBody(c, bodyTrans), UnavailableAfter(c, bodyTrans, n);  
+ 								 t is TransDecl, PayloadVar(t, c, n, _), TranslatedBody(c, bodyTrans), UnavailableAfter(c, bodyTrans, n). 
+ 	UnavailableAtReturn(c, n) :- FormalParam(c, n), UnavailableBefore(c, Return(_, _), n); 
+ 								 t is TransDecl, PayloadVar(t, c, n, _), UnavailableBefore(c, Return(_, _), n). 
+	
+	FunArgsParams ::= (TypingContext, FunStmt, Exprs + { NIL }, NmdTupType + { NIL }).
+	FunArgsParams(c, e, e.args, decl.params) :- SubSE(c, e), e: FunStmt, FunAvailable(decl, c.owner), decl.name = e.name.
+	FunArgsParams(c, e, exprs, nmdTupType) :- FunArgsParams(c, e, exprs', nmdTupType'), exprs' = Exprs(_, _, exprs), nmdTupType' = NmdTupType(_, nmdTupType).
+							 
+	UnavailableParameterError ::= (TypingContext, String). 
+	
+	ERROR2(t.id, c.id, "Payload parameter not available at return"),
+	UnavailableParameterError(c, n) :- t is TransDecl, PayloadVar(t, c, n, _), UnavailableAtReturn(c, n). 
+ 	
+	ERROR2(e.id, decl.id, "Parameter passed with swap not available at callee return"),
+	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
+									   FunAvailable(decl, c.owner), e.name = decl.name, UnavailableAtReturn(decl, n).
+
+	ERROR2(e.id, decl.id, "Type of argument passed with swap must be identical to parameter type"),
+	UnavailableParameterError(c, n) :- FunArgsParams(c, e, Exprs(SWAP, arg, _), NmdTupType(NmdTupTypeField(n, paramType), _)), 
+									   FunAvailable(decl, c.owner), e.name = decl.name,
+	                                   TypeOf(c, arg, argType), argType: TypeExpr, TypeExpansion(paramType, eParamType), argType != eParamType.
+	
+	/*************************************************************/
+    /*            Permissions Embedded in Types                  */
+    /*************************************************************/
+
+	//// Compute the permission set associated with each high level type
+	//// A(e)
+	MemberOfEventNameList ::= sub(EventNameList, EventName).
+	EmbeddedPermissionsInType ::= (t: TypeExpr, perm: NonNullEventName).
+
+	EmbeddedPermissionsInType(BaseType(MACHINE), ev) :- EventDecl(ev, _, _, _).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype : InterfaceType, MemberOfInterfaceType(etype, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = AnyType(NIL), EventDecl(ev, _, _, _);
+											AllTypeExprs(type), TypeExpansion(type, etype), etype = AnyType(esname), EventSet(esname, evlist), MemberOfEventNameList(evlist, ev), ev : NonNullEventName.
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = TupType(hd, NIL), EmbeddedPermissionsInType(hd, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
+											AllTypeExprs(type), TypeExpansion(type, etype), etype = TupType(hd, tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = NmdTupType(NmdTupTypeField(name, hd), NIL), EmbeddedPermissionsInType(hd, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(hd, ev);
+	 										AllTypeExprs(type), TypeExpansion(type, etype), etype = NmdTupType(NmdTupTypeField(name, hd), tl), tl != NIL, EmbeddedPermissionsInType(tl, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = SeqType(x), EmbeddedPermissionsInType(x, ev).
+	EmbeddedPermissionsInType(type, ev)  :- AllTypeExprs(type), TypeExpansion(type, etype), etype = MapType(k, v), EmbeddedPermissionsInType(v, ev).							   
+    
+	/*************************************************************/
+    /*                      Types of Statements                  */
+    /*************************************************************/
+
+	//// (1) Nullary statements
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(SKIP, _).
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NulStmt(POP, _).
+
+	//// (2) Return statement
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, NIL, _, _, _). 
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Return(NIL, _), c : AnonFunDecl.
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, SUB).
+
+ 	
+	ERROR1(e.id, "Function must return a value"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(NIL, _), c = FunDecl(_, _, _, t, _, _, _), t != NIL. 
+	
+	ERROR1(e.id, "Function cannot return a value"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1, _), e1 != NIL, c = FunDecl(_, _, _, NIL, _, _, _). 
+	
+	ERROR1(e.id, "Return value has incorrect type"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, et), TypeRel(t1, et, k), t1 != et, k != SUB.
+	
+	ERROR1(e.id, "Anonymous function cannot return a value"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Return(e1, _), c : AnonFunDecl, e1 != NIL. 
+
+	//// (3) Non-mutating statements
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Seq(_, _, _).
+    
+	TypeOf(c, e, NIL)              :- SubSE(c, e), e = Print(_, _, _, _).
+
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Assert(_, _, _), t1 = BaseType(BOOL).
+	
+	ERROR1(e.id, "Boolean value expected"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = Assert(_, _, _), t1 != BaseType(BOOL).
+    
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : Ite, t1 = BaseType(BOOL).
+	
+	ERROR1(e.id, "Boolean value expected"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Ite, t1 != BaseType(BOOL).
+    
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e : While, t1 = BaseType(BOOL).
+	
+	ERROR1(e.id, "Boolean value expected"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : While, t1 != BaseType(BOOL).
+               
+	ERROR1(e.id, "Cannot create a spec machine"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineKind(n, SPEC).
+
+	ERROR1(e.id, "Undefined interface or machine name"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), no InterfaceDecl(n, _, _, _), no MachineDecl(n, _).
+
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), InterfaceDecl(n, _, _, _),
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+
+	TypeOf(c, e, NIL)              :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, _),
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = NewStmt(n, _, _, _), InterfaceDecl(n, _, _, _),
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
+
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), InterfaceDecl(n, _, _, _),
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, _), 
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, k), k != SUB, t1 != t2.
+
+	TypeOf(c, e, NIL)			   :- SubSE(c, e), e = NewStmt(n, _, _, _), MachineDecl(n, _), 
+									  TypeExpansion(NameType(n), t1), TypeOfArg2(c, e, _, t2), TypeRel(t1, t2, SUB).
+	
+
+
+	//// Error rules for pop.
+	ERROR1(e.id, "Global function must not use pop statement"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = NulStmt(POP, _), c.owner = NIL.
+
+	//// Rules for raise.
+    TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _),              ///// < raise has NIL payload,
+	                                  TypeRel(BaseType(NULL), plt, SUB).                          ///// < event type contains null.
+
+    TypeOf(c, e, NIL)              :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL,      ///// < raise has non-NIL payload,             
+	                                  TypeOf(c, p, pt), TypeRel(pt, plt, SUB).                    ///// < and pt is a subtype of evt.
+
+	//// Error rules for raise.
+	ERROR1(e.id, "Global function must not use raise statement"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Raise(_, _, _), c.owner = NIL.
+	
+	ERROR1(e.id, "Argument 1 of raise expects an event value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Raise, t1 != BaseType(EVENT).
+	
+	ERROR1(e.id, "Invalid payload type in raise (cannot send null value)"),
+    TypeOf(c, e, ERROR)            :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _), null = BaseType(NULL),  ///// < raise has NIL payload,
+									  TypeRel(null, plt, k), k != SUB, null != plt.                         ///// < and null not in event type.
+
+	ERROR1(e.id, "Invalid payload type in raise"),
+    TypeOf(c, e, ERROR)            :- CommStmtPLType(c, e, plt), e = Raise(_, p, _), p != NIL,       ///// < p has non-NIL payload,             
+									  TypeOfArg2(c, e, _, pt), TypeRel(pt, plt, k), k != SUB, pt != plt. ///// < and pt is not a subtype of plt.
+
+	//// Rules for send.
+    TypeOf(c, e, NIL)              :- TypeOfArg1(c, e, t1), e = Send(_, _, NIL, _),                           ///// < send has NIL payload,
+	                                  t1 = BaseType(MACHINE),                                                 ///// < arg1 is a machine type,
+	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).        ///// < arg2 event type contains null.
+
+    TypeOf(c, e, NIL)              :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                             ///// < send has non-NIL payload,             
+	                                  t1 = BaseType(MACHINE),                                                ///// < arg1 is a machine type,
+	                                  CommStmtPLType(c, e, plt), TypeRel(t3, evt, SUB).                   ///// < and t3 is a subtype of plt.
+
+	//// Error rules for send.
+	ERROR1(e.id, "Argument 1 of send expects a machine or interface type value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Send, t1 != BaseType(MACHINE), toSymbol(t1) != #InterfaceType.
+
+	ERROR1(e.id, "Argument 2 of send expects an event value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, _, t2), e : Send, t2 != BaseType(EVENT).
+
+	//// Error rules for send with constant event expression. 	
+	ERROR1(e.id, "Invalid payload type in send (cannot send null value)"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Send(_, _, NIL, _), null = BaseType(NULL),   ///// < send has NIL payload,
+	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
+									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
+
+	ERROR1(e.id, "Invalid payload type in send"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg3(c, e, t1, t2, t3), e : Send,                     ///// < p has non-NIL payload,             
+	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
+									  TypeRel(t3, plt, k), k != SUB, t3 != plt.                   ///// < and pt is not a subtype of plt.
+
+	//// Error rules for goto.
+	ERROR1(e.id, "Global function must not use goto statement"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(_, _, _), c.owner = NIL.
+	
+	ERROR1(e.id, "Undefined state"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(dst, _, _), c.owner != NIL, no StateDecl(dst, c.owner, _, _, _, _).
+	
+	ERROR1(e.id, "Invalid payload type in goto"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Goto(dst, _, _), c.owner != NIL, s = StateDecl(dst, c.owner, _, _, _, _), 
+						   PayloadVar(s, _, _, ft), TypeOfArg1(c, e, et), 
+						   TypeRel(et, ft, k), et != ft, k != SUB.
+
+	//// Rules for Announce.
+    TypeOf(c, e, NIL)              :- SubSE(c, e), e = Announce(_, NIL, _),                           ///// < announce has NIL payload,
+	                                  CommStmtPLType(c, e, plt), TypeRel(BaseType(NULL), plt, SUB).  ///// < event type contains null.
+
+    TypeOf(c, e, NIL)              :- TypeOfArg2(c, e, t1, t2), e = Announce(_, _, _),                          ///// < announce has non-NIL payload,
+	                                  CommStmtPLType(c, e, plt), TypeRel(t2, plt, SUB).                        ///// < and pt is a subtype of plt.
+
+	//// Error rules for spec.
+
+	ERROR1(e.id, "Argument 1 of announce expects an event value"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e : Announce, t1 != BaseType(EVENT).
+
+	//// Error rules for Announce. 	
+	ERROR1(e.id, "Invalid payload type in announce (cannot send null value)"),
+    TypeOf(c, e, ERROR)            :- SubSE(c, e), e = Announce(_, NIL, _), null = BaseType(NULL), ///// < Announce has NIL payload,
+	                                  CommStmtPLType(c, e, plt),                                  ///// < constant event expression
+									  TypeRel(null, plt, k), k != SUB, null != plt.               ///// < and null not in event type.
+
+	ERROR1(e.id, "Invalid payload type in announce"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e : Announce,    ///// < p has non-NIL payload,             
+	                                  CommStmtPLType(c, e, plt),                ///// < constant event expression
+									  TypeRel(t2, plt, k), k != SUB, t2 != plt. ///// < and pt is not a subtype of evt.
+
+	//// (4) Mutating statements		
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _, _, _), TypeRel(t2, t1, SUB).
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+	TypeOf(c, e , ERROR)		   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _, _, _), TypeRel(t2, t1, k), k!= SUB, t1 != t2.
+		
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 : SeqType, t2 = BaseType(INT).
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 = MapType(dom, cod), TypeRel(t2, dom, SUB).	
+	ERROR1(e.id, "Remove must be applied to a sequence or map"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinStmt(REMOVE, _, _, _, _), toSymbol(t1) != #SeqType, toSymbol(t1) != #MapType.
+    
+	ERROR1(e.id, "Index must be an integer"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 : SeqType, t2 != BaseType(INT).
+	
+	ERROR1(e.id, "Index may not be in the domain of the map"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 = MapType(dom, _), TypeRel(t2, dom, k), t2 != dom, k != SUB.
+		
+	TypeOf(c, e, NIL)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(index, TupType(value, NIL)), TypeRel(index, BaseType(INT), SUB), TypeRel(value, inner, SUB).
+	
+	ERROR1(e.id, "Insert must be applied to a sequence"),
+    TypeOf(c, e, ERROR)            :- TypeOfArg1(c, e, t1), e = BinStmt(INSERT, _, _, _, _), toSymbol(t1) != #SeqType.
+	
+	ERROR1(e.id, "Incorrect syntax: use seq += (index, value)"),
+	TypeOf(c, e, ERROR)			   :- SubSE(c, e), e = BinStmt(INSERT, _, _, arg2, _), TypeOf(c, arg2, t2), toSymbol(t2) != #TupType; 
+	                                  SubSE(c, e), e = BinStmt(INSERT, _, _, arg2, _), TypeOf(c, arg2, t2), t2 : TupType, lstLength(#TupType, t2) != 2.
+    
+	ERROR1(e.id, "Key must be an integer"),
+    TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), idx != BaseType(INT), toSymbol(idx) != #NameType.	
+    
+	ERROR1(e.id, "Value must be a subtype of sequence type"),
+    TypeOf(c, e, ERROR)			   :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)), TypeRel(value, inner, k), k != SUB, value != inner.
+	
+	//// (5) Function statements
+	TypeOf(c, e, NIL)   :- SubSE(c, e), e = FunStmt(n, NIL, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, NIL, _).
+	TypeOf(c, e, NIL)   :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, NIL, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, SUB).
+	TypeOf(c, e, NIL)   :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, et), TypeRel(t1, inpt, SUB), TypeRel(et, t2, SUB).
+
+	
+	ERROR1(e.id, "Function not defined"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), no FunDecl(n, c.owner, _, _, _, _, _), no FunDecl(n, NIL, _, _, _, _, _), no FunProtoDecl(n, _, _).	
+	
+	ERROR1(e.id, "Function requires arguments"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, NIL, _, _, _), FunAvailable(decl, c.owner), decl.name = n, decl.params != NIL.
+	
+	ERROR1(e.id, "Function arguments have incorrect types"),
+	TypeOf(c, e, ERROR) :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _), TypeRel(t1, inpt, k), t1 != inpt, k != SUB.
+	
+	ERROR1(e.id, "Function does not return a value"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = FunStmt(n, _, x, _, _), x: Name, FunAvailable(decl, c.owner), decl.name = n, decl.return = NIL.
+	
+	ERROR1(e.id, "Invalid assignment: right hand side is not a subtype of left hand side"),
+	TypeOf(c, e, ERROR) :- TypeOfArg2(c, e, t1, t2), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, _, et), TypeRel(et, t2, k), k != SUB, et != t2.
+
+	//// (6) Receive statement
+	ReceiveCases ::= (c: TypingContext, receive: Receive, cases: Cases).
+	ReceiveCases(c, receive, cases) :- SubSE(c, receive), receive = Receive(cases, _, _).
+	ReceiveCases(c, receive, cases) :- ReceiveCases(c, receive, Cases(_, _, cases, _)), cases : Cases.
+
+	ERROR1(e.id, "Two cases with the same event not allowed"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(c, e, case1), ReceiveCases(c, e, case2), case1 != case2, case1.trig = case2.trig.
+	
+	// This error is covered by one of the cases
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e: Receive, ReceiveCases(c, e, cases), TypeOf(c, cases, ERROR).
+
+	ValidCaseEvent ::= (trig: String + { NULL, HALT }).
+	ValidCaseEvent(trig) :- trig = NULL.
+	ValidCaseEvent(trig) :- trig = HALT.
+	ValidCaseEvent(trig) :- trig: String, EventDecl(trig, _, _, _).
+
+	ERROR1(e.id, "Undefined event"),
+	TypeOf(c, e, ERROR) :- SubSE(c, e), e = Cases(trig, _, _, _), trig: String, no EventDecl(trig, _, _, _).
+	
+	TypeOf(c, e, NIL) :- SubSE(c, e), e = Cases(trig, _, _, _), ValidCaseEvent(trig).
+
+    /*************************************************************/
+    /*                     Types of arguments                    */
+    /*************************************************************/
+
+	//// The type of the first sub-expression in a Typeable with at least one sub-expression.
+    TypeOfArg1 ::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }).
+
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunApp(_, e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = UnApp(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Cast(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Convert(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Tuple(e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedTuple(e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NewStmt(_, e1, _, _), ExprsToPayloadType(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = FunStmt(_, e1, _, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Assert(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Return(e1, _), TypeOf(c, e1, t1).
+
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Field(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = While(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = BinStmt(_, e1, _, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = BinApp(_, e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Exprs(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = NamedExprs(_, e1, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Raise(e1, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Goto(_, e1, _), ExprsToPayloadType(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Announce(e1, _, _), TypeOf(c, e1, t1).
+
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Send(e1, _, _, _), TypeOf(c, e1, t1).
+	TypeOfArg1(c, e, t1) :- SubSE(c, e), e = Ite(e1, _, _, _), TypeOf(c, e1, t1).
+
+	//// The type of the first two sub-expression in a Typeable with at least two sub-expression.
+    TypeOfArg2::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }, type2: TypeExpr + { ERROR, NIL }).
+
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Field(_, n, _), TypeOfField(t1, n, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = FunStmt(_, _, e2, _, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = NewStmt(_, _, e2, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinStmt(_, _, _, e2, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = BinApp(_, _, e2, _), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Exprs(_, _, e2), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = NamedExprs(_, _, e2), TypeOf(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Raise(_, e2, _), ExprsToPayloadType(c, e2, t2).
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Announce(_, e2, _), ExprsToPayloadType(c, e2, t2).
+
+	TypeOfArg2(c, e, t1, t2) :- TypeOfArg1(c, e, t1), e = Send(_, e2, _, _), TypeOf(c, e2, t2).
+
+	//// The type of the first three sub-expression in a Typeable with at least three sub-expression.
+    TypeOfArg3::= (cntxt: TypingContext, expr: Typeable, type1: TypeExpr + { ERROR, NIL }, type2: TypeExpr + { ERROR, NIL }, type3: TypeExpr + { ERROR, NIL }).
+
+	TypeOfArg3(c, e, t1, t2, t3) :- TypeOfArg2(c, e, t1, t2), e = Send(_, _, e3, _), ExprsToPayloadType(c, e3, t3).
+
+	//// Determines the payload type of the event mentioned in a communication statement.
+	//// If the event expression is not an constant, then this payload type is ANY.
+	CommStmtPLType ::= (cntxt: TypingContext, comm: Raise + Send + Announce, type: TypeExpr + { ERROR }).
+
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, AnyType(NIL)) :- SubSE(c, e), e = Raise(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Raise(ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
+
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, AnyType(NIL)) :- SubSE(c, e), e = Send(_, ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Send(_, ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
+
+	CommStmtPLType(c, e, ERROR)         :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt != BaseType(EVENT).
+	CommStmtPLType(c, e, AnyType(NIL)) :- SubSE(c, e), e = Announce(ev, _, _), TypeOf(c, ev, evt), evt = BaseType(EVENT), toSymbol(ev) != #Name.
+	CommStmtPLType(c, e, plt)           :- SubSE(c, e), e = Announce(ev, _, _), ev = Name(n, _), IsEventCnst(c, n, plt).
+
+	ExprsToPayloadType ::= (TypingContext, Exprs + { NIL }, TypeExpr).
+	ExprsToPayloadType(c, NIL, BaseType(NULL)) :- c is TypingContext.
+	ExprsToPayloadType(c, e, t') :- TypeOf(c, e, t), e: Exprs, t = TupType(t', NIL).
+	ExprsToPayloadType(c, e, t)  :- TypeOf(c, e, t), e: Exprs, t: TupType, t.tl != NIL.
+
+    /*************************************************************/
+    /*                      Field helpers                        */
+    /*************************************************************/
+
+	TOrNTType      ::= TupType + NmdTupType.
+	FieldLabel     ::= String + Natural.
+    TypeOfField    ::= (tupTyp: TOrNTType, lookup: FieldLabel, fieldType: TypeExpr + { ERROR }).    
+    TypeOfFieldAux ::= (tupTyp: TOrNTType, lookup: FieldLabel, fieldType: TypeExpr + { ERROR }, pos: Natural, tail: TOrNTType + { NIL }).
+
+    TypeOfFieldAux(ttup, n, ERROR, 0, ttup)  :- SubSE(c, e), e = Field(e', n, _), TypeOf(c, e', ttup), ttup : TOrNTType.    
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), n = pos, pos' = pos + 1, aux = TupType(t, tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), n = pos, pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(_, t), tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, ERROR, pos, aux), pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(n, t), tl).
+
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, t, pos, aux), n != pos, pos' = pos + 1, aux = TupType(_, tl).
+    TypeOfFieldAux(ttup, n, t, pos', tl)     :- TypeOfFieldAux(ttup, n, t, pos, aux), n != pos, n != fn, pos' = pos + 1, aux = NmdTupType(NmdTupTypeField(fn, _), tl).
+
+    TypeOfField(ttup, n, ft)                 :- TypeOfFieldAux(ttup, n, ft, _, NIL).    
+	TypeOfField(ttup, n, ERROR)              :- TypeOfFieldAux(ttup, n, ERROR, 0, ttup), n : String, ttup : TupType.
+
+	/*************************************************************/
+    /*                  Local Variable Types                     */
+    /*************************************************************/
+	MaxNumLocals ::= (ctxt: TypingContext + Stmt + Cases, n: Natural).
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: NewStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: Goto.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: Raise.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: Send.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: Announce.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: FunStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: NulStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: Assert.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: Print.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: BinStmt.
+	MaxNumLocals(e, 0) :- SubSE(c, e), e: Return.
+	MaxNumLocals(e, n) :- SubSE(c, e), e = While(_, e', _), MaxNumLocals(e', n).
+	MaxNumLocals(e, n) :- SubSE(c, e), e = Ite(_, e1, e2, _), 
+						  MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
+    MaxNumLocals(e, n) :- SubSE(c, e), e = Seq(e1, e2, _), 
+	                      MaxNumLocals(e1, n1), MaxNumLocals(e2, n2), n = max(n1, n2).
+	MaxNumLocals(e, n) :- SubSE(c, receive), receive: Receive, 
+						  ReceiveCases(c, receive, e), e = Cases(_, a, NIL, _), MaxNumLocals(a, n).
+	MaxNumLocals(e, n) :- SubSE(c, receive), receive: Receive, 
+						  ReceiveCases(c, receive, e), e = Cases(_, a, e', _), e': Cases, 
+						  MaxNumLocals(a, n1), MaxNumLocals(e', n2), n =  max(n1, n2).
+	MaxNumLocals(e, n) :- SubSE(c, e), e = Receive(cases, _, _), MaxNumLocals(cases, n). 
+	MaxNumLocals(a, n) :- a is AnonFunDecl, TranslatedBody(a, bodyTrans), MaxNumLocals(bodyTrans, n1), n2 = lstLength(#NmdTupType, a.locals), n = n1 + n2 + 1.
+	MaxNumLocals(a, n) :- a is FunDecl, TranslatedBody(a, bodyTrans), MaxNumLocals(bodyTrans, n1), n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n1 + n2 + n3.
+	MaxNumLocals(a, n) :- a is FunDecl, a.body = NIL, n2 = lstLength(#NmdTupType, a.locals), n3 = lstLength(#NmdTupType, a.params), n = n2 + n3.
+
+    LocalVarsAux ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }, tl: NmdTupType + { NIL }).
+	LocalVarsAux(cntxt, envVars, locals) :- cntxt is FunDecl(_, _, params, _, locals, _, _), envVars = lstReverse(#NmdTupType, params).
+	LocalVarsAux(cntxt, envVars, locals) :- cntxt is AnonFunDecl(_, _, locals, _, envVars', _), envVars = lstReverse(#NmdTupType, envVars').
+	LocalVarsAux(cntxt, envVars, locals) :- LocalVarsAux(cntxt, envVars', locals'), locals' = NmdTupType(x, locals), envVars = NmdTupType(x, envVars').
+
+	LocalVars ::= (cntxt: FunDecl + AnonFunDecl, vars: NmdTupType + { NIL }).
+	LocalVars(cntxt, rlocals) :- LocalVarsAux(cntxt, locals, NIL), rlocals = lstReverse(#NmdTupType, locals).
+
+	TypeOfLocalVar    ::= (cntxt: FunDecl + AnonFunDecl, name: String, type: TypeExpr + { ERROR }).
+    TypeOfLocalVarAux ::= (cntxt: FunDecl + AnonFunDecl, name: String, type: TypeExpr, aux: NmdTupType + { NIL }).
+
+    TypeOfLocalVarAux(cntxt, name, type, tl) :- LocalVars(cntxt, locals), locals = NmdTupType(NmdTupTypeField(name, type), tl).
+    TypeOfLocalVarAux(cntxt, name, type, tl) :- TypeOfLocalVarAux(cntxt, _, _, aux), aux = NmdTupType(NmdTupTypeField(name, type), tl).
+    TypeOfLocalVar(cntxt, name, type)  :- TypeOfLocalVarAux(cntxt, name, type, aux), no { aux' | TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux' }.
+	
+	ERROR1(cntxt.id, "Multiple local variable declarations with same name"),
+    TypeOfLocalVar(cntxt, name, ERROR) :- TypeOfLocalVarAux(cntxt, name, _, aux), TypeOfLocalVarAux(cntxt, name, _, aux'), aux != aux'.
+
+    /*************************************************************/
+    /*                  Formal Parameter Types                   */
+    /*************************************************************/
+
+    FormalParam    ::= (cntxt: FunDecl, name: String).
+    FormalParamAux ::= (cntxt: FunDecl, name: String, aux: NmdTupType + { NIL }).
+    
+    FormalParamAux(cntxt, name, tl) :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(name, _), tl).  
+    FormalParamAux(cntxt, name, tl) :- FormalParamAux(cntxt, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl).
+    FormalParam(cntxt, name)  :- FormalParamAux(cntxt, name, _).
+
+	//// The input type of a function, ignoring names.
+	FuncSigTupleType    ::= (cntxt: FunDecl, type: TupType + { NIL }).
+	FuncSigTupleTypeAux ::= (cntxt: FunDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
+
+	FuncSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NIL.
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunDecl(_, _, params, _, _, _, _), params = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, NIL).
+	FuncSigTupleTypeAux(cntxt, type, tl)    :- FuncSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), TypeExpansion(t, et), type = TupType(et, t').
+	FuncSigTupleType(cntxt, type)           :- FuncSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
+
+	//// The input type of a function prototype, ignoring names.
+	FuncProtoSigTupleType    ::= (cntxt: FunProtoDecl, type: TupType + { NIL }).
+	FuncProtoSigTupleTypeAux ::= (cntxt: FunProtoDecl, type: TupType + { NIL }, aux: NmdTupType + { NIL }).
+
+	FuncProtoSigTupleTypeAux(cntxt, params, NIL) :- cntxt is FunProtoDecl(_, params, _), params = NIL.
+	FuncProtoSigTupleTypeAux(cntxt, type, tl)    :- cntxt is FunProtoDecl(_, params, _), params = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, NIL).
+	FuncProtoSigTupleTypeAux(cntxt, type, tl)    :- FuncProtoSigTupleTypeAux(cntxt, t', aux), aux = NmdTupType(NmdTupTypeField(_, t), tl), type = TupType(t, t').
+	FuncProtoSigTupleType(cntxt, type)           :- FuncProtoSigTupleTypeAux(cntxt, t, NIL), type = lstReverse(#TupType, t).
+
+	FuncSig    ::= (cntxt: FunDecl + FunProtoDecl, inputType: TupType + { NIL }, outputType: TypeExpr + { NIL }).
+	FuncSig(cntxt, inputType, NIL) :- FuncSigTupleType(cntxt, inputType), cntxt.return = NIL.
+	FuncSig(cntxt, inputType, et)  :- FuncSigTupleType(cntxt, inputType), TypeExpansion(cntxt.return, et).
+	FuncSig(cntxt, inputType, returnType) :- cntxt is FunProtoDecl(_, _, returnType), FuncProtoSigTupleType(cntxt, inputType).
+
+    /*************************************************************/
+    /* Check that named tuple (types) don't reuse the same name  */
+    /*************************************************************/
+	NmdList       ::= NmdTupType + NamedExprs.
+	NmdListOrNone ::= NmdTupType + NamedExprs + { NIL }.
+
+	NmdSubE     ::= sub (NmdList).
+	MaxNmdSubE  ::=     (NmdList).
+	NmdSubNames ::=     (list: NmdList, name: String, aux: NmdListOrNone). 
+	DupNmdSubE  ::=     (list: NmdList, name: String, aux1: NmdListOrNone, aux2: NmdListOrNone).
+
+	MaxNmdSubE(e) :- NmdSubE(e), no NmdSubE(NmdTupType(_, e)), no NmdSubE(NamedExprs(_, _, e)).
+	NmdSubNames(list, name, tl) :- MaxNmdSubE(list), list = NmdTupType(NmdTupTypeField(name, _), tl). 
+	NmdSubNames(list, name, tl) :- MaxNmdSubE(list), list = NamedExprs(name, _, tl). 
+	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NmdTupType(NmdTupTypeField(name, _), tl). 
+	NmdSubNames(list, name, tl) :- NmdSubNames(list, _, aux), aux = NamedExprs(name, _, tl). 
+
+	ERROR0(errorMsg),
+	DupNmdSubE(list, name, tl, tl') :- NmdSubNames(list, name, tl), NmdSubNames(list, name, tl'), tl != tl',
+									   errorMsg = strJoin("Name appears more than once in name tuple or named tuple type: ", name).
+
+    /*************************************************************/
+    /*                          L-values                         */
+    /*************************************************************/
+	VarInLocalScope ::= (TypingContext, NmdTupType, String).
+	VarInLocalScope(decl, locals, name) :- decl is TypingContext, locals = decl.locals, locals != NIL, name = locals.hd.name.
+	VarInLocalScope(decl, locals, name) :- VarInLocalScope(decl, locals', _), locals = locals'.tl, locals != NIL, name = locals.hd.name.
+
+	LValueError    ::= (cntxt: TypingContext, stmt: BinStmt).
+	ModStmtSubExpr ::= sub (cntxt: TypingContext, stmt: BinStmt, expr: Expr).
+	IsLValue       ::=     (cntxt: TypingContext, expr: Expr, writesGlobal: Boolean). 
+	IsLValue(c, e, FALSE)  :- ModStmtSubExpr(c, _, e), e = Name(n, _), VarInLocalScope(c, _, n).		
+	IsLValue(c, e, TRUE)  :- ModStmtSubExpr(c, _, e), e = Name(n, _), no VarInLocalScope(c, _, n), TypeOfLocalVar(c, n, _).		
+    IsLValue(c, e, TRUE)   :- ModStmtSubExpr(c, _, e), e = Name(n, _), VarDecl(n, c.owner, t, _), no VarInLocalScope(c, _, n), no TypeOfLocalVar(c, n, _). 
+    IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = Field(e', _, _), IsLValue(c, e', wg). 
+    IsLValue(c, e, wg)     :- ModStmtSubExpr(c, _, e), e = BinApp(IDX, e', _, _), IsLValue(c, e', wg). 
+
+	ERROR1(e.id, "Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name"),
+	LValueError(c, e) :- SubSE(c, e), e = BinStmt(_, e', _, _, _), no IsLValue(c, e', _).
+
+    /*************************************************************/
+    /*                      Function Returns                     */
+    /*************************************************************/
+
+	FunRetError ::= (cntxt: FunDecl).
+
+
+	ERROR1(f.id, "function must return a value"),
+	FunRetError(f) :- f is FunDecl, f.body != NIL, rt = f.return, rt : TypeExpr, no { r | SubSE(f, r), r : Return }.
+
+    /*************************************************************/
+    /*                      Control Impurity                     */
+    /*************************************************************/
+    PurityError ::= (cntxt: TypingContext + StateDecl + TransDecl, expr: Typeable + String + AnonFunDecl).
+
+	ControlImpure ::= (TypingContext).
+	ControlImpure(c) :- SubSE(c, e), e : Goto.
+	ControlImpure(c) :- SubSE(c, e), e : Raise.
+	ControlImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).
+	ControlImpure(c) :- SubSE(c, e), e = FunApp(n, _, _, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
+    ControlImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), ControlImpure(called).
+	ControlImpure(c) :- SubSE(c, e), e : Receive, ReceiveCases(c, e, cases), cases = Cases(_, act, _, _), ControlImpure(act).
+
+    ERROR1(c.id, "Function is not pure"),
+	PurityError(c, n) :- c is FunDecl, Annotation(c, "pure", _, _), Impure(c), n = c.name.
+
+	ERROR1(c.id, "Exit function may cause a change in current state"),
+    PurityError(c, n) :- 
+	       c is StateDecl(_, owner, _, n, _, _), called.name = n, FunAvailable(called, owner), ControlImpure(called).
+
+    ERROR1(c.id, "Exit function may cause a change in current state"),
+	PurityError(c, called) :- 
+	       c is StateDecl(_, owner, _, called, _, _), called = AnonFunDecl(_, _, _, _, _, _), ControlImpure(called).
+
+    ERROR1(c.id, "Transition function may cause a change in current state"),
+	PurityError(c, n) :- 
+	       c is TransDecl(src, _, _, n, _), called.name = n, FunAvailable(called, src.owner), ControlImpure(called).
+
+    ERROR1(c.id, "Transition function may cause a change in current state"),
+	PurityError(c, called) :- 
+	       c is TransDecl(src, _, _, called, _), called = AnonFunDecl(_, _, _, _, _, _), ControlImpure(called).
+
+
+    /*************************************************************/
+    /*                 Spec Machine Checking                     */
+    /*************************************************************/
+	SpecImpure ::= (TypingContext + FunProtoDecl).
+	SpecImpure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
+	SpecImpure(c) :- SubSE(c, e), e = NulApp(NONDET, _).
+	SpecImpure(c) :- SubSE(c, e), e = NulApp(FAIRNONDET, _).
+	SpecImpure(c) :- SubSE(c, e), e = NulApp(THIS, _).
+	SpecImpure(c) :- SubSE(c, e), e : New.
+	SpecImpure(c) :- SubSE(c, e), e : Send.
+	SpecImpure(c) :- SubSE(c, e), e : NewStmt.
+	SpecImpure(c) :- SubSE(c, e), e : Announce.
+	SpecImpure(c) :- SubSE(c, e), e : Receive.
+	SpecImpure(c) :- SubSE(c, e), e = NulStmt(POP, _).
+    SpecImpure(c) :- SubSE(c, e), e = FunApp(n, _, _, _), called.name = n, FunAvailable(called, c.owner), SpecImpure(called).
+    SpecImpure(c) :- SubSE(c, e), e = FunStmt(n, _, _, _, _), called.name = n, FunAvailable(called, c.owner), SpecImpure(called).
+
+	SpecError ::= (cntxt: StateDecl + TransDecl + DoDecl, expr: String + AnonFunDecl).
+
+	ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+    SpecError(c, n) :- 
+	       c is StateDecl(_, owner, n, _, _, _), decl is MachineKind(owner, SPEC), called.name = n, FunAvailable(called, owner), SpecImpure(called);
+		   c is StateDecl(_, owner, _, n, _, _), decl is MachineKind(owner, SPEC), called.name = n, FunAvailable(called, owner), SpecImpure(called).
+
+    ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+	SpecError(c, called) :- 
+	       c is StateDecl(_, owner, called, _, _, _), decl is MachineKind(owner, SPEC), called: AnonFunDecl, SpecImpure(called);
+		   c is StateDecl(_, owner, _, called, _, _), decl is MachineKind(owner, SPEC), called: AnonFunDecl, SpecImpure(called).
+
+    ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+	SpecError(c, n) :- 
+	       c is TransDecl(src, _, _, n, _), decl is MachineKind(src.owner, SPEC), called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
+
+    ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+	SpecError(c, called) :- 
+	       c is TransDecl(src, _, _, called, _), decl is MachineKind(src.owner, SPEC), called: AnonFunDecl, SpecImpure(called).
+
+	ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+	SpecError(c, n) :-	
+		   c is DoDecl(src, _, n, _), decl is MachineKind(src.owner, SPEC), called.name = n, FunAvailable(called, src.owner), SpecImpure(called).
+
+	ERROR1(called.id, "$, $$, this, new, send, announce, receive, and pop not allowed in spec machines"),
+	SpecError(c, called) :- 
+		   c is DoDecl(src, _, called, _), decl is MachineKind(src.owner, SPEC), called: AnonFunDecl, SpecImpure(called).
+
+    /*************************************************************/
+    /*                         Receive Labels                    */
+    /*************************************************************/
+    BadLabelError ::= (TypingContext).
+	Continuation ::= Receive + FunStmt.
+
+	//// Every receive statement must have a label that is unique within a context.
+	//// This constraint simplifies P compilers.
+	
+	//// A term path describes how to reach a term.
+	//// 0 means this term is reached by following the 1st child stmt of the parent term.
+	//// 1 means this term is reached by following the 2nd child stmt of the parent term.
+	TermPath    ::= (child: { 0, 1 }, prev: TermPath + { NIL }).
+	ReachedContinuation ::= (cntxt: TypingContext, stmt: Stmt, path: TermPath + { NIL }).
+	ReachedContinuation(c, bodyTrans, NIL) :- TranslatedBody(c, bodyTrans).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = While(_, s', _),  p' = TermPath(0, p).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Ite(_, s', _, _), p' = TermPath(0, p).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Ite(_, _, s', _), p' = TermPath(1, p).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Seq(s', _, _),    p' = TermPath(0, p).
+	ReachedContinuation(c, s', p')  :- ReachedContinuation(c, s, p), s = Seq(_, s', _),    p' = TermPath(1, p).
+
+	ERROR1(c.id, "Function contains bad labeling of receive statements"),
+	BadLabelError(c) :-
+	    ReachedContinuation(c, s, p), ReachedContinuation(c, s', p'), s : Continuation, s' : Continuation, s.label = s'.label, p != p'.
+	
+    /*************************************************************/
+    /*                            Impurity                       */
+    /*************************************************************/
+	Impure ::= (FunDecl + FunProtoDecl).
+	Impure(c) :- c is FunProtoDecl, no Annotation(c, "pure", _, _).
+	Impure(c) :- c is FunDecl, c.body = NIL, no Annotation(c, "pure", _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(NONDET, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulApp(FAIRNONDET, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Goto.
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e : Raise.
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NulStmt(POP, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = BinStmt(_, e', _, _, _), IsLValue(c, e', TRUE).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = BinStmt(_, _, qual, e', _), qual != NONE, IsLValue(c, e', TRUE).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = NewStmt(_, _, _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = New(_, _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = Send(_, _, _, _). 
+	Impure(c) :- SubSE0(c, e), c: FunDecl, e = Receive(_, _, _).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, ImpureFunApp(c, e).
+	Impure(c) :- SubSE0(c, e), e: FunApp, c : FunDecl, called.name = e.name, FunAvailable(called, c.owner), Impure(called).
+	Impure(c) :- SubSE0(c, e), c: FunDecl, ImpureFunStmt(c, e).
+	Impure(c) :- SubSE0(c, e), e: FunStmt, c : FunDecl, called.name = e.name, FunAvailable(called, c.owner), Impure(called).
+
+	ERROR1(e'.id, "Function must be pure: impure functions can only be called like foo(...); or x = foo(...)"),
+    PurityError(c, e') :- 
+       SubSE0(c, e), e = UnApp(_, e', _),         ImpureFunApp(c, e');
+       SubSE0(c, e), e = BinApp(_, e', _, _),     ImpureFunApp(c, e');
+       SubSE0(c, e), e = BinApp(_, _, e', _),     ImpureFunApp(c, e');    
+       SubSE0(c, e), e = Field(e', _, _),         ImpureFunApp(c, e');
+       SubSE0(c, e), e = Cast(e', _, _),          ImpureFunApp(c, e');
+	   SubSE0(c, e), e = Convert(e', _, _),       ImpureFunApp(c, e');
+       SubSE0(c, e), e = Exprs(_, e', _),         ImpureFunApp(c, e');              
+       SubSE0(c, e), e = NamedExprs(_, e', _),    ImpureFunApp(c, e');
+       SubSE0(c, e), e = Raise(e', _, _),         ImpureFunApp(c, e');
+       SubSE0(c, e), e = Send(e', _, _, _),       ImpureFunApp(c, e');
+       SubSE0(c, e), e = Send(_, e', _, _),       ImpureFunApp(c, e');
+       SubSE0(c, e), e = Announce(e', _, _),      ImpureFunApp(c, e');
+       SubSE0(c, e), e = Assert(e', _, _),        ImpureFunApp(c, e');
+       SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  ImpureFunApp(c, e'), toSymbol(e'') != #Name;
+	   SubSE0(c, e), e = While(e', _, _),         ImpureFunApp(c, e');
+	   SubSE0(c, e), e = Ite(e', _, _, _),        ImpureFunApp(c, e');
+	   SubSE0(c, e), e = Return(e', _),           ImpureFunApp(c, e').
+
+	ERROR1(e'.id, "Illegal machine creation: only new M(...); or x = new M(...) is allowed"),
+    PurityError(c, e') :- 
+       SubSE0(c, e), e = UnApp(_, e', _),         e' : New;
+       SubSE0(c, e), e = BinApp(_, e', _, _),     e' : New;
+       SubSE0(c, e), e = BinApp(_, _, e', _),     e' : New;    
+       SubSE0(c, e), e = Field(e', _, _),         e' : New;
+       SubSE0(c, e), e = Cast(e', _, _),          e' : New;
+	   SubSE0(c, e), e = Convert(e', _, _),       e' : New;
+       SubSE0(c, e), e = Exprs(_, e', _),         e' : New;              
+       SubSE0(c, e), e = NamedExprs(_, e', _),    e' : New;
+	   SubSE0(c, e), e = Raise(e', _, _),         e' : New;
+       SubSE0(c, e), e = Send(e', _, _, _),       e' : New;
+       SubSE0(c, e), e = Send(_, e', _, _),       e' : New;
+       SubSE0(c, e), e = Announce(e', _, _),      e' : New;
+       SubSE0(c, e), e = Assert(e', _, _),        e' : New;
+       SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' : New, toSymbol(e'') != #Name;
+	   SubSE0(c, e), e = Return(e', _),           e' : New.
+
+	ERROR1(e'.id, "Illegal nondeterministic choice: only x = $ or if ($) or while ($) or return $ is allowed"),
+    PurityError(c, e') :- 
+       SubSE0(c, e), e = UnApp(_, e', _),         e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = BinApp(_, _, e', _),     e' = NulApp(NONDET, _);    
+       SubSE0(c, e), e = Field(e', _, _),         e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = Cast(e', _, _),          e' = NulApp(NONDET, _);
+	   SubSE0(c, e), e = Convert(e', _, _),          e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = Exprs(_, e', _),         e' = NulApp(NONDET, _);              
+       SubSE0(c, e), e = NamedExprs(_, e', _),    e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = Raise(e', _, _),         e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = Send(e', _, _, _),       e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = Send(_, e', _, _),       e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = Announce(e', _, _),      e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = Assert(e', _, _),        e' = NulApp(NONDET, _);
+       SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' = NulApp(NONDET, _), toSymbol(e'') != #Name.
+
+	ERROR1(e'.id, "Illegal fair nondeterministic choice: only x = $$ or if ($$) or while ($$) or return $$ is allowed"),
+    PurityError(c, e') :- 
+       SubSE0(c, e), e = UnApp(_, e', _),         e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = BinApp(_, e', _, _),     e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = BinApp(_, _, e', _),     e' = NulApp(FAIRNONDET, _);    
+       SubSE0(c, e), e = Field(e', _, _),         e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = Cast(e', _, _),          e' = NulApp(FAIRNONDET, _);
+	   SubSE0(c, e), e = Convert(e', _, _),          e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = Exprs(_, e', _),         e' = NulApp(FAIRNONDET, _);              
+       SubSE0(c, e), e = NamedExprs(_, e', _),    e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = Raise(e', _, _),         e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = Send(e', _, _, _),       e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = Send(_, e', _, _),       e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = Announce(e', _, _),      e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = Assert(e', _, _),        e' = NulApp(FAIRNONDET, _);
+       SubSE0(c, e), e = BinStmt(_, e'', _, e', _),  e' = NulApp(FAIRNONDET, _), toSymbol(e'') != #Name.
+	                                       
+    /*************************************************************/
+    /*                      Type Comparability                   */
+    /*************************************************************/
+    //// These are the pairs of types whose relationships must be computed.
+    CompTypeRel ::= (TypeExpr + { NIL, ERROR }, TypeExpr + { NIL, ERROR }).
+    CompTypeRel(ta', tb')                    :- CompTypeRel(ta, tb), ta = SeqType(ta'), tb = SeqType(tb').
+    CompTypeRel(da, db), CompTypeRel(ca, cb) :- CompTypeRel(ta, tb), ta = MapType(da, ca), tb = MapType(db, cb).
+    CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = TupType(la, ra), tb = TupType(lb, rb).
+    CompTypeRel(la, lb), CompTypeRel(ra, rb) :- CompTypeRel(ta, tb), ta = NmdTupType(lfa, ra), tb = NmdTupType(lfb, rb), la = lfa.type, lb = lfb.type.
+    
+	CompTypeRel(t1, t2')      :- TypeOfArg1(c, e, t1), e = Cast(_, t2, _), TypeExpansion(t2, t2').
+	CompTypeRel(t1, t2')      :- TypeOfArg1(c, e, t1), e = Convert(_, t2, _), TypeExpansion(t2, t2').
+	CompTypeRel(t2, et2')     :- TypeOfArg2(c, e, t1, t2), e = NewStmt(n, _, _, _), TypeExpansion(NameType(n), et2').
+	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, t1, t2), e = BinApp(op, _, _, _), op : PolyRel.
+	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IDX, _, _, _), t1 = MapType(dom, cod).
+	CompTypeRel(t1, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinApp(IN, _, _, _), t2 = MapType(dom, _).      
+	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunApp(n, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _).
+	CompTypeRel(t1, t)        :- TypeOfArg1(c, e, t1), e : Return, FuncSig(c, _, t).
+	CompTypeRel(null, plt)    :- SubSE(c, e), c.owner != NIL, e = Goto(dst, NIL, _), null = BaseType(NULL), s = StateDecl(dst, c.owner, _, _, _, _), PayloadVar(s, _, _, plt).
+	CompTypeRel(t1, plt)      :- TypeOfArg1(c, e, t1), c.owner != NIL, e = Goto(dst, p, _), p != NIL, s = StateDecl(dst, c.owner, _, _, _, _), PayloadVar(s, _, _, plt).
+	CompTypeRel(null, plt)    :- CommStmtPLType(c, e, plt), e = Raise(_, NIL, _), null = BaseType(NULL).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Raise, CommStmtPLType(c, e, plt).
+	CompTypeRel(null, plt)    :- SubSE(c, e), e = Send(_, _, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
+	CompTypeRel(t3, plt)      :- TypeOfArg3(c, e, t1, t2, t3), e : Send, CommStmtPLType(c, e, plt).
+	CompTypeRel(null, plt)    :- SubSE(c, e), e = Announce(_, NIL, _), null = BaseType(NULL), CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Announce, CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, plt)      :- TypeOfArg2(c, e, t1, t2), e : Announce, CommStmtPLType(c, e, plt).
+	CompTypeRel(t2, t1)       :- TypeOfArg2(c, e, t1, t2), e = BinStmt(ASSIGN, _, _, _, _).	
+	CompTypeRel(t2, dom)      :- TypeOfArg2(c, e, t1, t2), e = BinStmt(REMOVE, _, _, _, _), t1 = MapType(dom, cod).	
+	CompTypeRel(value, inner) :- TypeOfArg2(c, e, t1, t2), e = BinStmt(INSERT, _, _, _, _), t1 = SeqType(inner), t2 = TupType(idx, TupType(value, NIL)).
+	CompTypeRel(t1, inpt)     :- TypeOfArg1(c, e, t1), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, inpt, _).
+	CompTypeRel(t1, t2)       :- TypeOfArg2(c, e, _, t2), e = FunStmt(n, _, _, _, _), FunAvailable(decl, c.owner), decl.name = n, FuncSig(decl, _, t1).
+
+	//// TypeRel determines the relationship type expressions ta and tb.
+    //// If types are not subtype related, then they can
+    //// either have an empty (EMPTY) or nonempty (NONEMPTY) intersection. 
+    TypeRel ::= (ta: TypeExpr + { ERROR, NIL }, tb: TypeExpr + { ERROR, NIL }, rel: { SUB, SUP, EMPTY, NONEMPTY }).
+                            
+    //// (1) Type (non-) emptiness.       
+    // For convenience, the ERROR type is incomparable to all types, even itself.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = ERROR.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = ERROR.
+    
+    // For convenience, the NIL type is incomparable to all types, except itself.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NIL, t != NIL.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NIL, t != NIL.
+	
+	// Each model type has empty intersection with all types except itself and ANY
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), TypeDef(name, NIL, _), t != s, toSymbol(t) != #AnyType.
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), TypeDef(name, NIL, _), t != s, toSymbol(t) != #AnyType. 
+	
+	// Each enum type has empty intersection with all types except itself and ANY and INT
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT).
+	TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t != s, toSymbol(t) != #AnyType, t != BaseType(INT). 
+    
+    // The NULL type has empty intersections with NonNullBase and complex types.
+    NonNullBase ::= (TypeExpr).
+	NonNullBase(type) :- type = BaseType(BOOL).
+	NonNullBase(type) :- type = BaseType(INT).
+	NonNullBase(type) :- type = BaseType(FLOAT).
+    ComplexType ::= TupType  + NmdTupType + SeqType + MapType.
+    TypeRel(s, t, EMPTY)   :- CompTypeRel(s, t), NonNullBase(s), t = BaseType(NULL).
+    TypeRel(t, s, EMPTY)   :- CompTypeRel(t, s), NonNullBase(s), t = BaseType(NULL).
+    
+    TypeRel(s, t, EMPTY)   :- CompTypeRel(s, t), s : ComplexType, t = BaseType(NULL).
+    TypeRel(t, s, EMPTY)   :- CompTypeRel(t, s), s : ComplexType, t = BaseType(NULL).
+        
+    // BaseType(BOOL) has empty intersections with all types, except themselves and ANY.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(BOOL), s != t, toSymbol(t) != #AnyType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(BOOL), s != t, toSymbol(t) != #AnyType.
+
+	// BaseType(INT) has empty intersections with all types, except themselves and ANY.
+	// Relationship to NameType(_) has been dealt with above.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(INT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
+
+	// BaseType(FLOAT) has empty intersections with all types, except themselves, and ANY.
+	// Relationship to NameType(_) has been dealt with above.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = BaseType(FLOAT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s = BaseType(FLOAT), s != t, toSymbol(t) != #AnyType, toSymbol(t) != #NameType.
+
+    // NullBase types have empty intersections with all types, except themselves, ANY, and NULL.
+    NullBase    ::= (TypeExpr).
+	NullBase(type) :- type = BaseType(EVENT).
+	NullBase(type) :- type = BaseType(MACHINE).    
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), NullBase(s), NonNullBase(t).
+    TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), NullBase(s), NonNullBase(t).
+    
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), NullBase(s), toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
+    TypeRel(t, s, EMPTY)    :- CompTypeRel(t, s), NullBase(s), toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
+          
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), NullBase(s), NullBase(t), s != t.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), NullBase(s), NullBase(t), s != t.
+
+	//Interface Type has empty intersection with all the types except themselves, ANY, MACHINE and NULL
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, t = BaseType(kt), kt != NULL, kt != MACHINE.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, t = BaseType(kt), kt != NULL, kt != MACHINE.
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, toSymbol(t) != #BaseType, toSymbol(t) != #AnyType, toSymbol(t) != #InterfaceType.
+
+	//Interface Type has empty intersection with all interface types that are not equal.
+	TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : InterfaceType, t : InterfaceType, s != t.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : InterfaceType, t : InterfaceType, s != t.
+
+
+    // Complex types have empty intersections with all differing type kinds, except ANY.
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : ComplexType, toSymbol(s) != toSymbol(t), toSymbol(t) != #AnyType.
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s : ComplexType, toSymbol(s) != toSymbol(t), toSymbol(t) != #AnyType.
+    
+    // Sequences are EMPTY or NONEMPTY if their inner types are. (Only need one version of these rules.)
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', EMPTY). 
+    
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', NONEMPTY). 
+    
+    // Maps are EMPTY or NONEMPTY if their inner types are. (Only need one version of these rules.)
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = MapType(sd, _),  t = MapType(td, _),  TypeRel(sd, td, EMPTY).
+    
+    TypeRel(s, t, EMPTY)    :- CompTypeRel(s, t), s = MapType(_, sc),  t = MapType(_, tc),  TypeRel(sc, tc, EMPTY).    
+    
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, NONEMPTY), TypeRel(sc, tc, NONEMPTY). 
+
+    // Tuples and NmdTups are EMPTY if their lengths differ. (Only need one version of these rules.)
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : TupType, t : TupType, lstLength(#TupType, s) != lstLength(#TupType, t).
+    
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s : NmdTupType, t : NmdTupType, lstLength(#NmdTupType, s) != lstLength(#NmdTupType, t).
+    
+    // Tuples are EMPTY if any pair of inner types is EMPTY.  (Only need one version of some of these rules.)
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = TupType(s', _), t = TupType(t', _), TypeRel(s', t', EMPTY). 
+    
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = TupType(_, s'), t = TupType(_, t'), TypeRel(s', t', EMPTY). 
+    
+    // Tuples are NONEMPTY if not all inners types are in identical super / sub relationships. 
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
+                                                                                           
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
+
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', SUB), TypeRel(s'', t'', SUP), s' != t', s'' != t''.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = TupType(s', s''), t = TupType(t', t''), 
+                               TypeRel(s', t', SUB), TypeRel(s'', t'', SUP), s' != t', s'' != t''.
+                               
+    // Named Tuples are EMPTY if any pair of inner types is EMPTY or they name arguments differently. (Only need one version of some of these rules.) 
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, _), t = NmdTupType(ft, _), fs.name != ft.name. 
+    
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, _), t = NmdTupType(ft, _), TypeRel(fs.type, ft.type, EMPTY). 
+    
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s = NmdTupType(_, s'), t = NmdTupType(_, t'), TypeRel(s', t', EMPTY). 
+    
+    // Named Tuples are NONEMPTY if not all inners types are in identical super / sub relationships. 
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, NONEMPTY), TypeRel(s'', t'', r), r != EMPTY.
+                                                            
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, r), TypeRel(s'', t'', NONEMPTY), r != EMPTY.
+
+    TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUP), fs.type != ft.type, s'' != t''.
+    TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, 
+                               TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUP), fs.type != ft.type, s'' != t''.
+                               
+    //// (3) Sub-typing.                
+    // Any non-ERROR type is sub-type related to itself.
+    TypeRel(s, s, SUB) :- CompTypeRel(s, s), s != ERROR.
+    TypeRel(s, s, SUP) :- CompTypeRel(s, s), s != ERROR.
+   
+	PermissionsSubsetRel ::= (TypeExpr, TypeExpr).
+	NoPermissionsSubsetRel ::= (TypeExpr, TypeExpr).
+	PermissionsSubsetRel(t1, t2) :- AllTypeExprs(t1), AllTypeExprs(t2), t2 = AnyType(k), k != NIL, count({ev | EmbeddedPermissionsInType(t1, ev), no EmbeddedPermissionsInType(t2, ev)}) = 0.
+	NoPermissionsSubsetRel(t1, t2) :- AllTypeExprs(t1), AllTypeExprs(t2), t2 = AnyType(k), k != NIL, EmbeddedPermissionsInType(t1, ev), no EmbeddedPermissionsInType(t2, ev).
+	
+	AllEventNameinList ::= sub(EventNameList, EventName).
+    // Every proper type is a sub-type of any if the permissions are subset.
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(NIL).
+    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(NIL).
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, PermissionsSubsetRel(s, t).
+    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s != ERROR, s != NIL, t = AnyType(esname), esname != NIL, PermissionsSubsetRel(s, t).
+    TypeRel(s, t, EMPTY) :- CompTypeRel(s, t), s != ERROR, s != NIL, toSymbol(s) != #AnyType, t = AnyType(esname), esname != NIL, NoPermissionsSubsetRel(s, t).
+    TypeRel(t, s, EMPTY) :- CompTypeRel(t, s), s != ERROR, s != NIL, toSymbol(s) != #AnyType, t = AnyType(esname), esname != NIL, NoPermissionsSubsetRel(s, t).
+
+    // NULL is a subtype of all Nullable types.
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = BaseType(NULL), t : AnyType.
+    TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = BaseType(NULL), t : AnyType.
+    
+    TypeRel(s, t, SUB) :-  CompTypeRel(s, t), s = BaseType(NULL), NullBase(t).
+    TypeRel(t, s, SUP) :-  CompTypeRel(t, s), s = BaseType(NULL), NullBase(t).
+    
+	// Interface type is a subtype of the machine base-type
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), t = BaseType(MACHINE), s : InterfaceType.
+	TypeRel(t, s, SUP) :- CompTypeRel(t, s), t = BaseType(MACHINE), s : InterfaceType.
+
+	TypeRel(s, t, NONEMPTY) :- CompTypeRel(s, t), s : InterfaceType, t : InterfaceType, s != t.
+	TypeRel(t, s, NONEMPTY) :- CompTypeRel(t, s), s : InterfaceType, t : InterfaceType, s != t.
+
+	//Interface type is a supertype of NULL
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), t : InterfaceType, s = BaseType(NULL).
+	TypeRel(t, s, SUP) :- CompTypeRel(t, s), t : InterfaceType, s = BaseType(NULL).
+
+	// Enum types with values are a subtype of int
+	TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
+	TypeRel(t, s, SUP) :- CompTypeRel(t, s), s = NameType(name), EnumTypeDef(name, _, _, _), t = BaseType(INT).
+
+    // Sequences are subtype related if their inner types are subtype related.
+    TypeRel(s, t, SUB)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUB). 
+    TypeRel(s, t, SUP)    :- CompTypeRel(s, t), s = SeqType(s'), t = SeqType(t'), TypeRel(s', t', SUP). 
+    
+    // Maps are subtype related if their inner types are subtype related.
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, SUB), TypeRel(sc, tc, SUB). 
+    TypeRel(s, t, SUP) :- CompTypeRel(s, t), s = MapType(sd, sc), t = MapType(td, tc), TypeRel(sd, td, SUP), TypeRel(sc, tc, SUP). 
+    
+    // Tuples are subtype related if their inner types are subtype related.
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), TypeRel(s', t', SUB), TypeRel(s'', t'', SUB).
+    TypeRel(s, t, SUP) :- CompTypeRel(s, t), s = TupType(s', s''), t = TupType(t', t''), TypeRel(s', t', SUP), TypeRel(s'', t'', SUP).
+    
+    TypeRel(s, t, SUB) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, TypeRel(fs.type, ft.type, SUB), TypeRel(s'', t'', SUB).    
+    TypeRel(s, t, SUP) :- CompTypeRel(s, t), s = NmdTupType(fs, s''), t = NmdTupType(ft, t''), fs.name = ft.name, TypeRel(fs.type, ft.type, SUP), TypeRel(s'', t'', SUP).   
+	
+    /*************************************************************/
+    /*                      Payload Checking                    */
+    /*************************************************************/	
+
+	EventPayloadType ::= (e: String + { NULL, HALT }, t: TypeExpr).
+	EventPayloadType(e, et) :- EventDecl(e, _, t, _), t: TypeExpr, TypeExpansion(t, et).
+	EventPayloadType(e, t)  :- EventDecl(e, _, NIL, _), t = BaseType(NULL).
+	EventPayloadType(NULL, t) :- t = BaseType(NULL).
+	EventPayloadType(HALT, t) :- t = AnyType(NIL).
+
+	PayloadVarAux ::= (StateDecl + TransDecl + DoDecl + Cases, AnonFunDecl, String, TypeExpr).
+	PayloadVar ::= (StateDecl + TransDecl + DoDecl + Cases, AnonFunDecl, String, TypeExpr).
+	PayloadVarAux(s, f, name, type) :- s is StateDecl, f = s.entryAction, r = lstReverse(#NmdTupType, f.envVars), name = r.hd.name, type = r.hd.type, type != BaseType(NULL).
+	PayloadVarAux(t, f, name, type) :- t is TransDecl, f = t.action, r = lstReverse(#NmdTupType, f.envVars), name = r.hd.name, type = r.hd.type, type != BaseType(NULL).
+	PayloadVarAux(d, f, name, type) :- d is DoDecl, f = d.action, r = lstReverse(#NmdTupType, f.envVars), name = r.hd.name, type = r.hd.type, type != BaseType(NULL).
+	PayloadVarAux(cases, f, name, type) :- SubSE(_, cases), cases: Cases, f = cases.action, r = lstReverse(#NmdTupType, f.envVars), name = r.hd.name, type = r.hd.type, type != BaseType(NULL).
+	PayloadVar(x, f, name, ft) :- PayloadVarAux(x, f, name, type), TypeExpansion(type, ft).
+
+    ConstructorType ::= (m: String, s: StateDecl, t: TypeExpr).
+	ConstructorType(m, s, ft) :- s is StateDecl, MachineStart(m, s.name), m = s.owner, PayloadVar(s, _, _, ft).
+
+	CompTypeRel(et, ft) :- EventPayloadType(_, et), PayloadVar(_, _, _, ft);
+						   SubSE(c, n), n: New, TypeOf(c, n.args, et), et: TypeExpr, PayloadVar(_, _, _, ft);
+						   SubSE(c, n), n: NewStmt, TypeOf(c, n.args, et), et: TypeExpr, PayloadVar(_, _, _, ft).
+
+    PayloadError ::= (TransDecl + DoDecl + StateDecl + Cases + New + NewStmt).
+
+	ERROR1(t.id, "Payload type for event must be subtype of payload type of transition function"),
+	PayloadError(t) :- t is TransDecl, EventPayloadType(t.trig, et), PayloadVar(t, _, _, ft),
+	                   TypeRel(et, ft, k), et != ft, k != SUB.
+	
+	ERROR1(d.id, "Payload type for event must be subtype of payload type of do function"),
+	PayloadError(d) :- d is DoDecl, EventPayloadType(d.trig, et), PayloadVar(d, _, _, ft),
+	                   TypeRel(et, ft, k), et != ft, k != SUB.
+	
+	ERROR1(s.id, "Payload type for event on incoming transition must be subtype of payload type of state entry function"),
+	PayloadError(s) :- t is TransDecl, EventPayloadType(t.trig, et), 
+					   s is StateDecl, s.name = t.dst, s.owner = t.src.owner, PayloadVar(s, _, _, ft),
+					   TypeRel(et, ft, k), et != ft, k != SUB.
+	
+	ERROR1(cases.id, "Payload type for event must be subtype of payload type of case function"),
+	PayloadError(cases) :- SubSE(_, cases), cases: Cases, EventPayloadType(cases.trig, et), PayloadVar(cases, _, _, ft),
+						   TypeRel(et, ft, k), et != ft, k != SUB. 
+
+	// for creation of machines
+	ERROR1(n.id, "Entry function of start state expects an argument"),
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), ConstructorType(name, _, ft).
+	
+	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of entry function of start state"),
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), ConstructorType(name, _, ft), TypeOfArg1(c, n, type), type: TypeExpr,
+					   TypeRel(type, ft, k), type != ft, k != SUB.
+					   			   
+	//for creation of machines
+	ERROR1(n.id, "Created interface expects an argument"),
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, NIL, _, _), InterfaceDecl(name, _, ft, _), ft != BaseType(NULL).
+	
+	ERROR1(n.id, "Payload type of constructor must be subtype of payload type of the created interface"),
+	PayloadError(n) :- SubSE(c, n), n = NewStmt(name, _, _, _), InterfaceDecl(name, _, ft, _), TypeOfArg1(c, n, type), type: TypeExpr, 
+					   TypeRel(type, ft, k), type != ft, k != SUB.	
+
+	//Entry function of spec machine must have null constructor type
+	ERROR1(id, "Entry function of start state of a spec machine cannot have an argument"),
+	PayloadError(s) :- ConstructorType(name, s, ft), MachineDecl(name, id), MachineKind(name, SPEC), ft != BaseType(NULL).
+}

@@ -1,0 +1,178 @@
+domain C extends CData
+{
+
+}
+
+domain CData
+{
+     ///////////////////////////////////////////////////////
+     /////////           Files                     /////////
+     ///////////////////////////////////////////////////////     
+     
+     File    ::= new (name: String, body: any Cmp).
+     Section ::= new (s1: any Cmp, s2: any Cmp).
+
+     ///////////////////////////////////////////////////////
+     /////////             Comments                /////////
+     ///////////////////////////////////////////////////////
+     
+     Comment ::= new (cmt: String, isBlockStyle: Boolean).
+               
+     ///////////////////////////////////////////////////////
+     /////////            Preprocessor             /////////
+     ///////////////////////////////////////////////////////
+     
+	 PpEscape   ::= new (expr: any Expr).
+     PpInclude  ::= new (filename: String, isSystem: Boolean).
+     PpDefine   ::= new (pattern: any Expr, def: any Expr + { NIL }).  
+     PpUndef    ::= new (name: any Ident).
+     PpPragma   ::= new (expr: any Expr).     
+     PpITE      ::= new (kind:  { IF, IFDEF, IFNDEF },   
+                         cnd:   any Expr,
+                         true:  any Cmp + Stmt, 
+                         false: any Cmp + Stmt + PpElIf).
+                         
+     PpElIf     ::= new (cnd:   any Expr,
+                         true:  any Cmp + Stmt, 
+                         false: any Cmp + Stmt + PpElIf).
+                                                  
+     Cmp ::= Def + PpEscape + PpInclude + PpDefine + PpUndef + PpITE + PpPragma + Section + Comment + { NIL }.       
+                           
+     ///////////////////////////////////////////////////////
+     /////////    Declarations and Definitions     /////////
+     ///////////////////////////////////////////////////////
+
+     StorageClass ::= { NIL, EXTERN, STATIC, AUTO, REGISTER }. 
+     
+     TypDef ::= new (type: any Type, name: String).
+
+     VarDef ::= new (storage: StorageClass,
+                     type:    any NFType,
+                     name:    String,    
+                     init:    any Expr + { NIL }).
+                     
+     FunDef ::= new (storage: StorageClass,
+                     type:    any FunType,
+                     name:    String,
+                     prms:    any Params + { NIL },
+                     body:    any Stmt + { UNKNOWN }).                   
+     
+     Param  ::= new (storage: StorageClass, name: String).
+	 	                 
+     Params ::= new (param: any Param, tail: any Params + { NIL }).
+                     
+     DatDef ::= new (storage: StorageClass,
+                     kind:    { STRUCT, UNION },
+                     name:    String,               
+                     flds:    any Fields + { NIL, UNKNOWN }).
+
+     Field  ::= new (type: any Type,
+                     name: String,
+                     bits: any Expr + { NIL }).
+
+     Fields ::= new (field: any Field, tail: any Fields + { NIL }).
+                     
+     EnmDef ::= new (storage:  StorageClass,
+                     name:     String,  
+                     elements: any Elements + { NIL, UNKNOWN }). 
+     
+     Element  ::= new (value: any Expr + { NIL }, name: String).
+	                  
+     Elements ::= new (element: any Element, tail: any Elements + { NIL }).                                         
+                                            
+     Def  ::= TypDef + VarDef + FunDef + DatDef + EnmDef + Comment.
+     Defs ::= new (def: any Def, tail: any Defs + { NIL }).                     
+                                
+     ///////////////////////////////////////////////////////
+     /////////            Statements               /////////
+     ///////////////////////////////////////////////////////
+     
+     Seq    ::= new (s1: any Stmt, s2: any Stmt).
+     Block  ::= new (locals: any Defs + { NIL }, body: any Stmt). 
+     Lbl    ::= new (lbl: String, body: any Stmt).
+     Goto   ::= new (lbl: String).
+     Return ::= new (value: any Expr + { NIL }).
+     ITE    ::= new (cnd: any Expr, true: any Stmt, false: any Stmt).
+     Switch ::= new (switch: any Expr, cases: any Cases + { NIL }).
+     Loop   ::= new (kind: { WHILE, DO }, cnd: any Expr, body: any Stmt).
+     StrJmp ::= new (kind: { CONTINUE, BREAK }).
+     For    ::= new (init: any Expr + { NIL },
+                     upd:  any Expr + { NIL },
+                     cnd:  any Expr + { NIL },
+                     body: any Stmt).
+                     
+     Case   ::= new (cond: any Expr + { DEFAULT }, body: any Stmt).                
+                                            
+     Cases  ::= new (case: any Case, tail: any Cases + { NIL }).
+     
+	 PpLine ::= new (lineNum: Natural, fileName: String + { NIL }).
+
+     Stmt   ::= Expr   + Seq + Block  + Lbl  + Goto + 
+                Return + ITE + Switch + Loop + For  +
+                StrJmp + Comment + PpLine + { NIL }.         
+                
+     ///////////////////////////////////////////////////////
+     /////////           Type Expressions          /////////
+     ///////////////////////////////////////////////////////     
+          
+     BaseType ::= new (type: 
+                        { CHAR, UCHAR, SCHAR, SHORT, USHORT, SSHORT,
+                          INT, UINT, SINT, LONG, ULONG, SLONG,
+                          FLOAT, DOUBLE, LDOUBLE, VOID 
+                        }).                    
+     NmdType  ::= new (kind: { NIL, ENUM, STRUCT, UNION}, name: String).
+     PtrType  ::= new (type: any Type).
+     ArrType  ::= new (type: any Type, dimen: Natural + { NIL }).                          
+     QualType ::= new (type: any BaseType + NmdType + PtrType + QualType, qual: { CONST, VOLATILE } ).               
+     FunType  ::= new (type: any Type, params: any PrmTypes + { NIL }).
+     PrmTypes ::= new (type: any Type, tail: any PrmTypes + { NIL, ELLIPSE }). 
+     Type     ::= BaseType + NmdType + PtrType + ArrType + QualType + FunType.                                   
+     NFType   ::= BaseType + NmdType + PtrType + ArrType + QualType.
+                         
+     ///////////////////////////////////////////////////////
+     /////////            Expressions              /////////
+     ///////////////////////////////////////////////////////
+     
+     SizeOf  ::= new (op: any Type + Expr).
+     Cast    ::= new (type: any Type, expr: any Expr).
+     UnApp   ::= new (op: UnOp, arg1: any Expr).
+     BinApp  ::= new (op: BinOp + AsgnOp, arg1: any Expr, arg2: any Expr).
+     TerApp  ::= new (op: TerOp, arg1: any Expr, arg2: any Expr, arg3: any Expr).
+     FunApp  ::= new (op: any Expr, args: any Args + { NIL }).
+     Paren   ::= new (op: any Expr).
+     Init    ::= new (args: any Args).
+     Ident   ::= new (name: String).     
+     
+     Args  ::= new (arg: any Expr, tail: any Args + { NIL }).                                      
+     Expr  ::= Init + SizeOf + Cast + UnApp + BinApp + TerApp + FunApp + Paren + Ident + Literal.
+     
+     ///////////////////////////////////////////////////////
+     /////////          Builtin Operators          /////////
+     ///////////////////////////////////////////////////////     
+     
+     UnOp  ::= { LNOT,  BNOT, NEG,  POS,
+                 ADDR,  DRF,  INC,  DEC,
+                 INCAFTER, DECAFTER }.
+     
+     BinOp ::= { ADD,   SUB,  DIV,   MUL, MOD, 
+                 LAND,  LOR,  BAND,  BOR, BXOR,
+                 RT,    LFT,  CMA,   FLD,
+                 PFLD,  LT,   LE,    GT,  
+                 GE,    EQ,   NEQ,   AAC }.
+                   
+     AsgnOp ::= { ASN,    ASNADD, ASNSUB, ASNDIV,   
+                  ASNMUL, ASNMOD, ASNADD, ASNOR,
+                  ASNXOR, ASNRT,  ASNLFT }. 
+     
+     TerOp ::= { TCOND }.
+                                                                                         
+     ///////////////////////////////////////////////////////
+     /////////            C Literals               /////////
+     ///////////////////////////////////////////////////////
+     
+     IntLit    ::= new (value: Integer, format: { CHAR, OCT, DEC, HEX }, mod: { NIL, U, L, UL }). 
+     RealLit   ::= new (value: Real, nSigFigs: PosInteger, format: { DEC, EXP }, mod: { NIL, F, L }). 
+     StringLit ::= new (value: String, mod: { NIL, L }).
+     Literal   ::= IntLit + RealLit + StringLit.     
+}
+

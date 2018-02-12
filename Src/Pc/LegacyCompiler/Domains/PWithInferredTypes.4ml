@@ -1,0 +1,56 @@
+[
+   modules.P      = '"P      at P.4ml"',
+   modules.PData  = '"PData  at P.4ml"'
+]
+
+domain PWithInferredTypes extends PData
+{
+    //// The declarations that may contain expressions or statements that should be typed.
+    TypingContext ::= FunDecl + AnonFunDecl.
+    
+    //// The set of typeable expressions and statements.
+    Typeable ::= Expr + Stmt + Exprs + NamedExprs + Cases.
+    
+    //// The type judgement. NIL is a placeholder for untyped constructs.
+    TypeOf ::= new (cntxt: any TypingContext, expr: any Expr, type: any TypeExpr).
+
+	//// The expansion of NameTypes in TypeExprs
+	TypeExpansion ::= new (type: any TypeExpr, eType: any TypeExpr).
+
+	//// The translation due to conversion of each impure FunApp to a FunStmt
+	TranslatedBody ::= new (cntxt: any TypingContext, stmt: any Stmt).
+
+	//// The expansion of NameTypes in TypeExprs
+	TranslatedTypeExpr ::= new (eType: any TypeExpr).
+
+	//// The maximum number of local variables in any context
+	MaxNumLocals ::= new (ctxt: TypingContext, n: Natural).
+
+	//// Link map : map from interface or machine name to created machine
+	LinkMap ::= new (createdIorM: String, createdM: String).
+
+	ExportedType ::= new (String, TypeExpr).
+	ImportedType ::= new (String, TypeExpr).
+	ExportedEvent ::= new (String).
+
+	ERROR0 ::= new (String).
+	ERROR1  ::= new (Id, String).
+	ERROR2  ::= new (Id, Id, String).
+}
+
+transform P2PWithInferredTypes (in:: P) returns (out:: PWithInferredTypes)
+{
+    out._(x) :- x is in.Data.
+	out.TypeOf(c, e, t) :- in.TypeOf(c, e, t), e: in.Expr, t: in.TypeExpr.
+	out.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
+	out.TranslatedBody(c, s) :- in.TranslatedBody(c, s).
+	out.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).
+	out.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n), c: in.TypingContext.
+	out.ExportedType(n, t) :- in.ExportedType(n, t).
+	out.ImportedType(n, t) :- in.ImportedType(n, t).
+	out.ExportedEvent(n) :- in.ExportedEvent(n).
+
+	out.ERROR0(s) :- in.ERROR0(s).
+	out.ERROR1(s, id) :- in.ERROR1(s, id).
+	out.ERROR2(s, id, id') :- in.ERROR2(s, id, id').
+}

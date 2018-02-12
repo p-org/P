@@ -1,0 +1,2562 @@
+[
+   modules.P      = '"P at P.4ml"',
+   modules.PWithInferredTypes = '"PWithInferredTypes at PWithInferredTypes.4ml"',
+   modules.PLink  = '"PLink at PLink.4ml"',
+   modules.C      = '"C at C.4ml"'
+]
+
+transform P2CProgram (in:: P, outputFileName: String, importFileNames: in.StringList + { NIL }) 
+		     returns (inf:: PWithInferredTypes, out:: C, link:: PLink)
+/*
+[
+    compiler_ProductivityCheck = "TypeConstant[0], ExprDepNum[1]"
+]
+*/
+{
+    /*************************************************************/
+    /**********           Inferred info                ***********/
+    /*************************************************************/
+    inf._(x) :- x is in.Data.
+	inf.TypeOf(c, e, t) :- in.TypeOf(c, e, t), e: in.Expr, t: in.TypeExpr.
+	inf.TypeExpansion(type, eType) :- in.TypeExpansion(type, eType).
+	inf.TranslatedBody(c, s) :- in.TranslatedBody(c, s).
+	inf.TranslatedTypeExpr(eType) :- in.TranslatedTypeExpr(eType).
+	inf.MaxNumLocals(c, n) :- in.MaxNumLocals(c, n), c: in.TypingContext.
+	inf.ExportedType(n, t) :- in.ExportedType(n, t).
+	inf.ImportedType(n, t) :- in.ImportedType(n, t).
+	inf.ExportedEvent(n) :- in.ExportedEvent(n).
+   	inf.ERROR0(s) :- in.ERROR0(s).
+	inf.ERROR1(s, id) :- in.ERROR1(s, id).
+	inf.ERROR2(s, id, id') :- in.ERROR2(s, id, id').
+
+    /*************************************************************/
+    /**********         Create PLink output            ***********/
+    /*************************************************************/
+	link.DependsOn(n, d) :- in.DependsOn(n, d). 
+
+	link.MachineDecl(name, eft, id), link.MachineProtoDecl(name, eft):- 
+				in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), ConstructorType(name, _, ft), in.TypeExpansion(ft, eft);
+				in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), no ConstructorType(name, _, _), eft = link.BaseType(NULL).
+	link.MonitorDecl(name, list, id) :- in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), in.MachineKind(name, SPEC), 
+	                                    list = toList(in.#InterfaceType, NIL, {ev | in.ObservesDecl(name, ev) }), list : in.InterfaceType.
+
+	link.MachineProtoDecl(mname, ectype) :- in.MachineProtoDecl(mname, ctype), in.TypeExpansion(ctype, ectype).
+	link.MachineReceives(m, ev) :- in.MachineReceives(m, ev).
+	link.MachineSends(m, ev) :- in.MachineSends(m, ev).
+	link.MachineCreates(m, i) :- in.InferredMachineCreates(m, i).
+
+	link.GlobalFunCreates(m, ICreated) :- in.GlobalFunCreates(m, ICreated).
+
+	link.EventDecl(name, card, NIL, id) :- in.EventDecl(name, card, NIL, id).
+	link.EventDecl(name, card, etype, id) :- in.EventDecl(name, card, type, id), in.TypeExpansion(type, etype).
+
+	link.TypeDef(name, NIL, id) :- in.TypeDef(name, NIL, id).
+	link.TypeDef(name, etype, id) :- in.TypeDef(name, type, id), in.ExportedType(name, _), in.TypeExpansion(type, etype).
+	link.EnumTypeDef(name, elems, values, id) :- in.EnumTypeDef(name, elems, values, id).
+	link.InterfaceDecl(name, list, etype, id) :- in.InterfaceDecl(name, list, type, id), in.TypeExpansion(type, etype).
+	link.InterfaceDecl(name, NIL, etype, id) :- in.MachineDecl(name, id), no in.MachineReceives(name, _), ConstructorType(name, _, ft), in.TypeExpansion(ft, etype);
+												in.MachineDecl(name, id), no in.MachineReceives(name, _), no ConstructorType(name, _, _), etype = link.BaseType(NULL).
+
+	link.InterfaceDecl(name, list, etype, id) :- 
+		in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), ConstructorType(name, _, ft), in.TypeExpansion(ft, etype), no in.MachineReceives(name, ALL),
+		list = toList(in.#InterfaceType, NIL, {ev | in.MachineReceives(name, ev), ev : in.NonNullEventName }), list : in.InterfaceType;
+		in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), no ConstructorType(name, _, _), etype = link.BaseType(NULL), no in.MachineReceives(name, ALL),
+		list = toList(in.#InterfaceType, NIL, {ev | in.MachineReceives(name, ev), ev : in.NonNullEventName }), list : in.InterfaceType;
+		in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), ConstructorType(name, _, ft), in.TypeExpansion(ft, etype), in.MachineReceives(name, ALL), list = ALL;
+		in.MachineStart(name, state), in.StateDecl(state, name, _, _, _, id), no ConstructorType(name, _, _), etype = link.BaseType(NULL), in.MachineReceives(name, ALL), list = ALL.
+
+	PermEmbeddedInEvent(ev, perm) :- in.EventDecl(ev, _, pt, _), in.EmbeddedPermissionsInType(pt, perm).
+	PermEmbeddedInConstType(name, perm) :- in.InterfaceDecl(name, _, ct, _), in.EmbeddedPermissionsInType(ct, perm);
+										   ConstructorType(name, _, ct), in.EmbeddedPermissionsInType(ct, perm).
+
+	link.FunDecl(name, eparams, ereturn, id), link.FunProtoDecl(name, eparams, ereturn) :- 
+		c is in.FunDecl(name, NIL, params, return, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType, return != NIL, in.TypeExpansion(return, ereturn).
+	link.FunDecl(name, NIL, ereturn, id), link.FunProtoDecl(name, NIL, ereturn) :- 
+		c is in.FunDecl(name, NIL, NIL, return, _, _, id), return != NIL, in.TypeExpansion(return, ereturn).
+	link.FunDecl(name, eparams, NIL, id), link.FunProtoDecl(name, eparams, NIL) :- 
+		c is in.FunDecl(name, NIL, params, NIL, _, _, id), params: in.NmdTupType, in.TypeExpansion(params, eparams), eparams: in.NmdTupType.
+	link.FunDecl(name, NIL, NIL, id), link.FunProtoDecl(name, NIL, NIL) :- 
+		c is in.FunDecl(name, NIL, NIL, NIL, _, _, id).
+
+	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.Impure(c).
+	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.ControlImpure(c).
+	link.Pure(name, FALSE) :- c is in.FunDecl, name = c.name, in.SpecImpure(c).
+	
+	NamedEventNameList ::= (link.EventNameList + { NIL }, link.EventNameList + { NIL }, String).
+	NamedEventNameList(list, NIL, "") :- s is in.StateDecl, list = lstReverse(link.#EventNameList, toList(link.#EventNameList, NIL, { ev | t is in.TransDecl, t.src = s, ev = t.trig })).
+	NamedEventNameList(list, NIL, "") :- s is in.StateDecl, list = lstReverse(link.#EventNameList, toList(link.#EventNameList, NIL, { ev | t is in.DoDecl, t.src = s, t.action != DEFER, ev = t.trig })).
+	NamedEventNameList(list, NIL, "") :- s is in.StateDecl, list = lstReverse(link.#EventNameList, toList(link.#EventNameList, NIL, { ev | t is in.DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
+	NamedEventNameList(list, NIL, "") :- SubSE(c, s), s: in.Receive, list = lstReverse(link.#EventNameList, toList(link.#EventNameList, NIL, { ev | ReceiveCases(c, s, x), ev = x.trig })).
+	NamedEventNameList(list, link.EventNameList(NULL, list'), name') :- NamedEventNameList(link.EventNameList(NULL, list), list', name), name' = strJoin(name, strJoin("_", "null")).
+	NamedEventNameList(list, link.EventNameList(HALT, list'), name') :- NamedEventNameList(link.EventNameList(HALT, list), list', name), name' = strJoin(name, strJoin("_", "halt")).
+	NamedEventNameList(list, link.EventNameList(ev, list'), name') :- NamedEventNameList(link.EventNameList(ev, list), list', name), ev: String, name' = strJoin(name, strJoin("_", ev)).
+	link.EventSet(evsetName, list) :- NamedEventNameList(NIL, list, name), evsetName = strJoin("P_GEND_EVENTSET", name).
+	link.EventSet(esname, list) :- eventset is in.EventSetDecl(esname, _), 
+	                               list = toList(link.#EventNameList, NIL, {ev | in.EventSetContains(eventset, ev) }).
+
+	link.AvailableParameterDemand(e.name, n) :- FunArgsParams(c, e, Exprs(SWAP, _, _), NmdTupType(NmdTupTypeField(n,_), _)), 
+												FunAvailable(decl, c.owner), decl: in.FunProtoDecl, decl.name = e.name.
+	link.UnavailableParameterSupply(c.name, n) :- UnavailableAtReturn(c, n), c: in.FunDecl.
+
+    /*************************************************************/
+    /**********         Create Header File             ***********/
+    /*************************************************************/
+    //// Elements will be output to header file in order of position.
+    HOut ::= (pos: Natural, cmp: out.Cmp).
+    HOutOrder ::= (ord: Natural, cmp: out.Cmp).
+	HOutOrder(o, cmp) :- ho is HOut(_, cmp), o = toOrdinal(ho, 0, { ho' | ho' is HOut }). 
+
+    //// Concat elements in order.
+	HConcatOut ::= (pos: Integer, cmp: out.Cmp).	
+	HConcatOut(-1, NIL).
+	HConcatOut(m', cmp) :- HConcatOut(m, before), HOutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
+	
+	Includes ::= (in.StringList + {NIL}, out.Cmp).
+	Includes(%importFileNames, Section(PpInclude("PrtUser.h", FALSE),
+									   PpInclude("PrtExecution.h", FALSE))).
+	Includes(tl, inc') :- Includes(in.StringList(name, tl), inc), inc' = out.Section(PpInclude(strJoin(name, ".h"), FALSE), inc).
+
+	out.File(headerFileName, body) :- HConcatOut(count({ho | ho is HOut}) - 1, cmp), 
+								      headerFileName = strJoin(%outputFileName, ".h"),
+									  headerLockId = strJoin("P_", strJoin(strUpper(strReplace(headerFileName, ".", "_")), "_")),
+									  ifdefBegin = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("extern \"C\"{")), NIL),
+									  ifdefEnd = PpITE(IFDEF, Ident("__cplusplus"), PpEscape(Ident("}")), NIL),
+									  Includes(NIL, inc),
+									  body = PpITE(
+									   IFNDEF,
+									   Ident(headerLockId),
+									   Section(
+										   Section(PpDefine(Ident(headerLockId), NIL), inc),
+										   Section(ifdefBegin, Section(cmp, ifdefEnd))),
+									   NIL).
+
+    /*************************************************************/
+    /**********         Create Code File               ***********/
+    /*************************************************************/
+    //// Elements will be output to c file in order of position.
+    COut ::= (pos: Natural, cmp: out.Cmp).
+	COutOrder ::= (ord: Natural, cmp: out.Cmp).
+
+    //// Concat elements in order.
+	COutOrder(o, cmp) :- co is COut(_, cmp), o = toOrdinal(co, 0, { co' | co' is COut }). 
+	CConcatOut ::= (pos: Integer, cmp: out.Cmp).	
+	CConcatOut(-1, NIL).
+	CConcatOut(m', cmp) :- CConcatOut(m, before), COutOrder(m', nxt), m' = m + 1, cmp = Section(before, nxt). 		
+		
+	out.File(codeFileName, body) :- CConcatOut(count({co | co is COut}) - 1, cmp),
+	                               headerFileName = strJoin(%outputFileName, ".h"),
+								   codeFileName = strJoin(%outputFileName, ".c"),
+								   body = Section(PpInclude(headerFileName, FALSE), cmp).
+								   
+    /*************************************************************/
+    /**********     Create contents of header file     ***********/
+    /*************************************************************/
+	EventName ::= (decl: { NULL, HALT } + in.EventDecl, enumName: String).
+	EventName(NULL, "_P_EVENT_NULL").
+	EventName(HALT, "_P_EVENT_HALT").
+	EventName(d, cn) :- d is in.EventDecl, cn = strJoin("P_EVENT_", d.name).
+
+	MachineName ::= (machineName: String, enumName: String).
+	MachineName(name, en) :- in.MachineDecl(name, _), en = strJoin("P_MACHINE_", name).
+	MachineName(name, en) :- in.MachineProtoDecl(name, _), en = strJoin("P_MACHINE_", name). 
+
+	DeclId ::= (decl: in.VarDecl + in.AnonFunDecl + in.FunDecl + in.StateDecl + in.TransDecl + in.DoDecl, id: Natural, cname: String).
+
+	//// VarDecls - Start at Id 0.
+	DeclId(d, id, cn) :- d is in.VarDecl, 
+	                     id = toOrdinal(d, 0, { d' | d' is in.VarDecl, d'.owner = d.owner }), 
+						 cn = strJoin("P_VAR_", strJoin(d.owner, strJoin("_", d.name))).
+	
+	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_VARS_", name),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : in.VarDecl, d.owner = name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_VARS_", strJoin(name, "_COUNT"))), size = count({d | d is in.VarDecl, d.owner = name}) }).  
+
+	//// (Anon)FunDecls
+	AnonOrNamedFun ::= in.FunDecl + in.AnonFunDecl.
+
+	AnonOrNamedFunName ::= (decl: AnonOrNamedFun + in.FunProtoDecl, enumName: String).
+
+	AnonOrNamedFunName(d, en), link.AnonFunDecl(d.ownerFun, anonFunIndex) 
+					  :- d is in.AnonFunDecl, d.owner = NIL,
+	                     anonFunIndex = toOrdinal(d, 0, { d' | d' is in.AnonFunDecl, d'.ownerFun = d.ownerFun }), 
+						 en = strJoin("P_FUN_", strJoin(d.ownerFun, strJoin("_ANON", toString(anonFunIndex)))).
+
+	AnonOrNamedFunName(d, en) :- d is in.FunDecl, d.owner = NIL, en = strJoin("P_FUN_", d.name).
+
+	AnonOrNamedFunName(d, en) :- d is in.FunProtoDecl, en = strJoin("P_FUN_", d.name).
+
+	DeclId(d, id, en), AnonOrNamedFunName(d, en) :- 
+						 d is in.AnonFunDecl, d.owner != NULL,
+	                     id = toOrdinal(d, 0, { d' | d' is in.AnonFunDecl, d'.owner = d.owner }),
+						 en = strJoin("P_FUN_", strJoin(d.owner, strJoin("_ANON", toString(id)))).
+
+	DeclId(d, id, en), AnonOrNamedFunName(d, en) :- 
+						 d is in.FunDecl,
+	                     id = count({ d' | d' is in.AnonFunDecl, d'.owner = d.owner }) 
+						      + toOrdinal(d, 0, { d' | d' is in.FunDecl, d'.owner = d.owner }), 
+	                     en = strJoin("P_FUN_", strJoin(d.owner, strJoin("_", d.name))).
+
+	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_FUNS_", name),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : in.AnonFunDecl, d.owner = name, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
+									   DeclId(d, id, cn), d : in.FunDecl, d.owner = name, x = (2*id) + 1, enumMember = Element(IntLit(x, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_FUNS_", strJoin(name, "_COUNT"))), 
+									   size = count({d | d is in.AnonFunDecl, d.owner = name}) 
+											  + count({d | d is in.FunDecl, d.owner = name}) }).
+
+	//// StateDecls - Start at Id 0. Need to encode qualified names.
+	DeclId(d, id, cn) :- d is in.StateDecl, 
+	                     QualName2CStr(d.name, name), 
+					     id = toOrdinal(d, 0, { d' | d' is in.StateDecl, d'.owner = d.owner }), 
+						 cn = strJoin("P_STATE_", strJoin(d.owner, strJoin("_", name))).
+	
+	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
+	   in.MachineDecl(name, _),
+	   enumName = strJoin("P_STATES_", name),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   DeclId(d, id, cn), d : in.StateDecl, d.owner = name, enumMember = Element(IntLit(id, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin("_P_STATES_", strJoin(name, "_COUNT"))), size = count({d | d is in.StateDecl, d.owner = name}) }).  
+
+	//// Prototypes for foreign functions
+	MakeParams ::= (in.FunDecl, in.NmdTupType + { NIL }, PrmTypes + { NIL }, Params + { NIL }).
+	MakeParams(f, type, NIL, NIL) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.body = NIL, type = lstReverse(in.#NmdTupType, f.params).
+	MakeParams(f, tl, prmTypes', params') :- MakeParams(f, in.NmdTupType(NmdTupTypeField(name, _), tl), prmTypes, params), prmTypes' = PrmTypes(PtrType(PtrType(NmdType(NIL, "PRT_VALUE"))), prmTypes), params' = Params(Param(NIL, name), params).
+
+	HOut(0, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.body = NIL,
+					MakeParams(f, NIL, prmTypes, params),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), prmTypes),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_FOREIGN"),
+					  Params(Param(NIL, "context"), params),
+					  UNKNOWN).
+
+	//// Extern declarations for defined types
+	HOut(0, def) :- in.TypeDef(name, _, _),	typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+	HOut(0, def) :- in.EnumTypeDef(name, _, _, _),	typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+	HOut(0, def) :- in.InterfaceDecl(name, _, _, _), typeName = strJoin("P_GEND_TYPE_", name), def = out.VarDef(EXTERN, NmdType(NIL, "PRT_TYPE"), typeName, NIL).
+
+	//// Field names for exported named tuple types
+	HOut(0, out.EnmDef(NIL, enumName, list)) :- 
+	   in.ExportedType(name, type), type: in.NmdTupType, enumName = strJoin("P_FIELD_INDEX_", name),
+	   list = toList(#Elements, NIL, { enumMember | 
+									   IndexOf(type, f, offset, _), cn = strJoin(strJoin(enumName, "_"), f), enumMember = Element(IntLit(offset, DEC, NIL), cn); 
+									   enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")), size = lstLength(in.#NmdTupType, type) }).  
+	
+	//// Exported enum types
+	HOut(0, out.EnmDef(NIL, enumName, list)) :-
+		d is in.EnumTypeDef(enumName, elems, _, id), in.PFile(fileName), id.tl.val = fileName, size = lstLength(in.#StringList, elems),
+		list = toList(#Elements, NIL, { enumMember | 
+										EnumTypeElemIndex(d, _, _, name, offset), cn = strJoin(strJoin(enumName, "_"), name), enumMember = Element(IntLit(offset, DEC, NIL), cn);
+										enumMember = Element(IntLit(size, DEC, NIL), strJoin(strJoin("_", enumName), "_COUNT")) }).  
+
+	//// Extern declarations for foreign types
+	HOut(0, def) :- in.TypeDef(name, NIL, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name),
+						def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_UINT32"), 
+								  foreignTypeName, 
+								  NIL).
+	HOut(0, def) :- in.TypeDef(name, NIL, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+						def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_FOREIGNTYPEDECL"), 
+								  foreignTypeStructName, 
+								  NIL).
+
+	//// Extern declarations for foreign type functions
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
+	                params = NIL,
+				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
+					argTypes = PrmTypes(BaseType(VOID), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FOREIGN_MKDEF_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_UINT64"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FOREIGN_CLONE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(BaseType(VOID), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FOREIGN_FREE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_UINT32"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FOREIGN_GETHASHCODE_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
+	                params = Params(Param(NIL, "frgnVal"), NIL),
+				    funType = FunType(NmdType(NIL, "PRT_STRING"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), NIL),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FOREIGN_TOSTRING_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	HOut(0, def) :- in.TypeDef(name, NIL, _),
+	                params = Params(Param(NIL, "frgnVal1"),
+					         Params(Param(NIL, "frgnVal2"), 
+							 NIL)),
+				    funType = FunType(NmdType(NIL, "PRT_BOOLEAN"), argTypes),
+					argTypes = PrmTypes(NmdType(NIL, "PRT_UINT64"), 
+							   PrmTypes(NmdType(NIL, "PRT_UINT64"), 
+							   NIL)),					  
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin("PRT_FOREIGN_ISEQUAL_", strJoin(name, "_IMPL")),
+					  params,
+					  UNKNOWN).
+
+	//// Event structs
+	HOut(0, def) :- EventName(_, eventName), eventStructName = strJoin(eventName, "_STRUCT"),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_EVENTDECL"), 
+								  eventStructName, 
+								  NIL).
+
+	//// Eventset enum
+	HOut(0, def) :- UniqueEventSetName(esName, _),
+								  def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_EVENTSETDECL"), 
+								  esName, 
+								  NIL).
+
+	//// Fun structs
+ 	HOut(0, def) :- AnonOrNamedFunName(decl, funName), decl is in.FunProtoDecl, def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), funName, NIL).
+	HOut(0, def) :- AnonOrNamedFunName(decl, funName), decl.owner = NIL, def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), funName, NIL).
+ 	HOut(0, def) :- AnonOrNamedFunName(_, funName), funStructName = strJoin(funName, "_STRUCT"),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_FUNDECL"), funStructName, NIL).
+
+	//// Machine structs
+	HOut(0, def) :- MachineName(_, machineName),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_UINT32"), 
+								  machineName, 
+								  NIL).
+	HOut(0, def) :- MachineName(_, machineName), machineStructName = strJoin(machineName, "_STRUCT"),
+	                        def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_MACHINEDECL"), 
+								  machineStructName, 
+								  NIL).
+
+	//// I enum names
+	HOut(0, def) :- in.MachineDecl(name, _), iName = strJoin("P_I_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
+	HOut(0, def) :- in.MachineProtoDecl(name, _), iName = strJoin("P_I_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
+	HOut(0, def) :- in.InterfaceDecl(name, _, _, _), iName = strJoin("P_I_", name),
+	                        def = out.VarDef(EXTERN, NmdType(NIL, "PRT_UINT32"), iName, NIL).
+
+	//// Extern declaration for Program Decl
+	HOut(0, def) :- def = out.VarDef(
+							      EXTERN, 
+								  NmdType(NIL, "PRT_PROGRAMDECL"), 
+								  "P_GEND_PROGRAM", 
+								  NIL).
+
+
+    /*************************************************************/
+    /******       Generate contents of code file            ******/
+    /*************************************************************/	
+
+	//// Args lists of the form (xn, ..., x0)
+	MacroArgList ::= (args: out.Args, len: Natural, aux: Natural).
+	MacroArgList(args, 0, m) :- m = max(
+	                                  //maxAll(0, { k | RhsEvalOrder(_, _, _, k) }),
+									  maxAll(0, { k | ExprMacroSize(_, k) }),
+									max(
+									  maxAll(0, { k | in.TypeOf(_, _, t), t : in.TupType, k = lstLength(in.#TupType, t) - 1 }),
+									max(
+									  maxAll(0, { k | in.TypeOf(_, _, t), t : in.NmdTupType, k = lstLength(in.#NmdTupType, t) - 1 }),
+									max(
+									  maxAll(0, { k | StmtExprSize(_, k'), k = k' - 1 }),
+									  2)))),									  
+	                            m : Natural, 
+								args = out.Args(Ident("x0"), Args(Ident("f0"), NIL)).
+	MacroArgList(args, i, j) :- MacroArgList(tl, i', j'), i = i' + 1, j = j' - 1, j : Natural, 
+								args = out.Args(Ident(strJoin("x", toString(i))), Args(Ident(strJoin("f", toString(i))), tl)). 
+
+	TupleMacroArgList ::= (args: out.Args, len: Natural, aux: Natural).
+	TupleMacroArgList(args, 0, m) :- m = max(
+	                                  //maxAll(0, { k | RhsEvalOrder(_, _, _, k) }),
+									  maxAll(0, { k | ExprMacroSize(_, k) }),
+									max(
+									  maxAll(0, { k | in.TypeOf(_, _, t), t : in.TupType, k = lstLength(in.#TupType, t) - 1 }),
+									max(
+									  maxAll(0, { k | in.TypeOf(_, _, t), t : in.NmdTupType, k = lstLength(in.#NmdTupType, t) - 1 }),
+									max(
+									  maxAll(0, { k | StmtExprSize(_, k'), k = k' - 1 }),
+									  2)))),									  
+									 m : Natural, 
+									 args = out.Args(Ident("x0"), NIL).
+	TupleMacroArgList(args, i, j) :- TupleMacroArgList(tl, i', j'), i = i' + 1, j = j' - 1, j : Natural, 
+									 args = out.Args(Ident(strJoin("x", toString(i))), tl). 
+
+	//// Generate the bodies for P_EXPR_n
+	ExprMacroSize ::= (in.Stmt, Natural).
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.NewStmt, RhsMaxOrder(s, 0, k), n = k + 1.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.FunStmt, RhsMaxOrder(s, 0, k), n = k + 1.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Print, RhsMaxOrder(s, 0, k), n = k + 1.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Goto, RhsMaxOrder(s, 0, k), n = k + 1.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Announce, RhsMaxOrder(s, 0, k), n = k.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Announce, RhsMaxOrder(s, 1, k), n = k + 2.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Raise, RhsMaxOrder(s, 0, k), n = k.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Raise, RhsMaxOrder(s, 1, k), n = k + 2.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Send, RhsMaxOrder(s, 0, k), n = k.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Send, RhsMaxOrder(s, 1, k), n = k.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Send, RhsMaxOrder(s, 2, k), n = k + 3.
+
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.BinStmt, RhsMaxOrder(s, _, k), n = k.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Return, RhsMaxOrder(s, _, k), n = k.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.While, RhsMaxOrder(s, _, k), n = k.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Ite, RhsMaxOrder(s, _, k), n = k.
+	ExprMacroSize(s, n) :- SubSE(_, s), s: in.Assert, RhsMaxOrder(s, _, k), n = k.
+
+	PExprBodyArgs ::= (args: out.Args, size: Natural, freeNum: Integer, asnNum: Integer).
+
+	PExprBodyArgs(a, n, n', n) :- ExprMacroSize(_, n), a = out.Args(Ident(strJoin("p_tmp_expr_", toString(n))), NIL), n' = n - 1.
+	
+	PExprBodyArgs(a, n, i', n) :- PExprBodyArgs(tl, n, i, n), i : Natural, i' = i - 1, a = out.Args(condFree, tl), 
+							      free = out.FunApp(Ident("PrtFreeValue"), Args(Ident(strJoin("p_tmp_expr_", toString(i))), NIL)),
+								  condFree = out.Paren(TerApp(TCOND, Paren(Ident(strJoin("f", toString(i)))), free, IntLit(0, DEC, U))).
+
+	PExprBodyArgs(a, n, -1, i') :- PExprBodyArgs(tl, n, -1, i), i : Natural, i' = i - 1, a = out.Args(asn, tl), 
+							      asn = out.BinApp(ASN, Ident(strJoin("p_tmp_expr_", toString(i))), Paren(Ident(strJoin("x", toString(i))))).
+
+	//// Generate the bodies for P_STMT_n
+	PStmtBodyArgs ::= (args: out.Args, size: Natural, freeNum: Integer, asnNum: Integer).
+
+	PStmtBodyArgs(a, n, i', n)  :- StmtExprSize(_, n'), n : Natural, n = n' - 1, i' = n' - 2, a = out.Args(condFree, NIL), 
+							       free = out.FunApp(Ident("PrtFreeValue"), Args(Ident(strJoin("p_tmp_stmt_", toString(n))), NIL)),
+								   condFree = out.Paren(TerApp(TCOND, Paren(Ident(strJoin("f", toString(n)))), free, IntLit(0, DEC, U))).
+
+	PStmtBodyArgs(a, n, i', n)  :- PStmtBodyArgs(tl, n, i, n), i : Natural, i' = i - 1, a = out.Args(condFree, tl), 
+							       free = out.FunApp(Ident("PrtFreeValue"), Args(Ident(strJoin("p_tmp_stmt_", toString(i))), NIL)),
+								   condFree = out.Paren(TerApp(TCOND, Paren(Ident(strJoin("f", toString(i)))), free, IntLit(0, DEC, U))).
+
+	PStmtBodyArgs(a, n, -2, n)  :- PStmtBodyArgs(tl, n, -1, n), a = out.Args(Paren(Ident("s")), tl).
+
+	PStmtBodyArgs(a, n, -2, i') :- PStmtBodyArgs(tl, n, -2, i), i : Natural, i' = i - 1, a = out.Args(asn, tl), 
+							       asn = out.BinApp(ASN, Ident(strJoin("p_tmp_stmt_", toString(i))), Paren(Ident(strJoin("x", toString(i))))).
+
+	//// Generate the bodies for P_TUPLE_n
+	PTupleBodyArgs ::= (args: out.Args, size: Natural, asnNum: Integer).
+
+	PTupleBodyArgs(a, n, n)  :- in.TypeOf(_, _, t), t : in.TupType, n = lstLength(in.#TupType, t), a = out.Args(Ident("p_tmp_tuple"), NIL).
+	PTupleBodyArgs(a, n, n)  :- in.TypeOf(_, _, t), t : in.NmdTupType, n = lstLength(in.#NmdTupType, t), a = out.Args(Ident("p_tmp_tuple"), NIL).
+	PTupleBodyArgs(a, n, i') :- PTupleBodyArgs(tl, n, i), i' : Natural, i' = i - 1, a = out.Args(asn, tl), 
+							    asn = out.FunApp(Ident("PrtTupleSet"), Args(Ident("p_tmp_tuple"), Args(IntLit(i', DEC, U), Args(Paren(Ident(strJoin("x", toString(i')))), NIL)))).
+	PTupleBodyArgs(a, n, -1) :- PTupleBodyArgs(tl, n, 0), a = out.Args(asn, tl), 
+							    asn = out.BinApp(ASN, Ident("p_tmp_tuple"), FunApp(Ident("PrtMkDefaultValue"), Args(Ident("t"), NIL))).
+
+	//// Generate fixed macros
+	COut(0, def) :- def = out.PpDefine(Ident("P_SEQ"), NIL). 
+
+	COut(1, def) :- PStmtBodyArgs(bodyArgs, n, -2, -1), MacroArgList(paramArgs, n, _),
+	                def = out.PpDefine(
+					         FunApp(Ident(strJoin("P_STMT_", toString(n))), Args(Ident("s"), paramArgs)),
+					         FunApp(Ident("P_SEQ"), bodyArgs)).
+
+	PBoolExprBodyArgs ::= (out.Args).
+	PBoolExprBodyArgs(bodyArgs) :- 
+					bodyArgs = out.Args(asn0, Args(asnb, Args(condFree0, Args(retb, NIL)))),
+			        asn0 = out.BinApp(ASN, Ident("p_tmp_expr_0"), Paren(Ident("x0"))),
+			        asnb = out.BinApp(ASN, Ident("p_tmp_bool"), FunApp(Ident("PrtPrimGetBool"), Args(Ident("p_tmp_expr_0"), NIL))),
+			        free0 = out.FunApp(Ident("PrtFreeValue"), Args(Ident("p_tmp_expr_0"), NIL)),
+					condFree0 = out.Paren(TerApp(TCOND, Paren(Ident(strJoin("f", toString(0)))), free0, IntLit(0, DEC, U))),
+					retb = Ident("p_tmp_bool").
+	COut(2, def) :- def = out.PpDefine(
+					         FunApp(Ident("P_BOOL_EXPR"), Args(Ident("x0"), Args(Ident("f0"), NIL))),
+					         FunApp(Ident("P_SEQ"), bodyArgs)),
+					PBoolExprBodyArgs(bodyArgs).
+															        
+	COut(2, def) :- PExprBodyArgs(bodyArgs, n, -1, -1), MacroArgList(paramArgs, n, _),
+	                def = out.PpDefine(
+					         FunApp(Ident(strJoin("P_EXPR_", toString(n))), paramArgs),
+					         FunApp(Ident("P_SEQ"), bodyArgs)).
+
+	COut(2, def) :- PTupleBodyArgs(bodyArgs, n, -1), n' = n - 1, TupleMacroArgList(paramArgs, n', _), 
+	                def = out.PpDefine(
+					         FunApp(Ident(strJoin("P_TUPLE_", toString(n'))), Args(Ident("t"), lstReverse(out.#Args, paramArgs))),
+					         FunApp(Ident("P_SEQ"), bodyArgs)).
+
+    /*************************************************************/
+    /******     Generate C statics for types in program     ******/
+    /*************************************************************/
+
+	//// Labels a type expression with a number greater than the labels of all its sub-expressions.
+	//// TypeId linearizes the dependency order to get a schedule for emitting type expressions.
+	TypeId      ::= (id: Natural, type: in.TypeExpr).
+	TypeDepNum  ::= (id: Natural, type: in.TypeExpr).
+	TupTypeDepNum ::= (id: Natural, type: in.TupType).
+	NmdTupTypeDepNum ::= (id: Natural, type: in.NmdTupType).
+
+	TupTypeDepNum(i, t) :- TranslatedTupType(t), t = in.TupType(t', NIL), TypeDepNum(j, t'), i = j + 1.  
+	TupTypeDepNum(i, t) :- TranslatedTupType(t), t = in.TupType(t', t''), TypeDepNum(j, t'), TupTypeDepNum(k, t''),  i = j + k + 1.  
+	NmdTupTypeDepNum(i, t) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(_, t'), NIL), TypeDepNum(j, t'), i = j + 1.  
+	NmdTupTypeDepNum(i, t) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(_, t'), t''), TypeDepNum(j, t'), NmdTupTypeDepNum(k, t''), i = j + k + 1.  
+
+	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), t : in.BaseType.
+	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), t : in.AnyType.
+	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), t : in.InterfaceType.
+	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), t : in.NameType. 
+	TypeDepNum(0, t) :- in.TranslatedTypeExpr(t), in.ImportedType(_, t).
+	TypeDepNum(i, t) :- in.TranslatedTypeExpr(t), t = in.SeqType(t'), TypeDepNum(j, t'), i = j + 1.  
+	TypeDepNum(i, t) :- in.TranslatedTypeExpr(t), t = in.MapType(t', t''), TypeDepNum(j, t'), TypeDepNum(k, t''),  i = j + k + 1. 
+	TypeDepNum(i, t) :- in.TranslatedTypeExpr(t), t: in.TupType, TupTypeDepNum(i, t). 
+	TypeDepNum(i, t) :- in.TranslatedTypeExpr(t), t: in.NmdTupType, NmdTupTypeDepNum(i, t). 
+	TypeId(id, t) :- td is TypeDepNum(_, t), NotImportedType(t), id = toOrdinal(td, 0, { td' | td' is TypeDepNum(_, t'), NotImportedType(t') }).
+	
+	//// Build type initializers in linearization order.
+	//// defs is the definitions that precede the encoding of this type constant.
+	TypeConstant ::= (type: in.TypeExpr + { NIL }, typeExprId: Integer, defs: out.Section + { NIL }, def: out.VarDef + { NIL }).
+	TypeConstant(NIL, -1, NIL, NIL).
+
+	//// Base types
+	BaseType2Kind ::= ({ NULL, BOOL, INT, FLOAT, EVENT, MACHINE, ANY }, String).
+	BaseType2Kind(NULL, "PRT_KIND_NULL").
+	BaseType2Kind(BOOL, "PRT_KIND_BOOL").
+	BaseType2Kind(INT, "PRT_KIND_INT").
+	BaseType2Kind(FLOAT, "PRT_KIND_FLOAT").
+	BaseType2Kind(EVENT, "PRT_KIND_EVENT").
+	BaseType2Kind(MACHINE, "PRT_KIND_MACHINE").
+	BaseType2Kind(ANY, "PRT_KIND_ANY").
+	TypeConstant(t, m, defs, def) :- 
+								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.BaseType(base), 
+								BaseType2Kind(base, kind),
+								defs = out.Section(before, def),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+                                typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
+	//// Any types
+	TypeConstant(t, m, defs, def) :- 
+								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t : in.AnyType,
+								BaseType2Kind(ANY, kind),
+								defs = out.Section(before, def),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+                                typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).
+	//// Interface types
+	TypeConstant(t, m, defs, def) :- 
+								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t : in.InterfaceType, 
+								BaseType2Kind(MACHINE, kind),
+								defs = out.Section(before, def),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								typeStruct = out.Init(Args(Ident(kind), Args(Ident("NULL"), NIL))).
+
+	//// Enum types
+	TypeConstant(t, m, defs, def) :- 
+								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.NameType(name), in.EnumTypeDef(name, _, _, _),
+								BaseType2Kind(INT, kind),
+								defs = out.Section(before, def),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+                                typeStruct = out.Init(Args(Ident(kind), Args(Init(Args(Ident("NULL"), NIL)), NIL))).						              
+	
+	//// Foreign types
+	TypeConstant(t, m, defs, def) :- 
+								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), t = in.NameType(name), in.TypeDef(name, NIL, _),
+								defs = out.Section(before, def),
+								def = out.VarDef(STATIC, NmdType(NIL, "PRT_TYPE"), typeName, typeStruct),
+								foreignTypeName = strJoin("P_FOREIGN_TYPE_", name), foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+                                typeStruct = out.Init(Args(Ident("PRT_KIND_FOREIGN"), 
+								                      Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(foreignTypeStructName))), NIL)), NIL))).						              
+	
+	//// Complex type Seq 
+	//// (cast to PRT_MAPTYPE * is used to avoid compiler warnings when initializing union)
+	TypeConstant(t, m, defs, def) :- 
+								TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), 
+								t = in.SeqType(tinner), TypeToString(tinner, tinnerName),
+								defs = out.Section(Section(before, defSeq), def),
+								defSeq = out.VarDef(
+                                     STATIC, 
+                                     NmdType(NIL, "PRT_SEQTYPE"), 
+                                     typeNameSeq, 
+                                     Init(Args(UnApp(ADDR, Ident(tinnerName)), NIL))),								 
+								def = out.VarDef(
+                                     STATIC, 
+                                     NmdType(NIL, "PRT_TYPE"), 
+                                     typeName, 
+                                     typeStruct),
+								typeStruct = out.Init(
+									 Args(Ident("PRT_KIND_SEQ"), 
+									 Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameSeq))), NIL)), 
+									 NIL))),
+								typeNameSeq = strJoin("P_GEND_TYPE_SEQ_", toString(m)). 
+
+	//// Complex type Map 
+	TypeConstant(t, m, defs, def) :- 
+	                       TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), 
+						   t = in.MapType(tdom, tcod), TypeToString(tdom, domName), TypeToString(tcod, codName),
+								         defs = out.Section(Section(before, defMap), def),
+										     defMap = out.VarDef(
+														  STATIC, 
+														  NmdType(NIL, "PRT_MAPTYPE"), 
+														  typeNameMap, 
+														  Init(Args(UnApp(ADDR, Ident(domName)), 
+														       Args(UnApp(ADDR, Ident(codName)), 
+														       NIL)))),
+										      def = out.VarDef(
+														  STATIC, 
+														  NmdType(NIL, "PRT_TYPE"), 
+														  typeName, 
+														  typeStruct),
+							            typeStruct = out.Init(
+														Args(Ident("PRT_KIND_MAP"), 
+														Args(Init(Args(UnApp(ADDR, Ident(typeNameMap)), NIL)), 
+														NIL))),														  
+										      typeNameMap = strJoin("P_GEND_TYPE_MAP_", toString(m)).
+
+	//// Complex type Tuple 
+	Tup2ArrayInit ::= (type: in.TupType, arr: out.Expr). 
+	Tup2ArrayInit(t, init) :- TranslatedTupType(t), t = in.TupType(t', NIL), TypeToString(t', name), init = Init(Args(UnApp(ADDR, Ident(name)), NIL)). 
+	Tup2ArrayInit(t, init) :- TranslatedTupType(t), t = in.TupType(t', t''), TypeToString(t', name), Tup2ArrayInit(t'', Init(ts'')), 
+	                          init = Init(Args(UnApp(ADDR, Ident(name)), ts'')). 
+
+	TypeConstant(t, m, defs, def) :- 
+	                       TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), Tup2ArrayInit(t, arrInit), t : in.TupType, 
+								         defs = out.Section(Section(before, Section(defTupArr, defTup)), def),
+										     defTupArr = out.VarDef(
+															 STATIC, 
+															 ArrType(PtrType(NmdType(NIL, "PRT_TYPE")), NIL), 
+															 typeNameTupArr, 
+															 arrInit),
+										     defTup = out.VarDef(
+														  STATIC, 
+														  NmdType(NIL, "PRT_TUPTYPE"), 
+														  typeNameTup, 
+														  Init(
+														    Args(IntLit(lstLength(in.#TupType, t), DEC, NIL), 
+															  Args(Ident(typeNameTupArr), 
+															  NIL)))),
+										     def = out.VarDef(
+													   STATIC, 
+													   NmdType(NIL, "PRT_TYPE"), 
+													   typeName, 
+													   typeStruct),
+										    typeStruct = out.Init(
+													  Args(Ident("PRT_KIND_TUPLE"), 
+													  Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameTup))), NIL)),
+													  NIL))),
+										     typeNameTupArr = strJoin("P_GEND_TYPE_TUP_ARR_", toString(m)),
+										     typeNameTup = strJoin("P_GEND_TYPE_TUP_", toString(m)).
+
+	//// Complex type NmdTuple 
+	NmdTup2ArrayInit ::= (type: in.NmdTupType, narr: out.Expr, tarr: out.Expr). 
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(n', t'), NIL), TypeToString(t', name), 
+	                                   tarr = Init(Args(UnApp(ADDR, Ident(name)), NIL)), 
+	                                   narr = Init(Args(StringLit(n', NIL), NIL)).
+									    
+	NmdTup2ArrayInit(t, narr, tarr) :- TranslatedNmdTupType(t), t = in.NmdTupType(NmdTupTypeField(n', t'), t''), TypeToString(t', name), NmdTup2ArrayInit(t'', Init(n''), Init(ts'')), 
+	                                   tarr = Init(Args(UnApp(ADDR, Ident(name)), ts'')),
+	                                   narr = Init(Args(StringLit(n', NIL), n'')).
+
+	TypeConstant(t, m, defs, def) :- 
+									TypeId(m, t), TypeToString(t, typeName), TypeConstant(_, m - 1, before, _), NmdTup2ArrayInit(t, narr, tarr), t : in.NmdTupType, 
+								     defs = out.Section(before, Section(defNmdTupNArr, Section(defNmdTupTArr, Section(defNmdTup, def)))),
+										 defNmdTupNArr = out.VarDef(
+																STATIC, 
+															    ArrType(NmdType(NIL, "PRT_STRING"), NIL), 
+															    typeNameNmdTupNArr, 
+															    narr),
+										 defNmdTupTArr = out.VarDef(
+																STATIC, 
+															    ArrType(PtrType(NmdType(NIL, "PRT_TYPE")), NIL), 
+															    typeNameNmdTupTArr, 
+															    tarr),
+										 defNmdTup = out.VarDef(
+														  STATIC, 
+														  NmdType(NIL, "PRT_NMDTUPTYPE"), 
+														  typeNameNmdTup, 
+														  Init(
+														  Args(IntLit(lstLength(in.#NmdTupType, t), DEC, NIL), 
+															Args(Ident(typeNameNmdTupNArr), 
+															Args(Ident(typeNameNmdTupTArr), 
+															NIL))))),
+										 def = out.VarDef(
+													   STATIC, 
+													   NmdType(NIL, "PRT_TYPE"), 
+													   typeName, 
+													   typeStatic),
+							       typeStatic = out.Init(
+												Args(Ident("PRT_KIND_NMDTUP"), 
+											    Args(Init(Args(Cast(PtrType(NmdType(NIL, "PRT_MAPTYPE")), UnApp(ADDR, Ident(typeNameNmdTup))), NIL)),
+											    NIL))),
+										 typeNameNmdTupTArr = strJoin("P_GEND_TYPE_NMDTUP_TARR_", toString(m)),
+										 typeNameNmdTupNArr = strJoin("P_GEND_TYPE_NMDTUP_NARR_", toString(m)),
+										 typeNameNmdTup = strJoin("P_GEND_TYPE_NMDTUP_", toString(m)).
+
+    COut(3, defs) :- TypeConstant(_, c, defs, _), defs : out.Section, c = count({ td | td is TypeId}) - 1.
+
+	COut(4, def) :- in.ExportedType(name, type), TypeConstant(type, _, _, out.VarDef(_, t, _, initExpr)), def = out.VarDef(NIL, t, strJoin("P_GEND_TYPE_", name), initExpr).
+    
+    /*************************************************************/
+    /******   Generate C statics for constants in program   ******/
+    /*************************************************************/
+
+	ConstExpr ::= (e: in.Expr).
+	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Integer.
+	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: Boolean.
+	ConstExpr(in.NulApp(op, NIL)) :- SubSE(_, e), e = in.NulApp(op, _), op: in.Float.
+	ConstExpr(in.Name(n, NIL)) :- EnumTypeElemIndex(_, StringList(n, _), _, _, _).
+
+	ConstId      ::= (id: Natural, const: in.Expr).
+	ConstId(id, c) :- ConstExpr(c), id = toOrdinal(c, 0, { c' | ConstExpr(c') }).
+
+	//// Base types
+	BaseConstant2Kind ::= (const: in.Expr, kind: String, value: out.Expr).
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", IntLit(n, DEC, U)) :- ConstExpr(e), e = in.NulApp(n, _), n: Integer.
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_FLOAT", out.BinApp(ASN, Ident(".ft"), RealLit(n, 6, DEC, NIL))) :- ConstExpr(e), e = in.NulApp(Float(n), _), n: Real.
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_FALSE")) :- ConstExpr(e), e = in.NulApp(FALSE, _).
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_BOOL", out.Ident("PRT_TRUE")) :- ConstExpr(e), e = in.NulApp(TRUE, _).
+	BaseConstant2Kind(e, "PRT_VALUE_KIND_INT", out.Ident(n)) :- ConstExpr(e), e = in.Name(name, _), EnumTypeElemIndex(d, StringList(name, _), _, _, _),
+																n = strJoin(strJoin(d.name, "_"), name).
+
+	//// Build constant initializers in linearization order.
+	//// defs is the definitions that precede the encoding of this type constant.
+	Constant ::= (const: in.Expr + { NIL }, constExprId: Integer, defs: out.Section + { NIL }).
+	Constant(NIL, -1, NIL).
+	Constant(c, m, defs) :- ConstId(m, c), Constant(_, m - 1, before), BaseConstant2Kind(c, kind, value),
+							defs = out.Section(before, def), def = out.VarDef(STATIC, NmdType(NIL, "PRT_VALUE"), constName, constStruct),
+							constName = strJoin("P_GEND_VALUE_", toString(m)), constStruct = out.Init(Args(Ident(kind), Args(Init(Args(value, NIL)), NIL))).						              
+
+    COut(4, defs) :- Constant(_, c, defs), defs : out.Section, c = count({ x | x is ConstId}) - 1.
+
+	/*************************************************************/
+    /******            Generate event decls                 ******/
+    /*************************************************************/	
+	EvDecl2PayloadType ::= (in.EventDecl, out.Expr).
+	//// An EventDecl without a payload type has a null payload type.
+	EvDecl2PayloadType(d, expr) :- d is in.EventDecl(_, _, NIL, _), TypeToExpr(in.BaseType(NULL), expr).
+	//// An EventDecl with a payload type refers to one of the statically generated types.
+	EvDecl2PayloadType(d, expr) :- d is in.EventDecl(_, _, type, _), type : in.TypeExpr, TypeToExpr(type, expr).
+
+	EvDecl2EvCard      ::= (in.EventDecl, out.Expr).
+	//// An EventDecl without a queue constraint allows 2^32 - 1 events in a queue.
+	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, NIL, _, _), e = IntLit(4294967295, DEC, U).
+	//// An EventDecl with a payload type refers to one of the statically generated types.
+	EvDecl2EvCard(d, e) :- d is in.EventDecl(_, card, _, _), e = IntLit(card.bound, DEC, U).
+
+	COut(4, def) :- d is in.EventDecl(name, _, _, id), in.PFile(fileName), id.tl.val = fileName, 
+					EvDecl2PayloadType(d, expr), EvDecl2EvCard(d, card), cn = strJoin("P_EVENT_", name),
+					eventStructName = strJoin(cn, "_STRUCT"),
+					def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_EVENTDECL"), 
+								  eventStructName, 
+								  init),
+	                        init = Init(
+							   Args(Init(Args(Ident("PRT_VALUE_KIND_EVENT"), Args(IntLit(0, DEC, U), NIL))),
+							   Args(StringLit(name, NIL),
+							   Args(card,
+							   Args(expr,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
+
+    /*************************************************************/
+    /******            Generate Event Set Decls             ******/
+    /*************************************************************/	
+	EventNameListToEventStructList ::= (link.EventNameList + { NIL }, link.EventNameList + { NIL }, out.Args + { NIL }).
+	EventNameListToEventStructList(l', NIL, NIL) :- link.EventSet(_, l), l' = lstReverse(link.#EventNameList, l).
+	EventNameListToEventStructList(tl, x', y') :- 
+		EventNameListToEventStructList(link.EventNameList(name, tl), x, y), name: String,
+		x' = link.EventNameList(name, x), y' = Args(UnApp(ADDR, Ident(strJoin(strJoin("P_EVENT_", name), "_STRUCT"))), y).
+	EventNameListToEventStructList(tl, x', y') :- 
+		EventNameListToEventStructList(link.EventNameList(NULL, tl), x, y),
+		x' = link.EventNameList(NULL, x), y' = Args(UnApp(ADDR, Ident("_P_EVENT_NULL_STRUCT")), y).
+	EventNameListToEventStructList(tl, x', y') :- 
+		EventNameListToEventStructList(link.EventNameList(HALT, tl), x, y),
+		x' = link.EventNameList(HALT, x), y' = Args(UnApp(ADDR, Ident("_P_EVENT_HALT_STRUCT")), y).
+
+	COut(3, def) :- link.EventSet(esName, l), l: link.EventNameList,
+					EventNameListToEventStructList(NIL, l, args),
+					init = Init(args),
+					def = out.VarDef(NIL,  ArrType(PtrType(NmdType(NIL, "PRT_EVENTDECL")), NIL), strJoin(esName, "_INNER"), init).
+
+	EventSetArray ::= (esName: String, size: Natural, arr: out.Ident).
+	EventSetArray(esName, size, arr) :- link.EventSet(esName, NIL), size = 0, arr = out.Ident("NULL").
+	EventSetArray(esName, size, arr) :- link.EventSet(esName, l), l: link.EventNameList, 
+										size = lstLength(link.#EventNameList, l), arr = out.Ident(strJoin(esName, "_INNER")).
+	
+	COut(4, def) :- EventSetArray(esName, size, arr),
+					init = Init(
+						Args(IntLit(size, DEC, U),
+						Args(arr,
+						Args(Ident("NULL"),
+						NIL)))),
+					def = out.VarDef(NIL,  NmdType(NIL, "PRT_EVENTSETDECL"), esName, init).
+
+    /*************************************************************/
+    /******            Generate Variable Decl Arrays        ******/
+    /*************************************************************/	
+	VarDeclConcat ::= (pos: Natural, mach: String, arr: out.Args + {NIL}).
+
+	//// Base case
+	VarDeclConcat(c, name, NIL) :- in.MachineDecl(name, _), c = count({v | v is in.VarDecl, v.owner = name}).
+
+    //// Build every variable array in reverse order
+	VarDeclConcat(m, d.owner, arr) :- 
+							DeclId(d, m, cvar), MachineName(d.owner, ownerMachineName), VarDeclConcat(m + 1, d.owner, after), 
+							d : in.VarDecl, TypeToExpr(d.type, expr),
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(StringLit(d.name, NIL),
+							   Args(expr,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))).
+
+	COut(5, def) :- VarDeclConcat(0, mach, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_VARDECL"), NIL), 
+								  strJoin("P_GEND_VARS_", mach), 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******          Generate Transition Decl Arrays        ******/
+    /*************************************************************/	
+	TransDeclConcat ::= (pos: Natural, context: in.StateDecl, arr: out.Args + {NIL}).
+	TransDeclId     ::= (decl: in.TransDecl, id: Natural, srcName: String, dstName: String, machName: String).
+
+	//// Transition Id also contains source, destination, and owner machine ids
+	TransDeclId(t, id, srcname, dstname, machname) :- 
+	                t is in.TransDecl, 
+					id = toOrdinal(t, 0, { t' | t' is in.TransDecl, t'.src = t.src }),
+					DeclId(t.src, _, srcname), 
+					MachineName(t.src.owner, machname),
+					DeclId(dst, _, dstname), dst is in.StateDecl, dst.owner = t.src.owner, dst.name = t.dst.
+
+    //// Transition event Id depends on whether the transition is a user event, default, or halt.
+    TransDeclEvnt  ::= (decl: in.TransDecl, evName: String).
+	NullOrHalt     ::= { NULL, HALT }.
+	TransDeclEvnt(t, evname) :- t is in.TransDecl, ev is in.EventDecl, ev.name = t.trig, EventName(ev, evname).
+	TransDeclEvnt(t, evname) :- t is in.TransDecl, trig = t.trig, trig : NullOrHalt, EventName(trig, evname).
+
+	//// Transition action index depends on whether the transition is a push transition or not.
+    TransDeclAction  ::= (decl: in.TransDecl, funStruct: out.Expr).
+	TransDeclAction(t, funStruct) :- t is in.TransDecl, t.action = PUSH, funStruct = Ident("NULL"). 
+	TransDeclAction(t, funStruct) :- t is in.TransDecl, act = t.action, act : in.AnonFunDecl, 
+	                                 AnonOrNamedFunName(act, funname), funStruct = out.UnApp(ADDR, Ident(strJoin(funname, "_STRUCT"))).
+	TransDeclAction(t, funStruct) :- t is in.TransDecl, act = t.action, act : String, FunAvailable(f, t.src.owner), f.name = act, 
+	                                 AnonOrNamedFunName(f, funname), funStruct = out.UnApp(ADDR, Ident(strJoin(funname, "_STRUCT"))).
+
+	//// Base case
+	TransDeclConcat(c, s, NIL) :- s is in.StateDecl, c = count({t | t is in.TransDecl, t.src = s}).
+
+    //// Build every transition list in reverse order
+	TransDeclConcat(m, d.src, arr) :- 
+							TransDeclId(d, m, srcname, dstname, machname),
+							TransDeclEvnt(d, evname), evStructName = strJoin(evname, "_STRUCT"),
+							TransDeclAction(d, funStruct),
+							TransDeclConcat(m + 1, d.src, after), 
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(srcname),
+							   Args(UnApp(ADDR, Ident(evStructName)),
+							   Args(Ident(dstname),
+							   Args(funStruct,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))).
+
+	COut(6, def) :- TransDeclConcat(0, state, arr),
+	                QualName2CStr(state.name, statename),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_TRANSDECL"), NIL), 
+								  strJoin("P_GEND_TRANS_", strJoin(state.owner, strJoin("_", statename))), 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******             Generate Do Decl Arrays             ******/
+    /*************************************************************/	
+	DoDeclConcat ::= (pos: Natural, context: in.StateDecl, arr: out.Args + {NIL}).
+	DoDeclId     ::= (decl: in.DoDecl, id: Natural, srcName: String, machName: String).
+
+	//// DoDeclId Id also contains source and owner machine ids
+	DoDeclId(d, id, srcname, machname) :- 
+	                d is in.DoDecl, d.action != DEFER,
+					id = toOrdinal(d, 0, { d' | d' is in.DoDecl, d'.src = d.src, d'.action != DEFER }),
+					DeclId(d.src, _, srcname), 
+					MachineName(d.src.owner, machname).
+
+    //// Do event Id depends on whether the do is a user event, default, or halt.
+    DoDeclEvnt  ::= (decl: in.DoDecl, evName: String).
+	DoDeclEvnt(d, evname) :- d is in.DoDecl, d.action != DEFER, ev is in.EventDecl, ev.name = d.trig, EventName(ev, evname).
+	DoDeclEvnt(d, evname) :- d is in.DoDecl, d.action != DEFER, trig = d.trig, trig : NullOrHalt, EventName(trig, evname).
+
+	//// Do action index depends on whether the do is an ignore or not.
+    DoDeclAction  ::= (decl: in.DoDecl, funStruct: out.Expr).
+	DoDeclAction(d, funStruct) :- d is in.DoDecl, d.action = IGNORE, funStruct = Ident("NULL"). 
+	DoDeclAction(d, funStruct) :- d is in.DoDecl, act = d.action, act : AnonOrNamedFun, 
+	                              AnonOrNamedFunName(act, funname), funStruct = out.UnApp(ADDR, Ident(strJoin(funname, "_STRUCT"))).
+	DoDeclAction(d, funStruct) :- d is in.DoDecl, act = d.action, act : String, FunAvailable(f, d.src.owner), f.name = act, 
+	                              AnonOrNamedFunName(f, funname), funStruct = out.UnApp(ADDR, Ident(strJoin(funname, "_STRUCT"))).
+
+	//// Base case
+	DoDeclConcat(c, s, NIL) :- s is in.StateDecl, c = count({d | d is in.DoDecl, d.src = s, d.action != DEFER}).
+
+    //// Build every transition list in reverse order
+	DoDeclConcat(m, d.src, arr) :- 
+							DoDeclId(d, m, srcname, machname),
+							DoDeclEvnt(d, evname), evStructName = strJoin(evname, "_STRUCT"),
+							DoDeclAction(d, funStruct),
+							DoDeclConcat(m + 1, d.src, after), 
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(Ident(srcname),
+							   Args(UnApp(ADDR, Ident(evStructName)),
+							   Args(funStruct,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))).
+
+	COut(7, def) :- DoDeclConcat(0, state, arr),
+	                QualName2CStr(state.name, statename),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_DODECL"), NIL), 
+								  strJoin("P_GEND_DOS_", strJoin(state.owner, strJoin("_", statename))), 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******            Generate Fun Implementations         ******/
+    /*************************************************************/	
+	UniqueEventSetName ::= (String, link.EventNameList + { NIL }).
+	UniqueEventSetName(esName, list) :- link.EventSet(_, list), esNames = toList(in.#StringList, NIL, {x | link.EventSet(x, list)}), esName = esNames.hd.
+
+	ContextTransStmtExpr ::= (in.TypingContext, out.Stmt + out.Cases + out.Case + out.Args + { NIL }).
+	ContextTransStmtExpr(c, body) :- BodyTrans(c, body).
+	ContextTransStmtExpr(c, s1), ContextTransStmtExpr(c, s2) :- ContextTransStmtExpr(c, out.Seq(s1, s2)).
+	ContextTransStmtExpr(c, s) :- ContextTransStmtExpr(c, out.Block(_, s)).
+	ContextTransStmtExpr(c, s) :- ContextTransStmtExpr(c, out.Lbl(_, s)).
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.Return(e)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, s1), ContextTransStmtExpr(c, s2):- ContextTransStmtExpr(c, out.ITE(e, s1, s2)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, cases) :- ContextTransStmtExpr(c, out.Switch(e, cases)).
+	ContextTransStmtExpr(c, case), ContextTransStmtExpr(c, cases) :- ContextTransStmtExpr(c, out.Cases(case, cases)).
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.Case(e, _)), e: out.Expr.
+	ContextTransStmtExpr(c, s) :- ContextTransStmtExpr(c, out.Case(_, s)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, s) :- ContextTransStmtExpr(c, out.Loop(_, e, s)).
+	ContextTransStmtExpr(c, e0), ContextTransStmtExpr(c, e1), ContextTransStmtExpr(c, e2), ContextTransStmtExpr(c, s):- ContextTransStmtExpr(c, out.For(e0, e1, e2, s)).
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.SizeOf(e)), e: out.Expr. 
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.Cast(_, e)). 
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.UnApp(_, e)). 
+	ContextTransStmtExpr(c, e0), ContextTransStmtExpr(c, e1) :- ContextTransStmtExpr(c, out.BinApp(_, e0, e1)). 
+	ContextTransStmtExpr(c, e0), ContextTransStmtExpr(c, e1), ContextTransStmtExpr(c, e2) :- ContextTransStmtExpr(c, out.TerApp(_, e0, e1, e2)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(e, args)). 
+	ContextTransStmtExpr(c, e) :- ContextTransStmtExpr(c, out.Paren(e)).
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.Init(args)).
+	ContextTransStmtExpr(c, e), ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.Args(e, args)).
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(Ident(name), _)), name = strJoin("P_STMT_", toString(n)), PStmtBodyArgs(args, n, -2, -1).
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(Ident(name), _)), name = strJoin("P_EXPR_", toString(n)), PExprBodyArgs(args, n, -1, -1).
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(Ident(name), _)), name = strJoin("P_TUPLE_", toString(n')), PTupleBodyArgs(args, n, -1), n' = n - 1.
+	ContextTransStmtExpr(c, args) :- ContextTransStmtExpr(c, out.FunApp(Ident("P_BOOL_EXPR"), _)), PBoolExprBodyArgs(args).
+
+	//// Computes the variable definitions required for function bodies.
+	BodyTmpVars ::= (context: in.TypingContext, nExprVars: Integer, nStmtVars: Integer, defs: out.Defs + { NIL }).
+	BodyTmpVars(c, nExprs, nStmts, NIL) :-  SubCntxt(c), 
+											nExprs : Integer,
+										    nExprs = maxAll(-1, 
+											{ k | SubSE(c, s), s : in.Stmt, ExprMacroSize(_, k) }),
+	                                        nStmts : Integer,
+											nStmts = maxAll(0,  { k | SubSE(c, s), StmtExprSize(s, k'), k = k' - 1 }).
+    BodyTmpVars(c, i', n, defs)  :- BodyTmpVars(c, i, n, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
+	                                def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), strJoin("p_tmp_expr_", toString(i)), NIL).
+
+    BodyTmpVars(c, -1, i', defs) :- BodyTmpVars(c, -1, i, tl), i : Natural, i' = i - 1, defs = out.Defs(def, tl),
+	                                def = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), strJoin("p_tmp_stmt_", toString(i)), NIL).
+
+    BodyTmpVars(c, -1, -2, defs) :- BodyTmpVars(c, -1, -1, tl), 
+									defs = out.Defs(defe, Defs(defm, Defs(defpc, Defs(defb, Defs(defr, Defs(deft, Defs(deff, Defs(frame, tl)))))))),
+									frame  = out.VarDef(NIL, NmdType(NIL, "PRT_FUNSTACK_INFO"), "p_tmp_frame", NIL),
+									deff   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_funstmt_ret", NIL),
+									deft   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_tuple", NIL),
+	                                defr   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_ret", NIL),
+	                                defb   = out.VarDef(NIL, NmdType(NIL, "PRT_BOOLEAN"), "p_tmp_bool", NIL),
+									defpc  = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), "p_tmp_mach_priv", NIL),
+									defm   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_machine", NIL),
+									defe   = out.VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "p_tmp_event", NIL).
+
+	LocalVarsIter ::= (in.TypingContext, out.Defs + { NIL }, out.Defs + { NIL }).
+	LocalVarsIter(c, tmpVars, NIL) :- BodyTmpVars(c, -1, -2, tmpVars).
+	LocalVarsIter(c, tl, tmpVars') :- LocalVarsIter(c, out.Defs(tmpVar, tl), tl'), tmpVars' = out.Defs(tmpVar, tl').
+	LocalVarsTable ::= (in.TypingContext, out.VarDef).
+	LocalVarsTable(c, tmpVar) :- LocalVarsIter(c, out.Defs(tmpVar, tl), _), tmpVar: out.VarDef.
+
+	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.body != NIL,
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  UNKNOWN).
+
+	MakeArgs ::= (in.FunDecl, in.NmdTupType + { NIL }, Args + { NIL }, Natural).
+	MakeArgs(f, type, NIL, n) :- AnonOrNamedFunName(f, _), f : in.FunDecl, f.body = NIL, type = lstReverse(in.#NmdTupType, f.params), n = lstLength(in.#NmdTupType, f.params).
+	MakeArgs(f, tl, args', n') :- MakeArgs(f, in.NmdTupType(_, tl), args, n), n' = n - 1, n':  Natural, 
+	                              args' = Args(UnApp(ADDR, BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(n', DEC, U))), args).
+
+	COut(7, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.body = NIL,
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+					machinePtrType = PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")),
+					localVars = Defs(VarDef(NIL, machinePtrType, "p_tmp_mach_priv", Cast(machinePtrType, Ident("context"))),
+								Defs(VarDef(NIL, NmdType(NIL, "PRT_FUNSTACK_INFO"), "p_tmp_frame", NIL), 
+								Defs(VarDef(NIL, PtrType(NmdType(NIL, "PRT_VALUE")), "retVal", NIL), NIL))),
+					MakeArgs(f, NIL, args, _),
+					body = out.Seq(FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))),
+							   Seq(BinApp(ASN, Ident("retVal"), FunApp(Ident(strJoin(name, "_FOREIGN")), Args(Ident("context"), args))), 
+							   Seq(FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL))), 
+						       Seq(Return(Ident("retVal")), NIL)))),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  Block(localVars, body)).
+
+	PatchReturn ::= (f: in.FunDecl + in.AnonFunDecl, e: out.Stmt).
+	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f: in.AnonFunDecl, cs = out.Return(Ident("p_tmp_ret")).
+	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, NIL, _, _, _), cs = out.Return(Ident("p_tmp_ret")).
+	PatchReturn(f, cs) :- AnonOrNamedFunName(f, _), f = in.FunDecl(_, _, _, type, _, _, _), type : in.TypeExpr, TypeToExpr(type, expr),  
+						  cs = out.ITE(BinApp(EQ, Ident("p_tmp_ret"), Ident("NULL")), 
+									   Return(FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL))),
+									   Return(Ident("p_tmp_ret"))).
+
+	ContextSourceInfo ::= (in.TypingContext, out.Stmt, out.Stmt, out.Stmt).
+	ContextSourceInfo(f, NIL, NIL, NIL) :- f is in.TypingContext.
+
+	ContextLineInfo ::= (in.TypingContext, in.Stmt, out.Stmt).
+	ContextLineInfo(f, s, NIL) :- SubSE(f, s), s: in.Stmt.
+	
+	BodyTrans ::= (in.TypingContext, out.Stmt).
+	BodyTrans(f, body) :- 
+					in.TranslatedBody(f, bodyTrans),
+				    StmtTrans(f, bodyTrans, ctrans),
+					header = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_mach_priv"), Cast(PtrType(NmdType(NIL, "PRT_MACHINEINST_PRIV")), Ident("context")))), 
+					             Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), Ident("NULL"))), 
+								     Seq(info, FunApp(Ident("PrtPopFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))))),
+					Trampoline(f, bodyTrans, trampoline),
+					PatchReturn(f, patchReturn),
+					footer = out.Seq(Goto("P_EXIT_FUN"),
+					                 Lbl("P_EXIT_FUN", 
+					                   Seq(
+									     Seq(exitInfo, FunApp(Ident("PrtFreeLocals"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))),
+									     Seq(exitInfo, patchReturn)))),
+					ContextSourceInfo(f, _, info, exitInfo),
+					body = out.Seq(header, Seq(trampoline, Seq(ctrans, footer))).
+				
+	COut(8, def) :- AnonOrNamedFunName(f, name), f : in.FunDecl, f.body != NIL,
+				    tmpVars = toList(#Defs, NIL, { varDef | LocalVarsTable(f, varDef), ContextTransStmtExpr(f, out.Ident(varDef.name)) }),
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+					ContextSourceInfo(f, entryInfo, _, _),
+					BodyTrans(f, body),
+	                def = FunDef(
+					  NIL,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  out.Seq(entryInfo, Block(tmpVars, body))).
+
+	COut(8, def) :- AnonOrNamedFunName(f, name), f is in.AnonFunDecl,
+					tmpVars = toList(#Defs, NIL, { varDef | LocalVarsTable(f, varDef), ContextTransStmtExpr(f, out.Ident(varDef.name)) }),
+	                params = Params(Param(NIL, "context"), NIL),
+				    funType = FunType(PtrType(NmdType(NIL, "PRT_VALUE")), argTypes),
+					argTypes = PrmTypes(PtrType(NmdType(NIL, "PRT_MACHINEINST")), NIL),
+					ContextSourceInfo(f, entryInfo, _, _),
+					BodyTrans(f, body),
+	                def = FunDef(
+					  STATIC,
+					  funType,
+					  strJoin(name, "_IMPL"),
+					  params,
+					  out.Seq(entryInfo, Block(tmpVars, body))).
+
+    /*************************************************************/
+    /******      Generate (Anon)FunDecls             ******/
+    /*************************************************************/	
+	TypeToString ::= (type: in.TypeExpr, name: String).
+	TypeToString(type, typeName) :- in.ImportedType(_, type), names = toList(in.#StringList, NIL, {x | in.ImportedType(x, type)}), name = names.hd, typeName = strJoin("P_GEND_TYPE_", name).
+	TypeToString(type, typeName) :- TypeId(typeIndex, type), no in.ImportedType(_, type), typeName = strJoin("P_GEND_TYPE_", toString(typeIndex)).
+				
+	TypeToExpr ::= (type: in.TypeExpr, expr: out.Expr).
+	TypeToExpr(type, expr) :- TypeToString(type, typeName), expr = out.UnApp(ADDR, Ident(typeName)).
+	TypeToExpr(type, expr) :- in.TypeExpansion(type, etype), TypeToExpr(etype, expr).
+
+	LocalsType ::= (decl: AnonOrNamedFun, expr: out.Expr).
+	LocalsType(d, expr) :- d is AnonOrNamedFun, d.locals = NIL, expr = out.Ident("NULL").
+	LocalsType(d, expr) :- d is AnonOrNamedFun, TypeToExpr(d.locals, expr).
+
+	CaseEvent ::= (trig: String + { NULL, HALT }, name: String).
+	CaseEvent(trig, name) :- trig : String, ev is in.EventDecl, ev.name = trig, EventName(ev, name).
+	CaseEvent(NULL, name) :- EventName(NULL, name).
+	CaseEvent(HALT, name) :- EventName(HALT, name).
+
+	CaseDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, cases: in.Cases + { NIL }, arr: out.Args + { NIL }).
+	CaseDeclConcat(0, decl, NIL, NIL) :- decl is AnonOrNamedFun.
+	CaseDeclConcat(c, decl, cases, arr) :- SubSE(decl, cases), cases = in.Cases(trig, act, cases', _), CaseDeclConcat(c', decl, cases', arr'),
+										   CaseEvent(trig, eventName), AnonOrNamedFunName(act, funName), 
+										   eventStructName = strJoin(eventName, "_STRUCT"), funStructName = strJoin(funName, "_STRUCT"),
+										   def = out.Init(Args(UnApp(ADDR, Ident(eventStructName)), Args(UnApp(ADDR, Ident(funStructName)), NIL))),
+										   arr = out.Args(def, arr'), c = c' + 1.
+
+	COut(9, def) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = in.Receive(cases, label, _),
+					CaseDeclConcat(nCases, decl, cases, arr), AnonOrNamedFunName(decl, declName),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_CASEDECL"), NIL), 
+								  strJoin("P_GEND_CASES_", strJoin(declName, strJoin("_", toString(label)))), 
+								  Init(arr)).
+
+	ReceiveDeclConcat ::= (pos: Natural, decl: AnonOrNamedFun, arr: out.Args + { NIL }).
+	ReceiveDeclConcat(c, decl, NIL) :- decl is AnonOrNamedFun, SubSE(decl, _), c = count({r | r: in.Receive, SubSE(decl, r)}).
+	ReceiveDeclConcat(c, decl, arr) :- decl is AnonOrNamedFun, SubSE(decl, receive), receive = in.Receive(cases, label, _),
+									   c = toOrdinal(receive, 0, {r | r: in.Receive, SubSE(decl, r)}), 
+									   ReceiveDeclConcat(c + 1, decl, arr'), arr = out.Args(def, arr'),
+									   CaseDeclConcat(nCases, decl, cases, casesInit), AnonOrNamedFunName(decl, declName),
+									   UniqueEventSetName(index, toList(link.#EventNameList, NIL, { ev | ReceiveCases(decl, receive, x), ev = x.trig })),
+									   def = out.Init(
+												Args(IntLit(label, DEC, U),
+												Args(UnApp(ADDR, Ident(index)),
+												Args(IntLit(nCases, DEC, U),
+												Args(Ident(strJoin("P_GEND_CASES_", strJoin(declName, strJoin("_", toString(label))))),
+												NIL))))).
+
+	COut(10, def) :- decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args, 
+					 AnonOrNamedFunName(decl, declName),
+	                 def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_RECEIVEDECL"), NIL), 
+								  strJoin("P_GEND_RECEIVE_", declName), 
+								  Init(arr)).
+
+	ReceiveDeclInit ::= (decl: AnonOrNamedFun, nReceives: Natural, receives: out.Expr).
+	ReceiveDeclInit(decl, 0, receives) :- decl is AnonOrNamedFun, ReceiveDeclConcat(0, decl, NIL), receives = Ident("NULL").
+	ReceiveDeclInit(decl, 0, receives) :- decl is in.FunDecl, decl.body = NIL, receives = Ident("NULL").
+	ReceiveDeclInit(decl, nReceives, receives) :- 
+				decl is AnonOrNamedFun, ReceiveDeclConcat(nReceives, decl, NIL), ReceiveDeclConcat(0, decl, arr), arr: out.Args,
+				AnonOrNamedFunName(decl, declName), receives = Ident(strJoin("P_GEND_RECEIVE_", declName)).
+
+	COut(11, def) :-  		AnonOrNamedFunName(d, cfun), d : in.FunDecl,
+							funStructName = strJoin(cfun, "_STRUCT"),
+							in.MaxNumLocals(d, maxNumLocals), 
+							LocalsType(d, localsType),
+							ReceiveDeclInit(d, nReceives, receives), 
+							numParameters = lstLength(in.#NmdTupType, d.params),
+	                        init = Init(
+							   Args(StringLit(d.name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(numParameters, DEC, U),
+							   Args(IntLit(maxNumLocals, DEC, U),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   Args(localsType,
+							   Args(IntLit(nReceives, DEC, U),
+							   Args(receives,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))))))),
+							def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_FUNDECL"), 
+								  funStructName, 
+								  init).
+
+	COut(11, def) :- 		AnonOrNamedFunName(d, cfun), d : in.AnonFunDecl,
+							funStructName = strJoin(cfun, "_STRUCT"),
+							in.MaxNumLocals(d, maxNumLocals), 
+							r = lstReverse(in.#NmdTupType, d.envVars), TypeToExpr(r.hd.type, payloadType),
+							LocalsType(d, localsType),
+							ReceiveDeclInit(d, nReceives, receives),
+	                        init = Init(
+							   Args(Ident("NULL"),
+							   Args(UnApp(ADDR, Ident(strJoin(cfun, "_IMPL"))),
+							   Args(IntLit(1, DEC, U),
+							   Args(IntLit(maxNumLocals, DEC, U),
+							   Args(IntLit(lstLength(in.#NmdTupType, d.envVars), DEC, U),
+							   Args(payloadType,
+							   Args(localsType,
+							   Args(IntLit(nReceives, DEC, U),
+							   Args(receives,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL)))))))))))),
+							def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_FUNDECL"), 
+								  funStructName, 
+								  init).
+
+    /*************************************************************/
+    /******            Generate Fun Decl Arrays             ******/
+    /*************************************************************/	
+	FunDeclConcat ::= (pos: Natural, mach: String, arr: out.Args + {NIL}).
+
+	//// Base case
+	FunDeclConcat(c, name, NIL) :- in.MachineDecl(name, _),
+								c = count({d | d is in.AnonFunDecl, d.owner = name}) + count({d | d is in.FunDecl, d.owner = name}).
+
+    //// Build every fundecl array in reverse order
+	FunDeclConcat(m, d.owner, arr) :-  
+							DeclId(d, m, cfun), d: in.FunDecl, FunDeclConcat(m + 1, d.owner, after),
+							funStructName = strJoin(cfun, "_STRUCT"),
+							arr = out.Args(def, after),
+	                        def = out.UnApp(ADDR, Ident(funStructName)).
+
+	FunDeclConcat(m, d.owner, arr) :-  
+							DeclId(d, m, cfun), d: in.AnonFunDecl, FunDeclConcat(m + 1, d.owner, after),
+							funStructName = strJoin(cfun, "_STRUCT"),
+							arr = out.Args(def, after),
+	                        def = out.UnApp(ADDR, Ident(funStructName)).
+
+	COut(11, def) :- FunDeclConcat(0, mach, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(PtrType(NmdType(NIL, "PRT_FUNDECL")), NIL), 
+								  strJoin("P_GEND_FUNS_", mach), 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******            Generate State Decl Arrays           ******/
+    /*************************************************************/	
+	StateDeclConcat      ::= (pos: Natural, mach: String, arr: out.Args + {NIL}).
+
+	StateEventSetIndices ::= (state: in.StateDecl, transIndex: String, doIndex: String, deferIndex: String).
+	StateEventSetIndices(s, ti, doi, dfi) :- 
+	                     s is in.StateDecl,
+						 UniqueEventSetName(ti, toList(link.#EventNameList, NIL, { ev | t is in.TransDecl, t.src = s, ev = t.trig })),
+						 UniqueEventSetName(doi, toList(link.#EventNameList, NIL, { ev | t is in.DoDecl, t.src = s, t.action != DEFER, ev = t.trig })),
+						 UniqueEventSetName(dfi, toList(link.#EventNameList, NIL, { ev | t is in.DoDecl, t.src = s, t.action = DEFER, ev = t.trig })).
+
+    StateEntryAction  ::= (decl: in.StateDecl, funName: String).
+	StateEntryAction(s, funname) :- s is in.StateDecl, act = s.entryAction, act : in.AnonFunDecl, AnonOrNamedFunName(act, funname). 
+	StateEntryAction(s, funname) :- s is in.StateDecl, act = s.entryAction, act : String, FunAvailable(f, s.owner), f.name = act, AnonOrNamedFunName(f, funname). 
+
+    StateExitFun  ::= (decl: in.StateDecl, funName: String).
+	StateExitFun(s, funname) :- s is in.StateDecl, act = s.exitFun, act : in.AnonFunDecl, AnonOrNamedFunName(act, funname). 
+	StateExitFun(s, funname) :- s is in.StateDecl, act = s.exitFun, act : String, FunAvailable(f, s.owner), f.name = act, AnonOrNamedFunName(f, funname). 
+
+    StateHandlerArrays ::= (decl: in.StateDecl, transArrSize: Natural, transArr: out.Ident, doArrSize: Natural, doArr: out.Ident).
+
+	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
+		s is in.StateDecl, 
+		transArrSize = 0, transArr = out.Ident("NULL"),
+		doArrSize = 0, doArr = out.Ident("NULL"),
+		transArrSize = count({ t  | t is in.TransDecl, t.src = s }),
+		doArrSize = count({ do | do is in.DoDecl, do.src = s, do.action != DEFER }). 
+
+	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
+		s is in.StateDecl,
+		QualName2CStr(s.name, sname),
+		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner, strJoin("_", sname)))),
+		doArrSize = 0, doArr = out.Ident("NULL"),
+		transArrSize = count({ t  | t is in.TransDecl, t.src = s }),
+		doArrSize = count({ do | do is in.DoDecl, do.src = s, do.action != DEFER }). 
+
+	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
+		s is in.StateDecl,
+		QualName2CStr(s.name, sname),
+		transArrSize = 0, transArr = out.Ident("NULL"),
+		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner, strJoin("_", sname)))),
+		transArrSize = count({ t  | t is in.TransDecl, t.src = s }),
+		doArrSize = count({ do | do is in.DoDecl, do.src = s, do.action != DEFER }). 
+
+	StateHandlerArrays(s, transArrSize, transArr, doArrSize, doArr) :-
+		s is in.StateDecl,
+		QualName2CStr(s.name, sname),
+		transArrSize > 0, transArr = out.Ident(strJoin("P_GEND_TRANS_", strJoin(s.owner, strJoin("_", sname)))),
+		doArrSize > 0, doArr = out.Ident(strJoin("P_GEND_DOS_", strJoin(s.owner, strJoin("_", sname)))),
+		transArrSize = count({ t | t is in.TransDecl, t.src = s }),
+		doArrSize = count({ do | do is in.DoDecl, do.src = s, do.action != DEFER }). 
+    
+	//// Base case
+	StateDeclConcat(c, name, NIL) :- in.MachineDecl(name, _), c = count({s | s is in.StateDecl, s.owner = name}).
+
+    //// Build every variable array in reverse order
+	StateDeclConcat(m, d.owner, arr) :- 
+							DeclId(d, m, cstate), MachineName(d.owner, ownerMachineName),
+							StateDeclConcat(m + 1, d.owner, after), d : in.StateDecl, 
+							QualName2CStr(d.name, sname),
+							StateEventSetIndices(d, ti, doi, dfi),
+							StateEntryAction(d, entryname), entryStructName = strJoin(entryname, "_STRUCT"),
+							StateExitFun(d, exitname), exitStructName = strJoin(exitname, "_STRUCT"),
+							StateHandlerArrays(d, transArrSize, transArr, doArrSize, doArr),
+							arr = out.Args(def, after), 
+	                        def = Init(
+							   Args(StringLit(sname, NIL),
+							   Args(IntLit(transArrSize, DEC, NIL),
+							   Args(IntLit(doArrSize, DEC, NIL),
+							   Args(UnApp(ADDR, Ident(dfi)),
+							   Args(UnApp(ADDR, Ident(ti)),
+							   Args(UnApp(ADDR, Ident(doi)),
+							   Args(transArr,
+							   Args(doArr,
+							   Args(UnApp(ADDR, Ident(entryStructName)),
+							   Args(UnApp(ADDR, Ident(exitStructName)),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))))).
+
+	COut(12, def) :- StateDeclConcat(0, mach, arr),
+	                def = out.VarDef(
+							      NIL, 
+								  ArrType(NmdType(NIL, "PRT_STATEDECL"), NIL), 
+								  strJoin("P_GEND_STATES_", mach), 
+								  Init(arr)).
+
+    /*************************************************************/
+    /******          Generate Machine Decls                 ******/
+    /*************************************************************/	
+	MachineDeclConcat ::= (pos: Natural, arr: out.Args + {NIL}).
+
+	MachVarArr ::= (mach: String, size: Natural, arr: out.Ident).
+	MachVarArr(name, size, arr) :- in.MachineDecl(name, _),
+	                               size = 0, arr = out.Ident("NULL"),
+	                               size = count({ v | v is in.VarDecl, v.owner = name }).
+
+	MachVarArr(name, size, arr) :- in.MachineDecl(name, _),
+	                size > 0, arr = out.Ident(strJoin("P_GEND_VARS_", name)),
+	                size = count({ v | v is in.VarDecl, v.owner = name }).
+
+	MachStateArr ::= (mach: String, size: Natural, arr: out.Ident).
+	MachStateArr(name, size, arr) :- in.MachineDecl(name, _),
+	                                 size > 0, arr = out.Ident(strJoin("P_GEND_STATES_", name)),
+	                                 size = count({ s | s is in.StateDecl, s.owner = name }).
+
+	MachFunArr ::= (mach: String, size: Natural, arr: out.Ident).
+	MachFunArr(name, size, arr) :- in.MachineDecl(name, _),
+	                               arr = out.Ident(strJoin("P_GEND_FUNS_", name)),
+	                               size = count({ f | f is AnonOrNamedFun, f.owner = name }).
+
+	MachQueueSize ::= (mach: String, size: Natural).
+	MachQueueSize(name, size) :- in.MachineCard(name, card), size = card.bound.
+	MachQueueSize(name, size) :- in.MachineDecl(name, _), no in.MachineCard(name, _), size = 4294967295. 
+
+	COut(13, def) :- 		MachineName(name, machineName),
+							machineStructName = strJoin(machineName, "_STRUCT"),
+							MachVarArr(name, varArrSize, varArrName),
+							MachStateArr(name, stateArrSize, stateArrName),
+							MachFunArr(name, funArrSize, funArrName),
+							MachQueueSize(name, queueSize),
+							in.MachineStart(name, start), QualName2CStr(start, sname), 
+	                        init = Init(
+							   Args(IntLit(0, DEC, U),
+							   Args(StringLit(name, NIL),
+							   Args(IntLit(varArrSize, DEC, NIL),
+							   Args(IntLit(stateArrSize, DEC, NIL),
+							   Args(IntLit(funArrSize, DEC, NIL),
+							   Args(IntLit(queueSize, DEC, NIL),
+							   Args(Ident(strJoin("P_STATE_", strJoin(name, strJoin("_", sname)))),
+							   Args(varArrName,
+							   Args(stateArrName,
+							   Args(funArrName,
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))))),
+	                        def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_MACHINEDECL"), 
+								  machineStructName, 
+								  init).
+
+	COut(13, def) :- in.TypeDef(name, NIL, _), in.ExportedType(name, _), foreignTypeName = strJoin("P_FOREIGN_TYPE_", name),
+					 foreignTypeStructName = strJoin(foreignTypeName, "_STRUCT"),
+	                        init = Init(
+							   Args(IntLit(0, DEC, U),
+							   Args(StringLit(name, NIL),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_MKDEF_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_CLONE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_FREE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_GETHASHCODE_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_ISEQUAL_", strJoin(name, "_IMPL")))),
+							   Args(UnApp(ADDR, Ident(strJoin("PRT_FOREIGN_TOSTRING_", strJoin(name, "_IMPL")))),
+							   Args(IntLit(0, DEC, U),
+							   Args(Ident("NULL"),
+							   NIL))))))))))),
+							def = out.VarDef(
+							      NIL, 
+								  NmdType(NIL, "PRT_FOREIGNTYPEDECL"), 
+								  foreignTypeStructName, 
+								  init).
+
+    /*************************************************************/
+    /******                RHS Translation                  ******/
+    /*************************************************************/	
+
+	//// The translation of the ith expression in a statement.
+	RhsExpr ::= (cntxt: in.TypingContext, stmt: in.Stmt, pos: Natural, trans: out.FunApp, doFree: out.Ident).
+	RhsExpr(c, s, i, macroApp, doFree) :- RhsTrans(c, s, i, k, args), RhsMaxOrder(s, i, k), RhsNext(c, s, i, k, e, _), 
+										  macroApp = out.FunApp(Ident(strJoin("P_EXPR_", toString(k))), args),
+										  DoFree(e, FALSE), doFree = out.Ident("PRT_FALSE"). 
+	RhsExpr(c, s, i, macroApp, doFree) :- RhsTrans(c, s, i, k, args), RhsMaxOrder(s, i, k), RhsNext(c, s, i, k, e, _), 
+										  macroApp = out.FunApp(Ident(strJoin("P_EXPR_", toString(k))), args),
+										  DoFree(e, TRUE), doFree = out.Ident("PRT_TRUE"). 
+
+	//// Translates in context the ith expression appearing in stmt into a list of C args.
+	//// The number subId indicates the id of the subexpression currently at the head of the trans list.
+	RhsTrans ::= (cntxt: in.TypingContext, stmt: in.Stmt, pos: Natural, subId: Natural + { -1 }, trans: out.Args + { NIL }).
+
+	//// The next expression that needs to be translated, given the translation of the previous expression.
+	RhsNext ::= (cntxt: in.TypingContext, stmt: in.Stmt, pos: Natural, subId: Natural + { -1 }, nxt: in.Expr, prv: out.Args + { NIL }).
+	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1,
+									  DoFree(e, FALSE), trans = out.Args(Ident("PRT_FALSE"), tail).
+	RhsNext(c, s, i, j', e, trans) :- RhsTrans(c, s, i, j, tail), RhsEvalOrder(s, i, e, j'), j' = j + 1,
+									  DoFree(e, TRUE), trans = out.Args(Ident("PRT_TRUE"), tail).
+									  
+	//// Translates (named) exprs into a list of args that are applied to the P_TUPLE macro.
+	//// The number subId indicates the id of the subexpression currently at the head of the trans list.
+	ExprsTrans ::= (cntxt: in.TypingContext, stmt: in.Stmt, pos: Natural, exprs: in.Exprs + in.NamedExprs, trans: out.Args).
+
+	ExprsTrans(c, s, i, e, trans) :- SubSE(c, s), RhsCntxt(s, i, e), e = in.Exprs(_, e', NIL), RhsEvalOrder(s, i, e', j),
+	                                 trans = out.Args(Ident(strJoin("p_tmp_expr_", toString(j))), NIL). 
+	ExprsTrans(c, s, i, e, trans) :- SubSE(c, s), RhsCntxt(s, i, e), e = in.NamedExprs(_, e', NIL), RhsEvalOrder(s, i, e', j),
+	                                 trans = out.Args(Ident(strJoin("p_tmp_expr_", toString(j))), NIL). 
+
+	ExprsTrans(c, s, i, e, trans) :- SubSE(c, s), RhsCntxt(s, i, e), e = in.Exprs(_, e', e''), RhsEvalOrder(s, i, e', j),
+	                                 ExprsTrans(c, s, i, e'', tl),
+	                                 trans = out.Args(Ident(strJoin("p_tmp_expr_", toString(j))), tl). 
+
+	ExprsTrans(c, s, i, e, trans) :- SubSE(c, s), RhsCntxt(s, i, e), e = in.NamedExprs(_, e', e''), RhsEvalOrder(s, i, e', j),
+	                                 ExprsTrans(c, s, i, e'', tl),
+	                                 trans = out.Args(Ident(strJoin("p_tmp_expr_", toString(j))), tl). 
+
+	//// Base case: Initially, the translation is the empty list.
+	RhsTrans(c, s, i, -1, NIL) :- SubSE(c, s), s : in.Stmt, RhsCntxt(s, i, _).
+
+	IndexOf ::= (t: in.NmdTupType, name: String, offset: Natural, tail: in.NmdTupType + {NIL}).
+	IndexOf(t, name, 0, tail)  :- f is AnonOrNamedFun, LocalVars(f, t), t = in.NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(et, name, 0, tail) :- in.TypeDef(_, t, _), in.TypeExpansion(t, et), et = in.NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(t, name, 0, tail)  :- in.TypeOf(_, _, t), t = in.NmdTupType(NmdTupTypeField(name, _), tail).
+	IndexOf(t, name, i', tail) :- IndexOf(t, _, i, tail'), tail' = in.NmdTupType(NmdTupTypeField(name, _), tail), i' = i + 1.
+
+	//// Identifier
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.Name(n, _), IsLocalVar(c, n, _), LocalVars(c, locals), IndexOf(locals, n, localIndex, _),
+									ec = out.BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(localIndex, DEC, U)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.Name(n, _), IsMachineVar(c, n, varDecl, _), DeclId(varDecl, _, varName),
+									ec = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
+									e = in.Name(n, _), IsEventCnst(c, n, _),
+									ec = out.UnApp(ADDR, BinApp(FLD, Ident(strJoin(strJoin("P_EVENT_", n), "_STRUCT")), Ident("value"))). 
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.Name(n, _), IsEnumCnst(c, n, _), ConstId(m, in.Name(n, NIL)),
+									ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
+
+	//// Function application
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), e = in.FunApp(name, NIL, _, _), 
+									AnonOrNamedFunName(funDecl, funName), funDecl.name = name, FunAvailable(funDecl, c.owner), 
+									funStruct = out.UnApp(ADDR, Ident(strJoin(funName, "_STRUCT"))),
+									pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_TRUE"), Args(funStruct, NIL)))),
+									wrapFunStmt = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(funStruct, NIL))))),
+									ec = out.FunApp(Ident("P_SEQ"), Args(pushFrame, Args(wrapFunStmt, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), e = in.FunApp(name, args, _, _), args != NIL, 
+									AnonOrNamedFunName(funDecl, funName), funDecl.name = name, FunAvailable(funDecl, c.owner), 
+									funStruct = out.UnApp(ADDR, Ident(strJoin(funName, "_STRUCT"))),
+									TransformArgs(c, s, i, e, NIL, ecs', NIL),
+									pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_TRUE"), Args(funStruct, lstReverse(#Args, ecs'))))),
+									wrapFunStmt = out.FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(0, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(funStruct, NIL))))),
+									ec = out.FunApp(Ident("P_SEQ"), Args(pushFrame, Args(wrapFunStmt, NIL))).
+
+	//// Nullary expressions
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.NulApp(n, _), n : Integer,
+									ConstId(m, in.NulApp(n, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
+									
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.NulApp(Float(n), _), n : Real,
+									ConstId(m, in.NulApp(Float(n), NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.NulApp(FALSE, _), 
+									ConstId(m, in.NulApp(FALSE, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+
+    RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.NulApp(TRUE, _), 
+									ConstId(m, in.NulApp(TRUE, NIL)), ec = out.UnApp(ADDR, Ident(strJoin("P_GEND_VALUE_", toString(m)))). 
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.NulApp(THIS, _),
+									ec = out.BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("id")).
+									 
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.NulApp(NONDET, _),
+									ec = out.FunApp(Ident("PrtMkNondetBoolValue"), NIL). 
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.NulApp(FAIRNONDET, _),
+									ec = out.FunApp(Ident("PrtMkNondetBoolValue"), NIL). 
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.NulApp(NULL, _),
+									ec = out.UnApp(ADDR, BinApp(FLD, Ident("_P_EVENT_NULL_STRUCT"), Ident("value"))). 
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.NulApp(HALT, _),
+									ec = out.UnApp(ADDR, BinApp(FLD, Ident("_P_EVENT_HALT_STRUCT"), Ident("value"))). 
+	
+	GetFunctionIden ::= (type: in.TypeExpr, iden: Ident).
+	GetFunctionIden(in.BaseType(INT), Ident("PrtPrimGetInt")).
+	AllNameType ::= sub(in.NameType).
+	GetFunctionIden(t, Ident("PrtPrimGetInt")) :- AllNameType(t).
+	GetFunctionIden(in.BaseType(FLOAT), Ident("PrtPrimGetFloat")).
+	MkFunctionIden ::= (type: in.TypeExpr, iden: Ident).
+	MkFunctionIden(in.BaseType(INT), Ident("PrtMkIntValue")).
+	MkFunctionIden(t, Ident("PrtMkIntValue")) :-AllNameType(t).
+	MkFunctionIden(in.BaseType(FLOAT), Ident("PrtMkFloatValue")).
+
+	//// Unary expressions
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.UnApp(NOT, e1, _), RhsEvalOrder(s, i, e1, tmp1),
+									getBool = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(UnApp(LNOT, getBool), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.UnApp(NEG, e1, _), RhsEvalOrder(s, i, e1, tmp1), in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									ec = out.FunApp(mkFun, Args(UnApp(NEG, getNum), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.UnApp(KEYS, e1, _), RhsEvalOrder(s, i, e1, tmp1),
+									ec = out.FunApp(Ident("PrtMapGetKeys"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.UnApp(VALUES, e1, _), RhsEvalOrder(s, i, e1, tmp1),
+									ec = out.FunApp(Ident("PrtMapGetValues"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.UnApp(SIZEOF, e1, _), RhsEvalOrder(s, i, e1, tmp1),
+									in.TypeOf(c, e1, MapType(_, _)),
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(FunApp(Ident("PrtMapSizeOf"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.UnApp(SIZEOF, e1, _), RhsEvalOrder(s, i, e1, tmp1),
+									in.TypeOf(c, e1, SeqType(_)),
+									ec = out.FunApp(Ident("PrtMkIntValue"), Args(FunApp(Ident("PrtSeqSizeOf"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)), NIL)).
+
+	//// Binary expressions
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(ADD, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(mkFun, Args(BinApp(ADD, getNum1, getNum2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(SUB, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(mkFun, Args(BinApp(SUB, getNum1, getNum2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(MUL, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(mkFun, Args(BinApp(MUL, getNum1, getNum2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(DIV, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e, t), GetFunctionIden(t, getFun), MkFunctionIden(t, mkFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(mkFun, Args(BinApp(DIV, getNum1, getNum2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(AND, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getBool1 = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getBool2 = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LAND, getBool1, getBool2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(OR, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getBool1 = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getBool2 = out.FunApp(Ident("PrtPrimGetBool"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LOR, getBool1, getBool2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(EQ, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getBool = out.FunApp(Ident("PrtIsEqualValue"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL))),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(getBool, NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(NEQ, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getBool = out.FunApp(Ident("PrtIsEqualValue"), Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL))),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(UnApp(LNOT, getBool), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(LT, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e1, t), GetFunctionIden(t, getFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LT, getNum1, getNum2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(LE, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e1, t), GetFunctionIden(t, getFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(LE, getNum1, getNum2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(GT, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e1, t), GetFunctionIden(t, getFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GT, getNum1, getNum2), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(GE, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e1, t), GetFunctionIden(t, getFun),
+									getNum1 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp1))), NIL)),
+									getNum2 = out.FunApp(getFun, Args(Ident(strJoin("p_tmp_expr_", toString(tmp2))), NIL)),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(BinApp(GE, getNum1, getNum2), NIL)).
+
+	Accessor ::= (c: in.TypingContext, e: in.Expr, acc: out.Expr).
+	Accessor(c, e, acc)			 :- in.TypeOf(c, e, MapType(_, _)), DoFree(e, FALSE), acc = Ident("PrtMapGetNC").
+	Accessor(c, e, acc)			 :- in.TypeOf(c, e, MapType(_, _)), DoFree(e, TRUE), acc = Ident("PrtMapGet").
+	Accessor(c, e, acc)			 :- in.TypeOf(c, e, SeqType(_)), DoFree(e, FALSE), acc = Ident("PrtSeqGetNC").
+	Accessor(c, e, acc)			 :- in.TypeOf(c, e, SeqType(_)), DoFree(e, TRUE), acc = Ident("PrtSeqGet").
+	Accessor(c, e, acc)			 :- in.TypeOf(c, e, TupType(_, _)), DoFree(e, FALSE), acc = Ident("PrtTupleGetNC").
+	Accessor(c, e, acc)			 :- in.TypeOf(c, e, TupType(_, _)), DoFree(e, TRUE), acc = Ident("PrtTupleGet").
+	Accessor(c, e, acc)			 :- in.TypeOf(c, e, in.NmdTupType(_, _)), DoFree(e, FALSE), acc = Ident("PrtTupleGetNC").
+	Accessor(c, e, acc)			 :- in.TypeOf(c, e, in.NmdTupType(_, _)), DoFree(e, TRUE), acc = Ident("PrtTupleGet").
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(IDX, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e1, MapType(_, _)),
+									getMap = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									getIndex = Ident(strJoin("p_tmp_expr_", toString(tmp2))),
+									Accessor(c, e1, acc), ec = out.FunApp(acc, Args(getMap, Args(getIndex, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(IDX, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									in.TypeOf(c, e1, SeqType(_)),
+									getMap = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									getIndex = Ident(strJoin("p_tmp_expr_", toString(tmp2))),
+									Accessor(c, e1, acc), ec = out.FunApp(acc, Args(getMap, Args(getIndex, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.BinApp(IN, e1, e2, _), RhsEvalOrder(s, i, e1, tmp1), RhsEvalOrder(s, i, e2, tmp2),
+									getKey = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									getMap = Ident(strJoin("p_tmp_expr_", toString(tmp2))),
+									ec = out.FunApp(Ident("PrtMkBoolValue"), Args(FunApp(Ident("PrtMapExists"), Args(getMap, Args(getKey, NIL))), NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.Field(e1, f, _), RhsEvalOrder(s, i, e1, tmp1),
+									f : String, in.TypeOf(c, e1, nmdTupleType), IndexOf(nmdTupleType, f, offset, _),
+									getNmdTuple = Ident(strJoin("p_tmp_expr_", toString(tmp1))), 
+									Accessor(c, e1, acc), ec = out.FunApp(acc, Args(getNmdTuple, Args(IntLit(offset, DEC, NIL), NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+							        e = in.Field(e1, f, _), RhsEvalOrder(s, i, e1, tmp1),
+									f : Natural,
+									getTuple = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									Accessor(c, e1, acc), ec = out.FunApp(acc, Args(getTuple, Args(IntLit(f, DEC, NIL), NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.Default(type, _), TypeToExpr(type, expr),
+									ec = out.FunApp(Ident("PrtMkDefaultValue"), Args(expr, NIL)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
+									e = in.Cast(arg, type, _), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
+									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									ec = out.FunApp(Ident("PrtCastValue"), Args(getArg, Args(expr, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail),
+									e = in.Convert(arg, type, _), RhsEvalOrder(s, i, arg, tmp1), TypeToExpr(type, expr), 
+									getArg = Ident(strJoin("p_tmp_expr_", toString(tmp1))),
+									ec = out.FunApp(Ident("PrtConvertValue"), Args(getArg, Args(expr, NIL))).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.Tuple(es, _), in.TypeOf(c, e, type), TypeToExpr(type, expr),
+									ExprsTrans(c, s, i, es, ecs), 
+									ec = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#TupType, type) - 1))), Args(expr, ecs)).
+
+	RhsTrans(c, s, i, j', trans) :- RhsNext(c, s, i, j', e, tail), trans = out.Args(ec, tail), 
+									e = in.NamedTuple(es, _), in.TypeOf(c, e, type), TypeToExpr(type, expr),
+									ExprsTrans(c, s, i, es, ecs), 
+									ec = out.FunApp(Ident(strJoin("P_TUPLE_", toString(lstLength(in.#NmdTupType, type) - 1))), Args(expr, ecs)).
+
+    /*************************************************************/
+    /******             Statement translation               ******/
+    /*************************************************************/	
+	
+	Trampoline ::= (cntxt: in.TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label, _), ContextSourceInfo(c, _, info, _),
+		                    cs = out.Seq(info, 
+							             ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
+														    out.IntLit(label, DEC, U)), 
+										     out.Seq(info, Goto(strJoin("L", toString(label)))),
+										     NIL)).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NewStmt(_, _, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Raise(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Goto(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Send(_, _, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Announce(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.FunStmt(_, _, _, label, _), ContextSourceInfo(c, _, info, _),
+	                        cs = out.Seq(info, 
+							             ITE(out.BinApp(EQ, out.BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")),
+														    out.IntLit(label, DEC, U)), 
+										     out.Seq(info, Goto(strJoin("L", toString(label)))),
+										     NIL)).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.NulStmt(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Assert(_, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Print(_, _, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.BinStmt(_, _, _, _, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Return(_, _), cs = NIL.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.While(_, s1, _), Trampoline(c, s1, cs1), cs = cs1.
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Ite(_, s1, s2, _), Trampoline(c, s1, cs1), Trampoline(c, s2, cs2), cs = out.Seq(cs1, cs2).
+	Trampoline(c, s, cs) :- SubSE(c, s), s = in.Seq(s1, s2, _), Trampoline(c, s1, cs1), Trampoline(c, s2, cs2), cs = out.Seq(cs1, cs2).
+
+    StmtTrans ::= (cntxt: in.TypingContext, stmt: in.Stmt, trans: out.Stmt + { NIL }).
+
+	//// Receive
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Receive(_, label, x),
+						   receiveCall = out.FunApp(Ident("PrtReceive"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), NIL)))),
+						   receive = Lbl(strJoin("L", toString(label)), out.Seq(info, ITE(BinApp(LAND, BinApp(EQ, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("NULL")), UnApp(LNOT, receiveCall)), Seq(info, Return(Ident("NULL"))), NIL))),
+						   caseFun = out.BinApp(PFLD, BinApp(PFLD, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("fun")), Ident("implementation")),
+						   case = out.FunApp(caseFun, Args(Ident("context"), NIL)),
+						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Seq(Seq(info, FunApp(Ident("PrtPushFrame"), Args(Ident("p_tmp_mach_priv"), Args(UnApp(ADDR, Ident("p_tmp_frame")), NIL)))), Seq(info, Return(Ident("NULL")))), NIL), 
+						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Seq(info, Goto("P_EXIT_FUN")), NIL),
+						   resetRcase = out.BinApp(ASN, BinApp(FLD, Ident("p_tmp_frame"), Ident("rcase")), Ident("NULL")),
+						   resetReturnTo = out.BinApp(ASN, BinApp(FLD, Ident("p_tmp_frame"), Ident("returnTo")), IntLit(65535, HEX, U)),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(receive, Seq(Seq(info, case), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(Seq(info, resetRcase), Seq(info, resetReturnTo)))))).
+	
+	//// New Machine
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, NIL, _, x), ret = Ident("p_tmp_funstmt_ret"),
+						   iName = strJoin("P_I_", iname),
+						   newCall = out.FunApp(Ident("PrtMkInterface"),
+												Args(Ident("context"),
+												Args(Ident(iName), 
+												Args(IntLit(0, DEC, U), NIL)))),
+						   ContextLineInfo(c, s, info),
+						   FunStmtCleanup(c, s, cleanup),
+						   ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newCall, Ident("id")), NIL)),
+						   cs = out.Seq(Seq(info, out.BinApp(ASN, ret, ec)), Seq(info, cleanup)).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NewStmt(iname, pay, _, x), pay != NIL, ret = Ident("p_tmp_funstmt_ret"),
+						   iName = strJoin("P_I_", iname),
+						   newCall = out.FunApp(Ident("PrtMkInterface"),
+												Args(Ident("context"),
+												Args(Ident(iName),
+												Args(IntLit(numArgs, DEC, U), lstReverse(#Args, ecs'))))),
+						   RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1,
+						   TransformStmtArgs(c, s, 0, NIL, NIL, ecs', NIL), numArgs = lstLength(#Args, ecs') / 2,
+						   ContextLineInfo(c, s, info),
+						   FunStmtCleanup(c, s, cleanup),
+						   ec = out.FunApp(Ident("PrtCloneValue"), Args(out.BinApp(PFLD, newCall, Ident("id")), NIL)),
+						   cs = out.Seq(Seq(info, FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
+						                             Args(FunApp(Ident("P_SEQ"), Args(out.BinApp(ASN, ret, ec), Args(Ident("NULL"), NIL))), Args(Ident("PRT_FALSE"), 
+													 tail)))), 
+										Seq(info, cleanup)).
+
+   	//// Goto
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Goto(_, NIL, _),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, gotoCall), Goto("P_EXIT_FUN")),
+						   DeclId(dst, _, dstName), dst is in.StateDecl, dst.owner = c.owner, dst.name = s.dst,
+						   gotoCall = out.FunApp(Ident("PrtGoto"),
+						                 Args(context,
+										 Args(Ident(dstName), 
+										 Args(IntLit(0, DEC, U), NIL)))),
+						   context = Ident("p_tmp_mach_priv").
+						   
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Goto(_, pay, _), pay != NIL, 
+						   RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1,
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
+						                                 Args(FunApp(Ident("P_SEQ"), Args(gotoCall, Args(Ident("NULL"), NIL))), Args(Ident("PRT_FALSE"), 
+														 tail)))), 
+										Goto("P_EXIT_FUN")),
+						   DeclId(dst, _, dstName), dst is in.StateDecl, dst.owner = c.owner, dst.name = s.dst,
+						   TransformStmtArgs(c, s, 0, NIL, NIL, ecs', NIL), numArgs = lstLength(#Args, ecs') / 2,
+						   gotoCall = out.FunApp(Ident("PrtGoto"),
+						                 Args(context,
+										 Args(Ident(dstName),
+										 Args(IntLit(numArgs, DEC, U), lstReverse(#Args, ecs'))))),
+						   context = Ident("p_tmp_mach_priv").
+
+	//// Raise
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Raise(ev, NIL, x), RhsExpr(c, s, 0, evTrans, doFree),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, FunApp(Ident("P_STMT_0"), Args(raiseCall, Args(evTrans, Args(doFree, NIL))))), Goto("P_EXIT_FUN")),
+						   raiseCall = out.FunApp(Ident("PrtRaise"),
+						                 Args(context,
+										 Args(Ident("p_tmp_stmt_0"), 
+										 Args(IntLit(0, DEC, U), NIL)))),
+						   context = Ident("p_tmp_mach_priv").
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Raise(ev, pay, x), pay != NIL, 
+						   RhsExpr(c, s, 0, evTrans, doFreeEvTrans), 
+						   RhsTrans(c, s, 1, size, tail), RhsMaxOrder(s, 1, size), exprMacroSize = size + 2,
+						   ContextLineInfo(c, s, info),
+						   evVar = Ident("p_tmp_event"),
+						   cs = out.Seq(Seq(info, FunApp(Ident("P_SEQ"), Args(BinApp(ASN, evVar, evTrans), Args(raiseCall', NIL)))), 
+										Goto("P_EXIT_FUN")),
+						   TransformStmtArgs(c, s, 1, NIL, NIL, ecs', NIL), numArgs = lstLength(#Args, ecs') / 2,
+						   eventArgIndex = size + 1,
+						   eventArg = Ident(strJoin("p_tmp_expr_", toString(eventArgIndex))),
+						   raiseCall = out.FunApp(Ident("PrtRaise"), Args(context, Args(eventArg, Args(IntLit(numArgs, DEC, U), lstReverse(#Args, ecs'))))),
+						   raiseCall' = out.FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
+												   Args(FunApp(Ident("P_SEQ"), Args(raiseCall, Args(Ident("NULL"), NIL))), Args(Ident("PRT_FALSE"), 
+												   Args(evVar, Args(doFreeEvTrans, tail))))),
+						   context = Ident("p_tmp_mach_priv").
+
+	//// Send
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Send(dest, ev, NIL, x), RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident("P_STMT_1"), Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, NIL))), Args(evTrans, Args(doFreeEvTrans, Args(destTrans, Args(doFreeDestTrans, NIL))))))),
+						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(Ident("p_tmp_stmt_0"), NIL))),
+						   sendCall =  out.FunApp(Ident("PrtSendInternal"), 
+										 Args(Ident("context"),
+						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(Ident("p_tmp_stmt_0"), NIL))),
+										 Args(Ident("p_tmp_stmt_1"), 
+										 Args(IntLit(0, DEC, U), NIL))))).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Send(dest, ev, pay, x), pay != NIL,
+						   RhsExpr(c, s, 0, destTrans, doFreeDestTrans), RhsExpr(c, s, 1, evTrans, doFreeEvTrans), 
+						   RhsTrans(c, s, 2, size, tail), RhsMaxOrder(s, 2, size), exprMacroSize = size + 3,
+						   ContextLineInfo(c, s, info),
+						   destVar = Ident("p_tmp_machine"),
+						   evVar = Ident("p_tmp_event"),
+						   cs = out.Seq(info, FunApp(Ident("P_SEQ"), Args(BinApp(ASN, destVar, destTrans), Args(BinApp(ASN, evVar, evTrans), Args(sendCall', NIL))))),
+						   machineArgIndex = size + 2,
+						   machineArg = Ident(strJoin("p_tmp_expr_", toString(machineArgIndex))),
+						   eventArgIndex = size + 1,
+						   eventArg = Ident(strJoin("p_tmp_expr_", toString(eventArgIndex))),
+						   checkCall = out.FunApp(Ident("PrtCheckIsLocalMachineId"), Args(Ident("context"), Args(machineArg, NIL))),
+						   TransformStmtArgs(c, s, 2, NIL, NIL, ecs', NIL), numArgs = lstLength(#Args, ecs') / 2,
+						   sendCall = out.FunApp(Ident("PrtSendInternal"),
+										 Args(Ident("context"),
+						                 Args(FunApp(Ident("PrtGetMachine"), Args(BinApp(PFLD, Ident("context"), Ident("process")), Args(machineArg, NIL))),
+										 Args(eventArg,
+										 Args(IntLit(numArgs, DEC, U), lstReverse(#Args, ecs')))))),
+						   sendCall' = out.FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
+												  Args(FunApp(Ident("P_SEQ"), Args(checkCall, Args(sendCall, Args(Ident("NULL"), NIL)))), Args(Ident("PRT_FALSE"),
+												  Args(destVar, Args(doFreeDestTrans, 
+												  Args(evVar, Args(doFreeEvTrans, tail))))))).
+
+	//// Announce (erased)
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Announce(_, _, _), cs = NIL.
+
+	//// NulStmt
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
+	                       s = in.NulStmt(POP, x),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, FunApp(Ident("PrtPop"), Args(context, NIL))), Goto("P_EXIT_FUN")).
+
+	//// Assert
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
+	                       s = in.Assert(arg, NIL, x), RhsExpr(c, s, 0, argTrans, doFree),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, ITE(out.UnApp(LNOT, FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, Args(doFree, NIL)))), Seq(info, assertCall), NIL)),
+						   assertCall = out.FunApp(Ident("PrtHandleError"), 
+											Args(Ident("PRT_STATUS_ASSERT"), 
+											Args(context, NIL))).
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("p_tmp_mach_priv"),
+	                       s = in.Assert(arg, msg, x), msg: String, RhsExpr(c, s, 0, argTrans, doFree),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, ITE(out.UnApp(LNOT, FunApp(Ident("P_BOOL_EXPR"), Args(argTrans, Args(doFree, NIL)))), Seq(Seq(info, printCall), Seq(info, assertCall)), NIL)),
+						   printCall = out.FunApp(Ident("PrtPrintf"), Args(StringLit(msg, NIL), NIL)),
+						   assertCall = out.FunApp(Ident("PrtHandleError"), 
+											Args(Ident("PRT_STATUS_ASSERT"), 
+											Args(context, NIL))).
+
+	//// Print
+	PrintSegsToArgs ::= (in.TypingContext, in.Print, out.Args + { NIL }, in.Segments + { NIL }, Natural).
+	PrintSegsToArgs(c, s, NIL, NIL, 0) :- PrintSegs(c, s, NIL).
+	PrintSegsToArgs(c, s, args', segs', j') :- PrintSegs(c, s, segs'), segs' = in.Segments(i, str, segs), PrintSegsToArgs(c, s, args, segs, j), 
+											   args' = out.Args(IntLit(i, DEC, U), Args(StringLit(str, NIL), args)), j' = j + 1.
+
+	PrintSegs ::= (in.TypingContext, in.Print, in.Segments + { NIL }).
+	PrintSegs(c, s, segs) :- SubSE(c, s), s = in.Print(_, segs, _, _), segs != NIL.
+	PrintSegs(c, s, segs) :- PrintSegs(c, s, in.Segments(_, _, segs)).
+
+	PrintExprsLength ::= (in.TypingContext, in.Print, in.Exprs + { NIL }, Natural).
+	PrintExprsLength(c, s, exprs, 0) :- SubSE(c, s), s = in.Print(_, _, exprs, _), exprs != NIL.
+	PrintExprsLength(c, s, exprs, i) :- PrintExprsLength(c, s, in.Exprs(_, _, exprs), j), i = j + 1.
+
+	PrintArgs ::= (in.TypingContext, in.Print, out.Args + { NIL }, out.Args).
+	PrintArgs(c, s, ecs, out.Args(IntLit(numSegs, DEC, U), args)) :-
+		TransformStmtArgs(c, s, 0, NIL, NIL, ecs, NIL), s = in.Print(_, segs, exprs, x), exprs: in.Exprs, PrintSegsToArgs(c, s, args, segs, numSegs).
+	PrintArgs(c, s, ecs, out.Args(ec, args)) :- PrintArgs(c, s, out.Args(ec, ecs), args).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Print(msg, NIL, _, _), 
+	                       ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident("PrtPrintf"), Args(StringLit(msg, NIL), NIL))).
+
+	StmtTrans(c, s, cs) :- RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1,
+						   s = in.Print(msg, segs, exprs, _), segs != NIL, exprs: in.Exprs, 
+						   PrintExprsLength(c, s, NIL, numExprs),
+						   ContextLineInfo(c, s, info),
+						   PrintArgs(c, s, NIL, ecs),
+						   list = out.Args(StringLit(msg, NIL), Args(IntLit(numExprs, DEC, U), ecs)),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
+						                             Args(FunApp(Ident("P_SEQ"), Args(FunApp(Ident("PrtFormatPrintf"), list), Args(Ident("NULL"), NIL))), 
+													 Args(Ident("PRT_FALSE"), tail)))).
+
+	//// Skip 
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.NulStmt(SKIP, _), cs = NIL.
+	
+	//// Return
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(NIL, _), cs = out.Goto("P_EXIT_FUN").
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(e, x), e : in.Expr, RhsExpr(c, s, 0, ce, Ident("PRT_TRUE")),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), ce)), out.Goto("P_EXIT_FUN")).
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(e, x), e : in.Expr, RhsExpr(c, s, 0, ce, Ident("PRT_FALSE")),
+						   e = in.Name(n, _), VarInLocalScope(c, _, n), TransLocalVar(c, e, expr), 
+						   ContextLineInfo(c, s, info), 
+						   cs = out.Seq(Seq(info, FunApp(Ident("P_SEQ"), Args(BinApp(ASN, Ident("p_tmp_ret"), expr), Args(BinApp(ASN, expr, Ident("NULL")), NIL)))), out.Goto("P_EXIT_FUN")).
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(e, x), e : in.Expr, RhsExpr(c, s, 0, ce, Ident("PRT_FALSE")),
+						   e = in.Name(n, _), no VarInLocalScope(c, _, n), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), out.FunApp(Ident("PrtCloneValue"), Args(ce, NIL)))), out.Goto("P_EXIT_FUN")).
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.Return(e, x), e : in.Expr, toSymbol(e) != in.#Name, RhsExpr(c, s, 0, ce, Ident("PRT_FALSE")),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, BinApp(ASN, Ident("p_tmp_ret"), out.FunApp(Ident("PrtCloneValue"), Args(ce, NIL)))), out.Goto("P_EXIT_FUN")).
+
+	//// While
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.While(cond, s1, x), RhsExpr(c, s, 0, condTrans, doFree), StmtTrans(c, s1, cs1),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, Loop(WHILE, out.FunApp(Ident("P_BOOL_EXPR"), Args(condTrans, Args(doFree, NIL))), Seq(cs1, info))).
+    
+	//// Ite
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Ite(cond, s1, s2, x), RhsExpr(c, s, 0, condTrans, doFree), StmtTrans(c, s1, cs1), StmtTrans(c, s2, cs2),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, ITE(out.FunApp(Ident("P_BOOL_EXPR"), Args(condTrans, Args(doFree, NIL))), cs1, cs2)).
+
+	//// Seq
+	StmtTrans(c, s, cs) :- SubSE(c, s), 
+	                       s = in.Seq(s1, s2, _), StmtTrans(c, s1, cs1), StmtTrans(c, s2, cs2),
+						   cs = out.Seq(cs1, cs2).
+
+    //// Fun
+	FunStmtCleanup ::= (cntxt: in.TypingContext, stmt: in.Stmt, trans: out.Stmt).
+	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s: in.Stmt, s.aout = NIL, ret = Ident("p_tmp_funstmt_ret"), ContextLineInfo(c, s, info),
+								cs = out.ITE(BinApp(NEQ, ret, Ident("NULL")), Seq(info, FunApp(Ident("PrtFreeValue"), Args(ret, NIL))), NIL).
+	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s: in.Stmt, aout = s.aout, aout: in.Name, ret = Ident("p_tmp_funstmt_ret"),
+								varDecl is in.VarDecl(aout.name, c.owner, _, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, aout.name, _),
+								cs =  out.FunApp(Ident("PrtSetGlobalVarEx"),
+						                     Args(Ident("p_tmp_mach_priv"),
+											 Args(Ident(varName),
+											 Args(ret,
+											 Args(Ident("PRT_FALSE"),
+											      NIL))))).
+	FunStmtCleanup(c, s, cs) :- SubSE(c, s), s: in.Stmt, aout = s.aout, aout: in.Name, ret = Ident("p_tmp_funstmt_ret"),
+								TypeOfLocalVar(c, aout.name, _), LocalVars(c, locals), IndexOf(locals, aout.name, i, _),
+								cs = out.FunApp(Ident("PrtSetLocalVarEx"),
+						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
+											 Args(IntLit(i, DEC, U),
+											 Args(ret,
+											 Args(Ident("PRT_FALSE"),
+											      NIL))))).
+
+   	NaturalList ::= (i: Natural, tl: NaturalList + { NIL }).
+	ExprsTransIndex ::= (cntxt: in.TypingContext, stmt: in.Stmt, pos: Natural, e: in.FunApp + { NIL }, exprs: in.Exprs + { NIL }, transIndex: NaturalList + { NIL }).
+	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.FunStmt, s.args != NIL.
+	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.NewStmt, s.args != NIL.
+	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.Print, s.args != NIL.
+	ExprsTransIndex(c, s, 0, NIL, s.args, NIL) :- SubSE(c, s), s: in.Goto, s.args != NIL.
+	ExprsTransIndex(c, s, 1, NIL, s.args, NIL) :- SubSE(c, s), s: in.Raise, s.args != NIL.
+	ExprsTransIndex(c, s, 2, NIL, s.args, NIL) :- SubSE(c, s), s: in.Send, s.args != NIL.
+	ExprsTransIndex(c, s, i, e, e.args, NIL) :- RhsNext(c, s, i, _, e, _), e: in.FunApp, e.args != NIL.
+	ExprsTransIndex(c, s, i, x, e'', trans) :- ExprsTransIndex(c, s, i, x, e, tl), e = in.Exprs(_, e', e''), RhsEvalOrder(s, i, e', j),
+	                                           trans = NaturalList(j, tl). 
+
+	TransformArgs ::= (in.TypingContext, in.Stmt, Natural, in.FunApp + { NIL }, NaturalList + { NIL }, out.Args + { NIL }, in.Exprs + { NIL }).
+	TransformArgs(c, s, i, e, ii, NIL, e.args):- RhsNext(c, s, i, _, e, _), e: in.FunApp, e.args != NIL, ExprsTransIndex(c, s, i, e, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformArgs(c, s, i, x, ii, args', tl) :- TransformArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(_, _, tl)), 
+												ec = Ident(strJoin("p_tmp_expr_", toString(j))), 
+												args' = out.Args(ec, Args(Ident("PRT_FUN_PARAM_CLONE"), args)).
+
+	TransformStmtArgs ::= (in.TypingContext, in.Stmt, Natural, in.FunApp + { NIL }, NaturalList + { NIL }, out.Args + { NIL }, in.Exprs + { NIL }).
+	TransformStmtArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.FunStmt, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformStmtArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.NewStmt, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformStmtArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.Print, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformStmtArgs(c, s, 0, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.Goto, s.args != NIL, ExprsTransIndex(c, s, 0, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformStmtArgs(c, s, 1, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.Raise, s.args != NIL, ExprsTransIndex(c, s, 1, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformStmtArgs(c, s, 2, NIL, ii, NIL, s.args):- SubSE(c, s), s : in.Send, s.args != NIL, ExprsTransIndex(c, s, 2, NIL, NIL, ii'), ii = lstReverse(#NaturalList, ii').
+	TransformStmtArgs(c, s, i, x, ii, args', tl) :- TransformStmtArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(NONE, _, tl)), 
+												   ec = Ident(strJoin("p_tmp_expr_", toString(j))), 
+												   args' = out.Args(ec, Args(Ident("PRT_FUN_PARAM_CLONE"), args)).
+	TransformStmtArgs(c, s, i, x, ii, args', tl) :- TransformStmtArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(SWAP, _, tl)),
+												   RhsTrans(c, s, i, j, out.Args(ec, _)), 
+												   args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_SWAP"), args)).
+	TransformStmtArgs(c, s, i, x, ii, args', tl) :- TransformStmtArgs(c, s, i, x, NaturalList(j, ii), args, in.Exprs(MOVE, _, tl)), 
+												   RhsTrans(c, s, i, j, out.Args(ec, _)), 
+												   args' = out.Args(UnApp(ADDR, ec), Args(Ident("PRT_FUN_PARAM_MOVE"), args)).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), context = Ident("context"),
+						   s = in.FunStmt(name, NIL, _, label, x), AnonOrNamedFunName(funDecl, funName), FunAvailable(funDecl, c.owner), funDecl.name = name,
+						   funStruct = out.UnApp(ADDR, Ident(strJoin(funName, "_STRUCT"))), ret = Ident("p_tmp_funstmt_ret"),
+						   pushFrame = out.FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_FALSE"), Args(funStruct, NIL)))),
+						   funcall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(funStruct, NIL)))))),
+						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Seq(info, Return(ret)), NIL),
+						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Seq(info, Goto("P_EXIT_FUN")), NIL),
+						   FunStmtCleanup(c, s, cleanup),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(pushFrame, Lbl(strJoin("L", toString(label)), Seq(Seq(info, funcall), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(info, cleanup)))))).
+
+	StmtTrans(c, s, cs) :- RhsTrans(c, s, 0, size, tail), RhsMaxOrder(s, 0, size), exprMacroSize = size + 1, 
+						   s = in.FunStmt(name, args, _, label, x), args != NIL, 
+	                       AnonOrNamedFunName(fn, funName), fn.name = name, FunAvailable(fn, c.owner),
+						   funStruct = out.UnApp(ADDR, Ident(strJoin(funName, "_STRUCT"))),
+						   TransformStmtArgs(c, s, 0, NIL, NIL, ecs', NIL),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, pushFrame), Lbl(strJoin("L", toString(label)), Seq(Seq(info, funCall), Seq(Seq(info, blocked), Seq(Seq(info, exception), Seq(info, cleanup)))))),
+						   pushFrame = out.FunApp(Ident(strJoin("P_EXPR_", toString(exprMacroSize))), 
+						                          Args(FunApp(Ident("P_SEQ"), Args(FunApp(Ident("PrtPushNewFrame"), Args(Ident("p_tmp_mach_priv"), Args(Ident("PRT_FALSE"), Args(funStruct, lstReverse(#Args, ecs'))))), Args(Ident("NULL"), NIL))), 
+												  Args(Ident("PRT_FALSE"), tail))),
+						   funCall = out.BinApp(ASN, ret, FunApp(Ident("PrtWrapFunStmt"), Args(UnApp(ADDR, Ident("p_tmp_frame")), Args(IntLit(label, DEC, U), Args(Ident("p_tmp_mach_priv"), Args(funStruct, NIL)))))),
+						   blocked = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("receive")), Ident("NULL")), Seq(info, Return(ret)), NIL),
+						   exception = out.ITE(BinApp(NEQ, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("lastOperation")), Ident("ReturnStatement")), Seq(info, Goto("P_EXIT_FUN")), NIL),
+						   FunStmtCleanup(c, s, cleanup),
+						   ret = Ident("p_tmp_funstmt_ret"),
+						   context = Ident("context").
+    
+	/*************************************************************/
+	/******            Value availability                   ******/
+	/*************************************************************/
+
+	DoFree ::= (expr: in.Expr, Boolean).
+	DoFree(e, FALSE) :- SubSE(_, e), e: in.Name.
+	DoFree(e, FALSE) :- SubSE(_, e), e: in.NulApp, e.op != NONDET, e.op != FAIRNONDET.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op = NONDET.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NulApp, e.op = FAIRNONDET.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.FunApp.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.UnApp.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.BinApp, e.op != IDX.
+	DoFree(e, b)    :- SubSE(_, e), e = in.BinApp(IDX, e', _, _), DoFree(e', b).
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.Default.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.Tuple.
+	DoFree(e, TRUE) :- SubSE(_, e), e: in.NamedTuple.
+	DoFree(e, b) :- SubSE(_, e), e = in.Field(e', _, _), DoFree(e', b).
+	DoFree(e, FALSE) :- SubSE(_, e), e = in.Cast(_, _, _).
+	DoFree(e, TRUE) :- SubSE(_, e), e = in.Convert(_, _, _).
+
+    /*************************************************************/
+    /******            Expression dependencies              ******/
+    /*************************************************************/	
+
+	//// ExprDepNum labels each expression in the global expression DAG with a number 
+	//// greater than the labels of all its sub-expressions.
+	ExprDepNum ::= (id: Natural, expr: in.Expr + in.Exprs + in.NamedExprs).
+
+	//// These expressions have no dependencies.
+	ExprDepNum(0, e) :- SubSE(_, e), e : in.Name.
+	ExprDepNum(0, e) :- SubSE(_, e), e : in.NulApp. 
+	ExprDepNum(0, e) :- SubSE(_, e), e : in.Default.
+
+	//// Fun app has zero or one depenencies.
+	ExprDepNum(0, e) :- SubSE(_, e), e = in.FunApp(_, NIL, _, _). 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.FunApp(_, e', _, _), ExprDepNum(j, e'), i = j + 1.
+
+	//// These expressions have one depenency.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.UnApp(_, e', _), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Field(e', _, _), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Cast(e', _, _), ExprDepNum(j, e'), i = j + 1.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Convert(e', _, _), ExprDepNum(j, e'), i = j + 1.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Tuple(e', _), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.NamedTuple(e', _), ExprDepNum(j, e'), i = j + 1. 
+
+	//// These expressions have one or two depenencies.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Exprs(_, e', NIL), ExprDepNum(j, e'), i = j + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.NamedExprs(_, e', NIL), ExprDepNum(j, e'), i = j + 1. 
+
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.Exprs(_, e', e''), ExprDepNum(j, e'), ExprDepNum(k, e''), i = j + k + 1. 
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.NamedExprs(_, e', e''), ExprDepNum(j, e'), ExprDepNum(k, e''), i = j + k + 1.
+
+	//// These expressions have two depenencies.
+	ExprDepNum(i, e) :- SubSE(_, e), e = in.BinApp(_, e', e'', _), ExprDepNum(j, e'), ExprDepNum(k, e''), i = j + k + 1.
+
+    /*************************************************************/
+    /******                 RHS Eval Order                  ******/
+    /*************************************************************/	
+	//// Indicates the maximum order of the ith expression in statement.
+	RhsMaxOrder ::= (stmt: in.Stmt, pos: Natural, maxo: Natural). 
+
+	//// Marks the expressions that appear in statements. RhsCntxt(s, i, e) means
+	//// e is a sub-expression of the ith expression appearing in statement s. 
+	RhsCntxt ::= (stmt: in.Stmt, pos: Natural, expr: in.Expr + in.Exprs + in.NamedExprs). 
+
+	//// The number of top-level expressions in a statement (possibly including hidden null expressions).
+	StmtExprSize ::= (stmt: in.Stmt, pos: Natural). 
+
+	//// Rhs eval order tells the order in which subexpressions of a statement are evaluated in C. 
+	RhsEvalOrder ::= (stmt: in.Stmt, pos: Natural, expr: in.Expr, order: Natural).
+
+	RhsEvalOrder(s, i, e, k) :- RhsCntxt(s, i, e), dn is ExprDepNum(j, e), e : in.Expr, 
+	                            k = toOrdinal(dn, 0, { dn' | RhsCntxt(s, i, e'), dn' is ExprDepNum(l, e'), e' : in.Expr }). 
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.NewStmt(_, e, _, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.NewStmt(_, e, _, _), e : in.Exprs, 
+							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
+	StmtExprSize(s, 0)   :- SubSE(_, s), s : in.NewStmt, s.args = NIL.
+	
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.FunStmt(_, e, _, _, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.FunStmt(_, e, _, _, _), e : in.Exprs,
+							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
+	StmtExprSize(s, 0)   :- SubSE(_, s), s : in.FunStmt, s.args = NIL.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Print(_, _, e, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Print(_, _, e, _), e : in.Exprs,
+							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
+	StmtExprSize(s, 0)   :- SubSE(_, s), s : in.Print, s.args = NIL.
+	
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Return(e, _), e : in.Expr.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Return(e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Return.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.While(e, _, _).
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.While(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.While.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Ite(e, _, _, _).
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Ite(e, _, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Ite.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Assert(e, _, _).
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Assert(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Assert.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Goto(_, e, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Goto(_, e, _), e : in.Exprs, 
+							k = maxAll(0, { k' | RhsEvalOrder(s, 0, _, k') }), k: Natural.
+	StmtExprSize(s, 0)   :- SubSE(_, s), s : in.Goto, s.args = NIL.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Raise(e, _, _).
+	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Raise(_, e, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Raise(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Raise(_, e, _), e : in.Exprs, 
+							k = maxAll(0, { k' | RhsEvalOrder(s, 1, _, k') }), k: Natural.
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Raise, s.args = NIL.
+
+	RhsCntxt(s, 0, e)    :- SubSE(_, s), s = in.Announce(e, _, _).
+	RhsCntxt(s, 1, e)    :- SubSE(_, s), s = in.Announce(_, e, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Announce(e, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Announce(_, e, _), e : in.Exprs, 
+							k = maxAll(0, { k' | RhsEvalOrder(s, 1, _, k') }), k: Natural.
+	StmtExprSize(s, 1)   :- SubSE(_, s), s : in.Announce, s.args = NIL.
+
+	RhsCntxt(s, 0, e) :- SubSE(_, s), s = in.Send(e, _, _, _).
+	RhsCntxt(s, 1, e) :- SubSE(_, s), s = in.Send(_, e, _, _).
+	RhsCntxt(s, 2, e) :- SubSE(_, s), s = in.Send(_, _, e, _), e : in.Exprs.
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.Send(e, _, _, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, 1, k) :- SubSE(_, s), s = in.Send(_, e, _, _), e : in.Expr, RhsEvalOrder(s, 1, e, k).
+	RhsMaxOrder(s, 2, k) :- SubSE(_, s), s = in.Send(_, _, e, _), e : in.Exprs, 
+							k = maxAll(0, { k' | RhsEvalOrder(s, 2, _, k') }), k: Natural.
+	StmtExprSize(s, 2)   :- SubSE(_, s), s : in.Send, s.args = NIL.
+
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.FunApp(_, e', _, _), e' : in.Exprs.
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.UnApp(_, e', _).
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Field(e', _, _).
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Cast(e', _, _).
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Convert(e', _, _).
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Tuple(e', _).
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.NamedTuple(e', _).
+	
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Exprs(_, e', _). 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.NamedExprs(_, e', _). 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.Exprs(_, _, e'), e' : in.Exprs. 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.NamedExprs(_, _, e'), e' : in.NamedExprs. 
+	 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.BinApp(_, e', _, _). 
+	RhsCntxt(s, i, e') :- RhsCntxt(s, i, e), e = in.BinApp(_, _, e', _). 
+
+    /*************************************************************/
+    /******         Translation of BinStmt                  ******/
+    /*************************************************************/
+	
+	//// Records the sequence of getters in an LHS expression.
+	//// Numbers each getter involving a key expression.	
+	LhsPath ::= (stmt: in.BinStmt, getter: in.Expr, keyNum: Natural).
+
+	LhsPath(s, e, 1)   :- SubSE(_, s), s = in.BinStmt(_, e, _, _, _), e = in.BinApp(IDX, _, _, _).
+	LhsPath(s, e, 0)   :- SubSE(_, s), s = in.BinStmt(_, e, _, _, _), toSymbol(e) != in.#BinApp.
+
+	LhsPath(s, e', i') :- LhsPath(s, e, i), e = in.BinApp(IDX, e', _, _), e' = in.BinApp(IDX, _, _, _), i' = i + 1.
+	LhsPath(s, e', i)  :- LhsPath(s, e, i), e = in.BinApp(IDX, e', _, _), toSymbol(e') != in.#BinApp.
+
+	LhsPath(s, e', i') :- LhsPath(s, e, i), e = in.Field(e', _, _), e' = in.BinApp(IDX, _, _, _), i' = i + 1.
+	LhsPath(s, e', i)  :- LhsPath(s, e, i), e = in.Field(e', _, _), toSymbol(e') != in.#BinApp.
+
+	RhsCntxt(s, 0, e)  :- SubSE(_, s), s = in.BinStmt(_, _, _, e, _).
+	RhsCntxt(s, i, e)  :- LhsPath(s, g, i), g = in.BinApp(IDX, _, e, _).
+	StmtExprSize(s, n) :- LhsPath(s, in.Name(_, _), i), n = i + 1.
+
+	RhsMaxOrder(s, 0, k) :- SubSE(_, s), s = in.BinStmt(_, _, _, e, _), e : in.Expr, RhsEvalOrder(s, 0, e, k).
+	RhsMaxOrder(s, i, k) :- LhsPath(s, g, i), g = in.BinApp(IDX, _, e, _), RhsEvalOrder(s, i, e, k).
+
+	//// Caches the cnames of global variables in LhsPaths
+    LhsGlobalVar ::= (lp: LhsPath, owner: String, cname: String).
+    LhsGlobalVar(lp, m, varName) :- lp is LhsPath(s, in.Name(n, _), _), DeclId(varDecl, _, varName), 
+	                                varDecl : in.VarDecl, varDecl.name = n, m = varDecl.owner.
+
+	//// Translates the entire access path
+	LhsTrans ::= (cntxt: in.TypingContext, path: LhsPath, trans: out.Expr).
+
+    LhsTrans(c, lp, trans) :- SubSE(c, s), lp is LhsPath(s, in.Name(n, _), _), 
+							  TypeOfLocalVar(c, n, _), LocalVars(c, locals), IndexOf(locals, n, i, _),
+	                          trans = out.BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(i, DEC, U)). 
+
+	LhsTrans(c, lp, trans) :- SubSE(c, s), LhsGlobalVar(lp, c.owner, varName), lp = LhsPath(s, in.Name(n, _), _),   
+							  no TypeOfLocalVar(c, n, _), 
+							  trans = out.BinApp(AAC, BinApp(PFLD, Ident("p_tmp_mach_priv"), Ident("varValues")), Ident(varName)).
+
+	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.Field(g, n, _), _), n : Natural,
+	                          trans = out.FunApp(Ident("PrtTupleGetNC"), Args(e, Args(IntLit(n, DEC, U), NIL))).   
+
+	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.Field(g, n, _), _), n : String,
+	                          in.TypeOf(c, g, t), IndexOf(t, n, i, _),
+	                          trans = out.FunApp(Ident("PrtTupleGetNC"), Args(e, Args(IntLit(i, DEC, U), NIL))).   
+
+	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.BinApp(IDX, g, k, _), i),
+	                          in.TypeOf(c, g, t), toSymbol(t) = in.#SeqType, tmpVar = strJoin("p_tmp_stmt_", toString(i)),
+	                          trans = out.FunApp(Ident("PrtSeqGetNC"), 
+							                     Args(e, Args(Ident(tmpVar), NIL))).
+
+	LhsTrans(c, lp, trans) :- LhsTrans(c, LhsPath(s, g, _), e), lp is LhsPath(s, in.BinApp(IDX, g, k, _), i),
+	                          in.TypeOf(c, g, t), toSymbol(t) = in.#MapType, tmpVar = strJoin("p_tmp_stmt_", toString(i)),
+	                          trans = out.FunApp(Ident("PrtMapGetNC"), Args(e, Args(Ident(tmpVar), NIL))).
+
+    //// Concat all statement-level expressions
+	LhsExprs ::= (cntxt: in.TypingContext, stmt: in.BinStmt, indx: Natural, args: out.Args). 
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(REMOVE, _, _, _, _), RhsExpr(c, s, 0, trans, doFree), args = out.Args(trans, Args(doFree, NIL)).
+	LhsExprs(c, s, 0, args)  :- SubSE(c, s), s = in.BinStmt(op, _, _, _, _), op != REMOVE, RhsExpr(c, s, 0, trans, _), args = out.Args(trans, Args(Ident("PRT_FALSE"), NIL)).
+	LhsExprs(c, s, i', args) :- LhsExprs(c, s, i, a), i' = i + 1, RhsExpr(c, s, i', trans, doFree), args = out.Args(trans, Args(doFree, a)). 
+
+	QualToStatus ::= (in.Qualifier, String).
+	QualToStatus(MOVE, "PRT_FUN_PARAM_MOVE").
+	QualToStatus(SWAP, "PRT_FUN_PARAM_SWAP").
+
+	TransLocalVar ::= (in.TypingContext, in.Name, out.Expr).
+	TransLocalVar(c, e, ec) :- SubSE(c, e), e = in.Name(n, _), IsLocalVar(c, n, _), LocalVars(c, locals), IndexOf(locals, n, localIndex, _),
+								 ec = out.BinApp(AAC, BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")), IntLit(localIndex, DEC, U)).
+
+    //// ASSIGN / UPDATE
+	AssignSrcType ::= (in.TypingContext, in.BinStmt, out.Expr).
+	AssignSrcType(c, s, Ident("NULL")) :- SubSE(c, s), s = in.BinStmt(ASSIGN, dest, _, src, _), 
+	                                      in.TypeOf(c, dest, destType), in.TypeOf(c, src, srcType), srcType = destType.
+	AssignSrcType(c, s, expr) :- SubSE(c, s), s = in.BinStmt(ASSIGN, dest, _, src, _), 
+	                             in.TypeOf(c, dest, destType), in.TypeOf(c, src, srcType), srcType != destType, TypeToExpr(srcType, expr).
+
+	//// Case 1: Assign global variable
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Name(glbl, _), 
+	                       varDecl is in.VarDecl(glbl, c.owner, _, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, glbl, _),  
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   ContextLineInfo(c, s, info), 
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))), 
+						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
+						   asgn = out.FunApp(Ident("PrtSetGlobalVarEx"),
+						                     Args(Ident("p_tmp_mach_priv"),
+											 Args(Ident(varName),
+											 Args(Ident("p_tmp_stmt_0"),
+											 Args(doClone,
+											      NIL))))).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = in.Name(glbl, _), 
+	                       varDecl is in.VarDecl(glbl, c.owner, _, _), DeclId(varDecl, _, varName), no TypeOfLocalVar(c, glbl, _),  
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   ContextLineInfo(c, s, info), 
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))), 
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr), 
+						   asgn = out.FunApp(Ident("PrtSetGlobalVarLinear"),
+						                     Args(Ident("p_tmp_mach_priv"),
+											 Args(Ident(varName),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											 Args(expr,
+											      NIL)))))).
+
+	//// Case 2: Assign a local variable
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Name(lcl, _), 
+                           TypeOfLocalVar(c, lcl, _), LocalVars(c, locals), IndexOf(locals, lcl, i, _),                 
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
+						   asgn = out.FunApp(Ident("PrtSetLocalVarEx"),
+						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident("p_tmp_stmt_0"),
+											 Args(doClone,
+											      NIL))))).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = in.Name(lcl, _), 
+                           TypeOfLocalVar(c, lcl, _), LocalVars(c, locals), IndexOf(locals, lcl, i, _),                 
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
+						   asgn = out.FunApp(Ident("PrtSetLocalVarLinear"),
+						                     Args(BinApp(FLD, Ident("p_tmp_frame"), Ident("locals")),
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											 Args(expr,
+											      NIL)))))).
+
+	//// Case 3: Assign a tuple by int index
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Field(getter, i, _), i : Natural, 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, getter, _), egetter), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
+						   asgn = out.FunApp(Ident("PrtTupleSetEx"),
+						                     Args(egetter,
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident("p_tmp_stmt_0"),
+											 Args(doClone,
+											      NIL))))).
+
+  	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = in.Field(getter, i, _), i : Natural, 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, getter, _), egetter), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
+						   asgn = out.FunApp(Ident("PrtTupleSetLinear"),
+						                     Args(egetter,
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											 Args(expr,
+											      NIL)))))).
+
+	//// Case 4: Assign a tuple by name
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.Field(getter, field, _), field : String, 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   in.TypeOf(c, getter, t), IndexOf(t, field, i, _), LhsTrans(c, LhsPath(s, getter, _), egetter), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
+						   asgn = out.FunApp(Ident("PrtTupleSetEx"),
+						                     Args(egetter,
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident("p_tmp_stmt_0"),
+											 Args(doClone,
+											      NIL))))).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = in.Field(getter, field, _), field : String, 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   in.TypeOf(c, getter, t), IndexOf(t, field, i, _), LhsTrans(c, LhsPath(s, getter, _), egetter), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
+						   asgn = out.FunApp(Ident("PrtTupleSetLinear"),
+						                     Args(egetter,
+											 Args(IntLit(i, DEC, U),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											 Args(expr,
+											      NIL)))))).
+
+	//// Case 5: Assign a sequence (rewrite the reading version of the translation)
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.BinApp(IDX, _, _, _), 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, e, _), egetter), 
+						   egetter = out.FunApp(Ident("PrtSeqGetNC"), Args(seq, Args(ndex, NIL))),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
+						   asgn = out.FunApp(Ident("PrtSeqUpdateEx"),
+						                     Args(seq,
+											 Args(ndex,
+											 Args(Ident("p_tmp_stmt_0"),
+											 Args(doClone,
+											      NIL))))).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), e = in.BinApp(IDX, _, _, _), 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, e, _), egetter), 
+						   egetter = out.FunApp(Ident("PrtSeqGetNC"), Args(seq, Args(ndex, NIL))),
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
+						   asgn = out.FunApp(Ident("PrtSeqUpdateLinear"),
+						                     Args(seq,
+											 Args(ndex,
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											 Args(expr,
+											      NIL)))))).
+
+	//// Case 6: Assign a map (rewrite the reading version of the translation)
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, NONE, _, x), e = in.BinApp(IDX, _, _, _), 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, e, _), egetter), 
+						   egetter = out.FunApp(Ident("PrtMapGetNC"), Args(map, Args(key, NIL))),  
+						   ContextLineInfo(c, s, info), 
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree), doClone = out.UnApp(LNOT, doFree),
+						   asgn = out.FunApp(Ident("PrtMapUpdateEx"),
+						                     Args(map,
+											 Args(key,
+											 Args(Ident("PRT_TRUE"),
+											 Args(Ident("p_tmp_stmt_0"),
+											 Args(doClone,
+											      NIL)))))).
+
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(ASSIGN, e, qual, src, x), qual != NONE, e = in.BinApp(IDX, _, _, _), 	                       
+                           StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs),
+						   LhsTrans(c, LhsPath(s, e, _), egetter), 
+						   egetter = out.FunApp(Ident("PrtMapGetNC"), Args(map, Args(key, NIL))),  
+						   ContextLineInfo(c, s, info), 
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(asgn, exprs))),
+						   RhsExpr(c, s, 0, _, doFree),
+						   QualToStatus(qual, status), TransLocalVar(c, src, ec), AssignSrcType(c, s, expr),
+						   asgn = out.FunApp(Ident("PrtMapUpdateLinear"),
+						                     Args(map,
+											 Args(key,
+											 Args(Ident("PRT_TRUE"),
+											 Args(Ident(status),
+											 Args(UnApp(ADDR, ec),
+											 Args(expr,
+											      NIL))))))).
+
+    //// INSERT
+	//// Case 1: Insert into a sequence
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(INSERT, e, _, _, x), 
+	                       in.TypeOf(c, e, t), toSymbol(t) = in.#SeqType, LhsTrans(c, LhsPath(s, e, _), egetter), 
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs))),
+						            Seq(Seq(info, freeKey),
+									Seq(Seq(info, freeTupleArray),
+									Seq(Seq(info, freeTuple),
+									Seq(Seq(info, freeValue),
+									    NIL))))),
+						   insert = out.FunApp(Ident("PrtSeqInsertEx"),
+						                     Args(egetter,
+											 Args(key,
+											 Args(val,
+											 Args(Ident("PRT_FALSE"),
+											      NIL))))),
+						   key = out.FunApp(Ident("PrtTupleGetNC"),
+												        Args(Ident("p_tmp_stmt_0"),
+												        Args(IntLit(0, DEC, U),
+												        NIL))),
+				   		   val = out.FunApp(Ident("PrtTupleGetNC"),
+									                    Args(Ident("p_tmp_stmt_0"),
+									                    Args(IntLit(1, DEC, U),
+									                    NIL))),
+						   freeKey = out.FunApp(Ident("PrtFree"), Args(key, NIL)),
+						   freeTupleArray = out.FunApp(Ident("PrtFree"), 
+											       Args(BinApp(PFLD, BinApp(FLD, out.BinApp(PFLD, Ident("p_tmp_stmt_0"), Ident("valueUnion")), Ident("tuple")), Ident("values")),
+												        NIL)),
+						   freeTuple = out.FunApp(Ident("PrtFree"), 
+											       Args(BinApp(FLD, out.BinApp(PFLD, Ident("p_tmp_stmt_0"), Ident("valueUnion")), Ident("tuple")),
+												        NIL)),
+						   freeValue = out.FunApp(Ident("PrtFree"), Args(Ident("p_tmp_stmt_0"), NIL)).
+
+    //// REMOVE
+	//// Case 1: Remove from a sequence
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _, _, x), 
+	                       in.TypeOf(c, e, t), toSymbol(t) = in.#SeqType, LhsTrans(c, LhsPath(s, e, _), egetter), 
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(remove, exprs))),
+						   remove = out.FunApp(Ident("PrtSeqRemove"),
+						                     Args(egetter,
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL))).
+
+	//// Case 2: Remove from a map
+	StmtTrans(c, s, cs) :- SubSE(c, s), s = in.BinStmt(REMOVE, e, _, _, x), 
+	                       in.TypeOf(c, e, t), toSymbol(t) = in.#MapType, LhsTrans(c, LhsPath(s, e, _), egetter), 
+	                       StmtExprSize(s, n), n' = n - 1, n' : Natural, LhsExprs(c, s, n', exprs), 
+						   ContextLineInfo(c, s, info),
+						   cs = out.Seq(info, FunApp(Ident(strJoin("P_STMT_", toString(n'))), Args(insert, exprs))),
+						   insert = out.FunApp(Ident("PrtMapRemove"),
+						                     Args(egetter,
+											 Args(Ident("p_tmp_stmt_0"),
+											      NIL))).
+
+    /*************************************************************/
+    /******                 Powers of two                   ******/
+    /*************************************************************/	
+
+	PowOf2 ::= (exp: {0..31}, val: Natural).
+
+	PowOf2(0, 1).          PowOf2(1, 2).          PowOf2(2, 4).           PowOf2(3, 8).
+	PowOf2(4, 16).         PowOf2(5, 32).         PowOf2(6, 64).          PowOf2(7, 128).
+	PowOf2(8, 256).        PowOf2(9, 512).        PowOf2(10, 1024).       PowOf2(11, 2048).
+	PowOf2(12, 4096).      PowOf2(13, 8192).      PowOf2(14, 16384).      PowOf2(15, 32768).
+	PowOf2(16, 65536).     PowOf2(17, 131072).    PowOf2(18, 262144).     PowOf2(19, 524288).
+	PowOf2(20, 1048576).   PowOf2(21, 2097152).   PowOf2(22, 4194304).    PowOf2(23, 8388608).
+	PowOf2(24, 16777216).  PowOf2(25, 33554432).  PowOf2(26, 67108864).   PowOf2(27, 134217728).
+	PowOf2(28, 268435456). PowOf2(29, 536870912). PowOf2(30, 1073741824). PowOf2(31, 2147483648).
+
+    /*************************************************************/
+    /******                 String conversions              ******/
+    /*************************************************************/
+
+	QualNameSub ::= sub (in.QualifiedName).
+	QualName2CStr ::= (in.QualifiedName, String).
+	QualName2CStr(q, s) :- QualNameSub(q), q = in.QualifiedName(s, NIL).
+	QualName2CStr(q, sj) :- QualNameSub(q), QualName2CStr(q', s'), q = in.QualifiedName(s, q'), sj = strJoin(s', strJoin("_", s)).
+}	

@@ -65,7 +65,7 @@ namespace P.Tester
 
         public void Dump(string fileNamePrefix)
         {
-            var reporter = new Microsoft.PSharp.TestingServices.Coverage.CodeCoverageReporter(CoverageInfo);
+            var reporter = new Microsoft.PSharp.TestingServices.Coverage.ActivityCoverageReporter(CoverageInfo);
             reporter.EmitCoverageReport(fileNamePrefix + ".txt");
             reporter.EmitVisualizationGraph(fileNamePrefix + ".dgml");
         }

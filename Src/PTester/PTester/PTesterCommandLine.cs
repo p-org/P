@@ -516,17 +516,17 @@ namespace P.Tester
 
             void GotHot()
             {
-                this.Goto(typeof(S2));
+                this.Goto<S2>();
             }
 
             void GotCold()
             {
-                this.Goto(typeof(S1));
+                this.Goto<S1>();
             }
 
             void GotWarm()
             {
-                this.Goto(typeof(S3));
+                this.Goto<S3>();
             }
 
         }

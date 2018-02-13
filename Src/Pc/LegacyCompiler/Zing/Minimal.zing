@@ -1,0 +1,21 @@
+enum Machine {_default};
+
+enum Event {_default};
+
+enum State {_default};
+
+enum ActionOrFun {_default};
+
+
+class Main{
+static SM_EVENT null_SM_EVENT;
+static SM_EVENT halt_SM_EVENT;
+static PRT_TYPE PayloadOf(SM_EVENT e) {
+return null;
+
+;
+
+}
+
+};
+

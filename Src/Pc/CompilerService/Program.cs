@@ -14,8 +14,8 @@ namespace Microsoft.Pc
     {
         private const string ServerPipeName = "63642A12-F751-41E3-A9D3-279EE34A0EDB-CompilerService";
         private int busyCount;
-        private readonly Dictionary<string, Compiler> compilerBusy = new Dictionary<string, Compiler>();
-        private readonly Dictionary<string, Compiler> compilerFree = new Dictionary<string, Compiler>();
+        private readonly Dictionary<string, LegacyCompiler> compilerBusy = new Dictionary<string, LegacyCompiler>();
+        private readonly Dictionary<string, LegacyCompiler> compilerFree = new Dictionary<string, LegacyCompiler>();
         private readonly object compilerlock = new object();
         private bool doMoreWork;
         private int maxCompilers = 1;
@@ -120,7 +120,7 @@ namespace Microsoft.Pc
 
         private void HandleLockMessage(NamedPipe pipe)
         {
-            Tuple<string, Compiler> pair = GetFreeCompiler();
+            Tuple<string, LegacyCompiler> pair = GetFreeCompiler();
             // send the id to the client for use in subsequent jobs.
             pipe.WriteMessage(pair.Item1);
         }
@@ -136,7 +136,7 @@ namespace Microsoft.Pc
                 {
                     if (compilerBusy.ContainsKey(id))
                     {
-                        Compiler c = compilerBusy[id];
+                        LegacyCompiler c = compilerBusy[id];
                         compilerBusy.Remove(id);
                         compilerFree[id] = c;
                         result = CompilerServiceClient.JobFinishedMessage;
@@ -154,26 +154,26 @@ namespace Microsoft.Pc
             }
         }
 
-        private Tuple<string, Compiler> GetFreeCompiler()
+        private Tuple<string, LegacyCompiler> GetFreeCompiler()
         {
-            Tuple<string, Compiler> result = null;
+            Tuple<string, LegacyCompiler> result = null;
             while (result == null)
             {
                 lock (compilerlock)
                 {
                     if (compilerFree.Count > 0)
                     {
-                        KeyValuePair<string, Compiler> pair = compilerFree.First();
+                        KeyValuePair<string, LegacyCompiler> pair = compilerFree.First();
                         compilerFree.Remove(pair.Key);
                         compilerBusy[pair.Key] = pair.Value;
-                        result = new Tuple<string, Compiler>(pair.Key, pair.Value);
+                        result = new Tuple<string, LegacyCompiler>(pair.Key, pair.Value);
                     }
                     else if (compilerBusy.Count < maxCompilers)
                     {
-                        var compiler = new Compiler(false);
+                        var compiler = new LegacyCompiler(false);
                         string id = Guid.NewGuid().ToString();
                         compilerBusy[id] = compiler;
-                        result = new Tuple<string, Compiler>(id, compiler);
+                        result = new Tuple<string, LegacyCompiler>(id, compiler);
                     }
                 }
                 if (result == null)
@@ -187,7 +187,7 @@ namespace Microsoft.Pc
             return result;
         }
 
-        private void FreeCompiler(Compiler compiler, string id)
+        private void FreeCompiler(LegacyCompiler compiler, string id)
         {
             Interlocked.Decrement(ref busyCount);
             lock (compilerlock)
@@ -197,11 +197,11 @@ namespace Microsoft.Pc
             }
         }
 
-        private Compiler RebuildCompiler(Compiler compiler, string id)
+        private LegacyCompiler RebuildCompiler(LegacyCompiler compiler, string id)
         {
             lock (compilerlock)
             {
-                var newCompiler = new Compiler(false);
+                var newCompiler = new LegacyCompiler(false);
                 compilerBusy[id] = newCompiler;
                 return newCompiler;
             }
@@ -215,7 +215,7 @@ namespace Microsoft.Pc
         private bool ProcessJob(string msg, ICompilerOutput output)
         {
             var result = false;
-            Compiler compiler = null;
+            LegacyCompiler compiler = null;
             CommandLineOptions options = null;
             var freeCompiler = false;
             string compilerId = null;
@@ -230,7 +230,7 @@ namespace Microsoft.Pc
 
                 if (options.compilerId == null)
                 {
-                    Tuple<string, Compiler> pair = GetFreeCompiler();
+                    Tuple<string, LegacyCompiler> pair = GetFreeCompiler();
                     compiler = pair.Item2;
                     compilerId = pair.Item1;
                     freeCompiler = true;

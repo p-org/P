@@ -3,11 +3,6 @@
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
   <ItemGroup>
-    <PackageReference Include="Antlr4" Version="4.6.4" />
-    <PackageReference Include="Antlr4.CodeGenerator" Version="4.6.5-beta001">
-      <PrivateAssets>All</PrivateAssets>
-    </PackageReference>
-    <PackageReference Include="Antlr4.Runtime" Version="4.6.4" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="1.1.0" />
@@ -18,7 +13,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="1.1.0" />
     <PackageReference Include="Microsoft.Composition" Version="1.0.27" />
     <PackageReference Include="System.Collections" Version="4.0.0" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.1.37" />
     <PackageReference Include="System.Diagnostics.Debug" Version="4.0.0" />
     <PackageReference Include="System.Globalization" Version="4.0.0" />
     <PackageReference Include="System.Linq" Version="4.0.0" />
@@ -170,102 +164,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ANTLRCompiler.cs" />
-    <Compile Include="Antlr\PParserErrorListener.cs" />
-    <Compile Include="Backend\ASTExt\CloneExpr.cs" />
-    <Compile Include="Backend\Debugging\IrRenderer.cs" />
-    <Compile Include="Backend\Debugging\IrToPseudoP.cs" />
-    <Compile Include="Backend\Debugging\ModelDumper.cs" />
-    <Compile Include="Backend\TargetLanguage.cs" />
-    <Compile Include="Compiler.cs" />
-    <Compile Include="CompilerOutput.cs" />
+    <Compile Include="LegacyCompiler.cs" />
     <Compile Include="CompilerOutputStream.cs" />
     <Compile Include="ConsoleProfiler.cs" />
     <Compile Include="CSharpHelper.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\EnumElem.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\FunctionSignature.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\NamedEventSet.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\Function.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\Interface.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\Machine.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\PEvent.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\Variable.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\BinOpType.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\CoerceExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\UnaryOpType.cs" />
-    <Compile Include="TypeChecker\AST\ILinearRef.cs" />
-    <Compile Include="TypeChecker\AST\IPExpr.cs" />
-    <Compile Include="TypeChecker\AST\IPStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\InsertStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\ReceiveStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\RemoveStmt.cs" />
-    <Compile Include="TypeChecker\AST\States\EventDefer.cs" />
-    <Compile Include="TypeChecker\AST\States\EventDoAction.cs" />
-    <Compile Include="TypeChecker\AST\States\EventGotoState.cs" />
-    <Compile Include="TypeChecker\AST\States\EventIgnore.cs" />
-    <Compile Include="TypeChecker\AST\States\EventPushState.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\BoolLiteralExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\CastExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\ContainsKeyExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\CtorExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\DefaultExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\EnumElemRefExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\EventRefExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\FairNondetExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\FloatLiteralExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\FunCallExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\IntLiteralExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\KeysExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\LinearAccessRefExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\LinearType.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\MapAccessExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\NamedTupleAccessExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\NamedTupleExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\NondetExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\NullLiteralExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\SeqAccessExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\UnaryOpExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\SizeofExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\BinOpExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\ThisRefExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\TupleAccessExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\UnnamedTupleExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\ValuesExpr.cs" />
-    <Compile Include="TypeChecker\AST\Expressions\VariableAccessExpr.cs" />
-    <Compile Include="TypeChecker\AST\IHasScope.cs" />
-    <Compile Include="TypeChecker\AST\IPDecl.cs" />
-    <Compile Include="TypeChecker\AST\IStateAction.cs" />
-    <Compile Include="TypeChecker\AST\IStateContainer.cs" />
-    <Compile Include="TypeChecker\DeclarationStubVisitor.cs" />
-    <Compile Include="TypeChecker\DeclarationVisitor.cs" />
-    <Compile Include="TypeChecker\FunctionBodyVisitor.cs" />
-    <Compile Include="Backend\IRTransformer.cs" />
-    <Compile Include="TypeChecker\LinearTypeChecker.cs" />
-    <Compile Include="TypeChecker\TypeCheckingUtils.cs" />
-    <Compile Include="TypeChecker\Types\NamedTupleEntry.cs" />
-    <Compile Include="TypeChecker\AST\IPAST.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\PEnum.cs" />
-    <Compile Include="TypeChecker\AST\States\State.cs" />
-    <Compile Include="TypeChecker\AST\States\StateGroup.cs" />
-    <Compile Include="TypeChecker\AST\Statements\AnnounceStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\AssertStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\AssignStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\CompoundStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\CtorStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\FunCallStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\GotoStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\IfStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\MoveAssignStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\NoStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\PopStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\PrintStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\RaiseStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\ReturnStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\SendStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\SwapAssignStmt.cs" />
-    <Compile Include="TypeChecker\AST\Statements\WhileStmt.cs" />
-    <Compile Include="TypeChecker\AST\Declarations\TypeDef.cs" />
-    <Compile Include="TypeChecker\DefaultTranslationErrorHandler.cs" />
     <Compile Include="Domains\P.4ml.g.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
@@ -276,14 +178,10 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>PLink.4ml</DependentUpon>
     </Compile>
-    <Compile Include="CommandLineOptions.cs" />
     <Compile Include="ErrorReporter.cs" />
     <Compile Include="EventInfo.cs" />
     <Compile Include="FunInfo.cs" />
-    <Compile Include="ICompiler.cs" />
-    <Compile Include="ICompilerOutput.cs" />
     <Compile Include="IProfiler.cs" />
-    <Compile Include="LivenessOption.cs" />
     <Compile Include="LocalVariableInfo.cs" />
     <Compile Include="LProgram.cs" />
     <Compile Include="MachineInfo.cs" />
@@ -304,49 +202,16 @@
     <Compile Include="PTranslation.cs" />
     <Compile Include="SourceInfo.cs" />
     <Compile Include="SpecType.cs" />
-    <Compile Include="StandardOutput.cs" />
     <Compile Include="PToCSharpCompiler.TypeTranslationContext.cs" />
     <Compile Include="StateInfo.cs" />
-    <Compile Include="StateTemperature.cs" />
     <Compile Include="TransitionInfo.cs" />
-    <Compile Include="TypeChecker\Analyzer.cs" />
     <Compile Include="PProgramModel.cs" />
-    <Compile Include="TypeChecker\Scope.cs" />
-    <Compile Include="TypeChecker\ExprVisitor.cs" />
-    <Compile Include="TypeChecker\ITranslationErrorHandler.cs" />
-    <Compile Include="TypeChecker\StackProperty.cs" />
-    <Compile Include="TypeChecker\TranslationException.cs" />
-    <Compile Include="TypeChecker\StatementVisitor.cs" />
-    <Compile Include="TypeChecker\TypeResolver.cs" />
-    <Compile Include="TypeChecker\Types\BoundedType.cs" />
-    <Compile Include="TypeChecker\Types\EnumType.cs" />
-    <Compile Include="TypeChecker\Types\ForeignType.cs" />
-    <Compile Include="TypeChecker\Types\MapType.cs" />
-    <Compile Include="TypeChecker\Types\NamedTupleType.cs" />
-    <Compile Include="TypeChecker\Types\PermissionType.cs" />
-    <Compile Include="TypeChecker\Types\PLanguageType.cs" />
-    <Compile Include="TypeChecker\Types\PrimitiveType.cs" />
-    <Compile Include="TypeChecker\Types\SequenceType.cs" />
-    <Compile Include="TypeChecker\Types\TupleType.cs" />
-    <Compile Include="TypeChecker\Types\TypeDefType.cs" />
-    <Compile Include="TypeChecker\Types\TypeKind.cs" />
-    <Compile Include="TypeChecker\Validator.cs" />
     <Compile Include="VariableInfo.cs" />
     <Compile Include="XmlProfiler.cs" />
     <Compile Include="ZingData.cs" />
     <Compile Include="ZingTranslationInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Antlr4 Include="Antlr\PLexer.g4">
-      <Generator>MSBuild:Compile</Generator>
-      <CustomToolNamespace>Microsoft.Pc.Antlr</CustomToolNamespace>
-    </Antlr4>
-    <Antlr4 Include="Antlr\PParser.g4">
-      <Generator>MSBuild:Compile</Generator>
-      <CustomToolNamespace>Microsoft.Pc.Antlr</CustomToolNamespace>
-      <Listener>True</Listener>
-      <Visitor>True</Visitor>
-    </Antlr4>
     <None Include="App.config" />
     <EmbeddedResource Include="Domains\C.4ml" />
     <EmbeddedResource Include="Domains\P.4ml">
@@ -377,6 +242,10 @@
     <MPPGCompileToken Include="Parser\Tokens.y" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\CompilerCore\CompilerCore.csproj">
+      <Project>{D610863A-242B-4563-8AE5-E2C7A3142CF8}</Project>
+      <Name>CompilerCore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
       <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
       <Name>Core</Name>

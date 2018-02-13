@@ -13,7 +13,7 @@ namespace Microsoft.Pc
 {
     partial class PToCSharpCompiler : PTranslation
     {
-        public PToCSharpCompiler(Compiler compiler, AST<Model> modelWithTypes, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo, string cSharpFileName)
+        public PToCSharpCompiler(LegacyCompiler compiler, AST<Model> modelWithTypes, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo, string cSharpFileName)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
             this.cSharpFileName = cSharpFileName;

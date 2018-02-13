@@ -337,7 +337,7 @@ namespace Microsoft.Pc.Parser
                 if (!fi.Exists)
                 {
                     var badFile = new Flag(
-                        SeverityKind.Error,
+                        Formula.API.SeverityKind.Error,
                         default(Span),
                         Constants.BadFile.ToString(string.Format("The file {0} does not exist", fi.FullName)),
                         Constants.BadFile.Code,
@@ -360,7 +360,7 @@ namespace Microsoft.Pc.Parser
             catch (Exception e)
             {
                 var badFile = new Flag(
-                    SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                     default(Span),
                     Constants.BadFile.ToString(e.Message),
                     Constants.BadFile.Code,
@@ -428,7 +428,7 @@ namespace Microsoft.Pc.Parser
             if (error)
             {
                 var errFlag = new Flag(
-                                         SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                          nameSpan,
                                          Constants.BadSyntax.ToString(errorMessage),
                                          Constants.BadSyntax.Code,
@@ -878,7 +878,7 @@ namespace Microsoft.Pc.Parser
             if (!int.TryParse(intStr, out val))
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  span,
                                  Constants.BadSyntax.ToString(string.Format("Bad int constant {0}", intStr)),
                                  Constants.BadSyntax.Code,
@@ -899,7 +899,7 @@ namespace Microsoft.Pc.Parser
             if (!double.TryParse($"{first}.{second}", out val))
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  span,
                                  Constants.BadSyntax.ToString($"Bad float constant {val}"),
                                  Constants.BadSyntax.Code,
@@ -920,7 +920,7 @@ namespace Microsoft.Pc.Parser
             if (!double.TryParse($"{first}E{exp}", out val))
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  span,
                                  Constants.BadSyntax.ToString($"Bad float constant {val}"),
                                  Constants.BadSyntax.Code,
@@ -1137,7 +1137,7 @@ namespace Microsoft.Pc.Parser
             if (!int.TryParse(indexStr, out index) || index < 0)
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  span,
                                  Constants.BadSyntax.ToString(string.Format("Bad tuple index {0}", indexStr)),
                                  Constants.BadSyntax.Code,
@@ -1215,7 +1215,7 @@ namespace Microsoft.Pc.Parser
             if (!int.TryParse(cardStr, out card) || card < 0)
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  span,
                                  Constants.BadSyntax.ToString(string.Format("Bad event cardinality {0}", cardStr)),
                                  Constants.BadSyntax.Code,
@@ -1246,7 +1246,7 @@ namespace Microsoft.Pc.Parser
             if (!int.TryParse(cardStr, out card) || card < 0)
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  span,
                                  Constants.BadSyntax.ToString(string.Format("Bad machine cardinality {0}", cardStr)),
                                  Constants.BadSyntax.Code,
@@ -1307,7 +1307,7 @@ namespace Microsoft.Pc.Parser
             else
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  entry.Span,
                                  Constants.BadSyntax.ToString("Too many entry functions"),
                                  Constants.BadSyntax.Code,
@@ -1331,7 +1331,7 @@ namespace Microsoft.Pc.Parser
             else
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  entry.Span,
                                  Constants.BadSyntax.ToString("Too many entry functions"),
                                  Constants.BadSyntax.Code,
@@ -1361,7 +1361,7 @@ namespace Microsoft.Pc.Parser
             else
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  exit.Span,
                                  Constants.BadSyntax.ToString("Too many exit functions"),
                                  Constants.BadSyntax.Code,
@@ -1385,7 +1385,7 @@ namespace Microsoft.Pc.Parser
             else
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  exit.Span,
                                  Constants.BadSyntax.ToString("Too many exit functions"),
                                  Constants.BadSyntax.Code,
@@ -1418,7 +1418,7 @@ namespace Microsoft.Pc.Parser
             if (crntFunNames.Contains(name))
             {
                 var errFlag = new Flag(
-                                     SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                      span,
                                      Constants.BadSyntax.ToString(string.Format("A function with name {0} already declared", name)),
                                      Constants.BadSyntax.Code,
@@ -1496,7 +1496,7 @@ namespace Microsoft.Pc.Parser
             else
             {
                 var errFlag = new Flag(
-                     SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                      intStrSpan,
                      Constants.BadSyntax.ToString(string.Format("Bad int constant {0}", intStr)),
                      Constants.BadSyntax.Code,
@@ -1608,7 +1608,7 @@ namespace Microsoft.Pc.Parser
             if (crntVarNames.Contains(name))
             {
                 var errFlag = new Flag(
-                                     SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                      span,
                                      Constants.BadSyntax.ToString(string.Format("A variable with name {0} already declared", name)),
                                      Constants.BadSyntax.Code,
@@ -1627,7 +1627,7 @@ namespace Microsoft.Pc.Parser
             if (crntEventList.Where(e => ((string)e.Symbol == name)).Count() >= 1)
             {
                 var errFlag = new Flag(
-                                     SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                      span,
                                      Constants.BadSyntax.ToString(string.Format("Event {0} listed multiple times in the event list", name)),
                                      Constants.BadSyntax.Code,
@@ -1806,7 +1806,7 @@ namespace Microsoft.Pc.Parser
             if (!int.TryParse(intStr, out val))
             {
                 var errFlag = new Flag(
-                                 SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                  valSpan,
                                  Constants.BadSyntax.ToString(string.Format("Bad int constant {0}", intStr)),
                                  Constants.BadSyntax.Code,
@@ -1962,7 +1962,7 @@ namespace Microsoft.Pc.Parser
             if (crntStateNames.Contains(stateName))
             {
                 var errFlag = new Flag(
-                                     SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                      span,
                                      Constants.BadSyntax.ToString(string.Format("A state with name {0} already declared", stateName)),
                                      Constants.BadSyntax.Code,
@@ -2458,7 +2458,7 @@ namespace Microsoft.Pc.Parser
 
             error:
             var errFlag = new Flag(
-                            SeverityKind.Error,
+                Formula.API.SeverityKind.Error,
                             span,
                             Constants.BadSyntax.ToString(string.Format("Bad format string {0}", s)),
                             Constants.BadSyntax.Code,

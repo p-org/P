@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Xml;
-using Microsoft.Formula.API;
 using Microsoft.Pc;
 
 namespace PBuild
@@ -158,7 +157,7 @@ namespace PBuild
             compileArgs.profile = true;
 
             var compileResult = false;
-            var svc = new Compiler(true);
+            var svc = new LegacyCompiler(true);
             if (Options.Relink && !Options.Rebuild)
             {
                 compileResult = true;

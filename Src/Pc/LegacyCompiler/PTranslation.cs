@@ -51,7 +51,7 @@ namespace Microsoft.Pc
         public Dictionary<string, MachineInfo> allMachines = new Dictionary<string, MachineInfo>();
         public Dictionary<AST<Node>, string> anonFunToName = new Dictionary<AST<Node>, string>();
 
-        public Compiler compiler;
+        public LegacyCompiler compiler;
         public HashSet<string> exportedEvents = new HashSet<string>();
         public Dictionary<string, LinkedList<AST<FuncTerm>>> factBins = new Dictionary<string, LinkedList<AST<FuncTerm>>>();
         public Dictionary<AST<Node>, string> funToFileName = new Dictionary<AST<Node>, string>();
@@ -60,7 +60,7 @@ namespace Microsoft.Pc
 
         private readonly Dictionary<string, int> uniqIDCounters = new Dictionary<string, int>();
 
-        public PTranslation(Compiler compiler, AST<Model> model, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
+        public PTranslation(LegacyCompiler compiler, AST<Model> model, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
         {
             this.compiler = compiler;
             this.idToSourceInfo = idToSourceInfo;
@@ -88,7 +88,7 @@ namespace Microsoft.Pc
 
         public string SpanToString(Span span, string msg)
         {
-            var flag = new Flag(SeverityKind.Error, span, msg, 0, span.Program);
+            var flag = new Flag(Formula.API.SeverityKind.Error, span, msg, 0, span.Program);
             return ErrorReporter.FormatError(flag, compiler.Options).Replace(@"\", @"\\");
         }
 

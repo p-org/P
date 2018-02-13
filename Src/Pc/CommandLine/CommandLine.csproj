@@ -13,6 +13,7 @@
     <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <TargetFrameworkProfile />
+    <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|x86' ">
     <PlatformTarget>x86</PlatformTarget>
@@ -69,6 +70,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\CompilerCore\CompilerCore.csproj">
+      <Project>{D610863A-242B-4563-8AE5-E2C7A3142CF8}</Project>
+      <Name>CompilerCore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\CompilerService\CompilerService.csproj">
       <Project>{9f8de18d-c64b-4d30-9cff-6793ffeafc04}</Project>
       <Name>CompilerService</Name>

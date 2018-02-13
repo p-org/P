@@ -1,11 +1,11 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup>
-    <PackageReference Include="Antlr4" Version="4.6.4" />
+    <PackageReference Include="Antlr4" Version="4.6.5-beta001" />
     <PackageReference Include="Antlr4.CodeGenerator" Version="4.6.5-beta001">
       <PrivateAssets>All</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Antlr4.Runtime" Version="4.6.4" />
+    <PackageReference Include="Antlr4.Runtime" Version="4.6.5-beta001" />
     <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.0.20171219.105559" />
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="1.1.0" />
@@ -13,7 +13,6 @@
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
     <PackageReference Include="System.Collections" Version="4.0.0" />
-    <PackageReference Include="System.Collections.Immutable" Version="1.1.37" />
     <PackageReference Include="System.Diagnostics.Debug" Version="4.0.0" />
     <PackageReference Include="System.Globalization" Version="4.0.0" />
     <PackageReference Include="System.IO" Version="4.0.0" />
@@ -143,6 +142,10 @@
     <Compile Include="PSharpBackend\PSharpTests.cs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\CompilerCore\CompilerCore.csproj">
+      <Project>{D610863A-242B-4563-8AE5-E2C7A3142CF8}</Project>
+      <Name>CompilerCore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\Ext\Formula\Src\Core\Core.csproj">
       <Project>{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}</Project>
       <Name>Core</Name>

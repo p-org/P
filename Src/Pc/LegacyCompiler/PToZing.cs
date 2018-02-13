@@ -39,7 +39,7 @@ namespace Microsoft.Pc
             return string.Format("MACHINE_{0}", machineName);
         }
 
-        public PToZing(Compiler compiler, AST<Model> modelWithTypes, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
+        public PToZing(LegacyCompiler compiler, AST<Model> modelWithTypes, Dictionary<string, Dictionary<int, SourceInfo>> idToSourceInfo)
             : base(compiler, modelWithTypes, idToSourceInfo)
         {
             this.typeContext = new TypeTranslationContext(this);

@@ -257,7 +257,7 @@
             if (crntStringList.Where(e => (string)e.Symbol == name).Count() >= 1)
             {
                 var errFlag = new Flag(
-                                     SeverityKind.Error,
+                                     Formula.API.SeverityKind.Error,
                                      nameSpan,
                                      Constants.BadSyntax.ToString(string.Format(" item {0} listed multiple times in the list", name)),
                                      Constants.BadSyntax.Code,
@@ -286,7 +286,7 @@
         {
             if (crntMachineBindingList.Keys.Where(e => ((string)e.Symbol == interfaceName)).Count() >= 1) { 
                 var errFlag = new Flag(
-                                     SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                      span,
                                      Constants.BadSyntax.ToString(string.Format("Interface {0} bound multiple times in the module", interfaceName)),
                                      Constants.BadSyntax.Code,
@@ -310,7 +310,7 @@
             if (crntEventList.Where(e => ((string)e.Symbol == name)).Count() >= 1)
             {
                 var errFlag = new Flag(
-                                     SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                      span,
                                      Constants.BadSyntax.ToString(string.Format("Event {0} listed multiple times in the event list", name)),
                                      Constants.BadSyntax.Code,
@@ -441,7 +441,7 @@
                 if (!fi.Exists)
                 {
                     var badFile = new Flag(
-                        SeverityKind.Error,
+                        Formula.API.SeverityKind.Error,
                         default(Span),
                         Constants.BadFile.ToString(string.Format("The file {0} does not exist", fi.FullName)),
                         Constants.BadFile.Code,
@@ -464,7 +464,7 @@
             catch (Exception e)
             {
                 var badFile = new Flag(
-                    SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                     default(Span),
                     Constants.BadFile.ToString(e.Message),
                     Constants.BadFile.Code,
@@ -507,7 +507,7 @@
             if (error)
             {
                 var errFlag = new Flag(
-                                         SeverityKind.Error,
+                    Formula.API.SeverityKind.Error,
                                          nameSpan,
                                          Constants.BadSyntax.ToString(errorMessage),
                                          Constants.BadSyntax.Code,

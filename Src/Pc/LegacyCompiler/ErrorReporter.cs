@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Microsoft.Formula.API;
 using Microsoft.Formula.API.Nodes;
 using Microsoft.Formula.Common;
 using Microsoft.Formula.Common.Terms;
+using Enum = System.Enum;
 
 namespace Microsoft.Pc
 {
@@ -42,7 +44,9 @@ namespace Microsoft.Pc
 
         public void PrintFlag(Flag f, ICompilerOutput Log, CommandLineOptions Options)
         {
-            Log.WriteMessage(FormatError(f, Options), f.Severity);
+            bool success = Enum.TryParse(f.Severity.ToString(), out SeverityKind severity);
+            Debug.Assert(success);
+            Log.WriteMessage(FormatError(f, Options), severity);
         }
 
         public static string FormatError(Flag f, CommandLineOptions Options)

@@ -91,6 +91,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\CompilerCore\CompilerCore.csproj">
+      <Project>{D610863A-242B-4563-8AE5-E2C7A3142CF8}</Project>
+      <Name>CompilerCore</Name>
+    </ProjectReference>
     <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
       <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
       <Name>Core</Name>

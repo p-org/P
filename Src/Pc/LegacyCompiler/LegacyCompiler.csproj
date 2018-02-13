@@ -21,7 +21,6 @@
     <PackageReference Include="System.Runtime" Version="4.0.0" />
     <PackageReference Include="System.Runtime.Extensions" Version="4.0.0" />
     <PackageReference Include="System.Threading" Version="4.0.0" />
-    <PackageReference Include="System.ValueTuple" Version="4.4.0" />
   </ItemGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>

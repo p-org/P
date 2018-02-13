@@ -164,8 +164,6 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="LegacyCompiler.cs" />
-    <Compile Include="CompilerOutputStream.cs" />
     <Compile Include="ConsoleProfiler.cs" />
     <Compile Include="CSharpHelper.cs" />
     <Compile Include="Domains\P.4ml.g.cs">
@@ -182,6 +180,7 @@
     <Compile Include="EventInfo.cs" />
     <Compile Include="FunInfo.cs" />
     <Compile Include="IProfiler.cs" />
+    <Compile Include="LegacyCompiler.cs" />
     <Compile Include="LocalVariableInfo.cs" />
     <Compile Include="LProgram.cs" />
     <Compile Include="MachineInfo.cs" />
@@ -242,10 +241,6 @@
     <MPPGCompileToken Include="Parser\Tokens.y" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\CompilerCore\CompilerCore.csproj">
-      <Project>{D610863A-242B-4563-8AE5-E2C7A3142CF8}</Project>
-      <Name>CompilerCore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
       <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
       <Name>Core</Name>
@@ -257,6 +252,10 @@
     <ProjectReference Include="..\..\Parsers\ZingParser\ZingParser.csproj">
       <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
       <Name>ZingParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj">
+      <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
+      <Name>CompilerCore</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -142,10 +142,6 @@
     <Compile Include="PSharpBackend\PSharpTests.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\CompilerCore\CompilerCore.csproj">
-      <Project>{D610863A-242B-4563-8AE5-E2C7A3142CF8}</Project>
-      <Name>CompilerCore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Ext\Formula\Src\Core\Core.csproj">
       <Project>{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}</Project>
       <Name>Core</Name>
@@ -153,6 +149,10 @@
     <ProjectReference Include="..\..\Src\Parsers\CParser\CParser.csproj">
       <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
       <Name>CParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Src\Pc\CompilerCore\CompilerCore.csproj">
+      <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
+      <Name>CompilerCore</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Src\Pc\CompilerService\CompilerService.csproj">
       <Project>{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}</Project>

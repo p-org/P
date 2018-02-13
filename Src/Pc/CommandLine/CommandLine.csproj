@@ -70,8 +70,8 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\CompilerCore\CompilerCore.csproj">
-      <Project>{D610863A-242B-4563-8AE5-E2C7A3142CF8}</Project>
+    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj">
+      <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
       <Name>CompilerCore</Name>
     </ProjectReference>
     <ProjectReference Include="..\CompilerService\CompilerService.csproj">

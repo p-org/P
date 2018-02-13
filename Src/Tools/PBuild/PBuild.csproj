@@ -91,13 +91,13 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\..\CompilerCore\CompilerCore.csproj">
-      <Project>{D610863A-242B-4563-8AE5-E2C7A3142CF8}</Project>
-      <Name>CompilerCore</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
       <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
       <Name>Core</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\..\Pc\CompilerCore\CompilerCore.csproj">
+      <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
+      <Name>CompilerCore</Name>
     </ProjectReference>
     <ProjectReference Include="..\..\Pc\CompilerService\CompilerService.csproj">
       <Project>{9f8de18d-c64b-4d30-9cff-6793ffeafc04}</Project>

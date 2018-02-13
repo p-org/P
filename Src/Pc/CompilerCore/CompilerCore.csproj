@@ -4,6 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <Platforms>x64;x86</Platforms>
     <RootNamespace>Microsoft.Pc</RootNamespace>
+    <Antlr4JavaExecutable Condition=" '$(OS)' != 'Windows_NT' ">/usr/bin/java</Antlr4JavaExecutable>
   </PropertyGroup>
 
   <ItemGroup>

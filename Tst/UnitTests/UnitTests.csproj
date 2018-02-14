@@ -12,22 +12,24 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="1.1.0" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
-    <PackageReference Include="System.Collections" Version="4.0.0" />
-    <PackageReference Include="System.Diagnostics.Debug" Version="4.0.0" />
-    <PackageReference Include="System.Globalization" Version="4.0.0" />
-    <PackageReference Include="System.IO" Version="4.0.0" />
-    <PackageReference Include="System.Linq" Version="4.0.0" />
-    <PackageReference Include="System.Reflection" Version="4.0.0" />
-    <PackageReference Include="System.Reflection.Extensions" Version="4.0.0" />
-    <PackageReference Include="System.Reflection.Metadata" Version="1.2.0" />
-    <PackageReference Include="System.Reflection.Primitives" Version="4.0.0" />
-    <PackageReference Include="System.Resources.ResourceManager" Version="4.0.0" />
-    <PackageReference Include="System.Runtime" Version="4.0.0" />
-    <PackageReference Include="System.Runtime.Extensions" Version="4.0.0" />
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.0.0" />
-    <PackageReference Include="System.Text.Encoding" Version="4.0.0" />
-    <PackageReference Include="System.Text.Encoding.Extensions" Version="4.0.0" />
-    <PackageReference Include="System.Threading" Version="4.0.0" />
+    <!--
+      <PackageReference Include="System.Collections" Version="4.0.0" />
+      <PackageReference Include="System.Diagnostics.Debug" Version="4.0.0" />
+      <PackageReference Include="System.Globalization" Version="4.0.0" />
+      <PackageReference Include="System.IO" Version="4.0.0" />
+      <PackageReference Include="System.Linq" Version="4.0.0" />
+      <PackageReference Include="System.Reflection" Version="4.0.0" />
+      <PackageReference Include="System.Reflection.Extensions" Version="4.0.0" />
+      <PackageReference Include="System.Reflection.Metadata" Version="1.2.0" />
+      <PackageReference Include="System.Reflection.Primitives" Version="4.0.0" />
+      <PackageReference Include="System.Resources.ResourceManager" Version="4.0.0" />
+      <PackageReference Include="System.Runtime" Version="4.0.0" />
+      <PackageReference Include="System.Runtime.Extensions" Version="4.0.0" />
+      <PackageReference Include="System.Runtime.InteropServices" Version="4.0.0" />
+      <PackageReference Include="System.Text.Encoding" Version="4.0.0" />
+      <PackageReference Include="System.Text.Encoding.Extensions" Version="4.0.0" />
+      <PackageReference Include="System.Threading" Version="4.0.0" />
+    -->
   </ItemGroup>
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -48,24 +50,6 @@
     <TargetFrameworkProfile />
     <NuGetPackageImportStamp>
     </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-    <PlatformTarget>x64</PlatformTarget>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
     <DebugSymbols>true</DebugSymbols>

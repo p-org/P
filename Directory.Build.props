@@ -1,4 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
+<!-- See: https://docs.microsoft.com/en-us/visualstudio/msbuild/customize-your-build -->
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <WindowsSDKVer Condition="'$(WindowsSDKVersion)'!=''">$(WindowsSDKVersion.TrimEnd('\'))</WindowsSDKVer>    
@@ -16,6 +17,6 @@
     <StandardPDefinitions>PRT_STATIC;PRT_PLAT_WINUSER</StandardPDefinitions>
     <StandardPDefinitions Condition="'$(Configuration)'=='Debug'">PRT_DEBUG;$(StandardPDefinitions)</StandardPDefinitions>
     <StandardPLibraries>PrtWinUser.lib;</StandardPLibraries>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
-
 </Project>

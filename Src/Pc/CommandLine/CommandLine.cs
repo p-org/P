@@ -1,4 +1,6 @@
-﻿namespace Microsoft.Pc
+﻿using System;
+
+namespace Microsoft.Pc
 {
     public class CommandLine
     {
@@ -8,11 +10,16 @@
             {
                 return new AntlrCompiler();
             }
+            #if NET461
             if (options.compilerService)
             {
                 return new CompilerServiceClient();
             }
             return new LegacyCompiler(options.shortFileNames);
+            #else
+            Console.WriteLine("Legacy backend unsupported in .NET Core builds.");
+            return null;
+            #endif
         }
 
         public static int Main(string[] args)
@@ -20,6 +27,10 @@
             if (CommandLineOptions.ParseArguments(args, out CommandLineOptions options))
             {
                 ICompiler compiler = GetCompiler(options);
+                if (compiler == null)
+                {
+                    return -1;
+                }
                 var output = new StandardOutput();
                 bool result = options.isLinkerPhase
                                   ? compiler.Link(output, options)

@@ -70,9 +70,9 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<TypeDef> Typedefs => typedefs.Values;
         public IEnumerable<Variable> Variables => variables.Values;
         public IEnumerable<SafetyTest> SafetyTests => safetyTests.Values;
-        //public IEnumerable<RefinementTest> RefinementTests => RefinementTests.Values;
+        public IEnumerable<RefinementTest> RefinementTests => RefinementTests.Values;
         public Implementation Implementation => implementation;
-        //public IEnumerable<NamedModule> NamedModules => NamedModules.Values;
+        public IEnumerable<NamedModule> NamedModules => NamedModules.Values;
 
         #region Overloaded getters
 

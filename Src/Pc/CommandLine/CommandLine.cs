@@ -12,7 +12,7 @@
             {
                 return new CompilerServiceClient();
             }
-            return new Compiler(options.shortFileNames);
+            return new LegacyCompiler(options.shortFileNames);
         }
 
         public static int Main(string[] args)

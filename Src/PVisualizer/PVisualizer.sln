@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.24720.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PVisualizer", "PVisualizer.csproj", "{9EA5F2E1-7FFA-4A0C-B439-BEAE64B952C5}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Compiler", "..\Pc\Compiler\Compiler.csproj", "{ED76217F-2452-4A35-90F6-6EB6CCF2D882}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegacyCompiler", "..\Pc\LegacyCompiler\LegacyCompiler.csproj", "{ED76217F-2452-4A35-90F6-6EB6CCF2D882}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CParser", "..\Parsers\CParser\CParser.csproj", "{55AFEA71-DA6D-4258-9193-29942EBBBE48}"
 EndProject

@@ -17,7 +17,7 @@ namespace UnitTests.CBackend
     //[NonParallelizable]
     public class RegressionTests
     {
-        private ThreadLocal<Compiler> PCompiler { get; } = new ThreadLocal<Compiler>(() => new Compiler(true));
+        private ThreadLocal<LegacyCompiler> PCompiler { get; } = new ThreadLocal<LegacyCompiler>(() => new LegacyCompiler(true));
         //If running PCompilerService:
         private ThreadLocal<ICompiler> PCompilerService { get; }  = new ThreadLocal<ICompiler>(() => new CompilerServiceClient());
         public static string TestResultsDirectory { get; } = Path.Combine(

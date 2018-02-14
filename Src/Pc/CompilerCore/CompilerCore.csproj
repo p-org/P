@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <Platforms>x64;x86</Platforms>
+    <RootNamespace>Microsoft.Pc</RootNamespace>
+    <Antlr4JavaExecutable Condition=" '$(OS)' != 'Windows_NT' ">/usr/bin/java</Antlr4JavaExecutable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Antlr4" Version="4.6.5-beta001" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.4.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <Antlr4 Include="Antlr/PParser.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <CustomToolNamespace>Microsoft.Pc</CustomToolNamespace>
+      <Listener>True</Listener>
+      <Visitor>True</Visitor>
+    </Antlr4>
+    <Antlr4 Include="Antlr/PLexer.g4">
+      <Generator>MSBuild:Compile</Generator>
+      <CustomToolNamespace>Microsoft.Pc</CustomToolNamespace>
+    </Antlr4>
+  </ItemGroup>
+
+</Project>

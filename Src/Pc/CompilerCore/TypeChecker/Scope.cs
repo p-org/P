@@ -28,6 +28,8 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
         private readonly Implementation implementation = null;
         private readonly IDictionary<string, SafetyTest> safetyTests = new Dictionary<string, SafetyTest>();
+        private readonly IDictionary<string, RefinementTest> refinementTests = new Dictionary<string, RefinementTest>();
+        private readonly IDictionary<string, NamedModule> namedModules = new Dictionary<string, NamedModule>();
 
         public Scope(ITranslationErrorHandler handler) : this(handler, null) { }
 
@@ -70,9 +72,9 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<TypeDef> Typedefs => typedefs.Values;
         public IEnumerable<Variable> Variables => variables.Values;
         public IEnumerable<SafetyTest> SafetyTests => safetyTests.Values;
-        public IEnumerable<RefinementTest> RefinementTests => RefinementTests.Values;
+        public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public Implementation Implementation => implementation;
-        public IEnumerable<NamedModule> NamedModules => NamedModules.Values;
+        public IEnumerable<NamedModule> NamedModules => namedModules.Values;
 
         #region Overloaded getters
 

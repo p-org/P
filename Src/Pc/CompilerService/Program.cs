@@ -21,8 +21,8 @@ namespace Microsoft.Pc
 
         private static void Main(string[] args)
         {
-            var p = new Program();
-            p.maxCompilers = Environment.ProcessorCount - 1; // leave 1 core for the user :-) 
+            // leave 1 core for the user :-) 
+            var p = new Program {maxCompilers = Environment.ProcessorCount - 1};
             try
             {
                 p.Run();

@@ -9,10 +9,9 @@
     <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
   </PropertyGroup>
 
-  <PropertyGroup>
-    <!--Make sure that the lexer runs before the C# compiler-->
+  <!-- <PropertyGroup>
     <CoreCompileDependsOn>$(CoreCompileDependsOn);KillCompilerService</CoreCompileDependsOn>
-  </PropertyGroup>
+  </PropertyGroup> -->
 
   <UsingTask
     TaskName="KillProcess"
@@ -38,10 +37,10 @@
     </Task>
   </UsingTask>
 
-  <Target Name="KillCompilerService">
+  <Target Name="KillCompilerService" BeforeTargets="Build">
     <KillProcess ProcessName="PCompilerService" Condition="'$(OS)' == 'Windows_NT'"/>
     <KillProcess ProcessName="PCompilerService.vshost" Condition="'$(OS)' == 'Windows_NT'"/>
     <Exec Command="pkill PCompilerService; exit 0" Condition="'$(OS)' != 'Windows_NT'"/>
   </Target>
-  
+
 </Project>

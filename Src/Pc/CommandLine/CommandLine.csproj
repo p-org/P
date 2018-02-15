@@ -9,23 +9,9 @@
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <DefineConstants>TRACE</DefineConstants>
-  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
     <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\LegacyCompiler\LegacyCompiler.csproj" />
     <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\CompilerService\CompilerService.csproj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Properties\" />
   </ItemGroup>
 </Project>

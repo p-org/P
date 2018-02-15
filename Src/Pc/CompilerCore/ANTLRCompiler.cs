@@ -15,7 +15,6 @@ using Microsoft.Pc.TypeChecker.AST.Declarations;
 namespace Microsoft.Pc
 {
     [Export(typeof(ICompiler))]
-    [ExportMetadata("ProvidedTargets", new[]{"P#", "C"})]
     public class AntlrCompiler : ICompiler
     {
         public bool Compile(ICompilerOutput log, CommandLineOptions options)

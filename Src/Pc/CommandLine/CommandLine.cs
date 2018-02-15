@@ -1,6 +1,4 @@
-﻿#if !NET461
-using System;
-#endif
+﻿using System;
 
 namespace Microsoft.Pc
 {

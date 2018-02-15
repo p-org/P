@@ -75,10 +75,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <MPLexCompile Include="Parser\Lexer.lex" />
+    <MPLexCompile Include="Parser\lexer.lex" />
     <MPPGCompileParser Include="Parser\PParser.y" />
     <MPPGCompileTempParser Include="Parser\LParser.y" />
-    <MPPGCompileToken Include="Parser\Tokens.y" />
+    <MPPGCompileToken Include="Parser\tokens.y" />
   </ItemGroup>
 
   <Import Project="$(PTargets)\compiler.targets" />

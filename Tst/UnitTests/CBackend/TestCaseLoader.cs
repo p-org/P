@@ -22,14 +22,14 @@ namespace UnitTests.CBackend
             //Remove previous TestResultsDirectory:
             try
             {
-                if (Directory.Exists(RegressionTests.TestResultsDirectory))
+                if (Directory.Exists(Constants.TestResultsDirectory))
                 {
-                    Directory.Delete(RegressionTests.TestResultsDirectory, true);
+                    Directory.Delete(Constants.TestResultsDirectory, true);
                 }
             }
             catch (Exception e)
             {
-                RegressionTests.WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
+                ConsoleHelper.WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
             }
 
             //Remove old file with diffs:

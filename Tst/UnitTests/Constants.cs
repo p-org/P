@@ -1,6 +1,8 @@
 using System;
 using System.Diagnostics.Contracts;
 using System.IO;
+using System.Reflection;
+using NUnit.Framework;
 
 namespace UnitTests
 {
@@ -30,7 +32,7 @@ namespace UnitTests
         private static readonly Lazy<string> LazySolutionDirectory = new Lazy<string>(
             () =>
             {
-                string assemblyPath = AppDomain.CurrentDomain.SetupInformation.ApplicationBase;
+                string assemblyPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
                 string assemblyDirectory = Path.GetDirectoryName(assemblyPath);
                 Contract.Assert(assemblyDirectory != null);
                 for (var dir = new DirectoryInfo(assemblyDirectory); dir != null; dir = dir.Parent)
@@ -48,13 +50,14 @@ namespace UnitTests
 
         internal static string TestDirectory => Path.Combine(SolutionDirectory, TestDirectoryName);
 
-        internal static bool ResetTests => Properties.Settings.Default.ResetTests;
-        internal static bool RunPc => Properties.Settings.Default.RunPc;
-        internal static bool RunPrt => Properties.Settings.Default.RunPrt;
-        internal static bool RunPt => Properties.Settings.Default.RunPt;
-        internal static bool RunZing => Properties.Settings.Default.RunZing;
-        internal static bool RunAll => Properties.Settings.Default.RunAll;
-        internal static bool PtWithPSharp => Properties.Settings.Default.PtWithPSharp;
+        internal static bool ResetTests => bool.Parse(TestContext.Parameters["ResetTests"]);
+        internal static bool RunPc => bool.Parse(TestContext.Parameters["RunPc"]);
+        internal static bool RunPrt => bool.Parse(TestContext.Parameters["RunPrt"]);
+        internal static bool RunPt => bool.Parse(TestContext.Parameters["RunPt"]);
+        internal static bool RunZing => bool.Parse(TestContext.Parameters["RunZing"]);
+        internal static bool RunAll => bool.Parse(TestContext.Parameters["RunAll"]);
+        internal static bool PtWithPSharp => bool.Parse(TestContext.Parameters["PtWithPSharp"]);
 
+        internal static string TestResultsDirectory { get; } = Path.Combine(TestDirectory, $"TestResult_{Configuration}_{Platform}");
     }
 }

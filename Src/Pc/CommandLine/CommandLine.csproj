@@ -7,6 +7,7 @@
     <AssemblyName>Pc</AssemblyName>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)' == 'Debug'">
     <DebugSymbols>true</DebugSymbols>
@@ -21,5 +22,10 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
+    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\LegacyCompiler\LegacyCompiler.csproj" />
+    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\CompilerService\CompilerService.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Properties\" />
   </ItemGroup>
 </Project>

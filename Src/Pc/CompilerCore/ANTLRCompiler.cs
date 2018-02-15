@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Composition;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
@@ -13,6 +14,8 @@ using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc
 {
+    [Export(typeof(ICompiler))]
+    [ExportMetadata("ProvidedTargets", new[]{"P#", "C"})]
     public class AntlrCompiler : ICompiler
     {
         public bool Compile(ICompilerOutput log, CommandLineOptions options)

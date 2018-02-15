@@ -13,9 +13,9 @@ namespace Microsoft.Pc
     {
         private const string ServerPipeName = "63642A12-F751-41E3-A9D3-279EE34A0EDB-CompilerService";
 
-        public static string JobFinishedMessage = "<job-finished>";
-        public static string CompilerLockMessage = "<lock>";
-        public static string CompilerFreeMessage = "<free>";
+        public const string JobFinishedMessage = "<job-finished>";
+        public const string CompilerLockMessage = "<lock>";
+        public const string CompilerFreeMessage = "<free>";
         private string id;
         private NamedPipe service;
 
@@ -113,8 +113,7 @@ namespace Microsoft.Pc
                     if (i > 0)
                     {
                         string sev = msg.Substring(0, i);
-                        SeverityKind severity;
-                        Enum.TryParse(sev, out severity);
+                        Enum.TryParse(sev, out SeverityKind severity);
                         msg = msg.Substring(i + 2);
 
                         if (msg.StartsWith(JobFinishedMessage))

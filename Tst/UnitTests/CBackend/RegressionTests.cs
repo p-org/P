@@ -1,4 +1,6 @@
-﻿using System;
+﻿#if NET461
+
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -11,6 +13,7 @@ using NUnit.Framework;
 
 namespace UnitTests.CBackend
 {
+
     [TestFixture]
     //Parallel execution is not working:
     [Parallelizable(ParallelScope.Children)]
@@ -18,11 +21,6 @@ namespace UnitTests.CBackend
     public class RegressionTests
     {
         private ThreadLocal<LegacyCompiler> PCompiler { get; } = new ThreadLocal<LegacyCompiler>(() => new LegacyCompiler(true));
-        //If running PCompilerService:
-        private ThreadLocal<ICompiler> PCompilerService { get; }  = new ThreadLocal<ICompiler>(() => new CompilerServiceClient());
-        public static string TestResultsDirectory { get; } = Path.Combine(
-            Constants.TestDirectory,
-            $"TestResult_{Constants.Configuration}_{Constants.Platform}");
 
         public static IEnumerable<TestCaseData> TestCases => TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
 
@@ -31,7 +29,7 @@ namespace UnitTests.CBackend
             var testRoot = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar);
             var curTest = new Uri(testDir.FullName);
             Uri relativePath = testRoot.MakeRelativeUri(curTest);
-            string destinationDir = Path.GetFullPath(Path.Combine(TestResultsDirectory, relativePath.OriginalString));
+            string destinationDir = Path.GetFullPath(Path.Combine(Constants.TestResultsDirectory, relativePath.OriginalString));
             //Why below is commented out:
             //Some tests failed to copy without any exception
             //Removing TestResult_Debug_x86 dir in FindTestCasesInDirectory instead
@@ -49,14 +47,6 @@ namespace UnitTests.CBackend
 
             FileHelper.DeepCopy(testDir, destinationDir);
             return new DirectoryInfo(destinationDir);
-        }
-
-        public static void WriteError(string format, params object[] args)
-        {
-            ConsoleColor saved = Console.ForegroundColor;
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.WriteLine(format, args);
-            Console.ForegroundColor = saved;
         }
 
         private int TestPc(
@@ -215,8 +205,8 @@ namespace UnitTests.CBackend
                 csFileName,
                 linkerFileName
             };
-            string stdout, stderr;
-            int exitCode = ProcessHelper.RunWithOutput(cscFilePath, activeDirectory, arguments, out stdout, out stderr);
+            int exitCode = ProcessHelper.RunWithOutput(cscFilePath, activeDirectory, arguments, 
+                                                       out string stdout, out string stderr);
             //tmpWriter.Write(stdout);
             //tmpWriter.Write(stderr);
             tmpWriter.WriteLine($"EXIT (csc.exe): {exitCode}");
@@ -468,7 +458,7 @@ namespace UnitTests.CBackend
                     }
                     catch (Exception e)
                     {
-                        WriteError("ERROR: exception: {0}", e.Message);
+                        ConsoleHelper.WriteError("ERROR: exception: {0}", e.Message);
                     }
                 }
                 Assert.AreEqual(correctText, actualText);
@@ -576,3 +566,5 @@ namespace UnitTests.CBackend
         }
     }
 }
+
+#endif

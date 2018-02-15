@@ -20,22 +20,9 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             ValidateTransitions(handler, machine);
-            ValidateInterfaces(handler, machine);
         }
 
-        private static void ValidateInterfaces(ITranslationErrorHandler handler, Machine machine)
-        {
-            foreach (Interface machineInterface in machine.Interfaces)
-            {
-                if (!machine.PayloadType.IsAssignableFrom(machineInterface.PayloadType))
-                {
-                    // TODO: add special "invalid machine interface" error
-                    throw handler.TypeMismatch(machine.StartState.Entry?.SourceLocation ?? machine.SourceLocation,
-                                               machine.PayloadType,
-                                               machineInterface.PayloadType);
-                }
-            }
-        }
+        
 
         private static void ValidateTransitions(ITranslationErrorHandler handler, Machine machine)
         {

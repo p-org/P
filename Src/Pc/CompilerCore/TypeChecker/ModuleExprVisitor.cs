@@ -8,5 +8,9 @@ namespace Microsoft.Pc.TypeChecker.AST
 {
     class ModuleExprVisitor
     {
+        public static void PopulateModuleExpr(ITranslationErrorHandler handler, IPModuleExpr moduleExpr)
+        {
+
+        }
     }
 }

@@ -56,6 +56,20 @@ namespace Microsoft.Pc.TypeChecker
             // Step 6: Check linear type ownership
             LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
 
+
+            // Step 7: Fill the module expressions
+            List<IPModuleExpr> allModuleExprs = AllModuleExprs(globalScope).ToList();
+            foreach (IPModuleExpr moduleExpr in allModuleExprs)
+            {
+                ModuleExprVisitor.PopulateModuleExpr(handler, moduleExpr);
+            }
+
+            // Step 8: Check the test and implementation declarations
+            foreach (IPModuleExpr moduleExpr in allModuleExprs)
+            {
+                ModuleSystemTypeChecker.CheckWellFormedness(handler, moduleExpr);
+            }
+
             return globalScope;
         }
 
@@ -137,6 +151,33 @@ namespace Microsoft.Pc.TypeChecker
                     yield return method;
                 }
             }
+        }
+
+        private static IEnumerable<IPModuleExpr> AllModuleExprs(Scope globalScope)
+        {
+            // first do all the named modules
+            foreach (NamedModule mod in globalScope.NamedModules)
+            {
+                yield return mod.ModExpr;
+            }
+
+            // all the test declarations
+            foreach (SafetyTest test in globalScope.SafetyTests)
+            {
+                yield return test.ModExpr;
+            }
+
+            foreach (RefinementTest test in globalScope.RefinementTests)
+            {
+                yield return test.ModExpr;
+            }
+
+            // all the implementations
+            foreach (Implementation test in globalScope.Implementations)
+            {
+                yield return test.ModExpr;
+            }
+
         }
 
         private class Propagation<T>

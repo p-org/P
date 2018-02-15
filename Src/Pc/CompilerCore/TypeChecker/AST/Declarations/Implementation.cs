@@ -5,14 +5,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class Implementation : IPDecl
     {
-        public Implementation(ParserRuleContext sourceNode)
+        private IPModuleExpr modExpr;
+        public Implementation(ParserRuleContext sourceNode, string name)
         {
-            Name = "implementation";
+            Name = name;
             SourceLocation = sourceNode;
         }
 
-        Module module;
-
+        public IPModuleExpr ModExpr => modExpr;
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
     }

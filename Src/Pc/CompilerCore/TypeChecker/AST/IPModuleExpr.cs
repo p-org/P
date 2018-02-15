@@ -1,24 +1,25 @@
-﻿using Microsoft.Pc.TypeChecker.Types;
+﻿using System.Collections.Generic;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.AST
 {
     public interface IPModuleExpr : IPAST
     {
         //Attributes of module expression
+        IEnumerable<PEvent> PrivateEvents { get; }
+        IEnumerable<Interface> PrivateInterfaces { get; }
+        IEnumerable<PEvent> Sends { get; }
+        IEnumerable<PEvent> Receives { get; }
+        IEnumerable<Interface> Creates { get; }
 
-        //// Module Signature 
-    /*ModulePrivateEvents::= (mod: ModuleExpr, ev: NonNullEventName).
-	ModulePrivateInterfaces::= (mod: ModuleExpr, mach: String).
-	ModuleSends::= (mod: ModuleExpr, ev: NonNullEventName).
-	ModuleReceives::= (mod: ModuleExpr, ev: NonNullEventName).
-	ModuleCreates::= (mod: ModuleExpr, i: String).
+        //used for code generation and runtime
+        IDictionary<Interface, IDictionary<Interface, Machine>> LinkMap { get; }
+        IDictionary<Interface, Machine> InterfaceDef { get; }
+        IDictionary<Interface, IEnumerable<Machine>> MonitorMap{ get; }
 
-	//// Module Code Gen and Compatibity Helpers
-	ModuleLinkMap::= (mod: ModuleExpr, newMachineName: String, createdInterface: String, newImpMachine: String).
-	ModuleMachineDefMap::= (mod: ModuleExpr, newName: String, impMachine: String).  // for both machines and monitors
-	ModuleSafeMap::= (mod: ModuleExpr, newName: String, isSafe: Boolean).
-	ModuleMonitorMap::= (mod: ModuleExpr, newMonitorName: String, impMachine: String).*/
+        bool IsWellFormed { get; }
 
+        bool CheckAndPopulateAttributes(ITranslationErrorHandler handler);
     }
 }
 

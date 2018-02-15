@@ -84,7 +84,7 @@ eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
 interfaceDecl : INTERFACE name=iden LPAREN type? RPAREN (RECEIVES nonDefaultEventList?) SEMI ;
 
 // has scope
-implMachineDecl : MACHINE name=iden cardinality? (COLON idenList)? receivesSends* machineBody ;
+implMachineDecl : MACHINE name=iden cardinality? receivesSends* machineBody ;
 idenList : names+=iden (COMMA names+=iden)* ;
 
 receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
@@ -239,5 +239,5 @@ testDecl : TEST testName=iden COLON modExpr SEMI 					# SafetyTestDecl
 		 | TEST testName=iden COLON modExpr REFINES modExpr SEMI	# RefinementTestDecl
 		 ;
 
-implementationDecl : IMPLEMENTATION modExpr SEMI # ImplDecl
+implementationDecl : IMPLEMENTATION implName= iden COLON modExpr SEMI
 				   ; 

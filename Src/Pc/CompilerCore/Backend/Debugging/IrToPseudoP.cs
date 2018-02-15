@@ -79,9 +79,7 @@ namespace Microsoft.Pc.Backend.Debugging
                 case Machine machine:
                     WriteStmt(machine.IsSpec ? "spec " : "",
                               "machine ",
-                              machine,
-                              " : ",
-                              string.Join(", ", machine.Interfaces.Select(x => x.Name)));
+                              machine);
                     WriteStmt("  assert ", machine.Assert, " assume ", machine.Assume);
                     WriteStmt("  receives ", WriteEventSet(machine.Receives));
                     WriteStmt("  sends ", WriteEventSet(machine.Sends));

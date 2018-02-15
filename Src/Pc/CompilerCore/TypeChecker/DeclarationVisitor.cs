@@ -226,21 +226,6 @@ namespace Microsoft.Pc.TypeChecker
             machine.Assume = hasAssume ? cardinality : -1;
             machine.Assert = hasAssert ? cardinality : -1;
 
-            // (COLON idenList)?
-            if (context.idenList() is PParser.IdenListContext interfaces)
-            {
-                foreach (var pInterfaceNameCtx in interfaces._names)
-                {
-                    var pInterfaceName = pInterfaceNameCtx.GetText();
-                    if (!CurrentScope.Lookup(pInterfaceName, out Interface pInterface))
-                    {
-                        throw Handler.MissingDeclaration(pInterfaceNameCtx, "interface", pInterfaceName);
-                    }
-
-                    machine.AddInterface(pInterface);
-                }
-            }
-
             // receivesSends*
             foreach (var receivesSends in context.receivesSends())
             {

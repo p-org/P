@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LegacyCompiler", "Src\Pc\LegacyCompiler\LegacyCompiler.csproj", "{ED76217F-2452-4A35-90F6-6EB6CCF2D882}"
-	ProjectSection(ProjectDependencies) = postProject
-		{3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1} = {3B52B4F5-52F5-4E19-88CD-6A4A78EA0BF1}
-	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CParser", "Src\Parsers\CParser\CParser.csproj", "{55AFEA71-DA6D-4258-9193-29942EBBBE48}"
 EndProject

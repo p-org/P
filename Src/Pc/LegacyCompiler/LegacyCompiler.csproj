@@ -16,9 +16,9 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <GPLexCmd>mono $(GPToolsPath)\GPLEX\gplex45.exe</GPLexCmd>
+    <GPLexCmd>mono $(GPToolsPath)/GPLEX/gplex45.exe</GPLexCmd>
     <CpCmd>cp</CpCmd>
-    <GPPGCmd>mono $(GPToolsPath)\GPPG\gppg45.exe</GPPGCmd>
+    <GPPGCmd>mono $(GPToolsPath)/GPPG/gppg45.exe</GPPGCmd>
   </PropertyGroup>
   
   <ItemGroup>

@@ -7,9 +7,9 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    public static class Validator
+    public static class MachineChecker
     {
-        public static void ValidateMachine(ITranslationErrorHandler handler, Machine machine)
+        public static void Validate(ITranslationErrorHandler handler, Machine machine)
         {
             State startState = FindStartState(machine, handler);
             PLanguageType startStatePayloadType = GetStatePayload(startState, handler);

@@ -20,7 +20,7 @@ namespace Microsoft.Pc.TypeChecker
             // Step 2: Validate machine specifications
             foreach (Machine machine in globalScope.Machines)
             {
-                Validator.ValidateMachine(handler, machine);
+                MachineChecker.Validate(handler, machine);
             }
 
             // Step 3: Fill function bodies
@@ -56,6 +56,11 @@ namespace Microsoft.Pc.TypeChecker
             // Step 6: Check linear type ownership
             LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
 
+            // Step 7: Infer the creates set for each machine.
+            foreach (Machine machine in globalScope.Machines)
+            {
+                InferMachineCreates.Populate(handler, machine);
+            }
 
             // Step 7: Fill the module expressions
             List<IPModuleExpr> allModuleExprs = AllModuleExprs(globalScope).ToList();

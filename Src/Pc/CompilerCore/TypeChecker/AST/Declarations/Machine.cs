@@ -29,6 +29,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public int Assert { get; set; } = -1;
         public IEventSet Receives { get; set; }
         public IEventSet Sends { get; set; }
+        public IInterfaceSet Creates { get; set; }
         public IEnumerable<Variable> Fields => fields;
         public IEnumerable<Function> Methods => methods;
         public State StartState { get; set; }

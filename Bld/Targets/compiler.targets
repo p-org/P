@@ -9,37 +9,8 @@
     <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
   </PropertyGroup>
 
-  <!-- <PropertyGroup>
-    <CoreCompileDependsOn>$(CoreCompileDependsOn);KillCompilerService</CoreCompileDependsOn>
-  </PropertyGroup> -->
-
-  <UsingTask
-    TaskName="KillProcess"
-    TaskFactory="CodeTaskFactory"
-    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
-    <ParameterGroup>
-      <ProcessName ParameterType="System.String" Required="true" />
-    </ParameterGroup>
-    <Task>
-      <Using Namespace="System"/>
-      <Using Namespace="System.Diagnostics"/>
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[        
-            foreach (Process p in Process.GetProcesses())
-            {
-                if (p.ProcessName == ProcessName) {
-                  Log.LogMessage("Killing process: " + p.ProcessName, MessageImportance.High);
-                  p.Kill();
-                }
-            }
-        ]]>
-      </Code>
-    </Task>
-  </UsingTask>
-
   <Target Name="KillCompilerService" BeforeTargets="Build">
-    <KillProcess ProcessName="PCompilerService" Condition="'$(OS)' == 'Windows_NT'"/>
-    <KillProcess ProcessName="PCompilerService.vshost" Condition="'$(OS)' == 'Windows_NT'"/>
+    <Exec Command='taskkill /FI "IMAGENAME eq PCompilerService*" /F' Condition="'$(OS)' == 'Windows_NT'" />
     <Exec Command="pkill PCompilerService; exit 0" Condition="'$(OS)' != 'Windows_NT'"/>
   </Target>
 

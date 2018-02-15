@@ -2,13 +2,8 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
     <ProjectGuid>{71691381-D3C9-478C-BA37-A94032A536DF}</ProjectGuid>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>UnitTests</RootNamespace>
-    <AssemblyName>UnitTests</AssemblyName>
-    <ProjectTypeGuids>{3AC096D0-A1C2-E12C-1390-A8335801FDAB};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
-    <TestProjectType>UnitTest</TestProjectType>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
   
   <ItemGroup>
@@ -16,13 +11,10 @@
     <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.0.20171219.105559" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\Ext\Formula\Src\Core\Core.csproj">
-      <Project>{1B5724EC-FFF1-48D7-A700-AD46F0150AFC}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Src\Pc\CompilerCore\CompilerCore.csproj">
       <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
       <Name>CompilerCore</Name>

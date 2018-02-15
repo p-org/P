@@ -156,7 +156,7 @@ call :StartTimer
 
 Bld\nuget restore -configfile NuGet.config P.sln
 
-msbuild P.sln /p:Platform=%PBuildPlatform% /p:Configuration=%PBuildConfiguration% /p:SOLVER=NOSOLVER
+msbuild P.sln /p:Platform=%PBuildPlatform% /p:Configuration=%PBuildConfiguration% /p:SOLVER=NOSOLVER /p:TargetPlatform=net461
 call :StopTimer
 call :DisplayTimerResult
 

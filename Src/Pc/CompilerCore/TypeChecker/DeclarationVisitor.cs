@@ -695,11 +695,6 @@ namespace Microsoft.Pc.TypeChecker
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
 
-                if (transitionFunction != null)
-                {
-                    TypeCheckingUtils.ValidatePayloadTypes(Handler, eventIdContext, evt.PayloadType, transitionFunction.Signature.ParameterTypes.ToList());
-                }
-
                 actions.Add(new EventGotoState(eventIdContext, evt, target, transitionFunction));
             }
             return actions.ToArray();

@@ -110,6 +110,9 @@ namespace Microsoft.Pc.TypeChecker
 
         public static int PrintStmtNumArgs(string message)
         {
+            // Tried using regex for this and it became a hotspot.
+            // There are specific unit tests for this method.
+            // Do not modify without adding tests.
             var max = 0;
             for (var i = 0; i < message.Length; i++)
             {

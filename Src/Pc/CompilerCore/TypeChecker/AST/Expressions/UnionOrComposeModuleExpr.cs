@@ -4,7 +4,7 @@ using Antlr4.Runtime;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class ComposeModuleExpr : IPModuleExpr
+    public class UnionOrComposeModuleExpr : IPModuleExpr
     {
         private IEnumerable<PEvent> privateEvents = new List<PEvent>();
         private IEnumerable<Interface> privateInterfaces = new List<Interface>();
@@ -16,12 +16,15 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         private IDictionary<Interface, Machine> interfaceDef = new Dictionary<Interface, Machine>();
         private IDictionary<Interface, IEnumerable<Machine>> monitorMap = new Dictionary<Interface, IEnumerable<Machine>>();
 
-        private IEnumerable<IPModuleExpr> composeModules = new List<IPModuleExpr>();
+        private IEnumerable<IPModuleExpr> modules;
+        private bool isComposition = false;
         private bool isWellFormed = false;
 
-        public ComposeModuleExpr(ParserRuleContext sourceNode)
+        public UnionOrComposeModuleExpr(ParserRuleContext sourceNode, IEnumerable<IPModuleExpr> modules, bool isComposition)
         {
             SourceLocation = sourceNode;
+            this.modules = modules;
+            this.isComposition = isComposition;
         }
 
         public bool IsWellFormed => isWellFormed;
@@ -43,7 +46,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
                 return true;
 
             //check that all component modules are wellformed
-            foreach(var module in composeModules)
+            foreach(var module in modules)
             {
                 
             }

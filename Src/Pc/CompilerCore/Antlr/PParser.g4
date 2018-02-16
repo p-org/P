@@ -225,9 +225,9 @@ modExpr	: LBRACE bindslist+=bindExpr (COMMA bindslist+=bindExpr)* RBRACE			# Pri
 		| LPAREN op=COMPOSE mexprs+=modExpr (COMMA mexprs+=modExpr)+ RPAREN			# ComposeModuleExpr
 		| LPAREN op=UNION   mexprs+=modExpr (COMMA  mexprs+=modExpr)+ RPAREN		# UnionModuleExpr
 		| LPAREN op=HIDEE  nonDefaultEventList IN modExpr RPAREN					# HideEventsModuleExpr
-		| LPAREN op=HIDEI  idenList IN modExpr RPAREN								# HideInterfacesModuleExpr
+		| LPAREN op=HIDEI	idenList IN modExpr RPAREN								# HideInterfacesModuleExpr
 		| LPAREN op=ASSERT  idenList IN modExpr RPAREN								# AssertModuleExpr
-		| LPAREN op=RENAME  oldName=iden TO newName=iden IN modExpr RPAREN		# HideInterfacesModuleExpr
+		| LPAREN op=RENAME  oldName=iden TO newName=iden IN modExpr RPAREN			# RenameModuleExpr
 		;
 
 

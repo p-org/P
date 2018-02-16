@@ -62,18 +62,18 @@ namespace Microsoft.Pc.TypeChecker
                 InferMachineCreates.Populate(handler, machine);
             }
 
-            // Step 7: Fill the module expressions
-            List<IPModuleExpr> allModuleExprs = AllModuleExprs(globalScope).ToList();
-            foreach (IPModuleExpr moduleExpr in allModuleExprs)
-            {
-                ModuleExprVisitor.PopulateModuleExpr(handler, moduleExpr);
-            }
+            // Step 8: Fill the module expressions
+            ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
 
-            // Step 8: Check the test and implementation declarations
-            foreach (IPModuleExpr moduleExpr in allModuleExprs)
+            // Step 9: Check that all module expressions are wellformed
+            foreach (IPModuleExpr moduleExpr in AllModuleExprs(globalScope))
             {
                 ModuleSystemTypeChecker.CheckWellFormedness(handler, moduleExpr);
             }
+
+            // Step 9: Check the test and implementation declarations
+            // TODO: like test decls have main in them, refinement relation holds for refinement test cases.
+
 
             return globalScope;
         }
@@ -174,13 +174,18 @@ namespace Microsoft.Pc.TypeChecker
 
             foreach (RefinementTest test in globalScope.RefinementTests)
             {
-                yield return test.ModExpr;
+                yield return test.LeftModExpr;
+            }
+
+            foreach (RefinementTest test in globalScope.RefinementTests)
+            {
+                yield return test.RightModExpr;
             }
 
             // all the implementations
-            foreach (Implementation test in globalScope.Implementations)
+            foreach (Implementation impl in globalScope.Implementations)
             {
-                yield return test.ModExpr;
+                yield return impl.ModExpr;
             }
 
         }

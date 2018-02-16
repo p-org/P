@@ -193,8 +193,40 @@ namespace Microsoft.Pc.TypeChecker
 
         #endregion
 
-        #region Modules Contructors
+        #region Module System
+        public override object VisitNamedModuleDecl([NotNull] PParser.NamedModuleDeclContext context)
+        {
+            string symbolName = context.name.GetText();
+            NamedModule decl = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
+        public override object VisitSafetyTestDecl([NotNull] PParser.SafetyTestDeclContext context)
+        {
+            string symbolName = context.testName.GetText();
+            SafetyTest decl = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
+        public override object VisitRefinementTestDecl([NotNull] PParser.RefinementTestDeclContext context)
+        {
+            string symbolName = context.testName.GetText();
+            RefinementTest decl = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
+
+        public override object VisitImplementationDecl([NotNull] PParser.ImplementationDeclContext context)
+        {
+            string symbolName = context.implName.GetText();
+            Implementation decl = CurrentScope.Put(symbolName, context);
+            nodesToDeclarations.Put(context, decl);
+            return null;
+        }
         #endregion
+
         private object VisitChildrenWithNewScope(IHasScope decl, IRuleNode context)
         {
             using (scope.NewContext(CurrentScope.MakeChildScope()))

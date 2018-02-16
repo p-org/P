@@ -17,13 +17,13 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         private IDictionary<Interface, IEnumerable<Machine>> monitorMap = new Dictionary<Interface, IEnumerable<Machine>>();
 
         private IPModuleExpr module;
-        private Machine specMonitor;
+        private List<Machine> specMonitors;
         private bool isWellFormed = false;
 
-        public AssertModuleExpr(ParserRuleContext sourceNode, Machine spec, IPModuleExpr module)
+        public AssertModuleExpr(ParserRuleContext sourceNode, List<Machine> specs, IPModuleExpr module)
         {
             SourceLocation = sourceNode;
-            specMonitor = spec;
+            specMonitors = specs;
             this.module = module;
         }
 

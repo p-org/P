@@ -9,7 +9,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class Interface : IPDecl
     {
-        private readonly HashSet<Machine> implementations = new HashSet<Machine>();
 
         public Interface(string name, ParserRuleContext sourceNode)
         {
@@ -19,22 +18,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         }
 
         public IEventSet ReceivableEvents { get; set; }
-        public IEnumerable<Machine> Implementations => implementations;
 
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
-
-        public void AddImplementation(Machine machine)
-        {
-            if (implementations.Contains(machine))
-            {
-                return;
-            }
-            implementations.Add(machine);
-            machine.AddInterface(this);
-        }
     }
 
     public interface IInterfaceSet

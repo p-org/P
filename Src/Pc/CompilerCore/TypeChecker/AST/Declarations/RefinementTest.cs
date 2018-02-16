@@ -5,14 +5,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class RefinementTest : IPDecl
     {
-        private IPModuleExpr modExpr;
         public RefinementTest(ParserRuleContext sourceNode, string testName)
         {
             Name = testName;
             SourceLocation = sourceNode;
         }
 
-        public IPModuleExpr ModExpr => modExpr;
+        public IPModuleExpr LeftModExpr { get; set; }
+        public IPModuleExpr RightModExpr { get; set; }
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
     }

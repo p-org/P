@@ -422,7 +422,7 @@ namespace Microsoft.Pc.TypeChecker
         public NamedEventSet Put(string name, PParser.EventSetDeclContext tree)
         {
             var eventSet = new NamedEventSet(name, tree);
-            CheckConflicts(eventSet, Namespace(eventSets));
+            CheckConflicts(eventSet, Namespace(eventSets), Namespace(interfaces));
             eventSets.Add(name, eventSet);
             return eventSet;
         }
@@ -445,6 +445,7 @@ namespace Microsoft.Pc.TypeChecker
             var machine = new Machine(name, tree);
             CheckConflicts(machine, Namespace(machines), Namespace(interfaces), Namespace(enums), Namespace(typedefs));
             machines.Add(name, machine);
+            interfaces.Add(name, new Interface(name, tree));
             return machine;
         }
         
@@ -509,7 +510,7 @@ namespace Microsoft.Pc.TypeChecker
             return state;
         }
 
-        public NamedModule Put(string name, PParser.NamedModuleContext tree)
+        public NamedModule Put(string name, PParser.NamedModuleDeclContext tree)
         {
             var namedModule = new NamedModule(tree, name);
             CheckConflicts(namedModule, Namespace(namedModules));

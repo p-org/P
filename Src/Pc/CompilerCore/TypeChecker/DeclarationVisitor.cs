@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
@@ -275,6 +276,11 @@ namespace Microsoft.Pc.TypeChecker
             {
                 Visit(context.machineBody());
             }
+
+            // initialize the corresponding interface
+            currentScope.Value.Get(machine.Name, out Interface @interface);
+            @interface.ReceivableEvents = machine.Receives;
+            @interface.PayloadType = machine.PayloadType;
 
             return machine;
         }

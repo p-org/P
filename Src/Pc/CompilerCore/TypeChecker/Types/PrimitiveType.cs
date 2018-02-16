@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
+
 namespace Microsoft.Pc.TypeChecker.Types
 {
     public class PrimitiveType : PLanguageType
@@ -45,5 +49,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             return this;
         }
+
+        public override IEnumerable<PEvent> AllowedPermissions() { return Enumerable.Empty<PEvent>(); }
     }
 }

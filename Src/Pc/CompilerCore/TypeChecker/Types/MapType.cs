@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
+using System.Linq;
+
 namespace Microsoft.Pc.TypeChecker.Types
 {
     internal class MapType : PLanguageType
@@ -28,6 +32,11 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override PLanguageType Canonicalize()
         {
             return new MapType(KeyType.Canonicalize(), ValueType.Canonicalize());
+        }
+
+        public override IEnumerable<PEvent> AllowedPermissions()
+        {
+            return KeyType.AllowedPermissions().Concat(ValueType.AllowedPermissions());
         }
     }
 }

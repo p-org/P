@@ -1,3 +1,7 @@
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
+
 namespace Microsoft.Pc.TypeChecker.Types
 {
     public class SequenceType : PLanguageType
@@ -16,5 +20,10 @@ namespace Microsoft.Pc.TypeChecker.Types
         }
 
         public override PLanguageType Canonicalize() { return new SequenceType(ElementType.Canonicalize()); }
+
+        public override IEnumerable<PEvent> AllowedPermissions()
+        {
+            return ElementType.AllowedPermissions();
+        }
     }
 }

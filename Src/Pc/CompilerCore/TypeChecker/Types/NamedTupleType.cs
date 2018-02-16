@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
 {
@@ -44,6 +45,11 @@ namespace Microsoft.Pc.TypeChecker.Types
         public bool LookupEntry(string name, out NamedTupleEntry entry)
         {
             return lookupTable.TryGetValue(name, out entry);
+        }
+
+        public override IEnumerable<PEvent> AllowedPermissions()
+        {
+            return Fields.SelectMany(f => f.Type.AllowedPermissions());
         }
     }
 }

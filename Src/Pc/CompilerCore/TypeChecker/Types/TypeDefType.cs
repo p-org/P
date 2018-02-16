@@ -1,4 +1,5 @@
 using Microsoft.Pc.TypeChecker.AST.Declarations;
+using System.Collections.Generic;
 
 namespace Microsoft.Pc.TypeChecker.Types
 {
@@ -18,5 +19,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         }
 
         public override PLanguageType Canonicalize() { return TypeDefDecl.Type.Canonicalize(); }
+
+        public override IEnumerable<PEvent> AllowedPermissions() { return TypeDefDecl.Type.Canonicalize().AllowedPermissions(); }
     }
 }

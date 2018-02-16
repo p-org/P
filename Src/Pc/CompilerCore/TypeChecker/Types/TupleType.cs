@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
 {
@@ -30,6 +31,11 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override PLanguageType Canonicalize()
         {
             return new TupleType(Types.Select(t => t.Canonicalize()).ToArray());
+        }
+
+        public override IEnumerable<PEvent> AllowedPermissions()
+        {
+            return Types.SelectMany(t => t.AllowedPermissions());
         }
     }
 }

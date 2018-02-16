@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using Microsoft.Pc;
 
-namespace UnitTests
+namespace UnitTestsCore
 {
     public class CompilerTestOutputStream : ICompilerOutput
     {

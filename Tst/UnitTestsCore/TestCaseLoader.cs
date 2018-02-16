@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 
-namespace UnitTests.CBackend
+namespace UnitTestsCore
 {
-    internal class TestCaseLoader
+    public class TestCaseLoader
     {
         //private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
         private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Combined",
@@ -132,8 +132,7 @@ namespace UnitTests.CBackend
             return Regex.Replace(value, @"\$\(([^)]+)\)", match =>
             {
                 string variableName = match.Groups[1].Value.ToLowerInvariant();
-                string variableValue;
-                return variables.TryGetValue(variableName, out variableValue) ? variableValue : match.Value;
+                return variables.TryGetValue(variableName, out string variableValue) ? variableValue : match.Value;
             });
         }
     }

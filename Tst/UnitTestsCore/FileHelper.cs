@@ -1,8 +1,8 @@
 ﻿using System.IO;
 
-namespace UnitTests
+namespace UnitTestsCore
 {
-    internal class FileHelper
+    public class FileHelper
     {
         public static void DeepCopy(DirectoryInfo src, string target)
         {

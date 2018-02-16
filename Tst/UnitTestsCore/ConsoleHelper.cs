@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace UnitTests.CBackend
+namespace UnitTestsCore
 {
     public static class ConsoleHelper
     {

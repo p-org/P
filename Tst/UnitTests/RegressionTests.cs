@@ -1,6 +1,4 @@
-﻿#if NET461
-
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -10,8 +8,9 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using Microsoft.Pc;
 using NUnit.Framework;
+using UnitTestsCore;
 
-namespace UnitTests.CBackend
+namespace UnitTests
 {
 
     [TestFixture]
@@ -566,5 +565,3 @@ namespace UnitTests.CBackend
         }
     }
 }
-
-#endif

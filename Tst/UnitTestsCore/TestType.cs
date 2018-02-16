@@ -1,4 +1,4 @@
-﻿namespace UnitTests.CBackend
+﻿namespace UnitTestsCore
 {
     public enum TestType
     {

@@ -54,5 +54,8 @@ namespace Microsoft.Pc.TypeChecker
         Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable);
         Exception SwappedField(SwapAssignStmt swapAssignStmt, Variable variable);
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
+
+        // module system related
+        Exception InvalidBindExpr(ParserRuleContext location, string message);
     }
 }

@@ -213,6 +213,10 @@ namespace Microsoft.Pc.TypeChecker
             return method.Name.Length > 0 ? method.Name : $"at {GetLocation(method.SourceLocation)}";
         }
 
+        public Exception InvalidBindExpr(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid bind operation. {message}");
+        }
         #region Internal book keeping
 
         private readonly ParseTreeProperty<FileInfo> originalFiles;

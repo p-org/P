@@ -13,7 +13,7 @@ namespace Microsoft.Pc.TypeChecker.AST
         IEnumerable<Interface> Creates { get; }
 
         //used for code generation and runtime
-        IDictionary<Interface, IDictionary<Interface, Machine>> LinkMap { get; }
+        IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap { get; }
         IDictionary<Interface, Machine> InterfaceDef { get; }
         IDictionary<Interface, IEnumerable<Machine>> MonitorMap{ get; }
 

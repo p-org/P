@@ -14,6 +14,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         bool AddEvent(PEvent pEvent);
         bool Contains(PEvent pEvent);
         bool IsSame(IEventSet eventSet);
+        bool IsSubsetEqOf(IEventSet eventSet);
     }
 
     public class EventSet : IEventSet
@@ -38,6 +39,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool IsSame(IEventSet eventSet)
         {
             return events.SetEquals(eventSet.Events);
+        }
+
+        public bool IsSubsetEqOf(IEventSet eventSet)
+        {
+            return events.IsSubsetOf(eventSet.Events);
         }
     }
 
@@ -76,6 +82,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool IsSame(IEventSet eventSet)
         {
             return this == Instance && eventSet == this;
+        }
+
+        public bool IsSubsetEqOf(IEventSet eventSet)
+        {
+            return events.IsSubsetOf(eventSet.Events);
         }
     }
 
@@ -118,6 +129,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             {
                 AddEvent(pEvent);
             }
+        }
+
+        public bool IsSubsetEqOf(IEventSet eventSet)
+        {
+            return events.IsSubsetEqOf(eventSet);
         }
     }
 }

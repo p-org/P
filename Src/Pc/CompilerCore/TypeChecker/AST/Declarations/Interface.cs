@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
@@ -29,8 +30,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
     {
         IEnumerable<Interface> Interfaces { get; }
         bool AddInterface(Interface @interface);
+        void AddInterfaces(IEnumerable<Interface> interfaces);
         bool Contains(Interface @interface);
         bool Intersects(IInterfaceSet eventSet);
+
     }
 
     public class InterfaceSet : IInterfaceSet
@@ -45,6 +48,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool AddInterface(Interface @interface)
         {
             return interfaces.Add(@interface);
+        }
+
+        public void AddInterfaces(IEnumerable<Interface> its)
+        {
+            foreach(var @interface in its)
+            {
+                interfaces.Add(@interface);
+            }
         }
 
         public bool Contains(Interface @interface)

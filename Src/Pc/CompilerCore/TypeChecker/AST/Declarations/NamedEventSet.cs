@@ -12,9 +12,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
     {
         IEnumerable<PEvent> Events { get; }
         bool AddEvent(PEvent pEvent);
+        void AddEvents(IEnumerable<PEvent> evts);
         bool Contains(PEvent pEvent);
         bool IsSame(IEventSet eventSet);
         bool IsSubsetEqOf(IEventSet eventSet);
+
     }
 
     public class EventSet : IEventSet
@@ -29,6 +31,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool AddEvent(PEvent pEvent)
         {
             return events.Add(pEvent);
+        }
+
+        public void AddEvents(IEnumerable<PEvent> evts)
+        {
+            foreach (PEvent pEvent in evts)
+            {
+                AddEvent(pEvent);
+            }
         }
 
         public bool Contains(PEvent pEvent)
@@ -71,6 +81,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             lock (setUpdateLock)
             {
                 return events.Add(pEvent);
+            }
+        }
+
+        public void AddEvents(IEnumerable<PEvent> evts)
+        {
+            foreach (PEvent pEvent in evts)
+            {
+                AddEvent(pEvent);
             }
         }
 

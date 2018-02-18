@@ -217,6 +217,11 @@ namespace Microsoft.Pc.TypeChecker
         {
             return IssueError(location, $"invalid bind operation. {message}");
         }
+
+        Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent)
+        {
+            return IssueError(location, $"invalid assert operation. event {illegalEvent.Name} in observes set of {monitor.Name} is not in the sends set of the module");
+        }
         #region Internal book keeping
 
         private readonly ParseTreeProperty<FileInfo> originalFiles;

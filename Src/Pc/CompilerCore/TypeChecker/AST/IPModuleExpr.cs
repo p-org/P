@@ -6,16 +6,16 @@ namespace Microsoft.Pc.TypeChecker.AST
     public interface IPModuleExpr : IPAST
     {
         //Attributes of module expression
-        IEnumerable<PEvent> PrivateEvents { get; }
-        IEnumerable<Interface> PrivateInterfaces { get; }
-        IEnumerable<PEvent> Sends { get; }
-        IEnumerable<PEvent> Receives { get; }
-        IEnumerable<Interface> Creates { get; }
+        IEventSet PrivateEvents { get; }
+        IInterfaceSet PrivateInterfaces { get; }
+        IEventSet Sends { get; }
+        IEventSet Receives { get; }
+        IInterfaceSet Creates { get; }
 
         //used for code generation and runtime
         IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap { get; }
         IDictionary<Interface, Machine> InterfaceDef { get; }
-        IDictionary<Interface, IEnumerable<Machine>> MonitorMap{ get; }
+        IDictionary<Machine, IEnumerable<Interface>> MonitorMap{ get; }
 
         bool IsWellFormed { get; }
 

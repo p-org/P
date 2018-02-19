@@ -60,12 +60,12 @@ namespace UnitTestsCore
 
         private static Dictionary<string, string> GetVariables(DirectoryInfo testRoot)
         {
-            string binDir = Path.Combine(Constants.SolutionDirectory, "bld", "drops", Constants.Configuration, Constants.Platform, "binaries");
+            string binDir = Path.Combine(Constants.SolutionDirectory, "bld", "drops", Constants.BuildConfiguration, Constants.Platform, "binaries");
             var variables = new Dictionary<string, string>
             {
                 {"platform", Constants.Platform},
                 {"testroot", testRoot.FullName},
-                {"configuration", Constants.Configuration},
+                {"configuration", Constants.BuildConfiguration},
                 {"testbinaries", binDir}
             };
             return variables;

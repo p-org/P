@@ -159,6 +159,12 @@ namespace Microsoft.Pc.TypeChecker
             // Check the arguments
             IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             ISet<Variable> linearVariables = new HashSet<Variable>();
+
+            if (function.Signature.Parameters.Count != arguments.Length)
+            {
+                throw handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count);
+            }
+
             for (var i = 0; i < arguments.Length; i++)
             {
                 IPExpr argument = arguments[i];

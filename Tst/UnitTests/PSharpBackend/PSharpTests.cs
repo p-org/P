@@ -36,7 +36,9 @@ namespace UnitTests.PSharpBackend
             {
                 "RegressionTests/Combined/StaticError/DuplicateActions",
                 "RegressionTests/Combined/StaticError/DuplicateTransitions",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/DeferIgnoreSameEvent"
+                "RegressionTests/Feature1SMLevelDecls/StaticError/DeferIgnoreSameEvent",
+                "RegressionTests/Feature1SMLevelDecls/StaticError/EventDeferredDoSameState",
+                "RegressionTests/Feature1SMLevelDecls/StaticError/EventDeferredHandledSameState"
             };
             foreach (TestCaseData test in TestCases)
             {

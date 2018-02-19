@@ -169,7 +169,7 @@ namespace UnitTests
                 Constants.SolutionDirectory,
                 "Bld",
                 "Drops",
-                Constants.Configuration,
+                Constants.BuildConfiguration,
                 Constants.Platform,
                 "Binaries",
                 "Prt.dll");
@@ -247,7 +247,7 @@ namespace UnitTests
                 Constants.SolutionDirectory,
                 "Bld",
                 "Drops",
-                Constants.Configuration,
+                Constants.BuildConfiguration,
                 Constants.Platform,
                 "Binaries",
                 "Pt.exe");
@@ -306,7 +306,7 @@ namespace UnitTests
                 Constants.SolutionDirectory,
                 "Bld",
                 "Drops",
-                Constants.Configuration,
+                Constants.BuildConfiguration,
                 Constants.Platform,
                 "Binaries",
                 "zinger.exe");
@@ -365,7 +365,7 @@ namespace UnitTests
             var testerDir = new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
             FileHelper.CopyFiles(testerDir, workDirectory.FullName);
 
-            string testerExeDir = Path.Combine(workDirectory.FullName, Constants.Configuration, Constants.Platform);
+            string testerExeDir = Path.Combine(workDirectory.FullName, Constants.BuildConfiguration, Constants.Platform);
             string testerExePath = Path.Combine(testerExeDir, Constants.CTesterExecutableName);
             //if (!File.Exists(testerExePath))
             //{
@@ -398,7 +398,7 @@ namespace UnitTests
         {
             var argumentList = new[]
             {
-                prtTesterProj, clean ? "/t:Clean" : "/t:Build", $"/p:Configuration={Constants.Configuration}",
+                prtTesterProj, clean ? "/t:Clean" : "/t:Build", $"/p:Configuration={Constants.BuildConfiguration}",
                 $"/p:Platform={Constants.Platform}", "/nologo"
             };
             ////////////////////////////

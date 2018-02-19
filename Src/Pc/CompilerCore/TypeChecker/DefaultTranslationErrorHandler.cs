@@ -218,9 +218,19 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(location, $"invalid bind operation. {message}");
         }
 
-        Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent)
+        public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent)
         {
             return IssueError(location, $"invalid assert operation. event {illegalEvent.Name} in observes set of {monitor.Name} is not in the sends set of the module");
+        }
+
+        public Exception InvalidHideEvent(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid hide event operation. {message}");
+        }
+
+        public Exception InvalidHideInterface(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid hide interface operation. {message}");
         }
         #region Internal book keeping
 

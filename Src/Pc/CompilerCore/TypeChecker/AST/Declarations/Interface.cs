@@ -32,8 +32,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         bool AddInterface(Interface @interface);
         void AddInterfaces(IEnumerable<Interface> interfaces);
         bool Contains(Interface @interface);
-        bool Intersects(IInterfaceSet eventSet);
-
+        bool Intersects(IInterfaceSet interfaceSet);
+        bool Intersects(IEnumerable<Interface> interfaceSet);
     }
 
     public class InterfaceSet : IInterfaceSet
@@ -66,6 +66,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool Intersects(IInterfaceSet interfaceSet)
         {
             return interfaces.Overlaps(interfaceSet.Interfaces);
+        }
+
+        public bool Intersects(IEnumerable<Interface> interfaceSet)
+        {
+            return interfaces.Overlaps(interfaceSet);
         }
     }
 }

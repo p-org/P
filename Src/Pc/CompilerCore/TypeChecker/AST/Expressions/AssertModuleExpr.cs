@@ -5,21 +5,11 @@ using Antlr4.Runtime;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class AssertModuleExpr : IPModuleExpr
+    public class AssertModuleExpr : ModuleExpr
     {
-        private IEventSet privateEvents = new EventSet();
-        private IInterfaceSet privateInterfaces = new InterfaceSet();
-        private IEventSet sends = new EventSet();
-        private IEventSet receives = new EventSet();
-        private IInterfaceSet creates = new InterfaceSet();
-
-        private IDictionary<Interface, IDictionary<Interface, Interface>> linkMap = new Dictionary<Interface, IDictionary<Interface, Interface>>();
-        private IDictionary<Interface, Machine> interfaceDef = new Dictionary<Interface, Machine>();
-        private IDictionary<Machine, IEnumerable<Interface>> monitorMap = new Dictionary<Machine, IEnumerable<Interface>>();
-
+       
         private IPModuleExpr module;
         private List<Machine> specMonitors;
-        private bool isWellFormed = false;
 
         public AssertModuleExpr(ParserRuleContext sourceNode, List<Machine> specs, IPModuleExpr module)
         {
@@ -28,20 +18,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             this.module = module;
         }
 
-        public bool IsWellFormed => isWellFormed;
-
-        public IEventSet PrivateEvents => privateEvents;
-        public IInterfaceSet PrivateInterfaces => privateInterfaces;
-        public IEventSet Sends => sends;
-        public IEventSet Receives => receives;
-        public IInterfaceSet Creates => creates;
-
-        public IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap => linkMap;
-        public IDictionary<Interface, Machine> InterfaceDef => interfaceDef;
-        public IDictionary<Machine, IEnumerable<Interface>> MonitorMap => monitorMap;
-        public ParserRuleContext SourceLocation { get; }
-
-        public bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
+        public override bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
         {
             if (IsWellFormed)
                 return true;

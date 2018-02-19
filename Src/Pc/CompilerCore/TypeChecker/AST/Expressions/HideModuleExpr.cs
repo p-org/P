@@ -1,79 +1,102 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Antlr4.Runtime;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class HideEventModuleExpr : IPModuleExpr
+    public class HideEventModuleExpr : ModuleExpr
     {
-        private IEnumerable<PEvent> privateEvents = new List<PEvent>();
-        private IEnumerable<Interface> privateInterfaces = new List<Interface>();
-        private IEnumerable<PEvent> sends = new List<PEvent>();
-        private IEnumerable<PEvent> receives = new List<PEvent>();
-        private IEnumerable<Interface> creates = new List<Interface>();
-
-        private IDictionary<Interface, IDictionary<Interface, Interface>> linkMap = new Dictionary<Interface, IDictionary<Interface, Interface>>();
-        private IDictionary<Interface, Machine> interfaceDef = new Dictionary<Interface, Machine>();
-        private IDictionary<Interface, IEnumerable<Machine>> monitorMap = new Dictionary<Interface, IEnumerable<Machine>>();
-
+        
         private IPModuleExpr module;
-        private IEnumerable<PEvent> hideEvents;
-        private bool isWellFormed = false;
+        private IEventSet hideEvents;
+        
 
         public HideEventModuleExpr(ParserRuleContext sourceNode, IEnumerable<PEvent> events, IPModuleExpr module)
         {
             SourceLocation = sourceNode;
-            hideEvents = events;
+            hideEvents = new EventSet();
+            hideEvents.AddEvents(events);
             this.module = module;
         }
 
-        public bool IsWellFormed => isWellFormed;
-
-        public IEnumerable<PEvent> PrivateEvents => privateEvents;
-        public IEnumerable<Interface> PrivateInterfaces => privateInterfaces;
-        public IEnumerable<PEvent> Sends => sends;
-        public IEnumerable<PEvent> Receives => receives;
-        public IEnumerable<Interface> Creates => creates;
-
-        public IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap => linkMap;
-        public IDictionary<Interface, Machine> InterfaceDef => interfaceDef;
-        public IDictionary<Interface, IEnumerable<Machine>> MonitorMap => monitorMap;
-        public ParserRuleContext SourceLocation { get; }
-
-        public bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
+        public override bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
         {
             if (IsWellFormed)
                 return true;
 
-            //check that all component modules are wellformed
+            //check that component module is wellformed
+            module.CheckAndPopulateAttributes(handler);
 
             //check if the current module is wellformed
 
-            //populate the attributes of the module
+            // 1) e \subseteq ER \intersect ES
+            var receiveAndsends = module.Sends.Events.Where(ev => module.Receives.Contains(ev));
+            if(!hideEvents.IsSubsetEqOf(receiveAndsends))
+            {
+                var @event = hideEvents.Events.Where(h => !receiveAndsends.Contains(h)).First();
+                throw handler.InvalidHideEvent(SourceLocation, $"event {@event.Name} cannot be made private, it must belong to both receive and send set of the module");
+            }
 
+            // 2) only events in interfaces that are both created and implemented by the module can be hidden
+            var interfaceImplAndNotCreated = module.Creates.Interfaces.Except(module.InterfaceDef.Keys);
+            var interfaceCreatedAndNotImpl = module.InterfaceDef.Keys.Except(module.Creates.Interfaces);
 
+            foreach(var @interface in interfaceCreatedAndNotImpl.Union(interfaceImplAndNotCreated).Where(i => hideEvents.Intersects(i.ReceivableEvents.Events)))
+            {
+                var @event = hideEvents.Events.Where(ev => @interface.ReceivableEvents.Contains(ev)).First();
+                throw handler.InvalidHideEvent(SourceLocation, $"event {@event.Name} cannot be made private as interface {@interface.Name} contains this event. " +
+                    $"Only events in interfaces that are both created and bound in the module can be hidden");
+            }
+
+            // 3) events received and sent by the module must not include private permissions
+            var eventsReceivedAndSent = module.Sends.Events.Union(module.Receives.Events);
+            foreach(var @event in eventsReceivedAndSent.Except(hideEvents.Events))
+            {
+                var permissionsEmbedded = @event.PayloadType.AllowedPermissions();
+                foreach(var privatePermission in hideEvents.Events.Where(ev => permissionsEmbedded.Contains(ev)))
+                {
+                    throw handler.InvalidHideEvent(SourceLocation, $"event {privatePermission} cannot be made private as it belongs to allowed permission of {@event.Name} which is received or sent by the module");
+                }
+            }
 
             //module is wellformed
             isWellFormed = true;
+
+            //populate the attributes of the module
+            privateEvents.AddEvents(module.PrivateEvents.Events.Union(hideEvents.Events));
+            privateInterfaces.AddInterfaces(module.PrivateInterfaces.Interfaces);
+            sends.AddEvents(module.Sends.Events.Except(hideEvents.Events));
+            receives.AddEvents(module.Receives.Events.Except(hideEvents.Events));
+            creates.AddInterfaces(module.Creates.Interfaces);
+
+            foreach(var monMap in module.MonitorMap)
+            {
+                monitorMap[monMap.Key] = monMap.Value.ToList();
+            }
+
+            foreach (var linkMapItem in module.LinkMap)
+            {
+                linkMap[linkMapItem.Key] = new Dictionary<Interface, Interface>();
+                foreach (var localLinkMap in linkMapItem.Value)
+                {
+                    linkMap[linkMapItem.Key].Add(localLinkMap.Key, localLinkMap.Value);
+                }
+            }
+
+            foreach (var IpItem in module.InterfaceDef)
+            {
+                interfaceDef.Add(IpItem.Key, IpItem.Value);
+            }
+
             return IsWellFormed;
         }
     }
 
-    public class HideInterfaceModuleExpr : IPModuleExpr
+    public class HideInterfaceModuleExpr : ModuleExpr
     {
-        private IEnumerable<PEvent> privateEvents = new List<PEvent>();
-        private IEnumerable<Interface> privateInterfaces = new List<Interface>();
-        private IEnumerable<PEvent> sends = new List<PEvent>();
-        private IEnumerable<PEvent> receives = new List<PEvent>();
-        private IEnumerable<Interface> creates = new List<Interface>();
-
-        private IDictionary<Interface, IDictionary<Interface, Machine>> linkMap = new Dictionary<Interface, IDictionary<Interface, Machine>>();
-        private IDictionary<Interface, Machine> interfaceDef = new Dictionary<Interface, Machine>();
-        private IDictionary<Interface, IEnumerable<Machine>> monitorMap = new Dictionary<Interface, IEnumerable<Machine>>();
-
         private IPModuleExpr module;
         private IEnumerable<Interface> hideInterfaces;
-        private bool isWellFormed = false;
 
         public HideInterfaceModuleExpr(ParserRuleContext sourceNode, IEnumerable<Interface> interfaces, IPModuleExpr module)
         {
@@ -82,32 +105,52 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             this.module = module;
         }
 
-        public bool IsWellFormed => isWellFormed;
-
-        public IEnumerable<PEvent> PrivateEvents => privateEvents;
-        public IEnumerable<Interface> PrivateInterfaces => privateInterfaces;
-        public IEnumerable<PEvent> Sends => sends;
-        public IEnumerable<PEvent> Receives => receives;
-        public IEnumerable<Interface> Creates => creates;
-
-        public IDictionary<Interface, IDictionary<Interface, Machine>> LinkMap => linkMap;
-        public IDictionary<Interface, Machine> InterfaceDef => interfaceDef;
-        public IDictionary<Interface, IEnumerable<Machine>> MonitorMap => monitorMap;
-        public ParserRuleContext SourceLocation { get; }
-
-        public bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
+        public override bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
         {
             if (IsWellFormed)
                 return true;
 
-            //check that all component modules are wellformed
+            //check that component module is wellformed
+            module.CheckAndPopulateAttributes(handler);
 
             //check if the current module is wellformed
 
-            //populate the attributes of the module
+            // 1) interfaces to be hidden must be both implemented and created by the module
+            var interfacesImplementedAndCreated = module.Creates.Interfaces.Intersect(module.InterfaceDef.Keys);
+            foreach (var @interface in hideInterfaces.Where(it => !interfacesImplementedAndCreated.Contains(it)))
+            {
+                throw handler.InvalidHideInterface(SourceLocation, $"interface {@interface.Name} cannot be made private. Interface {@interface.Name} must be both created and bounded in the module");
+            }
 
             //module is wellformed
             isWellFormed = true;
+
+            //populate the attributes of the module
+            privateEvents.AddEvents(module.PrivateEvents.Events);
+            privateInterfaces.AddInterfaces(module.PrivateInterfaces.Interfaces.Union(PrivateInterfaces.Interfaces));
+            sends.AddEvents(module.Sends.Events);
+            receives.AddEvents(module.Receives.Events);
+            creates.AddInterfaces(module.Creates.Interfaces);
+
+            foreach (var monMap in module.MonitorMap)
+            {
+                monitorMap[monMap.Key] = monMap.Value.ToList();
+            }
+
+            foreach (var linkMapItem in module.LinkMap)
+            {
+                linkMap[linkMapItem.Key] = new Dictionary<Interface, Interface>();
+                foreach (var localLinkMap in linkMapItem.Value)
+                {
+                    linkMap[linkMapItem.Key].Add(localLinkMap.Key, localLinkMap.Value);
+                }
+            }
+
+            foreach (var IpItem in module.InterfaceDef)
+            {
+                interfaceDef.Add(IpItem.Key, IpItem.Value);
+            }
+
             return IsWellFormed;
         }
     }

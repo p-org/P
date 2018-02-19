@@ -6,19 +6,9 @@ using Antlr4.Runtime;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class BindModuleExpr : IPModuleExpr
+    public class BindModuleExpr : ModuleExpr
     {
-        private IEventSet privateEvents = new EventSet();
-        private IInterfaceSet privateInterfaces = new InterfaceSet();
-        private IEventSet sends = new EventSet();
-        private IEventSet receives = new EventSet();
-        private IInterfaceSet creates = new InterfaceSet();
-
-        private IDictionary<Interface, IDictionary<Interface, Interface>> linkMap = new Dictionary<Interface, IDictionary<Interface, Interface>>();
-        private IDictionary<Interface, Machine> interfaceDef = new Dictionary<Interface, Machine>();
-        private IDictionary<Machine, IEnumerable<Interface>> monitorMap = new Dictionary<Machine, IEnumerable<Interface>>();
-
-        private bool isWellFormed = false;
+        
         private IEnumerable<Tuple<Interface, Machine>> bindings;
 
         public BindModuleExpr(ParserRuleContext sourceNode, List<Tuple<Interface, Machine>> bindings)
@@ -26,21 +16,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
             this.bindings = bindings;
         }
-
-        public bool IsWellFormed => isWellFormed;
-
-        public IEventSet PrivateEvents => privateEvents;
-        public IInterfaceSet PrivateInterfaces => privateInterfaces;
-        public IEventSet Sends => sends;
-        public IEventSet Receives => receives;
-        public IInterfaceSet Creates => creates;
-
-        public IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap => linkMap;
-        public IDictionary<Interface, Machine> InterfaceDef => interfaceDef;
-        public IDictionary<Machine, IEnumerable<Interface>> MonitorMap => monitorMap;
-        public ParserRuleContext SourceLocation { get; }
- 
-        public bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
+        
+        public override bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
         {
             if (IsWellFormed)
                 return true;
@@ -86,10 +63,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
             var boundMachines = bindings.Select(b => b.Item2);
             // 4) compute the sends
-            boundMachines.Select(m => m.Sends.Events.Select(sends.AddEvent));
+            sends.AddEvents(boundMachines.SelectMany(m => m.Sends.Events));
 
             // 5) compute the receives
-            boundMachines.Select(m => m.Receives.Events.Select(receives.AddEvent));
+            receives.AddEvents(boundMachines.SelectMany(m => m.Receives.Events));
 
             // 6) compute the creates
             foreach (var binding in bindings)

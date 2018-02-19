@@ -58,5 +58,7 @@ namespace Microsoft.Pc.TypeChecker
         // module system related
         Exception InvalidBindExpr(ParserRuleContext location, string message);
         Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent);
+        Exception InvalidHideEvent(ParserRuleContext location, string message);
+        Exception InvalidHideInterface(ParserRuleContext location, string message);
     }
 }

@@ -138,14 +138,19 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitCtorExpr(PParser.CtorExprContext context)
         {
             string machineName = context.machineName.GetText();
-            if (!table.Lookup(machineName, out Machine machine))
+            if (!table.Lookup(machineName, out Machine targetMachine))
             {
                 throw handler.MissingDeclaration(context.machineName, "machine", machineName);
             }
 
+            if (targetMachine.IsSpec)
+            {
+                throw handler.CreatedSpecMachine(context, targetMachine);
+            }
+
             IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-            TypeCheckingUtils.ValidatePayloadTypes(handler, context, machine.PayloadType, arguments);
-            return new CtorExpr(context, machine, arguments);
+            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, arguments);
+            return new CtorExpr(context, targetMachine, arguments);
         }
 
         public override IPExpr VisitFunCallExpr(PParser.FunCallExprContext context)

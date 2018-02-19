@@ -203,6 +203,11 @@ namespace Microsoft.Pc.TypeChecker
                               "Print format placeholders must contain only digits. Escape braces by doubling them.");
         }
 
+        public Exception CreatedSpecMachine(ParserRuleContext location, Machine machine)
+        {
+            return IssueError(location, $"tried to create spec machine {machine.Name} with new.");
+        }
+
         public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
         {
             return new TranslationException($"[{GetLocation(ctx, location)}] {message}");

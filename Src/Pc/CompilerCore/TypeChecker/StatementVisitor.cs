@@ -256,9 +256,15 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(context.iden(), "machine", machineName);
             }
 
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
-            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, args);
-            return new CtorStmt(context, targetMachine, args);
+            if (targetMachine.IsSpec)
+            {
+                throw handler.CreatedSpecMachine(context, targetMachine);
+            }
+            
+            IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, arguments);
+
+            return new CtorStmt(context, targetMachine, arguments);
         }
 
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)

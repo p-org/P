@@ -474,6 +474,12 @@ namespace Microsoft.Pc.TypeChecker
                             {
                                 throw Handler.DuplicateEventAction(action.SourceLocation, state[action.Trigger], state);
                             }
+
+                            if (action.Trigger.Name.Equals("null") && CurrentMachine.IsSpec)
+                            {
+                                throw Handler.IssueError(action.SourceLocation,
+                                                         "Transition on null event not allowed in spec machines");
+                            }
                             state[action.Trigger] = action;
                         }
                         break;
@@ -557,6 +563,11 @@ namespace Microsoft.Pc.TypeChecker
             if (context.annotationSet() != null)
             {
                 throw new NotImplementedException("event defer annotations");
+            }
+
+            if (CurrentMachine.IsSpec)
+            {
+                throw Handler.IssueError(context, "Event cannot be deferred in spec machine");
             }
 
             // DEFER nonDefaultEventList

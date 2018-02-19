@@ -52,6 +52,12 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitPopStmt(PParser.PopStmtContext context)
         {
+            if (machine?.IsSpec == true)
+            {
+                throw handler.IssueError(
+                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+            }
+
             method.CanChangeState = true;
             if (method.Role.HasFlag(FunctionRole.TransitionFunction))
             {
@@ -319,6 +325,12 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitSendStmt(PParser.SendStmtContext context)
         {
+            if (machine?.IsSpec == true)
+            {
+                throw handler.IssueError(
+                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+            }
+
             IPExpr machineExpr = exprVisitor.Visit(context.machine);
             if (!PrimitiveType.Machine.IsAssignableFrom(machineExpr.Type))
             {
@@ -353,6 +365,12 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitAnnounceStmt(PParser.AnnounceStmtContext context)
         {
+            if (machine?.IsSpec == true)
+            {
+                throw handler.IssueError(
+                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+            }
+
             IPExpr evtExpr = exprVisitor.Visit(context.expr());
             if (IsDefinitelyNullEvent(evtExpr))
             {
@@ -415,6 +433,12 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitReceiveStmt(PParser.ReceiveStmtContext context)
         {
+            if (machine?.IsSpec == true)
+            {
+                throw handler.IssueError(
+                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+            }
+
             var cases = new Dictionary<PEvent, Function>();
             foreach (PParser.RecvCaseContext caseContext in context.recvCase())
             {

@@ -1,6 +1,6 @@
 =================================
          Console output          
 =================================
-OUT: monitors.p(8,13,8,26): error PC1001: Cannot create a spec machine
+OUT: monitors.p(10,4,10,9): error PC1001: Invalid payload type in raise
 OUT: Compilation failed
 EXIT: -1

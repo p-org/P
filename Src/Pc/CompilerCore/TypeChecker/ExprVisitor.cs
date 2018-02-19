@@ -143,6 +143,12 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(context.machineName, "machine", machineName);
             }
 
+            if (method.Owner?.IsSpec == true)
+            {
+                throw handler.IssueError(
+                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+            }
+
             if (targetMachine.IsSpec)
             {
                 throw handler.CreatedSpecMachine(context, targetMachine);
@@ -394,11 +400,21 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.NONDET() != null)
             {
+                if (method.Owner.IsSpec)
+                {
+                    throw handler.IssueError(
+                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                }
                 method.IsNondeterministic = true;
                 return new NondetExpr(context);
             }
             if (context.FAIRNONDET() != null)
             {
+                if (method.Owner.IsSpec)
+                {
+                    throw handler.IssueError(
+                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                }
                 method.IsNondeterministic = true;
                 return new FairNondetExpr(context);
             }
@@ -413,6 +429,11 @@ namespace Microsoft.Pc.TypeChecker
                 if (method.Owner == null)
                 {
                     throw handler.MisplacedThis(context);
+                }
+                if (method.Owner.IsSpec)
+                {
+                    throw handler.IssueError(
+                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
                 }
                 return new ThisRefExpr(context, method.Owner);
             }

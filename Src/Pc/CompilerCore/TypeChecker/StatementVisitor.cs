@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -29,9 +28,26 @@ namespace Microsoft.Pc.TypeChecker
             exprVisitor = new ExprVisitor(method, handler);
         }
 
+        public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
+        {
+            List<IPStmt> statements = context.statement().Select(Visit).Where(stmt => !(stmt is NoStmt)).ToList();
+            if (statements.Count == 0)
+            {
+                return new NoStmt(context);
+            }
+
+            return new CompoundStmt(context, statements);
+        }
+
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
-            return new CompoundStmt(context, context.statement().Select(Visit).Where(stmt => !(stmt is NoStmt)).ToList());
+            List<IPStmt> statements = context.statement().Select(Visit).Where(stmt => !(stmt is NoStmt)).ToList();
+            if (statements.Count == 0)
+            {
+                return new NoStmt(context);
+            }
+
+            return new CompoundStmt(context, statements);
         }
 
         public override IPStmt VisitPopStmt(PParser.PopStmtContext context)
@@ -41,6 +57,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.ChangedStateMidTransition(context, method);
             }
+
             return new PopStmt(context);
         }
 
@@ -51,6 +68,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context.expr(), assertion.Type, PrimitiveType.Bool);
             }
+
             string message = context.StringLiteral()?.GetText() ?? "";
             return new AssertStmt(context, assertion, message);
         }
@@ -64,7 +82,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.InvalidPrintFormat(context, context.StringLiteral().Symbol);
             }
 
-            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             if (args.Count != numNecessaryArgs)
             {
                 throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);
@@ -81,6 +99,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context, returnType, method.Signature.ReturnType);
             }
+
             return new ReturnStmt(context, returnValue);
         }
 
@@ -101,6 +120,7 @@ namespace Microsoft.Pc.TypeChecker
                         {
                             throw handler.TypeMismatch(context.rvalue(), refVariable.Type, variable.Type);
                         }
+
                         return new MoveAssignStmt(context, variable, refVariable);
                     case LinearType.Swap:
                         // Within a function, swaps must only be subtyped in either direction
@@ -111,6 +131,7 @@ namespace Microsoft.Pc.TypeChecker
                         {
                             throw handler.TypeMismatch(context.rvalue(), refVariable.Type, variable.Type);
                         }
+
                         return new SwapAssignStmt(context, variable, refVariable);
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -209,6 +230,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
+
             IPStmt body = Visit(context.statement());
             return new WhileStmt(context, condition, body);
         }
@@ -220,6 +242,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
+
             IPStmt thenBody = Visit(context.thenBranch);
             IPStmt elseBody = context.elseBranch == null ? new NoStmt(context) : Visit(context.elseBranch);
             return new IfStmt(context, condition, thenBody, elseBody);
@@ -232,6 +255,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.MissingDeclaration(context.iden(), "machine", machineName);
             }
+
             List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, args);
             return new CtorStmt(context, targetMachine, args);
@@ -257,7 +281,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 TypeCheckingUtils.CheckArgument(handler, context, pair.Item1.Type, pair.Item2);
             }
-            
+
             method.AddCallee(fun);
             return new FunCallStmt(context, fun, argsList);
         }
@@ -278,12 +302,12 @@ namespace Microsoft.Pc.TypeChecker
             method.CanCommunicate = true;
             method.CanChangeState = true;
 
-            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             if (evtExpr is EventRefExpr eventRef)
             {
                 TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
             }
-            
+
             return new RaiseStmt(context, evtExpr, args);
         }
 
@@ -305,7 +329,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.TypeMismatch(context.@event, evtExpr.Type, PrimitiveType.Event);
             }
-            
+
             IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
 
             if (evtExpr is EventRefExpr eventRef)
@@ -358,7 +382,8 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(stateNameContext.state, "state", stateName);
             }
 
-            PLanguageType expectedType = state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
+            PLanguageType expectedType =
+                state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
             IPExpr[] rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             IPExpr payload;
             if (rvaluesList.Length == 0)
@@ -410,10 +435,12 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         throw handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                     }
+
                     if (cases.ContainsKey(pEvent))
                     {
                         throw handler.IssueError(eventIdContext, $"duplicate case for event {pEvent.Name} in receive");
                     }
+
                     PLanguageType expectedType =
                         recvHandler.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
                     if (!expectedType.IsAssignableFrom(pEvent.PayloadType))
@@ -421,9 +448,11 @@ namespace Microsoft.Pc.TypeChecker
                         throw handler.TypeMismatch(caseContext.anonEventHandler().funParam(), expectedType,
                                                    pEvent.PayloadType);
                     }
+
                     cases.Add(pEvent, recvHandler);
                 }
             }
+
             return new ReceiveStmt(context, cases);
         }
 

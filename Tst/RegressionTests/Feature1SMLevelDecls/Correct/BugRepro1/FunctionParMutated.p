@@ -37,6 +37,7 @@ machine Main {
 			assert (i == 4);
 			return i;
 		}
+		assert false;
 	}
 	fun Func2(v: int) : int {
 		v = v + 1;       

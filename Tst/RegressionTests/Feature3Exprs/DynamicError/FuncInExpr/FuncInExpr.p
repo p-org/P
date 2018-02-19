@@ -14,7 +14,7 @@ machine Main {
 	{
 		if(F1().Success)
 			return F1();
-			
+		return default((Success: bool));
 	}
 	fun F1() : (Success: bool)
 	{

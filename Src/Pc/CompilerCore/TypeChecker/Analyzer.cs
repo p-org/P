@@ -28,6 +28,7 @@ namespace Microsoft.Pc.TypeChecker
             foreach (Function machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
+                FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
 
             // Step 4: Propagate purity properties

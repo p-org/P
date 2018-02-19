@@ -40,7 +40,9 @@ namespace UnitTests.PSharpBackend
                 "RegressionTests/Feature1SMLevelDecls/StaticError/EventDeferredDoSameState",
                 "RegressionTests/Feature1SMLevelDecls/StaticError/EventDeferredHandledSameState",
                 "RegressionTests/Feature1SMLevelDecls/StaticError/FunctionMissingArgs",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/FunctionReturnsNothingInAssignment"
+                "RegressionTests/Feature1SMLevelDecls/StaticError/FunctionReturnsNothingInAssignment",
+                "RegressionTests/Feature1SMLevelDecls/StaticError/RaisedNullEvent",
+                "RegressionTests/Feature1SMLevelDecls/StaticError/SentNullEvent"
             };
             foreach (TestCaseData test in TestCases)
             {

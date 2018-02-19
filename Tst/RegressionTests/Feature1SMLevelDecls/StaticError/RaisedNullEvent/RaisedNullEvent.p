@@ -9,8 +9,6 @@ machine Main {
 			raise E1;
 	        }
 		exit {   }
-
-		on E1 do {send this, null; }  //error
 		on null do {assert(false);}   //unreachable
 	}
 	fun Action2() {

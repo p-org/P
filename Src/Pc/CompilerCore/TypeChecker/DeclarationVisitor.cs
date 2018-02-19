@@ -326,9 +326,18 @@ namespace Microsoft.Pc.TypeChecker
         {
             // SPEC name=Iden 
             var specMachine = (Machine) nodesToDeclarations.Get(context);
+
+            // spec machines neither send nor receive events.
+            specMachine.Receives = new EventSet();
+            specMachine.Sends = new EventSet();
+
             // OBSERVES eventSetLiteral
-            specMachine.Observes = new NamedEventSet($"{specMachine.Name}$eventset", context.eventSetLiteral());
-            specMachine.Observes.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
+            specMachine.Observes = new EventSet();
+            foreach (var pEvent in (PEvent[]) Visit(context.eventSetLiteral()))
+            {
+                specMachine.Observes.AddEvent(pEvent);
+            }
+
             // machineBody
             using (currentScope.NewContext(specMachine.Scope))
             using (currentMachine.NewContext(specMachine))

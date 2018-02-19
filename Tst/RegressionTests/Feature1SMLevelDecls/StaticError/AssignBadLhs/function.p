@@ -5,7 +5,7 @@ machine Main {
 			x = foo();
 		}
 	}
-	fun foo() : int {
-		return 1;
+	fun foo() : event {
+		return x;
 	}
 }

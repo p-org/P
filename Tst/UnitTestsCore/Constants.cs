@@ -1,5 +1,4 @@
 using System;
-using System.Configuration;
 using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
@@ -22,6 +21,7 @@ namespace UnitTestsCore
         public const string DisplayDiffsFile = "display-diffs.bat";
         public const string ActualOutputFileName = "check-output.log";
         public const string FrontEndRegressionFileName = "frontend-regression.txt";
+        public const string SettingsResourceName = "UnitTestsCore.TestSettings.settings";
 #if DEBUG
         public const string BuildConfiguration = "Debug";
 #else
@@ -50,13 +50,15 @@ namespace UnitTestsCore
 
         public static string TestDirectory => Path.Combine(SolutionDirectory, TestDirectoryName);
 
-        public static bool ResetTests => bool.Parse(ConfigurationManager.AppSettings["ResetTests"]);
-        public static bool RunPc => bool.Parse(ConfigurationManager.AppSettings["RunPc"]);
-        public static bool RunPrt => bool.Parse(ConfigurationManager.AppSettings["RunPrt"]);
-        public static bool RunPt => bool.Parse(ConfigurationManager.AppSettings["RunPt"]);
-        public static bool RunZing => bool.Parse(ConfigurationManager.AppSettings["RunZing"]);
-        public static bool RunAll => bool.Parse(ConfigurationManager.AppSettings["RunAll"]);
-        public static bool PtWithPSharp => bool.Parse(ConfigurationManager.AppSettings["PtWithPSharp"]);
+        private static readonly ConfigurationShim Configuration = new ConfigurationShim(SettingsResourceName);
+
+        public static bool ResetTests => (bool) Configuration["ResetTests"];
+        public static bool RunPc => (bool) Configuration["RunPc"];
+        public static bool RunPrt => (bool) Configuration["RunPrt"];
+        public static bool RunPt => (bool) Configuration["RunPt"];
+        public static bool RunZing => (bool) Configuration["RunZing"];
+        public static bool RunAll => (bool) Configuration["RunAll"];
+        public static bool PtWithPSharp => (bool) Configuration["PtWithPSharp"];
 
         public static string TestResultsDirectory { get; } =
             Path.Combine(TestDirectory, $"TestResult_{BuildConfiguration}_{Platform}");

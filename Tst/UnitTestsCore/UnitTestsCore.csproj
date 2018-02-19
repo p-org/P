@@ -7,9 +7,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="TestSettings.settings">
+    <EmbeddedResource Include="TestSettings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
-    </None>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>

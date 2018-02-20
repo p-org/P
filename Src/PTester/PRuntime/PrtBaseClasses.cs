@@ -710,9 +710,11 @@ namespace P.Runtime
 
         public PrtContinuation Clone()
         {
-            var clonedVal = new PrtContinuation();
-            clonedVal.reason = this.reason;
-            clonedVal.retVal = this.retVal.Clone();
+            var clonedVal = new PrtContinuation
+            {
+                reason = reason,
+                retVal = retVal.Clone()
+            };
             foreach(var loc in retLocals)
             {
                 clonedVal.retLocals.Add(loc.Clone());

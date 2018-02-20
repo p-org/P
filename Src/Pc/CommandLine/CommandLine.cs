@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Microsoft.Pc
+﻿namespace Microsoft.Pc
 {
     public class CommandLine
     {
@@ -12,7 +10,7 @@ namespace Microsoft.Pc
                 compiler = new AntlrCompiler();
                 return true;
             }
-#if NET461
+
             if (options.compilerService)
             {
                 compiler = new CompilerServiceClient();
@@ -21,10 +19,6 @@ namespace Microsoft.Pc
 
             compiler = new LegacyCompiler(options.shortFileNames);
             return true;
-#else
-            Console.WriteLine("Legacy backend unsupported in .NET Core builds.");
-            return false;
-#endif
         }
 
         public static int Main(string[] args)

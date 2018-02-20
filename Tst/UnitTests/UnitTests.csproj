@@ -7,12 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="CBackend\**" />
-    <EmbeddedResource Remove="CBackend\**" />
-    <None Remove="CBackend\**" />
-  </ItemGroup>
-  
-  <ItemGroup>
     <PackageReference Include="Antlr4" Version="4.6.5-beta001" />
     <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.0.20171219.105559" />
     <PackageReference Include="NUnit" Version="3.9.0" />

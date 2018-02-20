@@ -83,7 +83,7 @@
   <Import Project="$(PTargets)\compiler.targets" />
   
   <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)" BeforeTargets="PrepareForBuild">
-    <Message Text="### GenerateCodeFromLex ###" Importance="high" />
+    <Message Text="### GenerateCodeFromLex: EXEC = $(GPLexCmd) /babel /unicode /out:@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" Importance="high" />
     <!--Run the command line tool that generates the cs files.-->
     <Exec Command="$(GPLexCmd) /babel /unicode /out:@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" />
     <!--Add the generated files to the list of the files to compile.-->
@@ -136,8 +136,7 @@
     <Is64BitBuild Condition="$(MSBuildBinPath.EndsWith('amd64'))">true</Is64BitBuild>
     <FormulaCodeGeneratorBin>x86</FormulaCodeGeneratorBin>
     <FormulaCodeGeneratorBin Condition="$(Is64BitBuild)">x64</FormulaCodeGeneratorBin>
-    <FormulaCodeGeneratorPath>$(FormulaTargetsPath)$(Configuration)\$(FormulaCodeGeneratorBin)\FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
-    <FormulaCodeGeneratorPath Condition="Exists('$(FormulaTargetsPath)$(Configuration)\$(FormulaCodeGeneratorBin)\vs\FormulaCodeGeneratorTask.dll')">$(FormulaTargetsPath)$(Configuration)\$(FormulaCodeGeneratorBin)\vs\FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
+    <FormulaCodeGeneratorPath>$(FormulaTargetsPath)bin\$(Configuration)\FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
   </PropertyGroup> 
 
   <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(FormulaCodeGeneratorPath)" />

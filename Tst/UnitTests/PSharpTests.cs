@@ -6,7 +6,7 @@ using Microsoft.Pc;
 using NUnit.Framework;
 using UnitTestsCore;
 
-namespace UnitTests.PSharpBackend
+namespace UnitTests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
@@ -42,7 +42,13 @@ namespace UnitTests.PSharpBackend
                 "RegressionTests/Feature1SMLevelDecls/StaticError/FunctionMissingArgs",
                 "RegressionTests/Feature1SMLevelDecls/StaticError/FunctionReturnsNothingInAssignment",
                 "RegressionTests/Feature1SMLevelDecls/StaticError/RaisedNullEvent",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/SentNullEvent"
+                "RegressionTests/Feature1SMLevelDecls/StaticError/SentNullEvent",
+                "RegressionTests/Feature4DataTypes/StaticError/EventSets_1",
+                "RegressionTests/Feature4DataTypes/StaticError/EventSets_2",
+                "RegressionTests/Feature4DataTypes/StaticError/EventSets_3",
+                "RegressionTests/Feature4DataTypes/StaticError/EventSets_4",
+                "RegressionTests/Feature4DataTypes/StaticError/EventSets_5",
+                "RegressionTests/Feature4DataTypes/StaticError/typedef"
             };
             foreach (TestCaseData test in TestCases)
             {

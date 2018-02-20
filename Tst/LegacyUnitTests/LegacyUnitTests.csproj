@@ -1,0 +1,41 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net461</TargetFrameworks>
+    <ProjectGuid>{FAF31646-8C91-4148-B1EF-3E310B65893F}</ProjectGuid>
+    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="CBackend\**" />
+    <EmbeddedResource Remove="CBackend\**" />
+    <None Remove="CBackend\**" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <PackageReference Include="Antlr4" Version="4.6.5-beta001" />
+    <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.0.20171219.105559" />
+    <PackageReference Include="NUnit" Version="3.9.0" />
+    <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\Src\Pc\CompilerCore\CompilerCore.csproj">
+      <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
+      <Name>CompilerCore</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\UnitTestsCore\UnitTestsCore.csproj" />
+    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\..\Src\Parsers\CParser\CParser.csproj">
+      <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
+      <Name>CParser</Name>
+    </ProjectReference>
+    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\..\Src\Pc\CompilerService\CompilerService.csproj">
+      <Project>{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}</Project>
+      <Name>CompilerService</Name>
+    </ProjectReference>
+    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\..\Src\Pc\LegacyCompiler\LegacyCompiler.csproj">
+      <Project>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</Project>
+      <Name>LegacyCompiler</Name>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

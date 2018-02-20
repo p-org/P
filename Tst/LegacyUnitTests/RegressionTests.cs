@@ -10,7 +10,7 @@ using Microsoft.Pc;
 using NUnit.Framework;
 using UnitTestsCore;
 
-namespace UnitTests
+namespace LegacyUnitTests
 {
 
     [TestFixture]

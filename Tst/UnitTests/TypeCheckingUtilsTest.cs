@@ -1,8 +1,7 @@
-﻿using System;
-using Microsoft.Pc.TypeChecker;
+﻿using Microsoft.Pc.TypeChecker;
 using NUnit.Framework;
 
-namespace UnitTests.General
+namespace UnitTests
 {
     [TestFixture]
     public class TypeCheckingUtilsTest

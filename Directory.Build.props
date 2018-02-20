@@ -17,6 +17,6 @@
     <StandardPDefinitions>PRT_STATIC;PRT_PLAT_WINUSER</StandardPDefinitions>
     <StandardPDefinitions Condition="'$(Configuration)'=='Debug'">PRT_DEBUG;$(StandardPDefinitions)</StandardPDefinitions>
     <StandardPLibraries>PrtWinUser.lib;</StandardPLibraries>
-    <!-- <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath> -->
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 </Project>

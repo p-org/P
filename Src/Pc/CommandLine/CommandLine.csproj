@@ -8,9 +8,12 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
   </PropertyGroup>
-  <ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.0'">
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Condition="'$(TargetFramework)'=='net461'" Include="..\LegacyCompiler\LegacyCompiler.csproj" />
-    <ProjectReference Condition="'$(TargetFramework)'=='net461'" Include="..\CompilerService\CompilerService.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net461'">
+    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
+    <ProjectReference Include="..\LegacyCompiler\LegacyCompiler.csproj" />
+    <ProjectReference Include="..\CompilerService\CompilerService.csproj" />
   </ItemGroup>
 </Project>

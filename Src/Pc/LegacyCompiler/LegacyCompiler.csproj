@@ -137,7 +137,7 @@
     <FormulaCodeGeneratorBin>x86</FormulaCodeGeneratorBin>
     <FormulaCodeGeneratorBin Condition="$(Is64BitBuild)">x64</FormulaCodeGeneratorBin>
     <FormulaCodeGeneratorPath>$(FormulaTargetsPath)$(Configuration)\$(FormulaCodeGeneratorBin)\FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
-    <FormulaCodeGeneratorPath Condition="'$(OS)'=='Windows_NT'">$(FormulaTargetsPath)$(Configuration)\$(FormulaCodeGeneratorBin)\vs\FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
+    <FormulaCodeGeneratorPath Condition="Exists('$(FormulaTargetsPath)$(Configuration)\$(FormulaCodeGeneratorBin)\vs\FormulaCodeGeneratorTask.dll')">$(FormulaTargetsPath)$(Configuration)\$(FormulaCodeGeneratorBin)\vs\FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
   </PropertyGroup> 
 
   <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(FormulaCodeGeneratorPath)" />

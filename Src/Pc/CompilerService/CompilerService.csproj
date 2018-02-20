@@ -8,17 +8,8 @@
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
   </PropertyGroup>
   <ItemGroup>
-    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj">
-      <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
-      <Name>CompilerCore</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
-      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\LegacyCompiler\LegacyCompiler.csproj">
-      <Project>{ed76217f-2452-4a35-90f6-6eb6ccf2d882}</Project>
-      <Name>LegacyCompiler</Name>
-    </ProjectReference>
+    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj"/>
+    <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj"/>
+    <ProjectReference Include="..\LegacyCompiler\LegacyCompiler.csproj"/>
   </ItemGroup>
 </Project>

@@ -5,7 +5,6 @@
     <RootNamespace>Microsoft.Pc</RootNamespace>
     <Antlr4JavaExecutable Condition=" '$(OS)' != 'Windows_NT' ">/usr/bin/java</Antlr4JavaExecutable>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
 
   <ItemGroup>

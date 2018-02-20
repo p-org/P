@@ -7,11 +7,10 @@
     <AssemblyName>PBuild</AssemblyName>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Pc\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\..\Pc\LegacyCompiler\LegacyCompiler.csproj" />
-    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\..\Pc\CompilerService\CompilerService.csproj" />
+    <ProjectReference Include="..\..\Pc\LegacyCompiler\LegacyCompiler.csproj" />
+    <ProjectReference Include="..\..\Pc\CompilerService\CompilerService.csproj" />
   </ItemGroup>
 </Project>

@@ -1,10 +1,9 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFramework>net461</TargetFramework>
     <RootNamespace>Microsoft.Pc</RootNamespace>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <ProjectGuid>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</ProjectGuid>
     <GPToolsPath>$(ExtFolder)\Formula\Ext</GPToolsPath>
   </PropertyGroup>

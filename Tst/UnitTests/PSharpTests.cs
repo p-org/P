@@ -50,6 +50,7 @@ namespace UnitTests
                 "RegressionTests/Feature4DataTypes/StaticError/EventSets_5",
                 "RegressionTests/Feature4DataTypes/StaticError/typedef"
             };
+
             foreach (TestCaseData test in TestCases)
             {
                 var testDir = (DirectoryInfo) test.Arguments[0];

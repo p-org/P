@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net461</TargetFrameworks>
+    <TargetFramework>net461</TargetFramework>
     <ProjectGuid>{9F8DE18D-C64B-4D30-9CFF-6793FFEAFC04}</ProjectGuid>
     <RootNamespace>Microsoft.Pc</RootNamespace>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>

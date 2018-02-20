@@ -1,10 +1,11 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.0</TargetFrameworks>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <ProjectGuid>{71691381-D3C9-478C-BA37-A94032A536DF}</ProjectGuid>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <IsPackable>false</IsPackable>
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Remove="CBackend\**" />
     <EmbeddedResource Remove="CBackend\**" />
@@ -16,7 +17,7 @@
     <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.0.20171219.105559" />
     <PackageReference Include="NUnit" Version="3.9.0" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.9.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.6.0" />
   </ItemGroup>
   
   <ItemGroup>

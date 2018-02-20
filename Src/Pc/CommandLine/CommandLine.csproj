@@ -1,17 +1,16 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp2.0;net461</TargetFrameworks>
+    <TargetFrameworks>net461;netcoreapp2.0</TargetFrameworks>
     <ProjectGuid>{48B4C337-CD13-4826-B6A1-DA97CE71511B}</ProjectGuid>
     <RootNamespace>Microsoft.Pc</RootNamespace>
     <AssemblyName>Pc</AssemblyName>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\LegacyCompiler\LegacyCompiler.csproj" />
-    <ProjectReference Condition="'$(TargetFramework)' == 'net461'" Include="..\CompilerService\CompilerService.csproj" />
+    <ProjectReference Condition="'$(TargetFramework)'=='net461'" Include="..\LegacyCompiler\LegacyCompiler.csproj" />
+    <ProjectReference Condition="'$(TargetFramework)'=='net461'" Include="..\CompilerService\CompilerService.csproj" />
   </ItemGroup>
 </Project>

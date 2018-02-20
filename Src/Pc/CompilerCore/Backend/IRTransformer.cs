@@ -116,7 +116,7 @@ namespace Microsoft.Pc.Backend
                         deps.AddRange(argDeps);
                     }
 
-                    var (ctorTemp, ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Machine, ctorArgs));
+                    var (ctorTemp, ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs));
                     deps.Add(ctorStore);
                     return (new VariableAccessExpr(location, ctorTemp), deps);
                 case DefaultExpr defaultExpr:
@@ -325,7 +325,7 @@ namespace Microsoft.Pc.Backend
 
                     return ctorDeps.Concat(new[]
                                    {
-                                       new CtorStmt(location, ctorStmt.Machine, newCtorArgs)
+                                       new CtorStmt(location, ctorStmt.Interface, newCtorArgs)
                                    })
                                    .ToList();
                 case FunCallStmt funCallStmt:

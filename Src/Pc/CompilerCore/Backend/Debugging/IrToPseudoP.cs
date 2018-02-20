@@ -161,7 +161,7 @@ namespace Microsoft.Pc.Backend.Debugging
 
                     break;
                 case CtorStmt ctorStmt:
-                    WriteStmt("new ", ctorStmt.Machine, "(", ctorStmt.Arguments, ");");
+                    WriteStmt("new ", ctorStmt.Interface, "(", ctorStmt.Arguments, ");");
                     break;
                 case FunCallStmt funCallStmt:
                     WriteStmt(funCallStmt.Fun, "(", funCallStmt.ArgsList, ");");
@@ -438,7 +438,7 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteParts("$Clone(", cloneExpr.SubExpr, ")");
                     break;
                 case CtorExpr ctorExpr:
-                    WriteParts("new ", ctorExpr.Machine, "(", ctorExpr.Arguments, ")");
+                    WriteParts("new ", ctorExpr.Interface, "(", ctorExpr.Arguments, ")");
                     break;
                 case DefaultExpr defaultExpr:
                     WriteParts("default(", defaultExpr.Type, ")");

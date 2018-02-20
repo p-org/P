@@ -6,15 +6,15 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
     public class CtorExpr : IPExpr
     {
-        public CtorExpr(ParserRuleContext sourceLocation, Machine machine, IPExpr[] arguments)
+        public CtorExpr(ParserRuleContext sourceLocation, Interface @interface, IPExpr[] arguments)
         {
-            Machine = machine;
+            Interface = @interface;
             Arguments = arguments;
             SourceLocation = sourceLocation;
-            Type = new PermissionType(machine);
+            Type = new PermissionType(Interface);
         }
 
-        public Machine Machine { get; }
+        public Interface Interface { get; }
         public IPExpr[] Arguments { get; }
 
         public PLanguageType Type { get; }

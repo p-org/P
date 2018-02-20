@@ -177,7 +177,7 @@ expr : primitive                                      # PrimitiveExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
      | fun=SIZEOF LPAREN expr RPAREN                  # KeywordExpr
      | fun=DEFAULT LPAREN type RPAREN                 # KeywordExpr
-     | NEW machineName=iden LPAREN rvalueList? RPAREN # CtorExpr
+     | NEW interfaceName=iden LPAREN rvalueList? RPAREN # CtorExpr
      | fun=iden LPAREN rvalueList? RPAREN             # FunCallExpr
      | op=(SUB | LNOT) expr                           # UnaryExpr
      | lhs=expr op=(MUL | DIV) rhs=expr               # BinExpr

@@ -7,14 +7,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class CtorStmt : IPStmt
     {
-        public CtorStmt(ParserRuleContext sourceLocation, Machine machine, List<IPExpr> arguments)
+        public CtorStmt(ParserRuleContext sourceLocation, Interface @interface, List<IPExpr> arguments)
         {
             SourceLocation = sourceLocation;
-            Machine = machine;
+            Interface = @interface;
             Arguments = arguments;
         }
 
-        public Machine Machine { get; }
+        public Interface Interface { get; }
         public List<IPExpr> Arguments { get; }
 
         public ParserRuleContext SourceLocation { get; }

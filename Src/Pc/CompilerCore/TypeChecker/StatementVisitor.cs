@@ -227,14 +227,14 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitCtorStmt(PParser.CtorStmtContext context)
         {
-            string machineName = context.iden().GetText();
-            if (!table.Lookup(machineName, out Machine targetMachine))
+            string interfaceName = context.iden().GetText();
+            if (!table.Lookup(interfaceName, out Interface targetInterface))
             {
-                throw handler.MissingDeclaration(context.iden(), "machine", machineName);
+                throw handler.MissingDeclaration(context.iden(), "interface", interfaceName);
             }
             List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
-            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, args);
-            return new CtorStmt(context, targetMachine, args);
+            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetInterface.PayloadType, args);
+            return new CtorStmt(context, targetInterface, args);
         }
 
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)

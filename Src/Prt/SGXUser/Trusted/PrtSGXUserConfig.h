@@ -1,9 +1,9 @@
 /**
-* \file PrtConfigLinuxUser.h
+* \file PrtSGXUserConfig.h
 * \brief Defines the Linux user configurations.
 */
-#ifndef PRTCONFIG_LINUXUSER_H
-#define PRTCONFIG_LINUXUSER_H
+#ifndef PRTCONFIG_SGXUSER_H
+#define PRTCONFIG_SGXUSER_H
 
 
 #if defined(PRT_USE_CLANG)
@@ -42,12 +42,8 @@ extern "C"{
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include <pthread.h>
-#ifdef __APPLE__
-#include <dispatch/dispatch.h>
-#else
-#include <semaphore.h>
-#endif
+#include <sgx_thread.h>
+#include <sgx_trts.h>
 #include "ext_compat.h"
 
 	/** PRT uses these definitions for boolean values */
@@ -90,14 +86,13 @@ extern "C"{
 	typedef char const * PRT_CSTRING;
 
 	/** PRT_RECURSIVE_MUTEX identifies a recursive mutex. */
-	typedef pthread_mutex_t* PRT_RECURSIVE_MUTEX;
+    typedef sgx_thread_mutex_t PRT_MUTEX_OBJ;
+    typedef sgx_thread_mutexattr_t PRT_MUTEX_ATTR;
+	typedef PRT_MUTEX_OBJ* PRT_RECURSIVE_MUTEX;
 
     /** PRT_SEMAPHORE identifies a platform specific semaphore object. */
-#ifdef __APPLE__
-	typedef dispatch_semaphore_t* PRT_SEMAPHORE;
-#else
-    typedef sem_t* PRT_SEMAPHORE;
-#endif
+    // FIXME: define a real semaphore
+    typedef sgx_thread_mutex_t* PRT_SEMAPHORE;
 
 #ifdef __cplusplus
 }

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -19,6 +20,10 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             OriginalRepresentation = name;
             CanonicalRepresentation = name;
+            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
+            {
+                return new List<PEvent>();
+            });
         }
 
         public override string OriginalRepresentation { get; }
@@ -50,6 +55,7 @@ namespace Microsoft.Pc.TypeChecker.Types
             return this;
         }
 
-        public override IEnumerable<PEvent> AllowedPermissions() { return Enumerable.Empty<PEvent>(); }
+        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
     }
 }

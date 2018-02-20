@@ -1,3 +1,4 @@
+using System;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using System.Collections.Generic;
 
@@ -5,7 +6,14 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class TypeDefType : PLanguageType
     {
-        public TypeDefType(TypeDef typeDef) : base(TypeKind.TypeDef) { TypeDefDecl = typeDef; }
+        public TypeDefType(TypeDef typeDef) : base(TypeKind.TypeDef)
+        {
+            TypeDefDecl = typeDef;
+            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
+            {
+                return TypeDefDecl.Type.Canonicalize().AllowedPermissions;
+            });
+        }
 
         public TypeDef TypeDefDecl { get; }
 
@@ -20,6 +28,8 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         public override PLanguageType Canonicalize() { return TypeDefDecl.Type.Canonicalize(); }
 
-        public override IEnumerable<PEvent> AllowedPermissions() { return TypeDefDecl.Type.Canonicalize().AllowedPermissions(); }
+        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
+
     }
 }

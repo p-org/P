@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using System.Linq;
@@ -10,6 +11,11 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             KeyType = keyType;
             ValueType = valueType;
+            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
+            {
+                return KeyType.AllowedPermissions.Concat(ValueType.AllowedPermissions).ToList();
+            });
+            
         }
 
         public PLanguageType KeyType { get; }
@@ -34,9 +40,8 @@ namespace Microsoft.Pc.TypeChecker.Types
             return new MapType(KeyType.Canonicalize(), ValueType.Canonicalize());
         }
 
-        public override IEnumerable<PEvent> AllowedPermissions()
-        {
-            return KeyType.AllowedPermissions().Concat(ValueType.AllowedPermissions());
-        }
+        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
+
     }
 }

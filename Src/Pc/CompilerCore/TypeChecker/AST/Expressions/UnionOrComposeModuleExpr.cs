@@ -59,7 +59,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
                         foreach (var @event in allSendAndReceiveEvents)
                         {
-                            var permissionsEmbedded = @event.PayloadType.AllowedPermissions();
+                            var permissionsEmbedded = @event.PayloadType.AllowedPermissions;
                             foreach (var privatePermission in allPrivateEvents.Where(ev => permissionsEmbedded.Contains(ev)))
                             {
                                 throw handler.InvalidCompositionExpr(module1.SourceLocation, $"private events after composition are not disjoint from permissions in events sent or received, e.g., " +

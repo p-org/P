@@ -53,7 +53,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             var eventsReceivedAndSent = module.Sends.Events.Union(module.Receives.Events);
             foreach(var @event in eventsReceivedAndSent.Except(hideEvents.Events))
             {
-                var permissionsEmbedded = @event.PayloadType.AllowedPermissions();
+                var permissionsEmbedded = @event.PayloadType.AllowedPermissions;
                 foreach(var privatePermission in hideEvents.Events.Where(ev => permissionsEmbedded.Contains(ev)))
                 {
                     throw handler.InvalidHideEventExpr(SourceLocation, $"event {privatePermission} cannot be made private as it belongs to allowed permission of {@event.Name} which is received or sent by the module");

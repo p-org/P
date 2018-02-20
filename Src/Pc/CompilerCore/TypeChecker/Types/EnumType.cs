@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -6,7 +7,14 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class EnumType : PLanguageType
     {
-        public EnumType(PEnum enumDecl) : base(TypeKind.Enum) { EnumDecl = enumDecl; }
+        public EnumType(PEnum enumDecl) : base(TypeKind.Enum)
+        {
+            EnumDecl = enumDecl;
+            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
+            {
+                return new List<PEvent>();
+            });
+        }
 
         public PEnum EnumDecl { get; }
 
@@ -22,6 +30,7 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         public override PLanguageType Canonicalize() { return this; }
 
-        public override IEnumerable<PEvent> AllowedPermissions()  { return Enumerable.Empty<PEvent>(); }
+        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
     }
 }

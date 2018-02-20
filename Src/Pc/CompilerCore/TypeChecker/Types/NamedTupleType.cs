@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -16,6 +17,10 @@ namespace Microsoft.Pc.TypeChecker.Types
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.OriginalRepresentation}"))})";
             CanonicalRepresentation =
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.CanonicalRepresentation}"))})";
+            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
+            {
+                return Fields.SelectMany(f => f.Type.AllowedPermissions).ToList();
+            });
         }
 
         public IEnumerable<string> Names => Fields.Select(f => f.Name);
@@ -47,9 +52,7 @@ namespace Microsoft.Pc.TypeChecker.Types
             return lookupTable.TryGetValue(name, out entry);
         }
 
-        public override IEnumerable<PEvent> AllowedPermissions()
-        {
-            return Fields.SelectMany(f => f.Type.AllowedPermissions());
-        }
+        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
     }
 }

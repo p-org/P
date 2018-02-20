@@ -37,9 +37,8 @@ namespace Microsoft.Pc.TypeChecker.Types
         }
 
         /// <summary>
-        /// Computes the permissions embedded in a type
+        /// represents the permissions embedded in a type
         /// </summary>
-        /// <returns> the set of permissions </returns>        
-        public abstract IEnumerable<PEvent> AllowedPermissions();
+        public abstract IReadOnlyList<PEvent> AllowedPermissions { get; }
     }
 }

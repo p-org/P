@@ -35,7 +35,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             if(!hideEvents.IsSubsetEqOf(receiveAndsends))
             {
                 var @event = hideEvents.Events.Where(h => !receiveAndsends.Contains(h)).First();
-                throw handler.InvalidHideEvent(SourceLocation, $"event {@event.Name} cannot be made private, it must belong to both receive and send set of the module");
+                throw handler.InvalidHideEventExpr(SourceLocation, $"event {@event.Name} cannot be made private, it must belong to both receive and send set of the module");
             }
 
             // 2) only events in interfaces that are both created and implemented by the module can be hidden
@@ -45,7 +45,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             foreach(var @interface in interfaceCreatedAndNotImpl.Union(interfaceImplAndNotCreated).Where(i => hideEvents.Intersects(i.ReceivableEvents.Events)))
             {
                 var @event = hideEvents.Events.Where(ev => @interface.ReceivableEvents.Contains(ev)).First();
-                throw handler.InvalidHideEvent(SourceLocation, $"event {@event.Name} cannot be made private as interface {@interface.Name} contains this event. " +
+                throw handler.InvalidHideEventExpr(SourceLocation, $"event {@event.Name} cannot be made private as interface {@interface.Name} contains this event. " +
                     $"Only events in interfaces that are both created and bound in the module can be hidden");
             }
 
@@ -56,7 +56,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
                 var permissionsEmbedded = @event.PayloadType.AllowedPermissions();
                 foreach(var privatePermission in hideEvents.Events.Where(ev => permissionsEmbedded.Contains(ev)))
                 {
-                    throw handler.InvalidHideEvent(SourceLocation, $"event {privatePermission} cannot be made private as it belongs to allowed permission of {@event.Name} which is received or sent by the module");
+                    throw handler.InvalidHideEventExpr(SourceLocation, $"event {privatePermission} cannot be made private as it belongs to allowed permission of {@event.Name} which is received or sent by the module");
                 }
             }
 
@@ -119,7 +119,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             var interfacesImplementedAndCreated = module.Creates.Interfaces.Intersect(module.InterfaceDef.Keys);
             foreach (var @interface in hideInterfaces.Where(it => !interfacesImplementedAndCreated.Contains(it)))
             {
-                throw handler.InvalidHideInterface(SourceLocation, $"interface {@interface.Name} cannot be made private. Interface {@interface.Name} must be both created and bounded in the module");
+                throw handler.InvalidHideInterfaceExpr(SourceLocation, $"interface {@interface.Name} cannot be made private. Interface {@interface.Name} must be both created and bounded in the module");
             }
 
             //module is wellformed

@@ -61,5 +61,6 @@ namespace Microsoft.Pc.TypeChecker
         Exception InvalidHideEventExpr(ParserRuleContext location, string message);
         Exception InvalidHideInterfaceExpr(ParserRuleContext location, string message);
         Exception InvalidRenameExpr(ParserRuleContext location, string message);
+        Exception InvalidCompositionExpr(ParserRuleContext location, string message);
     }
 }

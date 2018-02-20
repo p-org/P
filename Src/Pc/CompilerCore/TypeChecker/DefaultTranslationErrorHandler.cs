@@ -237,6 +237,12 @@ namespace Microsoft.Pc.TypeChecker
         {
             return IssueError(location, $"invalid rename operation. {message}");
         }
+
+        public Exception InvalidCompositionExpr(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid composition operation. {message}");
+        }
+
         #region Internal book keeping
 
         private readonly ParseTreeProperty<FileInfo> originalFiles;

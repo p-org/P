@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net461</TargetFrameworks>
+    <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Microsoft.Pc</RootNamespace>
     <Antlr4JavaExecutable Condition=" '$(OS)' != 'Windows_NT' ">/usr/bin/java</Antlr4JavaExecutable>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>

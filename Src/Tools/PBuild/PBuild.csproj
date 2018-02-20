@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net461</TargetFramework>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
     <ProjectGuid>{39B65065-C655-42E9-BE97-277A2BE471FE}</ProjectGuid>
     <RootNamespace>PBuild</RootNamespace>
     <AssemblyName>PBuild</AssemblyName>

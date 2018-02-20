@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27130.2027
+VisualStudioVersion = 15.0.27130.2036
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtWinUser", "Src\PrtDist\PrtWinUser.vcxproj", "{F8C72C0E-450C-4AE1-9885-31B8565C1D63}"
 EndProject
@@ -88,7 +88,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FormulaCodeGeneratorTask", 
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PRuntime", "Src\PTester\PRuntime\PRuntime.csproj", "{1CB4A7CA-B1D6-42E1-8A6F-919369FDCFC9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PTester", "Src\PTester\PTester\PTester.csproj", "{56FF7823-8BE6-4EEA-8B5D-656D801DC87D}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PTester", "Src\PTester\PTester\PTester.csproj", "{56FF7823-8BE6-4EEA-8B5D-656D801DC87D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Timer", "Src\Samples\Timer\Timer.vcxproj", "{25142DD0-BC85-4156-8691-416FF932D341}"
 	ProjectSection(ProjectDependencies) = postProject

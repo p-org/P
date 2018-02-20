@@ -30,13 +30,12 @@
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="1.1.0" />
     <PackageReference Include="Microsoft.Composition" Version="1.0.27" />
+
+    <PackageReference Include="Formula.Core" Version="1.0.0" />
+    <!-- <PackageReference Include="Formula.FormulaCodeGeneratorTask" Version="1.0.0" /> -->
   </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
-      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
     <ProjectReference Include="..\..\Parsers\CParser\CParser.csproj">
       <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
       <Name>CParser</Name>
@@ -136,7 +135,7 @@
     <Is64BitBuild Condition="$(MSBuildBinPath.EndsWith('amd64'))">true</Is64BitBuild>
     <FormulaCodeGeneratorBin>x86</FormulaCodeGeneratorBin>
     <FormulaCodeGeneratorBin Condition="$(Is64BitBuild)">x64</FormulaCodeGeneratorBin>
-    <FormulaCodeGeneratorPath>$(FormulaTargetsPath)bin\$(Configuration)\FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
+    <FormulaCodeGeneratorPath>$(FormulaTargetsPath)bin\Debug\Formula.FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
   </PropertyGroup> 
 
   <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(FormulaCodeGeneratorPath)" />

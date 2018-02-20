@@ -223,6 +223,11 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(location, $"invalid assert operation. event {illegalEvent.Name} in observes set of {monitor.Name} is not in the sends set of the module");
         }
 
+        public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor)
+        {
+            return IssueError(location, $"invalid assert operation. monitor {monitor.Name} already attached in the module");
+        }
+
         public Exception InvalidHideEventExpr(ParserRuleContext location, string message)
         {
             return IssueError(location, $"invalid hide event operation. {message}");

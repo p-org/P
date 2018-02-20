@@ -36,6 +36,12 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
                 }
             }
 
+            // check if the same monitor has already been attached
+            foreach(var conflictMonitor in module.MonitorMap.Keys.Where(x => specMonitors.Contains(x)))
+            {
+                throw handler.InvalidAssertExpr(SourceLocation, conflictMonitor);
+            }
+
             //module is wellformed
             isWellFormed = true;
 

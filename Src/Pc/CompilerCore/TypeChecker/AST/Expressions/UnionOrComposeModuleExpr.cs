@@ -76,9 +76,17 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
                         {
                             foreach(var @event in allPrivateEvents.Where(ev => @interface.ReceivableEvents.Contains(ev)))
                             {
-                                throw handler.InvalidCompositionExpr(module1.SourceLocation, $"After composition, private event {@event.Name} is in the received events of interface {@interface.Name} which is created or bound in the module");
+                                throw handler.InvalidCompositionExpr(module1.SourceLocation, 
+                                    $"After composition, private event {@event.Name} is in the received events of interface {@interface.Name} which is created or bound in the module");
                             }
                         }
+
+                        // ensure also that the monitor maps are disjoint
+                        foreach (var monitor in module1.MonitorMap.Keys.Intersect(module2.MonitorMap.Keys))
+                        {
+                            throw handler.InvalidCompositionExpr(module1.SourceLocation, $"monitor {monitor.Name} is attached in more than one modules being composed");
+                        }
+
                         // if composition then output actions must be disjoint
                         if (isComposition)
                         {

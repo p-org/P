@@ -23,7 +23,7 @@
     <ProjectGuid>{2010A7BF-C537-4311-9EE6-34DB5D9464B5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Test</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.15063.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
     <ProjectName>PingPongFast</ProjectName>
     <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
   </PropertyGroup>

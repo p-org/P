@@ -20,7 +20,7 @@ namespace Microsoft.Pc.TypeChecker
             // Step 2: Validate machine specifications
             foreach (Machine machine in globalScope.Machines)
             {
-                Validator.ValidateMachine(handler, machine);
+                MachineChecker.Validate(handler, machine);
             }
 
             // Step 3: Fill function bodies
@@ -56,6 +56,25 @@ namespace Microsoft.Pc.TypeChecker
 
             // Step 6: Check linear type ownership
             LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
+
+            // Step 7: Infer the creates set for each machine.
+            foreach (Machine machine in globalScope.Machines)
+            {
+                InferMachineCreates.Populate(handler, machine);
+            }
+
+            // Step 8: Fill the module expressions
+            ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
+
+            // Step 9: Check that all module expressions are wellformed
+            foreach (IPModuleExpr moduleExpr in AllModuleExprs(globalScope))
+            {
+                ModuleSystemTypeChecker.CheckWellFormedness(handler, moduleExpr);
+            }
+
+            // Step 9: Check the test and implementation declarations
+            // TODO: like test decls have main in them, refinement relation holds for refinement test cases.
+
 
             return globalScope;
         }
@@ -138,6 +157,38 @@ namespace Microsoft.Pc.TypeChecker
                     yield return method;
                 }
             }
+        }
+
+        private static IEnumerable<IPModuleExpr> AllModuleExprs(Scope globalScope)
+        {
+            // first do all the named modules
+            foreach (NamedModule mod in globalScope.NamedModules)
+            {
+                yield return mod.ModExpr;
+            }
+
+            // all the test declarations
+            foreach (SafetyTest test in globalScope.SafetyTests)
+            {
+                yield return test.ModExpr;
+            }
+
+            foreach (RefinementTest test in globalScope.RefinementTests)
+            {
+                yield return test.LeftModExpr;
+            }
+
+            foreach (RefinementTest test in globalScope.RefinementTests)
+            {
+                yield return test.RightModExpr;
+            }
+
+            // all the implementations
+            foreach (Implementation impl in globalScope.Implementations)
+            {
+                yield return impl.ModExpr;
+            }
+
         }
 
         private class Propagation<T>

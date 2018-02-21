@@ -218,6 +218,41 @@ namespace Microsoft.Pc.TypeChecker
             return method.Name.Length > 0 ? method.Name : $"at {GetLocation(method.SourceLocation)}";
         }
 
+        public Exception InvalidBindExpr(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid bind operation. {message}");
+        }
+
+        public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent)
+        {
+            return IssueError(location, $"invalid assert operation. event {illegalEvent.Name} in observes set of {monitor.Name} is not in the sends set of the module");
+        }
+
+        public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor)
+        {
+            return IssueError(location, $"invalid assert operation. monitor {monitor.Name} already attached in the module");
+        }
+
+        public Exception InvalidHideEventExpr(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid hide event operation. {message}");
+        }
+
+        public Exception InvalidHideInterfaceExpr(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid hide interface operation. {message}");
+        }
+
+        public Exception InvalidRenameExpr(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid rename operation. {message}");
+        }
+
+        public Exception InvalidCompositionExpr(ParserRuleContext location, string message)
+        {
+            return IssueError(location, $"invalid composition operation. {message}");
+        }
+
         #region Internal book keeping
 
         private readonly ParseTreeProperty<FileInfo> originalFiles;

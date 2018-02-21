@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
@@ -142,12 +143,6 @@ namespace Microsoft.Pc.TypeChecker
             // (COLON type)?
             pEvent.PayloadType = ResolveType(context.type());
 
-            // annotationSet?
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("event annotations");
-            }
-
             // SEMI 
             return pEvent;
         }
@@ -232,27 +227,6 @@ namespace Microsoft.Pc.TypeChecker
             machine.Assume = hasAssume ? cardinality : -1;
             machine.Assert = hasAssert ? cardinality : -1;
 
-            // annotationSet?
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("impl machine annotations");
-            }
-
-            // (COLON idenList)?
-            if (context.idenList() is PParser.IdenListContext interfaces)
-            {
-                foreach (var pInterfaceNameCtx in interfaces._names)
-                {
-                    var pInterfaceName = pInterfaceNameCtx.GetText();
-                    if (!CurrentScope.Lookup(pInterfaceName, out Interface pInterface))
-                    {
-                        throw Handler.MissingDeclaration(pInterfaceNameCtx, "interface", pInterfaceName);
-                    }
-
-                    machine.AddInterface(pInterface);
-                }
-            }
-
             // receivesSends*
             foreach (var receivesSends in context.receivesSends())
             {
@@ -302,6 +276,11 @@ namespace Microsoft.Pc.TypeChecker
             {
                 Visit(context.machineBody());
             }
+
+            // initialize the corresponding interface
+            currentScope.Value.Get(machine.Name, out Interface @interface);
+            @interface.ReceivableEvents = machine.Receives;
+            @interface.PayloadType = machine.PayloadType;
 
             return machine;
         }
@@ -386,11 +365,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
-            // annotationSet?
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("variable annotations");
-            }
 
             // COLON type
             var variableType = ResolveType(context.type());
@@ -455,12 +429,6 @@ namespace Microsoft.Pc.TypeChecker
                                     : context.temperature.Text.Equals("HOT")
                                         ? StateTemperature.HOT
                                         : StateTemperature.COLD;
-
-            // annotationSet?
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("state annotations");
-            }
 
             // LBRACE stateBodyItem* RBRACE ;
             foreach (var stateBodyItemContext in context.stateBodyItem())
@@ -558,12 +526,7 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         public override object VisitStateDefer(PParser.StateDeferContext context)
-        {
-            // annotationSet? SEMI
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("event defer annotations");
-            }
+        { 
 
             if (CurrentMachine.IsSpec)
             {
@@ -587,11 +550,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override object VisitStateIgnore(PParser.StateIgnoreContext context)
         {
-            // annotationSet? SEMI
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("event ignore annotations");
-            }
 
             // IGNORE nonDefaultEventList
             var actions = new List<IStateAction>();
@@ -608,11 +566,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override object VisitOnEventDoAction(PParser.OnEventDoActionContext context)
         {
-            // annotationSet?
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("state action annotations");
-            }
 
             Function fun;
             if (context.anonEventHandler() is PParser.AnonEventHandlerContext anonEventHandler)
@@ -649,11 +602,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override object VisitOnEventPushState(PParser.OnEventPushStateContext context)
         {
-            //annotationSet? 
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("push state annotations");
-            }
 
             // PUSH stateName 
             var targetState = FindState(context.stateName());
@@ -674,12 +622,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override object VisitOnEventGotoState(PParser.OnEventGotoStateContext context)
         {
-            // annotationSet?
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("state transition annotations");
-            }
-
             Function transitionFunction;
             if (context.funName != null)
             {
@@ -738,12 +680,6 @@ namespace Microsoft.Pc.TypeChecker
             // (COLON type)?
             fun.Signature.ReturnType = ResolveType(context.type());
 
-            // annotationSet?
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("function annotations");
-            }
-
             // functionBody
             // handled in later phase.
             return fun;
@@ -762,12 +698,6 @@ namespace Microsoft.Pc.TypeChecker
 
             // (COLON type)?
             fun.Signature.ReturnType = ResolveType(context.type());
-
-            // annotationSet?
-            if (context.annotationSet() != null)
-            {
-                throw new NotImplementedException("function annotations");
-            }
 
             // SEMI
             // no function body

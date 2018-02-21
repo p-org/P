@@ -19,7 +19,7 @@
     <CpCmd>cp</CpCmd>
     <GPPGCmd>mono $(GPToolsPath)/GPPG/gppg45.exe</GPPGCmd>
   </PropertyGroup>
-  
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="1.1.0" />
@@ -40,10 +40,6 @@
       <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
       <Name>CParser</Name>
     </ProjectReference>
-    <ProjectReference Include="..\..\Parsers\ZingParser\ZingParser.csproj">
-      <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
-      <Name>ZingParser</Name>
-    </ProjectReference>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj">
       <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
       <Name>CompilerCore</Name>
@@ -58,11 +54,6 @@
       <CustomToolNamespace>Microsoft.Pc.Domains</CustomToolNamespace>
       <LastGenOutput>P.4ml.g.cs</LastGenOutput>
     </EmbeddedResource>
-    <EmbeddedResource Include="Domains\Zing.4ml" />
-    <EmbeddedResource Include="Zing\Prt.zing" />
-    <EmbeddedResource Include="Zing\PrtTypes.zing" />
-    <EmbeddedResource Include="Zing\PrtValues.zing" />
-    <EmbeddedResource Include="Zing\Minimal.zing" />
     <EmbeddedResource Include="Domains\PLink.4ml">
       <Generator>FormulaCodeGenerator</Generator>
       <CustomToolNamespace>Microsoft.Pc.Domains</CustomToolNamespace>

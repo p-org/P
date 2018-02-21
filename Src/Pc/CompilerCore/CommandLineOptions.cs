@@ -111,13 +111,10 @@ namespace Microsoft.Pc
                             {
                                 case null:
                                     Console.WriteLine(
-                                        "Missing generation argument, expecting generate:[C,C#,P#,P3,Zing]");
+                                        "Missing generation argument, expecting generate:[C,C#,P#,P3]");
                                     return false;
                                 case "C":
                                     options.compilerOutput = CompilerOutput.C;
-                                    break;
-                                case "Zing":
-                                    options.compilerOutput = CompilerOutput.Zing;
                                     break;
                                 case "C#":
                                     options.compilerOutput = CompilerOutput.CSharp;
@@ -130,7 +127,7 @@ namespace Microsoft.Pc
                                     break;
                                 default:
                                     Console.WriteLine(
-                                        "Unrecognized generate option '{0}', expecting C, C#, P#, P3, or Zing",
+                                        "Unrecognized generate option '{0}', expecting C, C#, P#, or P3",
                                         colonArg);
                                     return false;
                             }
@@ -170,12 +167,6 @@ namespace Microsoft.Pc
                 {
                     commandLineFileNames.Add(arg);
                 }
-            }
-
-            if (options.compilerOutput == CompilerOutput.Zing && dependencyFileNames.Count > 0)
-            {
-                Console.WriteLine("Compilation to Zing does not support dependencies");
-                return false;
             }
 
             var fileCheck = true;
@@ -332,11 +323,9 @@ namespace Microsoft.Pc
             Console.WriteLine("/outputDir:path         -- where to write the generated files");
             Console.WriteLine("/shared                 -- use the compiler service");
             Console.WriteLine("/profile                -- print detailed timing information");
-            Console.WriteLine("/generate:[C,C#,Zing]");
+            Console.WriteLine("/generate:[C,C#]");
             Console.WriteLine("    C   : generate C without model functions");
             Console.WriteLine("    C#  : generate C# with model functions");
-            Console.WriteLine("    Zing: generate Zing with model functions");
-            Console.WriteLine("/liveness[:sampling]    -- controls compilation for Zinger");
             Console.WriteLine("/shortFileNames         -- print only file names in error messages");
             Console.WriteLine("/dumpFormulaModel       -- write the entire formula model to a file named 'output.4ml'");
             Console.WriteLine(" ------------ Linker Phase ------------");

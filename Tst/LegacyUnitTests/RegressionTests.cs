@@ -72,9 +72,7 @@ namespace LegacyUnitTests
                 outputDir = workDirectory.FullName,
                 unitName = linkFileName,
                 //liveness = LivenessOption.None,
-                liveness = outputLanguage == CompilerOutput.Zing && config.Arguments.Contains("/liveness")
-                    ? LivenessOption.Standard
-                    : LivenessOption.None,
+                liveness = LivenessOption.None,
                 compilerOutput = outputLanguage
             };
 
@@ -299,65 +297,6 @@ namespace LegacyUnitTests
             } 
         }
 
-        private static void TestZing(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
-        {
-            // Find Zing tool
-            string zingFilePath = Path.Combine(
-                Constants.SolutionDirectory,
-                "Bld",
-                "Drops",
-                Constants.BuildConfiguration,
-                Constants.Platform,
-                "Binaries",
-                "zinger.exe");
-            if (!File.Exists(zingFilePath))
-            {
-                throw new Exception("Could not find zinger.exe");
-            }
-            // Find DLL input to Zing
-            string zingDllName = (from fileName in workDirectory.EnumerateFiles()
-                                  where fileName.Extension == ".dll" && !fileName.Name.Contains("linker")
-                                  select fileName.FullName).FirstOrDefault();
-            if (zingDllName == null)
-            {
-                throw new Exception("Could not find Zinger input.");
-            }
-
-            // Run Zing tool
-            var arguments = new List<string>(config.Arguments) {zingDllName};
-            string stdout, stderr;
-            int exitCode = ProcessHelper.RunWithOutput(zingFilePath, activeDirectory, arguments, out stdout, out stderr);
-            tmpWriter.Write(stdout);
-            tmpWriter.Write(stderr);
-            tmpWriter.WriteLine($"EXIT: {exitCode}");
-
-            // Append includes
-            foreach (string include in config.Includes)
-            {
-                tmpWriter.WriteLine();
-                tmpWriter.WriteLine("=================================");
-                tmpWriter.WriteLine(include);
-                tmpWriter.WriteLine("=================================");
-
-                try
-                {
-                    using (var sr = new StreamReader(Path.Combine(activeDirectory, include)))
-                    {
-                        while (!sr.EndOfStream)
-                        {
-                            tmpWriter.WriteLine(sr.ReadLine());
-                        }
-                    }
-                }
-                catch (FileNotFoundException)
-                {
-                    if (!include.EndsWith("trace"))
-                    {
-                        throw;
-                    }
-                }
-            }
-        }
 
         private void TestPrt(TestConfig config, TextWriter tmpWriter, DirectoryInfo workDirectory, string activeDirectory)
         {
@@ -532,24 +471,6 @@ namespace LegacyUnitTests
                                 {
                                     WriteHeader(tmpWriter);
                                     TestPt(config, tmpWriter, workDirectory, activeDirectory, origTestDir);
-                                    CheckResult(activeDirectory, origTestDir, testType, sb, true);
-                                }
-                                else
-                                {
-                                    throw new Exception("TestPc failed");
-                                }
-                            }
-                            break;
-                        case TestType.Zing:
-                            if (Constants.RunZing || Constants.RunAll)
-                            {
-                                WriteHeader(tmpWriter);
-                                pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.Zing);
-                                //CheckResult(activeDirectory, origTestDir, testType, sb);
-                                if (pcResult == 0)
-                                {
-                                    WriteHeader(tmpWriter);
-                                    TestZing(config, tmpWriter, workDirectory, activeDirectory);
                                     CheckResult(activeDirectory, origTestDir, testType, sb, true);
                                 }
                                 else

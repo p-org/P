@@ -23,6 +23,7 @@ extern "C"{
 
 
 	/** Structure for representing a standard GUID */
+	#pragma pack()
 	typedef struct PRT_GUID
 	{
 		PRT_UINT32 data1;   /**< 0 First data field (32 bits)  */

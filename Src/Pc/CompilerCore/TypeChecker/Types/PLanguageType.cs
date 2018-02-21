@@ -1,3 +1,6 @@
+using System.Collections.Generic;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
+
 namespace Microsoft.Pc.TypeChecker.Types
 {
     public abstract class PLanguageType
@@ -32,5 +35,10 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             return type.Canonicalize().TypeKind.Equals(kind);
         }
+
+        /// <summary>
+        /// represents the permissions embedded in a type
+        /// </summary>
+        public abstract IReadOnlyList<PEvent> AllowedPermissions { get; }
     }
 }

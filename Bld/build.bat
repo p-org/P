@@ -97,36 +97,6 @@ goto :nosync
 
 :nosync
 
-cd ext\zing
-
-echo msbuild  Zing.sln /p:Platform=%PBuildPlatform% /p:Configuration=Release
-msbuild  Zing.sln /p:Platform=%PBuildPlatform% /p:Configuration=Release
-if ERRORLEVEL 1 goto :exit
-
-set BinaryDrop=..\..\Bld\Drops\%PBuildConfiguration%\%PBuildPlatform%\Binaries
-if NOT exist %BinaryDrop% mkdir %BinaryDrop%
-
-for %%i in (zc\bin\%PBuildPlatform%\Release\zc.exe
-             ZingExplorer\bin\%PBuildPlatform%\Release\ZingExplorer.dll
-             Zinger\bin\%PBuildPlatform%\Release\Zinger.exe
-             Microsoft.Zing\bin\%PBuildPlatform%\Release\Microsoft.Zing.dll
-             Microsoft.Zing.Runtime\bin\%PBuildPlatform%\Release\Microsoft.Zing.Runtime.dll
-             Microsoft.Zing\bin\%PBuildPlatform%\Release\Microsoft.Comega.dll
-             Microsoft.Zing\bin\%PBuildPlatform%\Release\Microsoft.Comega.Runtime.dll
-             Resources\external\CCI\System.Compiler.dll
-             Resources\external\CCI\System.Compiler.Framework.dll
-             Resources\external\CCI\System.Compiler.Runtime.dll
-             DelayingSchedulers\CustomDelayingScheduler\bin\%PBuildPlatform%\Release\CustomDelayingScheduler.dll
-             DelayingSchedulers\RandomDelayingScheduler\bin\%PBuildPlatform%\Release\RandomDelayingScheduler.dll
-             DelayingSchedulers\RoundRobinDelayingScheduler\bin\%PBuildPlatform%\Release\RoundRobinDelayingScheduler.dll
-             DelayingSchedulers\RunToCompletionDelayingScheduler\bin\%PBuildPlatform%\Release\RunToCompletionDelayingScheduler.dll
-	     DelayingSchedulers\SealingScheduler\bin\%PBuildPlatform%\Release\SealingScheduler.dll) do (
-             
-    copy %%i %BinaryDrop%
-)
-   
-cd ..\..
-
 if "%NoClean%"=="true" goto :build
 echo msbuild P.sln /p:Platform=%PBuildPlatform% /p:Configuration=%PBuildConfiguration%  /t:Clean
 msbuild  P.sln /p:Platform=%PBuildPlatform% /p:Configuration=%PBuildConfiguration% /t:Clean

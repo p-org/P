@@ -26,6 +26,10 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, State> states = new Dictionary<string, State>();
         private readonly IDictionary<string, TypeDef> typedefs = new Dictionary<string, TypeDef>();
         private readonly IDictionary<string, Variable> variables = new Dictionary<string, Variable>();
+        private readonly IDictionary<string, Implementation> implementations = new Dictionary<string, Implementation>();
+        private readonly IDictionary<string, SafetyTest> safetyTests = new Dictionary<string, SafetyTest>();
+        private readonly IDictionary<string, RefinementTest> refinementTests = new Dictionary<string, RefinementTest>();
+        private readonly IDictionary<string, NamedModule> namedModules = new Dictionary<string, NamedModule>();
 
         public Scope(ITranslationErrorHandler handler) : this(handler, null) { }
 
@@ -54,7 +58,12 @@ namespace Microsoft.Pc.TypeChecker
                      .Concat(StateGroups)
                      .Concat(States)
                      .Concat(Typedefs)
-                     .Concat(Variables);
+                     .Concat(Variables)
+                     .Concat(Implementations)
+                     .Concat(SafetyTests)
+                     .Concat(RefinementTests)
+                     .Concat(NamedModules)
+                    ;
 
         public IEnumerable<EnumElem> EnumElems => enumElems.Values;
         public IEnumerable<PEnum> Enums => enums.Values;
@@ -67,6 +76,10 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<State> States => states.Values;
         public IEnumerable<TypeDef> Typedefs => typedefs.Values;
         public IEnumerable<Variable> Variables => variables.Values;
+        public IEnumerable<SafetyTest> SafetyTests => safetyTests.Values;
+        public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
+        public IEnumerable<Implementation> Implementations => implementations.Values;
+        public IEnumerable<NamedModule> NamedModules => namedModules.Values;
 
         #region Overloaded getters
 
@@ -92,6 +105,13 @@ namespace Microsoft.Pc.TypeChecker
 
         public bool Get(string name, out Variable tree) { return variables.TryGetValue(name, out tree); }
 
+        public bool Get(string name, out SafetyTest tree) { return safetyTests.TryGetValue(name, out tree); }
+
+        public bool Get(string name, out RefinementTest tree) { return refinementTests.TryGetValue(name, out tree); }
+
+        public bool Get(string name, out Implementation tree) { return implementations.TryGetValue(name, out tree); }
+
+        public bool Get(string name, out NamedModule tree) { return namedModules.TryGetValue(name, out tree); }
         #endregion
 
         #region Overloaded lookup methods
@@ -283,6 +303,73 @@ namespace Microsoft.Pc.TypeChecker
             return false;
         }
 
+        public bool Lookup(string name, out SafetyTest tree)
+        {
+            Scope current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        public bool Lookup(string name, out RefinementTest tree)
+        {
+            Scope current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        public bool Lookup(string name, out Implementation tree)
+        {
+            Scope current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
+
+        public bool Lookup(string name, out NamedModule tree)
+        {
+            Scope current = this;
+            while (current != null)
+            {
+                if (current.Get(name, out tree))
+                {
+                    return true;
+                }
+
+                current = current.Parent;
+            }
+
+            tree = null;
+            return false;
+        }
         #endregion
 
         #region Conflict-checking putters
@@ -335,7 +422,7 @@ namespace Microsoft.Pc.TypeChecker
         public NamedEventSet Put(string name, PParser.EventSetDeclContext tree)
         {
             var eventSet = new NamedEventSet(name, tree);
-            CheckConflicts(eventSet, Namespace(eventSets));
+            CheckConflicts(eventSet, Namespace(eventSets), Namespace(interfaces));
             eventSets.Add(name, eventSet);
             return eventSet;
         }
@@ -358,6 +445,7 @@ namespace Microsoft.Pc.TypeChecker
             var machine = new Machine(name, tree);
             CheckConflicts(machine, Namespace(machines), Namespace(interfaces), Namespace(enums), Namespace(typedefs));
             machines.Add(name, machine);
+            interfaces.Add(name, new Interface(name, tree));
             return machine;
         }
         
@@ -422,6 +510,46 @@ namespace Microsoft.Pc.TypeChecker
             return state;
         }
 
+        public NamedModule Put(string name, PParser.NamedModuleDeclContext tree)
+        {
+            var namedModule = new NamedModule(tree, name);
+            CheckConflicts(namedModule, Namespace(namedModules));
+            namedModules.Add(name, namedModule);
+            return namedModule;
+        }
+
+        public Implementation Put(string name, PParser.ImplementationDeclContext tree)
+        {
+            var impl = new Implementation(tree, name);
+            CheckConflicts(impl, 
+                Namespace(implementations), 
+                Namespace(safetyTests), 
+                Namespace(refinementTests));
+            implementations.Add(name, impl);
+            return impl;
+        }
+
+        public SafetyTest Put(string name, PParser.SafetyTestDeclContext tree)
+        {
+            var safetyTest = new SafetyTest(tree, name);
+            CheckConflicts(safetyTest,
+                Namespace(implementations),
+                Namespace(safetyTests), 
+                Namespace(refinementTests));
+            safetyTests.Add(name, safetyTest);
+            return safetyTest;
+        }
+
+        public RefinementTest Put(string name, PParser.RefinementTestDeclContext tree)
+        {
+            var refineTest = new RefinementTest(tree, name);
+            CheckConflicts(refineTest,
+                Namespace(implementations),
+                Namespace(safetyTests), 
+                Namespace(refinementTests));
+            refinementTests.Add(name, refineTest);
+            return refineTest;
+        }
         #endregion
 
         #region Conflict API
@@ -448,6 +576,19 @@ namespace Microsoft.Pc.TypeChecker
             };
         }
 
+        #endregion
+
+        #region unique name generator
+        private IDictionary<string, int> namesCounter = new Dictionary<string, int>();
+
+        private string GetUniqueName(string name)
+        {
+            if (namesCounter.ContainsKey(name))
+                namesCounter[name] += 1;
+            else
+                namesCounter.Add(name, 1);
+            return string.Concat(name, namesCounter[name]);
+        }
         #endregion
     }
 }

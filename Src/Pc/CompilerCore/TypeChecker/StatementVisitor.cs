@@ -256,21 +256,15 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitCtorStmt(PParser.CtorStmtContext context)
         {
-            string machineName = context.iden().GetText();
-            if (!table.Lookup(machineName, out Machine targetMachine))
+            string interfaceName = context.iden().GetText();
+            if (!table.Lookup(interfaceName, out Interface targetInterface))
             {
-                throw handler.MissingDeclaration(context.iden(), "machine", machineName);
+                throw handler.MissingDeclaration(context.iden(), "interface", interfaceName);
             }
-
-            if (targetMachine.IsSpec)
-            {
-                throw handler.CreatedSpecMachine(context, targetMachine);
-            }
-            
-            IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
-            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, arguments);
-
-            return new CtorStmt(context, targetMachine, arguments);
+            // TODO: don't add implicit interfaces for spec machines.
+            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetInterface.PayloadType, args);
+            return new CtorStmt(context, targetInterface, args);
         }
 
         public override IPStmt VisitFunCallStmt(PParser.FunCallStmtContext context)

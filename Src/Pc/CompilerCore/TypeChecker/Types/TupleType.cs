@@ -1,5 +1,7 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
 {
@@ -10,6 +12,11 @@ namespace Microsoft.Pc.TypeChecker.Types
             Types = new List<PLanguageType>(types);
             OriginalRepresentation = $"({string.Join(",", Types.Select(type => type.OriginalRepresentation))})";
             CanonicalRepresentation = $"({string.Join(",", Types.Select(type => type.CanonicalRepresentation))})";
+
+            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
+            {
+                return Types.SelectMany(t => t.AllowedPermissions).ToList();
+            });
         }
 
         public IReadOnlyList<PLanguageType> Types { get; }
@@ -31,5 +38,8 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             return new TupleType(Types.Select(t => t.Canonicalize()).ToArray());
         }
+
+        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
     }
 }

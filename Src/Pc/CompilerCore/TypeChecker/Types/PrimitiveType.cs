@@ -1,3 +1,8 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
+
 namespace Microsoft.Pc.TypeChecker.Types
 {
     public class PrimitiveType : PLanguageType
@@ -15,6 +20,10 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             OriginalRepresentation = name;
             CanonicalRepresentation = name;
+            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
+            {
+                return new List<PEvent>();
+            });
         }
 
         public override string OriginalRepresentation { get; }
@@ -45,5 +54,8 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             return this;
         }
+
+        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
     }
 }

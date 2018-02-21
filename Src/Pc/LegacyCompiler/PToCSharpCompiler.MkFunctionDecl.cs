@@ -73,7 +73,7 @@ namespace Microsoft.Pc
                 string funName = ((Id) ft.Function).Name;
                 if (funName == PData.Con_New.Node.Name)
                 {
-                    Debug.Assert(false, "New expr in ZingUnfold");
+                    Debug.Assert(false, "New expr in Unfold");
                 }
                 else if (funName == PData.Con_Print.Node.Name)
                 {
@@ -432,7 +432,6 @@ namespace Microsoft.Pc
 
                 if (funName == PData.Con_IdList.Node.Name)
                 {
-                    //return ZingData.Cnst_Nil;
                     return SyntaxFactory.IdentifierName("NIL");
                 }
 

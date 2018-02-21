@@ -22,7 +22,7 @@ options { tokenVocab=PLexer; }
 // tokens or productions of the same type into a list (list+=part). The `type`
 // production below uses this feature, too.
 
-program : (topDecl | annotationSet)* EOF ;
+program : (topDecl)* EOF ;
 
 iden : Iden ;
 int  : IntLiteral ;
@@ -55,14 +55,11 @@ topDecl : typeDefDecl
         | implMachineDecl
         | specMachineDecl
         | funDecl
+		| namedModuleDecl
+		| testDecl
+		| implementationDecl
         ;
 
-annotationSet : LBRACK (annotations+=annotation (COMMA annotations+=annotation)*)? RBRACK;
-annotation : name=iden ASSIGN value=NullLiteral
-           | name=iden ASSIGN value=BoolLiteral
-           | name=iden ASSIGN value=IntLiteral
-           | name=iden ASSIGN value=Iden
-           ;
 
 typeDefDecl : TYPE name=iden SEMI # ForeignTypeDef
             | TYPE name=iden ASSIGN type SEMI # PTypeDef
@@ -76,7 +73,7 @@ enumElem : name=iden ;
 numberedEnumElemList : numberedEnumElem (COMMA numberedEnumElem)* ;
 numberedEnumElem : name=iden ASSIGN value=IntLiteral ;
 
-eventDecl : EVENT name=iden cardinality? (COLON type)? annotationSet? SEMI;
+eventDecl : EVENT name=iden cardinality? (COLON type)? SEMI;
 cardinality : ASSERT IntLiteral
             | ASSUME IntLiteral
             ;
@@ -87,7 +84,7 @@ eventSetLiteral : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
 interfaceDecl : INTERFACE name=iden LPAREN type? RPAREN (RECEIVES nonDefaultEventList?) SEMI ;
 
 // has scope
-implMachineDecl : MACHINE name=iden cardinality? annotationSet? (COLON idenList)? receivesSends* machineBody ;
+implMachineDecl : MACHINE name=iden cardinality? receivesSends* machineBody ;
 idenList : names+=iden (COMMA names+=iden)* ;
 
 receivesSends : RECEIVES eventSetLiteral? SEMI # MachineReceive
@@ -103,29 +100,29 @@ machineEntry : varDecl
              | stateDecl
              ;
 
-varDecl : VAR idenList COLON type annotationSet? SEMI ;
+varDecl : VAR idenList COLON type SEMI ;
 
-funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? SEMI # ForeignFunDecl
-        | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? annotationSet? functionBody # PFunDecl
+funDecl : FUN name=iden LPAREN funParamList? RPAREN (COLON type)? SEMI # ForeignFunDecl
+        | FUN name=iden LPAREN funParamList? RPAREN (COLON type)? functionBody # PFunDecl
         ;
 
 group : GROUP name=iden LBRACE groupItem* RBRACE ;
 groupItem : stateDecl | group ;
 
-stateDecl : START? temperature=(HOT | COLD)? STATE name=iden annotationSet? LBRACE stateBodyItem* RBRACE ;
+stateDecl : START? temperature=(HOT | COLD)? STATE name=iden LBRACE stateBodyItem* RBRACE ;
 
 stateBodyItem : ENTRY anonEventHandler       # StateEntry
               | ENTRY funName=iden SEMI      # StateEntry
               | EXIT noParamAnonEventHandler # StateExit
               | EXIT funName=iden SEMI       # StateExit
-              | DEFER nonDefaultEventList annotationSet? SEMI    # StateDefer
-              | IGNORE nonDefaultEventList annotationSet? SEMI   # StateIgnore
-              | ON eventList DO funName=iden annotationSet? SEMI # OnEventDoAction
-              | ON eventList DO annotationSet? anonEventHandler  # OnEventDoAction
-              | ON eventList PUSH stateName annotationSet? SEMI  # OnEventPushState
-              | ON eventList GOTO stateName annotationSet? SEMI  # OnEventGotoState
-              | ON eventList GOTO stateName annotationSet? WITH anonEventHandler  # OnEventGotoState
-              | ON eventList GOTO stateName annotationSet? WITH funName=iden SEMI # OnEventGotoState
+              | DEFER nonDefaultEventList SEMI    # StateDefer
+              | IGNORE nonDefaultEventList SEMI   # StateIgnore
+              | ON eventList DO funName=iden SEMI # OnEventDoAction
+              | ON eventList DO anonEventHandler  # OnEventDoAction
+              | ON eventList PUSH stateName SEMI  # OnEventPushState
+              | ON eventList GOTO stateName SEMI  # OnEventGotoState
+              | ON eventList GOTO stateName WITH anonEventHandler  # OnEventGotoState
+              | ON eventList GOTO stateName WITH funName=iden SEMI # OnEventGotoState
               ;
 
 nonDefaultEventList : events+=nonDefaultEvent (COMMA events+=nonDefaultEvent)* ;
@@ -180,7 +177,7 @@ expr : primitive                                      # PrimitiveExpr
      | fun=VALUES LPAREN expr RPAREN                  # KeywordExpr
      | fun=SIZEOF LPAREN expr RPAREN                  # KeywordExpr
      | fun=DEFAULT LPAREN type RPAREN                 # KeywordExpr
-     | NEW machineName=iden LPAREN rvalueList? RPAREN # CtorExpr
+     | NEW interfaceName=iden LPAREN rvalueList? RPAREN # CtorExpr
      | fun=iden LPAREN rvalueList? RPAREN             # FunCallExpr
      | op=(SUB | LNOT) expr                           # UnaryExpr
      | lhs=expr op=(MUL | DIV) rhs=expr               # BinExpr
@@ -219,3 +216,28 @@ rvalueList : rvalue (COMMA rvalue)* ;
 rvalue : iden linear=(SWAP | MOVE)
        | expr
        ;
+
+
+// module system related
+
+modExpr	: LBRACE bindslist+=bindExpr (COMMA bindslist+=bindExpr)* RBRACE			# PrimitiveModuleExpr
+		| iden																		# NamedModule
+		| LPAREN op=COMPOSE mexprs+=modExpr (COMMA mexprs+=modExpr)+ RPAREN			# ComposeModuleExpr
+		| LPAREN op=UNION   mexprs+=modExpr (COMMA  mexprs+=modExpr)+ RPAREN		# UnionModuleExpr
+		| LPAREN op=HIDEE  nonDefaultEventList IN modExpr RPAREN					# HideEventsModuleExpr
+		| LPAREN op=HIDEI	idenList IN modExpr RPAREN								# HideInterfacesModuleExpr
+		| LPAREN op=ASSERT  idenList IN modExpr RPAREN								# AssertModuleExpr
+		| LPAREN op=RENAME  oldName=iden TO newName=iden IN modExpr RPAREN			# RenameModuleExpr
+		;
+
+
+bindExpr : (mName=iden | mName=iden RARROW iName=iden) ;
+
+namedModuleDecl : MODULE name=iden ASSIGN modExpr SEMI	;
+
+testDecl : TEST testName=iden COLON modExpr SEMI 					# SafetyTestDecl
+		 | TEST testName=iden COLON modExpr REFINES modExpr SEMI	# RefinementTestDecl
+		 ;
+
+implementationDecl : IMPLEMENTATION implName= iden COLON modExpr SEMI
+				   ; 

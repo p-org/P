@@ -1,6 +1,5 @@
-<?xml version="1.0" encoding="utf-8"?>
-<Project DefaultTargets="Build" ToolsVersion="12.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), P.sln))\Bld\Targets\p.targets" />
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -20,53 +19,65 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\API\Prt.h" />
-    <ClInclude Include="..\API\PrtConfig.h" />
-    <ClInclude Include="..\API\PrtProgram.h" />
-    <ClInclude Include="..\API\PrtTypes.h" />
-    <ClInclude Include="..\API\PrtValues.h" />
-    <ClInclude Include="..\API\PrtUser.h" />
-    <ClInclude Include="..\Core\PrtExecution.h" />
-    <ClInclude Include="PrtWinUserConfig.h" />
+    <ClInclude Include="..\API\Prt.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\API\PrtConfig.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\API\PrtProgram.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\API\PrtTypes.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\API\PrtValues.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="..\Core\PrtExecution.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
+    <ClInclude Include="PrtWinUserConfig.h">
+      <CopyToHeaders>True</CopyToHeaders>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\Core\Prt.c" />
     <ClCompile Include="..\Core\PrtExecution.c" />
     <ClCompile Include="..\Core\PrtTypes.c" />
     <ClCompile Include="..\Core\PrtValues.c" />
-    <ClCompile Include="PrtUser.c" />
     <ClCompile Include="PrtWinUserConfig.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F8C72C0E-450C-4AE1-9885-31B8565C1D63}</ProjectGuid>
     <RootNamespace>PrtWinUser</RootNamespace>
+    <WindowsTargetPlatformVersion>$(WindowsSDKVer)</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
-    <CharacterSet>NotSet</CharacterSet>
+    <PlatformToolset>v141</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
-    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v120</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>NotSet</CharacterSet>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -85,45 +96,57 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
+    <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
+    <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
+    <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <OutDir>$(SolutionDir)$(Configuration)\$(Platform)\</OutDir>
-    <IntDir>$(SolutionDir)$(Configuration)\$(Platform)\</IntDir>
+    <OutDir>$(PSdkFolder)\Lib\</OutDir>
+    <IntDir>$(ProjectDir)\InterWin\$(Configuration)\$(Platform)\</IntDir>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_API_IMPL;PRT_PLAT_WINUSER;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../IDL/;../API/;../WinUser/;../Core/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;PRT_USE_THREADPOOL;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
       <CompileAs>CompileAsC</CompileAs>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_API_IMPL;PRT_PLAT_WINUSER;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../IDL/;../API/;../WinUser/;../Core/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -132,8 +155,8 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_API_IMPL;PRT_PLAT_WINUSER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../IDL/;../API/;../WinUser/;../Core/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -144,12 +167,12 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
-      <Optimization>MaxSpeed</Optimization>
+      <Optimization>Disabled</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>PRT_API_IMPL;PRT_PLAT_WINUSER;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>../IDL/;../API/;../WinUser/;../Core/</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>../Prt/WinUser/;../Prt/Core/;../Prt/API/;$(PSdkFolder)/Headers/</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -158,6 +181,7 @@
     </Link>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), P.sln))\Bld\Targets\p.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

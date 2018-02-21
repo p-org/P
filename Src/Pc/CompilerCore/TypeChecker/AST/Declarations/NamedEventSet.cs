@@ -12,8 +12,12 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
     {
         IEnumerable<PEvent> Events { get; }
         bool AddEvent(PEvent pEvent);
+        void AddEvents(IEnumerable<PEvent> evts);
         bool Contains(PEvent pEvent);
         bool IsSame(IEventSet eventSet);
+        bool IsSubsetEqOf(IEventSet eventSet);
+        bool IsSubsetEqOf(IEnumerable<PEvent> eventSet);
+        bool Intersects(IEnumerable<PEvent> eventSet);
     }
 
     public class EventSet : IEventSet
@@ -30,6 +34,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             return events.Add(pEvent);
         }
 
+        public void AddEvents(IEnumerable<PEvent> evts)
+        {
+            foreach (PEvent pEvent in evts)
+            {
+                AddEvent(pEvent);
+            }
+        }
+
         public bool Contains(PEvent pEvent)
         {
             return events.Contains(pEvent);
@@ -38,6 +50,21 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool IsSame(IEventSet eventSet)
         {
             return events.SetEquals(eventSet.Events);
+        }
+
+        public bool IsSubsetEqOf(IEventSet eventSet)
+        {
+            return events.IsSubsetOf(eventSet.Events);
+        }
+
+        public bool IsSubsetEqOf(IEnumerable<PEvent> eventsList)
+        {
+            return events.IsSubsetOf(eventsList);
+        }
+
+        public bool Intersects(IEnumerable<PEvent> eventSet)
+        {
+            return events.Overlaps(eventSet);
         }
     }
 
@@ -68,6 +95,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             }
         }
 
+        public void AddEvents(IEnumerable<PEvent> evts)
+        {
+            foreach (PEvent pEvent in evts)
+            {
+                AddEvent(pEvent);
+            }
+        }
+
         public bool Contains(PEvent pEvent)
         {
             return true;
@@ -76,6 +111,21 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool IsSame(IEventSet eventSet)
         {
             return this == Instance && eventSet == this;
+        }
+
+        public bool IsSubsetEqOf(IEventSet eventSet)
+        {
+            return events.IsSubsetOf(eventSet.Events);
+        }
+
+        public bool IsSubsetEqOf(IEnumerable<PEvent> eventsList)
+        {
+            return events.IsSubsetOf(eventsList);
+        }
+
+        public bool Intersects(IEnumerable<PEvent> eventSet)
+        {
+            return events.Overlaps(eventSet);
         }
     }
 
@@ -118,6 +168,21 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             {
                 AddEvent(pEvent);
             }
+        }
+
+        public bool IsSubsetEqOf(IEventSet eventSet)
+        {
+            return events.IsSubsetEqOf(eventSet);
+        }
+
+        public bool IsSubsetEqOf(IEnumerable<PEvent> eventsList)
+        {
+            return events.IsSubsetEqOf(eventsList);
+        }
+
+        public bool Intersects(IEnumerable<PEvent> eventSet)
+        {
+            return events.Intersects(eventSet);
         }
     }
 }

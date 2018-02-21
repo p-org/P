@@ -35,20 +35,5 @@ namespace P.Tester
             }
         }
 
-        public static void ZingerTimeOut(object obj)
-        {
-            PTesterUtil.PrintMessage("");
-            PTesterUtil.PrintMessage(String.Format("--Zinger Timed Out --"));
-            PTesterUtil.PrintMessage(String.Format("--Final Stats --"));
-            //ZingerStats.PrintPeriodicStats();
-            //Environment.Exit((int)ZingerResult.ZingerTimeOut);
-        }
-
-        //private static System.Threading.Timer TimeOutTimer;
-        public static void StartTimeOut()
-        {
-            TimerCallback tcb = ZingerTimeOut;
-            //TimeOutTimer = new Timer(tcb, null, ZingerConfiguration.Timeout * 1000, ZingerConfiguration.Timeout * 1000);
-        }
     }
 }

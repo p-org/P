@@ -55,5 +55,14 @@ namespace Microsoft.Pc.TypeChecker
         Exception SwappedField(SwapAssignStmt swapAssignStmt, Variable variable);
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
         Exception CreatedSpecMachine(ParserRuleContext location, Machine machine);
+
+        // module system related
+        Exception InvalidBindExpr(ParserRuleContext location, string message);
+        Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent);
+        Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor);
+        Exception InvalidHideEventExpr(ParserRuleContext location, string message);
+        Exception InvalidHideInterfaceExpr(ParserRuleContext location, string message);
+        Exception InvalidRenameExpr(ParserRuleContext location, string message);
+        Exception InvalidCompositionExpr(ParserRuleContext location, string message);
     }
 }

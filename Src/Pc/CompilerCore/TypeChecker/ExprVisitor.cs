@@ -137,10 +137,10 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPExpr VisitCtorExpr(PParser.CtorExprContext context)
         {
-            string machineName = context.machineName.GetText();
-            if (!table.Lookup(machineName, out Machine targetMachine))
+            string interfaceName = context.interfaceName.GetText();
+            if (!table.Lookup(interfaceName, out Interface @interface))
             {
-                throw handler.MissingDeclaration(context.machineName, "machine", machineName);
+                throw handler.MissingDeclaration(context.interfaceName, "interface", interfaceName);
             }
 
             if (method.Owner?.IsSpec == true)
@@ -149,14 +149,9 @@ namespace Microsoft.Pc.TypeChecker
                     context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
             }
 
-            if (targetMachine.IsSpec)
-            {
-                throw handler.CreatedSpecMachine(context, targetMachine);
-            }
-
             IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
-            TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetMachine.PayloadType, arguments);
-            return new CtorExpr(context, targetMachine, arguments);
+            TypeCheckingUtils.ValidatePayloadTypes(handler, context, @interface.PayloadType, arguments);
+            return new CtorExpr(context, @interface, arguments);
         }
 
         public override IPExpr VisitFunCallExpr(PParser.FunCallExprContext context)

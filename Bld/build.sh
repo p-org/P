@@ -28,7 +28,7 @@ echo ============= Building P SDK ===============
 Configuration=Release
 Platform=x86
 if [ $# -ne 2 ]; then
-    echo "No configuration supplied. Falling back on default: Release,x64"
+    echo "No configuration supplied. Falling back on default: Release,x86"
 else
     Configuration=$1
     Configuration="$(tr '[:lower:]' '[:upper:]' <<< ${Configuration:0:1})${Configuration:1}"

@@ -53,9 +53,6 @@ namespace PBuild
                                 case "c#":
                                     Options.Output = CompilerOutput.CSharp;
                                     break;
-                                case "zing":
-                                    Options.Output = CompilerOutput.Zing;
-                                    break;
                                 default:
                                     WriteError("### Unrecognized option with generate: " + option);
                                     return false;
@@ -92,7 +89,7 @@ namespace PBuild
             Console.WriteLine("Options:");
             Console.WriteLine("    /rebuild - force rebuild");
             Console.WriteLine("    /sln:<path> - path to the solution xml file");
-            Console.WriteLine("    /generate:<C/C#/Zing> - specify the type of output to generate");
+            Console.WriteLine("    /generate:<C/C#> - specify the type of output to generate");
             Console.WriteLine("    /project:<name> - compile a particular project");
             Console.WriteLine("    /relink - force re-link");
         }

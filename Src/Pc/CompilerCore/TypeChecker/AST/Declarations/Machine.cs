@@ -12,7 +12,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
     {
         private readonly List<Variable> fields = new List<Variable>();
         private readonly Dictionary<string, StateGroup> groups = new Dictionary<string, StateGroup>();
-        private readonly List<Interface> interfaces = new List<Interface>();
         private readonly List<Function> methods = new List<Function>();
         private readonly Dictionary<string, State> states = new Dictionary<string, State>();
 
@@ -29,7 +28,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public int Assert { get; set; } = -1;
         public IEventSet Receives { get; set; }
         public IEventSet Sends { get; set; }
-        public IEnumerable<Interface> Interfaces => interfaces;
+        public IInterfaceSet Creates { get; set; }
         public IEnumerable<Variable> Fields => fields;
         public IEnumerable<Function> Methods => methods;
         public State StartState { get; set; }
@@ -91,15 +90,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             Debug.Assert(group.ParentStateContainer == null);
             group.ParentStateContainer = this;
             groups.Add(group.Name, group);
-        }
-
-        public void AddInterface(Interface pInter)
-        {
-            if (!interfaces.Contains(pInter))
-            {
-                interfaces.Add(pInter);
-                pInter.AddImplementation(this);
-            }
         }
 
         public void AddField(Variable field) { fields.Add(field); }

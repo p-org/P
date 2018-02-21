@@ -12,28 +12,17 @@ namespace Microsoft.Pc.TypeChecker.AST
 
     public class ModuleInfo
     {
-        protected IEventSet privateEvents = new EventSet();
-        protected IInterfaceSet privateInterfaces = new InterfaceSet();
-        protected IEventSet sends = new EventSet();
-        protected IEventSet receives = new EventSet();
-        protected IInterfaceSet creates = new InterfaceSet();
-
-        protected IDictionary<Interface, IDictionary<Interface, Interface>> linkMap = new Dictionary<Interface, IDictionary<Interface, Interface>>();
-        protected IDictionary<Interface, Machine> interfaceDef = new Dictionary<Interface, Machine>();
-        protected IDictionary<Machine, IEnumerable<Interface>> monitorMap = new Dictionary<Machine, IEnumerable<Interface>>();
-
         //Attributes of module expression
-        public IEventSet PrivateEvents => privateEvents;
-        public IInterfaceSet PrivateInterfaces => privateInterfaces;
-        public IEventSet Sends => sends;
-        public IEventSet Receives => receives;
-        public IInterfaceSet Creates => creates;
+        public IEventSet PrivateEvents = new EventSet();
+        public IInterfaceSet PrivateInterfaces = new InterfaceSet();
+        public IEventSet Sends = new EventSet();
+        public IEventSet Receives = new EventSet();
+        public IInterfaceSet Creates = new InterfaceSet();
 
         //used for code generation and runtime
-        public IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap => linkMap;
-        public IDictionary<Interface, Machine> InterfaceDef => interfaceDef;
-        public IDictionary<Machine, IEnumerable<Interface>> MonitorMap => monitorMap;
-
+        public IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap = new Dictionary<Interface, IDictionary<Interface, Interface>>();
+        public IDictionary<Interface, Machine> InterfaceDef = new Dictionary<Interface, Machine>();
+        public IDictionary<Machine, IEnumerable<Interface>> MonitorMap = new Dictionary<Machine, IEnumerable<Interface>>();
     }
 }
 

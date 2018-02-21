@@ -13,7 +13,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public Interface(string name, ParserRuleContext sourceNode)
         {
-            Debug.Assert(sourceNode is PParser.InterfaceDeclContext);
+            //Debug.Assert(sourceNode is PParser.InterfaceDeclContext);
             Name = name;
             SourceLocation = sourceNode;
         }

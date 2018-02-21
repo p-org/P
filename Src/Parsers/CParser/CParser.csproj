@@ -5,17 +5,9 @@
     <RootNamespace>CParser</RootNamespace>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
   </PropertyGroup>
-  <ItemGroup>
-    <Compile Remove="Properties\**" />
-    <EmbeddedResource Remove="Properties\**" />
-    <None Remove="Properties\**" />
-  </ItemGroup>
   
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
-      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
+    <PackageReference Include="Formula.Core" Version="1.0.0" />
   </ItemGroup>
   
   <Import Project="$(PTargets)\compiler.targets" />

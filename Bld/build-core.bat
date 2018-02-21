@@ -12,6 +12,7 @@ dotnet build Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGene
 dotnet pack Ext\Formula\Src\Core\Core.csproj --output ..\..\..\nupkgs
 dotnet pack Ext\PSharp\Source\Core\Core.csproj --output ..\..\..\nupkgs
 dotnet pack Ext\PSharp\Source\TestingServices\TestingServices.csproj --output ..\..\..\nupkgs
+dotnet pack Ext\PSharp\Source\SchedulingStrategies\SchedulingStrategies.csproj --output ..\..\..\nupkgs
 
 REM Run the build! :D
 dotnet build P.sln

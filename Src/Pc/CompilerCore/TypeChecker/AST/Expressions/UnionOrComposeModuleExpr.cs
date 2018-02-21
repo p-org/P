@@ -5,19 +5,28 @@ using Antlr4.Runtime;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class UnionOrComposeModuleExpr : ModuleExpr
+    public class UnionOrComposeModuleExpr : IPModuleExpr
     {
 
-        private IEnumerable<IPModuleExpr> modules;
+        private List<IPModuleExpr> componentModules;
         private bool isComposition = false;
 
-        public UnionOrComposeModuleExpr(ParserRuleContext sourceNode, IEnumerable<IPModuleExpr> modules, bool isComposition)
+        public IReadOnlyList<IPModuleExpr> ComponentModules => componentModules;
+        public bool IsComposition => isComposition;
+
+        public UnionOrComposeModuleExpr(ParserRuleContext sourceNode, List<IPModuleExpr> modules, bool isComposition)
         {
             SourceLocation = sourceNode;
-            this.modules = modules;
+            this.componentModules = modules;
             this.isComposition = isComposition;
+            ModuleInfo = null;
         }
 
+        public ParserRuleContext SourceLocation { get; set; }
+
+        public ModuleInfo ModuleInfo { get; set; }
+
+        /*
         public override bool CheckAndPopulateAttributes(ITranslationErrorHandler handler)
         {
             if (IsWellFormed)
@@ -141,7 +150,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
 
             return IsWellFormed;
-        }
+        }*/
     }
     
 }

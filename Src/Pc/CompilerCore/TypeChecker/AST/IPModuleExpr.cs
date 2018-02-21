@@ -7,24 +7,10 @@ namespace Microsoft.Pc.TypeChecker.AST
 {
     public interface IPModuleExpr : IPAST
     {
-        //Attributes of module expression
-        IEventSet PrivateEvents { get; }
-        IInterfaceSet PrivateInterfaces { get; }
-        IEventSet Sends { get; }
-        IEventSet Receives { get; }
-        IInterfaceSet Creates { get; }
-
-        //used for code generation and runtime
-        IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap { get; }
-        IDictionary<Interface, Machine> InterfaceDef { get; }
-        IDictionary<Machine, IEnumerable<Interface>> MonitorMap{ get; }
-
-        bool IsWellFormed { get; }
-
-        bool CheckAndPopulateAttributes(ITranslationErrorHandler handler);
+        ModuleInfo ModuleInfo { get; }
     }
 
-    public abstract class ModuleExpr : IPModuleExpr
+    public class ModuleInfo
     {
         protected IEventSet privateEvents = new EventSet();
         protected IInterfaceSet privateInterfaces = new InterfaceSet();
@@ -36,23 +22,18 @@ namespace Microsoft.Pc.TypeChecker.AST
         protected IDictionary<Interface, Machine> interfaceDef = new Dictionary<Interface, Machine>();
         protected IDictionary<Machine, IEnumerable<Interface>> monitorMap = new Dictionary<Machine, IEnumerable<Interface>>();
 
-        protected bool isWellFormed = false;
-
-        public bool IsWellFormed => isWellFormed;
-
+        //Attributes of module expression
         public IEventSet PrivateEvents => privateEvents;
         public IInterfaceSet PrivateInterfaces => privateInterfaces;
         public IEventSet Sends => sends;
         public IEventSet Receives => receives;
         public IInterfaceSet Creates => creates;
 
+        //used for code generation and runtime
         public IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap => linkMap;
         public IDictionary<Interface, Machine> InterfaceDef => interfaceDef;
         public IDictionary<Machine, IEnumerable<Interface>> MonitorMap => monitorMap;
 
-        public ParserRuleContext SourceLocation { get; set;  }
-
-        public abstract bool CheckAndPopulateAttributes(ITranslationErrorHandler handler);
     }
 }
 

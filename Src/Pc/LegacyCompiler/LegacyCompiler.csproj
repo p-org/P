@@ -70,7 +70,7 @@
     <MPPGCompileToken Include="Parser\tokens.y" />
   </ItemGroup>
 
-  <Import Project="$(PTargets)\compiler.targets" />
+    <Import Project="$(PTargets)\compiler.targets" />
   
   <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)" BeforeTargets="PrepareForBuild">
     <!-- Ensure the output directory exists -->
@@ -89,16 +89,13 @@
     =======================================================================================================
   -->
   
-  <PropertyGroup>
-    <PostBuildEvent>
-      $(CpCmd) $(MSBuildProjectDirectory)\Domains\P.4ml $(OutputPath)
-      $(CpCmd) $(MSBuildProjectDirectory)\Domains\PLink.4ml $(OutputPath)
-      $(CpCmd) $(MSBuildProjectDirectory)\Domains\C.4ml $(OutputPath)
-      $(CpCmd) $(MSBuildProjectDirectory)\Domains\Zing.4ml $(OutputPath)
-      $(CpCmd) $(MSBuildProjectDirectory)\Domains\P2CProgram.4ml $(OutputPath)
-      $(CpCmd) $(MSBuildProjectDirectory)\Domains\PWithInferredTypes.4ml $(OutputPath)
-    </PostBuildEvent>
-  </PropertyGroup>
+  <ItemGroup>
+    <FormulaFiles Include="Domains\*.4ml"/>
+  </ItemGroup>
+
+  <Target Name="CopyFormula" AfterTargets="PostBuildEvent">
+    <Copy SourceFiles="@(FormulaFiles)" DestinationFiles="@(FormulaFiles->'$(OutputPath)%(Filename)%(Extension)')" />
+  </Target>
   
   <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompileParser)" Outputs="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)" BeforeTargets="PrepareForBuild">
     <!-- Ensure the output directory exists -->

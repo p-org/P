@@ -15,7 +15,8 @@ namespace Microsoft.Pc.TypeChecker
         {
             foreach (Function function in machine.Methods)
             {
-                machine.Creates?.AddInterfaces(InferCreates(function));
+                machine.Creates = new InterfaceSet();
+                machine.Creates.AddInterfaces(InferCreates(function));
             }
         }
 

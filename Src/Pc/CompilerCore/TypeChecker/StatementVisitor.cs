@@ -261,7 +261,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.MissingDeclaration(context.iden(), "interface", interfaceName);
             }
-            // TODO: don't add implicit interfaces for spec machines.
+            
             List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, targetInterface.PayloadType, args);
             return new CtorStmt(context, targetInterface, args);

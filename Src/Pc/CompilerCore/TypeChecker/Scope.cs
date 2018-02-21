@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
@@ -31,9 +30,7 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, RefinementTest> refinementTests = new Dictionary<string, RefinementTest>();
         private readonly IDictionary<string, NamedModule> namedModules = new Dictionary<string, NamedModule>();
 
-        public Scope(ITranslationErrorHandler handler) : this(handler, null) { }
-
-        public Scope(ITranslationErrorHandler handler, Scope parent)
+        public Scope(ITranslationErrorHandler handler, Scope parent = null)
         {
             this.handler = handler;
             parent?.children.Remove(this);

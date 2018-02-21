@@ -7,13 +7,14 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class BoundedType : PLanguageType
     {
+        private readonly Lazy<IReadOnlyList<PEvent>> allowedPermissions;
+
         public BoundedType(NamedEventSet eventSet) : base(TypeKind.Bounded)
         {
             EventSet = eventSet;
-            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
-            {
-                return (EventSet == null ? Enumerable.Empty<PEvent>() : EventSet.Events).ToList();
-            });
+            allowedPermissions =
+                new Lazy<IReadOnlyList<PEvent>>(() => (EventSet == null ? Enumerable.Empty<PEvent>() : EventSet.Events)
+                                                    .ToList());
         }
 
         public NamedEventSet EventSet { get; }
@@ -22,15 +23,16 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override string CanonicalRepresentation =>
             EventSet == null ? "data" : $"any<{{{string.Join(",", EventSet.Events.Select(ev => ev.Name))}}}>";
 
+        public override IReadOnlyList<PEvent> AllowedPermissions => allowedPermissions.Value;
+
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             throw new NotImplementedException("any<...> type checking");
         }
 
-        public override PLanguageType Canonicalize() { return this; }
-
-        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
-        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
-
+        public override PLanguageType Canonicalize()
+        {
+            return this;
+        }
     }
 }

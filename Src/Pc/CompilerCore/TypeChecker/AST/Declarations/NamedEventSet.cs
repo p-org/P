@@ -1,10 +1,7 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.Antlr;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {

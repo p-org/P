@@ -1,6 +1,4 @@
 using System.Collections.Generic;
-using System;
-using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
@@ -10,10 +8,6 @@ namespace Microsoft.Pc.TypeChecker.Types
         public SequenceType(PLanguageType elementType) : base(TypeKind.Sequence)
         {
             ElementType = elementType;
-            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
-            {
-                return ElementType.AllowedPermissions;
-            });
         }
 
 
@@ -22,16 +16,17 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override string OriginalRepresentation => $"seq[{ElementType.OriginalRepresentation}]";
         public override string CanonicalRepresentation => $"seq[{ElementType.CanonicalRepresentation}]";
 
+        public override IReadOnlyList<PEvent> AllowedPermissions => ElementType.AllowedPermissions;
+
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             // Copying semantics: Can assign to a sequence variable if the other sequence's elements are subtypes of this sequence's elements.
             return otherType.Canonicalize() is SequenceType other && ElementType.IsAssignableFrom(other.ElementType);
         }
 
-        public override PLanguageType Canonicalize() { return new SequenceType(ElementType.Canonicalize()); }
-
-        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
-        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
-
+        public override PLanguageType Canonicalize()
+        {
+            return new SequenceType(ElementType.Canonicalize());
+        }
     }
 }

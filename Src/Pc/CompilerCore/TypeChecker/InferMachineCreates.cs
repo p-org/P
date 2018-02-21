@@ -9,9 +9,9 @@ using Microsoft.Pc.TypeChecker.AST.Statements;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    public class InferMachineCreates
+    public static class InferMachineCreates
     {
-        public static void Populate(ITranslationErrorHandler handler, Machine machine)
+        public static void Populate(Machine machine)
         {
             foreach (Function function in machine.Methods)
             {

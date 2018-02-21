@@ -31,10 +31,7 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         private void InitAllowedPermissions()
         {
-            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
-            {
-                return EventSet.Events.ToList();
-            });
+            allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => EventSet.Events.ToList());
         }
 
         private readonly IPDecl origin;
@@ -57,7 +54,7 @@ namespace Microsoft.Pc.TypeChecker.Types
             return this;
         }
 
-        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
-        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
+        private Lazy<IReadOnlyList<PEvent>> allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => allowedPermissions.Value;
     }
 }

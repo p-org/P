@@ -1,28 +1,26 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Antlr4.Runtime;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker.AST.Declarations
+namespace Microsoft.Pc.TypeChecker.AST.ModuleExprs
 {
     public class AssertModuleExpr : IPModuleExpr
     {
-       
-        private IPModuleExpr componentModule;
-        private List<Machine> specMonitors;
+        private readonly List<Machine> specMonitors;
 
-        public IPModuleExpr ComponentModule => componentModule;
+        public IPModuleExpr ComponentModule { get; }
+
         public IReadOnlyList<Machine> SpecMonitors => specMonitors;
 
         public AssertModuleExpr(ParserRuleContext sourceNode, List<Machine> specs, IPModuleExpr module)
         {
             SourceLocation = sourceNode;
             specMonitors = specs;
-            this.componentModule = module;
+            ComponentModule = module;
             ModuleInfo = null;
         }
         
-        public ParserRuleContext SourceLocation { get; set; }
+        public ParserRuleContext SourceLocation { get; }
         
         public ModuleInfo ModuleInfo { get; set; }
     }

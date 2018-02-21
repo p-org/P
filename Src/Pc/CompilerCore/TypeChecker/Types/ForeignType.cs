@@ -1,6 +1,4 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
@@ -11,14 +9,12 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             OriginalRepresentation = name;
             CanonicalRepresentation = name;
-            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
-            {
-                return new List<PEvent>();
-            });
         }
 
         public override string OriginalRepresentation { get; }
         public override string CanonicalRepresentation { get; }
+
+        public override IReadOnlyList<PEvent> AllowedPermissions { get; } = new List<PEvent>();
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
@@ -26,9 +22,9 @@ namespace Microsoft.Pc.TypeChecker.Types
                    CanonicalRepresentation == other.CanonicalRepresentation;
         }
 
-        public override PLanguageType Canonicalize() { return this; }
-
-        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
-        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
+        public override PLanguageType Canonicalize()
+        {
+            return this;
+        }
     }
 }

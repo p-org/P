@@ -2,10 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime.Tree;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -60,7 +58,7 @@ namespace Microsoft.Pc.TypeChecker
             // Step 7: Infer the creates set for each machine.
             foreach (Machine machine in globalScope.Machines)
             {
-                InferMachineCreates.Populate(handler, machine);
+                InferMachineCreates.Populate(machine);
             }
 
             // Step 8: Fill the module expressions

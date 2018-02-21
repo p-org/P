@@ -7,12 +7,13 @@ git submodule foreach --recursive git reset --hard
 git submodule foreach --recursive git clean -fdx
 git clean -fdx
 
+REM Initialize submodules
+git submodule update --init --recursive
+
 REM Place build dependencies
+mkdir Ext\nupkgs
 dotnet build Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.csproj
 dotnet pack Ext\Formula\Src\Core\Core.csproj --output ..\..\..\nupkgs
-dotnet pack Ext\PSharp\Source\Core\Core.csproj --output ..\..\..\nupkgs
-dotnet pack Ext\PSharp\Source\TestingServices\TestingServices.csproj --output ..\..\..\nupkgs
-dotnet pack Ext\PSharp\Source\SchedulingStrategies\SchedulingStrategies.csproj --output ..\..\..\nupkgs
 
 REM Run the build! :D
 dotnet build P.sln

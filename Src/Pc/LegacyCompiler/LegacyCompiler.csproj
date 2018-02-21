@@ -73,7 +73,8 @@
   <Import Project="$(PTargets)\compiler.targets" />
   
   <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)" BeforeTargets="PrepareForBuild">
-    <Message Text="### GenerateCodeFromLex: EXEC = $(GPLexCmd) /babel /unicode /out:@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" Importance="high" />
+    <!-- Ensure the output directory exists -->
+    <MakeDir Directories="$(IntermediateOutputPath)" />
     <!--Run the command line tool that generates the cs files.-->
     <Exec Command="$(GPLexCmd) /babel /unicode /out:@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" />
     <!--Add the generated files to the list of the files to compile.-->
@@ -100,6 +101,8 @@
   </PropertyGroup>
   
   <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompileParser)" Outputs="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)" BeforeTargets="PrepareForBuild">
+    <!-- Ensure the output directory exists -->
+    <MakeDir Directories="$(IntermediateOutputPath)" />
     <!--Run the command line tool that generates the cs files.-->
     <Exec Command="$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileToken) &gt; @(MPPGCompileToken->'$(IntermediateOutputPath)%(FileName).g.cs')" />
     <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompileParser) &gt; @(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" />

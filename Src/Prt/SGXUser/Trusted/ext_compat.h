@@ -5,7 +5,7 @@
 #include <string.h>
 #include "PrtEnclave_t.h"
 
-#define prints(str) ocall_print(str)
+#define printf_s(f, message) ocall_print(message)
 
 #define strcpy_s(d, n, s) strncpy(d, s, n)
 

@@ -43,7 +43,15 @@ namespace Microsoft.Pc
                 Console.WriteLine("-----------------------------------------");
                 Console.WriteLine(IrToPseudoP.Dump(scope));
 
-                log.WriteMessage("Program valid. Code generation not implemented.", SeverityKind.Info);
+                log.WriteMessage("Program valid.", SeverityKind.Info);
+
+                ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.compilerOutput);
+                foreach (CompiledFile compiledFile in backend.GenerateCode(handler, scope, log))
+                {
+                    log.WriteMessage($"Writing {compiledFile.FileName}...", SeverityKind.Info);
+                    File.WriteAllText(compiledFile.FileName, compiledFile.Contents);
+                }
+                
                 return true;
             }
             catch (TranslationException e)

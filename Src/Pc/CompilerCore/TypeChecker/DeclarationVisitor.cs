@@ -1,9 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
@@ -305,9 +303,18 @@ namespace Microsoft.Pc.TypeChecker
         {
             // SPEC name=Iden 
             var specMachine = (Machine) nodesToDeclarations.Get(context);
+
+            // spec machines neither send nor receive events.
+            specMachine.Receives = new EventSet();
+            specMachine.Sends = new EventSet();
+
             // OBSERVES eventSetLiteral
-            specMachine.Observes = new NamedEventSet($"{specMachine.Name}$eventset", context.eventSetLiteral());
-            specMachine.Observes.AddEvents((PEvent[]) Visit(context.eventSetLiteral()));
+            specMachine.Observes = new EventSet();
+            foreach (var pEvent in (PEvent[]) Visit(context.eventSetLiteral()))
+            {
+                specMachine.Observes.AddEvent(pEvent);
+            }
+
             // machineBody
             using (currentScope.NewContext(specMachine.Scope))
             using (currentMachine.NewContext(specMachine))
@@ -433,6 +440,12 @@ namespace Microsoft.Pc.TypeChecker
                             {
                                 throw Handler.DuplicateEventAction(action.SourceLocation, state[action.Trigger], state);
                             }
+
+                            if (action.Trigger.Name.Equals("null") && CurrentMachine.IsSpec)
+                            {
+                                throw Handler.IssueError(action.SourceLocation,
+                                                         "Transition on null event not allowed in spec machines");
+                            }
                             state[action.Trigger] = action;
                         }
                         break;
@@ -512,6 +525,11 @@ namespace Microsoft.Pc.TypeChecker
 
         public override object VisitStateDefer(PParser.StateDeferContext context)
         { 
+
+            if (CurrentMachine.IsSpec)
+            {
+                throw Handler.IssueError(context, "Event cannot be deferred in spec machine");
+            }
 
             // DEFER nonDefaultEventList
             var eventContexts = context.nonDefaultEventList()._events;
@@ -635,11 +653,6 @@ namespace Microsoft.Pc.TypeChecker
                 if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
                 {
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
-                }
-
-                if (transitionFunction != null)
-                {
-                    TypeCheckingUtils.ValidatePayloadTypes(Handler, eventIdContext, evt.PayloadType, transitionFunction.Signature.ParameterTypes.ToList());
                 }
 
                 actions.Add(new EventGotoState(eventIdContext, evt, target, transitionFunction));

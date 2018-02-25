@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -143,6 +142,12 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.MissingDeclaration(context.interfaceName, "interface", interfaceName);
             }
 
+            if (method.Owner?.IsSpec == true)
+            {
+                throw handler.IssueError(
+                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+            }
+
             IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             TypeCheckingUtils.ValidatePayloadTypes(handler, context, @interface.PayloadType, arguments);
             return new CtorExpr(context, @interface, arguments);
@@ -159,6 +164,12 @@ namespace Microsoft.Pc.TypeChecker
             // Check the arguments
             IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
             ISet<Variable> linearVariables = new HashSet<Variable>();
+
+            if (function.Signature.Parameters.Count != arguments.Length)
+            {
+                throw handler.IncorrectArgumentCount(context, arguments.Length, function.Signature.Parameters.Count);
+            }
+
             for (var i = 0; i < arguments.Length; i++)
             {
                 IPExpr argument = arguments[i];
@@ -383,11 +394,21 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.NONDET() != null)
             {
+                if (method.Owner.IsSpec)
+                {
+                    throw handler.IssueError(
+                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                }
                 method.IsNondeterministic = true;
                 return new NondetExpr(context);
             }
             if (context.FAIRNONDET() != null)
             {
+                if (method.Owner.IsSpec)
+                {
+                    throw handler.IssueError(
+                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                }
                 method.IsNondeterministic = true;
                 return new FairNondetExpr(context);
             }
@@ -402,6 +423,11 @@ namespace Microsoft.Pc.TypeChecker
                 if (method.Owner == null)
                 {
                     throw handler.MisplacedThis(context);
+                }
+                if (method.Owner.IsSpec)
+                {
+                    throw handler.IssueError(
+                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
                 }
                 return new ThisRefExpr(context, method.Owner);
             }

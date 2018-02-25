@@ -1,7 +1,4 @@
-using System.Linq;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.Statements;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -55,7 +52,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // Build the statement trees
             var statementVisitor = new StatementVisitor(handler, machine, method);
-            method.Body = new CompoundStmt(context, context.statement().Select(statementVisitor.Visit).ToList());
+            method.Body = statementVisitor.Visit(context);
             return null;
         }
 

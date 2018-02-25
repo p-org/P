@@ -300,7 +300,15 @@ namespace Microsoft.Pc
         }
 
 
-        private static readonly Lazy<bool> isFileSystemCaseInsensitive = new Lazy<bool>(() => { return true; });
+        private static readonly Lazy<bool> isFileSystemCaseInsensitive = new Lazy<bool>(() =>
+        {
+            string file = Path.GetTempPath() + Guid.NewGuid().ToString().ToLower() + "-lower";
+            File.CreateText(file).Close();
+            bool isCaseInsensitive = File.Exists(file.ToUpper());
+            File.Delete(file);
+            return isCaseInsensitive;
+        });
+
         private static bool IsFileSystemCaseInsensitive => isFileSystemCaseInsensitive.Value;
 
         public static void PrintUsage()

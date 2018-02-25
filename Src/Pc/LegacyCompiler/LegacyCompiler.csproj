@@ -1,7 +1,25 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), p.props))\p.props" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+    <RootNamespace>Microsoft.Pc</RootNamespace>
+    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
+    <ProjectGuid>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</ProjectGuid>
+    <GPToolsPath>$(ExtFolder)\Formula\Ext</GPToolsPath>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <GPLexCmd>"$(GPToolsPath)\GPLEX\gplex45.exe"</GPLexCmd>
+    <CpCmd>copy /Y</CpCmd>
+    <GPPGCmd>"$(GPToolsPath)\GPPG\gppg45.exe"</GPPGCmd>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <GPLexCmd>mono $(GPToolsPath)/GPLEX/gplex45.exe</GPLexCmd>
+    <CpCmd>cp</CpCmd>
+    <GPPGCmd>mono $(GPToolsPath)/GPPG/gppg45.exe</GPPGCmd>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" Version="1.1.0" />
@@ -12,198 +30,22 @@
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="1.1.0" />
     <PackageReference Include="Microsoft.Composition" Version="1.0.27" />
-    <PackageReference Include="System.Collections" Version="4.0.0" />
-    <PackageReference Include="System.Diagnostics.Debug" Version="4.0.0" />
-    <PackageReference Include="System.Globalization" Version="4.0.0" />
-    <PackageReference Include="System.Linq" Version="4.0.0" />
-    <PackageReference Include="System.Reflection.Metadata" Version="1.2.0" />
-    <PackageReference Include="System.Resources.ResourceManager" Version="4.0.0" />
-    <PackageReference Include="System.Runtime" Version="4.0.0" />
-    <PackageReference Include="System.Runtime.Extensions" Version="4.0.0" />
-    <PackageReference Include="System.Threading" Version="4.0.0" />
+
+    <PackageReference Include="Formula.Core" Version="1.0.0" />
+    <!-- <PackageReference Include="Formula.FormulaCodeGeneratorTask" Version="1.0.0" /> -->
   </ItemGroup>
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">x86</Platform>
-    <ProductVersion>8.0.30703</ProductVersion>
-    <SchemaVersion>2.0</SchemaVersion>
-    <ProjectGuid>{ED76217F-2452-4A35-90F6-6EB6CCF2D882}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Microsoft.Pc</RootNamespace>
-    <AssemblyName>LegacyCompiler</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
-    <TargetFrameworkProfile>
-    </TargetFrameworkProfile>
-    <FileAlignment>512</FileAlignment>
-    <CodeContractsAssemblyMode>1</CodeContractsAssemblyMode>
-    <GPToolsPath>$(ExtFolder)\Formula\Ext</GPToolsPath>
-    <NuGetPackageImportStamp>
-    </NuGetPackageImportStamp>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x86'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <DefineConstants>DEBUG;TRACE</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-    <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
-    <CodeContractsRuntimeOnlyPublicSurface>False</CodeContractsRuntimeOnlyPublicSurface>
-    <CodeContractsRuntimeThrowOnFailure>False</CodeContractsRuntimeThrowOnFailure>
-    <CodeContractsRuntimeCallSiteRequires>False</CodeContractsRuntimeCallSiteRequires>
-    <CodeContractsRuntimeSkipQuantifiers>False</CodeContractsRuntimeSkipQuantifiers>
-    <CodeContractsRunCodeAnalysis>False</CodeContractsRunCodeAnalysis>
-    <CodeContractsNonNullObligations>True</CodeContractsNonNullObligations>
-    <CodeContractsBoundsObligations>True</CodeContractsBoundsObligations>
-    <CodeContractsArithmeticObligations>False</CodeContractsArithmeticObligations>
-    <CodeContractsEnumObligations>False</CodeContractsEnumObligations>
-    <CodeContractsRedundantAssumptions>False</CodeContractsRedundantAssumptions>
-    <CodeContractsMissingPublicRequiresAsWarnings>True</CodeContractsMissingPublicRequiresAsWarnings>
-    <CodeContractsInferRequires>True</CodeContractsInferRequires>
-    <CodeContractsInferEnsures>False</CodeContractsInferEnsures>
-    <CodeContractsInferObjectInvariants>False</CodeContractsInferObjectInvariants>
-    <CodeContractsSuggestAssumptions>False</CodeContractsSuggestAssumptions>
-    <CodeContractsSuggestRequires>True</CodeContractsSuggestRequires>
-    <CodeContractsSuggestObjectInvariants>False</CodeContractsSuggestObjectInvariants>
-    <CodeContractsRunInBackground>True</CodeContractsRunInBackground>
-    <CodeContractsShowSquigglies>True</CodeContractsShowSquigglies>
-    <CodeContractsUseBaseLine>False</CodeContractsUseBaseLine>
-    <CodeContractsEmitXMLDocs>False</CodeContractsEmitXMLDocs>
-    <CodeContractsCustomRewriterAssembly />
-    <CodeContractsCustomRewriterClass />
-    <CodeContractsLibPaths />
-    <CodeContractsExtraRewriteOptions />
-    <CodeContractsExtraAnalysisOptions />
-    <CodeContractsSQLServerOption />
-    <CodeContractsBaseLineFile />
-    <CodeContractsCacheAnalysisResults>True</CodeContractsCacheAnalysisResults>
-    <CodeContractsFailBuildOnWarnings>False</CodeContractsFailBuildOnWarnings>
-    <CodeContractsRuntimeCheckingLevel>Full</CodeContractsRuntimeCheckingLevel>
-    <CodeContractsReferenceAssembly>%28none%29</CodeContractsReferenceAssembly>
-    <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x86'">
-    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x86</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'">
-    <DebugSymbols>true</DebugSymbols>
-    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <DefineConstants>TRACE;DEBUG</DefineConstants>
-    <DebugType>full</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-    <CodeContractsEnableRuntimeChecking>True</CodeContractsEnableRuntimeChecking>
-    <CodeContractsRuntimeOnlyPublicSurface>False</CodeContractsRuntimeOnlyPublicSurface>
-    <CodeContractsRuntimeThrowOnFailure>False</CodeContractsRuntimeThrowOnFailure>
-    <CodeContractsRuntimeCallSiteRequires>False</CodeContractsRuntimeCallSiteRequires>
-    <CodeContractsRuntimeSkipQuantifiers>False</CodeContractsRuntimeSkipQuantifiers>
-    <CodeContractsRunCodeAnalysis>False</CodeContractsRunCodeAnalysis>
-    <CodeContractsNonNullObligations>True</CodeContractsNonNullObligations>
-    <CodeContractsBoundsObligations>True</CodeContractsBoundsObligations>
-    <CodeContractsArithmeticObligations>False</CodeContractsArithmeticObligations>
-    <CodeContractsEnumObligations>False</CodeContractsEnumObligations>
-    <CodeContractsRedundantAssumptions>False</CodeContractsRedundantAssumptions>
-    <CodeContractsMissingPublicRequiresAsWarnings>True</CodeContractsMissingPublicRequiresAsWarnings>
-    <CodeContractsInferRequires>True</CodeContractsInferRequires>
-    <CodeContractsInferEnsures>False</CodeContractsInferEnsures>
-    <CodeContractsInferObjectInvariants>False</CodeContractsInferObjectInvariants>
-    <CodeContractsSuggestAssumptions>False</CodeContractsSuggestAssumptions>
-    <CodeContractsSuggestRequires>True</CodeContractsSuggestRequires>
-    <CodeContractsSuggestObjectInvariants>False</CodeContractsSuggestObjectInvariants>
-    <CodeContractsRunInBackground>True</CodeContractsRunInBackground>
-    <CodeContractsShowSquigglies>True</CodeContractsShowSquigglies>
-    <CodeContractsUseBaseLine>False</CodeContractsUseBaseLine>
-    <CodeContractsEmitXMLDocs>False</CodeContractsEmitXMLDocs>
-    <CodeContractsCustomRewriterAssembly />
-    <CodeContractsCustomRewriterClass />
-    <CodeContractsLibPaths />
-    <CodeContractsExtraRewriteOptions />
-    <CodeContractsExtraAnalysisOptions />
-    <CodeContractsSQLServerOption />
-    <CodeContractsBaseLineFile />
-    <CodeContractsCacheAnalysisResults>True</CodeContractsCacheAnalysisResults>
-    <CodeContractsFailBuildOnWarnings>False</CodeContractsFailBuildOnWarnings>
-    <CodeContractsRuntimeCheckingLevel>Full</CodeContractsRuntimeCheckingLevel>
-    <CodeContractsReferenceAssembly>%28none%29</CodeContractsReferenceAssembly>
-    <CodeContractsAnalysisWarningLevel>0</CodeContractsAnalysisWarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)' == 'Release|x64'">
-    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
-    <DefineConstants>TRACE</DefineConstants>
-    <Optimize>true</Optimize>
-    <DebugType>pdbonly</DebugType>
-    <PlatformTarget>x64</PlatformTarget>
-    <ErrorReport>prompt</ErrorReport>
-    <CodeAnalysisRuleSet>MinimumRecommendedRules.ruleset</CodeAnalysisRuleSet>
-    <Prefer32Bit>true</Prefer32Bit>
-  </PropertyGroup>
-  <PropertyGroup>
-    <StartupObject />
-  </PropertyGroup>
+  
   <ItemGroup>
-    <Reference Include="System.Core" />
-    <Reference Include="System.Numerics" />
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
+    <ProjectReference Include="..\..\Parsers\CParser\CParser.csproj">
+      <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
+      <Name>CParser</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj">
+      <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
+      <Name>CompilerCore</Name>
+    </ProjectReference>
   </ItemGroup>
-  <ItemGroup>
-    <Compile Include="ConsoleProfiler.cs" />
-    <Compile Include="CSharpHelper.cs" />
-    <Compile Include="Domains\P.4ml.g.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>P.4ml</DependentUpon>
-    </Compile>
-    <Compile Include="Domains\PLink.4ml.g.cs">
-      <AutoGen>True</AutoGen>
-      <DesignTime>True</DesignTime>
-      <DependentUpon>PLink.4ml</DependentUpon>
-    </Compile>
-    <Compile Include="ErrorReporter.cs" />
-    <Compile Include="EventInfo.cs" />
-    <Compile Include="FunInfo.cs" />
-    <Compile Include="IProfiler.cs" />
-    <Compile Include="LegacyCompiler.cs" />
-    <Compile Include="LocalVariableInfo.cs" />
-    <Compile Include="LProgram.cs" />
-    <Compile Include="MachineInfo.cs" />
-    <Compile Include="PToCSharpCompiler.MkFunctionDecl.cs" />
-    <Compile Include="PToCSharpCompiler.MkMachineClass.cs" />
-    <Compile Include="NullProfiler.cs" />
-    <Compile Include="Parser\LParser.cs" />
-    <Compile Include="Parser\PParser.cs" />
-    <Compile Include="Parser\ShiftReduceParserCode.cs" />
-    <Compile Include="PData.cs" />
-    <Compile Include="PProgram.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="PToCSharpCompiler.cs" />
-    <Compile Include="PToCSharpLinker.cs" />
-    <Compile Include="PTranslation.cs" />
-    <Compile Include="SourceInfo.cs" />
-    <Compile Include="SpecType.cs" />
-    <Compile Include="PToCSharpCompiler.TypeTranslationContext.cs" />
-    <Compile Include="StateInfo.cs" />
-    <Compile Include="TransitionInfo.cs" />
-    <Compile Include="PProgramModel.cs" />
-    <Compile Include="VariableInfo.cs" />
-    <Compile Include="XmlProfiler.cs" />
-  </ItemGroup>
+
   <ItemGroup>
     <None Include="App.config" />
     <EmbeddedResource Include="Domains\C.4ml" />
@@ -219,54 +61,20 @@
     </EmbeddedResource>
     <EmbeddedResource Include="Domains\P2CProgram.4ml" />
     <EmbeddedResource Include="Domains\PWithInferredTypes.4ml" />
-    <EmbeddedResource Include="Templates\PSharp.stg" />
-    <None Include="Templates\Prt.stg" />
-    <None Include="Templates\Prt_h.stg" />
   </ItemGroup>
+
   <ItemGroup>
-    <MPLexCompile Include="Parser\Lexer.lex" />
+    <MPLexCompile Include="Parser\lexer.lex" />
     <MPPGCompileParser Include="Parser\PParser.y" />
     <MPPGCompileTempParser Include="Parser\LParser.y" />
-    <MPPGCompileToken Include="Parser\Tokens.y" />
+    <MPPGCompileToken Include="Parser\tokens.y" />
   </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\..\..\Ext\Formula\Src\Core\Core.csproj">
-      <Project>{1b5724ec-fff1-48d7-a700-ad46f0150afc}</Project>
-      <Name>Core</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Parsers\CParser\CParser.csproj">
-      <Project>{55afea71-da6d-4258-9193-29942ebbbe48}</Project>
-      <Name>CParser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\..\Parsers\ZingParser\ZingParser.csproj">
-      <Project>{09a73016-0395-4014-8f26-0dd25ed81d12}</Project>
-      <Name>ZingParser</Name>
-    </ProjectReference>
-    <ProjectReference Include="..\CompilerCore\CompilerCore.csproj">
-      <Project>{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}</Project>
-      <Name>CompilerCore</Name>
-    </ProjectReference>
-  </ItemGroup>
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="$(PTargets)\compiler.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
-  <PropertyGroup>
-    <!--Make sure that the lexer runs before the C# compiler-->
-    <CoreCompileDependsOn>$(CoreCompileDependsOn);GenerateCodeFromLex;</CoreCompileDependsOn>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <GPLexCmd>"$(GPToolsPath)\GPLEX\gplex45.exe"</GPLexCmd>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <GPLexCmd>mono $(GPToolsPath)\GPLEX\gplex45.exe</GPLexCmd>
-  </PropertyGroup>
-  <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)">
+
+    <Import Project="$(PTargets)\compiler.targets" />
+  
+  <Target Name="GenerateCodeFromLex" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPLexCompile);$(LexFrameFile)" Outputs="@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateCodeFromLexDependsOn)" BeforeTargets="PrepareForBuild">
+    <!-- Ensure the output directory exists -->
+    <MakeDir Directories="$(IntermediateOutputPath)" />
     <!--Run the command line tool that generates the cs files.-->
     <Exec Command="$(GPLexCmd) /babel /unicode /out:@(MPLexCompile->'$(IntermediateOutputPath)%(FileName).g.cs') @(MPLexCompile)" />
     <!--Add the generated files to the list of the files to compile.-->
@@ -280,33 +88,18 @@
                                       Generate parser code from Y files
     =======================================================================================================
   -->
-  <PropertyGroup>
-    <GenerateParserCodeFromGrammarDependsOn>$(GenerateParserCodeFromGrammarDependsOn)</GenerateParserCodeFromGrammarDependsOn>
-    <CoreCompileDependsOn>$(CoreCompileDependsOn);GenerateParserCodeFromGrammar</CoreCompileDependsOn>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <CpCmd>copy /Y</CpCmd>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <CpCmd>cp</CpCmd>
-  </PropertyGroup>
-  <PropertyGroup>
-    <PostBuildEvent>
-      $(CpCmd) $(ProjectDir)\Domains\P.4ml $(OutDir)
-      $(CpCmd) $(ProjectDir)\Domains\PLink.4ml $(OutDir)
-      $(CpCmd) $(ProjectDir)\Domains\C.4ml $(OutDir)
-      $(CpCmd) $(ProjectDir)\Domains\Zing.4ml $(OutDir)
-      $(CpCmd) $(ProjectDir)\Domains\P2CProgram.4ml $(OutDir)
-      $(CpCmd) $(ProjectDir)\Domains\PWithInferredTypes.4ml $(OutDir)
-    </PostBuildEvent>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <GPPGCmd>"$(GPToolsPath)\GPPG\gppg45.exe"</GPPGCmd>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
-    <GPPGCmd>mono $(GPToolsPath)\GPPG\gppg45.exe</GPPGCmd>
-  </PropertyGroup>
-  <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompileParser)" Outputs="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)">
+  
+  <ItemGroup>
+    <FormulaFiles Include="Domains\*.4ml"/>
+  </ItemGroup>
+
+  <Target Name="CopyFormula" AfterTargets="PostBuildEvent">
+    <Copy SourceFiles="@(FormulaFiles)" DestinationFiles="@(FormulaFiles->'$(OutputPath)%(Filename)%(Extension)')" />
+  </Target>
+  
+  <Target Name="GenerateParserCodeFromGrammar" Condition="'$(BuildingProject)'!='false'" Inputs="@(MPPGCompileParser)" Outputs="@(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" DependsOnTargets="$(GenerateParserCodeFromGrammarDependsOn)" BeforeTargets="PrepareForBuild">
+    <!-- Ensure the output directory exists -->
+    <MakeDir Directories="$(IntermediateOutputPath)" />
     <!--Run the command line tool that generates the cs files.-->
     <Exec Command="$(GPPGCmd) -report -verbose -conflicts @(MPPGCompileToken) &gt; @(MPPGCompileToken->'$(IntermediateOutputPath)%(FileName).g.cs')" />
     <Exec Command="$(GPPGCmd) -babel -gplex -report -verbose -conflicts @(MPPGCompileParser) &gt; @(MPPGCompileParser->'$(IntermediateOutputPath)%(FileName).g.cs')" />
@@ -325,7 +118,27 @@
       <Output TaskParameter="Include" ItemName="FileWrites" />
     </CreateItem>
   </Target>
+
   <!-- Start Formula code generator MSBuild integration -->
-  <Import Project="..\..\..\Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\FormulaCodeGeneratorTask.Targets" />
-  <Import Project="..\..\..\packages\Antlr4.CodeGenerator.4.6.5-beta001\build\Antlr4.CodeGenerator.targets" Condition="Exists('..\..\..\packages\Antlr4.CodeGenerator.4.6.5-beta001\build\Antlr4.CodeGenerator.targets')" />
+  <PropertyGroup>
+    <FormulaTargetsPath>..\..\..\Ext\Formula\Src\Extensions\FormulaCodeGeneratorTask\</FormulaTargetsPath>
+    <Is64BitBuild>false</Is64BitBuild>
+    <Is64BitBuild Condition="$(MSBuildBinPath.EndsWith('amd64'))">true</Is64BitBuild>
+    <FormulaCodeGeneratorBin>x86</FormulaCodeGeneratorBin>
+    <FormulaCodeGeneratorBin Condition="$(Is64BitBuild)">x64</FormulaCodeGeneratorBin>
+    <FormulaCodeGeneratorPath>$(FormulaTargetsPath)bin\Debug\Formula.FormulaCodeGeneratorTask.dll</FormulaCodeGeneratorPath>
+  </PropertyGroup> 
+
+  <UsingTask TaskName="FormulaCodeGeneratorTask.FormulaCodeGeneratorTask" AssemblyFile="$(FormulaCodeGeneratorPath)" />
+  <Target Name="FormulaCodeGenerator" Outputs="@(FormulaGenFiles->'%(FullPath).g.cs')" BeforeTargets="PrepareForBuild">                                                            
+    <ItemGroup>
+      <FormulaGenFiles Include="@(EmbeddedResource->'%(FullPath)')" Condition="'%(EmbeddedResource.Generator)' == 'FormulaCodeGenerator'" />
+    </ItemGroup>
+    <Error Condition="!Exists('$(FormulaCodeGeneratorPath)')" Text="### Please build $(FormulaCodeGeneratorPath)" />
+    <FormulaCodeGeneratorTask GeneratorInputs="@(FormulaGenFiles->'%(FullPath),%(CustomToolNamespace),%(IsThreadSafe),%(IsObjectGraph),%(IsNewOnly)')" DefaultNamespace="$(RootNamespace)" />
+    <CreateItem Include="@(FormulaGenFiles->'%(FullPath).g.cs')">
+      <Output TaskParameter="Include" ItemName="Compile" />
+      <Output TaskParameter="Include" ItemName="FileWrites" />
+    </CreateItem>
+  </Target>
 </Project>

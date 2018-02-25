@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
@@ -36,30 +37,33 @@ namespace Microsoft.Pc.TypeChecker
                         case EventDoAction eventDoAction:
                             if (eventDoAction.Target != null)
                             {
-                                TypeCheckingUtils.ValidatePayloadTypes(handler, eventDoAction.SourceLocation,
-                                                                       handledEvent.PayloadType,
-                                                                       eventDoAction
-                                                                           .Target.Signature.ParameterTypes.ToList());
+                                ValidateEventPayloadToTransitionTarget(handler, eventDoAction.SourceLocation,
+                                                                       handledEvent.PayloadType, eventDoAction.Target);
                             }
 
                             break;
                         case EventGotoState eventGotoState:
                             if (eventGotoState.Target.Entry != null)
                             {
-                                TypeCheckingUtils.ValidatePayloadTypes(handler, eventGotoState.SourceLocation,
+                                ValidateEventPayloadToTransitionTarget(handler, eventGotoState.SourceLocation,
                                                                        handledEvent.PayloadType,
-                                                                       eventGotoState
-                                                                           .Target.Entry.Signature.ParameterTypes
-                                                                           .ToList());
+                                                                       eventGotoState.Target.Entry);
                             }
 
                             if (eventGotoState.TransitionFunction != null)
                             {
-                                TypeCheckingUtils.ValidatePayloadTypes(handler, eventGotoState.SourceLocation,
+                                ValidateEventPayloadToTransitionTarget(handler, eventGotoState.SourceLocation,
                                                                        handledEvent.PayloadType,
-                                                                       eventGotoState
-                                                                           .TransitionFunction.Signature.ParameterTypes
-                                                                           .ToList());
+                                                                       eventGotoState.TransitionFunction);
+                            }
+
+                            break;
+                        case EventPushState eventPushState:
+                            if (eventPushState.Target.Entry != null)
+                            {
+                                ValidateEventPayloadToTransitionTarget(handler, eventPushState.SourceLocation,
+                                                                       handledEvent.PayloadType,
+                                                                       eventPushState.Target.Entry);
                             }
 
                             break;
@@ -71,6 +75,50 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.IncorrectArgumentCount(state.SourceLocation, state.Exit.Signature.Parameters.Count,
                                                          0);
                 }
+            }
+        }
+
+        private static void ValidateEventPayloadToTransitionTarget(ITranslationErrorHandler handler,
+                                                                   ParserRuleContext sourceLocation,
+                                                                   PLanguageType eventPayloadType,
+                                                                   Function targetFunction)
+        {
+            IReadOnlyList<PLanguageType> entrySignature = targetFunction.Signature.ParameterTypes.ToList();
+            if (entrySignature.Count == 0)
+            {
+                // We ignore payloads that go to states with no entry parameter
+                return;
+            }
+
+            if (entrySignature.Count == 1 && entrySignature[0].IsAssignableFrom(eventPayloadType))
+            {
+                // If the single argument matches the payload type, then that's it.
+                // This has higher precedence, too, since `any` arguments should receive
+                // the entire payload.
+                return;
+            }
+
+            if (entrySignature.Count == 1 && eventPayloadType.Canonicalize() is TupleType tuple &&
+                tuple.Types.Count == 1 && entrySignature[0].IsAssignableFrom(tuple.Types[0]))
+            {
+                // handles the case where we have something like:
+                // event E : (int);
+                // on E do (x : int) { ... }
+                // this is silly, but should be allowable since tuples are unpacked in:
+                // event E2 : (int, bool);
+                // on E2 do (x : int, b : bool) { ... }
+                return;
+            }
+
+            if (entrySignature.Count == 1)
+            {
+                throw handler.TypeMismatch(sourceLocation, eventPayloadType, entrySignature[0]);
+            }
+
+            PLanguageType entrySignatureType = new TupleType(entrySignature.ToArray());
+            if (!entrySignatureType.IsAssignableFrom(eventPayloadType))
+            {
+                throw handler.TypeMismatch(sourceLocation, eventPayloadType, entrySignatureType);
             }
         }
 

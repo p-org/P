@@ -51,7 +51,7 @@ machine Main {
 			BOOL = payload.sec[2];
 			assert ( BOOL == true );
 		}
-		on halt do (payload: any) {
+		on halt do {
 			//MACH = payload;                 //error
 			//INT = payload;                  //error
 		}

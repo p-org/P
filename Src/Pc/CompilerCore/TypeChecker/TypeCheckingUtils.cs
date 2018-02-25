@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.Types;
@@ -110,6 +109,9 @@ namespace Microsoft.Pc.TypeChecker
 
         public static int PrintStmtNumArgs(string message)
         {
+            // Tried using regex for this and it became a hotspot.
+            // There are specific unit tests for this method.
+            // Do not modify without adding tests.
             var max = 0;
             for (var i = 0; i < message.Length; i++)
             {

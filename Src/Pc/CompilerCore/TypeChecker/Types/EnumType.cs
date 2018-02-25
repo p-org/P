@@ -1,17 +1,20 @@
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
 {
     public class EnumType : PLanguageType
     {
-        public EnumType(PEnum enumDecl) : base(TypeKind.Enum) { EnumDecl = enumDecl; }
+        public EnumType(PEnum enumDecl) : base(TypeKind.Enum)
+        {
+            EnumDecl = enumDecl;
+        }
 
         public PEnum EnumDecl { get; }
 
         public override string OriginalRepresentation => EnumDecl.Name;
         public override string CanonicalRepresentation => EnumDecl.Name;
+        public override IReadOnlyList<PEvent> AllowedPermissions { get; } = new List<PEvent>();
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
@@ -20,8 +23,9 @@ namespace Microsoft.Pc.TypeChecker.Types
             return (otherType as EnumType)?.EnumDecl == EnumDecl;
         }
 
-        public override PLanguageType Canonicalize() { return this; }
-
-        public override IEnumerable<PEvent> AllowedPermissions()  { return Enumerable.Empty<PEvent>(); }
+        public override PLanguageType Canonicalize()
+        {
+            return this;
+        }
     }
 }

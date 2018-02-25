@@ -3,7 +3,6 @@ using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -203,6 +202,11 @@ namespace Microsoft.Pc.TypeChecker
                               "Print format placeholders must contain only digits. Escape braces by doubling them.");
         }
 
+        public Exception CreatedSpecMachine(ParserRuleContext location, Machine machine)
+        {
+            return IssueError(location, $"tried to create spec machine {machine.Name} with new.");
+        }
+
         public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
         {
             return new TranslationException($"[{GetLocation(ctx, location)}] {message}");
@@ -221,6 +225,11 @@ namespace Microsoft.Pc.TypeChecker
         public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent)
         {
             return IssueError(location, $"invalid assert operation. event {illegalEvent.Name} in observes set of {monitor.Name} is not in the sends set of the module");
+        }
+
+        public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor)
+        {
+            return IssueError(location, $"invalid assert operation. monitor {monitor.Name} already attached in the module");
         }
 
         public Exception InvalidHideEventExpr(ParserRuleContext location, string message)

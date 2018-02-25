@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
 using Antlr4.Runtime;
-using Antlr4.Runtime.Tree;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -54,10 +52,12 @@ namespace Microsoft.Pc.TypeChecker
         Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable);
         Exception SwappedField(SwapAssignStmt swapAssignStmt, Variable variable);
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
+        Exception CreatedSpecMachine(ParserRuleContext location, Machine machine);
 
         // module system related
         Exception InvalidBindExpr(ParserRuleContext location, string message);
         Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent);
+        Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor);
         Exception InvalidHideEventExpr(ParserRuleContext location, string message);
         Exception InvalidHideInterfaceExpr(ParserRuleContext location, string message);
         Exception InvalidRenameExpr(ParserRuleContext location, string message);

@@ -1,9 +1,7 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
@@ -13,7 +11,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public Interface(string name, ParserRuleContext sourceNode)
         {
-            Debug.Assert(sourceNode is PParser.InterfaceDeclContext);
+            Debug.Assert(sourceNode is PParser.InterfaceDeclContext || sourceNode is PParser.ImplMachineDeclContext);
             Name = name;
             SourceLocation = sourceNode;
         }

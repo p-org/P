@@ -1,16 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime.Misc;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Antlr4.Runtime.Tree;
-using Antlr4.Runtime.Misc;
+using Microsoft.Pc.TypeChecker.AST.ModuleExprs;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Microsoft.Pc.TypeChecker
 {
-    class ModuleSystemDeclarations
+    internal static class ModuleSystemDeclarations
     {
-
         public static void PopulateAllModuleExprs(
             ITranslationErrorHandler handler,
             Scope globalScope)
@@ -26,13 +25,13 @@ namespace Microsoft.Pc.TypeChecker.AST
             // all the test declarations
             foreach (SafetyTest test in globalScope.SafetyTests)
             {
-                var context = (PParser.SafetyTestDeclContext)test.SourceLocation;
+                var context = (PParser.SafetyTestDeclContext) test.SourceLocation;
                 test.ModExpr = modExprVisitor.Visit(context.modExpr());
             }
 
             foreach (RefinementTest test in globalScope.RefinementTests)
             {
-                var context = (PParser.RefinementTestDeclContext)test.SourceLocation;
+                var context = (PParser.RefinementTestDeclContext) test.SourceLocation;
                 test.LeftModExpr = modExprVisitor.Visit(context.modExpr()[0]);
                 test.RightModExpr = modExprVisitor.Visit(context.modExpr()[1]);
             }
@@ -40,17 +39,16 @@ namespace Microsoft.Pc.TypeChecker.AST
             // all the implementations
             foreach (Implementation impl in globalScope.Implementations)
             {
-                var context = (PParser.ImplementationDeclContext)impl.SourceLocation;
+                var context = (PParser.ImplementationDeclContext) impl.SourceLocation;
                 impl.ModExpr = modExprVisitor.Visit(context.modExpr());
             }
-            
         }
     }
 
-    class ModuleExprVisitor : PParserBaseVisitor<IPModuleExpr>
+    internal class ModuleExprVisitor : PParserBaseVisitor<IPModuleExpr>
     {
-        private ITranslationErrorHandler handler;
-        private Scope globalScope;
+        private readonly Scope globalScope;
+        private readonly ITranslationErrorHandler handler;
 
         public ModuleExprVisitor(
             ITranslationErrorHandler handler,
@@ -63,78 +61,67 @@ namespace Microsoft.Pc.TypeChecker.AST
         public override IPModuleExpr VisitNamedModule([NotNull] PParser.NamedModuleContext context)
         {
             // check if the named module is declared
-            if (globalScope.Get(context.GetText(), out NamedModule mod))
-            {
-                var declContext = (PParser.NamedModuleDeclContext)mod.SourceLocation;
-                return Visit(declContext.modExpr());
-            }
-            else
+            if (!globalScope.Get(context.GetText(), out NamedModule mod))
             {
                 throw handler.MissingDeclaration(context, "module", context.GetText());
             }
 
+            var declContext = (PParser.NamedModuleDeclContext) mod.SourceLocation;
+            return Visit(declContext.modExpr());
         }
 
         public override IPModuleExpr VisitPrimitiveModuleExpr([NotNull] PParser.PrimitiveModuleExprContext context)
         {
-            var bindings = new List<Tuple<Interface, Machine>>();
-            foreach(var bindExpr in context._bindslist)
-            {
-                bindings.Add(VisitBindExpr(bindExpr));
-            }
+            var bindings = context._bindslist.Select(VisitBindExpr).ToList();
             return new BindModuleExpr(context, bindings);
         }
 
         public override IPModuleExpr VisitComposeModuleExpr([NotNull] PParser.ComposeModuleExprContext context)
         {
-            List<IPModuleExpr> moduleList = new List<IPModuleExpr>();
-            foreach (var modExpr in context._mexprs)
-            {
-                moduleList.Add(Visit(modExpr));
-            }
+            var moduleList = context._mexprs.Select(Visit).ToList();
             return new UnionOrComposeModuleExpr(context, moduleList, true);
         }
 
         public override IPModuleExpr VisitHideEventsModuleExpr([NotNull] PParser.HideEventsModuleExprContext context)
         {
-            List<PEvent> eventList = new List<PEvent>();
+            var eventList = new List<PEvent>();
             foreach (PParser.NonDefaultEventContext eventName in context.nonDefaultEventList()._events)
             {
                 if (!globalScope.Get(eventName.GetText(), out PEvent @event))
                 {
                     throw handler.MissingDeclaration(eventName, "event", eventName.GetText());
                 }
-                else
-                {
-                    eventList.Add(@event);
-                }
+
+                eventList.Add(@event);
             }
+
             return new HideEventModuleExpr(context, eventList, Visit(context.modExpr()));
         }
 
-        public override IPModuleExpr VisitHideInterfacesModuleExpr([NotNull] PParser.HideInterfacesModuleExprContext context)
+        public override IPModuleExpr VisitHideInterfacesModuleExpr(
+            [NotNull] PParser.HideInterfacesModuleExprContext context)
         {
-            List<Interface> interfaceList = new List<Interface>();
+            var interfaceList = new List<Interface>();
             foreach (PParser.IdenContext interfaceName in context.idenList()._names)
             {
                 if (!globalScope.Get(interfaceName.GetText(), out Interface @interface))
                 {
                     throw handler.MissingDeclaration(interfaceName, "interface", interfaceName.GetText());
                 }
-                else
-                {
-                    interfaceList.Add(@interface);
-                }
+
+                interfaceList.Add(@interface);
             }
+
             return new HideInterfaceModuleExpr(context, interfaceList, Visit(context.modExpr()));
         }
 
         public override IPModuleExpr VisitRenameModuleExpr([NotNull] PParser.RenameModuleExprContext context)
         {
-            if(!globalScope.Get(context.newName.GetText(), out Interface newInterface))
+            if (!globalScope.Get(context.newName.GetText(), out Interface newInterface))
             {
                 throw handler.MissingDeclaration(context.newName, "interface", context.newName.GetText());
             }
+
             if (!globalScope.Get(context.oldName.GetText(), out Interface oldInterface))
             {
                 throw handler.MissingDeclaration(context.oldName, "interface", context.oldName.GetText());
@@ -145,53 +132,49 @@ namespace Microsoft.Pc.TypeChecker.AST
 
         public override IPModuleExpr VisitUnionModuleExpr([NotNull] PParser.UnionModuleExprContext context)
         {
-            List<IPModuleExpr> moduleList = new List<IPModuleExpr>();
-            foreach(var modExpr in context._mexprs)
-            {
-                moduleList.Add(Visit(modExpr));
-            }
+            var moduleList = context._mexprs.Select(Visit).ToList();
             return new UnionOrComposeModuleExpr(context, moduleList, false);
         }
 
         public override IPModuleExpr VisitAssertModuleExpr([NotNull] PParser.AssertModuleExprContext context)
         {
-            List<Machine> monList = new List<Machine>();
-            foreach(PParser.IdenContext monName in context.idenList()._names)
+            var monList = new List<Machine>();
+            foreach (PParser.IdenContext monName in context.idenList()._names)
             {
-                if(!globalScope.Get(monName.GetText(), out Machine mon))
+                if (!globalScope.Get(monName.GetText(), out Machine mon))
                 {
                     throw handler.MissingDeclaration(monName, "spec machine", monName.GetText());
                 }
+
+                if (!mon.IsSpec)
+                {
+                    handler.IssueError(monName, $"expected a specification machine instead of {mon.Name}");
+                }
                 else
                 {
-                    if(!mon.IsSpec)
-                    {
-                        handler.IssueError(monName, $"expected a specification machine instead of {mon.Name}");
-                    }
-                    else
-                    {
-                        monList.Add(mon);
-                    }
+                    monList.Add(mon);
                 }
             }
+
             return new AssertModuleExpr(context, monList, Visit(context.modExpr()));
         }
 
         private new Tuple<Interface, Machine> VisitBindExpr([NotNull] PParser.BindExprContext context)
         {
             string machine = context.mName.GetText();
-            string @interface = context.iName == null ? machine : context.iName.GetText();
+            string @interface = context.iName?.GetText() ?? machine;
 
-            if(!globalScope.Get(@interface, out Interface i))
+            if (!globalScope.Get(@interface, out Interface i))
             {
                 throw handler.MissingDeclaration(context.iName, "interface", @interface);
             }
+
             if (!globalScope.Get(machine, out Machine m))
             {
                 throw handler.MissingDeclaration(context.mName, "machine", machine);
             }
 
-            return new Tuple<Interface, Machine>(i, m);
+            return Tuple.Create(i, m);
         }
     }
 }

@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
@@ -23,6 +22,8 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         public override string OriginalRepresentation { get; }
         public override string CanonicalRepresentation { get; }
+
+        public override IReadOnlyList<PEvent> AllowedPermissions { get; } = new List<PEvent>();
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
@@ -49,7 +50,5 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             return this;
         }
-
-        public override IEnumerable<PEvent> AllowedPermissions() { return Enumerable.Empty<PEvent>(); }
     }
 }

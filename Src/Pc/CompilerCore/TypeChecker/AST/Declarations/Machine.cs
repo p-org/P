@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
@@ -32,7 +31,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public IEnumerable<Variable> Fields => fields;
         public IEnumerable<Function> Methods => methods;
         public State StartState { get; set; }
-        public NamedEventSet Observes { get; set; }
+        public IEventSet Observes { get; set; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
         public ParserRuleContext SourceLocation { get; }
 

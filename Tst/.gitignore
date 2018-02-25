@@ -18,3 +18,9 @@ trace
 !UnitTests/**/*
 UnitTests/bin/**/*
 UnitTests/obj/**/*
+!UnitTestsCore/**/*
+UnitTestsCore/bin/**/*
+UnitTestsCore/obj/**/*
+!LegacyUnitTests/**/*
+LegacyUnitTests/bin/**/*
+LegacyUnitTests/obj/**/*

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -6,11 +7,15 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class TupleType : PLanguageType
     {
+        private readonly Lazy<IReadOnlyList<PEvent>> allowedPermissions;
+
         public TupleType(params PLanguageType[] types) : base(TypeKind.Tuple)
         {
             Types = new List<PLanguageType>(types);
             OriginalRepresentation = $"({string.Join(",", Types.Select(type => type.OriginalRepresentation))})";
             CanonicalRepresentation = $"({string.Join(",", Types.Select(type => type.CanonicalRepresentation))})";
+            allowedPermissions =
+                new Lazy<IReadOnlyList<PEvent>>(() => Types.SelectMany(t => t.AllowedPermissions).ToList());
         }
 
         public IReadOnlyList<PLanguageType> Types { get; }
@@ -18,6 +23,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override string OriginalRepresentation { get; }
 
         public override string CanonicalRepresentation { get; }
+        public override IReadOnlyList<PEvent> AllowedPermissions => allowedPermissions.Value;
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
@@ -31,11 +37,6 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override PLanguageType Canonicalize()
         {
             return new TupleType(Types.Select(t => t.Canonicalize()).ToArray());
-        }
-
-        public override IEnumerable<PEvent> AllowedPermissions()
-        {
-            return Types.SelectMany(t => t.AllowedPermissions());
         }
     }
 }

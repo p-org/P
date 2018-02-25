@@ -2,33 +2,43 @@
 {
     public class CommandLine
     {
-        private static ICompiler GetCompiler(CommandLineOptions options)
+        private static bool GetCompiler(CommandLineOptions options, out ICompiler compiler)
         {
+            compiler = null;
             if (options.compilerOutput == CompilerOutput.PSharp)
             {
-                return new AntlrCompiler();
+                compiler = new AntlrCompiler();
+                return true;
             }
+
             if (options.compilerService)
             {
-                return new CompilerServiceClient();
+                compiler = new CompilerServiceClient();
+                return true;
             }
-            return new LegacyCompiler(options.shortFileNames);
+
+            compiler = new LegacyCompiler(options.shortFileNames);
+            return true;
         }
 
         public static int Main(string[] args)
         {
-            if (CommandLineOptions.ParseArguments(args, out CommandLineOptions options))
+            if (!CommandLineOptions.ParseArguments(args, out CommandLineOptions options))
             {
-                ICompiler compiler = GetCompiler(options);
-                var output = new StandardOutput();
-                bool result = options.isLinkerPhase
-                                  ? compiler.Link(output, options)
-                                  : compiler.Compile(output, options);
-                return result ? 0 : -1;
+                CommandLineOptions.PrintUsage();
+                return -1;
             }
 
-            CommandLineOptions.PrintUsage();
-            return -1;
+            if (!GetCompiler(options, out ICompiler compiler))
+            {
+                return -1;
+            }
+
+            var output = new StandardOutput();
+            bool result = options.isLinkerPhase
+                ? compiler.Link(output, options)
+                : compiler.Compile(output, options);
+            return result ? 0 : -1;
         }
     }
 }

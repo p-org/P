@@ -288,3 +288,4 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /dotMemory
 /tmp
 /**/obj/
+nupkgs/

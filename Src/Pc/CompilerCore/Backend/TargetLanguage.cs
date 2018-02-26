@@ -4,20 +4,16 @@ namespace Microsoft.Pc.Backend
 {
     public class TargetLanguage
     {
-        private static readonly List<TargetLanguage> AllLanguagesList = new List<TargetLanguage>();
+        private static readonly IDictionary<CompilerOutput, ICodeGenerator> _backendMap = new Dictionary<CompilerOutput, ICodeGenerator>();
 
-        public static TargetLanguage Prt = new TargetLanguage("Prt");
-        public static TargetLanguage PSharp = new TargetLanguage("PSharp");
-        public static TargetLanguage P3 = new TargetLanguage("P3");
-
-        private TargetLanguage(string languageName)
+        public static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)
         {
-            LanguageName = languageName;
-            AllLanguagesList.Add(this);
+            _backendMap[name] = generator;
         }
 
-        public string LanguageName { get; }
-
-        public static IEnumerable<TargetLanguage> AllLanguages => AllLanguagesList;
+        public static ICodeGenerator GetCodeGenerator(CompilerOutput languageName)
+        {
+            return _backendMap[languageName];
+        }
     }
 }

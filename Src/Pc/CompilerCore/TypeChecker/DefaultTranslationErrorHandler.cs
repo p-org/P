@@ -257,11 +257,6 @@ namespace Microsoft.Pc.TypeChecker
         private readonly ParseTreeProperty<FileInfo> originalFiles;
         private readonly ICompilerOutput compilerOutput;
 
-        public DefaultTranslationErrorHandler(ParseTreeProperty<FileInfo> originalFiles)
-            : this(originalFiles, new StandardOutput())
-        {
-        }
-
         public DefaultTranslationErrorHandler(ParseTreeProperty<FileInfo> originalFiles, ICompilerOutput compilerOutput)
         {
             this.originalFiles = originalFiles;

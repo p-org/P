@@ -1,14 +1,10 @@
-﻿namespace Microsoft.Pc
+﻿using Microsoft.Pc.Backend;
+
+namespace Microsoft.Pc
 {
     public interface ICompilerOutput
     {
         void WriteMessage(string msg, SeverityKind severity);
-    }
-
-    public enum SeverityKind
-    {
-        Info,
-        Warning,
-        Error
+        void WriteFile(CompiledFile file);
     }
 }

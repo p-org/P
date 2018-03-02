@@ -21,7 +21,7 @@ namespace UnitTests
             var compilerOutput = new StringWriter();
             bool success = compiler.Compile(new CompilerOutputStream(compilerOutput), new CommandLineOptions
             {
-                compilerOutput = CompilerOutput.PSharp,
+                compilerOutput = CompilerOutput.C,
                 inputFileNames = inputFiles.Select(file => file.FullName).ToList()
             });
             output = compilerOutput.ToString().Trim();
@@ -95,8 +95,7 @@ namespace UnitTests
             {
                 Assert.Fail($"Expected error, but none were found!\n\t{fileList}\n");
             }
-
-            Assert.Pass($"{output}\n\t{fileList}\n");
+            Console.WriteLine(output);
         }
     }
 }

@@ -78,13 +78,13 @@
             this.Profiler = new NullProfiler();
         }
 
-        public bool Compile(ICompilerOutput log, CommandLineOptions options)
+        public bool Compile(ICompilerOutput output, CommandLineOptions options)
         {
             if (options.profile)
             {
-                this.Profiler = new ConsoleProfiler(log);
+                this.Profiler = new ConsoleProfiler(output);
             }
-            this.Log = log;
+            this.Log = output;
             this.Options = options;
             this.errorReporter = new ErrorReporter();
             PProgramTopDeclNames topDeclNames = new PProgramTopDeclNames();
@@ -716,13 +716,13 @@
             return true;
         }
 
-        public bool Link(ICompilerOutput log, CommandLineOptions options)
+        public bool Link(ICompilerOutput output, CommandLineOptions options)
         {
             if (options.profile)
             {
-                this.Profiler = new ConsoleProfiler(log);
+                this.Profiler = new ConsoleProfiler(output);
             }
-            this.Log = log;
+            this.Log = output;
             this.Options = options;
             this.errorReporter = new ErrorReporter();
             var linkModel = Factory.Instance.MkModel(

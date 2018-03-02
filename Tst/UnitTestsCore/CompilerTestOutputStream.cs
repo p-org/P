@@ -3,7 +3,7 @@ using Microsoft.Pc;
 
 namespace UnitTestsCore
 {
-    public class CompilerTestOutputStream : ICompilerOutput
+    public class CompilerTestOutputStream : StandardOutput
     {
         private readonly TextWriter writer;
 
@@ -12,7 +12,7 @@ namespace UnitTestsCore
             this.writer = writer;
         }
 
-        public void WriteMessage(string msg, SeverityKind severity)
+        public override void WriteMessage(string msg, SeverityKind severity)
         {
             writer.WriteLine("OUT: " + msg);
         }

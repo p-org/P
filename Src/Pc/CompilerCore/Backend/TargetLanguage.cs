@@ -6,6 +6,13 @@ namespace Microsoft.Pc.Backend
     {
         private static readonly IDictionary<CompilerOutput, ICodeGenerator> _backendMap = new Dictionary<CompilerOutput, ICodeGenerator>();
 
+        static TargetLanguage()
+        {
+            RegisterCodeGenerator(CompilerOutput.PThree, new P3CodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.PSharp, new PSharpCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.C, new PrtCodeGenerator());
+        }
+
         public static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)
         {
             _backendMap[name] = generator;

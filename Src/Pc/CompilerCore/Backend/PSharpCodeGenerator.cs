@@ -5,12 +5,8 @@ namespace Microsoft.Pc.Backend
 {
     public class PSharpCodeGenerator : ICodeGenerator
     {
-        static PSharpCodeGenerator()
-        {
-            TargetLanguage.RegisterCodeGenerator(CompilerOutput.PSharp, new PSharpCodeGenerator());
-        }
-
-        public IReadOnlyList<CompiledFile> GenerateCode(ITranslationErrorHandler handler, Scope globalScope, ICompilerOutput log)
+        public IReadOnlyList<CompiledFile> GenerateCode(ITranslationErrorHandler handler, ICompilerOutput log, string projectName,
+                                                        Scope globalScope)
         {
             log.WriteMessage("P# code generation not implemented.", SeverityKind.Error);
             return new List<CompiledFile>();

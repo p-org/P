@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Xml.Serialization;
+using Microsoft.Pc.Backend;
 
 namespace Microsoft.Pc
 {
@@ -328,6 +329,11 @@ namespace Microsoft.Pc
                 // send this back to the command line process that invoked this compiler.
                 DebugWriteLine("WriteMessage: " + msg);
                 pipe.WriteMessage(severity + ": " + msg);
+            }
+
+            public void WriteFile(CompiledFile file)
+            {
+                WriteMessage($"Server should not do file IO. File {file.FileName} not written.", SeverityKind.Warning);
             }
 
             public void Flush()

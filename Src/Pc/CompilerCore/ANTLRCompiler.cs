@@ -8,7 +8,6 @@ using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.Backend;
-using Microsoft.Pc.Backend.Debugging;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
@@ -17,14 +16,20 @@ namespace Microsoft.Pc
     [Export(typeof(ICompiler))]
     public class AntlrCompiler : ICompiler
     {
-        public bool Compile(ICompilerOutput log, CommandLineOptions options)
+        public bool Compile(ICompilerOutput output, CommandLineOptions options)
         {
+            if (options.inputFileNames.Count == 0)
+            {
+                output.WriteMessage("No input files specified.", SeverityKind.Error);
+                return false;
+            }
+
             try
             {
                 var inputFiles = options.inputFileNames.Select(name => new FileInfo(name)).ToArray();
                 var trees = new PParser.ProgramContext[inputFiles.Length];
                 var originalFiles = new ParseTreeProperty<FileInfo>();
-                ITranslationErrorHandler handler = new DefaultTranslationErrorHandler(originalFiles);
+                ITranslationErrorHandler handler = new DefaultTranslationErrorHandler(originalFiles, output);
 
                 for (var i = 0; i < inputFiles.Length; i++)
                 {
@@ -34,36 +39,31 @@ namespace Microsoft.Pc
                 }
 
                 Scope scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
-                Console.WriteLine(IrToPseudoP.Dump(scope));
                 foreach (Function fun in AllFunctions(scope))
                 {
                     IRTransformer.SimplifyMethod(fun);
                 }
 
-                Console.WriteLine("-----------------------------------------");
-                Console.WriteLine(IrToPseudoP.Dump(scope));
-
-                log.WriteMessage("Program valid.", SeverityKind.Info);
-
                 ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.compilerOutput);
-                foreach (CompiledFile compiledFile in backend.GenerateCode(handler, scope, log))
+                string projectName = Path.GetFileNameWithoutExtension(inputFiles[0].Name);
+                foreach (CompiledFile compiledFile in backend.GenerateCode(handler, output, projectName, scope))
                 {
-                    log.WriteMessage($"Writing {compiledFile.FileName}...", SeverityKind.Info);
-                    File.WriteAllText(compiledFile.FileName, compiledFile.Contents);
+                    output.WriteMessage($"Writing {compiledFile.FileName}...", SeverityKind.Info);
+                    output.WriteFile(compiledFile);
                 }
                 
                 return true;
             }
             catch (TranslationException e)
             {
-                log.WriteMessage(e.Message, SeverityKind.Error);
+                output.WriteMessage(e.Message, SeverityKind.Error);
                 return false;
             }
         }
 
-        public bool Link(ICompilerOutput log, CommandLineOptions options)
+        public bool Link(ICompilerOutput output, CommandLineOptions options)
         {
-            log.WriteMessage("Linking not yet implemented in Antlr toolchain.", SeverityKind.Info);
+            output.WriteMessage("Linking not yet implemented in Antlr toolchain.", SeverityKind.Info);
             return true;
         }
 

@@ -389,7 +389,7 @@ namespace PBuild
         public class PSolutionInfo
         {
             public string name;
-            public List<PProjectInfo> projects;
+            public readonly List<PProjectInfo> projects;
             public string solutionDir;
 
             public PSolutionInfo()
@@ -407,9 +407,14 @@ namespace PBuild
                 {
                     Console.WriteLine("- Projects: {0}", project.Name);
                     foreach (var psource in project.psources)
+                    {
                         Console.WriteLine("---> includes p file: {0}", psource);
+                    }
+
                     foreach (var dep in project.depends)
+                    {
                         Console.WriteLine("--> depends on: {0}", dep);
+                    }
                 }
                 Console.WriteLine("==============================================================");
             }
@@ -430,14 +435,6 @@ namespace PBuild
                 psources = new List<string>();
                 testscripts = new List<string>();
                 outputDir = null;
-            }
-        }
-
-        public class ConsoleOutputStream : ICompilerOutput
-        {
-            public void WriteMessage(string msg, SeverityKind severity)
-            {
-                WriteError(msg);
             }
         }
     }

@@ -38,10 +38,10 @@ namespace Microsoft.Pc
             service?.Close(); // we can only write one message at a time.
         }
 
-        public bool Link(ICompilerOutput log, CommandLineOptions options)
+        public bool Link(ICompilerOutput output, CommandLineOptions options)
         {
             options.isLinkerPhase = true;
-            return Compile(log, options);
+            return Compile(output, options);
         }
 
         private NamedPipe Connect(ICompilerOutput log)
@@ -90,12 +90,12 @@ namespace Microsoft.Pc
             Debug.WriteLine("(" + Thread.CurrentThread.ManagedThreadId + ") " + msg);
         }
 
-        public bool Compile(ICompilerOutput log, CommandLineOptions options)
+        public bool Compile(ICompilerOutput output, CommandLineOptions options)
         {
             var finished = false;
             var result = false;
 
-            NamedPipe service = Connect(log);
+            NamedPipe service = Connect(output);
             
             options.compilerId = id;
             var writer = new StringWriter();
@@ -124,19 +124,19 @@ namespace Microsoft.Pc
                         }
                         else
                         {
-                            log.WriteMessage(msg, severity);
+                            output.WriteMessage(msg, severity);
                         }
                     }
                     else
                     {
-                        log.WriteMessage(msg, SeverityKind.Info);
+                        output.WriteMessage(msg, SeverityKind.Info);
                     }
                 }
             }
             catch (Exception)
             {
                 result = false;
-                log.WriteMessage(
+                output.WriteMessage(
                     "PCompilerService is gone, did someone kill it?  Perhaps the P build is happening in parallel?",
                     SeverityKind.Error);
             }

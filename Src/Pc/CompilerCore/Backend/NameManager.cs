@@ -6,12 +6,18 @@ namespace Microsoft.Pc.Backend
 {
     public class NameManager
     {
-        private readonly ConditionalWeakTable<IPDecl, string> settledNames = new ConditionalWeakTable<IPDecl, string>();
-        private readonly HashSet<string> allNames = new HashSet<string>();
+        private readonly string namePrefix;
+        private readonly Dictionary<string, int> nameUsages = new Dictionary<string, int>();
+        private readonly ConditionalWeakTable<IPDecl, string> declNames = new ConditionalWeakTable<IPDecl, string>();
+
+        public NameManager(string namePrefix)
+        {
+            this.namePrefix = namePrefix;
+        }
 
         public string GetNameForNode(IPDecl node)
         {
-            if (settledNames.TryGetValue(node, out string name))
+            if (declNames.TryGetValue(node, out string name))
             {
                 return name;
             }
@@ -19,30 +25,26 @@ namespace Microsoft.Pc.Backend
             name = node.Name;
             if (name.StartsWith("$"))
             {
-                name = "tmp_" + name.Substring(1);
+                name = "PTMP_" + name.Substring(1);
             }
             else
             {
-                name = "pSrc_" + name;
+                name = namePrefix + name;
             }
 
-            name = AdjustName(name);
-            allNames.Add(name);
-            settledNames.Add(node, name);
-            return name;
-        }
-
-        private string AdjustName(string name)
-        {
-            // This takes O(|allNames|). It could be made more efficient by
-            // using a trie to walk down to the desired name, 
-            var suffix = 2;
-            string baseName = name;
-            while (allNames.Contains(name))
+            if (!nameUsages.TryGetValue(name, out int usages))
             {
-                name = $"{baseName}_{suffix}";
-                suffix++;
+                // name has not been used before
+                nameUsages.Add(name, 1);
             }
+            else
+            {
+                // name has been used `usages` times before
+                nameUsages[name] = usages + 1;
+                name = $"{name}_{usages}";
+            }
+
+            declNames.Add(node, name);
             return name;
         }
     }

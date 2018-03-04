@@ -10,7 +10,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         /// <summary>
         ///     The category of type this is (eg. sequence, map, base)
         /// </summary>
-        public TypeKind TypeKind { get; set; }
+        public TypeKind TypeKind { get; }
 
         /// <summary>
         ///     Original representation of the type in P.
@@ -27,6 +27,31 @@ namespace Microsoft.Pc.TypeChecker.Types
         public bool IsSameTypeAs(PLanguageType otherType)
         {
             return IsAssignableFrom(otherType) && otherType.IsAssignableFrom(this);
+        }
+
+        protected bool Equals(PLanguageType other)
+        {
+            return IsSameTypeAs(other);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (obj is null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, obj))
+            {
+                return true;
+            }
+
+            return obj.GetType() == GetType() && Equals((PLanguageType) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            return CanonicalRepresentation.GetHashCode();
         }
 
         public abstract PLanguageType Canonicalize();

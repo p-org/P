@@ -26,11 +26,13 @@ namespace Microsoft.Pc
 
             try
             {
+                // Compilation job details
                 var inputFiles = options.inputFileNames.Select(name => new FileInfo(name)).ToArray();
                 var trees = new PParser.ProgramContext[inputFiles.Length];
                 var originalFiles = new ParseTreeProperty<FileInfo>();
                 ITranslationErrorHandler handler = new DefaultTranslationErrorHandler(originalFiles, output);
 
+                // Run parser on every input file
                 for (var i = 0; i < inputFiles.Length; i++)
                 {
                     FileInfo inputFile = inputFiles[i];
@@ -38,12 +40,16 @@ namespace Microsoft.Pc
                     originalFiles.Put(trees[i], inputFile);
                 }
 
+                // Run typechecker and produce AST
                 Scope scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
-                foreach (Function fun in AllFunctions(scope))
+
+                // Convert functions to lowered SSA form with explicit cloning
+                foreach (var fun in TopLevelFunctions(scope).ToList())
                 {
                     IRTransformer.SimplifyMethod(fun);
                 }
 
+                // Run the selected backend on the project and write the files.
                 ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.compilerOutput);
                 string projectName = Path.GetFileNameWithoutExtension(inputFiles[0].Name);
                 foreach (CompiledFile compiledFile in backend.GenerateCode(handler, output, projectName, scope))
@@ -67,7 +73,7 @@ namespace Microsoft.Pc
             return true;
         }
 
-        private static IEnumerable<Function> AllFunctions(Scope globalScope)
+        private static IEnumerable<Function> TopLevelFunctions(Scope globalScope)
         {
             foreach (Function fun in globalScope.Functions)
             {

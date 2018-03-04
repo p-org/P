@@ -29,24 +29,9 @@ namespace Microsoft.Pc.TypeChecker.Types
             return IsAssignableFrom(otherType) && otherType.IsAssignableFrom(this);
         }
 
-        protected bool Equals(PLanguageType other)
-        {
-            return IsSameTypeAs(other);
-        }
-
         public override bool Equals(object obj)
         {
-            if (obj is null)
-            {
-                return false;
-            }
-
-            if (ReferenceEquals(this, obj))
-            {
-                return true;
-            }
-
-            return obj.GetType() == GetType() && Equals((PLanguageType) obj);
+            return !(obj is null) && (this == obj || obj.GetType() == GetType() && IsSameTypeAs((PLanguageType) obj));
         }
 
         public override int GetHashCode()

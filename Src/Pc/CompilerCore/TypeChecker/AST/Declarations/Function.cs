@@ -58,6 +58,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         // TODO: decouple this? turn it into flags? a mix?
         public bool? IsPure { get; set; }
 
+        public bool IsAnon => string.IsNullOrEmpty(Name);
+
         public bool? CanChangeState { get; set; }
         public bool? CanCommunicate { get; set; }
         public bool? IsNondeterministic { get; set; }

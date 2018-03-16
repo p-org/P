@@ -60,7 +60,7 @@ namespace UnitTests
                 bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
                 if (!expectCorrect)
                 {
-                    string[] lines = File.ReadAllLines(Path.Combine(testDir.FullName, "Pc", "acc_0.txt"));
+                    var lines = File.ReadAllLines(Path.Combine(testDir.FullName, "Pc", "acc_0.txt"));
                     if (lines.Count(line => line.StartsWith("OUT:")) != 2 && !exceptions.Contains(testName))
                     {
                         Console.WriteLine($"==== {testName} ====");
@@ -84,7 +84,7 @@ namespace UnitTests
                               .MakeRelativeUri(new Uri(testDir.FullName))
                               .ToString();
             bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
-            FileInfo[] inputFiles = testDir.GetFiles("*.p");
+            var inputFiles = testDir.GetFiles("*.p");
             bool result = RunTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
             if (expectCorrect && !result)
@@ -95,6 +95,22 @@ namespace UnitTests
             {
                 Assert.Fail($"Expected error, but none were found!\n\t{fileList}\n");
             }
+
+            Console.WriteLine(output);
+        }
+
+        [Test]
+        public void TestTemp()
+        {
+            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
+            FileInfo[] inputFiles = {new FileInfo(path)};
+            bool result = RunTest(out string output, inputFiles);
+            string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
+            if (!result)
+            {
+                Assert.Fail($"Expected correct, but error was found: {output}\n\t{fileList}\n");
+            }
+
             Console.WriteLine(output);
         }
     }

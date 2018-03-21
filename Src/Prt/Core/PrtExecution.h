@@ -185,22 +185,6 @@ extern "C"{
 		PRT_UINT16			length;
 	} PRT_STATESTACK;
 
-	typedef struct PRT_FUNSTACK_INFO
-	{
-		PRT_FUNDECL			*funDecl;
-		PRT_VALUE			**locals;
-		PRT_BOOLEAN			freeLocals; 
-		PRT_VALUE			***refArgs;
-		PRT_UINT16			returnTo;
-		PRT_CASEDECL		*rcase;
-	} PRT_FUNSTACK_INFO;
-
-	typedef struct PRT_FUNSTACK
-	{
-		PRT_FUNSTACK_INFO	funs[PRT_MAX_FUNSTACK_DEPTH];
-		PRT_UINT16			length;
-	} PRT_FUNSTACK;
-
 	typedef struct PRT_EVENTSTACK
 	{
 		PRT_EVENT			events[PRT_MAX_EVENTSTACK_DEPTH];
@@ -220,9 +204,8 @@ extern "C"{
 		PRT_UINT32			eventValue;
 		PRT_BOOLEAN			isHalted;
 		PRT_UINT32			currentState;
-		PRT_RECEIVEDECL		*receive;
 		PRT_STATESTACK		callStack;
-		PRT_FUNSTACK		funStack;
+		PRT_UINT32			*packedReceiveCases;
 		PRT_UINT32			destStateIndex;
 		PRT_VALUE			*currentTrigger;
 		PRT_VALUE			*currentPayload;
@@ -524,8 +507,7 @@ extern "C"{
 
 	PRT_BOOLEAN
 		PrtDequeueEvent(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_Inout_ PRT_FUNSTACK_INFO		*frame
+		_Inout_ PRT_MACHINEINST_PRIV	*context
 		);
 
 	FORCEINLINE
@@ -736,63 +718,10 @@ extern "C"{
 		_Inout_ PRT_MACHINEINST_PRIV		*context
 		);
 
-	PRT_FUNSTACK_INFO *
-		PrtTopOfFunStack(
-		_In_ PRT_MACHINEINST_PRIV	*context
-		);
-
-	PRT_FUNSTACK_INFO *
-		PrtBottomOfFunStack(
-		_In_ PRT_MACHINEINST_PRIV	*context
-		);
-
-	void
-		PrtPushNewEventHandlerFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_FUNDECL				*funDecl,
-		_In_ PRT_FUN_PARAM_STATUS       payloadStatus, 
-		_In_ PRT_VALUE					**locals
-		);
-
-	void
-		PrtPushNewFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_BOOLEAN				isFunApp,
-		_In_ PRT_FUNDECL				*funDecl,
-		...
-		);
-
-	PRT_API void
-		PrtPushFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_FUNSTACK_INFO *funStackInfo
-		);
-
-	PRT_API void
-		PrtPopFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_Inout_ PRT_FUNSTACK_INFO *funStackInfo
-		);
-
-	PRT_API void
-		PrtFreeLocals(
-		_In_ PRT_MACHINEINST_PRIV		*context,
-		_Inout_ PRT_FUNSTACK_INFO		*frame
-		);
-
-	PRT_API PRT_VALUE *
-		PrtWrapFunStmt(
-		_Inout_ PRT_FUNSTACK_INFO		*frame,
-		_In_ PRT_UINT16					funCallIndex,
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_FUNDECL				*funDecl
-		);
 
 	PRT_API PRT_BOOLEAN
 		PrtReceive(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_Inout_ PRT_FUNSTACK_INFO		*funStackInfo,
-		_In_ PRT_UINT16					receiveIndex
+		_Inout_ PRT_MACHINEINST_PRIV	*context
 		);
 
 	PRT_API void

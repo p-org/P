@@ -146,12 +146,13 @@ namespace Microsoft.Pc.Backend
                 case NamedModule namedModule:
                     return;
                 case PEvent pEvent when !pEvent.IsBuiltIn:
+                    long eventBound = Math.Min(pEvent.Assert == -1 ? uint.MaxValue : (uint) pEvent.Assert,
+                                               pEvent.Assume == -1 ? uint.MaxValue : (uint) pEvent.Assume);
+
                     bodyWriter.WriteLine($"PRT_EVENTDECL {GetPrtNameForDecl(context, pEvent)} = ");
                     bodyWriter.WriteLine("{");
                     bodyWriter.WriteLine("  { PRT_VALUE_KIND_EVENT, 0U },");
                     bodyWriter.WriteLine($"  \"{pEvent.Name}\",");
-                    long eventBound = Math.Min(pEvent.Assert == -1 ? uint.MaxValue : (uint) pEvent.Assert,
-                                               pEvent.Assume == -1 ? uint.MaxValue : (uint) pEvent.Assume);
                     bodyWriter.WriteLine($"  {eventBound}U,");
                     bodyWriter.WriteLine($"  &{context.Names.GetNameForType(pEvent.PayloadType)}");
                     bodyWriter.WriteLine("  0U,");
@@ -241,7 +242,7 @@ namespace Microsoft.Pc.Backend
                 case TupleType tupleType:
                     writer.WriteLine($"// TODO: implement types like {tupleType.CanonicalRepresentation}");
                     break;
-                case TypeDefType typeDefType:
+                case TypeDefType _:
                     throw new ArgumentException("typedefs shouldn't be possible after canonicalization", nameof(type));
             }
 

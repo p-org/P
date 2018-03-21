@@ -20,7 +20,7 @@ struct PRT_MACHINEINST; /* forward declaration */
 *	args are the parameters to the function.
 *   Returns a non-null pointer if function has a return type. Otherwise returns C null value. Caller frees return.
 */
-typedef PRT_VALUE *(PRT_CALL_CONV* PRT_SM_FUN)(_Inout_ struct PRT_MACHINEINST *context, _Inout_ PRT_VALUE** args);
+typedef PRT_VALUE *(PRT_CALL_CONV* PRT_SM_FUN)(_Inout_ struct PRT_MACHINEINST *context, _Inout_ PRT_VALUE*** refLocals);
 
 /** Represents a P event declaration */
 typedef struct PRT_EVENTDECL

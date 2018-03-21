@@ -718,21 +718,6 @@ extern "C"{
 		_Inout_ PRT_MACHINEINST_PRIV		*context
 		);
 
-	void
-		PrtPushNewEventHandlerFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_FUNDECL				*funDecl,
-		_In_ PRT_FUN_PARAM_STATUS       payloadStatus, 
-		_In_ PRT_VALUE					**locals
-		);
-
-	void
-		PrtPushNewFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_BOOLEAN				isFunApp,
-		_In_ PRT_FUNDECL				*funDecl,
-		...
-		);
 
 	PRT_API PRT_BOOLEAN
 		PrtReceive(

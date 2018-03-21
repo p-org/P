@@ -638,6 +638,7 @@ _Inout_ PRT_MACHINEINST_PRIV	*context
 		return PRT_FALSE;
 	}
 	*/
+	return PRT_FALSE;
 }
 
 
@@ -656,7 +657,44 @@ PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)
 	}
 }
 
-
+PRT_VALUE	***
+PrtInitParameters(
+	_Inout_ PRT_MACHINEINST_PRIV	*context,
+	_In_ PRT_FUNDECL				*funDecl,
+	_In_ PRT_FUN_PARAM_STATUS       payloadStatus
+)
+{
+	PRT_VALUE	***refLocals = PrtCalloc(1, sizeof(PRT_VALUE **));
+	PrtAssert(payloadStatus != PRT_FUN_PARAM_CLONE, "Incorrect payload status value");
+	if (funDecl->name == NULL)
+	{
+		
+		
+		if (payloadStatus == PRT_FUN_PARAM_SWAP)
+		{
+			refLocals[0] = &context->currentPayload;
+		}
+		else 
+		{
+			*refLocals = PrtCalloc(1, sizeof(PRT_VALUE **));
+			**refLocals = context->currentPayload;
+			context->currentPayload = NULL;
+			if (context->currentTrigger != NULL)
+			{
+				PrtFreeValue(context->currentTrigger);
+				context->currentTrigger = NULL;
+			}
+		}
+	}
+	else
+	{
+		if (payloadStatus != PRT_FUN_PARAM_SWAP)
+		{
+			PrtFreeTriggerPayload(context);
+		}
+	}
+	return refLocals;
+}
 
 void
 PrtPushState(
@@ -789,14 +827,17 @@ void
 PrtRunExitFunction(
 _In_ PRT_MACHINEINST_PRIV			*context
 )
-{
+{	
+	PRT_VALUE*** refLocals = NULL;
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement;
 
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
-	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
+	PRT_FUNDECL *exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
+	refLocals = PrtInitParameters(context, exitFun, PRT_FUN_PARAM_SWAP);
+	PrtGetExitFunction(context)((PRT_MACHINEINST *)context, refLocals);
 }
 
 FORCEINLINE
@@ -806,12 +847,13 @@ PrtRunTransitionFunction(
 	_In_ PRT_UINT32						transIndex
 )
 {
+	PRT_VALUE*** refLocals = NULL;
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement; 
 	PRT_FUNDECL *transFun = stateDecl->transitions[transIndex].transFun;
 	PRT_DBG_ASSERT(transFun != NULL, "Must be valid function");
-	PrtPushNewEventHandlerFrame(context, transFun, PRT_FUN_PARAM_SWAP, NULL);
-	transFun->implementation((PRT_MACHINEINST *)context);
+	refLocals = PrtInitParameters(context, transFun, PRT_FUN_PARAM_SWAP);
+	transFun->implementation((PRT_MACHINEINST *)context, refLocals);
 }
 
 static PRT_BOOLEAN
@@ -848,7 +890,8 @@ DoEntry:
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
 	PRT_FUNDECL *entryFun = currentState->entryFun;
-	entryFun->implementation((PRT_MACHINEINST *)context);
+	PRT_VALUE ***refLocals = PrtInitParameters(context, entryFun, PRT_FUN_PARAM_MOVE);
+	entryFun->implementation((PRT_MACHINEINST *)context, refLocals);
 	goto CheckLastOperation;
 
 DoAction:
@@ -869,7 +912,8 @@ DoAction:
 		PRT_MACHINESTATE state;
 		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
-		doFun->implementation((PRT_MACHINEINST *)context);
+		PRT_VALUE ***refLocals = PrtInitParameters(context, doFun, PRT_FUN_PARAM_MOVE);
+		doFun->implementation((PRT_MACHINEINST *)context, refLocals);
 	}
 	goto CheckLastOperation;
 
@@ -956,7 +1000,7 @@ DoDequeue:
 	PrtLockMutex(context->stateMachineLock);
 
 	PrtAssert(context->packedReceiveCases == NULL, "Machine must not be blocked at a receive");
-	if (PrtDequeueEvent(context, NULL))
+	if (PrtDequeueEvent(context))
 	{
 		lockHeld = PRT_FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
@@ -1280,6 +1324,7 @@ PrtDequeueEvent(
 			return PRT_FALSE;
 		}
 		*/
+		return PRT_FALSE;
 	}
 }
 
@@ -1967,10 +2012,6 @@ void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
 	{
 		PrtTraverseState(&machine->states[i], doInstall);
 	}
-	for (PRT_UINT32 i = 0; i < machine->nFuns; i++)
-	{
-		PrtTraverseFun(machine->funs[i], doInstall);
-	}
 }
 
 void PrtInstallProgram(_In_ PRT_PROGRAMDECL *p)
@@ -1985,10 +2026,6 @@ void PrtInstallProgram(_In_ PRT_PROGRAMDECL *p)
 	{
 		p->machines[i]->declIndex = i;
 		PrtTraverseMachine(p->machines[i], PRT_TRUE);
-	}
-	for (PRT_UINT32 i = 0; i < p->nGlobalFuns; i++)
-	{
-		PrtTraverseFun(p->globalFuns[i], PRT_TRUE);
 	}
 	for (PRT_UINT32 i = 0; i < p->nForeignTypes; i++)
 	{
@@ -2007,10 +2044,6 @@ void PrtUninstallProgram()
 	{
 		program->machines[i]->declIndex = 0;
 		PrtTraverseMachine(program->machines[i], PRT_FALSE);
-	}
-	for (PRT_UINT32 i = 0; i < program->nGlobalFuns; i++)
-	{
-		PrtTraverseFun(program->globalFuns[i], PRT_FALSE);
 	}
 	for (PRT_UINT32 i = 0; i < program->nForeignTypes; i++)
 	{

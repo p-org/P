@@ -453,7 +453,11 @@ namespace Microsoft.Pc.Backend
                         return new List<IPStmt> {returnStmt};
                     }
 
-                    var(returnValue, returnValueDeps) = SimplifyExpression(returnStmt.ReturnValue);
+                    var (returnValue, returnValueDeps) = SimplifyExpression(returnStmt.ReturnValue);
+                    if (!(returnValue is CloneExpr))
+                    {
+                        returnValue = new CloneExpr(returnValue);
+                    }
                     return returnValueDeps.Concat(new[]
                                           {
                                               new ReturnStmt(location, returnValue)

@@ -82,6 +82,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
         {
             string message = context.StringLiteral().GetText();
+            message = message.Substring(1, message.Length - 2); // strip beginning / end double quote
             int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(message);
             if (numNecessaryArgs == -1)
             {

@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
+using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Pc.Backend.ASTExt;
 using Microsoft.Pc.TypeChecker;
@@ -121,7 +124,7 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"\"{function.Name}\","); // name of function in original program
                     context.WriteLine(output, $"&{functionImplName},"); // pointer to implementation
-                    context.WriteLine(output, "NULL,"); // payload type for anonymous functions: always NULL.
+                    context.WriteLine(output, "NULL"); // payload type for anonymous functions: always NULL.
                     context.WriteLine(output, "};");
                     context.WriteLine(output);
                     context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
@@ -189,14 +192,21 @@ namespace Microsoft.Pc.Backend
                 context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue({varTypeName});");
             }
 
-            if (function.Signature.Parameters.Any() || function.LocalVariables.Any())
+            if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                context.WriteLine(output);
+                context.WriteLine(output, "PRT_VALUE* retval = NULL;");
             }
-
-            if (function.Body is CompoundStmt stmts)
+            else
             {
-                foreach (IPStmt stmt in stmts.Statements)
+                string nameForReturnType = context.Names.GetNameForType(function.Signature.ReturnType);
+                context.WriteLine(output, $"PRT_VALUE* retval = PrtMkDefaultValue({nameForReturnType});");
+            }
+            context.WriteLine(output);
+
+            // skip unnecessary nesting level.
+            if (function.Body is CompoundStmt body)
+            {
+                foreach (IPStmt stmt in body.Statements)
                 {
                     WriteStmt(context, stmt, output);
                 }
@@ -205,10 +215,19 @@ namespace Microsoft.Pc.Backend
             {
                 WriteStmt(context, function.Body, output);
             }
+
+            output.WriteLine("p_return:");
+            foreach (Variable localVariable in function.LocalVariables)
+            {
+                string varName = GetPrtNameForDecl(context, localVariable);
+                context.WriteLine(output, $"PrtFreeValue({varName}); {varName} = NULL;");
+            }
+            context.WriteLine(output, "return retval;");
         }
 
         private void WriteStmt(CompilationContext context, IPStmt stmt, TextWriter output)
         {
+            context.WriteLine(output, $"// {stmt.GetType().Name}");
             switch (stmt)
             {
                 case AnnounceStmt announceStmt:
@@ -216,6 +235,16 @@ namespace Microsoft.Pc.Backend
                 case AssertStmt assertStmt:
                     break;
                 case AssignStmt assignStmt:
+                    // Free old value
+                    context.Write(output, "PrtFreeValue(");
+                    WriteExpr(context, assignStmt.Variable, output);
+                    context.WriteLine(output, ");");
+
+                    // Assign new value
+                    WriteExpr(context, assignStmt.Variable, output);
+                    context.Write(output, " = ");
+                    WriteExpr(context, assignStmt.Value, output);
+                    context.WriteLine(output, ";");
                     break;
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");
@@ -232,6 +261,15 @@ namespace Microsoft.Pc.Backend
                 case GotoStmt gotoStmt:
                     break;
                 case IfStmt ifStmt:
+                    context.Write(output, "if (");
+                    WriteExpr(context, ifStmt.Condition, output);
+                    context.WriteLine(output, ")");
+                    WriteStmt(context, ifStmt.ThenBranch, output);
+                    if (ifStmt.ElseBranch != null)
+                    {
+                        context.WriteLine(output, "else");
+                        WriteStmt(context, ifStmt.ElseBranch, output);
+                    }
                     break;
                 case InsertStmt insertStmt:
                     break;
@@ -242,6 +280,7 @@ namespace Microsoft.Pc.Backend
                 case PopStmt popStmt:
                     break;
                 case PrintStmt printStmt:
+                    WritePrintStmt(context, output, printStmt);
                     break;
                 case RaiseStmt raiseStmt:
                     break;
@@ -250,9 +289,14 @@ namespace Microsoft.Pc.Backend
                 case RemoveStmt removeStmt:
                     break;
                 case ReturnStmt returnStmt:
-                    context.Write(output, "return ");
-                    WriteExpr(context, returnStmt.ReturnValue, output);
-                    context.WriteLine(output, ";");
+                    if (returnStmt.ReturnValue != null)
+                    {
+                        context.WriteLine(output, "PrtFreeValue(retval);");
+                        context.Write(output, "retval = ");
+                        WriteExpr(context, returnStmt.ReturnValue, output);
+                        context.WriteLine(output, ";");
+                    }
+                    context.WriteLine(output, "goto p_return;");
                     break;
                 case SendStmt sendStmt:
                     break;
@@ -261,6 +305,110 @@ namespace Microsoft.Pc.Backend
                 case WhileStmt whileStmt:
                     break;
             }
+            context.WriteLine(output);
+        }
+
+        private void WritePrintStmt(CompilationContext context, TextWriter output, PrintStmt printStmt1)
+        {
+            // format is {str0, n1, str1, n2, ..., nK, strK}
+            var printMessageParts = ParsePrintMessage(printStmt1.Message);
+
+            // Optimize for simple case.
+            if (printMessageParts.Length == 1)
+            {
+                context.Write(output, "PrtPrintf(\"");
+                context.Write(output, (string) printMessageParts[0]);
+                context.WriteLine(output, "\");");
+                return;
+            }
+
+            // Otherwise build full parameter pack...
+            int k = (printMessageParts.Length - 1) / 2;
+            context.Write(output, "PrtFormatPrintf(\"");
+            context.Write(output, (string) printMessageParts[0]);
+            context.Write(output, "\", ");
+            context.Write(output, printStmt1.Args.Count.ToString());
+            foreach (var printArg in printStmt1.Args)
+            {
+                context.Write(output, ", PRT_FUN_PARAM_CLONE, ");
+                WriteExpr(context, printArg, output);
+            }
+
+            context.Write(output, ", ");
+            context.Write(output, k.ToString());
+            for (var i = 0; i < k; i++)
+            {
+                var n = (int) printMessageParts[1 + 2 * i];
+                var s = (string) printMessageParts[1 + 2 * i + 1];
+                context.Write(output, ", ");
+                context.Write(output, n.ToString());
+                context.Write(output, ", \"");
+                context.Write(output, s);
+                context.Write(output, "\"");
+            }
+
+            context.WriteLine(output, ");");
+        }
+
+        public static object[] ParsePrintMessage(string message)
+        {
+            var parts = new List<object>();
+            var sb = new StringBuilder();
+            for (var i = 0; i < message.Length; i++)
+            {
+                if (message[i] == '{')
+                {
+                    if (i + 1 == message.Length)
+                    {
+                        throw new ArgumentException("unmatched opening brace", nameof(message));
+                    }
+
+                    if (message[i+1] == '{')
+                    {
+                        i++;
+                        sb.Append(message[i]);
+                    }
+                    else if (char.IsDigit(message[i + 1]))
+                    {
+                        parts.Add(sb.ToString());
+                        sb.Clear();
+
+                        var position = 0;
+                        while (++i < message.Length && '0' <= message[i] && message[i] <= '9')
+                        {
+                            position = 10 * position + (message[i] - '0');
+                        }
+
+                        if (i == message.Length || message[i] != '}')
+                        {
+                            throw new ArgumentException("unmatched opening brace in position expression", nameof(message));
+                        }
+
+                        parts.Add(position);
+                    }
+                    else
+                    {
+                        throw new ArgumentException("opening brace not followed by digits", nameof(message));
+                    }
+                }
+                else if (message[i] == '}')
+                {
+                    if (i + 1 == message.Length || message[i + 1] != '}')
+                    {
+                        throw new ArgumentException("unmatched closing brace", nameof(message));
+                    }
+
+                    sb.Append(message[i]);
+                    i++;
+                }
+                else
+                {
+                    sb.Append(message[i]);
+                }
+            }
+
+            parts.Add(sb.ToString());
+            return parts.ToArray();
         }
 
         private void WriteExpr(CompilationContext context, IPExpr expr, TextWriter output)
@@ -268,10 +416,34 @@ namespace Microsoft.Pc.Backend
             switch (expr)
             {
                 case CloneExpr cloneExpr:
+                    context.Write(output, "PrtCloneValue(");
+                    WriteExpr(context, cloneExpr.SubExpr, output);
+                    context.Write(output, ")");
                     break;
                 case BinOpExpr binOpExpr:
-                    break;
+                    var binOpLhs = binOpExpr.Lhs;
+                    var binOpRhs = binOpExpr.Rhs;
+                    Debug.Assert(binOpLhs.Type.IsSameTypeAs(binOpRhs.Type));
+                    Debug.Assert(binOpLhs.Type.IsSameTypeAs(PrimitiveType.Int) || binOpLhs.Type.IsSameTypeAs(PrimitiveType.Bool) || binOpLhs.Type.IsSameTypeAs(PrimitiveType.Float));
+
+                    var (binOpGetter, binOpBuilder) = GetTypeStructureFuns(binOpLhs.Type);
+                    context.Write(output, $"{binOpBuilder}(");
+
+                    context.Write(output, $"{binOpGetter}(");
+                    WriteExpr(context, binOpLhs, output);
+                    context.Write(output, ")");
+
+                    BinOpType binOpType = binOpExpr.Operation;
+                    context.Write(output, $" {BinOpToStr(binOpType)} ");
+
+                    context.Write(output, $"{binOpGetter}(");
+                    WriteExpr(context, binOpRhs, output);
+                    context.Write(output, ")");
+
+                    context.Write(output, ")");
+                    break; 
                 case BoolLiteralExpr boolLiteralExpr:
+                    context.Write(output, $"PrtMkBoolValue({(boolLiteralExpr.Value ? "1" : "0")})");
                     break;
                 case CastExpr castExpr:
                     break;
@@ -282,6 +454,8 @@ namespace Microsoft.Pc.Backend
                 case CtorExpr ctorExpr:
                     break;
                 case DefaultExpr defaultExpr:
+                    string nameForDefaultType = context.Names.GetNameForType(defaultExpr.Type);
+                    context.Write(output, $"PrtMkDefaultValue({nameForDefaultType})");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
                     context.Write(output, GetPrtNameForDecl(context, enumElemRefExpr.EnumElem));
@@ -307,9 +481,11 @@ namespace Microsoft.Pc.Backend
                     break;
                 case NamedTupleExpr namedTupleExpr:
                     break;
-                case NondetExpr nondetExpr:
+                case NondetExpr _:
+                    context.Write(output, "PrtMkNondetBoolValue()");
                     break;
                 case NullLiteralExpr nullLiteralExpr:
+                    context.Write(output, "PrtMkNullValue()");
                     break;
                 case SeqAccessExpr seqAccessExpr:
                     break;
@@ -320,13 +496,101 @@ namespace Microsoft.Pc.Backend
                 case TupleAccessExpr tupleAccessExpr:
                     break;
                 case UnaryOpExpr unaryOpExpr:
+                    var (unOpGetter, unOpBuilder) = GetTypeStructureFuns(unaryOpExpr.Type);
+                    context.Write(output, $"{unOpBuilder}(");
+
+                    context.Write(output, UnOpToStr(unaryOpExpr.Operation));
+                    context.Write(output, $"{unOpGetter}(");
+                    WriteExpr(context, unaryOpExpr.SubExpr, output);
+                    context.Write(output, ")");
+
+                    context.Write(output, ")");
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
                     break;
                 case ValuesExpr valuesExpr:
                     break;
                 case VariableAccessExpr variableAccessExpr:
+                    if (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Param))
+                    {
+                        // dereference, since params are passed by reference.
+                        context.Write(output, "*");
+                    }
+                    context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
                     break;
+            }
+        }
+
+        private string UnOpToStr(UnaryOpType operation)
+        {
+            switch (operation)
+            {
+                case UnaryOpType.Negate:
+                    return "-";
+                case UnaryOpType.Not:
+                    return "!";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
+            }
+        }
+
+        private static (string, string) GetTypeStructureFuns(PLanguageType type)
+        {
+            string binOpGetter;
+            string binOpBuilder;
+            if (type.IsSameTypeAs(PrimitiveType.Int))
+            {
+                binOpGetter = "PrtPrimGetInt";
+                binOpBuilder = "PrtMkIntValue";
+            }
+            else if (type.IsSameTypeAs(PrimitiveType.Bool))
+            {
+                binOpGetter = "PrtPrimGetBool";
+                binOpBuilder = "PrtMkBoolValue";
+            }
+            else if (type.IsSameTypeAs(PrimitiveType.Float))
+            {
+                binOpGetter = "PrtPrimGetFloat";
+                binOpBuilder = "PrtMkFloatValue";
+            }
+            else
+            {
+                throw new ArgumentException("cannot destructure type", nameof(type));
+            }
+
+            return (binOpGetter, binOpBuilder);
+        }
+
+        private string BinOpToStr(BinOpType binOpType)
+        {
+            switch (binOpType)
+            {
+                case BinOpType.Add:
+                    return "+";
+                case BinOpType.Sub:
+                    return "-";
+                case BinOpType.Mul:
+                    return "*";
+                case BinOpType.Div:
+                    return "/";
+                case BinOpType.Eq:
+                    return "==";
+                case BinOpType.Neq:
+                    return "!=";
+                case BinOpType.Lt:
+                    return "<";
+                case BinOpType.Le:
+                    return "<=";
+                case BinOpType.Gt:
+                    return ">";
+                case BinOpType.Ge:
+                    return ">=";
+                case BinOpType.And:
+                    return "&&";
+                case BinOpType.Or:
+                    return "||";
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
             }
         }
 

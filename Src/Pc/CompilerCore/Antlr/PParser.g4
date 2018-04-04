@@ -55,9 +55,9 @@ topDecl : typeDefDecl
         | implMachineDecl
         | specMachineDecl
         | funDecl
-		| namedModuleDecl
-		| testDecl
-		| implementationDecl
+    | namedModuleDecl
+    | testDecl
+    | implementationDecl
         ;
 
 
@@ -220,24 +220,23 @@ rvalue : iden linear=(SWAP | MOVE)
 
 // module system related
 
-modExpr	: LBRACE bindslist+=bindExpr (COMMA bindslist+=bindExpr)* RBRACE			# PrimitiveModuleExpr
-		| iden																		# NamedModule
-		| LPAREN op=COMPOSE mexprs+=modExpr (COMMA mexprs+=modExpr)+ RPAREN			# ComposeModuleExpr
-		| LPAREN op=UNION   mexprs+=modExpr (COMMA  mexprs+=modExpr)+ RPAREN		# UnionModuleExpr
-		| LPAREN op=HIDEE  nonDefaultEventList IN modExpr RPAREN					# HideEventsModuleExpr
-		| LPAREN op=HIDEI	idenList IN modExpr RPAREN								# HideInterfacesModuleExpr
-		| LPAREN op=ASSERT  idenList IN modExpr RPAREN								# AssertModuleExpr
-		| LPAREN op=RENAME  oldName=iden TO newName=iden IN modExpr RPAREN			# RenameModuleExpr
-		;
+modExpr : LBRACE bindslist+=bindExpr (COMMA bindslist+=bindExpr)* RBRACE      # PrimitiveModuleExpr
+        | iden                                                                # NamedModule
+        | LPAREN op=COMPOSE mexprs+=modExpr (COMMA mexprs+=modExpr)+ RPAREN   # ComposeModuleExpr
+        | LPAREN op=UNION   mexprs+=modExpr (COMMA  mexprs+=modExpr)+ RPAREN  # UnionModuleExpr
+        | LPAREN op=HIDEE  nonDefaultEventList IN modExpr RPAREN              # HideEventsModuleExpr
+        | LPAREN op=HIDEI idenList IN modExpr RPAREN                          # HideInterfacesModuleExpr
+        | LPAREN op=ASSERT  idenList IN modExpr RPAREN                        # AssertModuleExpr
+        | LPAREN op=RENAME  oldName=iden TO newName=iden IN modExpr RPAREN    # RenameModuleExpr
+        ;
 
 
 bindExpr : (mName=iden | mName=iden RARROW iName=iden) ;
 
-namedModuleDecl : MODULE name=iden ASSIGN modExpr SEMI	;
+namedModuleDecl : MODULE name=iden ASSIGN modExpr SEMI ;
 
-testDecl : TEST testName=iden COLON modExpr SEMI 					# SafetyTestDecl
-		 | TEST testName=iden COLON modExpr REFINES modExpr SEMI	# RefinementTestDecl
-		 ;
+testDecl : TEST testName=iden COLON modExpr SEMI                  # SafetyTestDecl
+         | TEST testName=iden COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
+         ;
 
-implementationDecl : IMPLEMENTATION implName= iden COLON modExpr SEMI
-				   ; 
+implementationDecl : IMPLEMENTATION implName= iden COLON modExpr SEMI ; 

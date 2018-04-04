@@ -27,7 +27,15 @@ namespace Microsoft.Pc.Backend.Debugging
 
         protected override void WriteTypeRef(PLanguageType type) { WriteParts(type.OriginalRepresentation); }
 
-        protected override void WriteDeclRef(IPDecl decl) { WriteParts(decl.Name); }
+        protected override void WriteDeclRef(IPDecl decl)
+        {
+            string name = decl.Name;
+            if (decl is State state)
+            {
+                name = state.QualifiedName;
+            }
+            WriteParts(name);
+        }
 
         protected override void WriteStringList(IEnumerable<string> strs) { JoinObjects(strs); }
 

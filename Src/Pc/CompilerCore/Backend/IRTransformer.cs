@@ -33,12 +33,12 @@ namespace Microsoft.Pc.Backend
         private (VariableAccessExpr, IPStmt) SaveInTemporary(IPExpr expr, PLanguageType tempType)
         {
             ParserRuleContext location = expr.SourceLocation;
-            var temp = function.Scope.Put($"$tmp{numTemp++}", expr.SourceLocation, VariableRole.Local);
+            var temp = function.Scope.Put($"$tmp{numTemp++}", location, VariableRole.Local | VariableRole.Temp);
             Debug.Assert(tempType.IsAssignableFrom(expr.Type));
             temp.Type = tempType;
             function.AddLocalVariable(temp);
             var stmt = new AssignStmt(location, new VariableAccessExpr(location, temp), expr);
-            return (new VariableAccessExpr(expr.SourceLocation, temp), stmt);
+            return (new VariableAccessExpr(location, temp), stmt);
         }
 
         private (IPExpr, List<IPStmt>) SimplifyLvalue(IPExpr expr)

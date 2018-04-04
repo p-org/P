@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend
@@ -31,7 +32,14 @@ namespace Microsoft.Pc.Backend
                 return name;
             }
 
-            name = node.Name ?? "Anon";
+            name = node.Name;
+            if (node is State state)
+            {
+                name = state.QualifiedName;
+            }
+            name = string.IsNullOrEmpty(name) ? "Anon" : name;
+            name = name.Replace('.', '_');
+
             if (name.StartsWith("$"))
             {
                 name = "PTMP_" + name.Substring(1);

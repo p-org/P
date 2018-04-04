@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Mime;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Pc.Backend.ASTExt;
@@ -112,6 +111,7 @@ namespace Microsoft.Pc.Backend
 
         private void WriteSourceDecl(CompilationContext context, IPDecl decl, TextWriter output)
         {
+            string declName = GetPrtNameForDecl(context, decl);
             switch (decl)
             {
                 case EnumElem enumElem:
@@ -119,8 +119,8 @@ namespace Microsoft.Pc.Backend
                 case PEnum pEnum:
                     return;
                 case Function function:
-                    var functionImplName = context.Names.GetNameForFunctionImpl(function);
-                    context.WriteLine(output, $"PRT_FUNDECL {GetPrtNameForDecl(context, function)} =");
+                    string functionImplName = context.Names.GetNameForFunctionImpl(function);
+                    context.WriteLine(output, $"PRT_FUNDECL {declName} =");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"\"{function.Name}\","); // name of function in original program
                     context.WriteLine(output, $"&{functionImplName},"); // pointer to implementation
@@ -137,8 +137,30 @@ namespace Microsoft.Pc.Backend
                 case Interface @interface:
                     return;
                 case Machine machine:
+                    foreach (Function machineMethod in machine.Methods)
+                    {
+                        WriteSourceDecl(context, machineMethod, output);
+                    }
+                    foreach (var state in machine.States)
+                    {
+                        WriteSourceDecl(context, state, output);
+                    }
+                    foreach (var subGroup in machine.Groups)
+                    {
+                        WriteSourceDecl(context, subGroup, output);
+                    }
+
                     break;
                 case NamedEventSet namedEventSet:
+                    string innerSetName = context.Names.GetTemporaryName(namedEventSet.Name + "_INNER");
+                    var eventDeclNames = namedEventSet.Events.Select(x => "&" + GetPrtNameForDecl(context, x)).ToList();
+                    context.WriteLine(output, $"PRT_EVENTDECL* {innerSetName}[] = {{ {string.Join(", ", eventDeclNames)} }};");
+                    context.WriteLine(output, $"PRT_EVENTSETDECL {declName} =");
+                    context.WriteLine(output, "{");
+                    context.WriteLine(output, $"{eventDeclNames.Count}U,");
+                    context.WriteLine(output, $"{innerSetName},");
+                    context.WriteLine(output, "NULL");
+                    context.WriteLine(output, "};");
                     break;
                 case NamedModule namedModule:
                     return;
@@ -148,7 +170,7 @@ namespace Microsoft.Pc.Backend
                     long eventBound = Math.Min(pEvent.Assert == -1 ? uint.MaxValue : (uint) pEvent.Assert,
                                                pEvent.Assume == -1 ? uint.MaxValue : (uint) pEvent.Assume);
 
-                    context.WriteLine(output, $"PRT_EVENTDECL {GetPrtNameForDecl(context, pEvent)} = ");
+                    context.WriteLine(output, $"PRT_EVENTDECL {declName} = ");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, "{ PRT_VALUE_KIND_EVENT, 0U },");
                     context.WriteLine(output, $"\"{pEvent.Name}\",");
@@ -169,6 +191,14 @@ namespace Microsoft.Pc.Backend
                 case State state:
                     break;
                 case StateGroup stateGroup:
+                    foreach (var state in stateGroup.States)
+                    {
+                        WriteSourceDecl(context, state, output);
+                    }
+                    foreach (var subGroup in stateGroup.Groups)
+                    {
+                        WriteSourceDecl(context, subGroup, output);
+                    }
                     break;
             }
 
@@ -201,6 +231,7 @@ namespace Microsoft.Pc.Backend
                 string nameForReturnType = context.Names.GetNameForType(function.Signature.ReturnType);
                 context.WriteLine(output, $"PRT_VALUE* retval = PrtMkDefaultValue({nameForReturnType});");
             }
+
             context.WriteLine(output);
 
             // skip unnecessary nesting level.
@@ -222,6 +253,7 @@ namespace Microsoft.Pc.Backend
                 string varName = GetPrtNameForDecl(context, localVariable);
                 context.WriteLine(output, $"PrtFreeValue({varName}); {varName} = NULL;");
             }
+
             context.WriteLine(output, "return retval;");
         }
 
@@ -233,6 +265,9 @@ namespace Microsoft.Pc.Backend
                 case AnnounceStmt announceStmt:
                     break;
                 case AssertStmt assertStmt:
+                    context.Write(output, "PrtAssert(PrtPrimGetBool(");
+                    WriteExpr(context, assertStmt.Assertion, output);
+                    context.WriteLine(output, $"), \"{assertStmt.Message}\");");
                     break;
                 case AssignStmt assignStmt:
                     // Free old value
@@ -252,6 +287,7 @@ namespace Microsoft.Pc.Backend
                     {
                         WriteStmt(context, pStmt, output);
                     }
+
                     context.WriteLine(output, "}");
                     break;
                 case CtorStmt ctorStmt:
@@ -270,6 +306,7 @@ namespace Microsoft.Pc.Backend
                         context.WriteLine(output, "else");
                         WriteStmt(context, ifStmt.ElseBranch, output);
                     }
+
                     break;
                 case InsertStmt insertStmt:
                     break;
@@ -296,6 +333,7 @@ namespace Microsoft.Pc.Backend
                         WriteExpr(context, returnStmt.ReturnValue, output);
                         context.WriteLine(output, ";");
                     }
+
                     context.WriteLine(output, "goto p_return;");
                     break;
                 case SendStmt sendStmt:
@@ -305,6 +343,7 @@ namespace Microsoft.Pc.Backend
                 case WhileStmt whileStmt:
                     break;
             }
+
             context.WriteLine(output);
         }
 
@@ -328,7 +367,7 @@ namespace Microsoft.Pc.Backend
             context.Write(output, (string) printMessageParts[0]);
             context.Write(output, "\", ");
             context.Write(output, printStmt1.Args.Count.ToString());
-            foreach (var printArg in printStmt1.Args)
+            foreach (IPExpr printArg in printStmt1.Args)
             {
                 context.Write(output, ", PRT_FUN_PARAM_CLONE, ");
                 WriteExpr(context, printArg, output);
@@ -363,7 +402,7 @@ namespace Microsoft.Pc.Backend
                         throw new ArgumentException("unmatched opening brace", nameof(message));
                     }
 
-                    if (message[i+1] == '{')
+                    if (message[i + 1] == '{')
                     {
                         i++;
                         sb.Append(message[i]);
@@ -421,29 +460,40 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, ")");
                     break;
                 case BinOpExpr binOpExpr:
-                    var binOpLhs = binOpExpr.Lhs;
-                    var binOpRhs = binOpExpr.Rhs;
-                    Debug.Assert(binOpLhs.Type.IsSameTypeAs(binOpRhs.Type));
-                    Debug.Assert(binOpLhs.Type.IsSameTypeAs(PrimitiveType.Int) || binOpLhs.Type.IsSameTypeAs(PrimitiveType.Bool) || binOpLhs.Type.IsSameTypeAs(PrimitiveType.Float));
-
-                    var (binOpGetter, binOpBuilder) = GetTypeStructureFuns(binOpLhs.Type);
-                    context.Write(output, $"{binOpBuilder}(");
-
-                    context.Write(output, $"{binOpGetter}(");
-                    WriteExpr(context, binOpLhs, output);
-                    context.Write(output, ")");
-
+                    IPExpr binOpLhs = binOpExpr.Lhs;
+                    IPExpr binOpRhs = binOpExpr.Rhs;
                     BinOpType binOpType = binOpExpr.Operation;
-                    context.Write(output, $" {BinOpToStr(binOpType)} ");
 
-                    context.Write(output, $"{binOpGetter}(");
-                    WriteExpr(context, binOpRhs, output);
-                    context.Write(output, ")");
+                    if (binOpType == BinOpType.Eq || binOpType == BinOpType.Neq)
+                    {
+                        string negate = binOpType == BinOpType.Eq ? "" : "!";
+                        context.Write(output, $"PrtMkBoolValue({negate}PrtIsEqualValue(");
+                        WriteExpr(context, binOpLhs, output);
+                        context.Write(output, ", ");
+                        WriteExpr(context, binOpRhs, output);
+                        context.Write(output, "))");
+                    }
+                    else
+                    {
+                        var (binOpGetter, binOpBuilder) = GetTypeStructureFuns(binOpLhs.Type);
+                        context.Write(output, $"{binOpBuilder}(");
 
-                    context.Write(output, ")");
-                    break; 
+                        context.Write(output, $"{binOpGetter}(");
+                        WriteExpr(context, binOpLhs, output);
+                        context.Write(output, ")");
+
+                        context.Write(output, $" {BinOpToStr(binOpType)} ");
+
+                        context.Write(output, $"{binOpGetter}(");
+                        WriteExpr(context, binOpRhs, output);
+                        context.Write(output, ")");
+
+                        context.Write(output, ")");
+                    }
+
+                    break;
                 case BoolLiteralExpr boolLiteralExpr:
-                    context.Write(output, $"PrtMkBoolValue({(boolLiteralExpr.Value ? "1" : "0")})");
+                    context.Write(output, $"PrtMkBoolValue({(boolLiteralExpr.Value ? "PRT_TRUE" : "PRT_FALSE")})");
                     break;
                 case CastExpr castExpr:
                     break;
@@ -516,6 +566,12 @@ namespace Microsoft.Pc.Backend
                         // dereference, since params are passed by reference.
                         context.Write(output, "*");
                     }
+
+                    if (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Field))
+                    {
+                        context.Write(output, "p_this->");
+                    }
+
                     context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
                     break;
             }
@@ -538,7 +594,7 @@ namespace Microsoft.Pc.Backend
         {
             string binOpGetter;
             string binOpBuilder;
-            if (type.IsSameTypeAs(PrimitiveType.Int))
+            if (type.IsSameTypeAs(PrimitiveType.Int) || type.TypeKind.Equals(TypeKind.Enum))
             {
                 binOpGetter = "PrtPrimGetInt";
                 binOpBuilder = "PrtMkIntValue";
@@ -555,7 +611,7 @@ namespace Microsoft.Pc.Backend
             }
             else
             {
-                throw new ArgumentException("cannot destructure type", nameof(type));
+                throw new ArgumentException($"cannot destructure type {type.CanonicalRepresentation}", nameof(type));
             }
 
             return (binOpGetter, binOpBuilder);
@@ -627,11 +683,14 @@ namespace Microsoft.Pc.Backend
                     string ntStructName = context.Names.GetTemporaryName("NMDTUP");
                     var typeDeclNames = namedTupleType.Types.Select(t => WriteTypeDefinition(context, t, output));
                     context.WriteLine(
-                        output, $"static PRT_STRING {ntNamesArrayName}[] = {{ {string.Join(", ", namedTupleType.Names.Select(name => "\"" + name + "\""))} }};");
+                        output,
+                        $"static PRT_STRING {ntNamesArrayName}[] = {{ {string.Join(", ", namedTupleType.Names.Select(name => "\"" + name + "\""))} }};");
                     context.WriteLine(
-                        output, $"static PRT_TYPE* {ntTypesArrayName}[] = {{ {string.Join(", ", typeDeclNames.Select(name => "&" + name))} }};");
+                        output,
+                        $"static PRT_TYPE* {ntTypesArrayName}[] = {{ {string.Join(", ", typeDeclNames.Select(name => "&" + name))} }};");
                     context.WriteLine(
-                        output, $"static PRT_NMDTUPTYPE {ntStructName} = {{ {namedTupleType.Types.Count}, {ntNamesArrayName}, {ntTypesArrayName} }};");
+                        output,
+                        $"static PRT_NMDTUPTYPE {ntStructName} = {{ {namedTupleType.Types.Count}, {ntNamesArrayName}, {ntTypesArrayName} }};");
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NMDTUP, {{ &{ntStructName} }} }};");
                     break;
                 case PermissionType permissionType:
@@ -697,9 +756,6 @@ namespace Microsoft.Pc.Backend
                     }
 
                     break;
-                case State state:
-                    // TODO: merge names of state groups.
-                    break;
             }
 
             if (DeclNameParts.TryGetValue(decl.GetType(), out string prefix))
@@ -716,6 +772,8 @@ namespace Microsoft.Pc.Backend
 
         private class CompilationContext
         {
+            private bool lineHasBeenIndented;
+
             public CompilationContext(string projectName)
             {
                 ProjectName = projectName;
@@ -732,7 +790,6 @@ namespace Microsoft.Pc.Backend
             public HashSet<PLanguageType> WrittenTypes { get; } = new HashSet<PLanguageType>();
             public int IndentationLevel { get; set; }
 
-            private bool lineHasBeenIndented = false;
             public void WriteLine(TextWriter output, string format = "")
             {
                 // Unindent for every } at the beginning of the line, save the index 
@@ -756,6 +813,7 @@ namespace Microsoft.Pc.Backend
                 {
                     indentation = "";
                 }
+
                 output.WriteLine(indentation + format);
                 lineHasBeenIndented = false;
 
@@ -796,6 +854,7 @@ namespace Microsoft.Pc.Backend
                 {
                     indentation = "";
                 }
+
                 output.Write(indentation + format);
                 lineHasBeenIndented = true;
 
@@ -857,7 +916,8 @@ namespace Microsoft.Pc.Backend
                     break;
                 case PEnum pEnum:
                     context.WriteLine(
-                        output, $"typedef enum {declName} {{ {string.Join(", ", pEnum.Values.Select(val => $"{GetPrtNameForDecl(context, val)} = {val.Value}"))} }} {declName};");
+                        output,
+                        $"typedef enum {declName} {{ {string.Join(", ", pEnum.Values.Select(val => $"{GetPrtNameForDecl(context, val)} = {val.Value}"))} }} {declName};");
                     context.WriteLine(output);
                     break;
                 case PEvent pEvent:

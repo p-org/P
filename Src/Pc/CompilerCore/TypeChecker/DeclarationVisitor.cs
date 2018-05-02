@@ -221,9 +221,13 @@ namespace Microsoft.Pc.TypeChecker
             // cardinality? 
             var hasAssume = context.cardinality()?.ASSUME() != null;
             var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            machine.Assume = hasAssume ? cardinality : -1;
-            machine.Assert = hasAssert ? cardinality : -1;
+            var cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            if (cardinality > uint.MaxValue)
+            {
+                throw Handler.IssueError(context.cardinality(), "assume/assert not in uint32 range.");
+            }
+            machine.Assume = hasAssume ? (uint?)cardinality : null;
+            machine.Assert = hasAssert ? (uint?)cardinality : null;
 
             // receivesSends*
             foreach (var receivesSends in context.receivesSends())

@@ -23,8 +23,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         }
 
         public bool IsSpec { get; }
-        public int Assume { get; set; } = -1;
-        public int Assert { get; set; } = -1;
+        public uint? Assume { get; set; }
+        public uint? Assert { get; set; }
         public IEventSet Receives { get; set; }
         public IEventSet Sends { get; set; }
         public IInterfaceSet Creates { get; set; }

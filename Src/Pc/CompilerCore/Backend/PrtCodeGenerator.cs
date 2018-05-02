@@ -137,7 +137,8 @@ namespace Microsoft.Pc.Backend
                 case Interface @interface:
                     return;
                 case Machine machine:
-                    foreach (Function machineMethod in machine.Methods)
+                    var machineMethods = machine.Methods.ToList();
+                    foreach (Function machineMethod in machineMethods)
                     {
                         WriteSourceDecl(context, machineMethod, output);
                     }
@@ -149,6 +150,20 @@ namespace Microsoft.Pc.Backend
                     {
                         WriteSourceDecl(context, subGroup, output);
                     }
+
+                    var machineFields = machine.Fields.ToList();
+                    var maxQueueSize = machine.Assert ?? uint.MaxValue;
+
+                    context.WriteLine(output, $"PRT_MACHINEDECL {declName} = ");
+                    context.WriteLine(output, "{");
+                    context.WriteLine(output, "0U,");
+                    context.WriteLine(output, $"\"{machine.Name}\",");
+                    context.WriteLine(output, $"{machineFields.Count}U,");
+                    context.WriteLine(output, $"{machine.AllStates().Count()}U,");
+                    context.WriteLine(output, $"{machineMethods.Count}U,");
+                    context.WriteLine(output, $"{maxQueueSize}U,");
+                    
+                    context.WriteLine(output, "};");
 
                     break;
                 case NamedEventSet namedEventSet:

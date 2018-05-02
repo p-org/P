@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Pc.Backend.ASTExt;
@@ -132,10 +133,31 @@ namespace Microsoft.Pc.Backend
                     WriteFunctionBody(context, function, output);
                     context.WriteLine(output, "}");
                     break;
-                case Implementation implementation:
+                case Implementation _:
+                    // does not produce a struct definition
                     return;
                 case Interface @interface:
-                    return;
+                    string ifaceRecvSetName;
+                    if (@interface.ReceivableEvents is NamedEventSet)
+                    {
+                        ifaceRecvSetName = ((NamedEventSet) @interface.ReceivableEvents).Name;
+                    }
+                    else
+                    {
+                        var interfaceEventSet = new NamedEventSet(@interface.Name + "_RECV", @interface.SourceLocation);
+                        interfaceEventSet.AddEvents(@interface.ReceivableEvents.Events);
+                        WriteSourceDecl(context, interfaceEventSet, output);
+                        ifaceRecvSetName = GetPrtNameForDecl(context, interfaceEventSet);
+                    }
+                    
+                    context.WriteLine(output, $"PRT_INTERFACEDECL {declName} =");
+                    context.WriteLine(output, "{");
+                    context.WriteLine(output, $"{context.GetNumberForInterface(@interface)}U,");
+                    context.WriteLine(output, $"\"{@interface.Name}\",");
+                    context.WriteLine(output, $"&{context.Names.GetNameForType(@interface.PayloadType)},");
+                    context.WriteLine(output, $"{ifaceRecvSetName}");
+                    context.WriteLine(output, "};");
+                    break;
                 case Machine machine:
                     var machineMethods = machine.Methods.ToList();
                     foreach (Function machineMethod in machineMethods)
@@ -177,7 +199,8 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "NULL");
                     context.WriteLine(output, "};");
                     break;
-                case NamedModule namedModule:
+                case NamedModule _:
+                    // does not produce a struct definition
                     return;
                 case PEvent pEvent when pEvent.IsBuiltIn:
                     return;
@@ -195,15 +218,75 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "NULL");
                     context.WriteLine(output, "};");
                     break;
-                case RefinementTest refinementTest:
+                case RefinementTest _:
+                    // does not produce a struct definition
                     return;
-                case SafetyTest safetyTest:
+                case SafetyTest _:
+                    // does not produce a struct definition
                     return;
                 case TypeDef typeDef:
+                    context.WriteLine(output, $"PRT_TYPE* {declName} = &{context.Names.GetNameForType(typeDef.Type)};");
                     return;
                 case Variable variable:
                     return;
                 case State state:
+                    var stateEntryFunName = state.Entry == null ? "NULL" : $"&{GetPrtNameForDecl(context, state.Entry)}";
+                    var stateExitFunName = state.Exit == null ? "NULL" : $"&{GetPrtNameForDecl(context, state.Exit)}";
+
+                    var stateIndex = context.GetNumberForState(state);
+                    var stateData = BuildActionSets(context, state);
+
+                    WriteSourceDecl(context, stateData.DefersSet, output);
+                    WriteSourceDecl(context, stateData.TransSet, output);
+                    WriteSourceDecl(context, stateData.DosSet, output);
+
+                    var transArrName = context.Names.GetTemporaryName("TRANS");
+                    context.WriteLine(output, $"PRT_TRANSDECL {transArrName}[] =");
+                    context.WriteLine(output, "{");
+                    for (var i = 0; i < stateData.Trans.Count; i++)
+                    {
+                        (PEvent triggerEvent, int destIndex, string transFunRef) = stateData.Trans[i];
+                        string triggerName = GetPrtNameForDecl(context, triggerEvent);
+                        var comma = i == stateData.Trans.Count - 1 ? "" : ",";
+                        context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {destIndex}, {transFunRef} }}{comma}");
+                    }
+
+                    context.WriteLine(output, "};");
+                    context.WriteLine(output);
+
+                    var dosArrName = context.Names.GetTemporaryName("DOS");
+                    context.WriteLine(output, $"PRT_DODECL {dosArrName}[] =");
+                    context.WriteLine(output, "{");
+                    for (var i = 0; i < stateData.Dos.Count; i++)
+                    {
+                        (PEvent triggerEvent, Function transFun) = stateData.Dos[i];
+                        string triggerName = GetPrtNameForDecl(context, triggerEvent);
+                        var comma = i == stateData.Trans.Count - 1 ? "" : ",";
+                        context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{GetPrtNameForDecl(context, transFun)} }}{comma}");
+                    }
+
+                    context.WriteLine(output, "}");
+                    context.WriteLine(output);
+
+                    context.WriteLine(output, $"PRT_STATEDECL {declName} = ");
+                    context.WriteLine(output, "{");
+                    context.WriteLine(output, $"\"{state.QualifiedName}\",");
+                    
+                    // number of transitions
+                    context.WriteLine(output, $"{stateData.Trans.Count}U,");
+                    // number of do handlers
+                    context.WriteLine(output, $"{stateData.Dos.Count}U,");
+                    // defers event set
+                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.DefersSet)},");
+                    // transition event set
+                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.TransSet)},");
+                    // do trigger set
+                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.DosSet)},");
+                    // transitions[]
+                    // dos []
+                    context.WriteLine(output, $"{stateEntryFunName},");
+                    context.WriteLine(output, $"{stateExitFunName},");
+                    context.WriteLine(output, "};");
                     break;
                 case StateGroup stateGroup:
                     foreach (var state in stateGroup.States)
@@ -218,6 +301,67 @@ namespace Microsoft.Pc.Backend
             }
 
             context.WriteLine(output);
+        }
+
+        private class StateActionResults
+        {
+            public NamedEventSet DefersSet { get; }
+            public NamedEventSet TransSet { get; }
+            public NamedEventSet DosSet { get; }
+
+            public List<(PEvent, Function)> Dos { get; }
+            public List<(PEvent, int, string)> Trans { get; }
+
+            public StateActionResults(NamedEventSet defersSet, NamedEventSet transSet, NamedEventSet dosSet, List<(PEvent, Function)> dos, List<(PEvent, int, string)> trans)
+            {
+                DefersSet = defersSet;
+                TransSet = transSet;
+                DosSet = dosSet;
+                Dos = dos;
+                Trans = trans;
+            }
+        }
+
+        private static StateActionResults BuildActionSets(CompilationContext context, State state)
+        {
+            var defersSet = new NamedEventSet(state.Name + "_DEFERS", state.SourceLocation);
+            var transSet = new NamedEventSet(state.Name + "_TRANS", state.SourceLocation);
+            var dosSet = new NamedEventSet(state.Name + "_DOS", state.SourceLocation);
+
+            var dos = new List<(PEvent, Function)>();
+            var trans = new List<(PEvent, int, string)>();
+
+            foreach (var eventActionPair in state.AllEventHandlers)
+            {
+                PEvent pEvent = eventActionPair.Key;
+                switch (eventActionPair.Value)
+                {
+                    case EventDefer _:
+                        defersSet.AddEvent(pEvent);
+                        break;
+                    case EventDoAction eventDoAction:
+                        dosSet.AddEvent(pEvent);
+                        dos.Add((pEvent, eventDoAction.Target));
+                        break;
+                    case EventGotoState eventGotoState:
+                        transSet.AddEvent(pEvent);
+                        var transFunName = eventGotoState.TransitionFunction == null
+                                               ? "_P_NO_OP"
+                                               : GetPrtNameForDecl(context, eventGotoState.TransitionFunction);
+                        trans.Add((pEvent, context.GetNumberForState(eventGotoState.Target), "&" + transFunName));
+                        break;
+                    case EventIgnore _:
+                        dosSet.AddEvent(pEvent);
+                        dos.Add((pEvent, null));
+                        break;
+                    case EventPushState eventPushState:
+                        transSet.AddEvent(pEvent);
+                        trans.Add((pEvent, context.GetNumberForState(eventPushState.Target), "NULL"));
+                        break;
+                }
+            }
+
+            return new StateActionResults(defersSet,transSet,dosSet,dos,trans);
         }
 
         private void WriteFunctionBody(CompilationContext context, Function function, TextWriter output)
@@ -310,11 +454,22 @@ namespace Microsoft.Pc.Backend
                 case FunCallStmt funCallStmt:
                     break;
                 case GotoStmt gotoStmt:
+                    context.WriteLine(output, "PrtGoto(context, /* state index? */, ");
+                    if (gotoStmt.Payload != null)
+                    {
+                        context.Write(output, "1, ");
+                        WriteExpr(context, gotoStmt.Payload, output);
+                    }
+                    else
+                    {
+                        context.Write(output, "0");
+                    }
+                    context.WriteLine(output, ");");
                     break;
                 case IfStmt ifStmt:
-                    context.Write(output, "if (");
+                    context.Write(output, "if (PrtPrimGetBool(");
                     WriteExpr(context, ifStmt.Condition, output);
-                    context.WriteLine(output, ")");
+                    context.WriteLine(output, "))");
                     WriteStmt(context, ifStmt.ThenBranch, output);
                     if (ifStmt.ElseBranch != null)
                     {
@@ -327,9 +482,11 @@ namespace Microsoft.Pc.Backend
                     break;
                 case MoveAssignStmt moveAssignStmt:
                     break;
-                case NoStmt noStmt:
-                    break;
-                case PopStmt popStmt:
+                case NoStmt _:
+                    return;
+                case PopStmt _:
+                    context.WriteLine(output, "PrtPop(context);");
+                    context.WriteLine(output, "goto p_return;");
                     break;
                 case PrintStmt printStmt:
                     WritePrintStmt(context, output, printStmt);
@@ -356,6 +513,10 @@ namespace Microsoft.Pc.Backend
                 case SwapAssignStmt swapAssignStmt:
                     break;
                 case WhileStmt whileStmt:
+                    context.Write(output, "while (PrtPrimGetBool(");
+                    WriteExpr(context, whileStmt.Condition, output);
+                    context.WriteLine(output, "))");
+                    WriteStmt(context, whileStmt.Body, output);
                     break;
             }
 
@@ -667,6 +828,8 @@ namespace Microsoft.Pc.Backend
 
         private string WriteTypeDefinition(CompilationContext context, PLanguageType type, TextWriter output)
         {
+            type = type.Canonicalize();
+
             string typeGenName = context.Names.GetNameForType(type);
 
             if (context.WrittenTypes.Contains(type))
@@ -674,7 +837,7 @@ namespace Microsoft.Pc.Backend
                 return typeGenName;
             }
 
-            switch (type.Canonicalize())
+            switch (type)
             {
                 case BoundedType boundedType:
                     context.WriteLine(output, $"// TODO: implement types like {boundedType.CanonicalRepresentation}");
@@ -705,7 +868,7 @@ namespace Microsoft.Pc.Backend
                         $"static PRT_TYPE* {ntTypesArrayName}[] = {{ {string.Join(", ", typeDeclNames.Select(name => "&" + name))} }};");
                     context.WriteLine(
                         output,
-                        $"static PRT_NMDTUPTYPE {ntStructName} = {{ {namedTupleType.Types.Count}, {ntNamesArrayName}, {ntTypesArrayName} }};");
+                        $"static PRT_NMDTUPTYPE {ntStructName} = {{ {namedTupleType.Types.Count}U, {ntNamesArrayName}, {ntTypesArrayName} }};");
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NMDTUP, {{ &{ntStructName} }} }};");
                     break;
                 case PermissionType permissionType:
@@ -730,7 +893,12 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_SEQ, {{ &{seqTypeDeclName} }} }};");
                     break;
                 case TupleType tupleType:
-                    context.WriteLine(output, $"// TODO: implement types like {tupleType.CanonicalRepresentation}");
+                    string tupTypesArrayName = context.Names.GetTemporaryName("TUP_T");
+                    string tupStructName = context.Names.GetTemporaryName("TUP");
+                    var tupTypeDeclNames = tupleType.Types.Select(t => WriteTypeDefinition(context, t, output));
+                    context.WriteLine(output, $"static PRT_TYPE* {tupTypesArrayName}[] = {{ {string.Join(", ", tupTypeDeclNames.Select(n => "&" + n))} }};");
+                    context.WriteLine(output, $"static PRT_TUPTYPE {tupStructName} = {{ {tupleType.Types.Count}U, {tupTypesArrayName} }};");
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_TUPLE, {{ &{tupStructName} }} }};");
                     break;
                 case TypeDefType _:
                     throw new ArgumentException("typedefs shouldn't be possible after canonicalization", nameof(type));
@@ -788,6 +956,8 @@ namespace Microsoft.Pc.Backend
         private class CompilationContext
         {
             private bool lineHasBeenIndented;
+            private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
+            private readonly Dictionary<ValueTuple<Machine, State>, int> stateNumbering = new Dictionary<ValueTuple<Machine, State>, int>();
 
             public CompilationContext(string projectName)
             {
@@ -804,6 +974,31 @@ namespace Microsoft.Pc.Backend
             public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
             public HashSet<PLanguageType> WrittenTypes { get; } = new HashSet<PLanguageType>();
             public int IndentationLevel { get; set; }
+
+            public int GetNumberForInterface(Interface pInterface)
+            {
+                if (interfaceNumbering.TryGetValue(pInterface, out int name))
+                {
+                    return name;
+                }
+
+                name = interfaceNumbering.Count;
+                interfaceNumbering.Add(pInterface, name);
+                return name;
+            }
+
+            public int GetNumberForState(State state)
+            {
+                var machine = state.OwningMachine;
+                if (stateNumbering.TryGetValue((machine, state), out int name))
+                {
+                    return name;
+                }
+
+                name = stateNumbering.Count;
+                stateNumbering.Add((machine, state), name);
+                return name;
+            }
 
             public void WriteLine(TextWriter output, string format = "")
             {
@@ -949,7 +1144,7 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, $"// DECL(SafetyTest, {decl.Name}) => {declName}");
                     break;
                 case TypeDef typeDef:
-                    context.WriteLine(output, $"// no need to generate typedef {typeDef.Name} = {typeDef.Type.OriginalRepresentation}");
+                    context.WriteLine(output, $"extern PRT_TYPE* {declName};");
                     break;
                 case Variable variable:
                     throw new ArgumentException("can't have global P variables", nameof(decl));

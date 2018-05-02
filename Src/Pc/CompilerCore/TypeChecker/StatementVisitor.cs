@@ -58,6 +58,11 @@ namespace Microsoft.Pc.TypeChecker
                     context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
             }
 
+            if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            {
+                throw handler.IssueError(context, "pop can only appear in functions that do not return a value.");
+            }
+
             method.CanChangeState = true;
             if (method.Role.HasFlag(FunctionRole.TransitionFunction))
             {
@@ -76,6 +81,10 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             string message = context.StringLiteral()?.GetText() ?? "";
+            if (message.StartsWith("\""))
+            {
+                message = message.Substring(1, message.Length - 2);
+            }
             return new AssertStmt(context, assertion, message);
         }
 

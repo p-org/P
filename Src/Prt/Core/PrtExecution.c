@@ -1,5 +1,8 @@
 #include "PrtExecution.h"
 
+// Can only run one P program at a time
+PRT_PROGRAMDECL *program;
+
 PRT_TYPE NullType =
 {
 	PRT_KIND_NULL,
@@ -33,6 +36,17 @@ PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
 	4294967295U,
 	&AnyType
 };
+
+PRT_FUNDECL _P_NO_OP =
+{
+	"_P_NO_OP",
+	&_P_NO_OP_IMPL,
+	NULL
+};
+
+PRT_VALUE* PRT_CALL_CONV _P_NO_OP_IMPL(_Inout_ struct PRT_MACHINEINST *context, _Inout_ PRT_VALUE*** refLocals) {
+	return NULL;
+}
 
 /* Initialize the function to default assert function */
 PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
@@ -1960,10 +1974,6 @@ _In_ PRT_VALUE *id
 		return;
 	PrtHandleError(PRT_STATUS_ILLEGAL_SEND, (PRT_MACHINEINST_PRIV *)context);
 }
-
-#include "PrtExecution.h"
-
-PRT_PROGRAMDECL *program;
 
 /*********************************************************************************
 

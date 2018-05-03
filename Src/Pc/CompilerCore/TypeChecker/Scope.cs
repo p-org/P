@@ -30,19 +30,26 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, RefinementTest> refinementTests = new Dictionary<string, RefinementTest>();
         private readonly IDictionary<string, NamedModule> namedModules = new Dictionary<string, NamedModule>();
 
-        public Scope(ITranslationErrorHandler handler, Scope parent = null)
+        public EventSet UniversalEventSet { get; }
+
+        public static Scope CreateGlobalScope(ITranslationErrorHandler handler)
+        {
+            return new Scope(handler);
+        }
+
+        private Scope(ITranslationErrorHandler handler, Scope parent = null)
         {
             this.handler = handler;
             parent?.children.Remove(this);
             Parent = parent;
             parent?.children.Add(this);
+
+            UniversalEventSet = parent == null ? new EventSet() : parent.UniversalEventSet;
         }
 
-        public Scope Parent { get; set; }
+        private Scope Parent { get; }
 
         public Scope MakeChildScope() { return new Scope(handler, this); }
-
-        public IEnumerable<Scope> Children => children;
 
         public IEnumerable<IPDecl> AllDecls =>
             EnumElems.Cast<IPDecl>()

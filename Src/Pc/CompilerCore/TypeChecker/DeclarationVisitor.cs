@@ -191,7 +191,7 @@ namespace Microsoft.Pc.TypeChecker
             IEventSet eventSet;
             if (context.RECEIVES() == null)
             {
-                eventSet = UniversalEventSet.Instance;
+                eventSet = CurrentScope.UniversalEventSet;
             }
             else
             {
@@ -264,12 +264,12 @@ namespace Microsoft.Pc.TypeChecker
 
             if (machine.Receives == null)
             {
-                machine.Receives = UniversalEventSet.Instance;
+                machine.Receives = CurrentScope.UniversalEventSet;
             }
 
             if (machine.Sends == null)
             {
-                machine.Sends = UniversalEventSet.Instance;
+                machine.Sends = CurrentScope.UniversalEventSet;
             }
 
             // machineBody
@@ -388,6 +388,7 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitGroup(PParser.GroupContext context)
         {
             var group = (StateGroup) nodesToDeclarations.Get(context);
+            group.OwningMachine = CurrentMachine;
             using (currentScope.NewContext(group.Scope))
             {
                 foreach (var groupItemContext in context.groupItem())
@@ -421,6 +422,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             // STATE name=iden
             var state = (State) nodesToDeclarations.Get(context);
+            state.OwningMachine = CurrentMachine;
 
             // START? 
             state.IsStart = context.START() != null;

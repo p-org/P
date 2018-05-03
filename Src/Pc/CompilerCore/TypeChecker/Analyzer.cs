@@ -119,7 +119,7 @@ namespace Microsoft.Pc.TypeChecker
 
         private static Scope BuildGlobalScope(ITranslationErrorHandler handler, PParser.ProgramContext[] programUnits)
         {
-            var globalScope = new Scope(handler);
+            var globalScope = Scope.CreateGlobalScope(handler);
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
 
             // Add built-in events to the table.

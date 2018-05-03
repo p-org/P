@@ -81,6 +81,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         {
             Debug.Assert(state.Container == null);
             state.Container = this;
+            state.OwningMachine = this;
             states.Add(state.Name, state);
         }
 
@@ -88,6 +89,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         {
             Debug.Assert(group.ParentStateContainer == null);
             group.ParentStateContainer = this;
+            group.OwningMachine = this;
             groups.Add(group.Name, group);
         }
 

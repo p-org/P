@@ -64,68 +64,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             return events.Overlaps(eventSet);
         }
     }
-
-    internal class UniversalEventSet : IEventSet
-    {
-        private static readonly Comparer<PEvent> EventNameComparer =
-            Comparer<PEvent>.Create((ev1, ev2) => string.Compare(ev1.Name, ev2.Name, StringComparison.Ordinal));
-
-        private readonly SortedSet<PEvent> events = new SortedSet<PEvent>(EventNameComparer);
-        private readonly object setUpdateLock = new object();
-
-        private static readonly Lazy<UniversalEventSet> LazyInstance =
-            new Lazy<UniversalEventSet>(() => new UniversalEventSet());
-
-        private UniversalEventSet()
-        {
-        }
-
-        public static UniversalEventSet Instance => LazyInstance.Value;
-
-        public IEnumerable<PEvent> Events => events;
-
-        public bool AddEvent(PEvent pEvent)
-        {
-            lock (setUpdateLock)
-            {
-                return events.Add(pEvent);
-            }
-        }
-
-        public void AddEvents(IEnumerable<PEvent> evts)
-        {
-            foreach (PEvent pEvent in evts)
-            {
-                AddEvent(pEvent);
-            }
-        }
-
-        public bool Contains(PEvent pEvent)
-        {
-            return true;
-        }
-
-        public bool IsSame(IEventSet eventSet)
-        {
-            return this == Instance && eventSet == this;
-        }
-
-        public bool IsSubsetEqOf(IEventSet eventSet)
-        {
-            return events.IsSubsetOf(eventSet.Events);
-        }
-
-        public bool IsSubsetEqOf(IEnumerable<PEvent> eventsList)
-        {
-            return events.IsSubsetOf(eventsList);
-        }
-
-        public bool Intersects(IEnumerable<PEvent> eventSet)
-        {
-            return events.Overlaps(eventSet);
-        }
-    }
-
+    
     public class NamedEventSet : IPDecl, IEventSet
     {
         private readonly EventSet events = new EventSet();

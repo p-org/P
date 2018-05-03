@@ -89,8 +89,93 @@ namespace Microsoft.Pc.Backend
             // Append all the function bodies and declaration structs (which have forward declarations in the header)
             cSource.Stream.GetStringBuilder().Append(bodyWriter);
 
+            // Finally, write the overall program decl
+            WriteProgramDecl(context, globalScope, cSource.Stream);
+
             // All done! Return the compiled files.
             return new List<CompiledFile> {cHeader, cSource};
+        }
+
+        private void WriteProgramDecl(CompilationContext context, Scope globalScope, TextWriter output)
+        {
+            // generate event array
+            var eventArrayName = context.Names.GetTemporaryName("ALL_EVENTS");
+            var eventArrayBody = string.Join(", ", globalScope.Events.Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            context.WriteLine(output, $"PRT_EVENTDECL* {eventArrayName}[] = {{ {eventArrayBody} }};");
+
+            // generate machine array
+            var machineArrayName = context.Names.GetTemporaryName("ALL_MACHINES");
+            var machineArrayBody = string.Join(", ", globalScope.Machines.Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            context.WriteLine(output, $"PRT_MACHINEDECL* {machineArrayName}[] = {{ {machineArrayBody} }};");
+
+            // generate functions array
+            var funcArrayName = context.Names.GetTemporaryName("ALL_FUNCTIONS");
+            var funcArrayBody = string.Join(", ", globalScope.Functions.Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            context.WriteLine(output, $"PRT_FUNDECL* {funcArrayName}[] = {{ {funcArrayBody} }};");
+
+            foreach (Implementation impl in globalScope.Implementations)
+            {
+                var linkMap = impl.ModExpr.ModuleInfo.LinkMap;
+                
+                int[][] trueLinkMap = ResolveLinkMap(globalScope, context, linkMap);
+                string[] mapNames = Enumerable.Repeat("NULL", trueLinkMap.Length).ToArray();
+                for (var i = 0; i < trueLinkMap.Length; i++)
+                {
+                    var iMap = trueLinkMap[i];
+                    if (iMap != null)
+                    {
+                        var mapTmpName = context.Names.GetTemporaryName($"{impl.Name}_LME_{i}");
+                        mapNames[i] = mapTmpName;
+                        context.WriteLine(output, $"int {mapTmpName}[] = {{ {string.Join(",", iMap)} }};");
+                    }
+                }
+                var linkMapName = context.Names.GetTemporaryName($"{impl.Name}_LINKMAP");
+                context.WriteLine(output, $"int* {linkMapName}[] = {{ {string.Join(", ", mapNames)} }};");
+
+                var machineDefMap = impl.ModExpr.ModuleInfo.InterfaceDef;
+                var machineDefMapName = context.Names.GetTemporaryName($"{impl.Name}_DEFMAP");
+                int[] realMachineDefMap = Enumerable.Repeat(-1, trueLinkMap.Length).ToArray();
+                foreach (var linking in machineDefMap)
+                {
+                    realMachineDefMap[context.GetNumberForInterface(linking.Key)] = 9999;
+                }
+                context.WriteLine(output, $"int {machineDefMapName}[] = {{ {string.Join(",", realMachineDefMap)} }};");
+
+                context.WriteLine(output, $"PRT_PROGRAMDECL {GetPrtNameForDecl(context, impl)} = {{");
+                context.WriteLine(output, $"{globalScope.Events.Count()}U,");
+                context.WriteLine(output, $"{globalScope.Machines.Count()}U,");
+                context.WriteLine(output, $"{globalScope.Functions.Count()}U,");
+                context.WriteLine(output, "0U,"); // TODO: foreign types
+                context.WriteLine(output, $"{eventArrayName},");
+                context.WriteLine(output, $"{machineArrayName},");
+                context.WriteLine(output, $"{funcArrayName},");
+                context.WriteLine(output, $"NULL,"); // TODO: foreign types
+                context.WriteLine(output, $"{linkMapName},");
+                context.WriteLine(output, $"{machineDefMapName}");
+                context.WriteLine(output, "};");
+            }
+        }
+
+        private static int[][] ResolveLinkMap(Scope globalScope, CompilationContext context,
+                                       IDictionary<Interface, IDictionary<Interface, Interface>> linkMap)
+        {
+            var nInterfaces = globalScope.Interfaces.Count();
+            var maps = new int[nInterfaces][];
+            foreach (var keyValuePair in linkMap)
+            {
+                var firstInterfaceIndex = context.GetNumberForInterface(keyValuePair.Key);
+                Debug.Assert(maps[firstInterfaceIndex] == null);
+                maps[firstInterfaceIndex] = Enumerable.Repeat(-1, nInterfaces).ToArray();
+                
+                foreach (var finalMapping in keyValuePair.Value)
+                {
+                    var secondInterfaceIndex = context.GetNumberForInterface(finalMapping.Key);
+                    var finalInterfaceIndex = context.GetNumberForInterface(finalMapping.Value);
+                    maps[firstInterfaceIndex][secondInterfaceIndex] = finalInterfaceIndex;
+                }
+            }
+
+            return maps;
         }
 
         private IEnumerable<Function> AllMethods(Scope scope)
@@ -115,9 +200,11 @@ namespace Microsoft.Pc.Backend
             string declName = GetPrtNameForDecl(context, decl);
             switch (decl)
             {
-                case EnumElem enumElem:
+                case EnumElem _:
+                    // Member of a type. Instantitated by usage.
                     return;
-                case PEnum pEnum:
+                case PEnum _:
+                    // Declares a type. Instantitated by usage.
                     return;
                 case Function function:
                     string functionImplName = context.Names.GetNameForFunctionImpl(function);
@@ -134,13 +221,13 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "}");
                     break;
                 case Implementation _:
-                    // does not produce a struct definition
+                    // does not produce a struct definition - aside from ProgramDecl
                     return;
                 case Interface @interface:
                     string ifaceRecvSetName;
-                    if (@interface.ReceivableEvents is NamedEventSet)
+                    if (@interface.ReceivableEvents is NamedEventSet set)
                     {
-                        ifaceRecvSetName = ((NamedEventSet) @interface.ReceivableEvents).Name;
+                        ifaceRecvSetName = set.Name;
                     }
                     else
                     {
@@ -159,32 +246,55 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "};");
                     break;
                 case Machine machine:
+                    var machineFields = machine.Fields.ToList();
+                    var fieldArrayName = context.Names.GetTemporaryName($"{machine.Name}_VARS");
+                    context.WriteLine(output, $"PRT_VARDECL {fieldArrayName}[] = {{");
+                    for (var i = 0; i < machineFields.Count; i++)
+                    {
+                        var field = machineFields[i];
+                        var sep = i == machineFields.Count - 1 ? "" : ",";
+                        context.WriteLine(output, $"{{ \"{field.Name}\", &{context.Names.GetNameForType(field.Type)} }}{sep}");
+                    }
+                    context.WriteLine(output, "};");
+                    context.WriteLine(output);
+
+                    var machineStates = machine.AllStates().ToList();
+                    var machineStatesInOrder = new State[machineStates.Count];
+                    foreach (var state in machineStates)
+                    {
+                        WriteSourceDecl(context, state, output);
+                        machineStatesInOrder[context.GetNumberForState(state)] = state;
+                    }
+
+                    var stateArrayName = context.Names.GetTemporaryName($"{machine.Name}_STATES");
+                    var stateArrayBody = string.Join(", ", machineStatesInOrder.Select(st => GetPrtNameForDecl(context, st)));
+                    context.WriteLine(output, $"PRT_STATEDECL {stateArrayName}[] = {{ {stateArrayBody} }};");
+                    context.WriteLine(output);
+                    
                     var machineMethods = machine.Methods.ToList();
                     foreach (Function machineMethod in machineMethods)
                     {
                         WriteSourceDecl(context, machineMethod, output);
                     }
-                    foreach (var state in machine.States)
-                    {
-                        WriteSourceDecl(context, state, output);
-                    }
-                    foreach (var subGroup in machine.Groups)
-                    {
-                        WriteSourceDecl(context, subGroup, output);
-                    }
 
-                    var machineFields = machine.Fields.ToList();
+                    var methodArrayName = context.Names.GetTemporaryName($"{machine.Name}_METHODS");
+                    var methodArrayBody = string.Join(", ", machineMethods.Select(m => $"&{GetPrtNameForDecl(context, m)}"));
+                    context.WriteLine(output, $"PRT_FUNDECL* {methodArrayName}[] = {{ {methodArrayBody} }};");
+                    context.WriteLine(output);
+                    
                     var maxQueueSize = machine.Assert ?? uint.MaxValue;
-
                     context.WriteLine(output, $"PRT_MACHINEDECL {declName} = ");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, "0U,");
                     context.WriteLine(output, $"\"{machine.Name}\",");
                     context.WriteLine(output, $"{machineFields.Count}U,");
-                    context.WriteLine(output, $"{machine.AllStates().Count()}U,");
+                    context.WriteLine(output, $"{machineStatesInOrder.Length}U,");
                     context.WriteLine(output, $"{machineMethods.Count}U,");
                     context.WriteLine(output, $"{maxQueueSize}U,");
-                    
+                    context.WriteLine(output, $"{context.GetNumberForState(machine.StartState)}U,");
+                    context.WriteLine(output, $"&{fieldArrayName},");
+                    context.WriteLine(output, $"&{stateArrayName},");
+                    context.WriteLine(output, $"&{methodArrayName}");
                     context.WriteLine(output, "};");
 
                     break;
@@ -227,7 +337,9 @@ namespace Microsoft.Pc.Backend
                 case TypeDef typeDef:
                     context.WriteLine(output, $"PRT_TYPE* {declName} = &{context.Names.GetNameForType(typeDef.Type)};");
                     return;
-                case Variable variable:
+                case Variable _:
+                    // does not produce a struct definition
+                    // handled by MachineDecl.
                     return;
                 case State state:
                     var stateEntryFunName = state.Entry == null ? "NULL" : $"&{GetPrtNameForDecl(context, state.Entry)}";
@@ -262,30 +374,25 @@ namespace Microsoft.Pc.Backend
                         (PEvent triggerEvent, Function transFun) = stateData.Dos[i];
                         string triggerName = GetPrtNameForDecl(context, triggerEvent);
                         var comma = i == stateData.Trans.Count - 1 ? "" : ",";
-                        context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{GetPrtNameForDecl(context, transFun)} }}{comma}");
+                        var funName = transFun != null ? GetPrtNameForDecl(context, transFun) : "_P_NO_OP";
+                        context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{funName} }}{comma}");
                     }
 
                     context.WriteLine(output, "}");
                     context.WriteLine(output);
 
-                    context.WriteLine(output, $"PRT_STATEDECL {declName} = ");
-                    context.WriteLine(output, "{");
-                    context.WriteLine(output, $"\"{state.QualifiedName}\",");
-                    
-                    // number of transitions
-                    context.WriteLine(output, $"{stateData.Trans.Count}U,");
-                    // number of do handlers
-                    context.WriteLine(output, $"{stateData.Dos.Count}U,");
-                    // defers event set
-                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.DefersSet)},");
-                    // transition event set
-                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.TransSet)},");
-                    // do trigger set
-                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.DosSet)},");
-                    // transitions[]
-                    // dos []
-                    context.WriteLine(output, $"{stateEntryFunName},");
-                    context.WriteLine(output, $"{stateExitFunName},");
+                    context.WriteLine(output, $"#define {declName} \\");
+                    context.WriteLine(output, "{ \\");
+                    context.WriteLine(output, $"\"{state.QualifiedName}\", \\");
+                    context.WriteLine(output, $"{stateData.Trans.Count}U, \\");
+                    context.WriteLine(output, $"{stateData.Dos.Count}U, \\");
+                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.DefersSet)}, \\");
+                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.TransSet)}, \\");
+                    context.WriteLine(output, $"&{GetPrtNameForDecl(context, stateData.DosSet)}, \\");
+                    context.WriteLine(output, $"{transArrName}, \\");
+                    context.WriteLine(output, $"{dosArrName}, \\");
+                    context.WriteLine(output, $"{stateEntryFunName}, \\");
+                    context.WriteLine(output, $"{stateExitFunName}, \\");
                     context.WriteLine(output, "};");
                     break;
                 case StateGroup stateGroup:
@@ -930,12 +1037,12 @@ namespace Microsoft.Pc.Backend
                 case PEvent pEvent:
                     if (pEvent.IsNullEvent)
                     {
-                        return "<<prt:null-event>>";
+                        return "_P_EVENT_NULL_STRUCT";
                     }
 
                     if (pEvent.IsHaltEvent)
                     {
-                        return "<<prt:halt-event>>";
+                        return "_P_EVENT_HALT_STRUCT";
                     }
 
                     break;
@@ -957,7 +1064,7 @@ namespace Microsoft.Pc.Backend
         {
             private bool lineHasBeenIndented;
             private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
-            private readonly Dictionary<ValueTuple<Machine, State>, int> stateNumbering = new Dictionary<ValueTuple<Machine, State>, int>();
+            private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering = new Dictionary<Machine, Dictionary<State, int>>();
 
             public CompilationContext(string projectName)
             {
@@ -990,13 +1097,19 @@ namespace Microsoft.Pc.Backend
             public int GetNumberForState(State state)
             {
                 var machine = state.OwningMachine;
-                if (stateNumbering.TryGetValue((machine, state), out int name))
+                if (!stateNumbering.TryGetValue(machine, out var internalNumbering))
+                {
+                    internalNumbering = new Dictionary<State, int>();
+                    stateNumbering.Add(machine, internalNumbering);
+                }
+
+                if (internalNumbering.TryGetValue(state, out var name))
                 {
                     return name;
                 }
 
-                name = stateNumbering.Count;
-                stateNumbering.Add((machine, state), name);
+                name = internalNumbering.Count;
+                internalNumbering.Add(state, name);
                 return name;
             }
 

@@ -586,7 +586,6 @@ namespace Microsoft.Pc.Backend.Debugging
                 case NamedEventSet namedEventSet:
                     return namedEventSet.Name;
                 case null:
-                case UniversalEventSet _:
                     return "<all>";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(eventSet));

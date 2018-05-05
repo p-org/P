@@ -1,4 +1,4 @@
-#include "linker.h"
+#include "fun.h"
 
 void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 {
@@ -212,7 +212,10 @@ int main(int argc, char *argv[])
 
 		PrtUpdateAssertFn(MyAssert);
 
-		PrtMkMachine(process, P_MACHINE_Main, 1, PRT_FUN_PARAM_CLONE, payload);
+		PRT_UINT32 mainMachine = 0;
+		PRT_BOOLEAN foundMachine = PrtLookupMachineByName("Main", &mainMachine);
+		PrtAssert(foundMachine, "No 'Main' machine found!");
+		PrtMkMachine(process, mainMachine, 1, PRT_FUN_PARAM_CLONE, payload);
 
 		if (cooperative)
 		{

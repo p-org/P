@@ -205,7 +205,7 @@ extern "C"{
 	#ifdef PRT_NO_ASSERT
 	#define PrtAssert(c,m)
 	#else
-	#define PrtAssert(c,m) do { int cond = c; if (!(cond)) { _PrtAssert(cond, m); } } while(0)
+	#define PrtAssert(c,m) do { int cond = (c); if (!(cond)) { _PrtAssert(cond, m); } } while(0)
 	#endif
 
 	#ifdef PRT_DEBUG

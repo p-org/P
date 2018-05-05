@@ -324,8 +324,6 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, $"\"{pEvent.Name}\",");
                     context.WriteLine(output, $"{eventBound}U,");
                     context.WriteLine(output, $"&{context.Names.GetNameForType(pEvent.PayloadType)}");
-                    context.WriteLine(output, "0U,");
-                    context.WriteLine(output, "NULL");
                     context.WriteLine(output, "};");
                     break;
                 case RefinementTest _:
@@ -378,7 +376,7 @@ namespace Microsoft.Pc.Backend
                         context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{funName} }}{comma}");
                     }
 
-                    context.WriteLine(output, "}");
+                    context.WriteLine(output, "};");
                     context.WriteLine(output);
 
                     context.WriteLine(output, $"#define {declName} \\");

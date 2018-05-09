@@ -246,7 +246,7 @@ namespace UnitTests
         [Test]
         public void TestTemp()
         {
-            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
+            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "PingPong.p");
             FileInfo[] inputFiles = {new FileInfo(path)};
             bool result = ExecuteTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));

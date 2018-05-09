@@ -113,5 +113,20 @@ namespace UnitTests
 
             Console.WriteLine(output);
         }
+
+        [Test]
+        public void TestModuleSystem()
+        {
+            string path = Path.Combine(Constants.SolutionDirectory, @"Tst\RegressionTests\Feature5ModuleSystem\Correct\Elevator", "Elevator.p");
+            FileInfo[] inputFiles = { new FileInfo(path) };
+            bool result = RunTest(out string output, inputFiles);
+            string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
+            if (!result)
+            {
+                Assert.Fail($"Expected correct, but error was found: {output}\n\t{fileList}\n");
+            }
+
+            Console.WriteLine(output);
+        }
     }
 }

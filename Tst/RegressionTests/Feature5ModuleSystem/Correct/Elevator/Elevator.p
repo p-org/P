@@ -18,19 +18,21 @@ event eUnit assert 1;
 event eStopTimerReturned assert 1;
 event eObjectEncountered assert 1;
 
-type ElevatorInterface() = { eOpenDoor, eCloseDoor, eDoorOpened, eTimerFired, eStopTimerReturned, eDoorClosed, eObjectDetected, eDoorStopped,
-eOperationSuccess, eOperationFailure };
+interface ElevatorInterface() receives eOpenDoor, eCloseDoor, eDoorOpened, eTimerFired, eStopTimerReturned, eDoorClosed, eObjectDetected, eDoorStopped,
+eOperationSuccess, eOperationFailure;
 
-type TimerInterface(machine) = { eStartDoorCloseTimer, eStopDoorCloseTimer };
+interface TimerInterface(machine) receives eStartDoorCloseTimer, eStopDoorCloseTimer;
 
-machine Elevator : ElevatorInterface
+machine Elevator
+receives eOpenDoor, eCloseDoor, eDoorOpened, eTimerFired, eStopTimerReturned, eDoorClosed, eObjectDetected, eDoorStopped,
+eOperationSuccess, eOperationFailure;
 {
     var TimerV: TimerInterface;
     var DoorV: machine;
 
     start state Init {
         entry {
-            TimerV = new Timer(this);
+            TimerV = new Timer(this to TimerInterface);
             DoorV = new Door(this);
             raise eUnit;
         }
@@ -232,12 +234,12 @@ machine Door {
     }
 }
 
-machine Timer : TimerInterface
+machine Timer receives eStartDoorCloseTimer, eStopDoorCloseTimer;
 {
     var ElevatorV : ElevatorInterface;
 
     start state _Init {
-	entry (payload: machine) { ElevatorV = payload as ElevatorInterface; raise eUnit; }
+	entry (payload: TimerInterface) { ElevatorV = payload as ElevatorInterface; raise eUnit; }
         on eUnit goto Init;
     }
 

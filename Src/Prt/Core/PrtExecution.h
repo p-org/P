@@ -94,6 +94,7 @@ extern "C"{
 	
 	extern PRT_EVENTDECL _P_EVENT_NULL_STRUCT;
 	extern PRT_EVENTDECL _P_EVENT_HALT_STRUCT;
+	extern PRT_FUNDECL   _P_NO_OP;
 
 	//
 	// Max call stack size of each machine
@@ -233,6 +234,13 @@ extern "C"{
 		_In_ PRT_ERROR_FUN errorFun,
 		_In_ PRT_LOG_FUN loggerFun
 	);
+
+	/** Get the number of the machine in the installed process by name.
+	* @param[in] the name of the machine to find
+	* @param[out] the id of the machine with the given name
+	* @returns True if the machine was found, else false.
+	*/
+	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtLookupMachineByName(_In_ PRT_STRING name, _Out_ PRT_UINT32* id);
 
 	/** Set the scheduling policy for this process.  The default policy is TaskNeutral
 	*   @param[in] policy The new policy.

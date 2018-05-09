@@ -37,16 +37,16 @@ PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
 	&AnyType
 };
 
+PRT_VALUE* PRT_CALL_CONV _P_NO_OP_IMPL(_Inout_ struct PRT_MACHINEINST *context, _Inout_ PRT_VALUE*** refLocals) {
+	return NULL;
+}
+
 PRT_FUNDECL _P_NO_OP =
 {
 	"_P_NO_OP",
 	&_P_NO_OP_IMPL,
 	NULL
 };
-
-PRT_VALUE* PRT_CALL_CONV _P_NO_OP_IMPL(_Inout_ struct PRT_MACHINEINST *context, _Inout_ PRT_VALUE*** refLocals) {
-	return NULL;
-}
 
 /* Initialize the function to default assert function */
 PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
@@ -2085,6 +2085,18 @@ PrtStartProcess(
 	process->schedulerInfo = NULL;
 	process->terminating = PRT_FALSE;
 	return (PRT_PROCESS *)process;
+}
+
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtLookupMachineByName(_In_ PRT_STRING name, _Out_ PRT_UINT32* id)
+{
+	*id = 0;
+	for (PRT_UINT32 i = 0; i < program->nMachines; i++) {
+		if (strcmp(name, program->machines[i]->name) == 0) {
+			*id = i;
+			return PRT_TRUE;
+		}
+	}
+	return PRT_FALSE;
 }
 
 PRT_API PRT_BOOLEAN

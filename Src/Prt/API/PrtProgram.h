@@ -104,33 +104,18 @@ typedef struct PRT_STATEDECL
 /** Represents a P machine declaration */
 typedef struct PRT_MACHINEDECL
 {
-	PRT_UINT32          declIndex;         /**< The index of machine in program     */
-	PRT_STRING          name;              /**< The name of this machine            */
-	
-	PRT_EVENTSETDECL*   receivesSet;
-	PRT_EVENTSETDECL*   sendsSet;
+	PRT_UINT32       declIndex;         /**< The index of machine in program     */
+	PRT_STRING       name;              /**< The name of this machine            */
+	PRT_UINT32       nVars;             /**< The number of state variables       */
+	PRT_UINT32       nStates;           /**< The number of states                */
+	PRT_UINT32       nFuns;             /**< The number of functions             */
 
-	PRT_UINT32          nCreates;
-	PRT_INTERFACEDECL** createsSet;
-
-	PRT_UINT32          nVars;             /**< The number of state variables       */
-	PRT_UINT32          nStates;           /**< The number of states                */
-	PRT_UINT32          nFuns;             /**< The number of functions             */
-	PRT_UINT32          maxQueueSize;      /**< The max queue size                  */
-	PRT_UINT32          initStateIndex;    /**< The index of initial state      */
-	PRT_VARDECL         *vars;             /**< The array of variable declarations  */
-	PRT_STATEDECL       *states;           /**< The array of state declarations     */
-	PRT_FUNDECL         **funs;            /**< The array of fun declarations       */
+	PRT_UINT32       maxQueueSize;      /**< The max queue size                  */
+	PRT_UINT32       initStateIndex;    /**< The index of initial state      */
+	PRT_VARDECL      *vars;             /**< The array of variable declarations  */
+	PRT_STATEDECL    *states;           /**< The array of state declarations     */
+	PRT_FUNDECL      **funs;            /**< The array of fun declarations       */
 } PRT_MACHINEDECL;
-
-/** Represents a P interface */
-typedef	struct PRT_INTERFACEDECL
-{
-	PRT_UINT32        iName;
-	PRT_STRING        name;
-	PRT_TYPE*         payloadType;
-	PRT_EVENTSETDECL* receivesSet;
-} PRT_INTERFACEDECL;
 
 /** Represents a P program declaration */
 typedef struct PRT_PROGRAMDECL

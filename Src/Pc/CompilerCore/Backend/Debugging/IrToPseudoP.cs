@@ -88,7 +88,9 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteStmt(machine.IsSpec ? "spec " : "",
                               "machine ",
                               machine);
-                    WriteStmt("  assert ", machine.Assert, " assume ", machine.Assume);
+                    string machineAssume = machine.Assume?.ToString() ?? "max";
+                    string machineAssert = machine.Assert?.ToString() ?? "max";
+                    WriteStmt("  assert ", machineAssert, " assume ", machineAssume);
                     WriteStmt("  receives ", WriteEventSet(machine.Receives));
                     WriteStmt("  sends ", WriteEventSet(machine.Sends));
                     if (machine.IsSpec)
@@ -584,7 +586,6 @@ namespace Microsoft.Pc.Backend.Debugging
                 case NamedEventSet namedEventSet:
                     return namedEventSet.Name;
                 case null:
-                case UniversalEventSet _:
                     return "<all>";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(eventSet));

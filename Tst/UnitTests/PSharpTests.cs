@@ -2,12 +2,133 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Build.Evaluation;
+using Microsoft.Build.Execution;
 using Microsoft.Pc;
+using Microsoft.Pc.Backend;
 using NUnit.Framework;
 using UnitTestsCore;
 
 namespace UnitTests
 {
+    public class PrtTestRunner
+    {
+        private readonly List<FileInfo> sources;
+        private readonly DirectoryInfo prtTestProjDirectory;
+
+        public PrtTestRunner(List<FileInfo> sources)
+        {
+            this.sources = sources;
+            prtTestProjDirectory = new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
+        }
+
+        public int? RunTest(IEnumerable<string> arguments, out string testStdout, out string testStderr)
+        {
+            string tmpDir = null;
+            testStdout = null;
+            testStderr = null;
+            try
+            {
+                tmpDir = CreateTemporaryDirectory();
+                FileHelper.CopyFiles(prtTestProjDirectory, tmpDir);
+                foreach (FileInfo source in sources)
+                {
+                    File.Copy(source.FullName, Path.Combine(tmpDir, source.Name));
+                }
+
+                if (!RunMSBuildExe(tmpDir, out testStdout))
+                {
+                    return null;
+                }
+
+                return ProcessHelper.RunWithOutput(
+                    Path.Combine(tmpDir, Constants.BuildConfiguration, Constants.Platform, Constants.CTesterExecutableName),
+                    tmpDir,
+                    arguments,
+                    out testStdout,
+                    out testStderr
+                );
+            }
+            finally
+            {
+                //Directory.Delete(tmpDir, true);
+            }
+        }
+
+        private static bool RunMSBuildExe(string tmpDir, out string output)
+        {
+            const string msbuildpath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe";
+            var exitStatus = ProcessHelper.RunWithOutput(
+                msbuildpath,
+                tmpDir,
+                new[] {$"/p:Configuration={Constants.BuildConfiguration}", $"/p:Platform={Constants.Platform}", "/t:Build"},
+                out string stdout,
+                out string stderr
+            );
+            output = $"{stdout}\n{stderr}";
+            return exitStatus == 0;
+        }
+
+        private static bool RunMSBuild(string tmpDir)
+        {
+            var pc = new ProjectCollection();
+            var properties = new Dictionary<string, string>
+            {
+                {"Configuration", Constants.BuildConfiguration},
+                {"Platform", Constants.Platform}
+            };
+
+            var build = new BuildRequestData(Path.Combine(tmpDir, Constants.CTesterVsProjectName), properties, null, new[] {"Build"}, null);
+            BuildResult result = BuildManager.DefaultBuildManager.Build(new BuildParameters(pc), build);
+            bool buildSuccess = result.OverallResult == BuildResultCode.Success;
+            return buildSuccess;
+        }
+
+        private static string CreateTemporaryDirectory()
+        {
+            string tmpDir = Path.Combine(Constants.TestDirectory, Path.GetRandomFileName());
+            var numTries = 10;
+            while (Directory.Exists(tmpDir) && numTries > 0)
+            {
+                tmpDir = Path.Combine(Constants.TestDirectory, Path.GetRandomFileName());
+                numTries--;
+            }
+
+            if (Directory.Exists(tmpDir))
+            {
+                throw new Exception("Could not create unique temporary directory!");
+            }
+
+            Directory.CreateDirectory(tmpDir);
+            return tmpDir;
+        }
+    }
+
+    internal class TestCompilerStream : ICompilerOutput
+    {
+        private readonly DirectoryInfo outputDirectory;
+        private readonly List<FileInfo> outputFiles = new List<FileInfo>();
+
+        public IEnumerable<FileInfo> OutputFiles => outputFiles;
+
+        public TestCompilerStream(DirectoryInfo outputDirectory)
+        {
+            this.outputDirectory = outputDirectory;
+        }
+
+        public void WriteMessage(string msg, SeverityKind severity)
+        {
+            Console.WriteLine(msg);
+        }
+
+        public void WriteFile(CompiledFile file)
+        {
+            string fileName = Path.Combine(outputDirectory.FullName, file.FileName);
+            File.WriteAllText(fileName, file.Contents);
+            outputFiles.Add(new FileInfo(fileName));
+        }
+    }
+
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
     public class PSharpTests
@@ -19,13 +140,36 @@ namespace UnitTests
         {
             var compiler = new AntlrCompiler();
             var compilerOutput = new StringWriter();
-            bool success = compiler.Compile(new CompilerOutputStream(compilerOutput), new CommandLineOptions
+            var outputStream = new CompilerOutputStream(compilerOutput);
+            bool success = compiler.Compile(outputStream, new CommandLineOptions
             {
                 compilerOutput = CompilerOutput.C,
                 inputFileNames = inputFiles.Select(file => file.FullName).ToList()
             });
             output = compilerOutput.ToString().Trim();
             return success;
+        }
+
+        private static bool ExecuteTest(out string output, params FileInfo[] inputFiles)
+        {
+            output = null;
+
+            var compiler = new AntlrCompiler();
+            var outputStream = new TestCompilerStream(inputFiles[0].Directory);
+            bool success = compiler.Compile(outputStream, new CommandLineOptions
+            {
+                compilerOutput = CompilerOutput.C,
+                inputFileNames = inputFiles.Select(file => file.FullName).ToList()
+            });
+            if (!success)
+            {
+                return false;
+            }
+
+            var runner = new PrtTestRunner(outputStream.OutputFiles.ToList());
+            int? result = runner.RunTest(Enumerable.Empty<string>(), out string stdout, out string stderr);
+            output = $"{stdout}\n{stderr}\nEXIT: {result}";
+            return result != null;
         }
 
         [Test]
@@ -104,7 +248,7 @@ namespace UnitTests
         {
             string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
             FileInfo[] inputFiles = {new FileInfo(path)};
-            bool result = RunTest(out string output, inputFiles);
+            bool result = ExecuteTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
             if (!result)
             {

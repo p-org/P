@@ -64,7 +64,7 @@ namespace Microsoft.Pc.TypeChecker
             // Step 8: Fill the module expressions
             ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
 
-            // Step 9: Check that all module expressions are wellformed
+            // Step 9: Check that all module expressions are well-formed
             foreach (IPModuleExpr moduleExpr in AllModuleExprs(globalScope))
             {
                 ModuleSystemTypeChecker.CheckWellFormedness(handler, moduleExpr);
@@ -119,7 +119,7 @@ namespace Microsoft.Pc.TypeChecker
 
         private static Scope BuildGlobalScope(ITranslationErrorHandler handler, PParser.ProgramContext[] programUnits)
         {
-            var globalScope = new Scope(handler);
+            var globalScope = Scope.CreateGlobalScope(handler);
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
 
             // Add built-in events to the table.

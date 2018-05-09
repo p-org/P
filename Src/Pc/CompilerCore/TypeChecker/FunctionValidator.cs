@@ -32,6 +32,12 @@ namespace Microsoft.Pc.TypeChecker
                 case AssertStmt assertStmt
                     when (assertStmt.Assertion as BoolLiteralExpr)?.Value == false:
                     return true;
+                case PopStmt _:
+                    return true;
+                case GotoStmt _:
+                    return true;
+                case RaiseStmt _:
+                    return true;
                 default:
                     return false;
             }

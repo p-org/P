@@ -2244,6 +2244,19 @@ PrtStopProcess(
 	PrtFree(process);
 }
 
+PRT_BOOLEAN PrtInterfaceInCreatesSet(PRT_UINT32 interfaceCreated, PRT_INTERFACESETDECL* creates)
+{
+	for(PRT_UINT32 i = 0; i < creates->nInterfaces; i++)
+	{
+		if(interfaceCreated == creates->interfacesIndex[i])
+		{
+			return PRT_TRUE;
+		}
+	}
+
+	return PRT_FALSE;
+}
+
 PRT_MACHINEINST *
 PrtMkInterface(
 	_In_ PRT_MACHINEINST*		creator,
@@ -2254,9 +2267,11 @@ PrtMkInterface(
 {
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
 	PRT_VALUE *payload = NULL;
-	PRT_UINT32 interfaceName = program->linkMap[context->interfaceBound][IName];
-	PRT_UINT32 instanceOf = program->machineDefMap[interfaceName];
+	PRT_UINT32 interfaceCreated = program->linkMap[context->interfaceBound][IName];
+	const PRT_UINT32 instance_of = program->interfaceDefMap[interfaceCreated];
 
+	// Check the CreateOk condition
+	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[instance_of]->creates), "Created Inteface is not in the creates set of the machine");
 
 	if (numArgs == 0)
 	{
@@ -2272,11 +2287,11 @@ PrtMkInterface(
 #if __PX4_NUTTX
 			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
 #else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
+			const PRT_FUN_PARAM_STATUS arg_status = va_arg(argp, PRT_FUN_PARAM_STATUS);
 #endif
 			PRT_VALUE *arg;
 			PRT_VALUE **argPtr;
-			switch (argStatus)
+			switch (arg_status)
 			{
 			case PRT_FUN_PARAM_CLONE:
 				arg = va_arg(argp, PRT_VALUE *);
@@ -2297,14 +2312,14 @@ PrtMkInterface(
 
 		if (numArgs > 1)
 		{
-			PRT_MACHINEDECL *machineDecl = program->machines[instanceOf];
+			PRT_MACHINEDECL *machineDecl = program->machines[instance_of];
 			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
 			PRT_TYPE *payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
 	}
-	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, interfaceName, instanceOf, payload);
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, interfaceCreated, instance_of, payload);
 	// must now free this payload because PrtMkMachinePrivate clones it.
 	PrtFreeValue(payload);
 	return result;
@@ -2318,8 +2333,8 @@ PrtMkMachine(
 	...
 )
 {
-	PRT_VALUE *payload = NULL;
-	PRT_UINT32 instanceOf = program->machineDefMap[interfaceName];
+	PRT_VALUE *payload;
+	PRT_UINT32 instanceOf = program->interfaceDefMap[interfaceName];
 
 	if (numArgs == 0)
 	{

@@ -4,6 +4,8 @@ using System.IO;
 using System.Linq;
 using Microsoft.Build.Evaluation;
 using Microsoft.Build.Execution;
+using Microsoft.Build.Framework;
+using Microsoft.Build.Logging;
 using Microsoft.Pc;
 using Microsoft.Pc.Backend;
 using NUnit.Framework;
@@ -36,7 +38,7 @@ namespace UnitTests
                     File.Copy(source.FullName, Path.Combine(tmpDir, source.Name));
                 }
 
-                if (!RunMSBuildExe(tmpDir, out testStdout))
+                if (!RunMSBuild(tmpDir, out testStdout))
                 {
                     return null;
                 }
@@ -51,7 +53,7 @@ namespace UnitTests
             }
             finally
             {
-                //Directory.Delete(tmpDir, true);
+                Directory.Delete(tmpDir, true);
             }
         }
 
@@ -69,17 +71,27 @@ namespace UnitTests
             return exitStatus == 0;
         }
 
-        private static bool RunMSBuild(string tmpDir)
+        private static bool RunMSBuild(string tmpDir, out string output)
         {
             var pc = new ProjectCollection();
+
+            
+
             var properties = new Dictionary<string, string>
             {
                 {"Configuration", Constants.BuildConfiguration},
                 {"Platform", Constants.Platform}
             };
 
-            var build = new BuildRequestData(Path.Combine(tmpDir, Constants.CTesterVsProjectName), properties, null, new[] {"Build"}, null);
-            BuildResult result = BuildManager.DefaultBuildManager.Build(new BuildParameters(pc), build);
+            var projectFullPath = Path.Combine(tmpDir, Constants.CTesterVsProjectName);
+            var build = new BuildRequestData(projectFullPath, properties, null, new[] {"Build"}, null);
+            var buildParameters = new BuildParameters(pc)
+            {
+                Loggers = new []{new ConsoleLogger(LoggerVerbosity.Diagnostic), },
+                
+            };
+            BuildResult result = BuildManager.DefaultBuildManager.Build(buildParameters, build);
+            output = result.Exception?.Message ?? "";
             bool buildSuccess = result.OverallResult == BuildResultCode.Success;
             return buildSuccess;
         }

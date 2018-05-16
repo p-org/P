@@ -55,9 +55,9 @@ topDecl : typeDefDecl
         | implMachineDecl
         | specMachineDecl
         | funDecl
-    | namedModuleDecl
-    | testDecl
-    | implementationDecl
+		| namedModuleDecl
+		| testDecl
+		| implementationDecl
         ;
 
 

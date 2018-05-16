@@ -208,6 +208,12 @@ namespace Microsoft.Pc.Backend
                     return;
                 case Function function:
                     string functionImplName = context.Names.GetNameForFunctionImpl(function);
+                    
+                    context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
+                    context.WriteLine(output, "{");
+                    WriteFunctionBody(context, function, output);
+                    context.WriteLine(output, "}");
+                    context.WriteLine(output);
                     context.WriteLine(output, $"PRT_FUNDECL {declName} =");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"\"{function.Name}\","); // name of function in original program
@@ -215,10 +221,6 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "NULL"); // payload type for anonymous functions: always NULL.
                     context.WriteLine(output, "};");
                     context.WriteLine(output);
-                    context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
-                    context.WriteLine(output, "{");
-                    WriteFunctionBody(context, function, output);
-                    context.WriteLine(output, "}");
                     break;
                 case Implementation _:
                     // does not produce a struct definition - aside from ProgramDecl
@@ -301,6 +303,10 @@ namespace Microsoft.Pc.Backend
                 case NamedEventSet namedEventSet:
                     string innerSetName = context.Names.GetTemporaryName(namedEventSet.Name + "_INNER");
                     var eventDeclNames = namedEventSet.Events.Select(x => "&" + GetPrtNameForDecl(context, x)).ToList();
+                    if (eventDeclNames.Count == 0)
+                    {
+                        eventDeclNames.Add("NULL");
+                    }
                     context.WriteLine(output, $"PRT_EVENTDECL* {innerSetName}[] = {{ {string.Join(", ", eventDeclNames)} }};");
                     context.WriteLine(output, $"PRT_EVENTSETDECL {declName} =");
                     context.WriteLine(output, "{");
@@ -353,29 +359,41 @@ namespace Microsoft.Pc.Backend
                     var transArrName = context.Names.GetTemporaryName("TRANS");
                     context.WriteLine(output, $"PRT_TRANSDECL {transArrName}[] =");
                     context.WriteLine(output, "{");
-                    for (var i = 0; i < stateData.Trans.Count; i++)
+                    if(stateData.Trans.Count == 0)
                     {
-                        (PEvent triggerEvent, int destIndex, string transFunRef) = stateData.Trans[i];
-                        string triggerName = GetPrtNameForDecl(context, triggerEvent);
-                        var comma = i == stateData.Trans.Count - 1 ? "" : ",";
-                        context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {destIndex}, {transFunRef} }}{comma}");
+                        context.WriteLine(output, "NULL");
                     }
-
+                    else
+                    { 
+                        for (var i = 0; i < stateData.Trans.Count; i++)
+                        {
+                            (PEvent triggerEvent, int destIndex, string transFunRef) = stateData.Trans[i];
+                            string triggerName = GetPrtNameForDecl(context, triggerEvent);
+                            var comma = i == stateData.Trans.Count - 1 ? "" : ",";
+                            context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {destIndex}, {transFunRef} }}{comma}");
+                        }
+                    }
                     context.WriteLine(output, "};");
                     context.WriteLine(output);
 
                     var dosArrName = context.Names.GetTemporaryName("DOS");
                     context.WriteLine(output, $"PRT_DODECL {dosArrName}[] =");
                     context.WriteLine(output, "{");
-                    for (var i = 0; i < stateData.Dos.Count; i++)
+                    if (stateData.Dos.Count == 0)
                     {
-                        (PEvent triggerEvent, Function transFun) = stateData.Dos[i];
-                        string triggerName = GetPrtNameForDecl(context, triggerEvent);
-                        var comma = i == stateData.Trans.Count - 1 ? "" : ",";
-                        var funName = transFun != null ? GetPrtNameForDecl(context, transFun) : "_P_NO_OP";
-                        context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{funName} }}{comma}");
+                        context.WriteLine(output, "NULL");
                     }
-
+                    else
+                    { 
+                        for (var i = 0; i < stateData.Dos.Count; i++)
+                        {
+                            (PEvent triggerEvent, Function transFun) = stateData.Dos[i];
+                            string triggerName = GetPrtNameForDecl(context, triggerEvent);
+                            var comma = i == stateData.Trans.Count - 1 ? "" : ",";
+                            var funName = transFun != null ? GetPrtNameForDecl(context, transFun) : "_P_NO_OP";
+                            context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{funName} }}{comma}");
+                        }
+                    }
                     context.WriteLine(output, "};");
                     context.WriteLine(output);
 

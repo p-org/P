@@ -25,19 +25,35 @@ typedef PRT_VALUE *(PRT_CALL_CONV* PRT_SM_FUN)(_Inout_ struct PRT_MACHINEINST *c
 /** Represents a P event declaration */
 typedef struct PRT_EVENTDECL
 {
-    PRT_VALUE value;              /**< The value representing this event in the program >*/
-	PRT_STRING name;              /**< The name of this event                                                  */
-	PRT_UINT32 eventMaxInstances; /**< The value of maximum instances of the event that can occur in the queue */
-	PRT_TYPE   *type;	          /**< The type of the payload associated with this event                      */
+    PRT_VALUE  value;				/**< The value representing this event in the program >*/
+	PRT_STRING name;				/**< The name of this event                                                  */
+	PRT_UINT32 eventMaxInstances;	/**< The value of maximum instances of the event that can occur in the queue */
+	PRT_TYPE   *type;				/**< The type of the payload associated with this event                      */
 } PRT_EVENTDECL;
 
 /** Represents a set of P events and the set packed into a bit vector */
 typedef struct PRT_EVENTSETDECL
 {
-    PRT_UINT32 nEvents;        /**< The number of events */
-    PRT_EVENTDECL **events;    /**< The array of events */
-	PRT_UINT32 *packedEvents;  /**< The events packed into an array of ints */
+    PRT_UINT32		nEvents;        /**< The number of events */
+    PRT_EVENTDECL	**events;    /**< The array of events */
+	PRT_UINT32		*packedEvents;  /**< The events packed into an array of ints */
 } PRT_EVENTSETDECL;
+
+/** Represents a P interface declaration */
+typedef struct PRT_INTERFACEDECL
+{
+	PRT_STRING			name;				/**< The name of this event             */
+	PRT_TYPE			*type;				/**< The type of the constructor		*/
+	PRT_EVENTSETDECL	*receives;			/**< The receives set of the interface	*/
+} PRT_INTERFACEDECL;
+
+/** Represents a set of P interfaces */
+typedef struct PRT_INTERFACESETDECL
+{
+	PRT_UINT32			nInterfaces;        /**< The number of interfaces */
+	PRT_UINT32			*interfacesIndex;	/**< The array of interfaces index*/
+} PRT_INTERFACESETDECL;
+
 
 /** Represents a P variable declaration */
 typedef struct PRT_VARDECL
@@ -104,32 +120,36 @@ typedef struct PRT_STATEDECL
 /** Represents a P machine declaration */
 typedef struct PRT_MACHINEDECL
 {
-	PRT_UINT32       declIndex;         /**< The index of machine in program     */
-	PRT_STRING       name;              /**< The name of this machine            */
-	PRT_UINT32       nVars;             /**< The number of state variables       */
-	PRT_UINT32       nStates;           /**< The number of states                */
-	PRT_UINT32       nFuns;             /**< The number of functions             */
-
-	PRT_UINT32       maxQueueSize;      /**< The max queue size                  */
-	PRT_UINT32       initStateIndex;    /**< The index of initial state      */
-	PRT_VARDECL      *vars;             /**< The array of variable declarations  */
-	PRT_STATEDECL    *states;           /**< The array of state declarations     */
-	PRT_FUNDECL      **funs;            /**< The array of fun declarations       */
+	PRT_UINT32			declIndex;         /**< The index of machine in program     */
+	PRT_STRING			name;              /**< The name of this machine            */
+	PRT_EVENTSETDECL	*receives;			/**< The set of events received by the machine */
+	PRT_EVENTSETDECL	*sends;				/**< The set of events sent by the machine */
+	PRT_INTERFACESETDECL *creates;			/**< The set of interfaces created by the machine */
+	PRT_UINT32			nVars;             /**< The number of state variables       */
+	PRT_UINT32			nStates;           /**< The number of states                */
+	PRT_UINT32			nFuns;             /**< The number of functions             */
+	PRT_UINT32			maxQueueSize;      /**< The max queue size                  */
+	PRT_UINT32			initStateIndex;    /**< The index of initial state      */
+	PRT_VARDECL			*vars;             /**< The array of variable declarations  */
+	PRT_STATEDECL		*states;           /**< The array of state declarations     */
+	PRT_FUNDECL			**funs;            /**< The array of fun declarations       */
 } PRT_MACHINEDECL;
 
 /** Represents a P program declaration */
 typedef struct PRT_PROGRAMDECL
 {
-	PRT_UINT32          nEvents;        /**< The number of events      */
-	PRT_UINT32          nMachines;      /**< The number of machines    */
-	PRT_UINT32          nGlobalFuns;    /**< The number of global functions */
-	PRT_UINT32          nForeignTypes;  /**< The number of foreign types */
-	PRT_EVENTDECL       **events;       /**< The array of events                 */
-	PRT_MACHINEDECL     **machines;     /**< The array of machines               */
-	PRT_FUNDECL         **globalFuns;   /**< The array of global functions */
-	PRT_FOREIGNTYPEDECL **foreignTypes; /**< The array of foreign types */
-	PRT_UINT32			**linkMap;		/**< stores the link map from interfaceName -> interfaceName -> interfaceName */
-	PRT_UINT32			*machineDefMap;		/**< stores the machine definition map from interfaceName -> concrete name */
+	PRT_UINT32          nEvents;			/**< The number of events      */
+	PRT_UINT32          nMachines;			/**< The number of machines    */
+	PRT_UINT32			nInterfaces;		/**< The number of interfaces    */
+	PRT_UINT32          nGlobalFuns;		/**< The number of global functions */
+	PRT_UINT32          nForeignTypes;		/**< The number of foreign types */
+	PRT_EVENTDECL       **events;			/**< The array of events  */
+	PRT_MACHINEDECL     **machines;			/**< The array of machines */
+	PRT_INTERFACEDECL   **interfaces;		/**< The array of interfaces */
+	PRT_FUNDECL         **globalFuns;		/**< The array of global functions */
+	PRT_FOREIGNTYPEDECL **foreignTypes;		/**< The array of foreign types */
+	PRT_UINT32			**linkMap;			/**< stores the link map from interfaceName -> interfaceName -> interfaceName */
+	PRT_UINT32			*interfaceDefMap;	/**< stores the machine definition map from interfaceName -> concrete name */
 } PRT_PROGRAMDECL;
 
 extern PRT_PROGRAMDECL *program;

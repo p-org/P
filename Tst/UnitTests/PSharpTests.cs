@@ -38,7 +38,7 @@ namespace UnitTests
                     File.Copy(source.FullName, Path.Combine(tmpDir, source.Name));
                 }
 
-                if (!RunMSBuild(tmpDir, out testStdout))
+                if (!RunMSBuildExe(tmpDir, out testStdout))
                 {
                     return null;
                 }
@@ -53,7 +53,7 @@ namespace UnitTests
             }
             finally
             {
-                Directory.Delete(tmpDir, true);
+                //Directory.Delete(tmpDir, true);
             }
         }
 
@@ -74,9 +74,7 @@ namespace UnitTests
         private static bool RunMSBuild(string tmpDir, out string output)
         {
             var pc = new ProjectCollection();
-
             
-
             var properties = new Dictionary<string, string>
             {
                 {"Configuration", Constants.BuildConfiguration},
@@ -258,7 +256,7 @@ namespace UnitTests
         [Test]
         public void TestTemp()
         {
-            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "PingPong.p");
+            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
             FileInfo[] inputFiles = {new FileInfo(path)};
             bool result = ExecuteTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));

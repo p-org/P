@@ -82,6 +82,8 @@ namespace Microsoft.Pc.Backend
             {
                 string functionName = context.Names.GetNameForFunctionImpl(function);
                 context.WriteLine(cSource.Stream, $"PRT_VALUE* {functionName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs);");
+                context.WriteLine(cSource.Stream, $"extern PRT_FUNDECL {GetPrtNameForDecl(context, function)};");
+                context.WriteLine(cSource.Stream);
             }
 
             context.WriteLine(cSource.Stream);
@@ -96,21 +98,43 @@ namespace Microsoft.Pc.Backend
             return new List<CompiledFile> {cHeader, cSource};
         }
 
+        private IList<T> ToOrderedListByPermutation<T>(IEnumerable<T> enumerable, Func<T, int> perm)
+        {
+            var items = enumerable.ToList();
+            IList<T> inOrder = new T[items.Count];
+            foreach (T item in items)
+            {
+                inOrder[perm(item)] = item;
+            }
+            return inOrder;
+        }
+
         private void WriteProgramDecl(CompilationContext context, Scope globalScope, TextWriter output)
         {
             // generate event array
             var eventArrayName = context.Names.GetTemporaryName("ALL_EVENTS");
             var eventArrayBody = string.Join(", ", globalScope.Events.Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            eventArrayBody = string.IsNullOrEmpty(eventArrayBody) ? "NULL" : eventArrayBody;
             context.WriteLine(output, $"PRT_EVENTDECL* {eventArrayName}[] = {{ {eventArrayBody} }};");
 
             // generate machine array
             var machineArrayName = context.Names.GetTemporaryName("ALL_MACHINES");
-            var machineArrayBody = string.Join(", ", globalScope.Machines.Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            var machineArrayBody = string.Join(", ", ToOrderedListByPermutation(globalScope.Machines, context.GetNumberForMachine)
+                                                                .Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            machineArrayBody = string.IsNullOrEmpty(machineArrayBody) ? "NULL" : machineArrayBody;
             context.WriteLine(output, $"PRT_MACHINEDECL* {machineArrayName}[] = {{ {machineArrayBody} }};");
+
+            // generate interface array
+            var interfaceArrayName = context.Names.GetTemporaryName("ALL_INTERFACES");
+            var interfaceArrayBody = string.Join(", ", ToOrderedListByPermutation(globalScope.Interfaces, context.GetNumberForInterface)
+                                                                  .Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            interfaceArrayBody = string.IsNullOrEmpty(interfaceArrayBody) ? "NULL" : interfaceArrayBody;
+            context.WriteLine(output, $"PRT_INTERFACEDECL* {interfaceArrayName}[] = {{ {interfaceArrayBody} }};");
 
             // generate functions array
             var funcArrayName = context.Names.GetTemporaryName("ALL_FUNCTIONS");
             var funcArrayBody = string.Join(", ", globalScope.Functions.Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            funcArrayBody = string.IsNullOrEmpty(funcArrayBody) ? "NULL" : funcArrayBody;
             context.WriteLine(output, $"PRT_FUNDECL* {funcArrayName}[] = {{ {funcArrayBody} }};");
 
             foreach (Implementation impl in globalScope.Implementations)
@@ -137,17 +161,19 @@ namespace Microsoft.Pc.Backend
                 int[] realMachineDefMap = Enumerable.Repeat(-1, trueLinkMap.Length).ToArray();
                 foreach (var linking in machineDefMap)
                 {
-                    realMachineDefMap[context.GetNumberForInterface(linking.Key)] = 9999;
+                    realMachineDefMap[context.GetNumberForInterface(linking.Key)] = context.GetNumberForMachine(linking.Value);
                 }
                 context.WriteLine(output, $"int {machineDefMapName}[] = {{ {string.Join(",", realMachineDefMap)} }};");
 
                 context.WriteLine(output, $"PRT_PROGRAMDECL {GetPrtNameForDecl(context, impl)} = {{");
                 context.WriteLine(output, $"{globalScope.Events.Count()}U,");
                 context.WriteLine(output, $"{globalScope.Machines.Count()}U,");
+                context.WriteLine(output, $"{globalScope.Interfaces.Count()}U,");
                 context.WriteLine(output, $"{globalScope.Functions.Count()}U,");
                 context.WriteLine(output, "0U,"); // TODO: foreign types
                 context.WriteLine(output, $"{eventArrayName},");
                 context.WriteLine(output, $"{machineArrayName},");
+                context.WriteLine(output, $"{interfaceArrayName},");
                 context.WriteLine(output, $"{funcArrayName},");
                 context.WriteLine(output, $"NULL,"); // TODO: foreign types
                 context.WriteLine(output, $"{linkMapName},");
@@ -229,7 +255,7 @@ namespace Microsoft.Pc.Backend
                     string ifaceRecvSetName;
                     if (@interface.ReceivableEvents is NamedEventSet set)
                     {
-                        ifaceRecvSetName = set.Name;
+                        ifaceRecvSetName = GetPrtNameForDecl(context, set);
                     }
                     else
                     {
@@ -244,7 +270,7 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, $"{context.GetNumberForInterface(@interface)}U,");
                     context.WriteLine(output, $"\"{@interface.Name}\",");
                     context.WriteLine(output, $"&{context.Names.GetNameForType(@interface.PayloadType)},");
-                    context.WriteLine(output, $"{ifaceRecvSetName}");
+                    context.WriteLine(output, $"&{ifaceRecvSetName}");
                     context.WriteLine(output, "};");
                     break;
                 case Machine machine:
@@ -283,31 +309,44 @@ namespace Microsoft.Pc.Backend
                     var methodArrayBody = string.Join(", ", machineMethods.Select(m => $"&{GetPrtNameForDecl(context, m)}"));
                     context.WriteLine(output, $"PRT_FUNDECL* {methodArrayName}[] = {{ {methodArrayBody} }};");
                     context.WriteLine(output);
-                    
+
+                    string machineRecvSetName = GetReceivesNameOrMkTemp(machine, context, output);
+                    string machineSendSetName = GetSendsNameOrMkTemp(machine, context, output);
+                    string machineCreatesName = "NULL";
+                    if (machine.Creates.Interfaces.Any())
+                    {
+                        var createsInterfaces = machine.Creates.Interfaces.ToList();
+                        machineCreatesName = context.Names.GetTemporaryName($"{machine.Name}_CREATES");
+                        var createsArrayBody = string.Join(", ", createsInterfaces.Select(context.GetNumberForInterface));
+                        context.WriteLine(output, $"PRT_INTERFACESETDECL {machineCreatesName} = {{ {createsInterfaces.Count}, {{ {createsArrayBody} }} }};");
+                        machineCreatesName = "&" + machineCreatesName;
+                    }
+
                     var maxQueueSize = machine.Assert ?? uint.MaxValue;
                     context.WriteLine(output, $"PRT_MACHINEDECL {declName} = ");
                     context.WriteLine(output, "{");
-                    context.WriteLine(output, "0U,");
+                    context.WriteLine(output, $"{context.GetNumberForMachine(machine)}U,");
                     context.WriteLine(output, $"\"{machine.Name}\",");
+                    context.WriteLine(output, $"&{machineRecvSetName},");
+                    context.WriteLine(output, $"&{machineSendSetName},");
+                    context.WriteLine(output, $"{machineCreatesName},");
                     context.WriteLine(output, $"{machineFields.Count}U,");
                     context.WriteLine(output, $"{machineStatesInOrder.Length}U,");
                     context.WriteLine(output, $"{machineMethods.Count}U,");
                     context.WriteLine(output, $"{maxQueueSize}U,");
                     context.WriteLine(output, $"{context.GetNumberForState(machine.StartState)}U,");
-                    context.WriteLine(output, $"&{fieldArrayName},");
-                    context.WriteLine(output, $"&{stateArrayName},");
-                    context.WriteLine(output, $"&{methodArrayName}");
+                    context.WriteLine(output, $"{fieldArrayName},");
+                    context.WriteLine(output, $"{stateArrayName},");
+                    context.WriteLine(output, $"{methodArrayName}");
                     context.WriteLine(output, "};");
 
                     break;
                 case NamedEventSet namedEventSet:
                     string innerSetName = context.Names.GetTemporaryName(namedEventSet.Name + "_INNER");
                     var eventDeclNames = namedEventSet.Events.Select(x => "&" + GetPrtNameForDecl(context, x)).ToList();
-                    if (eventDeclNames.Count == 0)
-                    {
-                        eventDeclNames.Add("NULL");
-                    }
-                    context.WriteLine(output, $"PRT_EVENTDECL* {innerSetName}[] = {{ {string.Join(", ", eventDeclNames)} }};");
+                    string eventDeclArrBody = string.Join(", ", eventDeclNames);
+                    eventDeclArrBody = string.IsNullOrEmpty(eventDeclArrBody) ? "NULL" : eventDeclArrBody;
+                    context.WriteLine(output, $"PRT_EVENTDECL* {innerSetName}[] = {{ {eventDeclArrBody} }};");
                     context.WriteLine(output, $"PRT_EVENTSETDECL {declName} =");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"{eventDeclNames.Count}U,");
@@ -409,7 +448,7 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, $"{dosArrName}, \\");
                     context.WriteLine(output, $"{stateEntryFunName}, \\");
                     context.WriteLine(output, $"{stateExitFunName}, \\");
-                    context.WriteLine(output, "};");
+                    context.WriteLine(output, "}");
                     break;
                 case StateGroup stateGroup:
                     foreach (var state in stateGroup.States)
@@ -424,6 +463,42 @@ namespace Microsoft.Pc.Backend
             }
 
             context.WriteLine(output);
+        }
+
+        private string GetReceivesNameOrMkTemp(Machine machine, CompilationContext context, TextWriter output)
+        {
+            string eventSetName;
+            if (machine.Receives is NamedEventSet mRecvSet)
+            {
+                eventSetName = GetPrtNameForDecl(context, mRecvSet);
+            }
+            else
+            {
+                var machineTempRecvSet = new NamedEventSet(machine.Name + "_RECV", machine.SourceLocation);
+                machineTempRecvSet.AddEvents(machine.Receives.Events);
+                WriteSourceDecl(context, machineTempRecvSet, output);
+                eventSetName = GetPrtNameForDecl(context, machineTempRecvSet);
+            }
+
+            return eventSetName;
+        }
+
+        private string GetSendsNameOrMkTemp(Machine machine, CompilationContext context, TextWriter output)
+        {
+            string eventSetName;
+            if (machine.Sends is NamedEventSet mSendSet)
+            {
+                eventSetName = GetPrtNameForDecl(context, mSendSet);
+            }
+            else
+            {
+                var machineTempSendSet = new NamedEventSet(machine.Name + "_SEND", machine.SourceLocation);
+                machineTempSendSet.AddEvents(machine.Sends.Events);
+                WriteSourceDecl(context, machineTempSendSet, output);
+                eventSetName = GetPrtNameForDecl(context, machineTempSendSet);
+            }
+
+            return eventSetName;
         }
 
         private class StateActionResults
@@ -504,6 +579,7 @@ namespace Microsoft.Pc.Backend
                 context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue({varTypeName});");
             }
 
+            context.WriteLine(output, "PRT_MACHINEINST_PRIV* p_this = (PRT_MACHINEINST_PRIV*)context;");
             if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
                 context.WriteLine(output, "PRT_VALUE* retval = NULL;");
@@ -632,6 +708,18 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "goto p_return;");
                     break;
                 case SendStmt sendStmt:
+                    context.Write(output, $"PrtSendInternal(context, ");
+                    WriteExpr(context, sendStmt.MachineExpr, output);
+                    context.Write(output, ", ");
+                    WriteExpr(context, sendStmt.Evt, output);
+                    context.Write(output, $"{sendStmt.ArgsList.Count}");
+                    foreach (IPExpr sendArgExpr in sendStmt.ArgsList)
+                    {
+                        context.Write(output, ", ");
+                        WriteExpr(context, sendArgExpr, output);
+                        context.Write(output, ", PRT_FUN_PARAM_SWAP");
+                    }
+                    context.WriteLine(output, ");");
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     break;
@@ -864,14 +952,15 @@ namespace Microsoft.Pc.Backend
                     {
                         // dereference, since params are passed by reference.
                         context.Write(output, "*");
+                        context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
                     }
 
                     if (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Field))
                     {
-                        context.Write(output, "p_this->");
+                        var varIdx = 0; // TODO: this.
+                        context.Write(output, $"p_this->varValues[{varIdx}]");
                     }
 
-                    context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
                     break;
             }
         }
@@ -1062,6 +1151,8 @@ namespace Microsoft.Pc.Backend
                     }
 
                     break;
+                case Implementation impl:
+                    return $"P_GEND_IMPL_{impl.Name}";
             }
 
             if (DeclNameParts.TryGetValue(decl.GetType(), out string prefix))
@@ -1080,6 +1171,7 @@ namespace Microsoft.Pc.Backend
         {
             private bool lineHasBeenIndented;
             private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
+            private readonly Dictionary<Machine, int> machineNumbering = new Dictionary<Machine, int>();
             private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering = new Dictionary<Machine, Dictionary<State, int>>();
 
             public CompilationContext(string projectName)
@@ -1107,6 +1199,18 @@ namespace Microsoft.Pc.Backend
 
                 name = interfaceNumbering.Count;
                 interfaceNumbering.Add(pInterface, name);
+                return name;
+            }
+
+            public int GetNumberForMachine(Machine machine)
+            {
+                if (machineNumbering.TryGetValue(machine, out int name))
+                {
+                    return name;
+                }
+
+                name = machineNumbering.Count;
+                machineNumbering.Add(machine, name);
                 return name;
             }
 
@@ -1239,10 +1343,11 @@ namespace Microsoft.Pc.Backend
                 case Function _:
                     context.WriteLine(output, $"extern PRT_FUNDECL {declName};");
                     break;
-                case Implementation implementation:
+                case Implementation _:
+                    context.WriteLine(output, $"extern PRT_PROGRAMDECL {declName};");
                     break;
                 case Interface _:
-                    context.WriteLine(output, $"extern PRT_UINT32 {declName};");
+                    context.WriteLine(output, $"extern PRT_INTERFACEDECL {declName};");
                     break;
                 case Machine _:
                     context.WriteLine(output, $"extern PRT_MACHINEDECL {declName};");

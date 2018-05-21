@@ -42,6 +42,7 @@ typedef struct PRT_EVENTSETDECL
 /** Represents a P interface declaration */
 typedef struct PRT_INTERFACEDECL
 {
+	PRT_UINT32          id;                 /**< The numeric id of this event       */
 	PRT_STRING			name;				/**< The name of this event             */
 	PRT_TYPE			*type;				/**< The type of the constructor		*/
 	PRT_EVENTSETDECL	*receives;			/**< The receives set of the interface	*/

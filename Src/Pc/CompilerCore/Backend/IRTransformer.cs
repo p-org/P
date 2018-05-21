@@ -275,7 +275,14 @@ namespace Microsoft.Pc.Backend
             return Flatten(new CompoundStmt(functionBody.SourceLocation, SimplifyStatement(functionBody)));
         }
 
-        private IPExpr MakeClone(IPExpr expr) { return new CloneExpr(expr); }
+        private static CloneExpr MakeClone(IPExpr expr)
+        {
+            if (expr is CloneExpr cloned)
+            {
+                return cloned;
+            }
+            return new CloneExpr(expr);
+        }
 
         private List<IPStmt> SimplifyStatement(IPStmt statement)
         {
@@ -454,18 +461,16 @@ namespace Microsoft.Pc.Backend
                     }
 
                     var (returnValue, returnValueDeps) = SimplifyExpression(returnStmt.ReturnValue);
-                    if (!(returnValue is CloneExpr))
-                    {
-                        returnValue = new CloneExpr(returnValue);
-                    }
                     return returnValueDeps.Concat(new[]
                                           {
-                                              new ReturnStmt(location, returnValue)
+                                              new ReturnStmt(location, MakeClone(returnValue))
                                           })
                                           .ToList();
                 case SendStmt sendStmt:
                     var (sendMachine, sendMachineDeps) = SimplifyExpression(sendStmt.MachineExpr);
+                    var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(sendMachine);
                     var (sendEvent, sendEventDeps) = SimplifyExpression(sendStmt.Evt);
+                    var (sendEventAccessExpr, sendEventAssn) = SaveInTemporary(sendEvent);
                     var sendArgs = new List<IPExpr>();
                     var sendArgDeps = new List<IPStmt>();
                     foreach (IPExpr pExpr in sendStmt.ArgsList)
@@ -475,13 +480,16 @@ namespace Microsoft.Pc.Backend
                         sendArgDeps.AddRange(argDeps);
                     }
 
-                    return sendMachineDeps.Concat(sendEventDeps)
-                                          .Concat(sendArgDeps)
-                                          .Concat(new[]
-                                          {
-                                              new SendStmt(location, sendMachine, sendEvent, sendArgs)
-                                          })
-                                          .ToList();
+                    return sendMachineDeps
+                           .Concat(new[] {sendMachineAssn})
+                           .Concat(sendEventDeps)
+                           .Concat(new[] {sendEventAssn})
+                           .Concat(sendArgDeps)
+                           .Concat(new[]
+                           {
+                               new SendStmt(location, sendMachineAccessExpr, sendEventAccessExpr, sendArgs)
+                           })
+                           .ToList();
                 case SwapAssignStmt swapAssignStmt:
                     var (swapVar, swapVarDeps) = SimplifyLvalue(swapAssignStmt.NewLocation);
                     var (swapTmp, tmpAssn) = SaveInTemporary(swapVar, PrimitiveType.Any);

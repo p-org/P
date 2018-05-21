@@ -8,6 +8,7 @@ using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.Backend;
+using Microsoft.Pc.Backend.Debugging;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
@@ -48,6 +49,8 @@ namespace Microsoft.Pc
                 {
                     IRTransformer.SimplifyMethod(fun);
                 }
+
+                Console.WriteLine(IrToPseudoP.Dump(scope));
 
                 // Run the selected backend on the project and write the files.
                 ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.compilerOutput);

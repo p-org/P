@@ -175,28 +175,16 @@ _In_  PRT_UINT32				instanceOf,
 _In_  PRT_VALUE					*payload
 )
 {
+	PrtLockMutex(process->processLock);
+
 	PRT_UINT32 packSize;
-	PRT_UINT32 nVars;
 	PRT_UINT8 eQSize;
 	PRT_MACHINEINST_PRIV *context;
 	PRT_UINT32 i;
 
-	PrtLockMutex(process->processLock);
-
-
-	nVars = program->machines[instanceOf]->nVars;
 	eQSize = PRT_QUEUE_LEN_DEFAULT;
 
-	//
-	// Allocate memory for state machine context
-	//
-	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
-
-	//assign the interface name
-	context->interfaceBound = interfaceName;
-	//
-	// Add it to the array of machines in the process
-	//
+	// Make space in process list for new machine
 	PRT_UINT32 numMachines = process->numMachines;
 	PRT_UINT32 machineCount = process->machineCount;
 	PRT_MACHINEINST **machines = process->machines;
@@ -217,6 +205,14 @@ _In_  PRT_VALUE					*payload
 		process->machines = newMachines;
 		process->machineCount = 2 * machineCount;
 	}
+
+	// Allocate memory for state machine context
+	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
+
+	// Assign the interface name
+	context->interfaceBound = interfaceName;
+
+	// Add it to the process list
 	machines[numMachines] = (PRT_MACHINEINST *)context;
 	process->numMachines++;
 
@@ -243,7 +239,6 @@ _In_  PRT_VALUE					*payload
 
 	// Initialize Machine Internal Variables
 	//
-	context->currentState = program->machines[context->instanceOf]->initStateIndex;
 	context->isRunning = PRT_FALSE;
 	context->isHalted = PRT_FALSE; 
     context->nextOperation = EntryOperation;
@@ -255,19 +250,20 @@ _In_  PRT_VALUE					*payload
 	context->currentTrigger = NULL;
 	context->currentPayload = PrtCloneValue(payload);
 
-	//
-	// Allocate memory for local variables and initialize them
-	//
+	// Initialize machine-dependent per-instance state
+	PRT_MACHINEDECL* curMachineDecl = program->machines[instanceOf];
+	PRT_UINT32 nVars = curMachineDecl->nVars;
+	
+	context->currentState = curMachineDecl->initStateIndex;
 	context->varValues = NULL;
 	if (nVars > 0)
 	{
 		context->varValues = PrtCalloc(nVars, sizeof(PRT_VALUE*));
 		for (i = 0; i < nVars; i++)
 		{
-			context->varValues[i] = PrtMkDefaultValue(program->machines[instanceOf]->vars[i].type);
+			context->varValues[i] = PrtMkDefaultValue(curMachineDecl->vars[i].type);
 		}
 	}
-
 
 	//
 	// Initialize various stacks
@@ -305,6 +301,7 @@ _In_  PRT_VALUE					*payload
 	//Initialize state machine lock
 	//
 	context->stateMachineLock = PrtCreateMutex();
+	context->packedReceiveCases = NULL;
 
 	//
 	//Log
@@ -2509,7 +2506,10 @@ PRT_CALL_CONV PrtSendInternal(
 				args[i] = PrtCloneValue(arg);
 				break;
 			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSendInternal");
+				//PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSendInternal");
+				// TODO: update runtime to match compiler behavior. Take away runtime knowledge of linear types.
+				arg = va_arg(argp, PRT_VALUE *);
+				args[i] = arg;
 				break;
 			case PRT_FUN_PARAM_MOVE:
 				argPtr = va_arg(argp, PRT_VALUE **);

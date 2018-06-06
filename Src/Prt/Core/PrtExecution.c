@@ -774,12 +774,12 @@ DoEntry:
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
+	
 	PRT_FUNDECL *entryFun = currentState->entryFun;
-	PRT_VALUE ***refLocals = PrtCalloc(1, sizeof(PRT_VALUE**));
-	//TODO: Confirm if the below assignment is correct.
-	refLocals[0] = &context->currentPayload;
-	context->currentPayload = NULL;
-	entryFun->implementation((PRT_MACHINEINST *)context, refLocals);
+	PRT_VALUE* refLocals[1] = { context->currentPayload };
+	entryFun->implementation((PRT_MACHINEINST *)context, &refLocals);
+	PrtFreeTriggerPayload(context);
+	
 	goto CheckLastOperation;
 
 DoAction:
@@ -800,11 +800,10 @@ DoAction:
 		PRT_MACHINESTATE state;
 		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
-		PRT_VALUE ***refLocals = PrtCalloc(1, sizeof(PRT_VALUE**));
-		//TODO: Confirm if the below assignment is correct.
-		refLocals[0] = &context->currentPayload;
-		doFun->implementation((PRT_MACHINEINST *)context, refLocals);
-		context->currentPayload = NULL;
+		
+		PRT_VALUE* refLocals[1] = { context->currentPayload };
+		doFun->implementation((PRT_MACHINEINST *)context, &refLocals);
+		PrtFreeTriggerPayload(context);
 	}
 	goto CheckLastOperation;
 

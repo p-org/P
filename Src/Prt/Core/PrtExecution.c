@@ -733,15 +733,12 @@ PrtRunTransitionFunction(
 	_In_ PRT_UINT32						transIndex
 )
 {
-	PRT_VALUE*** refLocals = NULL;
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement; 
 	PRT_FUNDECL *transFun = stateDecl->transitions[transIndex].transFun;
 	PRT_DBG_ASSERT(transFun != NULL, "Must be valid function");
-	//TODO: Confirm if the below assignment is correct.
-	refLocals[0] = &context->currentPayload;
-	context->currentPayload = NULL;
-	transFun->implementation((PRT_MACHINEINST *)context, refLocals);
+	PRT_VALUE* refLocals[1] = { context->currentPayload };
+	transFun->implementation((PRT_MACHINEINST *)context, &refLocals);
 }
 
 static PRT_BOOLEAN

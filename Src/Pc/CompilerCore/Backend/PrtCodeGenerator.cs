@@ -386,8 +386,8 @@ namespace Microsoft.Pc.Backend
                     // handled by MachineDecl.
                     return;
                 case State state:
-                    var stateEntryFunName = state.Entry == null ? "NULL" : $"&{GetPrtNameForDecl(context, state.Entry)}";
-                    var stateExitFunName = state.Exit == null ? "NULL" : $"&{GetPrtNameForDecl(context, state.Exit)}";
+                    var stateEntryFunName = state.Entry == null ? "&_P_NO_OP" : $"&{GetPrtNameForDecl(context, state.Entry)}";
+                    var stateExitFunName = state.Exit == null ? "&_P_NO_OP" : $"&{GetPrtNameForDecl(context, state.Exit)}";
 
                     var stateIndex = context.GetNumberForState(state);
                     var stateData = BuildActionSets(context, state);
@@ -396,15 +396,12 @@ namespace Microsoft.Pc.Backend
                     WriteSourceDecl(context, stateData.TransSet, output);
                     WriteSourceDecl(context, stateData.DosSet, output);
 
-                    var transArrName = context.Names.GetTemporaryName("TRANS");
-                    context.WriteLine(output, $"PRT_TRANSDECL {transArrName}[] =");
-                    context.WriteLine(output, "{");
-                    if(stateData.Trans.Count == 0)
+                    var transArrName = "NULL";
+                    if(stateData.Trans.Count != 0)
                     {
-                        context.WriteLine(output, "NULL");
-                    }
-                    else
-                    { 
+                        transArrName = context.Names.GetTemporaryName("TRANS");
+                        context.WriteLine(output, $"PRT_TRANSDECL {transArrName}[] =");
+                        context.WriteLine(output, "{");
                         for (var i = 0; i < stateData.Trans.Count; i++)
                         {
                             (PEvent triggerEvent, int destIndex, string transFunRef) = stateData.Trans[i];
@@ -412,19 +409,17 @@ namespace Microsoft.Pc.Backend
                             var comma = i == stateData.Trans.Count - 1 ? "" : ",";
                             context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {destIndex}, {transFunRef} }}{comma}");
                         }
+                        context.WriteLine(output, "};");
+                        context.WriteLine(output);
                     }
-                    context.WriteLine(output, "};");
-                    context.WriteLine(output);
+                    
 
-                    var dosArrName = context.Names.GetTemporaryName("DOS");
-                    context.WriteLine(output, $"PRT_DODECL {dosArrName}[] =");
-                    context.WriteLine(output, "{");
-                    if (stateData.Dos.Count == 0)
-                    {
-                        context.WriteLine(output, "NULL");
-                    }
-                    else
+                    var dosArrName = "NULL";
+                    if (stateData.Dos.Count != 0)
                     { 
+                        dosArrName = context.Names.GetTemporaryName("DOS");
+                        context.WriteLine(output, $"PRT_DODECL {dosArrName}[] =");
+                        context.WriteLine(output, "{");
                         for (var i = 0; i < stateData.Dos.Count; i++)
                         {
                             (PEvent triggerEvent, Function transFun) = stateData.Dos[i];
@@ -433,10 +428,10 @@ namespace Microsoft.Pc.Backend
                             var funName = transFun != null ? GetPrtNameForDecl(context, transFun) : "_P_NO_OP";
                             context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{funName} }}{comma}");
                         }
+                        context.WriteLine(output, "};");
+                        context.WriteLine(output);
                     }
-                    context.WriteLine(output, "};");
-                    context.WriteLine(output);
-
+                    
                     context.WriteLine(output, $"#define {declName} \\");
                     context.WriteLine(output, "{ \\");
                     context.WriteLine(output, $"\"{state.QualifiedName}\", \\");
@@ -727,16 +722,15 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "goto p_return;");
                     break;
                 case SendStmt sendStmt:
-                    context.Write(output, $"PrtSendInternal(context, ");
+                    context.Write(output, $"PrtSendInternal(context, PrtGetMachine(context->process, ");
                     WriteExpr(context, function, sendStmt.MachineExpr, output);
-                    context.Write(output, ", ");
+                    context.Write(output, "), ");
                     WriteExpr(context, function, sendStmt.Evt, output);
-                    context.Write(output, $"{sendStmt.ArgsList.Count}");
+                    context.Write(output, $", {sendStmt.ArgsList.Count}");
                     foreach (IPExpr sendArgExpr in sendStmt.ArgsList)
                     {
                         context.Write(output, ", ");
                         WriteExpr(context, function, sendArgExpr, output);
-                        context.Write(output, ", PRT_FUN_PARAM_SWAP");
                     }
                     context.WriteLine(output, ");");
                     break;
@@ -870,6 +864,7 @@ namespace Microsoft.Pc.Backend
                     IPExpr binOpRhs = binOpExpr.Rhs;
                     BinOpType binOpType = binOpExpr.Operation;
 
+                    // TODO: if getting a literal, replace with literal.
                     if (binOpType == BinOpType.Eq || binOpType == BinOpType.Neq)
                     {
                         string negate = binOpType == BinOpType.Eq ? "" : "!";
@@ -881,7 +876,9 @@ namespace Microsoft.Pc.Backend
                     }
                     else
                     {
-                        var (binOpGetter, binOpBuilder) = GetTypeStructureFuns(binOpLhs.Type);
+                        var (binOpGetter, _) = GetTypeStructureFuns(binOpLhs.Type);
+                        var (_, binOpBuilder) = GetTypeStructureFuns(binOpExpr.Type);
+
                         context.Write(output, $"{binOpBuilder}(");
 
                         context.Write(output, $"{binOpGetter}(");
@@ -947,6 +944,7 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, GetPrtNameForDecl(context, enumElemRefExpr.EnumElem));
                     break;
                 case EventRefExpr eventRefExpr:
+                    context.Write(output, $"PrtCloneValue(&{GetPrtNameForDecl(context, eventRefExpr.PEvent)}.value)");
                     break;
                 case FairNondetExpr fairNondetExpr:
                     break;
@@ -981,6 +979,7 @@ namespace Microsoft.Pc.Backend
                 case SizeofExpr sizeofExpr:
                     break;
                 case ThisRefExpr thisRefExpr:
+                    context.Write(output, "PrtCloneValue(p_this->id)");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     break;
@@ -1157,6 +1156,12 @@ namespace Microsoft.Pc.Backend
                     break;
                 case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Bool):
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_BOOL, {{ NULL }} }};");
+                    break;
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Machine):
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MACHINE, {{ NULL }} }};");
+                    break;
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Event):
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_EVENT, {{ NULL }} }};");
                     break;
                 case PrimitiveType primitiveType:
                     context.WriteLine(output, $"// TODO: implement types like {primitiveType.CanonicalRepresentation}");

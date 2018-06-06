@@ -34,8 +34,9 @@ extern "C"{
 
 	typedef enum PRT_SPECIAL_EVENT
 	{
-		PRT_SPECIAL_EVENT_NULL = 0,  /**< The id of the null event */
-		PRT_SPECIAL_EVENT_HALT = 1   /**< The id of the halt event */
+		PRT_SPECIAL_EVENT_NULL = 0,   /**< The id of the null event */
+		PRT_SPECIAL_EVENT_HALT = 1,   /**< The id of the halt event */
+		PRT_EVENT_USER_START = 2      /**< The first event id available to user code */
 	} PRT_SPECIAL_EVENT;
 
 	/**

@@ -32,13 +32,6 @@ extern "C"{
 		PRT_UINT64 data4;   /**< 0 Fourth data field (64 bits) */
 	} PRT_GUID;
 
-	typedef enum PRT_FUN_PARAM_STATUS
-	{
-		PRT_FUN_PARAM_CLONE,
-		PRT_FUN_PARAM_MOVE,
-		PRT_FUN_PARAM_SWAP
-	} PRT_FUN_PARAM_STATUS;
-
 	typedef enum PRT_SPECIAL_EVENT
 	{
 		PRT_SPECIAL_EVENT_NULL = 0,  /**< The id of the null event */
@@ -281,20 +274,6 @@ extern "C"{
 	/** Sets an element in a (named) tuple by index.
 	* @param[in,out] tuple A (named) tuple to mutate.
 	* @param[in]     index A 0-based element index.
-	* @param[in]     status Indicates whether this operation is move or swap
-	* @param[in,out] value The pointer to the value to move or swap
-	* @param[in]     type The type of data pointed to by value
-	*/
-	PRT_API void PRT_CALL_CONV PrtTupleSetLinear(
-		_Inout_ PRT_VALUE *tuple,
-		_In_ PRT_UINT32 index,
-		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value,
-		_In_ PRT_TYPE *type);
-
-	/** Sets an element in a (named) tuple by index.
-	* @param[in,out] tuple A (named) tuple to mutate.
-	* @param[in]     index A 0-based element index.
 	* @param[in]     value The value to set (will be cloned if cloneValue is PRT_TRUE).
 	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this tuple.
 	*/
@@ -350,20 +329,6 @@ extern "C"{
 		_Inout_ PRT_VALUE *seq, 
 		_In_ PRT_VALUE *index, 
 		_In_ PRT_VALUE *value);
-
-	/** Updates the sequence at index.
-	* @param[in,out] seq   A sequence to mutate.
-	* @param[in]     index The name of the element to set. A value must already exist at this index.
-	* @param[in]     status Indicates whether this operation is move or swap
-	* @param[in,out] value The pointer to the value to move or swap
-	* @param[in]     type The type of data pointed to by value
-	*/
-	PRT_API void PRT_CALL_CONV PrtSeqUpdateLinear(
-		_Inout_ PRT_VALUE *seq,
-		_In_ PRT_VALUE *index,
-		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value,
-		_In_ PRT_TYPE *type);
 
 	/** Updates the sequence at index.
 	* @param[in,out] seq   A sequence to mutate.
@@ -458,24 +423,6 @@ extern "C"{
 	* @returns The size of the sequence.
 	*/
 	PRT_API PRT_UINT32 PRT_CALL_CONV PrtSeqSizeOf(_In_ PRT_VALUE *seq);
-
-	/** Updates the map at key.
-	* If key is not in the map, then adds it.
-	* If key is already in the map, then changes its mapping.
-	* @param[in,out] map   A map to mutate.
-	* @param[in]     key   The key to update (will be cloned if cloneKey is PRT_TRUE).
-	* @param[in]     cloneKey Only set to false if key will be forever owned by this map.
-	* @param[in]     status Indicates whether this operation is move or swap
-	* @param[in,out] value The pointer to the value to move or swap
-	* @param[in]     type The type of data pointed to by value
-	*/
-	PRT_API void PRT_CALL_CONV PrtMapUpdateLinear(
-		_Inout_ PRT_VALUE *map,
-		_In_ PRT_VALUE *key,
-		_In_ PRT_BOOLEAN cloneKey,
-		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value,
-		_In_ PRT_TYPE *type);
 
 	/** Updates the map at key.
 	* If key is not in the map, then adds it.

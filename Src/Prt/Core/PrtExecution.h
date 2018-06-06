@@ -405,15 +405,6 @@ extern "C"{
 	/** Sets a global variable to variable
 	* @param[in,out] context The context to modify.
 	* @param[in] varIndex The index of the variable to modify.
-	* @param[in] status Indicates whether this operation is move or swap
-	* @param[in,out] value The pointer to the value to move or swap
-	* @param[in]     type The type of data pointed to by value
-	*/
-	PRT_API void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE ** value, _In_ PRT_TYPE *type);
-
-	/** Sets a global variable to variable
-	* @param[in,out] context The context to modify.
-	* @param[in] varIndex The index of the variable to modify.
 	* @param[in] value The value to set. (Will be cloned if cloneValue is PRT_TRUE)
 	* @param[in] cloneValue Only set to PRT_FALSE if value will be forever owned by this machine.
 	*/
@@ -426,14 +417,6 @@ extern "C"{
 		_In_  PRT_UINT32				instanceOf,
 		_In_  PRT_VALUE					*payload
 		);
-
-	PRT_API void PRT_CALL_CONV PrtSetLocalVarLinear(
-		_Inout_ PRT_VALUE **locals,
-		_In_ PRT_UINT32 varIndex,
-		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value,
-		_In_ PRT_TYPE *type
-	);
 
 	PRT_API void PRT_CALL_CONV PrtSetLocalVarEx(
 		_Inout_ PRT_VALUE **locals,

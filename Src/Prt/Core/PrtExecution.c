@@ -54,30 +54,7 @@ PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 /* Initialize the function to default print fucntion*/
 PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
 
-void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
-{
-	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
-	PrtAssert(PrtIsValidValue(*value), "value is not valid");
 
-	PRT_VALUE *oldValue = context->varValues[varIndex];
-	if (status == PRT_FUN_PARAM_MOVE)
-	{
-		if (oldValue != NULL)
-		{
-			PrtFreeValue(oldValue);
-			oldValue = NULL;
-		}
-		context->varValues[varIndex] = *value;
-		*value = NULL;
-	}
-	else 
-	{
-		PrtAssert(PrtIsValidValue(oldValue), "lhs value is not valid");
-		PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
-		context->varValues[varIndex] = *value;
-		*value = oldValue;
-	}	
-}
 
 void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
@@ -96,30 +73,6 @@ void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ P
 	PrtSetGlobalVarEx(context, varIndex, value, PRT_TRUE);
 }
 
-void PRT_CALL_CONV PrtSetLocalVarLinear(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
-{
-	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
-	PrtAssert(PrtIsValidValue(*value), "value is not valid");
-
-	PRT_VALUE *oldValue = locals[varIndex];
-	if (status == PRT_FUN_PARAM_MOVE)
-	{
-		if (oldValue != NULL)
-		{
-			PrtFreeValue(oldValue);
-			oldValue = NULL;
-		}
-		locals[varIndex] = *value;
-		*value = NULL;
-	}
-	else
-	{
-		PrtAssert(PrtIsValidValue(oldValue), "lhs value is not valid");
-		PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
-		locals[varIndex] = *value;
-		*value = oldValue;
-	}
-}
 
 void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
@@ -513,28 +466,9 @@ PrtGoto(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
-			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtGoto");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -579,28 +513,9 @@ PrtRaise(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
-			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -668,44 +583,6 @@ PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)
 	}
 }
 
-PRT_VALUE	***
-PrtInitParameters(
-	_Inout_ PRT_MACHINEINST_PRIV	*context,
-	_In_ PRT_FUNDECL				*funDecl,
-	_In_ PRT_FUN_PARAM_STATUS       payloadStatus
-)
-{
-	PRT_VALUE	***refLocals = PrtCalloc(1, sizeof(PRT_VALUE **));
-	PrtAssert(payloadStatus != PRT_FUN_PARAM_CLONE, "Incorrect payload status value");
-	if (funDecl->name == NULL)
-	{
-		
-		
-		if (payloadStatus == PRT_FUN_PARAM_SWAP)
-		{
-			refLocals[0] = &context->currentPayload;
-		}
-		else 
-		{
-			*refLocals = PrtCalloc(1, sizeof(PRT_VALUE **));
-			**refLocals = context->currentPayload;
-			context->currentPayload = NULL;
-			if (context->currentTrigger != NULL)
-			{
-				PrtFreeValue(context->currentTrigger);
-				context->currentTrigger = NULL;
-			}
-		}
-	}
-	else
-	{
-		if (payloadStatus != PRT_FUN_PARAM_SWAP)
-		{
-			PrtFreeTriggerPayload(context);
-		}
-	}
-	return refLocals;
-}
 
 void
 PrtPushState(
@@ -838,8 +715,7 @@ void
 PrtRunExitFunction(
 _In_ PRT_MACHINEINST_PRIV			*context
 )
-{	
-	PRT_VALUE*** refLocals = NULL;
+{
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement;
 
@@ -847,8 +723,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
 	PRT_FUNDECL *exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
-	refLocals = PrtInitParameters(context, exitFun, PRT_FUN_PARAM_SWAP);
-	PrtGetExitFunction(context)((PRT_MACHINEINST *)context, refLocals);
+	PrtGetExitFunction(context)((PRT_MACHINEINST *)context, NULL);
 }
 
 FORCEINLINE
@@ -858,13 +733,12 @@ PrtRunTransitionFunction(
 	_In_ PRT_UINT32						transIndex
 )
 {
-	PRT_VALUE*** refLocals = NULL;
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement; 
 	PRT_FUNDECL *transFun = stateDecl->transitions[transIndex].transFun;
 	PRT_DBG_ASSERT(transFun != NULL, "Must be valid function");
-	refLocals = PrtInitParameters(context, transFun, PRT_FUN_PARAM_SWAP);
-	transFun->implementation((PRT_MACHINEINST *)context, refLocals);
+	PRT_VALUE* refLocals[1] = { context->currentPayload };
+	transFun->implementation((PRT_MACHINEINST *)context, &refLocals);
 }
 
 static PRT_BOOLEAN
@@ -900,9 +774,12 @@ DoEntry:
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
+	
 	PRT_FUNDECL *entryFun = currentState->entryFun;
-	PRT_VALUE ***refLocals = PrtInitParameters(context, entryFun, PRT_FUN_PARAM_MOVE);
-	entryFun->implementation((PRT_MACHINEINST *)context, refLocals);
+	PRT_VALUE* refLocals[1] = { context->currentPayload };
+	entryFun->implementation((PRT_MACHINEINST *)context, &refLocals);
+	PrtFreeTriggerPayload(context);
+	
 	goto CheckLastOperation;
 
 DoAction:
@@ -923,8 +800,10 @@ DoAction:
 		PRT_MACHINESTATE state;
 		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
-		PRT_VALUE ***refLocals = PrtInitParameters(context, doFun, PRT_FUN_PARAM_MOVE);
-		doFun->implementation((PRT_MACHINEINST *)context, refLocals);
+		
+		PRT_VALUE* refLocals[1] = { context->currentPayload };
+		doFun->implementation((PRT_MACHINEINST *)context, &refLocals);
+		PrtFreeTriggerPayload(context);
 	}
 	goto CheckLastOperation;
 
@@ -2281,28 +2160,11 @@ PrtMkInterface(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			const PRT_FUN_PARAM_STATUS arg_status = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
+			//TODO: Confirm if the code below is correct.
 			PRT_VALUE **argPtr;
-			switch (arg_status)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkInterface");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -2344,28 +2206,12 @@ PrtMkMachine(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
+
 			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkMachine");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			//TODO: Confirm if the code below is correct.
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -2432,28 +2278,12 @@ PrtSend(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
 			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSend");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			//TODO: Confirm if the code below is correct.
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
+			
 		}
 		va_end(argp);
 		payload = args[0];
@@ -2492,31 +2322,11 @@ PRT_CALL_CONV PrtSendInternal(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
 			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				//PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSendInternal");
-				// TODO: update runtime to match compiler behavior. Take away runtime knowledge of linear types.
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = arg;
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			//TODO: Confirm if the code below is correct.
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -3074,8 +2884,6 @@ void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
 	PRT_VALUE **args = (PRT_VALUE **)PrtCalloc(numArgs, sizeof(PRT_VALUE *));
 	for (PRT_UINT32 i = 0; i < numArgs; i++)
 	{
-		// skip over arg status
-		PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
 		args[i] = va_arg(argp, PRT_VALUE *);
 	}
 	numSegs = va_arg(argp, PRT_UINT32);

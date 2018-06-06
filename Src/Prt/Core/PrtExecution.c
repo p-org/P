@@ -715,8 +715,7 @@ void
 PrtRunExitFunction(
 _In_ PRT_MACHINEINST_PRIV			*context
 )
-{	
-	PRT_VALUE*** refLocals = NULL;
+{
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	context->lastOperation = ReturnStatement;
 
@@ -724,10 +723,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
 	PRT_FUNDECL *exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
-	//TODO: Confirm if the below assignment is correct.
-	refLocals[0] = &context->currentPayload;
-	context->currentPayload = NULL;
-	PrtGetExitFunction(context)((PRT_MACHINEINST *)context, refLocals);
+	PrtGetExitFunction(context)((PRT_MACHINEINST *)context, NULL);
 }
 
 FORCEINLINE

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Net.Mime;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -592,30 +593,40 @@ namespace Microsoft.Pc.Backend
 
             context.WriteLine(output);
 
+            StringWriter bodyWriter = new StringWriter();
+
             // skip unnecessary nesting level.
             if (function.Body is CompoundStmt body)
             {
                 foreach (IPStmt stmt in body.Statements)
                 {
-                    WriteStmt(context, stmt, output);
+                    WriteStmt(context, function, stmt, bodyWriter);
                 }
             }
             else
             {
-                WriteStmt(context, function.Body, output);
+                WriteStmt(context, function, function.Body, bodyWriter);
             }
 
-            output.WriteLine("p_return:");
+            bodyWriter.WriteLine("p_return:");
             foreach (Variable localVariable in function.LocalVariables)
             {
                 string varName = GetPrtNameForDecl(context, localVariable);
-                context.WriteLine(output, $"PrtFreeValue({varName}); {varName} = NULL;");
+                context.WriteLine(bodyWriter, $"PrtFreeValue({varName}); {varName} = NULL;");
             }
 
-            context.WriteLine(output, "return retval;");
+            context.WriteLine(bodyWriter, "return retval;");
+
+            // Write gathered literals to the prologue
+            foreach (var intLiteral in context.GetRegisteredIntLiterals(function))
+            {
+                context.WriteLine(output, $"PRT_VALUE {intLiteral.Value} = {{ PRT_VALUE_KIND_INT, {intLiteral.Key} }};");
+            }
+
+            output.Write(bodyWriter);
         }
 
-        private void WriteStmt(CompilationContext context, IPStmt stmt, TextWriter output)
+        private void WriteStmt(CompilationContext context, Function function, IPStmt stmt, TextWriter output)
         {
             context.WriteLine(output, $"// {stmt.GetType().Name}");
             switch (stmt)
@@ -624,26 +635,26 @@ namespace Microsoft.Pc.Backend
                     break;
                 case AssertStmt assertStmt:
                     context.Write(output, "PrtAssert(PrtPrimGetBool(");
-                    WriteExpr(context, assertStmt.Assertion, output);
+                    WriteExpr(context, function, assertStmt.Assertion, output);
                     context.WriteLine(output, $"), \"{assertStmt.Message}\");");
                     break;
                 case AssignStmt assignStmt:
                     // Free old value
                     context.Write(output, "PrtFreeValue(");
-                    WriteExpr(context, assignStmt.Variable, output);
+                    WriteExpr(context, function, assignStmt.Variable, output);
                     context.WriteLine(output, ");");
 
                     // Assign new value
-                    WriteExpr(context, assignStmt.Variable, output);
+                    WriteExpr(context, function, assignStmt.Variable, output);
                     context.Write(output, " = ");
-                    WriteExpr(context, assignStmt.Value, output);
+                    WriteExpr(context, function, assignStmt.Value, output);
                     context.WriteLine(output, ";");
                     break;
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");
                     foreach (IPStmt pStmt in compoundStmt.Statements)
                     {
-                        WriteStmt(context, pStmt, output);
+                        WriteStmt(context, function, pStmt, output);
                     }
 
                     context.WriteLine(output, "}");
@@ -657,7 +668,7 @@ namespace Microsoft.Pc.Backend
                     if (gotoStmt.Payload != null)
                     {
                         context.Write(output, "1, ");
-                        WriteExpr(context, gotoStmt.Payload, output);
+                        WriteExpr(context, function, gotoStmt.Payload, output);
                     }
                     else
                     {
@@ -667,13 +678,13 @@ namespace Microsoft.Pc.Backend
                     break;
                 case IfStmt ifStmt:
                     context.Write(output, "if (PrtPrimGetBool(");
-                    WriteExpr(context, ifStmt.Condition, output);
+                    WriteExpr(context, function, ifStmt.Condition, output);
                     context.WriteLine(output, "))");
-                    WriteStmt(context, ifStmt.ThenBranch, output);
+                    WriteStmt(context, function, ifStmt.ThenBranch, output);
                     if (ifStmt.ElseBranch != null)
                     {
                         context.WriteLine(output, "else");
-                        WriteStmt(context, ifStmt.ElseBranch, output);
+                        WriteStmt(context, function, ifStmt.ElseBranch, output);
                     }
 
                     break;
@@ -688,7 +699,7 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "goto p_return;");
                     break;
                 case PrintStmt printStmt:
-                    WritePrintStmt(context, output, printStmt);
+                    WritePrintStmt(context, output, printStmt, function);
                     break;
                 case RaiseStmt raiseStmt:
                     break;
@@ -701,7 +712,7 @@ namespace Microsoft.Pc.Backend
                     {
                         context.WriteLine(output, "PrtFreeValue(retval);");
                         context.Write(output, "retval = ");
-                        WriteExpr(context, returnStmt.ReturnValue, output);
+                        WriteExpr(context, function, returnStmt.ReturnValue, output);
                         context.WriteLine(output, ";");
                     }
 
@@ -709,14 +720,14 @@ namespace Microsoft.Pc.Backend
                     break;
                 case SendStmt sendStmt:
                     context.Write(output, $"PrtSendInternal(context, ");
-                    WriteExpr(context, sendStmt.MachineExpr, output);
+                    WriteExpr(context, function, sendStmt.MachineExpr, output);
                     context.Write(output, ", ");
-                    WriteExpr(context, sendStmt.Evt, output);
+                    WriteExpr(context, function, sendStmt.Evt, output);
                     context.Write(output, $"{sendStmt.ArgsList.Count}");
                     foreach (IPExpr sendArgExpr in sendStmt.ArgsList)
                     {
                         context.Write(output, ", ");
-                        WriteExpr(context, sendArgExpr, output);
+                        WriteExpr(context, function, sendArgExpr, output);
                         context.Write(output, ", PRT_FUN_PARAM_SWAP");
                     }
                     context.WriteLine(output, ");");
@@ -725,16 +736,16 @@ namespace Microsoft.Pc.Backend
                     break;
                 case WhileStmt whileStmt:
                     context.Write(output, "while (PrtPrimGetBool(");
-                    WriteExpr(context, whileStmt.Condition, output);
+                    WriteExpr(context, function, whileStmt.Condition, output);
                     context.WriteLine(output, "))");
-                    WriteStmt(context, whileStmt.Body, output);
+                    WriteStmt(context, function, whileStmt.Body, output);
                     break;
             }
 
             context.WriteLine(output);
         }
 
-        private void WritePrintStmt(CompilationContext context, TextWriter output, PrintStmt printStmt1)
+        private void WritePrintStmt(CompilationContext context, TextWriter output, PrintStmt printStmt1, Function function)
         {
             // format is {str0, n1, str1, n2, ..., nK, strK}
             var printMessageParts = ParsePrintMessage(printStmt1.Message);
@@ -757,7 +768,7 @@ namespace Microsoft.Pc.Backend
             foreach (IPExpr printArg in printStmt1.Args)
             {
                 context.Write(output, ", ");
-                WriteExpr(context, printArg, output);
+                WriteExpr(context, function, printArg, output);
             }
 
             context.Write(output, ", ");
@@ -837,13 +848,13 @@ namespace Microsoft.Pc.Backend
             return parts.ToArray();
         }
 
-        private void WriteExpr(CompilationContext context, IPExpr expr, TextWriter output)
+        private void WriteExpr(CompilationContext context, Function function, IPExpr expr, TextWriter output)
         {
             switch (expr)
             {
                 case CloneExpr cloneExpr:
                     context.Write(output, "PrtCloneValue(");
-                    WriteExpr(context, cloneExpr.SubExpr, output);
+                    WriteExpr(context, function, cloneExpr.SubExpr, output);
                     context.Write(output, ")");
                     break;
                 case BinOpExpr binOpExpr:
@@ -855,9 +866,9 @@ namespace Microsoft.Pc.Backend
                     {
                         string negate = binOpType == BinOpType.Eq ? "" : "!";
                         context.Write(output, $"PrtMkBoolValue({negate}PrtIsEqualValue(");
-                        WriteExpr(context, binOpLhs, output);
+                        WriteExpr(context, function, binOpLhs, output);
                         context.Write(output, ", ");
-                        WriteExpr(context, binOpRhs, output);
+                        WriteExpr(context, function, binOpRhs, output);
                         context.Write(output, "))");
                     }
                     else
@@ -866,13 +877,13 @@ namespace Microsoft.Pc.Backend
                         context.Write(output, $"{binOpBuilder}(");
 
                         context.Write(output, $"{binOpGetter}(");
-                        WriteExpr(context, binOpLhs, output);
+                        WriteExpr(context, function, binOpLhs, output);
                         context.Write(output, ")");
 
                         context.Write(output, $" {BinOpToStr(binOpType)} ");
 
                         context.Write(output, $"{binOpGetter}(");
-                        WriteExpr(context, binOpRhs, output);
+                        WriteExpr(context, function, binOpRhs, output);
                         context.Write(output, ")");
 
                         context.Write(output, ")");
@@ -906,7 +917,8 @@ namespace Microsoft.Pc.Backend
                 case FunCallExpr funCallExpr:
                     break;
                 case IntLiteralExpr intLiteralExpr:
-                    context.Write(output, $"PrtMkIntValue({intLiteralExpr.Value})");
+                    string intLiteralName = context.RegisterLiteral(function, intLiteralExpr.Value);
+                    context.Write(output, $"(&{intLiteralName})");
                     break;
                 case KeysExpr keysExpr:
                     break;
@@ -938,7 +950,7 @@ namespace Microsoft.Pc.Backend
 
                     context.Write(output, UnOpToStr(unaryOpExpr.Operation));
                     context.Write(output, $"{unOpGetter}(");
-                    WriteExpr(context, unaryOpExpr.SubExpr, output);
+                    WriteExpr(context, function, unaryOpExpr.SubExpr, output);
                     context.Write(output, ")");
 
                     context.Write(output, ")");
@@ -1318,6 +1330,34 @@ namespace Microsoft.Pc.Backend
                         IndentationLevel--;
                     }
                 }
+            }
+
+            private readonly IDictionary<Function, IDictionary<int, string>> registeredInts = new Dictionary<Function, IDictionary<int, string>>();
+            public string RegisterLiteral(Function function, int value)
+            {
+                if (!registeredInts.TryGetValue(function, out var funcTable))
+                {
+                    funcTable = new Dictionary<int, string>();
+                    registeredInts.Add(function, funcTable);
+                }
+
+                if (!funcTable.TryGetValue(value, out var literalName))
+                {
+                    literalName = Names.GetTemporaryName($"INT_LIT_{value}");
+                    funcTable.Add(value, literalName);
+                }
+
+                return literalName;
+            }
+
+            public IEnumerable<KeyValuePair<int, string>> GetRegisteredIntLiterals(Function function)
+            {
+                if (registeredInts.TryGetValue(function, out var intTable))
+                {
+                    return intTable.AsEnumerable();
+                }
+
+                return Enumerable.Empty<KeyValuePair<int, string>>();
             }
         }
 

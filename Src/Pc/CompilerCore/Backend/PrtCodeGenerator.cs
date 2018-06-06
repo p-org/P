@@ -18,7 +18,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend
 {
-    public class PrtCodeGenerator : ICodeGenerator
+    public partial class PrtCodeGenerator : ICodeGenerator
     {
         private static readonly Dictionary<Type, string> DeclNameParts = new Dictionary<Type, string>
         {
@@ -618,9 +618,17 @@ namespace Microsoft.Pc.Backend
             context.WriteLine(bodyWriter, "return retval;");
 
             // Write gathered literals to the prologue
-            foreach (var intLiteral in context.GetRegisteredIntLiterals(function))
+            foreach (var literal in context.GetRegisteredIntLiterals(function))
             {
-                context.WriteLine(output, $"PRT_VALUE {intLiteral.Value} = {{ PRT_VALUE_KIND_INT, {intLiteral.Key} }};");
+                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_INT, {literal.Key} }};");
+            }
+            foreach (var literal in context.GetRegisteredFloatLiterals(function))
+            {
+                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_FLOAT, {literal.Key} }};");
+            }
+            foreach (var literal in context.GetRegisteredBoolLiterals(function))
+            {
+                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_BOOL, {(literal.Key ? "PRT_TRUE" : "PRT_FALSE")} }};");
             }
 
             output.Write(bodyWriter);
@@ -891,7 +899,8 @@ namespace Microsoft.Pc.Backend
 
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
-                    context.Write(output, $"PrtMkBoolValue({(boolLiteralExpr.Value ? "PRT_TRUE" : "PRT_FALSE")})");
+                    string boolLiteralName = context.RegisterLiteral(function, boolLiteralExpr.Value);
+                    context.Write(output, $"(&{boolLiteralName})");
                     break;
                 case CastExpr castExpr:
                     break;
@@ -913,6 +922,8 @@ namespace Microsoft.Pc.Backend
                 case FairNondetExpr fairNondetExpr:
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
+                    string floaLiteralName = context.RegisterLiteral(function, floatLiteralExpr.Value);
+                    context.Write(output, $"(&{floaLiteralName})");
                     break;
                 case FunCallExpr funCallExpr:
                     break;
@@ -1197,6 +1208,9 @@ namespace Microsoft.Pc.Backend
                 HeaderFileName = $"{projectName}.h";
                 SourceFileName = $"{projectName}.c";
                 Names = new NameManager($"P_{projectName.ToUpperInvariant()}_");
+                registeredInts = new ValueInternmentManager<int>(Names);
+                registeredFloats = new ValueInternmentManager<double>(Names);
+                registeredBools = new ValueInternmentManager<bool>(Names);
             }
 
             public string ProjectName { get; }
@@ -1331,33 +1345,39 @@ namespace Microsoft.Pc.Backend
                     }
                 }
             }
+            
+            private readonly ValueInternmentManager<int> registeredInts;
+            private readonly ValueInternmentManager<double> registeredFloats;
+            private readonly ValueInternmentManager<bool> registeredBools;
 
-            private readonly IDictionary<Function, IDictionary<int, string>> registeredInts = new Dictionary<Function, IDictionary<int, string>>();
             public string RegisterLiteral(Function function, int value)
             {
-                if (!registeredInts.TryGetValue(function, out var funcTable))
-                {
-                    funcTable = new Dictionary<int, string>();
-                    registeredInts.Add(function, funcTable);
-                }
-
-                if (!funcTable.TryGetValue(value, out var literalName))
-                {
-                    literalName = Names.GetTemporaryName($"INT_LIT_{value}");
-                    funcTable.Add(value, literalName);
-                }
-
-                return literalName;
+                return registeredInts.RegisterValue(function, value);
             }
 
             public IEnumerable<KeyValuePair<int, string>> GetRegisteredIntLiterals(Function function)
             {
-                if (registeredInts.TryGetValue(function, out var intTable))
-                {
-                    return intTable.AsEnumerable();
-                }
+                return registeredInts.GetValues(function);
+            }
 
-                return Enumerable.Empty<KeyValuePair<int, string>>();
+            internal string RegisterLiteral(Function function, double value)
+            {
+                return registeredFloats.RegisterValue(function, value);
+            }
+
+            public IEnumerable<KeyValuePair<double, string>> GetRegisteredFloatLiterals(Function function)
+            {
+                return registeredFloats.GetValues(function);
+            }
+
+            public string RegisterLiteral(Function function, bool value)
+            {
+                return registeredBools.RegisterValue(function, value);
+            }
+
+            public IEnumerable<KeyValuePair<bool, string>> GetRegisteredBoolLiterals(Function function)
+            {
+                return registeredBools.GetValues(function);
             }
         }
 

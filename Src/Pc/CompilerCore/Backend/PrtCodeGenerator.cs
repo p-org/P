@@ -620,15 +620,15 @@ namespace Microsoft.Pc.Backend
             // Write gathered literals to the prologue
             foreach (var literal in context.GetRegisteredIntLiterals(function))
             {
-                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_INT, {literal.Key} }};");
+                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_INT, {{ .nt = {literal.Key} }} }};");
             }
             foreach (var literal in context.GetRegisteredFloatLiterals(function))
             {
-                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_FLOAT, {literal.Key} }};");
+                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_FLOAT, {{ .ft = {literal.Key} }} }};");
             }
             foreach (var literal in context.GetRegisteredBoolLiterals(function))
             {
-                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_BOOL, {(literal.Key ? "PRT_TRUE" : "PRT_FALSE")} }};");
+                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_BOOL, {{ .bl = {(literal.Key ? "PRT_TRUE" : "PRT_FALSE")} }} }};");
             }
 
             output.Write(bodyWriter);
@@ -905,6 +905,35 @@ namespace Microsoft.Pc.Backend
                 case CastExpr castExpr:
                     break;
                 case CoerceExpr coerceExpr:
+                    string coerceCtor;
+                    switch (coerceExpr.NewType)
+                    {
+                        case PrimitiveType primitiveType when PrimitiveType.Int.IsSameTypeAs(primitiveType):
+                            coerceCtor = "PrtMkIntValue";
+                            break;
+                        case PrimitiveType primitiveType when PrimitiveType.Float.IsSameTypeAs(primitiveType):
+                            coerceCtor = "PrtMkFloatValue";
+                            break;
+                        default:
+                            throw new ArgumentException(nameof(coerceExpr.NewType));
+                    }
+
+                    string coerceUnpack;
+                    switch (coerceExpr.SubExpr.Type)
+                    {
+                        case PrimitiveType primitiveType when PrimitiveType.Int.IsSameTypeAs(primitiveType):
+                            coerceUnpack = "PrtPrimGetInt";
+                            break;
+                        case PrimitiveType primitiveType when PrimitiveType.Float.IsSameTypeAs(primitiveType):
+                            coerceUnpack = "PrtPrimGetFloat";
+                            break;
+                        default:
+                            throw new ArgumentException(nameof(coerceExpr.SubExpr));
+                    }
+
+                    context.Write(output, $"{coerceCtor}({coerceUnpack}(");
+                    WriteExpr(context, function, coerceExpr.SubExpr, output);
+                    context.Write(output, "))");
                     break;
                 case ContainsKeyExpr containsKeyExpr:
                     break;
@@ -971,20 +1000,23 @@ namespace Microsoft.Pc.Backend
                 case ValuesExpr valuesExpr:
                     break;
                 case VariableAccessExpr variableAccessExpr:
-                    if (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Param))
+                    VariableRole variableRole = variableAccessExpr.Variable.Role;
+
+                    if (variableRole.HasFlag(VariableRole.Param))
                     {
                         // dereference, since params are passed by reference.
                         context.Write(output, "*");
                         context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
                     }
 
-                    if (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Field))
+                    if (variableRole.HasFlag(VariableRole.Field))
                     {
-                        var varIdx = 0; // TODO: this.
+                        // TODO: is this always correct? I think the iterator ordering of a List should be consistent...
+                        var varIdx = function.Owner.Fields.ToList().IndexOf(variableAccessExpr.Variable);
                         context.Write(output, $"p_this->varValues[{varIdx}]");
                     }
 
-                    if (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Temp))
+                    if (variableRole.HasFlag(VariableRole.Temp) || variableRole.HasFlag(VariableRole.Local))
                     {
                         context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
                     }
@@ -1122,6 +1154,9 @@ namespace Microsoft.Pc.Backend
                     break;
                 case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Float):
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_FLOAT, {{ NULL }} }};");
+                    break;
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Bool):
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_BOOL, {{ NULL }} }};");
                     break;
                 case PrimitiveType primitiveType:
                     context.WriteLine(output, $"// TODO: implement types like {primitiveType.CanonicalRepresentation}");

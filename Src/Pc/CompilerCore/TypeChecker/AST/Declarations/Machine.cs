@@ -7,7 +7,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class Machine : IStateContainer, IHasScope, IPDecl
+    public class Machine : IStateContainer, IHasScope
     {
         private readonly List<Variable> fields = new List<Variable>();
         private readonly Dictionary<string, StateGroup> groups = new Dictionary<string, StateGroup>();

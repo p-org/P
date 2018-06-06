@@ -576,7 +576,7 @@ namespace Microsoft.Pc.Backend
                 string varName = GetPrtNameForDecl(context, localVariable);
                 string varTypeName = context.Names.GetNameForType(localVariable.Type);
                 // TODO: optimize away PrtMkDefaultValue if dataflow shows no usages before assignments.
-                context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue({varTypeName});");
+                context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
             }
 
             context.WriteLine(output, "PRT_MACHINEINST_PRIV* p_this = (PRT_MACHINEINST_PRIV*)context;");
@@ -756,7 +756,7 @@ namespace Microsoft.Pc.Backend
             context.Write(output, printStmt1.Args.Count.ToString());
             foreach (IPExpr printArg in printStmt1.Args)
             {
-                context.Write(output, ", PRT_FUN_PARAM_CLONE, ");
+                context.Write(output, ", ");
                 WriteExpr(context, printArg, output);
             }
 
@@ -959,6 +959,11 @@ namespace Microsoft.Pc.Backend
                     {
                         var varIdx = 0; // TODO: this.
                         context.Write(output, $"p_this->varValues[{varIdx}]");
+                    }
+
+                    if (variableAccessExpr.Variable.Role.HasFlag(VariableRole.Temp))
+                    {
+                        context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
                     }
 
                     break;

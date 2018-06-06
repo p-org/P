@@ -96,7 +96,7 @@ namespace UnitTests
 
         private static string CreateTemporaryDirectory()
         {
-            string tmpDir = Path.Combine(Constants.TestDirectory, Path.GetRandomFileName());
+            string tmpDir = Path.Combine(Constants.TestDirectory, "temp_builds", Path.GetRandomFileName());
             var numTries = 10;
             while (Directory.Exists(tmpDir) && numTries > 0)
             {

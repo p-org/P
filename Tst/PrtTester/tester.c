@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
 		PRT_UINT32 mainMachine = 0;
 		PRT_BOOLEAN foundMachine = PrtLookupMachineByName("Main", &mainMachine);
 		PrtAssert(foundMachine, "No 'Main' machine found!");
-		PrtMkMachine(process, mainMachine, 1, PRT_FUN_PARAM_CLONE, payload);
+		PrtMkMachine(process, mainMachine, 1, &payload);
 
 		if (cooperative)
 		{

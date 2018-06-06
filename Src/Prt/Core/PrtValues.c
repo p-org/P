@@ -1538,7 +1538,12 @@ PRT_BOOLEAN PRT_CALL_CONV PrtInhabitsType(_In_ PRT_VALUE *value, _In_ PRT_TYPE *
 
 void PRT_CALL_CONV PrtFreeValue(_Inout_ PRT_VALUE *value)
 {
-	PRT_VALUE_KIND kind = value->discriminator;
+	if (value == NULL)
+	{
+		return;
+	}
+
+	const PRT_VALUE_KIND kind = value->discriminator;
 	switch (kind)
 	{
 	case PRT_VALUE_KIND_BOOL:

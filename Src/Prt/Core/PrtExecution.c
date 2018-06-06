@@ -737,8 +737,8 @@ PrtRunTransitionFunction(
 	context->lastOperation = ReturnStatement; 
 	PRT_FUNDECL *transFun = stateDecl->transitions[transIndex].transFun;
 	PRT_DBG_ASSERT(transFun != NULL, "Must be valid function");
-	PRT_VALUE* refLocals[1] = { context->currentPayload };
-	transFun->implementation((PRT_MACHINEINST *)context, &refLocals);
+	PRT_VALUE** refLocals[1] = { &context->currentPayload };
+	transFun->implementation((PRT_MACHINEINST *)context, refLocals);
 }
 
 static PRT_BOOLEAN
@@ -776,8 +776,8 @@ DoEntry:
 	PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
 	
 	PRT_FUNDECL *entryFun = currentState->entryFun;
-	PRT_VALUE* refLocals[1] = { context->currentPayload };
-	entryFun->implementation((PRT_MACHINEINST *)context, &refLocals);
+	PRT_VALUE** refLocals[1] = { &context->currentPayload };
+	entryFun->implementation((PRT_MACHINEINST *)context, refLocals);
 	PrtFreeTriggerPayload(context);
 	
 	goto CheckLastOperation;
@@ -801,8 +801,8 @@ DoAction:
 		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
 		
-		PRT_VALUE* refLocals[1] = { context->currentPayload };
-		doFun->implementation((PRT_MACHINEINST *)context, &refLocals);
+		PRT_VALUE** refLocals[1] = { &context->currentPayload };
+		doFun->implementation((PRT_MACHINEINST *)context, refLocals);
 		PrtFreeTriggerPayload(context);
 	}
 	goto CheckLastOperation;
@@ -2208,7 +2208,6 @@ PrtMkMachine(
 		{
 
 			PRT_VALUE **argPtr;
-			//TODO: Confirm if the code below is correct.
 			argPtr = va_arg(argp, PRT_VALUE **);
 			args[i] = *argPtr;
 			*argPtr = NULL;

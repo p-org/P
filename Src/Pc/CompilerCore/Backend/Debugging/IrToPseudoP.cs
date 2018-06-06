@@ -359,7 +359,8 @@ namespace Microsoft.Pc.Backend.Debugging
                 case EnumElem _:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(tree));
+                    WriteStmt($"// UNKNOWN declaration {tree.GetType().FullName}");
+                    break;
             }
         }
 

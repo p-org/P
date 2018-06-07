@@ -588,7 +588,7 @@ namespace Microsoft.Pc.Backend
 
             context.WriteLine(output);
 
-            StringWriter bodyWriter = new StringWriter();
+            var bodyWriter = new StringWriter();
 
             // skip unnecessary nesting level.
             if (function.Body is CompoundStmt body)
@@ -729,8 +729,9 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, $", {sendStmt.ArgsList.Count}");
                     foreach (IPExpr sendArgExpr in sendStmt.ArgsList)
                     {
-                        context.Write(output, ", ");
-                        WriteExpr(context, function, sendArgExpr, output);
+                        Debug.Assert(sendArgExpr is VariableAccessExpr);
+                        var argVar = (VariableAccessExpr) sendArgExpr;
+                        context.Write(output, $", &{GetPrtNameForDecl(context, argVar.Variable)}");
                     }
                     context.WriteLine(output, ");");
                     break;

@@ -98,7 +98,14 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.InvalidPrintFormat(context, context.StringLiteral().Symbol);
             }
 
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            foreach (IPExpr arg in args)
+            {
+                if (arg is LinearAccessRefExpr)
+                {
+                    throw handler.IssueError(arg.SourceLocation, "Print statement never copies. Do not specify swap or move.");
+                }
+            }
             if (args.Count != numNecessaryArgs)
             {
                 throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);

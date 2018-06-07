@@ -471,13 +471,23 @@ namespace Microsoft.Pc.Backend
                     var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(sendMachine);
                     var (sendEvent, sendEventDeps) = SimplifyExpression(sendStmt.Evt);
                     var (sendEventAccessExpr, sendEventAssn) = SaveInTemporary(sendEvent);
-                    var sendArgs = new List<IPExpr>();
+                    var sendArgs = new List<VariableAccessExpr>();
                     var sendArgDeps = new List<IPStmt>();
                     foreach (IPExpr pExpr in sendStmt.ArgsList)
                     {
-                        var (arg, argDeps) = SimplifyExpression(pExpr);
-                        sendArgs.Add(arg);
-                        sendArgDeps.AddRange(argDeps);
+                        if (pExpr is LinearAccessRefExpr moveExpr)
+                        {
+                            Debug.Assert(moveExpr.LinearType == LinearType.Move);
+                            sendArgs.Add(new VariableAccessExpr(moveExpr.SourceLocation, moveExpr.Variable));
+                        }
+                        else
+                        {
+                            var (simpleArg, argDeps) = SimplifyExpression(pExpr);
+                            var (arg, clonedDep) = SaveInTemporary(MakeClone(simpleArg));
+                            sendArgDeps.AddRange(argDeps);
+                            sendArgDeps.Add(clonedDep);
+                            sendArgs.Add(arg);
+                        }
                     }
 
                     return sendMachineDeps

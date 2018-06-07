@@ -420,6 +420,14 @@ namespace Microsoft.Pc.TypeChecker
             PLanguageType expectedType =
                 state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
             IPExpr[] rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            foreach (IPExpr arg in rvaluesList)
+            {
+                if (arg is LinearAccessRefExpr linearArg && linearArg.LinearType == LinearType.Swap)
+                {
+                    throw handler.InvalidSwap(linearArg, "swap not allowed on goto");
+                }
+            }
+
             IPExpr payload;
             if (rvaluesList.Length == 0)
             {

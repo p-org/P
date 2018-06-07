@@ -667,11 +667,13 @@ namespace Microsoft.Pc.Backend
                 case FunCallStmt funCallStmt:
                     break;
                 case GotoStmt gotoStmt:
-                    context.WriteLine(output, "PrtGoto(context, /* state index? */, ");
+                    var destStateIndex = context.GetNumberForState(gotoStmt.State);
+                    context.WriteLine(output, $"PrtGoto(context, {destStateIndex}U, ");
                     if (gotoStmt.Payload != null)
                     {
-                        context.Write(output, "1, ");
-                        WriteExpr(context, function, gotoStmt.Payload, output);
+                        Debug.Assert(gotoStmt.Payload is VariableAccessExpr);
+                        var gotoArg = (VariableAccessExpr) gotoStmt.Payload;
+                        context.Write(output, $"1, &{GetPrtNameForDecl(context, gotoArg.Variable)}");
                     }
                     else
                     {

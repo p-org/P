@@ -364,9 +364,11 @@ namespace Microsoft.Pc.Backend
                                   .ToList();
                 case GotoStmt gotoStmt:
                     var (gotoPayload, gotoDeps) = SimplifyExpression(gotoStmt.Payload);
+                    var (gotoArgTmp, gotoArgDep) = SaveInTemporary(gotoPayload);
                     return gotoDeps.Concat(new[]
                                    {
-                                       new GotoStmt(location, gotoStmt.State, gotoPayload)
+                                       gotoArgDep,
+                                       new GotoStmt(location, gotoStmt.State, gotoArgTmp)
                                    })
                                    .ToList();
                 case IfStmt ifStmt:

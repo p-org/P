@@ -108,15 +108,9 @@ namespace Microsoft.Pc.Backend
                     deps.Add(contStore);
                     return (contTemp, deps);
                 case CtorExpr ctorExpr:
-                    var ctorArgs = new IPExpr[ctorExpr.Arguments.Length];
-                    for (var i = 0; i < ctorExpr.Arguments.Length; i++)
-                    {
-                        var (argExpr, argDeps) = SimplifyExpression(ctorExpr.Arguments[i]);
-                        ctorArgs[i] = argExpr;
-                        deps.AddRange(argDeps);
-                    }
-
-                    var (ctorTemp, ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs));
+                    var (ctorArgs, ctorArgDeps) = SimplifyArgPack(ctorExpr.Arguments);
+                    deps.AddRange(ctorArgDeps);
+                    var (ctorTemp, ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs.Cast<IPExpr>().ToArray()));
                     deps.Add(ctorStore);
                     return (ctorTemp, deps);
                 case DefaultExpr defaultExpr:
@@ -327,18 +321,11 @@ namespace Microsoft.Pc.Backend
 
                     return new List<IPStmt> {new CompoundStmt(location, newBlock)};
                 case CtorStmt ctorStmt:
-                    var ctorDeps = new List<IPStmt>();
-                    var newCtorArgs = new List<IPExpr>();
-                    foreach (IPExpr ctorStmtArgument in ctorStmt.Arguments)
-                    {
-                        var (arg, argDeps) = SimplifyExpression(ctorStmtArgument);
-                        newCtorArgs.Add(arg);
-                        ctorDeps.AddRange(argDeps);
-                    }
-
-                    return ctorDeps.Concat(new[]
+                    var (ctorArgs, ctorArgDeps) = SimplifyArgPack(ctorStmt.Arguments);
+                    return ctorArgDeps.
+                           Concat(new[]
                                    {
-                                       new CtorStmt(location, ctorStmt.Interface, newCtorArgs)
+                                       new CtorStmt(location, ctorStmt.Interface, ctorArgs.Cast<IPExpr>().ToList())
                                    })
                                    .ToList();
                 case FunCallStmt funCallStmt:
@@ -467,7 +454,7 @@ namespace Microsoft.Pc.Backend
                                           .ToList();
                 case SendStmt sendStmt:
                     var (sendMachine, sendMachineDeps) = SimplifyExpression(sendStmt.MachineExpr);
-                    var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(sendMachine);
+                    var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(MakeClone(sendMachine));
 
                     var (sendEvent, sendEventDeps) = SimplifyExpression(sendStmt.Evt);
                     var (sendEventAccessExpr, sendEventAssn) = SaveInTemporary(MakeClone(sendEvent));

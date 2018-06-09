@@ -2148,7 +2148,7 @@ PrtMkInterface(
 	const PRT_UINT32 instance_of = program->interfaceDefMap[interfaceCreated];
 
 	// Check the CreateOk condition
-	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[instance_of]->creates), "Created Inteface is not in the creates set of the machine");
+	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[creator->instanceOf]->creates), "Created Inteface is not in the creates set of the machine");
 
 	if (numArgs == 0)
 	{

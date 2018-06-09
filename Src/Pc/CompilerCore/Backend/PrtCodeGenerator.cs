@@ -327,8 +327,10 @@ namespace Microsoft.Pc.Backend
                     {
                         var createsInterfaces = machine.Creates.Interfaces.ToList();
                         machineCreatesName = context.Names.GetTemporaryName($"{machine.Name}_CREATES");
+                        var createsArrayName = context.Names.GetTemporaryName($"{machine.Name}_CREATES_ARR");
                         var createsArrayBody = string.Join(", ", createsInterfaces.Select(context.GetNumberForInterface));
-                        context.WriteLine(output, $"PRT_INTERFACESETDECL {machineCreatesName} = {{ {createsInterfaces.Count}, {{ {createsArrayBody} }} }};");
+                        context.WriteLine(output, $"PRT_UINT32 {createsArrayName}[] = {{ {createsArrayBody} }};");
+                        context.WriteLine(output, $"PRT_INTERFACESETDECL {machineCreatesName} = {{ {createsInterfaces.Count}, {createsArrayName} }};");
                         machineCreatesName = "&" + machineCreatesName;
                     }
 
@@ -672,6 +674,14 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "}");
                     break;
                 case CtorStmt ctorStmt:
+                    context.Write(output, $"PrtMkInterface(context, {context.GetNumberForInterface(ctorStmt.Interface)}, {ctorStmt.Arguments.Count}");
+                    foreach (IPExpr pExpr in ctorStmt.Arguments)
+                    {
+                        Debug.Assert(pExpr is VariableAccessExpr);
+                        var argVar = (VariableAccessExpr) pExpr;
+                        context.Write(output, $", &{GetPrtNameForDecl(context, argVar.Variable)}");
+                    }
+                    context.WriteLine(output, ");");
                     break;
                 case FunCallStmt funCallStmt:
                     break;
@@ -968,6 +978,14 @@ namespace Microsoft.Pc.Backend
                 case ContainsKeyExpr containsKeyExpr:
                     break;
                 case CtorExpr ctorExpr:
+                    context.Write(output, $"PrtCloneValue(PrtMkInterface(context, {context.GetNumberForInterface(ctorExpr.Interface)}, {ctorExpr.Arguments.Length}");
+                    foreach (IPExpr pExpr in ctorExpr.Arguments)
+                    {
+                        Debug.Assert(pExpr is VariableAccessExpr);
+                        var argVar = (VariableAccessExpr) pExpr;
+                        context.Write(output, $", &{GetPrtNameForDecl(context, argVar.Variable)}");
+                    }
+                    context.Write(output, ")->id)");
                     break;
                 case DefaultExpr defaultExpr:
                     string nameForDefaultType = context.Names.GetNameForType(defaultExpr.Type);
@@ -1178,8 +1196,10 @@ namespace Microsoft.Pc.Backend
                         $"static PRT_NMDTUPTYPE {ntStructName} = {{ {namedTupleType.Types.Count}U, {ntNamesArrayName}, {ntTypesArrayName} }};");
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NMDTUP, {{ .nmTuple = &{ntStructName} }} }};");
                     break;
-                case PermissionType permissionType:
-                    context.WriteLine(output, $"// TODO: implement types like {permissionType.CanonicalRepresentation}");
+                case PermissionType _:
+                    // TODO: implement full permission types in runtime
+                    context.WriteLine(output, "// TODO: implement full permission types in runtime");
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MACHINE, {{ NULL }} }};");
                     break;
                 case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Null):
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NULL, {{ NULL }} }};");

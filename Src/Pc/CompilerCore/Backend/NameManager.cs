@@ -87,6 +87,8 @@ namespace Microsoft.Pc.Backend
 
         public string GetNameForType(PLanguageType type)
         {
+            type = type.Canonicalize();
+
             if (typeNames.TryGetValue(type, out string name))
             {
                 return name;

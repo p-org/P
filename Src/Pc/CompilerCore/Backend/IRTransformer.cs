@@ -425,19 +425,16 @@ namespace Microsoft.Pc.Backend
                                .ToList();
                 case RaiseStmt raiseStmt:
                     var (raiseEvent, raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
-                    var raisePayloadArgs = new IPExpr[raiseStmt.Payload.Length];
-                    var raisePayloadDeps = new List<IPStmt>();
-                    for (var index = 0; index < raiseStmt.Payload.Length; index++)
-                    {
-                        var (arg, argDeps) = SimplifyExpression(raiseStmt.Payload[index]);
-                        raisePayloadArgs[index] = arg;
-                        raisePayloadDeps.AddRange(argDeps);
-                    }
+                    var (raiseEventTmp, raiseEventTempDep) = SaveInTemporary(MakeClone(raiseEvent));
 
-                    return raiseEventDeps.Concat(raisePayloadDeps)
+                    var (raiseArgs, raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);
+
+                    return raiseEventDeps.Concat(raiseEventDeps)
+                                         .Concat(raiseArgDeps)
+                                         .Concat(new [] {raiseEventTempDep})
                                          .Concat(new[]
                                          {
-                                             new RaiseStmt(location, raiseEvent, raisePayloadArgs)
+                                             new RaiseStmt(location, raiseEventTmp, raiseArgs.Cast<IPExpr>().ToArray())
                                          })
                                          .ToList();
                 case ReceiveStmt receiveStmt:
@@ -471,26 +468,11 @@ namespace Microsoft.Pc.Backend
                 case SendStmt sendStmt:
                     var (sendMachine, sendMachineDeps) = SimplifyExpression(sendStmt.MachineExpr);
                     var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(sendMachine);
+
                     var (sendEvent, sendEventDeps) = SimplifyExpression(sendStmt.Evt);
-                    var (sendEventAccessExpr, sendEventAssn) = SaveInTemporary(sendEvent);
-                    var sendArgs = new List<VariableAccessExpr>();
-                    var sendArgDeps = new List<IPStmt>();
-                    foreach (IPExpr pExpr in sendStmt.ArgsList)
-                    {
-                        if (pExpr is LinearAccessRefExpr moveExpr)
-                        {
-                            Debug.Assert(moveExpr.LinearType == LinearType.Move);
-                            sendArgs.Add(new VariableAccessExpr(moveExpr.SourceLocation, moveExpr.Variable));
-                        }
-                        else
-                        {
-                            var (simpleArg, argDeps) = SimplifyExpression(pExpr);
-                            var (arg, clonedDep) = SaveInTemporary(MakeClone(simpleArg));
-                            sendArgDeps.AddRange(argDeps);
-                            sendArgDeps.Add(clonedDep);
-                            sendArgs.Add(arg);
-                        }
-                    }
+                    var (sendEventAccessExpr, sendEventAssn) = SaveInTemporary(MakeClone(sendEvent));
+
+                    var (sendArgs, sendArgDeps) = SimplifyArgPack(sendStmt.ArgsList);
 
                     return sendMachineDeps
                            .Concat(new[] {sendMachineAssn})
@@ -534,6 +516,35 @@ namespace Microsoft.Pc.Backend
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));
             }
+        }
+
+        private (List<VariableAccessExpr> args, List<IPStmt> deps) SimplifyArgPack(IEnumerable<IPExpr> argsPack)
+        {
+            var argumentVars = new List<VariableAccessExpr>();
+            var argumentDeps = new List<IPStmt>();
+            foreach (IPExpr pExpr in argsPack)
+            {
+                switch (pExpr)
+                {
+                    case LinearAccessRefExpr moveExpr:
+                        Debug.Assert(moveExpr.LinearType == LinearType.Move);
+                        argumentVars.Add(new VariableAccessExpr(moveExpr.SourceLocation, moveExpr.Variable));
+                        break;
+                    case VariableAccessExpr readExpr:
+                        var (arg, clonedDep) = SaveInTemporary(MakeClone(readExpr));
+                        argumentDeps.Add(clonedDep);
+                        argumentVars.Add(arg);
+                        break;
+                    default:
+                        var (simpleArg, argDeps) = SimplifyExpression(pExpr);
+                        var (cloned, clonedDep2) = SaveInTemporary(MakeClone(simpleArg));
+                        argumentDeps.AddRange(argDeps);
+                        argumentDeps.Add(clonedDep2);
+                        argumentVars.Add(cloned);
+                        break;
+                }
+            }
+            return (argumentVars, argumentDeps);
         }
 
         private IPExpr MakeCast(IPExpr expr, PLanguageType newType)

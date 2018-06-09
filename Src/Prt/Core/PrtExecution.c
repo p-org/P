@@ -346,7 +346,7 @@ _In_ PRT_VALUE					*payload
 	//
 	// Add event to the queue
 	//
-	queue->events[tail].trigger = PrtCloneValue(event);
+	queue->events[tail].trigger = event;
 	queue->events[tail].payload = payload;
 	if (state != NULL) {
 		queue->events[tail].state = *state;
@@ -500,7 +500,7 @@ PrtRaise(
 	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
 	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
 	context->lastOperation = RaiseStatement;
-	context->currentTrigger = PrtCloneValue(event);
+	context->currentTrigger = event;
 	PRT_VALUE *payload = NULL;
 	if (numArgs == 0)
 	{
@@ -568,7 +568,7 @@ _Inout_ PRT_MACHINEINST_PRIV	*context
 }
 
 
-static void 
+void 
 PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)
 {
 	if (context->currentTrigger != NULL)
@@ -778,7 +778,6 @@ DoEntry:
 	PRT_FUNDECL *entryFun = currentState->entryFun;
 	PRT_VALUE** refLocals[1] = { &context->currentPayload };
 	entryFun->implementation((PRT_MACHINEINST *)context, refLocals);
-	PrtFreeTriggerPayload(context);
 	
 	goto CheckLastOperation;
 
@@ -836,11 +835,13 @@ CheckLastOperation:
 		switch (context->exitReason)
 		{
 		case NotExit:
+			PrtFreeTriggerPayload(context); // ??
 			context->nextOperation = DequeueOperation;
 			hasMoreWork = PRT_TRUE;
 			goto Finish;
 
 		case OnPopStatement:
+			PrtFreeTriggerPayload(context); // ??
 			hasMoreWork = !PrtPopState(context, PRT_TRUE);
 			context->nextOperation = DequeueOperation;
 			context->exitReason = NotExit;

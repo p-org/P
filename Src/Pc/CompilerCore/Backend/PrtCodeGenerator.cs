@@ -276,16 +276,21 @@ namespace Microsoft.Pc.Backend
                     break;
                 case Machine machine:
                     var machineFields = machine.Fields.ToList();
-                    var fieldArrayName = context.Names.GetTemporaryName($"{machine.Name}_VARS");
-                    context.WriteLine(output, $"PRT_VARDECL {fieldArrayName}[] = {{");
-                    for (var i = 0; i < machineFields.Count; i++)
+                    var fieldArrayName = "NULL";
+                    if (machineFields.Any())
                     {
-                        var field = machineFields[i];
-                        var sep = i == machineFields.Count - 1 ? "" : ",";
-                        context.WriteLine(output, $"{{ \"{field.Name}\", &{context.Names.GetNameForType(field.Type)} }}{sep}");
+                        fieldArrayName = context.Names.GetTemporaryName($"{machine.Name}_VARS");
+                        context.WriteLine(output, $"PRT_VARDECL {fieldArrayName}[] = {{");
+                        for (var i = 0; i < machineFields.Count; i++)
+                        {
+                            var field = machineFields[i];
+                            var sep = i == machineFields.Count - 1 ? "" : ",";
+                            context.WriteLine(output, $"{{ \"{field.Name}\", &{context.Names.GetNameForType(field.Type)} }}{sep}");
+                        }
+
+                        context.WriteLine(output, "};");
+                        context.WriteLine(output);
                     }
-                    context.WriteLine(output, "};");
-                    context.WriteLine(output);
 
                     var machineStates = machine.AllStates().ToList();
                     var machineStatesInOrder = new State[machineStates.Count];
@@ -306,10 +311,14 @@ namespace Microsoft.Pc.Backend
                         WriteSourceDecl(context, machineMethod, output);
                     }
 
-                    var methodArrayName = context.Names.GetTemporaryName($"{machine.Name}_METHODS");
-                    var methodArrayBody = string.Join(", ", machineMethods.Select(m => $"&{GetPrtNameForDecl(context, m)}"));
-                    context.WriteLine(output, $"PRT_FUNDECL* {methodArrayName}[] = {{ {methodArrayBody} }};");
-                    context.WriteLine(output);
+                    var methodArrayName = "NULL";
+                    if (machineMethods.Any())
+                    {
+                        methodArrayName = context.Names.GetTemporaryName($"{machine.Name}_METHODS");
+                        var methodArrayBody = string.Join(", ", machineMethods.Select(m => $"&{GetPrtNameForDecl(context, m)}"));
+                        context.WriteLine(output, $"PRT_FUNDECL* {methodArrayName}[] = {{ {methodArrayBody} }};");
+                        context.WriteLine(output);
+                    }
 
                     string machineRecvSetName = GetReceivesNameOrMkTemp(machine, context, output);
                     string machineSendSetName = GetSendsNameOrMkTemp(machine, context, output);
@@ -700,6 +709,7 @@ namespace Microsoft.Pc.Backend
                 case NoStmt _:
                     return;
                 case PopStmt _:
+                    context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
                     context.WriteLine(output, "PrtPop(context);");
                     context.WriteLine(output, "goto p_return;");
                     break;
@@ -707,6 +717,22 @@ namespace Microsoft.Pc.Backend
                     WritePrintStmt(context, output, printStmt, function);
                     break;
                 case RaiseStmt raiseStmt:
+                    context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
+                    context.Write(output, "PrtRaise(p_this, ");
+                    WriteExpr(context, function, raiseStmt.PEvent, output);
+                    context.Write(output, $", {raiseStmt.Payload.Length}");
+                    foreach (IPExpr pExpr in raiseStmt.Payload)
+                    {
+                        Debug.Assert(pExpr is VariableAccessExpr);
+                        var argVar = (VariableAccessExpr) pExpr;
+                        context.Write(output, $", &{GetPrtNameForDecl(context, argVar.Variable)}");
+                    }
+                    context.WriteLine(output, ");");
+
+                    Debug.Assert(raiseStmt.PEvent is VariableAccessExpr);
+                    var raiseEventVar = (VariableAccessExpr) raiseStmt.PEvent;
+                    context.WriteLine(output, $"{GetPrtNameForDecl(context, raiseEventVar.Variable)} = NULL;");
+                    context.WriteLine(output, "goto p_return;");
                     break;
                 case ReceiveStmt receiveStmt:
                     break;
@@ -736,6 +762,10 @@ namespace Microsoft.Pc.Backend
                         context.Write(output, $", &{GetPrtNameForDecl(context, argVar.Variable)}");
                     }
                     context.WriteLine(output, ");");
+
+                    Debug.Assert(sendStmt.Evt is VariableAccessExpr);
+                    var sendEventVar = (VariableAccessExpr) sendStmt.Evt;
+                    context.WriteLine(output, $"{GetPrtNameForDecl(context, sendEventVar.Variable)} = NULL;");
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     break;
@@ -947,7 +977,7 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, GetPrtNameForDecl(context, enumElemRefExpr.EnumElem));
                     break;
                 case EventRefExpr eventRefExpr:
-                    context.Write(output, $"PrtCloneValue(&{GetPrtNameForDecl(context, eventRefExpr.PEvent)}.value)");
+                    context.Write(output, $"(&{GetPrtNameForDecl(context, eventRefExpr.PEvent)}.value)");
                     break;
                 case FairNondetExpr fairNondetExpr:
                     break;
@@ -985,6 +1015,9 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, "PrtCloneValue(p_this->id)");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
+                    context.Write(output, "PrtTupleGet(");
+                    WriteExpr(context, function, tupleAccessExpr.SubExpr, output);
+                    context.Write(output, $", {tupleAccessExpr.FieldNo})");
                     break;
                 case UnaryOpExpr unaryOpExpr:
                     var (unOpGetter, unOpBuilder) = GetTypeStructureFuns(unaryOpExpr.Type);
@@ -1127,7 +1160,7 @@ namespace Microsoft.Pc.Backend
                     string mapValueTypeName = WriteTypeDefinition(context, mapType.ValueType, output);
                     string mapTypeDeclName = context.Names.GetTemporaryName("MAPTYPE");
                     context.WriteLine(output, $"static PRT_MAPTYPE {mapTypeDeclName} = {{ &{mapKeyTypeName}, &{mapValueTypeName} }};");
-                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MAP, {{ &{mapTypeDeclName} }} }};");
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MAP, {{ .map = &{mapTypeDeclName} }} }};");
                     break;
                 case NamedTupleType namedTupleType:
                     string ntNamesArrayName = context.Names.GetTemporaryName("NMDTUP_N");
@@ -1143,7 +1176,7 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(
                         output,
                         $"static PRT_NMDTUPTYPE {ntStructName} = {{ {namedTupleType.Types.Count}U, {ntNamesArrayName}, {ntTypesArrayName} }};");
-                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NMDTUP, {{ &{ntStructName} }} }};");
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NMDTUP, {{ .nmTuple = &{ntStructName} }} }};");
                     break;
                 case PermissionType permissionType:
                     context.WriteLine(output, $"// TODO: implement types like {permissionType.CanonicalRepresentation}");
@@ -1173,7 +1206,7 @@ namespace Microsoft.Pc.Backend
                     string seqElementTypeName = WriteTypeDefinition(context, sequenceType.ElementType, output);
                     string seqTypeDeclName = context.Names.GetTemporaryName("SEQTYPE");
                     context.WriteLine(output, $"static PRT_SEQTYPE {seqTypeDeclName} = {{ &{seqElementTypeName} }};");
-                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_SEQ, {{ &{seqTypeDeclName} }} }};");
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_SEQ, {{ .seq = &{seqTypeDeclName} }} }};");
                     break;
                 case TupleType tupleType:
                     string tupTypesArrayName = context.Names.GetTemporaryName("TUP_T");
@@ -1181,7 +1214,7 @@ namespace Microsoft.Pc.Backend
                     var tupTypeDeclNames = tupleType.Types.Select(t => WriteTypeDefinition(context, t, output));
                     context.WriteLine(output, $"static PRT_TYPE* {tupTypesArrayName}[] = {{ {string.Join(", ", tupTypeDeclNames.Select(n => "&" + n))} }};");
                     context.WriteLine(output, $"static PRT_TUPTYPE {tupStructName} = {{ {tupleType.Types.Count}U, {tupTypesArrayName} }};");
-                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_TUPLE, {{ &{tupStructName} }} }};");
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_TUPLE, {{ .tuple = &{tupStructName} }} }};");
                     break;
                 case TypeDefType _:
                     throw new ArgumentException("typedefs shouldn't be possible after canonicalization", nameof(type));

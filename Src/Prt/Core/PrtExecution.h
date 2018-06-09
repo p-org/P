@@ -454,6 +454,11 @@ extern "C"{
 		...
 		);
 
+	PRT_API void PRT_CALL_CONV
+		PrtFreeTriggerPayload(
+			_In_ PRT_MACHINEINST_PRIV	*context
+		);
+
 	void
 		PrtPushState(
 		_Inout_ PRT_MACHINEINST_PRIV	*context,

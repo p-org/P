@@ -580,7 +580,7 @@ namespace Microsoft.Pc
                 else
                 {
                     stmtList.Add(
-                        SyntaxFactory.ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("application", "CreateInterface"), CSharpHelper.MkCSharpDot("parent", "renamedName"), CSharpHelper.MkCSharpStringLiteralExpression(createdIorM), payloadVar))
+                        SyntaxFactory.ExpressionStatement(CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("application", "CreateInterface"), SyntaxFactory.IdentifierName("parent"), CSharpHelper.MkCSharpStringLiteralExpression(createdIorM), payloadVar))
                     );
                 }
                 int afterLabelId = GetFreshLabelId();

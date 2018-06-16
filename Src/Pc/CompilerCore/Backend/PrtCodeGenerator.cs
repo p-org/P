@@ -113,8 +113,13 @@ namespace Microsoft.Pc.Backend
         private void WriteProgramDecl(CompilationContext context, Scope globalScope, TextWriter output)
         {
             // generate event array
+            var eventsList = globalScope.Events.Where(e => !e.IsBuiltIn);
+            globalScope.Get("null", out PEvent nullEvent);
+            globalScope.Get("halt", out PEvent haltEvent);
+            eventsList = new[] {nullEvent, haltEvent}.Concat(eventsList);
+
             var eventArrayName = context.Names.GetTemporaryName("ALL_EVENTS");
-            var eventArrayBody = string.Join(", ", globalScope.Events.Select(ev => "&" + GetPrtNameForDecl(context, ev)));
+            var eventArrayBody = string.Join(", ", eventsList.Select(ev => "&" + GetPrtNameForDecl(context, ev)));
             eventArrayBody = string.IsNullOrEmpty(eventArrayBody) ? "NULL" : eventArrayBody;
             context.WriteLine(output, $"PRT_EVENTDECL* {eventArrayName}[] = {{ {eventArrayBody} }};");
 

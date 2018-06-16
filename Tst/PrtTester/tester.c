@@ -1,4 +1,4 @@
-#include "fun.h"
+#include "RaisedHalt_bugFound.h"
 
 void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 {

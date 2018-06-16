@@ -1,4 +1,7 @@
 // P semantics XYZ: two machines, machine is halted with "raise halt" (unhandled)
+module M = { Main, PONG };
+implementation Main : M;
+
 event Ping assert 1 : machine;
 event Pong assert 1;
 event Success;

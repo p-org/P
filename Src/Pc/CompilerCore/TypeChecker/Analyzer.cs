@@ -123,8 +123,8 @@ namespace Microsoft.Pc.TypeChecker
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
 
             // Add built-in events to the table.
-            globalScope.Put("halt", (PParser.EventDeclContext) null);
             globalScope.Put("null", (PParser.EventDeclContext) null);
+            globalScope.Put("halt", (PParser.EventDeclContext) null);
 
             // Step 1: Create mapping of names to declaration stubs
             foreach (PParser.ProgramContext programUnit in programUnits)

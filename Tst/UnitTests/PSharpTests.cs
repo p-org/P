@@ -146,7 +146,7 @@ namespace UnitTests
         private static IEnumerable<TestCaseData> TestCases =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
 
-        private static bool RunTest(out string output, params FileInfo[] inputFiles)
+        private static bool TestCompile(out string output, params FileInfo[] inputFiles)
         {
             var compiler = new AntlrCompiler();
             var compilerOutput = new StringWriter();
@@ -239,7 +239,7 @@ namespace UnitTests
                               .ToString();
             bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
             var inputFiles = testDir.GetFiles("*.p");
-            bool result = RunTest(out string output, inputFiles);
+            bool result = TestCompile(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
             if (expectCorrect && !result)
             {
@@ -256,7 +256,7 @@ namespace UnitTests
         [Test]
         public void TestTemp()
         {
-            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
+            string path = Path.Combine(Constants.TestDirectory, "RegressionTests", "Integration", "Correct", "SEM_TwoMachines_7", "RaisedHalt_bugFound.p");
             FileInfo[] inputFiles = {new FileInfo(path)};
             bool result = ExecuteTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
@@ -273,7 +273,7 @@ namespace UnitTests
         {
             string path = Path.Combine(Constants.SolutionDirectory, @"Tst\RegressionTests\Feature5ModuleSystem\Correct\Elevator", "Elevator.p");
             FileInfo[] inputFiles = { new FileInfo(path) };
-            bool result = RunTest(out string output, inputFiles);
+            bool result = TestCompile(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
             if (!result)
             {

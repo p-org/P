@@ -680,19 +680,19 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case AssertStmt assertStmt:
                     context.Write(output, "PrtAssert(PrtPrimGetBool(");
-                    WriteExpr(context, function, assertStmt.Assertion, output);
+                    WriteExpr(context, output, function, assertStmt.Assertion);
                     context.WriteLine(output, $"), \"{assertStmt.Message}\");");
                     break;
                 case AssignStmt assignStmt:
                     // Free old value
                     context.Write(output, "PrtFreeValue(");
-                    WriteExpr(context, function, assignStmt.Variable, output);
+                    WriteLValue(context, output, function, assignStmt.Location);
                     context.WriteLine(output, ");");
 
                     // Assign new value
-                    WriteExpr(context, function, assignStmt.Variable, output);
+                    WriteLValue(context, output, function, assignStmt.Location);
                     context.Write(output, " = ");
-                    WriteExpr(context, function, assignStmt.Value, output);
+                    WriteExpr(context, output, function, assignStmt.Value);
                     context.WriteLine(output, ";");
                     break;
                 case CompoundStmt compoundStmt:
@@ -758,7 +758,7 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case IfStmt ifStmt:
                     context.Write(output, "if (PrtPrimGetBool(");
-                    WriteExpr(context, function, ifStmt.Condition, output);
+                    WriteExpr(context, output, function, ifStmt.Condition);
                     context.WriteLine(output, "))");
                     WriteStmt(context, function, ifStmt.ThenBranch, output);
                     if (ifStmt.ElseBranch != null)
@@ -770,12 +770,12 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case InsertStmt insertStmt:
                     context.Write(output, "PrtSeqInsertEx(");
-                    WriteExpr(context, function, insertStmt.Variable, output);
+                    WriteLValue(context, output, function, insertStmt.Variable);
                     context.Write(output, ", ");
-                    WriteExpr(context, function, insertStmt.Index, output);
+                    WriteExpr(context, output, function, insertStmt.Index);
                     context.Write(output, ", ");
                     Debug.Assert(insertStmt.Value is IVariableRef);
-                    WriteExpr(context, function, insertStmt.Value, output);
+                    WriteExpr(context, output, function, insertStmt.Value);
                     context.WriteLine(output, ", PRT_FALSE);");
                     Variable insertValueVar = ((IVariableRef) insertStmt.Value).Variable;
                     context.WriteLine(output, $"{PrtTranslationUtils.GetPrtNameForDecl(context, insertValueVar)} = NULL;");
@@ -786,11 +786,11 @@ namespace Microsoft.Pc.Backend.Prt
 
                     // Free old value
                     context.Write(output, "PrtFreeValue(");
-                    WriteExpr(context, function, moveAssignStmt.ToLocation, output);
+                    WriteExpr(context, output, function, moveAssignStmt.ToLocation);
                     context.WriteLine(output, ");");
 
                     // Move variable to lvalue location
-                    WriteExpr(context, function, moveAssignStmt.ToLocation, output);
+                    WriteExpr(context, output, function, moveAssignStmt.ToLocation);
                     context.WriteLine(output, $" = {movedVarName};");
 
                     // Null out old variable
@@ -811,7 +811,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case RaiseStmt raiseStmt:
                     context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
                     context.Write(output, "PrtRaise(p_this, ");
-                    WriteExpr(context, function, raiseStmt.PEvent, output);
+                    WriteExpr(context, output, function, raiseStmt.PEvent);
                     context.Write(output, $", {raiseStmt.Payload.Count}");
                     foreach (IPExpr pExpr in raiseStmt.Payload)
                     {
@@ -828,15 +828,33 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, "goto p_return;");
                     break;
                 case ReceiveStmt receiveStmt:
+                    // TODO: implement. Daan's the man!
+                    context.Handler.IssueWarning(receiveStmt.SourceLocation, "RECEIVE NOT IMPLEMENTED CURRENTLY. IGNORING.");
+                    /*
+                     * Ideal template:
+                     * PRT_VALUE* payload = NULL; int allowedEventIds[] = { ... };
+                     * int eventId = PrtReceiveAsync(context, allowedEventIds, &payload);
+                     * switch(eventId) {
+                     *     case X: {
+                     *         PRT_VALUE* actual_payload_var_name = payload;
+                     *         // statements
+                     *     } break;
+                     *     // more cases
+                     *     default:
+                     *         PrtAssert(false, "issue in receive");
+                     *         break;
+                     * }
+                     */
                     break;
                 case RemoveStmt removeStmt:
+                    // TODO: implement. remember to use WriteLValue
                     break;
                 case ReturnStmt returnStmt:
                     if (returnStmt.ReturnValue != null)
                     {
                         context.WriteLine(output, $"PrtFreeValue({FunResultValName});");
                         context.Write(output, $"{FunResultValName} = ");
-                        WriteExpr(context, function, returnStmt.ReturnValue, output);
+                        WriteExpr(context, output, function, returnStmt.ReturnValue);
                         context.WriteLine(output, ";");
                     }
 
@@ -844,9 +862,9 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case SendStmt sendStmt:
                     context.Write(output, "PrtSendInternal(context, PrtGetMachine(context->process, ");
-                    WriteExpr(context, function, sendStmt.MachineExpr, output);
+                    WriteExpr(context, output, function, sendStmt.MachineExpr);
                     context.Write(output, "), ");
-                    WriteExpr(context, function, sendStmt.Evt, output);
+                    WriteExpr(context, output, function, sendStmt.Evt);
                     context.Write(output, $", {sendStmt.ArgsList.Count}");
                     foreach (IPExpr sendArgExpr in sendStmt.ArgsList)
                     {
@@ -868,11 +886,11 @@ namespace Microsoft.Pc.Backend.Prt
 
                     // Save l-value
                     context.Write(output, $"PRT_VALUE* {tmpName} = ");
-                    WriteExpr(context, function, swapAssignStmt.NewLocation, output);
+                    WriteExpr(context, output, function, swapAssignStmt.NewLocation);
                     context.WriteLine(output, ";");
 
                     // Overwrite l-value with var
-                    WriteExpr(context, function, swapAssignStmt.NewLocation, output);
+                    WriteExpr(context, output, function, swapAssignStmt.NewLocation);
                     context.WriteLine(output, $" = {swappedName};");
 
                     // Complete the swap
@@ -881,7 +899,7 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case WhileStmt whileStmt:
                     context.Write(output, "while (PrtPrimGetBool(");
-                    WriteExpr(context, function, whileStmt.Condition, output);
+                    WriteExpr(context, output, function, whileStmt.Condition);
                     context.WriteLine(output, "))");
                     WriteStmt(context, function, whileStmt.Body, output);
                     break;
@@ -913,7 +931,7 @@ namespace Microsoft.Pc.Backend.Prt
             foreach (IPExpr printArg in printStmt1.Args)
             {
                 context.Write(output, ", ");
-                WriteExpr(context, function, printArg, output);
+                WriteExpr(context, output, function, printArg);
             }
 
             context.Write(output, ", ");
@@ -932,13 +950,34 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output, ");");
         }
 
-        private static void WriteExpr(CompilationContext context, Function function, IPExpr expr, TextWriter output)
+        private static void WriteLValue(CompilationContext context, TextWriter output, Function function, IPExpr expr)
+        {
+            // TODO: complicated lvalues
+            switch (expr)
+            {
+                case MapAccessExpr mapAccessExpr:
+                    break;
+                case NamedTupleAccessExpr namedTupleAccessExpr:
+                    break;
+                case SeqAccessExpr seqAccessExpr:
+                    break;
+                case TupleAccessExpr tupleAccessExpr:
+                    break;
+                case VariableAccessExpr variableAccessExpr:
+                    WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(expr));
+            }
+        }
+
+        private static void WriteExpr(CompilationContext context, TextWriter output, Function function, IPExpr expr)
         {
             switch (expr)
             {
                 case CloneExpr cloneExpr:
                     context.Write(output, "PrtCloneValue(");
-                    WriteExpr(context, function, cloneExpr.Term, output);
+                    WriteExpr(context, output, function, cloneExpr.Term);
                     context.Write(output, ")");
                     break;
                 case BinOpExpr binOpExpr:
@@ -951,9 +990,9 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         string negate = binOpType == BinOpType.Eq ? "" : "!";
                         context.Write(output, $"PrtMkBoolValue({negate}PrtIsEqualValue(");
-                        WriteExpr(context, function, binOpLhs, output);
+                        WriteExpr(context, output, function, binOpLhs);
                         context.Write(output, ", ");
-                        WriteExpr(context, function, binOpRhs, output);
+                        WriteExpr(context, output, function, binOpRhs);
                         context.Write(output, "))");
                     }
                     else
@@ -964,13 +1003,13 @@ namespace Microsoft.Pc.Backend.Prt
                         context.Write(output, $"{binOpBuilder}(");
 
                         context.Write(output, $"{binOpGetter}(");
-                        WriteExpr(context, function, binOpLhs, output);
+                        WriteExpr(context, output, function, binOpLhs);
                         context.Write(output, ")");
 
                         context.Write(output, $" {BinOpToStr(binOpType)} ");
 
                         context.Write(output, $"{binOpGetter}(");
-                        WriteExpr(context, function, binOpRhs, output);
+                        WriteExpr(context, output, function, binOpRhs);
                         context.Write(output, ")");
 
                         context.Write(output, ")");
@@ -984,7 +1023,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case CastExpr castExpr:
                     string castTypeName = context.Names.GetNameForType(castExpr.Type);
                     context.Write(output, "PrtCastValue(");
-                    WriteExpr(context, function, castExpr.SubExpr, output);
+                    WriteExpr(context, output, function, castExpr.SubExpr);
                     context.Write(output, $", &{castTypeName})");
                     break;
                 case CoerceExpr coerceExpr:
@@ -1015,10 +1054,15 @@ namespace Microsoft.Pc.Backend.Prt
                     }
 
                     context.Write(output, $"{coerceCtor}({coerceUnpack}(");
-                    WriteExpr(context, function, coerceExpr.SubExpr, output);
+                    WriteExpr(context, output, function, coerceExpr.SubExpr);
                     context.Write(output, "))");
                     break;
                 case ContainsKeyExpr containsKeyExpr:
+                    context.Write(output, "PrtMkBoolValue(PrtMapExists(");
+                    WriteExpr(context, output, function, containsKeyExpr.Map);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, function, containsKeyExpr.Key);
+                    context.Write(output, "));");
                     break;
                 case CtorExpr ctorExpr:
                     context.Write(
@@ -1069,16 +1113,24 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, $"(&{intLiteralName})");
                     break;
                 case KeysExpr keysExpr:
+                    context.Write(output, "PrtMapGetKeys(");
+                    WriteExpr(context, output, function, keysExpr.Expr);
+                    context.Write(output, ")");
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
                     // TODO: what's special about linear refs here?
-                    WriteVariableAccess(context, function, output, linearAccessRefExpr.Variable);
+                    WriteVariableAccess(context, output, function, linearAccessRefExpr.Variable);
                     break;
                 case MapAccessExpr mapAccessExpr:
+                    context.Write(output, "PrtMapGet(");
+                    WriteExpr(context, output, function, mapAccessExpr.MapExpr);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, function, mapAccessExpr.IndexExpr);
+                    context.Write(output, ")");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, "PrtTupleGet(");
-                    WriteExpr(context, function, namedTupleAccessExpr.SubExpr, output);
+                    WriteExpr(context, output, function, namedTupleAccessExpr.SubExpr);
                     context.Write(output, $", {namedTupleAccessExpr.Entry.FieldNo})");
                     break;
                 case NamedTupleExpr namedTupleExpr:
@@ -1091,19 +1143,28 @@ namespace Microsoft.Pc.Backend.Prt
                 case NondetExpr _:
                     context.Write(output, "(PrtMkNondetBoolValue())");
                     break;
-                case NullLiteralExpr nullLiteralExpr:
+                case NullLiteralExpr _:
                     context.Write(output, "PrtMkNullValue()");
                     break;
                 case SeqAccessExpr seqAccessExpr:
+                    context.Write(output, "PrtSeqGet(");
+                    WriteExpr(context, output, function, seqAccessExpr.SeqExpr);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, function, seqAccessExpr.IndexExpr);
+                    context.Write(output, ")");
                     break;
                 case SizeofExpr sizeofExpr:
+                    var sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Type, TypeKind.Map) ? "PrtMapSizeOf" : "PrtSeqSizeOf";
+                    context.Write(output, $"{sizeofFun}(");
+                    WriteExpr(context, output, function, sizeofExpr.Expr);
+                    context.Write(output, ")");
                     break;
                 case ThisRefExpr _:
                     context.Write(output, "(p_this->id)");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, "PrtTupleGet(");
-                    WriteExpr(context, function, tupleAccessExpr.SubExpr, output);
+                    WriteExpr(context, output, function, tupleAccessExpr.SubExpr);
                     context.Write(output, $", {tupleAccessExpr.FieldNo})");
                     break;
                 case UnaryOpExpr unaryOpExpr:
@@ -1112,7 +1173,7 @@ namespace Microsoft.Pc.Backend.Prt
 
                     context.Write(output, UnOpToStr(unaryOpExpr.Operation));
                     context.Write(output, $"{unOpGetter}(");
-                    WriteExpr(context, function, unaryOpExpr.SubExpr, output);
+                    WriteExpr(context, output, function, unaryOpExpr.SubExpr);
                     context.Write(output, ")");
 
                     context.Write(output, ")");
@@ -1125,14 +1186,17 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, $"(PrtMkTuple(&{utTypeName}, {tupleBody}))");
                     break;
                 case ValuesExpr valuesExpr:
+                    context.Write(output, "PrtMapGetValues(");
+                    WriteExpr(context, output, function, valuesExpr.Expr);
+                    context.Write(output, ")");
                     break;
                 case VariableAccessExpr variableAccessExpr:
-                    WriteVariableAccess(context, function, output, variableAccessExpr.Variable);
+                    WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
                     break;
             }
         }
 
-        private static void WriteVariableAccess(CompilationContext context, Function function, TextWriter output, Variable variable)
+        private static void WriteVariableAccess(CompilationContext context, TextWriter output, Function function, Variable variable)
         {
             if (variable.Role.HasFlag(VariableRole.Param))
             {

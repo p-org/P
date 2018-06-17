@@ -161,7 +161,7 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteStmt("assert ", assertStmt.Assertion, ", \"", assertStmt.Message, "\";");
                     break;
                 case AssignStmt assignStmt:
-                    WriteStmt(assignStmt.Variable, " = ", assignStmt.Value, ";");
+                    WriteStmt(assignStmt.Location, " = ", assignStmt.Value, ";");
                     break;
                 case CompoundStmt compoundStmt:
                     foreach (IPStmt stmt in compoundStmt.Statements)

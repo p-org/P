@@ -252,7 +252,7 @@ namespace Microsoft.Pc.Backend
                                      })
                                      .ToList();
                 case AssignStmt assignStmt:
-                    var (assignLV, assignLVDeps) = SimplifyLvalue(assignStmt.Variable);
+                    var (assignLV, assignLVDeps) = SimplifyLvalue(assignStmt.Location);
                     var (assignRV, assignRVDeps) = SimplifyExpression(assignStmt.Value);
                     return assignLVDeps.Concat(assignRVDeps)
                                        .Concat(new[]
@@ -266,7 +266,7 @@ namespace Microsoft.Pc.Backend
                     {
                         newBlock.AddRange(SimplifyStatement(step));
                     }
-
+                    // TODO: why not return the list? because of source location info?
                     return new List<IPStmt> {new CompoundStmt(location, newBlock)};
                 case CtorStmt ctorStmt:
                     var (ctorArgs, ctorArgDeps) = SimplifyArgPack(ctorStmt.Arguments);
@@ -409,7 +409,7 @@ namespace Microsoft.Pc.Backend
                                       .ToList();
                 case WhileStmt whileStmt:
                     var (condExpr, condDeps) = SimplifyExpression(whileStmt.Condition);
-                    var (condTemp, condStore) = SaveInTemporary(condExpr);
+                    var (condTemp, condStore) = SaveInTemporary(MakeClone(condExpr));
                     var whileBody = SimplifyStatement(whileStmt.Body);
                     whileBody.AddRange(condDeps);
                     whileBody.Add(condStore);

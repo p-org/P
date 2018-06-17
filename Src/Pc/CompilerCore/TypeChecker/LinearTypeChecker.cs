@@ -93,13 +93,13 @@ namespace Microsoft.Pc.TypeChecker
                     break;
                 case AssignStmt assignStmt:
                     unavailable = ProcessExpr(unavailable, assignStmt.Value);
-                    if (assignStmt.Variable is VariableAccessExpr assignAccess)
+                    if (assignStmt.Location is VariableAccessExpr assignAccess)
                     {
                         unavailable.Remove(assignAccess.Variable);
                     }
                     else
                     {
-                        unavailable = ProcessExpr(unavailable, assignStmt.Variable);
+                        unavailable = ProcessExpr(unavailable, assignStmt.Location);
                     }
 
                     break;

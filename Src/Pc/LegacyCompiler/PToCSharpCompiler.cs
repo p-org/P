@@ -505,7 +505,7 @@ namespace Microsoft.Pc
             var file = new StreamWriter(Path.Combine(outputDir, cSharpFileName));
             // CS0162 = Unreachable code
             // CS0164 = Goto label declared, but unused
-            // CS0168 = Variable declared, but unused
+            // CS0168 = Location declared, but unused
             // CS0649 = Field never assigned a value
             file.WriteLine("#pragma warning disable CS0162, CS0164, CS0168, CS0649");
             file.WriteLine(result);

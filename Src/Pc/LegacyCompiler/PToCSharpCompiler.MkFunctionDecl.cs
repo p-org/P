@@ -1855,7 +1855,7 @@ namespace Microsoft.Pc
 
                     whereToAdd.Add(MkFuncClass());
 
-                    //Variable declaration:
+                    //Location declaration:
                     whereToAdd.Add(
                         SyntaxFactory.FieldDeclaration(
                                 SyntaxFactory.VariableDeclaration(

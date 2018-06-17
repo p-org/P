@@ -35,7 +35,7 @@ namespace Microsoft.Pc.TypeChecker
                 case AssertStmt assertStmt:
                     return InferCreatesForExpr(assertStmt.Assertion);
                 case AssignStmt assignStmt:
-                    return InferCreatesForExpr(assignStmt.Variable)
+                    return InferCreatesForExpr(assignStmt.Location)
                         .Union(InferCreatesForExpr(assignStmt.Value));
                 case CompoundStmt compoundStmt:
                     return compoundStmt.Statements.SelectMany(InferCreates);

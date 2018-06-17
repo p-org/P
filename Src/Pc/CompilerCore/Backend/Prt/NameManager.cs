@@ -8,7 +8,7 @@ using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
-namespace Microsoft.Pc.Backend
+namespace Microsoft.Pc.Backend.Prt
 {
     public class NameManager
     {
@@ -114,19 +114,19 @@ namespace Microsoft.Pc.Backend
                     return $"MK{SimplifiedRep(mapType.KeyType)}V{SimplifiedRep(mapType.ValueType)}";
                 case PermissionType _:
                     return "R";
-                case PrimitiveType primitiveType when primitiveType == PrimitiveType.Bool:
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Bool):
                     return "b";
-                case PrimitiveType primitiveType when primitiveType == PrimitiveType.Int:
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Int):
                     return "i";
-                case PrimitiveType primitiveType when primitiveType == PrimitiveType.Float:
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Float):
                     return "f";
-                case PrimitiveType primitiveType when primitiveType == PrimitiveType.Event:
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Event):
                     return "e";
-                case PrimitiveType primitiveType when primitiveType == PrimitiveType.Machine:
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Machine):
                     return "m";
-                case PrimitiveType primitiveType when primitiveType == PrimitiveType.Any:
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Any):
                     return "a";
-                case PrimitiveType primitiveType when primitiveType == PrimitiveType.Null:
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Null):
                     return "n";
                 case PrimitiveType _:
                     throw new ArgumentException("unrecognized primitive type", nameof(type));

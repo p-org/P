@@ -33,7 +33,7 @@ namespace Microsoft.Pc.TypeChecker
                     CheckWellFormedness(handler, hideIExpr);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException("Unknown module expression");
+                    throw new ArgumentOutOfRangeException(nameof(moduleExpr), "Unknown module expression");
             }
         }
 

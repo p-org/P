@@ -249,7 +249,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
         {
             IPExpr condition = exprVisitor.Visit(context.expr());
-            if (condition.Type != PrimitiveType.Bool)
+            if (!Equals(condition.Type, PrimitiveType.Bool))
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
@@ -261,7 +261,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
         {
             IPExpr condition = exprVisitor.Visit(context.expr());
-            if (condition.Type != PrimitiveType.Bool)
+            if (!Equals(condition.Type, PrimitiveType.Bool))
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }

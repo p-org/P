@@ -581,18 +581,5 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         #endregion
-
-        #region unique name generator
-        private IDictionary<string, int> namesCounter = new Dictionary<string, int>();
-
-        private string GetUniqueName(string name)
-        {
-            if (namesCounter.ContainsKey(name))
-                namesCounter[name] += 1;
-            else
-                namesCounter.Add(name, 1);
-            return string.Concat(name, namesCounter[name]);
-        }
-        #endregion
     }
 }

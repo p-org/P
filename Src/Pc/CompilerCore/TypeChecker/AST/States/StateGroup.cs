@@ -31,7 +31,7 @@ namespace Microsoft.Pc.TypeChecker.AST.States
         {
             Debug.Assert(state.Container == null);
             state.Container = this;
-            state.OwningMachine = this.OwningMachine;
+            state.OwningMachine = OwningMachine;
             states.Add(state.Name, state);
         }
 
@@ -39,7 +39,7 @@ namespace Microsoft.Pc.TypeChecker.AST.States
         {
             Debug.Assert(group.ParentStateContainer == null);
             group.ParentStateContainer = this;
-            group.OwningMachine = this.OwningMachine;
+            group.OwningMachine = OwningMachine;
             groups.Add(group.Name, group);
         }
 

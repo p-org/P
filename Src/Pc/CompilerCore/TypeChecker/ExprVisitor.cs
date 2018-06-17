@@ -17,7 +17,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public ExprVisitor(Function method, ITranslationErrorHandler handler)
         {
-            this.table = method.Scope;
+            table = method.Scope;
             this.method = method;
             this.handler = handler;
         }

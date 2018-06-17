@@ -129,13 +129,13 @@ namespace P.Runtime
                 {
                     if (this as PrtImplMachine != null)
                     {
-                        stateImpl.TraceLine("<HaltLog> Machine {0}-{1} HALTED with {2} events in the queue", this.Name, this.instanceNumber, (((PrtImplMachine)this).eventQueue).Size());
+                        stateImpl.TraceLine("<HaltLog> Value {0}-{1} HALTED with {2} events in the queue", this.Name, this.instanceNumber, (((PrtImplMachine)this).eventQueue).Size());
                     }
                     else
                     {
                         //SpecMachine case:
                         //TODO: is it possible to send "halt" event to a spec machine?
-                        stateImpl.TraceLine("<HaltLog> Machine {0}-{1} HALTED", this.Name, this.instanceNumber);
+                        stateImpl.TraceLine("<HaltLog> Value {0}-{1} HALTED", this.Name, this.instanceNumber);
                     }
                     currentStatus = PrtMachineStatus.Halted;
                 }
@@ -160,7 +160,7 @@ namespace P.Runtime
         {
             if (!fun.IsAnonFun)
             {
-                stateImpl.TraceLine("<FunctionLog> Machine {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
+                stateImpl.TraceLine("<FunctionLog> Value {0}-{1} executing Function {2}", this.Name, this.instanceNumber, fun);
             }
             invertedFunStack.PushFun(fun, locals);
         }
@@ -172,7 +172,7 @@ namespace P.Runtime
 
         public void PrtPushExitFunction()
         {
-            stateImpl.TraceLine("<StateLog> Machine {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
+            stateImpl.TraceLine("<StateLog> Value {0}-{1} exiting State {2}", this.Name, this.instanceNumber, CurrentState.name);
             PrtFun exitFun = CurrentState.exitFun;
             if (exitFun.IsAnonFun)
             {

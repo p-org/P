@@ -970,7 +970,7 @@ namespace Microsoft.Pc
                     ? pToCSharp.allGlobalFuns[stateEntryActionName]
                     : machineInfo.funNameToFunInfo[stateEntryActionName];
                 var payloadVar = MkPayload(children);
-                var traceStmt = CSharpHelper.MkCSharpTrace("<GotoLog> Machine {0}-{1} goes to {2}", 
+                var traceStmt = CSharpHelper.MkCSharpTrace("<GotoLog> Value {0}-{1} goes to {2}", 
                                                            CSharpHelper.MkCSharpDot("parent", "Name"), 
                                                            CSharpHelper.MkCSharpDot("parent", "instanceNumber"), 
                                                            CSharpHelper.MkCSharpDot(stateExpr, "name"));
@@ -988,7 +988,7 @@ namespace Microsoft.Pc
                 var payloadVar = MkPayload(children);
                 var equalsExpr = CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot(eventExpr, "Equals"), pToCSharp.GetEventVar(NullEvent));
                 var assertStmt = CSharpHelper.MkCSharpAssert(CSharpHelper.MkCSharpNot(equalsExpr), pToCSharp.SpanToString(pToCSharp.LookupSpan(ft), "Raised event must be non-null"));
-                var traceStmt = CSharpHelper.MkCSharpTrace("<RaiseLog> Machine {0}-{1} raised Event {2}", 
+                var traceStmt = CSharpHelper.MkCSharpTrace("<RaiseLog> Value {0}-{1} raised Event {2}", 
                                                            CSharpHelper.MkCSharpDot("parent", "Name"), 
                                                            CSharpHelper.MkCSharpDot("parent", "instanceNumber"), 
                                                            CSharpHelper.MkCSharpDot(CSharpHelper.MkCSharpCastExpression("PrtEventValue", eventExpr), "evt", "name"));

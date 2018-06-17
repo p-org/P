@@ -20,6 +20,10 @@ namespace Microsoft.Pc.Backend
 {
     public partial class PrtCodeGenerator : ICodeGenerator
     {
+        private const string FunCallArgsArrayName = "FUNARGS";
+        private const string FunCallRetValName = "FUNRETVAL";
+        private const string FunResultValName = "retval";
+
         private static readonly Dictionary<Type, string> DeclNameParts = new Dictionary<Type, string>
         {
             {typeof(EnumElem), "ENUMELEM"},
@@ -591,15 +595,18 @@ namespace Microsoft.Pc.Backend
                 context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
             }
 
+            context.WriteLine(output, $"PRT_VALUE* {FunCallRetValName} = NULL;");
+            // TODO: figure out how many args are actually necessary based on function calls.
+            context.WriteLine(output, $"PRT_VALUE** {FunCallArgsArrayName}[32];");
             context.WriteLine(output, "PRT_MACHINEINST_PRIV* p_this = (PRT_MACHINEINST_PRIV*)context;");
             if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                context.WriteLine(output, "PRT_VALUE* retval = NULL;");
+                context.WriteLine(output, $"PRT_VALUE* {FunResultValName} = NULL;");
             }
             else
             {
                 string nameForReturnType = context.Names.GetNameForType(function.Signature.ReturnType);
-                context.WriteLine(output, $"PRT_VALUE* retval = PrtMkDefaultValue({nameForReturnType});");
+                context.WriteLine(output, $"PRT_VALUE* {FunResultValName} = PrtMkDefaultValue(&{nameForReturnType});");
             }
 
             context.WriteLine(output);
@@ -626,7 +633,7 @@ namespace Microsoft.Pc.Backend
                 context.WriteLine(bodyWriter, $"PrtFreeValue({varName}); {varName} = NULL;");
             }
 
-            context.WriteLine(bodyWriter, "return retval;");
+            context.WriteLine(bodyWriter, $"return {FunResultValName};");
 
             // Write gathered literals to the prologue
             foreach (var literal in context.GetRegisteredIntLiterals(function))
@@ -689,6 +696,27 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, ");");
                     break;
                 case FunCallStmt funCallStmt:
+                    string funImplName = context.Names.GetNameForFunctionImpl(funCallStmt.Fun);
+                    var funArgs = funCallStmt.ArgsList.Cast<ILinearRef>().ToList();
+
+                    // Put all the arguments in the args array
+                    foreach (var arg in funArgs.Select((arg, i) => new {arg.Variable, i}))
+                    {
+                        context.WriteLine(output, $"{FunCallArgsArrayName}[{arg.i}] = &{GetPrtNameForDecl(context, arg.Variable)};");
+                    }
+
+                    // Call the function and immediately free the value
+                    context.WriteLine(output, $"PrtFreeValue({funImplName}(context, {FunCallArgsArrayName}));");
+
+                    // Free and set to null all the moved arguments
+                    var toFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
+                                        .Select(arg => GetPrtNameForDecl(context, arg.Variable));
+                    foreach (string argName in toFree)
+                    {
+                        context.WriteLine(output, $"PrtFreeValue({argName});");
+                        context.WriteLine(output, $"{argName} = NULL;");
+                    }
+
                     break;
                 case GotoStmt gotoStmt:
                     var destStateIndex = context.GetNumberForState(gotoStmt.State);
@@ -735,7 +763,7 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
                     context.Write(output, "PrtRaise(p_this, ");
                     WriteExpr(context, function, raiseStmt.PEvent, output);
-                    context.Write(output, $", {raiseStmt.Payload.Length}");
+                    context.Write(output, $", {raiseStmt.Payload.Count}");
                     foreach (IPExpr pExpr in raiseStmt.Payload)
                     {
                         Debug.Assert(pExpr is VariableAccessExpr);
@@ -756,8 +784,8 @@ namespace Microsoft.Pc.Backend
                 case ReturnStmt returnStmt:
                     if (returnStmt.ReturnValue != null)
                     {
-                        context.WriteLine(output, "PrtFreeValue(retval);");
-                        context.Write(output, "retval = ");
+                        context.WriteLine(output, $"PrtFreeValue({FunResultValName});");
+                        context.Write(output, $"{FunResultValName} = ");
                         WriteExpr(context, function, returnStmt.ReturnValue, output);
                         context.WriteLine(output, ";");
                     }
@@ -772,8 +800,8 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, $", {sendStmt.ArgsList.Count}");
                     foreach (IPExpr sendArgExpr in sendStmt.ArgsList)
                     {
-                        Debug.Assert(sendArgExpr is VariableAccessExpr);
-                        var argVar = (VariableAccessExpr) sendArgExpr;
+                        Debug.Assert(sendArgExpr is IVariableRef);
+                        var argVar = (IVariableRef) sendArgExpr;
                         context.Write(output, $", &{GetPrtNameForDecl(context, argVar.Variable)}");
                     }
                     context.WriteLine(output, ");");
@@ -904,7 +932,7 @@ namespace Microsoft.Pc.Backend
             {
                 case CloneExpr cloneExpr:
                     context.Write(output, "PrtCloneValue(");
-                    WriteExpr(context, function, cloneExpr.SubExpr, output);
+                    WriteExpr(context, function, cloneExpr.Term, output);
                     context.Write(output, ")");
                     break;
                 case BinOpExpr binOpExpr:
@@ -983,7 +1011,7 @@ namespace Microsoft.Pc.Backend
                 case ContainsKeyExpr containsKeyExpr:
                     break;
                 case CtorExpr ctorExpr:
-                    context.Write(output, $"PrtCloneValue(PrtMkInterface(context, {context.GetNumberForInterface(ctorExpr.Interface)}, {ctorExpr.Arguments.Length}");
+                    context.Write(output, $"PrtCloneValue(PrtMkInterface(context, {context.GetNumberForInterface(ctorExpr.Interface)}, {ctorExpr.Arguments.Count}");
                     foreach (IPExpr pExpr in ctorExpr.Arguments)
                     {
                         Debug.Assert(pExpr is VariableAccessExpr);
@@ -997,18 +1025,29 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, $"PrtMkDefaultValue({nameForDefaultType})");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
-                    context.Write(output, GetPrtNameForDecl(context, enumElemRefExpr.EnumElem));
+                    context.Write(output, GetPrtNameForDecl(context, enumElemRefExpr.Value));
                     break;
                 case EventRefExpr eventRefExpr:
-                    context.Write(output, $"(&{GetPrtNameForDecl(context, eventRefExpr.PEvent)}.value)");
+                    context.Write(output, $"(&{GetPrtNameForDecl(context, eventRefExpr.Value)}.value)");
                     break;
-                case FairNondetExpr fairNondetExpr:
+                case FairNondetExpr _:
+                    context.Write(output, "(PrtMkNondetBoolValue())");
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
                     string floaLiteralName = context.RegisterLiteral(function, floatLiteralExpr.Value);
                     context.Write(output, $"(&{floaLiteralName})");
                     break;
                 case FunCallExpr funCallExpr:
+                    string funImplName = context.Names.GetNameForFunctionImpl(funCallExpr.Function);
+                    var funArgs = funCallExpr.Arguments.Cast<ILinearRef>().ToList();
+                    var argSetup = funArgs.Select((arg, i) => $"({FunCallArgsArrayName}[{i}] = &{GetPrtNameForDecl(context, arg.Variable)})");
+                    var funCall = new[] {$"({FunCallRetValName} = {funImplName}(context, {FunCallArgsArrayName}))"};
+                    var argsFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
+                                          .Select(arg => GetPrtNameForDecl(context, arg.Variable))
+                                          .Select(varName => $"(PrtFreeValue({varName}), {varName} = NULL)");
+                    var resRetrieve = new[] {$"({FunCallRetValName})"};
+                    var fullCall = string.Join(", ", argSetup.Concat(funCall).Concat(argsFree).Concat(resRetrieve));
+                    context.Write(output, $"({fullCall})");
                     break;
                 case IntLiteralExpr intLiteralExpr:
                     string intLiteralName = context.RegisterLiteral(function, intLiteralExpr.Value);
@@ -1025,7 +1064,7 @@ namespace Microsoft.Pc.Backend
                 case NamedTupleExpr namedTupleExpr:
                     break;
                 case NondetExpr _:
-                    context.Write(output, "PrtMkNondetBoolValue()");
+                    context.Write(output, "(PrtMkNondetBoolValue())");
                     break;
                 case NullLiteralExpr nullLiteralExpr:
                     context.Write(output, "PrtMkNullValue()");
@@ -1035,7 +1074,7 @@ namespace Microsoft.Pc.Backend
                 case SizeofExpr sizeofExpr:
                     break;
                 case ThisRefExpr thisRefExpr:
-                    context.Write(output, "PrtCloneValue(p_this->id)");
+                    context.Write(output, "p_this->id");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, "PrtTupleGet(");

@@ -4,15 +4,15 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
-    public class EventRefExpr : IPExpr
+    public class EventRefExpr : IStaticTerm<PEvent>
     {
-        public EventRefExpr(ParserRuleContext sourceLocation, PEvent pEvent)
+        public EventRefExpr(ParserRuleContext sourceLocation, PEvent value)
         {
-            PEvent = pEvent;
+            Value = value;
             SourceLocation = sourceLocation;
         }
 
-        public PEvent PEvent { get; }
+        public PEvent Value { get; }
 
         public PLanguageType Type { get; } = PrimitiveType.Event;
         public ParserRuleContext SourceLocation { get; }

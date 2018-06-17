@@ -70,12 +70,15 @@ namespace Microsoft.Pc.Backend
             }
         }
 
-        private (IPExpr, List<IPStmt>) SimplifyExpression(IPExpr expr)
+        private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
             ParserRuleContext location = expr.SourceLocation;
             var deps = new List<IPStmt>();
             switch (expr)
             {
+                case IExprTerm term:
+                    return (term, deps);
+                // VariableAccessExpr
                 case BinOpExpr binOpExpr:
                     var (lhsTemp, lhsDeps) = SimplifyExpression(binOpExpr.Lhs);
                     var (rhsTemp, rhsDeps) = SimplifyExpression(binOpExpr.Rhs);
@@ -84,14 +87,14 @@ namespace Microsoft.Pc.Backend
                     deps.AddRange(lhsDeps.Concat(rhsDeps));
                     deps.Add(binOpStore);
                     return (binOpTemp, deps);
-                case BoolLiteralExpr boolLiteralExpr:
-                    return (boolLiteralExpr, deps);
+                // VariableAccessExpr
                 case CastExpr castExpr:
                     var (castSubExpr, castDeps) = SimplifyExpression(castExpr.SubExpr);
                     var (castTemp, castStore) = SaveInTemporary(new CastExpr(location, castSubExpr, castExpr.Type));
                     deps.AddRange(castDeps);
                     deps.Add(castStore);
                     return (castTemp, deps);
+                // VariableAccessExpr
                 case CoerceExpr coerceExpr:
                     var (coerceSubExpr, coerceDeps) = SimplifyExpression(coerceExpr.SubExpr);
                     var (coerceTemp, coerceStore) =
@@ -99,6 +102,7 @@ namespace Microsoft.Pc.Backend
                     deps.AddRange(coerceDeps);
                     deps.Add(coerceStore);
                     return (coerceTemp, deps);
+                // VariableAccessExpr
                 case ContainsKeyExpr containsKeyExpr:
                     var (contKeyExpr, contKeyDeps) = SimplifyExpression(containsKeyExpr.Key);
                     var (contMapExpr, contMapDeps) = SimplifyExpression(containsKeyExpr.Map);
@@ -107,50 +111,28 @@ namespace Microsoft.Pc.Backend
                     deps.AddRange(contKeyDeps.Concat(contMapDeps));
                     deps.Add(contStore);
                     return (contTemp, deps);
+                // VariableAccessExpr
                 case CtorExpr ctorExpr:
                     var (ctorArgs, ctorArgDeps) = SimplifyArgPack(ctorExpr.Arguments);
                     deps.AddRange(ctorArgDeps);
-                    var (ctorTemp, ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs.Cast<IPExpr>().ToArray()));
+                    var (ctorTemp, ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs));
                     deps.Add(ctorStore);
                     return (ctorTemp, deps);
-                case DefaultExpr defaultExpr:
-                    return (defaultExpr, deps);
-                case EnumElemRefExpr enumElemRefExpr:
-                    return (enumElemRefExpr, deps);
-                case EventRefExpr eventRefExpr:
-                    return (eventRefExpr, deps);
-                case FairNondetExpr fairNondetExpr:
-                    return (fairNondetExpr, deps);
-                case FloatLiteralExpr floatLiteralExpr:
-                    return (floatLiteralExpr, deps);
+                // VariableAccessExpr
                 case FunCallExpr funCallExpr:
-                    var funArgs = new IPExpr[funCallExpr.Arguments.Length];
-                    for (var i = 0; i < funCallExpr.Arguments.Length; i++)
-                    {
-                        var (argExpr, argDeps) = SimplifyExpression(funCallExpr.Arguments[i]);
-                        deps.AddRange(argDeps);
-                        if (!(argExpr is VariableAccessExpr) && !(argExpr is LinearAccessRefExpr))
-                        {
-                            var (argExpr2, newDep) = SaveInTemporary(argExpr);
-                            deps.Add(newDep);
-                            argExpr = argExpr2;
-                        }
-                        funArgs[i] = argExpr;
-                    }
-
+                    var (funArgs, funArgsDeps) = SimplifyFunArgs(funCallExpr.Arguments);
+                    deps.AddRange(funArgsDeps);
                     var (funTemp, funStore) = SaveInTemporary(new FunCallExpr(location, funCallExpr.Function, funArgs));
                     deps.Add(funStore);
                     return (funTemp, deps);
-                case IntLiteralExpr intLiteralExpr:
-                    return (intLiteralExpr, deps);
+                // VariableAccessExpr
                 case KeysExpr keysExpr:
                     var (keysColl, keysDeps) = SimplifyExpression(keysExpr.Expr);
                     var (keysTemp, keysStore) = SaveInTemporary(new KeysExpr(location, keysColl, keysExpr.Type));
                     deps.AddRange(keysDeps);
                     deps.Add(keysStore);
                     return (keysTemp, deps);
-                case LinearAccessRefExpr linearAccessRefExpr:
-                    return (linearAccessRefExpr, deps);
+                // VariableAccessExpr
                 case MapAccessExpr mapAccessExpr:
                     var (mapExpr, mapDeps) = SimplifyExpression(mapAccessExpr.MapExpr);
                     var (mapIdxExpr, mapIdxDeps) = SimplifyExpression(mapAccessExpr.IndexExpr);
@@ -159,6 +141,7 @@ namespace Microsoft.Pc.Backend
                     deps.AddRange(mapDeps.Concat(mapIdxDeps));
                     deps.Add(mapItemStore);
                     return (mapItemTemp, deps);
+                // VariableAccessExpr
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     var (ntSubExpr, ntSubDeps) = SimplifyExpression(namedTupleAccessExpr.SubExpr);
                     var (ntTemp, ntStore) =
@@ -166,23 +149,16 @@ namespace Microsoft.Pc.Backend
                     deps.AddRange(ntSubDeps);
                     deps.Add(ntStore);
                     return (ntTemp, deps);
+                // VariableAccessExpr
                 case NamedTupleExpr namedTupleExpr:
-                    var ntFields = new IPExpr[namedTupleExpr.TupleFields.Length];
-                    for (var i = 0; i < namedTupleExpr.TupleFields.Length; i++)
-                    {
-                        var (field, fieldDeps) = SimplifyExpression(namedTupleExpr.TupleFields[i]);
-                        ntFields[i] = field;
-                        deps.AddRange(fieldDeps);
-                    }
+                    var (args, argDeps) = SimplifyArgPack(namedTupleExpr.TupleFields);
+                    deps.AddRange(argDeps);
 
                     var (ntVal, ntValStore) =
-                        SaveInTemporary(new NamedTupleExpr(location, ntFields, namedTupleExpr.Type));
+                        SaveInTemporary(new NamedTupleExpr(location, args, namedTupleExpr.Type));
                     deps.Add(ntValStore);
                     return (ntVal, deps);
-                case NondetExpr nondetExpr:
-                    return (nondetExpr, deps);
-                case NullLiteralExpr nullLiteralExpr:
-                    return (nullLiteralExpr, deps);
+                // VariableAccessExpr
                 case SeqAccessExpr seqAccessExpr:
                     var (seqExpr, seqDeps) = SimplifyExpression(seqAccessExpr.SeqExpr);
                     var (seqIdx, seqIdxDeps) = SimplifyExpression(seqAccessExpr.IndexExpr);
@@ -191,14 +167,14 @@ namespace Microsoft.Pc.Backend
                     deps.AddRange(seqDeps.Concat(seqIdxDeps));
                     deps.Add(seqElemStore);
                     return (seqElem, deps);
+                // VariableAccessExpr
                 case SizeofExpr sizeofExpr:
                     var (sizeExpr, sizeDeps) = SimplifyExpression(sizeofExpr.Expr);
                     var (sizeTemp, sizeStore) = SaveInTemporary(new SizeofExpr(location, sizeExpr));
                     deps.AddRange(sizeDeps);
                     deps.Add(sizeStore);
                     return (sizeTemp, deps);
-                case ThisRefExpr thisRefExpr:
-                    return (thisRefExpr, deps);
+                // VariableAccessExpr
                 case TupleAccessExpr tupleAccessExpr:
                     var (tupItemExpr, tupAccessDeps) = SimplifyExpression(tupleAccessExpr.SubExpr);
                     var (tupItemTemp, tupItemStore) =
@@ -209,24 +185,21 @@ namespace Microsoft.Pc.Backend
                     deps.AddRange(tupAccessDeps);
                     deps.Add(tupItemStore);
                     return (tupItemTemp, deps);
+                // VariableAccessExpr
                 case UnaryOpExpr unaryOpExpr:
                     var (unExpr, unDeps) = SimplifyExpression(unaryOpExpr.SubExpr);
                     var (unTemp, unStore) = SaveInTemporary(new UnaryOpExpr(location, unaryOpExpr.Operation, unExpr));
                     deps.AddRange(unDeps);
                     deps.Add(unStore);
                     return (unTemp, deps);
+                // VariableAccessExpr
                 case UnnamedTupleExpr unnamedTupleExpr:
-                    var tupleFields = new IPExpr[unnamedTupleExpr.TupleFields.Length];
-                    for (var i = 0; i < unnamedTupleExpr.TupleFields.Length; i++)
-                    {
-                        var (field, fieldDeps) = SimplifyExpression(unnamedTupleExpr.TupleFields[i]);
-                        tupleFields[i] = field;
-                        deps.AddRange(fieldDeps);
-                    }
-
-                    var (tupVal, tupStore) = SaveInTemporary(new UnnamedTupleExpr(location, tupleFields));
+                    var (tupFields, tupFieldDeps) = SimplifyArgPack(unnamedTupleExpr.TupleFields);
+                    deps.AddRange(tupFieldDeps);
+                    var (tupVal, tupStore) = SaveInTemporary(new UnnamedTupleExpr(location, tupFields));
                     deps.Add(tupStore);
                     return (tupVal, deps);
+                // VariableAccessExpr
                 case ValuesExpr valuesExpr:
                     var (valuesColl, valuesDeps) = SimplifyExpression(valuesExpr.Expr);
                     var (valuesTemp, valuesStore) =
@@ -234,13 +207,10 @@ namespace Microsoft.Pc.Backend
                     deps.AddRange(valuesDeps);
                     deps.Add(valuesStore);
                     return (valuesTemp, deps);
-                case VariableAccessExpr variableAccessExpr:
-                    return (variableAccessExpr, deps);
                 default:
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
         }
-
         private static IPStmt Flatten(IPStmt stmt)
         {
             if (!(stmt is CompoundStmt compound))
@@ -269,12 +239,8 @@ namespace Microsoft.Pc.Backend
             return Flatten(new CompoundStmt(functionBody.SourceLocation, SimplifyStatement(functionBody)));
         }
 
-        private static CloneExpr MakeClone(IPExpr expr)
+        private static CloneExpr MakeClone(IExprTerm expr)
         {
-            if (expr is CloneExpr cloned)
-            {
-                return cloned;
-            }
             return new CloneExpr(expr);
         }
 
@@ -325,28 +291,14 @@ namespace Microsoft.Pc.Backend
                     return ctorArgDeps.
                            Concat(new[]
                                    {
-                                       new CtorStmt(location, ctorStmt.Interface, ctorArgs.Cast<IPExpr>().ToList())
+                                       new CtorStmt(location, ctorStmt.Interface, ctorArgs)
                                    })
                                    .ToList();
                 case FunCallStmt funCallStmt:
-                    var funDeps = new List<IPStmt>();
-                    var newFunArgs = new List<IPExpr>();
-                    foreach (IPExpr funStmtArg in funCallStmt.ArgsList)
-                    {
-                        var (arg, argDeps) = SimplifyExpression(funStmtArg);
-                        funDeps.AddRange(argDeps);
-                        if (!(arg is VariableAccessExpr) && !(arg is LinearAccessRefExpr))
-                        {
-                            var (arg2, argDep) = SaveInTemporary(arg);
-                            funDeps.Add(argDep);
-                            arg = arg2;
-                        }
-                        newFunArgs.Add(arg);
-                    }
-
-                    return funDeps.Concat(new[]
+                    var (funCallArgs, funCallArgDeps) = SimplifyFunArgs(funCallStmt.ArgsList);
+                    return funCallArgDeps.Concat(new[]
                                   {
-                                      new FunCallStmt(location, funCallStmt.Fun, newFunArgs)
+                                      new FunCallStmt(location, funCallStmt.Fun, funCallArgs)
                                   })
                                   .ToList();
                 case GotoStmt gotoStmt:
@@ -421,7 +373,7 @@ namespace Microsoft.Pc.Backend
                                          .Concat(new [] {raiseEventTempDep})
                                          .Concat(new[]
                                          {
-                                             new RaiseStmt(location, raiseEventTmp, raiseArgs.Cast<IPExpr>().ToArray())
+                                             new RaiseStmt(location, raiseEventTmp, raiseArgs)
                                          })
                                          .ToList();
                 case ReceiveStmt receiveStmt:
@@ -505,36 +457,51 @@ namespace Microsoft.Pc.Backend
             }
         }
 
-        private (List<VariableAccessExpr> args, List<IPStmt> deps) SimplifyArgPack(IEnumerable<IPExpr> argsPack)
+        private (IReadOnlyList<IVariableRef> args, List<IPStmt> deps) SimplifyArgPack(IEnumerable<IPExpr> argsPack)
         {
-            var argumentVars = new List<VariableAccessExpr>();
-            var argumentDeps = new List<IPStmt>();
-            foreach (IPExpr pExpr in argsPack)
+            var args = argsPack.ToList();
+            Debug.Assert(!args.Any(arg => arg is LinearAccessRefExpr lin && lin.LinearType.Equals(LinearType.Move)));
+            var (refArgs, deps) = SimplifyFunArgs(args);
+            return (refArgs, deps);
+        }
+
+        private (ILinearRef[], List<IPStmt>) SimplifyFunArgs(IReadOnlyList<IPExpr> funCallArgs)
+        {
+            var funArgs = new ILinearRef[funCallArgs.Count];
+            var deps = new List<IPStmt>();
+            for (var i = 0; i < funCallArgs.Count; i++)
             {
-                switch (pExpr)
+                var (argExpr, argDeps) = SimplifyExpression(funCallArgs[i]);
+                deps.AddRange(argDeps);
+                // My thoughts: if SimplifyExpression returns a temporary, there's no way that came from user code, thus
+                // it must be either an intermediate expression, or an explicit clone of another value. In either case, the
+                // memory there is invisible to the rest of the program and so it can be moved safely. The first case below
+                // is therefore an optimization that assumes this holds. If things go wrong, comment it out and take the extra
+                // allocations as a hit.
+                switch (argExpr)
                 {
-                    case LinearAccessRefExpr moveExpr:
-                        Debug.Assert(moveExpr.LinearType == LinearType.Move);
-                        argumentVars.Add(new VariableAccessExpr(moveExpr.SourceLocation, moveExpr.Variable));
+                    // Move temporaries...
+                    case VariableAccessExpr variableAccessExpr when variableAccessExpr.Variable.Role.HasFlag(VariableRole.Temp):
+                        funArgs[i] = new LinearAccessRefExpr(variableAccessExpr.SourceLocation, variableAccessExpr.Variable, LinearType.Move);
                         break;
-                    case VariableAccessExpr readExpr:
-                        var (arg, clonedDep) = SaveInTemporary(MakeClone(readExpr));
-                        argumentDeps.Add(clonedDep);
-                        argumentVars.Add(arg);
+                    // ...and leave linear accesses alone...
+                    case LinearAccessRefExpr linearAccessRefExpr:
+                        funArgs[i] = linearAccessRefExpr;
                         break;
+                    // ...but clone literals and visible variables/fields.
                     default:
-                        var (simpleArg, argDeps) = SimplifyExpression(pExpr);
-                        var (cloned, clonedDep2) = SaveInTemporary(MakeClone(simpleArg));
-                        argumentDeps.AddRange(argDeps);
-                        argumentDeps.Add(clonedDep2);
-                        argumentVars.Add(cloned);
+                        var (temp, tempDep) = SaveInTemporary(MakeClone(argExpr));
+                        deps.Add(tempDep);
+                        funArgs[i] = new LinearAccessRefExpr(temp.SourceLocation, temp.Variable, LinearType.Move);
                         break;
                 }
             }
-            return (argumentVars, argumentDeps);
-        }
 
-        private IPExpr MakeCast(IPExpr expr, PLanguageType newType)
+            return (funArgs, deps);
+        }
+   
+
+        private static IPExpr MakeCast(IPExpr expr, PLanguageType newType)
         {
             return newType.IsAssignableFrom(expr.Type) ? expr : new CastExpr(expr.SourceLocation, expr, newType);
         }

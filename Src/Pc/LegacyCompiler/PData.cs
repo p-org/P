@@ -91,7 +91,7 @@
         public static readonly AST<Id> Con_MapType = Factory.Instance.MkId("MapType");
         public static readonly AST<Id> Con_NmdTupTypeField = Factory.Instance.MkId("NmdTupTypeField");
 
-        //// Machine declarations
+        //// Value declarations
         public static readonly AST<Id> Con_MachType = Factory.Instance.MkId("MachType");
         public static readonly AST<Id> Con_MachineDecl = Factory.Instance.MkId("MachineDecl");
         public static readonly AST<Id> Con_EventDecl = Factory.Instance.MkId("EventDecl");

@@ -4,7 +4,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
-    public class VariableAccessExpr : IPExpr
+    public class VariableAccessExpr : IVariableRef
     {
         public VariableAccessExpr(ParserRuleContext sourceLocation, Variable variable)
         {

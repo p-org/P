@@ -101,7 +101,7 @@ namespace Microsoft.Pc.TypeChecker
                     return InferCreatesForExpr(containsKeyExpr.Key)
                         .Union(InferCreatesForExpr(containsKeyExpr.Map));
                 case CloneExpr cloneExpr:
-                    return InferCreatesForExpr(cloneExpr.SubExpr);
+                    return InferCreatesForExpr(cloneExpr.Term);
                 case CtorExpr ctorExpr:
                     var res = new []{ctorExpr.Interface};
                     return res.Union(ctorExpr.Arguments.SelectMany(InferCreatesForExpr));

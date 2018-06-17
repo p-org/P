@@ -256,7 +256,8 @@ namespace UnitTests
         [Test]
         public void TestTemp()
         {
-            string path = Path.Combine(Constants.TestDirectory, "RegressionTests", "Integration", "Correct", "SEM_TwoMachines_7", "RaisedHalt_bugFound.p");
+            //string path = Path.Combine(Constants.TestDirectory, "RegressionTests", "Integration", "Correct", "SEM_TwoMachines_7", "RaisedHalt_bugFound.p");
+            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
             FileInfo[] inputFiles = {new FileInfo(path)};
             bool result = ExecuteTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));

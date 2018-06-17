@@ -176,8 +176,8 @@ namespace P.Runtime
 
             CreateMachineCallback?.Invoke(machine);
 
-            //TraceLine("<CreateLog> Machine {0}-{1} was created by machine {2}-{3}", currMach.renamedName, currMach.instanceNumber, machine.renamedName, machine.instanceNumber);
-            TraceLine("<CreateLog> Machine {0}-{1} was created by machine {2}-{3}", machine.renamedName, machine.instanceNumber, currMach.renamedName, currMach.instanceNumber);
+            //TraceLine("<CreateLog> Value {0}-{1} was created by machine {2}-{3}", currMach.renamedName, currMach.instanceNumber, machine.renamedName, machine.instanceNumber);
+            TraceLine("<CreateLog> Value {0}-{1} was created by machine {2}-{3}", machine.renamedName, machine.instanceNumber, currMach.renamedName, currMach.instanceNumber);
 
             if (interfaceMap.ContainsKey(interfaceOrMachineName))
             {
@@ -208,7 +208,7 @@ namespace P.Runtime
 
         public void CreateSpecMachine(string renamedSpecName)
         {
-            TraceLine("<CreateLog> Spec Machine {0} was created by machine Runtime", renamedSpecName);
+            TraceLine("<CreateLog> Spec Value {0} was created by machine Runtime", renamedSpecName);
             var impSpecMachine = machineDefMap[renamedSpecName];
             var machine = createSpecMap[impSpecMachine](this);
             machine.isSafe = isSafeMap[renamedSpecName];
@@ -246,7 +246,7 @@ namespace P.Runtime
             {
                 if (mon.observes.Contains(ev))
                 {
-                    TraceLine("<AnnounceLog> Enqueued Event <{0}, {1}> to Spec Machine {2}", ev, payload, mon.Name);
+                    TraceLine("<AnnounceLog> Enqueued Event <{0}, {1}> to Spec Value {2}", ev, payload, mon.Name);
                     mon.PrtEnqueueEvent(ev, payload, parent);
                 }
             }

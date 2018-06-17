@@ -3,7 +3,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
-    public class FloatLiteralExpr : IPExpr
+    public class FloatLiteralExpr : IStaticTerm<double>
     {
         public FloatLiteralExpr(ParserRuleContext sourceLocation, double value)
         {

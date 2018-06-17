@@ -446,7 +446,7 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteParts("(", containsKeyExpr.Key, ") in (", containsKeyExpr.Map, ")");
                     break;
                 case CloneExpr cloneExpr:
-                    WriteParts("$Clone(", cloneExpr.SubExpr, ")");
+                    WriteParts("$Clone(", cloneExpr.Term, ")");
                     break;
                 case CtorExpr ctorExpr:
                     WriteParts("new ", ctorExpr.Interface, "(", ctorExpr.Arguments, ")");
@@ -455,10 +455,10 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteParts("default(", defaultExpr.Type, ")");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
-                    WriteParts(enumElemRefExpr.EnumElem);
+                    WriteParts(enumElemRefExpr.Value);
                     break;
                 case EventRefExpr eventRefExpr:
-                    WriteParts(eventRefExpr.PEvent);
+                    WriteParts(eventRefExpr.Value);
                     break;
                 case FairNondetExpr _:
                     WriteParts("$$");

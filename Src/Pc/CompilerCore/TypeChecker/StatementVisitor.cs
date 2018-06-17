@@ -328,7 +328,7 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             if (evtExpr is EventRefExpr eventRef)
             {
-                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
+                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
             }
 
             return new RaiseStmt(context, evtExpr, args);
@@ -363,7 +363,7 @@ namespace Microsoft.Pc.TypeChecker
 
             if (evtExpr is EventRefExpr eventRef)
             {
-                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
+                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
             }
 
             return new SendStmt(context, machineExpr, evtExpr, args);
@@ -371,7 +371,7 @@ namespace Microsoft.Pc.TypeChecker
 
         private static bool IsDefinitelyNullEvent(IPExpr evtExpr)
         {
-            return evtExpr is NullLiteralExpr || evtExpr is EventRefExpr evtRef && evtRef.PEvent.Name.Equals("null");
+            return evtExpr is NullLiteralExpr || evtExpr is EventRefExpr evtRef && evtRef.Value.Name.Equals("null");
         }
 
         public override IPStmt VisitAnnounceStmt(PParser.AnnounceStmtContext context)

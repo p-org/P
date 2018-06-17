@@ -339,7 +339,7 @@ namespace Microsoft.Pc
                 var constructor_1 = generator.ConstructorDeclaration(machineName, null, Accessibility.Public, baseConstructorArguments: new SyntaxNode[0]);
                 machineMembers.Add(constructor_1);
 
-                //Machine class constructor
+                //Value class constructor
                 //public PONG(StateImpl app, int maxB, bool assume): base (app, maxB, assume)
                 List<SyntaxNode> constructorStmtList = new List<SyntaxNode>();
                 foreach (var varInfo in machineInfo.localVariableToVarInfo.Values)
@@ -645,7 +645,7 @@ namespace Microsoft.Pc
                 }
 
                 //Constructor for the machine class:
-                //static Machine()
+                //static Value()
                 var mainConstructor =
                     SyntaxFactory.ConstructorDeclaration(
                             SyntaxFactory.Identifier(machineName))

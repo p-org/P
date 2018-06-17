@@ -357,7 +357,7 @@ namespace Microsoft.Pc
             // log
             /*fields.Add(
                 CSharpHelper.MkCSharpTrace(
-                    $"<CreateLog> Created Machine {machineName}-{{0}}",
+                    $"<CreateLog> Created Value {machineName}-{{0}}",
                     CSharpHelper.MkCSharpDot("machine", "instanceNumber")));*/
 
             //initialize the permission set for self
@@ -433,7 +433,7 @@ namespace Microsoft.Pc
                         new List<SyntaxNode> {generator.IdentifierName("application")})));
 
             //log
-            //fields.Add(CSharpHelper.MkCSharpTrace($"<CreateLog> Created spec Machine {machineName}"));
+            //fields.Add(CSharpHelper.MkCSharpTrace($"<CreateLog> Created spec Value {machineName}"));
 
             fields.AddRange(allMachines[machineName].observesEvents.Select(x => CSharpHelper.MkCSharpInvocationExpression(CSharpHelper.MkCSharpDot("machine", "observes", "Add"), GetEventVar(x))));
 

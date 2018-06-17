@@ -147,7 +147,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public Exception MissingStartState(Machine machine)
         {
-            return IssueError(machine.SourceLocation, $"Machine {machine.Name} has no start state");
+            return IssueError(machine.SourceLocation, $"Value {machine.Name} has no start state");
         }
 
         public Exception ChangedStateMidTransition(ParserRuleContext location, Function method)

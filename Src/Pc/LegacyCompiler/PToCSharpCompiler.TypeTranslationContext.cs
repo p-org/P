@@ -118,7 +118,7 @@ namespace Microsoft.Pc
 
                     Debug.Assert(
                         primitiveType == "Any" || primitiveType == "Null" || primitiveType == "Bool" || primitiveType == "Int" || primitiveType == "Float"
-                        || primitiveType == "Event" || primitiveType == "Machine",
+                        || primitiveType == "Event" || primitiveType == "Value",
                         $"Illegal BaseType: {primitiveType}");
 
                     if (primitiveType != "Any")

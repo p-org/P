@@ -45,10 +45,16 @@ namespace Microsoft.Pc
                 Scope scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
 
                 // Convert functions to lowered SSA form with explicit cloning
-                foreach (var fun in TopLevelFunctions(scope).ToList())
+                var allFunctions = TopLevelFunctions(scope).ToList();
+                foreach (var fun in allFunctions)
                 {
                     IRTransformer.SimplifyMethod(fun);
                 }
+
+#if DEBUG
+                // Validate linear type ownership after IR lowering.
+                LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
+#endif
 
                 Console.WriteLine(IrToPseudoP.Dump(scope));
 

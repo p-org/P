@@ -3,7 +3,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
-    public class DefaultExpr : IPExpr
+    public class DefaultExpr : IStaticTerm
     {
         public DefaultExpr(ParserRuleContext sourceLocation, PLanguageType type)
         {

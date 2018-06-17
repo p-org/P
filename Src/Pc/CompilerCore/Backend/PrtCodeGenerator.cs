@@ -212,7 +212,7 @@ namespace Microsoft.Pc.Backend
             return maps;
         }
 
-        private IEnumerable<Function> AllMethods(Scope scope)
+        private static IEnumerable<Function> AllMethods(Scope scope)
         {
             // TODO: There are like six copies of this function.
             foreach (Function function in scope.Functions)
@@ -657,6 +657,7 @@ namespace Microsoft.Pc.Backend
             switch (stmt)
             {
                 case AnnounceStmt announceStmt:
+                    // TODO: Ankush needs to implement this in Prt
                     break;
                 case AssertStmt assertStmt:
                     context.Write(output, "PrtAssert(PrtPrimGetBool(");
@@ -745,8 +746,34 @@ namespace Microsoft.Pc.Backend
 
                     break;
                 case InsertStmt insertStmt:
+                    context.Write(output, "PrtSeqInsertEx(");
+                    WriteExpr(context, function, insertStmt.Variable, output);
+                    context.Write(output, ", ");
+                    WriteExpr(context, function, insertStmt.Index, output);
+                    context.Write(output, ", ");
+                    Debug.Assert(insertStmt.Value is IVariableRef);
+                    WriteExpr(context, function, insertStmt.Value, output);
+                    context.WriteLine(output, ", PRT_FALSE);");
+                    var insertValueVar = ((IVariableRef) insertStmt.Value).Variable;
+                    context.WriteLine(output, $"{GetPrtNameForDecl(context, insertValueVar)} = NULL;");
                     break;
                 case MoveAssignStmt moveAssignStmt:
+                    context.WriteLine(output, "{");
+                    string movedVarName = GetPrtNameForDecl(context, moveAssignStmt.FromVariable);
+
+                    // Free old value
+                    context.Write(output, $"PrtFreeValue(");
+                    WriteExpr(context, function, moveAssignStmt.ToLocation, output);
+                    context.WriteLine(output, ");");
+
+                    // Move variable to lvalue location
+                    WriteExpr(context, function, moveAssignStmt.ToLocation, output);
+                    context.WriteLine(output, $" = {movedVarName};");
+
+                    // Null out old variable
+                    context.WriteLine(output, $"{movedVarName} = NULL;");
+
+                    context.WriteLine(output, "}");
                     break;
                 case NoStmt _:
                     return;
@@ -810,9 +837,25 @@ namespace Microsoft.Pc.Backend
                     context.WriteLine(output, $"{GetPrtNameForDecl(context, sendEventVar.Variable)} = NULL;");
                     break;
                 case SwapAssignStmt swapAssignStmt:
+                    context.WriteLine(output, "{");
+                    string tmpName = context.Names.GetTemporaryName("SWAP");
+                    string swappedName = GetPrtNameForDecl(context, swapAssignStmt.OldLocation);
+
+                    // Save l-value
+                    context.Write(output, $"PRT_VALUE* {tmpName} = ");
+                    WriteExpr(context, function, swapAssignStmt.NewLocation, output);
+                    context.WriteLine(output, ";");
+                    
+                    // Overwrite l-value with var
+                    WriteExpr(context, function, swapAssignStmt.NewLocation, output);
+                    context.WriteLine(output, $" = {swappedName};");
+
+                    // Complete the swap
+                    context.WriteLine(output, $"{swappedName} = {tmpName};");
+                    context.WriteLine(output, "}");
                     break;
                 case WhileStmt whileStmt:
-                    context.Write(output, "while (PrtPrimGetBool(");
+                     context.Write(output, "while (PrtPrimGetBool(");
                     WriteExpr(context, function, whileStmt.Condition, output);
                     context.WriteLine(output, "))");
                     WriteStmt(context, function, whileStmt.Body, output);
@@ -975,6 +1018,10 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, $"(&{boolLiteralName})");
                     break;
                 case CastExpr castExpr:
+                    string castTypeName = context.Names.GetNameForType(castExpr.Type);
+                    context.Write(output, "PrtCastValue(");
+                    WriteExpr(context, function, castExpr.SubExpr, output);
+                    context.Write(output, $", &{castTypeName})");
                     break;
                 case CoerceExpr coerceExpr:
                     string coerceCtor;
@@ -1055,6 +1102,8 @@ namespace Microsoft.Pc.Backend
                 case KeysExpr keysExpr:
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
+                    // TODO: what's special about linear refs here?
+                    WriteVariableAccess(context, function, output, linearAccessRefExpr.Variable);
                     break;
                 case MapAccessExpr mapAccessExpr:
                     break;
@@ -1079,8 +1128,8 @@ namespace Microsoft.Pc.Backend
                     break;
                 case SizeofExpr sizeofExpr:
                     break;
-                case ThisRefExpr thisRefExpr:
-                    context.Write(output, "p_this->id");
+                case ThisRefExpr _:
+                    context.Write(output, "(p_this->id)");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, "PrtTupleGet(");
@@ -1107,28 +1156,32 @@ namespace Microsoft.Pc.Backend
                 case ValuesExpr valuesExpr:
                     break;
                 case VariableAccessExpr variableAccessExpr:
-                    VariableRole variableRole = variableAccessExpr.Variable.Role;
-
-                    if (variableRole.HasFlag(VariableRole.Param))
-                    {
-                        // dereference, since params are passed by reference.
-                        context.Write(output, "*");
-                        context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
-                    }
-
-                    if (variableRole.HasFlag(VariableRole.Field))
-                    {
-                        // TODO: is this always correct? I think the iterator ordering of a List should be consistent...
-                        var varIdx = function.Owner.Fields.ToList().IndexOf(variableAccessExpr.Variable);
-                        context.Write(output, $"p_this->varValues[{varIdx}]");
-                    }
-
-                    if (variableRole.HasFlag(VariableRole.Temp) || variableRole.HasFlag(VariableRole.Local))
-                    {
-                        context.Write(output, GetPrtNameForDecl(context, variableAccessExpr.Variable));
-                    }
-
+                    WriteVariableAccess(context, function, output, variableAccessExpr.Variable);
                     break;
+            }
+        }
+
+        private static void WriteVariableAccess(CompilationContext context, Function function, TextWriter output, Variable variable)
+        {
+            if (variable.Role.HasFlag(VariableRole.Param))
+            {
+                // dereference, since params are passed by reference.
+                context.Write(output, "*");
+                context.Write(output, GetPrtNameForDecl(context, variable));
+            }
+            else if (variable.Role.HasFlag(VariableRole.Field))
+            {
+                // TODO: is this always correct? I think the iterator ordering of a List should be consistent...
+                var varIdx = function.Owner.Fields.ToList().IndexOf(variable);
+                context.Write(output, $"p_this->varValues[{varIdx}]");
+            }
+            else if (variable.Role.HasFlag(VariableRole.Temp) || variable.Role.HasFlag(VariableRole.Local))
+            {
+                context.Write(output, GetPrtNameForDecl(context, variable));
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException(nameof(variable));
             }
         }
 
@@ -1272,6 +1325,9 @@ namespace Microsoft.Pc.Backend
                     break;
                 case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Event):
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_EVENT, {{ NULL }} }};");
+                    break;
+                case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Any):
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_ANY, {{ NULL }} }};");
                     break;
                 case PrimitiveType primitiveType:
                     context.WriteLine(output, $"// TODO: implement types like {primitiveType.CanonicalRepresentation}");

@@ -45,6 +45,7 @@ namespace Microsoft.Pc.Backend
 
         private (IPExpr, List<IPStmt>) SimplifyLvalue(IPExpr expr)
         {
+            // TODO: I am suspicious.
             ParserRuleContext location = expr.SourceLocation;
             PLanguageType type = expr.Type;
             switch (expr)
@@ -327,22 +328,20 @@ namespace Microsoft.Pc.Backend
                 case InsertStmt insertStmt:
                     var (insVar, insVarDeps) = SimplifyLvalue(insertStmt.Variable);
                     var (insIdx, insIdxDeps) = SimplifyExpression(insertStmt.Index);
-                    var (insVal, insValDeps) = SimplifyExpression(insertStmt.Value);
+                    var (insVal, insValDeps) = SimplifyArgPack(new [] {insertStmt.Value});
+                    Debug.Assert(insVal.Count == 1);
                     return insVarDeps.Concat(insIdxDeps)
                                      .Concat(insValDeps)
                                      .Concat(new[]
                                      {
-                                         new InsertStmt(location, insVar, insIdx, insVal)
+                                         new InsertStmt(location, insVar, insIdx, insVal[0])
                                      })
                                      .ToList();
                 case MoveAssignStmt moveAssignStmt:
                     var (moveDest, moveDestDeps) = SimplifyLvalue(moveAssignStmt.ToLocation);
                     return moveDestDeps.Concat(new[]
                                        {
-                                           new AssignStmt(location,
-                                                              moveDest,
-                                                              new VariableAccessExpr(moveAssignStmt.SourceLocation,
-                                                                                     moveAssignStmt.FromVariable))
+                                           new MoveAssignStmt(moveAssignStmt.SourceLocation, moveDest, moveAssignStmt.FromVariable)
                                        })
                                        .ToList();
                 case NoStmt _:
@@ -427,17 +426,10 @@ namespace Microsoft.Pc.Backend
                            .ToList();
                 case SwapAssignStmt swapAssignStmt:
                     var (swapVar, swapVarDeps) = SimplifyLvalue(swapAssignStmt.NewLocation);
-                    var (swapTmp, tmpAssn) = SaveInTemporary(swapVar, PrimitiveType.Any);
                     Variable rhs = swapAssignStmt.OldLocation;
                     return swapVarDeps.Concat(new[]
                                       {
-                                          tmpAssn,
-                                          new AssignStmt(location,
-                                                         swapVar,
-                                                         MakeCast(new VariableAccessExpr(location, rhs), swapVar.Type)),
-                                          new AssignStmt(location,
-                                                         new VariableAccessExpr(location, rhs),
-                                                         MakeCast(swapTmp, rhs.Type))
+                                          new SwapAssignStmt(swapAssignStmt.SourceLocation, swapVar, rhs), 
                                       })
                                       .ToList();
                 case WhileStmt whileStmt:

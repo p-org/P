@@ -10,6 +10,8 @@ using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.AST.Statements;
 using Microsoft.Pc.TypeChecker.Types;
 
+// TODO: Make sure that compound statements are never nested and that block statement bodies (if, while, functions) are always compound statements
+
 namespace Microsoft.Pc.Backend
 {
     public class IRTransformer

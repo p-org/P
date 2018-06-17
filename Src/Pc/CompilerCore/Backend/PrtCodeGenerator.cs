@@ -101,7 +101,7 @@ namespace Microsoft.Pc.Backend
             return new List<CompiledFile> {cHeader, cSource};
         }
 
-        private IList<T> ToOrderedListByPermutation<T>(IEnumerable<T> enumerable, Func<T, int> perm)
+        private static IList<T> ToOrderedListByPermutation<T>(IEnumerable<T> enumerable, Func<T, int> perm)
         {
             var items = enumerable.ToList();
             IList<T> inOrder = new T[items.Count];
@@ -112,7 +112,7 @@ namespace Microsoft.Pc.Backend
             return inOrder;
         }
 
-        private void WriteProgramDecl(CompilationContext context, Scope globalScope, TextWriter output)
+        private static void WriteProgramDecl(CompilationContext context, Scope globalScope, TextWriter output)
         {
             // generate event array
             var eventsList = globalScope.Events.Where(e => !e.IsBuiltIn);
@@ -214,6 +214,7 @@ namespace Microsoft.Pc.Backend
 
         private IEnumerable<Function> AllMethods(Scope scope)
         {
+            // TODO: There are like six copies of this function.
             foreach (Function function in scope.Functions)
             {
                 yield return function;
@@ -1058,8 +1059,15 @@ namespace Microsoft.Pc.Backend
                 case MapAccessExpr mapAccessExpr:
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
+                    context.Write(output, "PrtTupleGet(");
+                    WriteExpr(context, function, namedTupleAccessExpr.SubExpr, output);
+                    context.Write(output, $", {namedTupleAccessExpr.Entry.FieldNo})");
                     break;
                 case NamedTupleExpr namedTupleExpr:
+                    var ntArgs = (IReadOnlyList<IVariableRef>)namedTupleExpr.TupleFields;
+                    var ntTypeName = context.Names.GetNameForType(namedTupleExpr.Type);
+                    var namedTupleBody = string.Join(", ", ntArgs.Select(v => $"&{GetPrtNameForDecl(context, v.Variable)}"));
+                    context.Write(output, $"(PrtMkTuple(&{ntTypeName}, {namedTupleBody}))");
                     break;
                 case NondetExpr _:
                     context.Write(output, "(PrtMkNondetBoolValue())");

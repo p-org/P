@@ -198,15 +198,10 @@ namespace Microsoft.Pc.Backend
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
         }
-        private static IPStmt Flatten(IPStmt stmt)
+        private static CompoundStmt Flatten(CompoundStmt stmt)
         {
-            if (!(stmt is CompoundStmt compound))
-            {
-                return stmt;
-            }
-
             var newBody = new List<IPStmt>();
-            foreach (IPStmt innerStmt in compound.Statements)
+            foreach (IPStmt innerStmt in stmt.Statements)
             {
                 if (innerStmt is CompoundStmt nested)
                 {
@@ -218,10 +213,10 @@ namespace Microsoft.Pc.Backend
                 }
             }
 
-            return new CompoundStmt(compound.SourceLocation, newBody);
+            return new CompoundStmt(stmt.SourceLocation, newBody);
         }
 
-        private IPStmt SimplifyFunctionBody(IPStmt functionBody)
+        private CompoundStmt SimplifyFunctionBody(CompoundStmt functionBody)
         {
             return Flatten(new CompoundStmt(functionBody.SourceLocation, SimplifyStatement(functionBody)));
         }

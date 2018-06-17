@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
+using Microsoft.Pc.TypeChecker.AST.Statements;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
@@ -39,7 +40,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public IEnumerable<Variable> LocalVariables => localVariables;
         public FunctionRole Role { get; set; }
 
-        public IPStmt Body { get; set; }
+        public CompoundStmt Body { get; set; }
         public Scope Scope { get; set; }
 
         public string Name { get; }

@@ -613,7 +613,7 @@ namespace Microsoft.Pc.Backend.Prt
             {
                 string varName = PrtTranslationUtils.GetPrtNameForDecl(context, localVariable);
                 string varTypeName = context.Names.GetNameForType(localVariable.Type);
-                // TODO: optimize away PrtMkDefaultValue if dataflow shows no usages before assignments.
+                // TODO: optimize away PrtMkDefaultValue if liveness shows no usages before assignments.
                 context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
             }
 
@@ -633,21 +633,13 @@ namespace Microsoft.Pc.Backend.Prt
 
             context.WriteLine(output);
 
+            // Write the body into a temporary buffer so that forward declarations can be found and added
             var bodyWriter = new StringWriter();
-
-            // skip unnecessary nesting level.
-            if (function.Body is CompoundStmt body)
+            foreach (IPStmt stmt in function.Body.Statements)
             {
-                foreach (IPStmt stmt in body.Statements)
-                {
-                    WriteStmt(context, function, stmt, bodyWriter);
-                }
+                WriteStmt(context, function, stmt, bodyWriter);
             }
-            else
-            {
-                WriteStmt(context, function, function.Body, bodyWriter);
-            }
-
+            
             bodyWriter.WriteLine("p_return:");
             foreach (Variable localVariable in function.LocalVariables)
             {
@@ -717,8 +709,8 @@ namespace Microsoft.Pc.Backend.Prt
                         output, $"PrtMkInterface(context, {context.GetNumberForInterface(ctorStmt.Interface)}, {ctorStmt.Arguments.Count}");
                     foreach (IPExpr pExpr in ctorStmt.Arguments)
                     {
-                        Debug.Assert(pExpr is VariableAccessExpr);
-                        var argVar = (VariableAccessExpr) pExpr;
+                        Debug.Assert(pExpr is IVariableRef);
+                        var argVar = (IVariableRef) pExpr;
                         context.Write(output, $", &{PrtTranslationUtils.GetPrtNameForDecl(context, argVar.Variable)}");
                     }
 
@@ -753,8 +745,8 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"PrtGoto(context, {destStateIndex}U, ");
                     if (gotoStmt.Payload != null)
                     {
-                        Debug.Assert(gotoStmt.Payload is VariableAccessExpr);
-                        var gotoArg = (VariableAccessExpr) gotoStmt.Payload;
+                        Debug.Assert(gotoStmt.Payload is IVariableRef);
+                        var gotoArg = (IVariableRef) gotoStmt.Payload;
                         context.Write(output, $"1, &{PrtTranslationUtils.GetPrtNameForDecl(context, gotoArg.Variable)}");
                     }
                     else
@@ -823,15 +815,15 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, $", {raiseStmt.Payload.Count}");
                     foreach (IPExpr pExpr in raiseStmt.Payload)
                     {
-                        Debug.Assert(pExpr is VariableAccessExpr);
-                        var argVar = (VariableAccessExpr) pExpr;
+                        Debug.Assert(pExpr is IVariableRef);
+                        var argVar = (IVariableRef) pExpr;
                         context.Write(output, $", &{PrtTranslationUtils.GetPrtNameForDecl(context, argVar.Variable)}");
                     }
 
                     context.WriteLine(output, ");");
 
-                    Debug.Assert(raiseStmt.PEvent is VariableAccessExpr);
-                    var raiseEventVar = (VariableAccessExpr) raiseStmt.PEvent;
+                    Debug.Assert(raiseStmt.PEvent is IVariableRef);
+                    var raiseEventVar = (IVariableRef) raiseStmt.PEvent;
                     context.WriteLine(output, $"{PrtTranslationUtils.GetPrtNameForDecl(context, raiseEventVar.Variable)} = NULL;");
                     context.WriteLine(output, "goto p_return;");
                     break;
@@ -865,8 +857,8 @@ namespace Microsoft.Pc.Backend.Prt
 
                     context.WriteLine(output, ");");
 
-                    Debug.Assert(sendStmt.Evt is VariableAccessExpr);
-                    var sendEventVar = (VariableAccessExpr) sendStmt.Evt;
+                    Debug.Assert(sendStmt.Evt is IVariableRef);
+                    var sendEventVar = (IVariableRef) sendStmt.Evt;
                     context.WriteLine(output, $"{PrtTranslationUtils.GetPrtNameForDecl(context, sendEventVar.Variable)} = NULL;");
                     break;
                 case SwapAssignStmt swapAssignStmt:
@@ -1034,8 +1026,8 @@ namespace Microsoft.Pc.Backend.Prt
                         $"PrtCloneValue(PrtMkInterface(context, {context.GetNumberForInterface(ctorExpr.Interface)}, {ctorExpr.Arguments.Count}");
                     foreach (IPExpr pExpr in ctorExpr.Arguments)
                     {
-                        Debug.Assert(pExpr is VariableAccessExpr);
-                        var argVar = (VariableAccessExpr) pExpr;
+                        Debug.Assert(pExpr is IVariableRef);
+                        var argVar = (IVariableRef) pExpr;
                         context.Write(output, $", &{PrtTranslationUtils.GetPrtNameForDecl(context, argVar.Variable)}");
                     }
 

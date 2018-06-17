@@ -29,7 +29,6 @@
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.VisualBasic.Workspaces" Version="1.1.0" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" Version="1.1.0" />
-    <PackageReference Include="Microsoft.Composition" Version="1.0.27" />
 
     <PackageReference Include="Formula.Core" Version="1.0.0" />
     <!-- <PackageReference Include="Formula.FormulaCodeGeneratorTask" Version="1.0.0" /> -->
@@ -90,7 +89,7 @@
   -->
   
   <ItemGroup>
-    <FormulaFiles Include="Domains\*.4ml"/>
+    <FormulaFiles Include="Domains\*.4ml" />
   </ItemGroup>
 
   <Target Name="CopyFormula" AfterTargets="PostBuildEvent">

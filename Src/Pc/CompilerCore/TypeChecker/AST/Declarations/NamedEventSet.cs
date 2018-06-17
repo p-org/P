@@ -76,6 +76,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
                          sourceNode is PParser.EventSetLiteralContext ||
                          sourceNode is PParser.InterfaceDeclContext ||
                          sourceNode is PParser.ImplMachineDeclContext ||
+                         sourceNode is PParser.SpecMachineDeclContext ||
                          sourceNode is PParser.StateDeclContext);
             Name = name;
             SourceLocation = sourceNode;

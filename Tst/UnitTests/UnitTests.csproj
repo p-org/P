@@ -14,7 +14,7 @@
     <PackageReference Include="Microsoft.Build.Framework" Version="15.6.85" />
     <PackageReference Include="NUnit" Version="3.10.1" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Src\Pc\CompilerCore\CompilerCore.csproj" />

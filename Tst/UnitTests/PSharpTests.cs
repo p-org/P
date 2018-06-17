@@ -15,8 +15,8 @@ namespace UnitTests
 {
     public class PrtTestRunner
     {
-        private readonly List<FileInfo> sources;
         private readonly DirectoryInfo prtTestProjDirectory;
+        private readonly List<FileInfo> sources;
 
         public PrtTestRunner(List<FileInfo> sources)
         {
@@ -60,7 +60,7 @@ namespace UnitTests
         private static bool RunMSBuildExe(string tmpDir, out string output)
         {
             const string msbuildpath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe";
-            var exitStatus = ProcessHelper.RunWithOutput(
+            int exitStatus = ProcessHelper.RunWithOutput(
                 msbuildpath,
                 tmpDir,
                 new[] {$"/p:Configuration={Constants.BuildConfiguration}", $"/p:Platform={Constants.Platform}", "/t:Build"},
@@ -74,19 +74,18 @@ namespace UnitTests
         private static bool RunMSBuild(string tmpDir, out string output)
         {
             var pc = new ProjectCollection();
-            
+
             var properties = new Dictionary<string, string>
             {
                 {"Configuration", Constants.BuildConfiguration},
                 {"Platform", Constants.Platform}
             };
 
-            var projectFullPath = Path.Combine(tmpDir, Constants.CTesterVsProjectName);
+            string projectFullPath = Path.Combine(tmpDir, Constants.CTesterVsProjectName);
             var build = new BuildRequestData(projectFullPath, properties, null, new[] {"Build"}, null);
             var buildParameters = new BuildParameters(pc)
             {
-                Loggers = new []{new ConsoleLogger(LoggerVerbosity.Diagnostic), },
-                
+                Loggers = new[] {new ConsoleLogger(LoggerVerbosity.Diagnostic)}
             };
             BuildResult result = BuildManager.DefaultBuildManager.Build(buildParameters, build);
             output = result.Exception?.Message ?? "";
@@ -119,12 +118,12 @@ namespace UnitTests
         private readonly DirectoryInfo outputDirectory;
         private readonly List<FileInfo> outputFiles = new List<FileInfo>();
 
-        public IEnumerable<FileInfo> OutputFiles => outputFiles;
-
         public TestCompilerStream(DirectoryInfo outputDirectory)
         {
             this.outputDirectory = outputDirectory;
         }
+
+        public IEnumerable<FileInfo> OutputFiles => outputFiles;
 
         public void WriteMessage(string msg, SeverityKind severity)
         {
@@ -177,7 +176,7 @@ namespace UnitTests
             }
 
             var runner = new PrtTestRunner(outputStream.OutputFiles.ToList());
-            int? result = runner.RunTest(Enumerable.Empty<string>(), out string stdout, out string stderr);
+            var result = runner.RunTest(Enumerable.Empty<string>(), out string stdout, out string stderr);
             output = $"{stdout}\n{stderr}\nEXIT: {result}";
             return result != null;
         }
@@ -254,12 +253,12 @@ namespace UnitTests
         }
 
         [Test]
-        public void TestTemp()
+        public void TestModuleSystem()
         {
-            //string path = Path.Combine(Constants.TestDirectory, "RegressionTests", "Integration", "Correct", "SEM_TwoMachines_7", "RaisedHalt_bugFound.p");
-            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
+            string path = Path.Combine(Constants.SolutionDirectory, "Tst", "RegressionTests", "Feature5ModuleSystem", "Correct", "Elevator",
+                                       "Elevator.p");
             FileInfo[] inputFiles = {new FileInfo(path)};
-            bool result = ExecuteTest(out string output, inputFiles);
+            bool result = TestCompile(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
             if (!result)
             {
@@ -270,11 +269,12 @@ namespace UnitTests
         }
 
         [Test]
-        public void TestModuleSystem()
+        public void TestTemp()
         {
-            string path = Path.Combine(Constants.SolutionDirectory, @"Tst\RegressionTests\Feature5ModuleSystem\Correct\Elevator", "Elevator.p");
-            FileInfo[] inputFiles = { new FileInfo(path) };
-            bool result = TestCompile(out string output, inputFiles);
+            //string path = Path.Combine(Constants.TestDirectory, "RegressionTests", "Integration", "Correct", "SEM_TwoMachines_7", "RaisedHalt_bugFound.p");
+            string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
+            FileInfo[] inputFiles = {new FileInfo(path)};
+            bool result = ExecuteTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
             if (!result)
             {

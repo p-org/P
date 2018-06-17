@@ -460,7 +460,7 @@ namespace Microsoft.Pc.Backend
         private (IReadOnlyList<IVariableRef> args, List<IPStmt> deps) SimplifyArgPack(IEnumerable<IPExpr> argsPack)
         {
             var args = argsPack.ToList();
-            Debug.Assert(!args.Any(arg => arg is LinearAccessRefExpr lin && lin.LinearType.Equals(LinearType.Move)));
+            Debug.Assert(!args.Any(arg => arg is LinearAccessRefExpr lin && lin.LinearType.Equals(LinearType.Swap)));
             var (refArgs, deps) = SimplifyFunArgs(args);
             return (refArgs, deps);
         }

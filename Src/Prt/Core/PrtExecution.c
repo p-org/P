@@ -441,6 +441,23 @@ PRT_VALUE *MakeTupleFromArray(_In_ PRT_TYPE *tupleType, _In_ PRT_VALUE **elems)
 	return payload;
 }
 
+PRT_VALUE *PrtMkTuple(_In_ PRT_TYPE *tupleType, ...)
+{
+	PRT_UINT32 arity = tupleType->typeUnion.tuple->arity;
+	PRT_VALUE *tup = PrtMkDefaultValue(tupleType);
+
+	va_list argp;
+	va_start(argp, tupleType);
+	for (PRT_UINT32 i = 0; i < arity; i++) {
+		PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
+		PrtTupleSetEx(tup, i, *argPtr, PRT_FALSE);
+		*argPtr = NULL;
+	}
+	va_end(argp);
+
+	return tup;
+}
+
 void
 PrtGoto(
 	_Inout_ PRT_MACHINEINST_PRIV		*context,

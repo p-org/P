@@ -425,9 +425,15 @@ extern "C"{
 		_In_ PRT_BOOLEAN cloneValue
 		);
 
-	PRT_VALUE *MakeTupleFromArray(
+	PRT_API PRT_VALUE* PRT_CALL_CONV MakeTupleFromArray(
 		_In_ PRT_TYPE *tupleType, 
 		_In_ PRT_VALUE **elems
+		);
+
+	PRT_API PRT_VALUE* PRT_CALL_CONV
+	    PrtMkTuple(
+			_In_ PRT_TYPE *tupleType, 
+			...
 		);
 	
 	void

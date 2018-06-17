@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.Mime;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.RegularExpressions;
 using Microsoft.Pc.Backend.ASTExt;
@@ -1093,6 +1091,10 @@ namespace Microsoft.Pc.Backend
                     context.Write(output, ")");
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
+                    var utArgs = (IReadOnlyList<IVariableRef>)unnamedTupleExpr.TupleFields;
+                    var utTypeName = context.Names.GetNameForType(unnamedTupleExpr.Type);
+                    var tupleBody = string.Join(", ", utArgs.Select(v => $"&{GetPrtNameForDecl(context, v.Variable)}"));
+                    context.Write(output, $"(PrtMkTuple(&{utTypeName}, {tupleBody}))");
                     break;
                 case ValuesExpr valuesExpr:
                     break;

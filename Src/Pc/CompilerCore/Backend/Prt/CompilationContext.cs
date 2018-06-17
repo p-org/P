@@ -1,12 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend.Prt
 {
-    internal class CompilationContext
+    public class CompilationContext
     {
         private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
         private readonly Dictionary<Machine, int> machineNumbering = new Dictionary<Machine, int>();
@@ -17,9 +18,10 @@ namespace Microsoft.Pc.Backend.Prt
         private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering = new Dictionary<Machine, Dictionary<State, int>>();
         private bool lineHasBeenIndented;
 
-        public CompilationContext(string projectName)
+        public CompilationContext(ITranslationErrorHandler handler, string projectName)
         {
             ProjectName = projectName;
+            Handler = handler;
             HeaderFileName = $"{projectName}.h";
             SourceFileName = $"{projectName}.c";
             Names = new NameManager($"P_{projectName.ToUpperInvariant()}_");
@@ -29,6 +31,7 @@ namespace Microsoft.Pc.Backend.Prt
         }
 
         public string ProjectName { get; }
+        public ITranslationErrorHandler Handler { get; }
         public string HeaderFileName { get; }
         public string SourceFileName { get; }
         public NameManager Names { get; }

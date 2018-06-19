@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 		processGuid.data2 = 0;
 		processGuid.data3 = 0;
 		processGuid.data4 = 0;
-		process = PrtStartProcess(processGuid, &P_GEND_IMPL_Main, ErrorHandler, Log);
+		process = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, ErrorHandler, Log);
 		if (cooperative)
 		{
 			PrtSetSchedulingPolicy(process, PRT_SCHEDULINGPOLICY_COOPERATIVE);

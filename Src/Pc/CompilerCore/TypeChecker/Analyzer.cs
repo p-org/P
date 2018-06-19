@@ -70,8 +70,8 @@ namespace Microsoft.Pc.TypeChecker
                 ModuleSystemTypeChecker.CheckWellFormedness(handler, moduleExpr);
             }
 
-            // Step 9: Check the test and implementation declarations
-            // TODO: like test decls have main in them, refinement relation holds for refinement test cases.
+            // Step 10: Check the test and implementation declarations
+            // TODO: like test decls have main in them, refinement relation holds for refinement test cases, implementations are closed.
 
 
             return globalScope;

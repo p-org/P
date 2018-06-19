@@ -110,7 +110,9 @@ namespace Microsoft.Pc.Backend.Prt
                     return;
                 case Function function:
                     string functionImplName = context.Names.GetNameForFunctionImpl(function);
-
+                    string functionParamType = function.Signature.ParameterTypes.Any()
+                        ? $"&{context.Names.GetNameForType(function.Signature.ParameterTypes.First())}"
+                        : "NULL";
                     context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
                     context.WriteLine(output, "{");
                     WriteFunctionBody(context, function, output);
@@ -120,7 +122,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"\"{function.Name}\","); // name of function in original program
                     context.WriteLine(output, $"&{functionImplName},"); // pointer to implementation
-                    context.WriteLine(output, "NULL"); // payload type for anonymous functions: always NULL.
+                    context.WriteLine(output, $"{functionParamType}"); // payload type for anonymous functions: always NULL.
                     context.WriteLine(output, "};");
                     context.WriteLine(output);
                     break;
@@ -741,8 +743,10 @@ namespace Microsoft.Pc.Backend.Prt
 
                     break;
                 case GotoStmt gotoStmt:
+                    context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
+
                     int destStateIndex = context.GetNumberForState(gotoStmt.State);
-                    context.WriteLine(output, $"PrtGoto(context, {destStateIndex}U, ");
+                    context.WriteLine(output, $"PrtGoto(p_this, {destStateIndex}U, ");
                     if (gotoStmt.Payload != null)
                     {
                         Debug.Assert(gotoStmt.Payload is IVariableRef);

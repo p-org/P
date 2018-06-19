@@ -149,7 +149,7 @@ int main(int argc, char *argv[])
 	{
 		payload = PrtMkIntValue(atoi(argv[1]));
 	}
-    PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
+    PRT_MACHINEINST* machine = PrtMkMachine(ContainerProcess, P_MACHINE_ClientMachine, 1, PRT_FUN_PARAM_CLONE, payload);
 	PrtFreeValue(payload);
 	
 	EnvWait();

@@ -156,11 +156,9 @@
   </ItemGroup>
   <ItemGroup>
     <PCompile Include="Main.p" />
-    <PCompile Include="ContinueHeader.p" />    
   </ItemGroup>
   <ItemGroup>
     <None Include="Main.p" />
-    <None Include="ContinueHeader.p" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Timer\Timer.vcxproj" />

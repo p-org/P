@@ -10,7 +10,8 @@ sends PING;
   var numIterations: int;  
 
   start state Init {  
-    entry (n: int) { 	
+    entry (n: int) {
+      assert n >= -1;
 	    print "Client created\n";
       numIterations = n;
       server = new ServerMachine(); 
@@ -20,11 +21,16 @@ sends PING;
   }
 
   state SendPing { 
-    entry { 
-      if (numIterations == 0) {
-        goto Stop;
-      } else if (numIterations > 0) {
+    entry {
+      var b: bool;
+      
+      if (numIterations > 0) {
         numIterations = numIterations - 1;
+      } else if (numIterations == 0) {
+        goto Stop;
+      } else {
+        b = Continue();
+        if (!b) goto Stop;
       }
 	    print "Client sending PING\n";
       send server, PING, this; 

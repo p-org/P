@@ -15,7 +15,7 @@ if NOT errorlevel 0 goto :eof
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /shared Main.p Continue.p /t:Hello.4ml /r:..\Timer\timer.4ml /r:..\Env\env.4ml
+%pc% /generate:C# /shared Main.p /t:Hello.4ml /r:..\Timer\timer.4ml /r:..\Env\env.4ml
 
 if NOT errorlevel 0 goto :eof
 

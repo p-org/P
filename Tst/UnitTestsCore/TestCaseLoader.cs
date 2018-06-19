@@ -44,15 +44,15 @@ namespace UnitTestsCore
 
         private static TestCaseData DirectoryToTestCase(DirectoryInfo dir, DirectoryInfo testRoot)
         {
-            Dictionary<string, string> variables = GetVariables(testRoot);
-            Dictionary<TestType, TestConfig> testConfigs =
+            var variables = GetVariables(testRoot);
+            var testConfigs =
                 (from type in Enum.GetValues(typeof(TestType)).Cast<TestType>()
                  let configPath = Path.Combine(dir.FullName, type.ToString(), Constants.TestConfigFileName)
                  where File.Exists(configPath)
                  select new { type, config = ParseTestConfig(configPath, variables) })
                 .ToDictionary(kv => kv.type, kv => kv.config);
 
-            string category = testRoot.Name + Constants.CategorySeparator + GetCategory(dir, testRoot);
+            var category = testRoot.Name + Constants.CategorySeparator + GetCategory(dir, testRoot);
             return new TestCaseData(dir, testConfigs)
                 .SetName(category + Constants.CategorySeparator + dir.Name)
                 .SetCategory(category);
@@ -60,7 +60,7 @@ namespace UnitTestsCore
 
         private static Dictionary<string, string> GetVariables(DirectoryInfo testRoot)
         {
-            string binDir = Path.Combine(Constants.SolutionDirectory, "bld", "drops", Constants.BuildConfiguration, Constants.Platform, "binaries");
+            var binDir = Path.Combine(Constants.SolutionDirectory, "bld", "drops", Constants.BuildConfiguration, Constants.Platform, "binaries");
             var variables = new Dictionary<string, string>
             {
                 {"platform", Constants.Platform},
@@ -90,16 +90,16 @@ namespace UnitTestsCore
         {
             var testConfig = new TestConfig();
 
-            foreach (string assignment in File.ReadLines(testConfigPath))
+            foreach (var assignment in File.ReadLines(testConfigPath))
             {
                 if (string.IsNullOrWhiteSpace(assignment))
                 {
                     continue;
                 }
 
-                string[] parts = assignment.Split(new[] { ':' }, 2).Select(x => x.Trim()).ToArray();
-                string key = parts[0];
-                string value = SubstituteVariables(parts[1], variables);
+                var parts = assignment.Split(new[] { ':' }, 2).Select(x => x.Trim()).ToArray();
+                var key = parts[0];
+                var value = SubstituteVariables(parts[1], variables);
                 switch (key)
                 {
                     case "inc":
@@ -131,8 +131,8 @@ namespace UnitTestsCore
             // Replaces variables that use a syntax like $(VarName). Inner capture group gets the name.
             return Regex.Replace(value, @"\$\(([^)]+)\)", match =>
             {
-                string variableName = match.Groups[1].Value.ToLowerInvariant();
-                return variables.TryGetValue(variableName, out string variableValue) ? variableValue : match.Value;
+                var variableName = match.Groups[1].Value.ToLowerInvariant();
+                return variables.TryGetValue(variableName, out var variableValue) ? variableValue : match.Value;
             });
         }
     }

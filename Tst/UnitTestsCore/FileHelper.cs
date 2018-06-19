@@ -8,7 +8,7 @@ namespace UnitTestsCore
         {
             Directory.CreateDirectory(target);
             CopyFiles(src, target);
-            foreach (DirectoryInfo dir in src.GetDirectories())
+            foreach (var dir in src.GetDirectories())
             {
                 DeepCopy(dir, Path.Combine(target, dir.Name));
             }
@@ -16,7 +16,7 @@ namespace UnitTestsCore
 
         public static void CopyFiles(DirectoryInfo src, string target)
         {
-            foreach (FileInfo file in src.GetFiles())
+            foreach (var file in src.GetFiles())
             {
                 File.Copy(file.FullName, Path.Combine(target, file.Name), true);
             }

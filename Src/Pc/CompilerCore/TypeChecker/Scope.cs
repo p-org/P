@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.AST;
@@ -578,6 +579,16 @@ namespace Microsoft.Pc.TypeChecker
                 decl = tDecl;
                 return success;
             };
+        }
+
+        #endregion
+
+        #region Add Default Impl. Declaration
+
+        public void AddDefaultImpl(Implementation defaultImplDecl)
+        {
+            Debug.Assert(!implementations.Any());
+            implementations.Add(defaultImplDecl.Name, defaultImplDecl);
         }
 
         #endregion

@@ -110,9 +110,12 @@ namespace Microsoft.Pc.Backend.Prt
                     return;
                 case Function function:
                     string functionImplName = context.Names.GetNameForFunctionImpl(function);
-                    string functionParamType = function.Signature.ParameterTypes.Any()
-                        ? $"&{context.Names.GetNameForType(function.Signature.ParameterTypes.First())}"
-                        : "NULL";
+                    bool isAnon = string.IsNullOrEmpty(function.Name);
+                    string functionName = isAnon ? "NULL" : $"\"{function.Name}\"";
+                    var signature = function.Signature.ParameterTypes.ToList();
+                    Debug.Assert((isAnon && signature.Count <= 1) || !isAnon);
+                    string payloadType = isAnon && signature.Count == 1 ? $"&{context.Names.GetNameForType(signature[0])}" : "NULL";
+
                     context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
                     context.WriteLine(output, "{");
                     WriteFunctionBody(context, function, output);
@@ -120,9 +123,9 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output);
                     context.WriteLine(output, $"PRT_FUNDECL {declName} =");
                     context.WriteLine(output, "{");
-                    context.WriteLine(output, $"\"{function.Name}\","); // name of function in original program
+                    context.WriteLine(output, $"{functionName},"); // name of function in original program, NULL if anon
                     context.WriteLine(output, $"&{functionImplName},"); // pointer to implementation
-                    context.WriteLine(output, $"{functionParamType}"); // payload type for anonymous functions: always NULL.
+                    context.WriteLine(output, $"{payloadType}"); // payload type for anonymous functions
                     context.WriteLine(output, "};");
                     context.WriteLine(output);
                     break;

@@ -438,7 +438,6 @@ namespace LegacyUnitTests
                 var sb = new StringBuilder();
                 using (var tmpWriter = new StringWriter(sb))
                 {
-                    int pcResult;
                     switch (testType)
                     {
                         case TestType.Pc:
@@ -465,7 +464,7 @@ namespace LegacyUnitTests
                             if (Constants.RunPt || Constants.RunAll)
                             {
                                 WriteHeader(tmpWriter);
-                                pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.CSharp);
+                                var pcResult = TestPc(config, tmpWriter, workDirectory, activeDirectory, CompilerOutput.CSharp);
                                 //CheckResult(activeDirectory, origTestDir, testType, sb);
                                 if (pcResult == 0)
                                 {

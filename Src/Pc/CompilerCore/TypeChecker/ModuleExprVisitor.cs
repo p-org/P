@@ -52,7 +52,7 @@ namespace Microsoft.Pc.TypeChecker
                 var defaultImplDecl = new Implementation(ParserRuleContext.EmptyContext, "DefaultImpl");
                 // create bindings from each machine to itself
                 var defaultBindings = new List<Tuple<Interface, Machine>>();
-                foreach (var machine in globalScope.Machines)
+                foreach (var machine in globalScope.Machines.Where(m => !m.IsSpec))
                 {
                     globalScope.Get(machine.Name, out Interface @interface);
                     defaultBindings.Add(new Tuple<Interface, Machine>(@interface, machine));

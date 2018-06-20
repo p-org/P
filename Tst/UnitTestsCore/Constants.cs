@@ -32,8 +32,8 @@ namespace UnitTestsCore
         private static readonly Lazy<string> LazySolutionDirectory = new Lazy<string>(
             () =>
             {
-                string assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-                string assemblyDirectory = Path.GetDirectoryName(assemblyPath);
+                var assemblyPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+                var assemblyDirectory = Path.GetDirectoryName(assemblyPath);
                 Contract.Assert(assemblyDirectory != null);
                 for (var dir = new DirectoryInfo(assemblyDirectory); dir != null; dir = dir.Parent)
                 {

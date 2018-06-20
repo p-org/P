@@ -459,6 +459,15 @@ PRT_VALUE * PRT_CALL_CONV PrtTupleGet(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 ind
 	return PrtCloneValue(tuple->valueUnion.tuple->values[index]);
 }
 
+PRT_VALUE ** PRT_CALL_CONV PrtTupleGetLValue(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
+{
+	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
+	PrtAssert(tuple->discriminator == PRT_VALUE_KIND_TUPLE, "Cannot perform tuple get on this value");
+	PrtAssert(index < tuple->valueUnion.tuple->size, "Invalid tuple index");
+
+	return &tuple->valueUnion.tuple->values[index];
+}
+
 PRT_VALUE * PRT_CALL_CONV PrtTupleGetNC(_In_ PRT_VALUE *tuple, _In_ PRT_UINT32 index)
 {
 	PrtAssert(PrtIsValidValue(tuple), "Invalid value expression.");
@@ -553,14 +562,13 @@ void PRT_CALL_CONV PrtSeqInsertExIntIndex(_Inout_ PRT_VALUE *seq, _In_ PRT_INT i
 }
 
 
-
-PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(_In_ PRT_VALUE *seq, _In_ PRT_INT index)
+PRT_VALUE** PrtSeqGetNCIntIndex(_In_ PRT_VALUE* seq, _In_ PRT_INT index)
 {
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 	PrtAssert(0 <= index && (PRT_UINT32)index < seq->valueUnion.seq->size, "Invalid index");
 
-	return seq->valueUnion.seq->values[index];
+	return &seq->valueUnion.seq->values[index];
 }
 
 
@@ -605,6 +613,13 @@ PRT_VALUE * PRT_CALL_CONV PrtSeqGet(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
+{
+	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
+
+	return *PrtSeqGetNCIntIndex(seq, index->valueUnion.nt);
+}
+
+PRT_VALUE ** PRT_CALL_CONV PrtSeqGetLValue(_In_ PRT_VALUE *seq, _In_ PRT_VALUE *index)
 {
 	PrtAssert(index->discriminator == PRT_VALUE_KIND_INT, "Invalid value");
 
@@ -659,7 +674,7 @@ static void PRT_CALL_CONV PrtMapExpand(_Inout_ PRT_VALUE *map)
 	}
 }
 
-PRT_VALUE *PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
+PRT_VALUE **PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
@@ -697,7 +712,9 @@ PRT_VALUE *PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ 
 
 				PRT_VALUE *oldValue = next->value;
 				next->value = valueClone;
-				return oldValue;
+				PrtFreeValue(oldValue);
+
+				return &next->value;
 			}
 
 			next = next->bucketNext;
@@ -731,18 +748,15 @@ PRT_VALUE *PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ 
 		PrtMapExpand(map);
 	}
 
-	return NULL;
+	return &node->value;
 }
 
 
 void PRT_CALL_CONV PrtMapUpdateEx(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
-	PRT_VALUE *oldValue = PrtMapUpdateHelper(map, key, cloneKey, value, cloneValue);
-	if (oldValue != NULL)
-	{
-		PrtFreeValue(oldValue);
-	}
+	PrtMapUpdateHelper(map, key, cloneKey, value, cloneValue);
 }
+
 
 void PRT_CALL_CONV PrtMapUpdate(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_VALUE *value)
 {
@@ -811,6 +825,11 @@ void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 		prev = next;
 		next = next->bucketNext;
 	}
+}
+
+PRT_VALUE ** PRT_CALL_CONV PrtMapGetLValue( _Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey)
+{
+	return PrtMapUpdateHelper(map, key, cloneKey, NULL, PRT_FALSE);
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)

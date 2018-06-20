@@ -712,10 +712,8 @@ PRT_VALUE **PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_
 
 				PRT_VALUE *oldValue = next->value;
 				next->value = valueClone;
-				if (oldValue != NULL)
-				{
-					PrtFreeValue(oldValue);
-				}
+				PrtFreeValue(oldValue);
+
 				return &next->value;
 			}
 
@@ -831,7 +829,7 @@ void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 
 PRT_VALUE ** PRT_CALL_CONV PrtMapGetLValue( _Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey)
 {
-	return PrtMapUpdateHelper(map, key, cloneKey, PrtMkNullValue(), PRT_FALSE);
+	return PrtMapUpdateHelper(map, key, cloneKey, NULL, PRT_FALSE);
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)

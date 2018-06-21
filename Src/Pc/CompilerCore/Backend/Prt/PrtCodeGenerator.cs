@@ -689,14 +689,17 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"), \"{assertStmt.Message}\");");
                     break;
                 case AssignStmt assignStmt:
-                    // Free old value
-                    context.Write(output, "PrtFreeValue(");
+                    // Lookup lvalue
+                    string lvalName = context.Names.GetTemporaryName("LVALUE");
+                    context.Write(output, $"PRT_VALUE** {lvalName} = &(");
                     WriteLValue(context, output, function, assignStmt.Location);
                     context.WriteLine(output, ");");
 
+                    // Free old value
+                    context.WriteLine(output, $"PrtFreeValue(*{lvalName});");
+
                     // Assign new value
-                    WriteLValue(context, output, function, assignStmt.Location);
-                    context.Write(output, " = ");
+                    context.Write(output, $"*{lvalName} = ");
                     WriteExpr(context, output, function, assignStmt.Value);
                     context.WriteLine(output, ";");
                     break;
@@ -749,7 +752,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
 
                     int destStateIndex = context.GetNumberForState(gotoStmt.State);
-                    context.WriteLine(output, $"PrtGoto(p_this, {destStateIndex}U, ");
+                    context.Write(output, $"PrtGoto(p_this, {destStateIndex}U, ");
                     if (gotoStmt.Payload != null)
                     {
                         Debug.Assert(gotoStmt.Payload is IVariableRef);
@@ -854,7 +857,11 @@ namespace Microsoft.Pc.Backend.Prt
                      */
                     break;
                 case RemoveStmt removeStmt:
-                    // TODO: implement. remember to use WriteLValue
+                    context.Write(output, "PrtRemoveByKey(");
+                    WriteLValue(context, output, function, removeStmt.Variable);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, function, removeStmt.Value);
+                    context.WriteLine(output, ");");
                     break;
                 case ReturnStmt returnStmt:
                     if (returnStmt.ReturnValue != null)
@@ -959,16 +966,32 @@ namespace Microsoft.Pc.Backend.Prt
 
         private static void WriteLValue(CompilationContext context, TextWriter output, Function function, IPExpr expr)
         {
-            // TODO: complicated lvalues
             switch (expr)
             {
                 case MapAccessExpr mapAccessExpr:
+                    // TODO: optimize out key copy when possible
+                    context.Write(output, "*(PrtMapGetLValue(");
+                    WriteLValue(context, output, function, mapAccessExpr.MapExpr);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, function, mapAccessExpr.IndexExpr);
+                    context.Write(output, $", PRT_TRUE, &{context.Names.GetNameForType(mapAccessExpr.MapExpr.Type)}))");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
+                    context.Write(output, "*(PrtTupleGetLValue(");
+                    WriteLValue(context, output, function, namedTupleAccessExpr.SubExpr);
+                    context.Write(output, $", {namedTupleAccessExpr.Entry.FieldNo}))");
                     break;
                 case SeqAccessExpr seqAccessExpr:
+                    context.Write(output, "*(PrtSeqGetLValue(");
+                    WriteLValue(context, output, function, seqAccessExpr.SeqExpr);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, function, seqAccessExpr.IndexExpr);
+                    context.Write(output, "))");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
+                    context.Write(output, "*(PrtTupleGetLValue(");
+                    WriteLValue(context, output, function, tupleAccessExpr.SubExpr);
+                    context.Write(output, $", {tupleAccessExpr.FieldNo}))");
                     break;
                 case VariableAccessExpr variableAccessExpr:
                     WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
@@ -1038,6 +1061,7 @@ namespace Microsoft.Pc.Backend.Prt
                     switch (coerceExpr.NewType)
                     {
                         case PrimitiveType primitiveType when PrimitiveType.Int.IsSameTypeAs(primitiveType):
+                        case PLanguageType type when PLanguageType.TypeIsOfKind(type, TypeKind.Enum):
                             coerceCtor = "PrtMkIntValue";
                             break;
                         case PrimitiveType primitiveType when PrimitiveType.Float.IsSameTypeAs(primitiveType):
@@ -1051,6 +1075,7 @@ namespace Microsoft.Pc.Backend.Prt
                     switch (coerceExpr.SubExpr.Type)
                     {
                         case PrimitiveType primitiveType when PrimitiveType.Int.IsSameTypeAs(primitiveType):
+                        case PLanguageType type when PLanguageType.TypeIsOfKind(type, TypeKind.Enum):
                             coerceUnpack = "PrtPrimGetInt";
                             break;
                         case PrimitiveType primitiveType when PrimitiveType.Float.IsSameTypeAs(primitiveType):
@@ -1210,16 +1235,19 @@ namespace Microsoft.Pc.Backend.Prt
                 // dereference, since params are passed by reference.
                 context.Write(output, "*");
                 context.Write(output, PrtTranslationUtils.GetPrtNameForDecl(context, variable));
+                // => *name
             }
             else if (variable.Role.HasFlag(VariableRole.Field))
             {
                 // TODO: is this always correct? I think the iterator ordering of a List should be consistent...
                 int varIdx = function.Owner.Fields.ToList().IndexOf(variable);
                 context.Write(output, $"p_this->varValues[{varIdx}]");
+                // => p_this->varValues[#]
             }
             else if (variable.Role.HasFlag(VariableRole.Temp) || variable.Role.HasFlag(VariableRole.Local))
             {
                 context.Write(output, PrtTranslationUtils.GetPrtNameForDecl(context, variable));
+                // => name
             }
             else
             {

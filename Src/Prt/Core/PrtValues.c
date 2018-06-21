@@ -827,9 +827,13 @@ void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 	}
 }
 
-PRT_VALUE ** PRT_CALL_CONV PrtMapGetLValue( _Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey)
+PRT_VALUE ** PRT_CALL_CONV PrtMapGetLValue(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_TYPE* mapType)
 {
-	return PrtMapUpdateHelper(map, key, cloneKey, NULL, PRT_FALSE);
+	PrtAssert(PrtIsValidValue(map), "Invalid map in map-lvalue.");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Map argument must be a map.");
+	PrtAssert(mapType->typeKind == PRT_KIND_MAP, "Map type argument must be a map type.");
+	PRT_TYPE* valueType = mapType->typeUnion.map->codType;
+	return PrtMapUpdateHelper(map, key, cloneKey, PrtMkDefaultValue(valueType), PRT_FALSE);
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)
@@ -1124,6 +1128,17 @@ PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE* inputValue)
 	default:
 		PrtAssert(PRT_FALSE, "PrtGetHashCodeValue: Invalid value");
 		return 0;
+	}
+}
+
+PRT_API void PRT_CALL_CONV PrtRemoveByKey(_Inout_ PRT_VALUE *mapOrSeq, _In_ PRT_VALUE *key)
+{
+	if (mapOrSeq->discriminator == PRT_VALUE_KIND_MAP) {
+		PrtMapRemove(mapOrSeq, key);
+	} else if(mapOrSeq->discriminator == PRT_VALUE_KIND_SEQ) {
+		PrtSeqRemove(mapOrSeq, key);
+	} else {
+		PrtAssert(PRT_FALSE, "Can only remove elements from a map or sequence.");
 	}
 }
 

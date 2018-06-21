@@ -469,7 +469,8 @@ extern "C"{
 	PRT_API PRT_VALUE ** PRT_CALL_CONV PrtMapGetLValue(
 		_Inout_ PRT_VALUE *map,
 		_In_ PRT_VALUE *key,
-		_In_ PRT_BOOLEAN cloneKey
+		_In_ PRT_BOOLEAN cloneKey,
+		_In_ PRT_TYPE* mapType
 	);
 
 	/** Updates the map at key.
@@ -572,6 +573,15 @@ extern "C"{
 	* @returns The hash code.
 	*/
 	PRT_API PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE *value);
+
+	/** Removes the value at index from the sequence, and shortens the sequence by one.
+	* seq[index] must be defined. Removal causes:
+	* For all i > index, if seq[i] is defined, then seq'[i - 1] = seq[i].
+	* For all i < index, if seq[i] is defined, then seq'[i] = seq[i].
+	* @param[in,out] seq   A sequence to mutate.
+	* @param[in]     index An 0-based index s.t. 0 <= index < size(seq).
+	*/
+	PRT_API void PRT_CALL_CONV PrtRemoveByKey(_Inout_ PRT_VALUE *mapOrSeq, _In_ PRT_VALUE *key);
 
 	/** Returns `true` if values are equivalent; `false` otherwise.
 	* @param[in] value1 The first value.

@@ -58,7 +58,7 @@ namespace Microsoft.Pc
 
                 // Run the selected backend on the project and write the files.
                 ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.compilerOutput);
-                string projectName = Path.GetFileNameWithoutExtension(inputFiles[0].Name);
+                string projectName = options.projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0].Name);
                 foreach (CompiledFile compiledFile in backend.GenerateCode(handler, output, projectName, scope))
                 {
                     output.WriteMessage($"Writing {compiledFile.FileName}...", SeverityKind.Info);

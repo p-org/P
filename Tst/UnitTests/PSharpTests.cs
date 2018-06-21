@@ -168,7 +168,8 @@ namespace UnitTests
             bool success = compiler.Compile(outputStream, new CommandLineOptions
             {
                 compilerOutput = CompilerOutput.C,
-                inputFileNames = inputFiles.Select(file => file.FullName).ToList()
+                inputFileNames = inputFiles.Select(file => file.FullName).ToList(),
+                projectName = "main"
             });
             if (!success)
             {
@@ -238,7 +239,7 @@ namespace UnitTests
                               .ToString();
             bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
             var inputFiles = testDir.GetFiles("*.p");
-            bool result = TestCompile(out string output, inputFiles);
+            bool result = ExecuteTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
             if (expectCorrect && !result)
             {

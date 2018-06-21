@@ -148,7 +148,7 @@ namespace PBuild
             compileArgs.dependencies = new List<string>(depFiles);
             compileArgs.shortFileNames = true;
             compileArgs.outputDir = project.outputDir;
-            compileArgs.unitName = project.Name + ".4ml";
+            compileArgs.projectName = project.Name + ".4ml";
             compileArgs.liveness = LivenessOption.None;
             compileArgs.compilerOutput = Options.Output;
             compileArgs.profile = true;

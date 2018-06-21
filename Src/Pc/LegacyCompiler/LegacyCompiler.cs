@@ -110,7 +110,7 @@
             {
                 Directory.CreateDirectory(outputDirName);
             }
-            string unitFileName = Options.unitName;
+            string unitFileName = Options.projectName;
             ProgramName unitProgramName = new ProgramName(unitFileName);
             AST<Model> unitModel;
 

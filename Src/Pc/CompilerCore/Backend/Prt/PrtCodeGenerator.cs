@@ -322,7 +322,7 @@ namespace Microsoft.Pc.Backend.Prt
                         {
                             (PEvent triggerEvent, Function transFun) = stateData.Dos[i];
                             string triggerName = PrtTranslationUtils.GetPrtNameForDecl(context, triggerEvent);
-                            string comma = i == stateData.Trans.Count - 1 ? "" : ",";
+                            string comma = i == stateData.Dos.Count - 1 ? "" : ",";
                             string funName = transFun != null ? PrtTranslationUtils.GetPrtNameForDecl(context, transFun) : "_P_NO_OP";
                             context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{funName} }}{comma}");
                         }
@@ -812,7 +812,7 @@ namespace Microsoft.Pc.Backend.Prt
                     return;
                 case PopStmt _:
                     context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
-                    context.WriteLine(output, "PrtPop(context);");
+                    context.WriteLine(output, "PrtPop(p_this);");
                     context.WriteLine(output, "goto p_return;");
                     break;
                 case PrintStmt printStmt:
@@ -839,7 +839,8 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case ReceiveStmt receiveStmt:
                     // TODO: implement. Daan's the man!
-                    context.Handler.IssueWarning(receiveStmt.SourceLocation, "RECEIVE NOT IMPLEMENTED CURRENTLY. IGNORING.");
+                    context.Handler.IssueWarning(receiveStmt.SourceLocation, "RECEIVE NOT IMPLEMENTED CURRENTLY. INSERTING CRASH.");
+                    context.WriteLine(output, "PrtAssert(PRT_FALSE, \"receive not yet implemented!\");");
                     /*
                      * Ideal template:
                      * PRT_VALUE* payload = NULL; int allowedEventIds[] = { ... };
@@ -895,17 +896,20 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     context.WriteLine(output, "{");
+                    string lvName = context.Names.GetTemporaryName("LVALUE");
                     string tmpName = context.Names.GetTemporaryName("SWAP");
+
+                    // Can only swap local variables, so this is safe. Otherwise would have to call a second WriteLValue
                     string swappedName = PrtTranslationUtils.GetPrtNameForDecl(context, swapAssignStmt.OldLocation);
 
                     // Save l-value
-                    context.Write(output, $"PRT_VALUE* {tmpName} = ");
-                    WriteExpr(context, output, function, swapAssignStmt.NewLocation);
-                    context.WriteLine(output, ";");
+                    context.Write(output, $"PRT_VALUE** {lvName} = &(");
+                    WriteLValue(context, output, function, swapAssignStmt.NewLocation);
+                    context.WriteLine(output, ");");
+                    context.WriteLine(output, $"PRT_VALUE* {tmpName} = *{lvName};");
 
                     // Overwrite l-value with var
-                    WriteExpr(context, output, function, swapAssignStmt.NewLocation);
-                    context.WriteLine(output, $" = {swappedName};");
+                    context.WriteLine(output, $"*{lvName} = {swappedName};");
 
                     // Complete the swap
                     context.WriteLine(output, $"{swappedName} = {tmpName};");
@@ -1111,7 +1115,7 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case DefaultExpr defaultExpr:
                     string nameForDefaultType = context.Names.GetNameForType(defaultExpr.Type);
-                    context.Write(output, $"PrtMkDefaultValue({nameForDefaultType})");
+                    context.Write(output, $"PrtMkDefaultValue(&{nameForDefaultType})");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
                     context.Write(output, PrtTranslationUtils.GetPrtNameForDecl(context, enumElemRefExpr.Value));
@@ -1187,9 +1191,9 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case SizeofExpr sizeofExpr:
                     var sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Type, TypeKind.Map) ? "PrtMapSizeOf" : "PrtSeqSizeOf";
-                    context.Write(output, $"{sizeofFun}(");
+                    context.Write(output, $"PrtMkIntValue({sizeofFun}(");
                     WriteExpr(context, output, function, sizeofExpr.Expr);
-                    context.Write(output, ")");
+                    context.Write(output, "))");
                     break;
                 case ThisRefExpr _:
                     context.Write(output, "(p_this->id)");

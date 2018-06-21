@@ -70,7 +70,7 @@ namespace LegacyUnitTests
                 inputFileNames = new List<string>(pFiles),
                 shortFileNames = true,
                 outputDir = workDirectory.FullName,
-                unitName = linkFileName,
+                projectName = linkFileName,
                 //liveness = LivenessOption.None,
                 liveness = LivenessOption.None,
                 compilerOutput = outputLanguage

@@ -21,7 +21,7 @@ namespace Microsoft.Pc
         public CompilerOutput compilerOutput { get; set; } = CompilerOutput.C;
         public List<string> inputFileNames { get; set; } = new List<string>();
         public List<string> dependencies { get; set; } = new List<string>();
-        public string unitName { get; set; }
+        public string projectName { get; set; }
 
         /// <summary>
         ///     whether to use the compiler service.
@@ -241,8 +241,8 @@ namespace Microsoft.Pc
                     return false;
                 }
 
-                options.unitName = targetName ?? Path.ChangeExtension(options.inputFileNames.First(), ".4ml");
-                string unitFileName = Path.GetFileNameWithoutExtension(options.unitName);
+                options.projectName = targetName ?? Path.ChangeExtension(options.inputFileNames.First(), ".4ml");
+                string unitFileName = Path.GetFileNameWithoutExtension(options.projectName);
                 if (!IsLegalUnitName(unitFileName))
                 {
                     Console.WriteLine("{0} is not a legal name for a compilation unit", unitFileName);

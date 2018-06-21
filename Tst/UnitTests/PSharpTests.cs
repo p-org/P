@@ -24,8 +24,10 @@ namespace UnitTests
             prtTestProjDirectory = new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
         }
 
-        public int? RunTest(IEnumerable<string> arguments, out string testStdout, out string testStderr)
+        public int? RunTest(IEnumerable<string> arguments, out string testStdout, out string testStderr,
+                            TestRunMode mode = TestRunMode.CompileAndRun)
         {
+            // TODO: do it right, Alex. Only delete tmpDir when the test passed. SOR!
             string tmpDir = null;
             testStdout = null;
             testStderr = null;
@@ -43,13 +45,20 @@ namespace UnitTests
                     return null;
                 }
 
-                return ProcessHelper.RunWithOutput(
-                    Path.Combine(tmpDir, Constants.BuildConfiguration, Constants.Platform, Constants.CTesterExecutableName),
-                    tmpDir,
-                    arguments,
-                    out testStdout,
-                    out testStderr
-                );
+                if (mode == TestRunMode.CompileAndRun)
+                {
+                    return ProcessHelper.RunWithOutput(
+                        Path.Combine(tmpDir, Constants.BuildConfiguration, Constants.Platform, Constants.CTesterExecutableName),
+                        tmpDir,
+                        arguments,
+                        out testStdout,
+                        out testStderr
+                    );
+                }
+                else
+                {
+                    return 0;
+                }
             }
             finally
             {
@@ -138,6 +147,12 @@ namespace UnitTests
         }
     }
 
+    public enum TestRunMode
+    {
+        CompileOnly,
+        CompileAndRun
+    }
+
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
     public class PSharpTests
@@ -159,7 +174,8 @@ namespace UnitTests
             return success;
         }
 
-        private static bool ExecuteTest(out string output, params FileInfo[] inputFiles)
+
+        private static int? ExecuteTest(out string output, IReadOnlyList<FileInfo> inputFiles, TestRunMode mode = TestRunMode.CompileAndRun)
         {
             output = null;
 
@@ -171,63 +187,16 @@ namespace UnitTests
                 inputFileNames = inputFiles.Select(file => file.FullName).ToList(),
                 projectName = "main"
             });
+
             if (!success)
             {
-                return false;
+                return null;
             }
 
             var runner = new PrtTestRunner(outputStream.OutputFiles.ToList());
-            var result = runner.RunTest(Enumerable.Empty<string>(), out string stdout, out string stderr);
+            var result = runner.RunTest(Enumerable.Empty<string>(), out string stdout, out string stderr, mode);
             output = $"{stdout}\n{stderr}\nEXIT: {result}";
-            return result != null;
-        }
-
-        [Test]
-        public void DetectUnsplitTests()
-        {
-            var totalUnsplitTests = 0;
-            var exceptions = new HashSet<string>
-            {
-                "RegressionTests/Combined/StaticError/DuplicateActions",
-                "RegressionTests/Combined/StaticError/DuplicateTransitions",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/DeferIgnoreSameEvent",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/EventDeferredDoSameState",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/EventDeferredHandledSameState",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/FunctionMissingArgs",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/FunctionReturnsNothingInAssignment",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/RaisedNullEvent",
-                "RegressionTests/Feature1SMLevelDecls/StaticError/SentNullEvent",
-                "RegressionTests/Feature4DataTypes/StaticError/EventSets_1",
-                "RegressionTests/Feature4DataTypes/StaticError/EventSets_2",
-                "RegressionTests/Feature4DataTypes/StaticError/EventSets_3",
-                "RegressionTests/Feature4DataTypes/StaticError/EventSets_4",
-                "RegressionTests/Feature4DataTypes/StaticError/EventSets_5",
-                "RegressionTests/Feature4DataTypes/StaticError/typedef"
-            };
-
-            foreach (TestCaseData test in TestCases)
-            {
-                var testDir = (DirectoryInfo) test.Arguments[0];
-                string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
-                                  .MakeRelativeUri(new Uri(testDir.FullName))
-                                  .ToString();
-                bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
-                if (!expectCorrect)
-                {
-                    var lines = File.ReadAllLines(Path.Combine(testDir.FullName, "Pc", "acc_0.txt"));
-                    if (lines.Count(line => line.StartsWith("OUT:")) != 2 && !exceptions.Contains(testName))
-                    {
-                        Console.WriteLine($"==== {testName} ====");
-                        Console.WriteLine(
-                            string.Join(Environment.NewLine, lines.Where(line => line.StartsWith("OUT:"))));
-                        Console.WriteLine();
-
-                        totalUnsplitTests++;
-                    }
-                }
-            }
-
-            Console.WriteLine($"Total remaining = {totalUnsplitTests} / {TestCases.Count()}");
+            return result;
         }
 
         [Test]
@@ -237,23 +206,41 @@ namespace UnitTests
             string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
                               .MakeRelativeUri(new Uri(testDir.FullName))
                               .ToString();
-            bool expectCorrect = testName.Contains("Correct") || testName.Contains("DynamicError");
+
             var inputFiles = testDir.GetFiles("*.p");
-            bool result = ExecuteTest(out string output, inputFiles);
-            string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
-            if (expectCorrect && !result)
+            int? result;
+            string output;
+            if (testDir.EnumerateDirectories("Prt").Any())
             {
-                Assert.Fail($"Expected correct, but error was found: {output}\n\t{fileList}\n");
+                result = ExecuteTest(out output, inputFiles);
             }
-            else if (!expectCorrect && result)
+            else
             {
-                Assert.Fail($"Expected error, but none were found!\n\t{fileList}\n");
+                result = ExecuteTest(out output, inputFiles, TestRunMode.CompileOnly);
+            }
+
+            string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
+
+            if (testName.Contains("Correct") && result != 0)
+            {
+                string reason = result == null ? "failed to compile" : $"exited with code {result}";
+                Assert.Fail($"Expected correct but {reason}. Output:\n{output}\n\t{fileList}\n");
+            }
+            else if (testName.Contains("DynamicError") && (result == 0 || result == null))
+            {
+                string reason = result == 0 ? "test passed without crashing" : "test failed to compile";
+                Assert.Fail($"Expected runtime error but {reason}. Output:\n{output}\n\t{fileList}\n");
+            }
+            else if (testName.Contains("StaticError") && result != null)
+            {
+                Assert.Fail($"Expected static error but typechecker failed to catch! Output:\n{output}\n\t{fileList}\n");
             }
 
             Console.WriteLine(output);
         }
 
-        [Test, Ignore("broken test")]
+        [Test]
+        [Ignore("broken test")]
         public void TestModuleSystem()
         {
             string path = Path.Combine(Constants.SolutionDirectory, "Tst", "RegressionTests", "Feature5ModuleSystem", "Correct", "Elevator",
@@ -275,9 +262,9 @@ namespace UnitTests
             //string path = Path.Combine(Constants.TestDirectory, "RegressionTests", "Integration", "Correct", "SEM_TwoMachines_7", "RaisedHalt_bugFound.p");
             string path = Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p");
             FileInfo[] inputFiles = {new FileInfo(path)};
-            bool result = ExecuteTest(out string output, inputFiles);
+            var result = ExecuteTest(out string output, inputFiles);
             string fileList = string.Join("\n\t", inputFiles.Select(fi => $"file: {fi.FullName}"));
-            if (!result)
+            if (result != 0)
             {
                 Assert.Fail($"Expected correct, but error was found: {output}\n\t{fileList}\n");
             }

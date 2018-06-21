@@ -205,13 +205,17 @@ extern "C"{
 	#ifdef PRT_NO_ASSERT
 	#define PrtAssert(c,m)
 	#else
-	#define PrtAssert(c,m) do { int cond = (c); if (!(cond)) { _PrtAssert(cond, m); } } while(0)
+	
+	#define _PrtStringify(x) #x
+	#define PrtStringify(x) _PrtStringify(x)
+	#define PrtAssert(c,m) do { int cond = (c); if (!(cond)) { \
+	  _PrtAssert(cond, "[" __FILE__ ":" PrtStringify(__LINE__) "] " m); } } while(0)
 	#endif
 
 	#ifdef PRT_DEBUG
 		//#define PrtMalloc(size) malloc(size)
 		//#define PrtCalloc(nmemb, size) calloc(nmemb, size)
-	#define PRT_DBG_ASSERT(condition, message) PrtAssert((condition), (message))
+	#define PRT_DBG_ASSERT(condition, message) PrtAssert(condition, message)
 	#define PRT_DBG_START_MEM_BALANCED_REGION { _CrtMemState prtDbgMemStateInitial, prtDbgMemStateFinal, prtDbgMemStateDiff; _CrtMemCheckpoint(&prtDbgMemStateInitial);
 	#define PRT_DBG_END_MEM_BALANCED_REGION _CrtMemCheckpoint(&prtDbgMemStateFinal); PrtAssert(!_CrtMemDifference(&prtDbgMemStateDiff, &prtDbgMemStateInitial, &prtDbgMemStateFinal), "Memory leak"); }
 

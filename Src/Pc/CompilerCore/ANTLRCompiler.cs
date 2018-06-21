@@ -54,8 +54,6 @@ namespace Microsoft.Pc
                 LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
 #endif
 
-                Console.WriteLine(IrToPseudoP.Dump(scope));
-
                 // Run the selected backend on the project and write the files.
                 ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.compilerOutput);
                 string projectName = options.projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0].Name);

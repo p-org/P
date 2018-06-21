@@ -285,7 +285,7 @@ namespace Microsoft.Pc.Backend
                                   .ToList();
                 case GotoStmt gotoStmt:
                     var (gotoPayload, gotoDeps) = SimplifyExpression(gotoStmt.Payload);
-                    var (gotoArgTmp, gotoArgDep) = SaveInTemporary(gotoPayload);
+                    var (gotoArgTmp, gotoArgDep) = SaveInTemporary(MakeClone(gotoPayload));
                     return gotoDeps.Concat(new[]
                                    {
                                        gotoArgDep,

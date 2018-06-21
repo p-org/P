@@ -1190,7 +1190,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, ")");
                     break;
                 case SizeofExpr sizeofExpr:
-                    var sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Type, TypeKind.Map) ? "PrtMapSizeOf" : "PrtSeqSizeOf";
+                    var sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Expr.Type, TypeKind.Map) ? "PrtMapSizeOf" : "PrtSeqSizeOf";
                     context.Write(output, $"PrtMkIntValue({sizeofFun}(");
                     WriteExpr(context, output, function, sizeofExpr.Expr);
                     context.Write(output, "))");

@@ -12,6 +12,9 @@ namespace Microsoft.Pc.TypeChecker
 {
     public interface ITranslationErrorHandler
     {
+        // TODO: don't do this
+        ILocationResolver LocationResolver { get; }
+
         void IssueWarning(ParserRuleContext location, string message);
         Exception IssueError(ParserRuleContext location, string message);
         Exception IssueError(ParserRuleContext ctx, IToken location, string message);

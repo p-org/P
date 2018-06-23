@@ -25,6 +25,12 @@ namespace UnitTests.Runners
 
             string tmpDirName = scratchDirectory.FullName;
 
+            // Copy source files into destination directory
+            foreach (FileInfo source in sources)
+            {
+                source.CopyTo(Path.Combine(tmpDirName, source.Name), true);
+            }
+
             // Copy tester into destination directory.
             FileHelper.CopyFiles(prtTestProjDirectory, tmpDirName);
             if (!RunMsBuildExe(tmpDirName, out testStdout))

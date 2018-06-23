@@ -2,7 +2,6 @@ using System;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
-using Antlr4.Runtime.Tree;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -16,7 +15,7 @@ namespace Microsoft.Pc.TypeChecker
     {
         public void IssueWarning(ParserRuleContext location, string message)
         {
-            compilerOutput.WriteMessage($"[{GetLocation(location)}] {message}", SeverityKind.Warning);
+            compilerOutput.WriteMessage($"[{LocationResolver.GetLocation(location)}] {message}", SeverityKind.Warning);
         }
 
         public Exception IssueError(ParserRuleContext location, string message)
@@ -42,25 +41,25 @@ namespace Microsoft.Pc.TypeChecker
 
         public Exception DuplicateEventAction(ParserRuleContext location, IStateAction existingAction, State state)
         {
-            return IssueError(location, $"event handler in state '{state.Name}' duplicates handler at {GetLocation(existingAction.SourceLocation)}");
+            return IssueError(location, $"event handler in state '{state.Name}' duplicates handler at {LocationResolver.GetLocation(existingAction.SourceLocation)}");
         }
 
         public Exception DuplicateStateExitHandler(ParserRuleContext location, Function existingHandler, State state)
         {
             return IssueError(location,
-                              $"exit handler in state '{state.Name}' duplicates exit handler at {GetLocation(existingHandler.SourceLocation)}");
+                              $"exit handler in state '{state.Name}' duplicates exit handler at {LocationResolver.GetLocation(existingHandler.SourceLocation)}");
         }
 
         public Exception DuplicateStateEntry(ParserRuleContext location, Function existingHandler, State state)
         {
             return IssueError(location,
-                              $"entry handler in state '{state.Name}' duplicates entry handler at {GetLocation(existingHandler.SourceLocation)}");
+                              $"entry handler in state '{state.Name}' duplicates entry handler at {LocationResolver.GetLocation(existingHandler.SourceLocation)}");
         }
 
         public Exception DuplicateDeclaration(ParserRuleContext location, IPDecl duplicate, IPDecl existing)
         {
             return IssueError(location,
-                              $"'{duplicate.Name}' duplicates declaration '{existing.Name}' at {GetLocation(existing.SourceLocation)}");
+                              $"'{duplicate.Name}' duplicates declaration '{existing.Name}' at {LocationResolver.GetLocation(existing.SourceLocation)}");
         }
 
         public Exception IncorrectArgumentCount(ParserRuleContext location, int actualCount, int expectedCount)
@@ -209,12 +208,12 @@ namespace Microsoft.Pc.TypeChecker
 
         public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
         {
-            return new TranslationException($"[{GetLocation(ctx, location)}] {message}");
+            return new TranslationException($"[{LocationResolver.GetLocation(ctx, location)}] {message}");
         }
 
         private string DeclarationName(IPDecl method)
         {
-            return method.Name.Length > 0 ? method.Name : $"at {GetLocation(method.SourceLocation)}";
+            return method.Name.Length > 0 ? method.Name : $"at {LocationResolver.GetLocation(method.SourceLocation)}";
         }
 
         public Exception InvalidBindExpr(ParserRuleContext location, string message)
@@ -253,76 +252,14 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         #region Internal book keeping
-
-        private readonly ParseTreeProperty<FileInfo> originalFiles;
+               
         private readonly ICompilerOutput compilerOutput;
+        public ILocationResolver LocationResolver { get; }
 
-        public DefaultTranslationErrorHandler(ParseTreeProperty<FileInfo> originalFiles, ICompilerOutput compilerOutput)
+        public DefaultTranslationErrorHandler(ILocationResolver locationResolver, ICompilerOutput compilerOutput)
         {
-            this.originalFiles = originalFiles;
+            this.LocationResolver = locationResolver;
             this.compilerOutput = compilerOutput;
-        }
-
-        private class Location
-        {
-            public int Line { get; set; }
-            public int Column { get; set; }
-            public FileInfo File { get; set; }
-
-            public override string ToString()
-            {
-                return File == null ? throw new ArgumentException() : $"{File.Name}:{Line},{Column}";
-            }
-        }
-
-        private Location GetLocation(ParserRuleContext decl)
-        {
-            if (decl == null)
-            {
-                return new Location
-                {
-                    Line = -1,
-                    Column = -1,
-                    File = null
-                };
-            }
-
-            return new Location
-            {
-                Line = decl.Start.Line,
-                Column = decl.Start.Column + 1,
-                File = originalFiles.Get(GetRoot(decl))
-            };
-        }
-
-        private Location GetLocation(IParseTree ctx, IToken tok)
-        {
-            if (ctx == null || tok == null)
-            {
-                return new Location
-                {
-                    Line = -1,
-                    Column = -1,
-                    File = null
-                };
-            }
-
-            return new Location
-            {
-                Line = tok.Line,
-                Column = tok.Column + 1,
-                File = originalFiles.Get(GetRoot(ctx))
-            };
-        }
-
-        private static IParseTree GetRoot(IParseTree node)
-        {
-            while (node?.Parent != null)
-            {
-                node = node.Parent;
-            }
-
-            return node;
         }
 
         #endregion

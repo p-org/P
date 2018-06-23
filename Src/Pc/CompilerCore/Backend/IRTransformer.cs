@@ -116,6 +116,10 @@ namespace Microsoft.Pc.Backend
                     var (ctorTemp, ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs));
                     deps.Add(ctorStore);
                     return (ctorTemp, deps);
+                case FairNondetExpr fairNondetExpr:
+                    var (fndTemp, fndStore) = SaveInTemporary(fairNondetExpr);
+                    deps.Add(fndStore);
+                    return (fndTemp, deps);
                 case FunCallExpr funCallExpr:
                     var (funArgs, funArgsDeps) = SimplifyFunArgs(funCallExpr.Arguments);
                     deps.AddRange(funArgsDeps);
@@ -151,6 +155,10 @@ namespace Microsoft.Pc.Backend
                         SaveInTemporary(new NamedTupleExpr(location, args, namedTupleExpr.Type));
                     deps.Add(ntValStore);
                     return (ntVal, deps);
+                case NondetExpr nondetExpr:
+                    var (ndTemp, ndStore) = SaveInTemporary(nondetExpr);
+                    deps.Add(ndStore);
+                    return (ndTemp, deps);
                 case SeqAccessExpr seqAccessExpr:
                     var (seqExpr, seqDeps) = SimplifyExpression(seqAccessExpr.SeqExpr);
                     var (seqIdx, seqIdxDeps) = SimplifyExpression(seqAccessExpr.IndexExpr);

@@ -29,7 +29,8 @@ namespace Microsoft.Pc
                 var inputFiles = options.inputFileNames.Select(name => new FileInfo(name)).ToArray();
                 var trees = new PParser.ProgramContext[inputFiles.Length];
                 var originalFiles = new ParseTreeProperty<FileInfo>();
-                ITranslationErrorHandler handler = new DefaultTranslationErrorHandler(originalFiles, output);
+                ILocationResolver locationResolver = new DefaultLocationResolver(originalFiles);
+                ITranslationErrorHandler handler = new DefaultTranslationErrorHandler(locationResolver, output);
 
                 // Run parser on every input file
                 for (var i = 0; i < inputFiles.Length; i++)

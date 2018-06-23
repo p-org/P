@@ -48,7 +48,7 @@ namespace UnitTests.Tests
             {
                 Console.WriteLine("Test failed!\n");
                 WriteOutput(stdout, stderr, exitCode);
-                Assert.Fail(stderr);
+                Assert.Fail($"EXIT: {exitCode}\n{stderr}");
             }
 
             Console.WriteLine("Test succeeded!\n");

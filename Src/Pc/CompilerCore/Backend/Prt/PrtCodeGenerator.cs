@@ -686,7 +686,8 @@ namespace Microsoft.Pc.Backend.Prt
                 case AssertStmt assertStmt:
                     context.Write(output, "PrtAssert(PrtPrimGetBool(");
                     WriteExpr(context, output, function, assertStmt.Assertion);
-                    context.WriteLine(output, $"), \"{assertStmt.Message}\");");
+                    var messageLocation = context.Handler.LocationResolver.GetLocation(assertStmt);
+                    context.WriteLine(output, $"), \"[{messageLocation}] {assertStmt.Message}\");");
                     break;
                 case AssignStmt assignStmt:
                     // Lookup lvalue
@@ -1010,9 +1011,17 @@ namespace Microsoft.Pc.Backend.Prt
             switch (expr)
             {
                 case CloneExpr cloneExpr:
-                    context.Write(output, "PrtCloneValue(");
-                    WriteExpr(context, output, function, cloneExpr.Term);
-                    context.Write(output, ")");
+                    bool isAllocating = IsAllocatingTerm(cloneExpr.Term);
+                    if (!isAllocating)
+                    {
+                        context.Write(output, "PrtCloneValue(");
+                        WriteExpr(context, output, function, cloneExpr.Term);
+                        context.Write(output, ")");
+                    }
+                    else
+                    {
+                        WriteExpr(context, output, function, cloneExpr.Term);
+                    }
                     break;
                 case BinOpExpr binOpExpr:
                     IPExpr binOpLhs = binOpExpr.Lhs;
@@ -1056,9 +1065,9 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case CastExpr castExpr:
                     string castTypeName = context.Names.GetNameForType(castExpr.Type);
-                    context.Write(output, "PrtCastValue(");
+                    context.Write(output, "PrtCloneValue(PrtCastValue(");
                     WriteExpr(context, output, function, castExpr.SubExpr);
-                    context.Write(output, $", &{castTypeName})");
+                    context.Write(output, $", &{castTypeName}))");
                     break;
                 case CoerceExpr coerceExpr:
                     string coerceCtor;
@@ -1118,7 +1127,8 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, $"PrtMkDefaultValue(&{nameForDefaultType})");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
-                    context.Write(output, PrtTranslationUtils.GetPrtNameForDecl(context, enumElemRefExpr.Value));
+                    string enumLiteralName = context.RegisterLiteral(function, enumElemRefExpr.Value.Value);
+                    context.Write(output, $"(&{enumLiteralName})");
                     break;
                 case EventRefExpr eventRefExpr:
                     context.Write(output, $"(&{PrtTranslationUtils.GetPrtNameForDecl(context, eventRefExpr.Value)}.value)");
@@ -1229,6 +1239,27 @@ namespace Microsoft.Pc.Backend.Prt
                 case VariableAccessExpr variableAccessExpr:
                     WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
                     break;
+            }
+        }
+
+        private static bool IsAllocatingTerm(IExprTerm term)
+        {
+            switch (term)
+            {
+                case DefaultExpr _:
+                case NullLiteralExpr _:
+                    return true;
+                case EnumElemRefExpr _:
+                case EventRefExpr _:
+                case FloatLiteralExpr _:
+                case IntLiteralExpr _:
+                case BoolLiteralExpr _:
+                case LinearAccessRefExpr _:
+                case ThisRefExpr _:
+                case VariableAccessExpr _:
+                    return false;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(term));
             }
         }
 

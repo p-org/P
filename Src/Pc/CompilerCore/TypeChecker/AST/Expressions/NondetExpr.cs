@@ -3,7 +3,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
-    public class NondetExpr : IStaticTerm
+    public class NondetExpr : IPExpr
     {
         public NondetExpr(ParserRuleContext sourceLocation)
         {

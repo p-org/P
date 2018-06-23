@@ -803,14 +803,17 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, "{");
                     string movedVarName = GetVariablePointer(context, function, moveAssignStmt.FromVariable);
 
-                    // Free old value
-                    context.Write(output, "PrtFreeValue(");
-                    WriteExpr(context, output, function, moveAssignStmt.ToLocation);
+                    // Get reference to old value
+                    string movedLValue = context.Names.GetTemporaryName("LVALUE");
+                    context.Write(output, $"PRT_VALUE** {movedLValue} = &(");
+                    WriteLValue(context, output, function, moveAssignStmt.ToLocation);
                     context.WriteLine(output, ");");
 
+                    // Free old value
+                    context.WriteLine(output, $"PrtFreeValue(*{movedLValue});");
+                    
                     // Move variable to lvalue location
-                    WriteExpr(context, output, function, moveAssignStmt.ToLocation);
-                    context.WriteLine(output, $" = {movedVarName};");
+                    context.WriteLine(output, $"*{movedLValue} = {movedVarName};");
 
                     // Null out old variable
                     context.WriteLine(output, $"{movedVarName} = NULL;");

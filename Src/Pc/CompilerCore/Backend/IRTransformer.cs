@@ -266,12 +266,17 @@ namespace Microsoft.Pc.Backend
                 case AssignStmt assignStmt:
                     var (assignLV, assignLVDeps) = SimplifyLvalue(assignStmt.Location);
                     var (assignRV, assignRVDeps) = SimplifyExpression(assignStmt.Value);
-                    return assignLVDeps.Concat(assignRVDeps)
-                                       .Concat(new[]
-                                       {
-                                           new AssignStmt(location, assignLV, MakeClone(assignRV))
-                                       })
-                                       .ToList();
+                    IPStmt assignment;
+                    // If temporary returned, then automatically move.
+                    if (assignRV is VariableAccessExpr variableRef && variableRef.Variable.Role.HasFlag(VariableRole.Temp))
+                    {
+                        assignment = new MoveAssignStmt(location, assignLV, variableRef.Variable);
+                    }
+                    else
+                    {
+                        assignment = new AssignStmt(location, assignLV, MakeClone(assignRV));
+                    }
+                    return assignLVDeps.Concat(assignRVDeps).Concat(new[]{assignment}).ToList();
                 case CompoundStmt compoundStmt:
                     var newBlock = new List<IPStmt>();
                     foreach (IPStmt step in compoundStmt.Statements)

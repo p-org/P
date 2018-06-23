@@ -681,12 +681,10 @@ PRT_VALUE **PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_
 	PrtAssert(PrtIsValidValue(value), "Invalid value expression.");
 	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
 
-	PRT_UINT32 bucketNum;
-	PRT_MAPNODE *bucket;
-	PRT_MAPNODE *node = NULL;
+	PRT_MAPNODE *node;
 
-	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->valueUnion.map->capNum];
-	bucket = map->valueUnion.map->buckets[bucketNum];
+	const PRT_UINT32 bucket_num = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->valueUnion.map->capNum];
+	PRT_MAPNODE *bucket = map->valueUnion.map->buckets[bucket_num];
 	if (bucket == NULL)
 	{
 		node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
@@ -694,7 +692,7 @@ PRT_VALUE **PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_
 		node->value = cloneValue == PRT_TRUE ? PrtCloneValue(value) : value;
 		node->bucketNext = NULL;
 		node->insertNext = NULL;
-		map->valueUnion.map->buckets[bucketNum] = node;
+		map->valueUnion.map->buckets[bucket_num] = node;
 	}
 	else
 	{
@@ -725,7 +723,7 @@ PRT_VALUE **PrtMapUpdateHelper(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_
 		node->value = valueClone;
 		node->bucketNext = bucket;
 		node->insertNext = NULL;
-		map->valueUnion.map->buckets[bucketNum] = node;
+		map->valueUnion.map->buckets[bucket_num] = node;
 	}
 
 	if (map->valueUnion.map->last == NULL)
@@ -827,13 +825,73 @@ void PRT_CALL_CONV PrtMapRemove(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key)
 	}
 }
 
+static PRT_MAPNODE* PrtMapGetValueNode(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey)
+{
+	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
+	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
+	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
+
+	const PRT_UINT32 bucket_num = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->valueUnion.map->capNum];
+	PRT_MAPNODE *bucket = map->valueUnion.map->buckets[bucket_num];
+
+	PRT_MAPNODE *next = bucket;
+	while (next != NULL)
+	{
+		if (PrtIsEqualValue(next->key, key))
+		{
+			// We own key, therefore need to free the unused key.
+			if (cloneKey != PRT_TRUE)
+			{
+				PrtFreeValue(key);
+			}
+
+			return next;
+		}
+
+		next = next->bucketNext;
+	}
+
+	// If we couldn't find a node matching our key in the bucket...
+	PRT_MAPNODE* node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
+	PrtAssert(node, "PrtMalloc failed to allocate new map node");
+
+	node->key = cloneKey == PRT_TRUE ? PrtCloneValue(key) : key;
+	node->value = NULL;
+	node->bucketNext = bucket;
+	node->insertNext = NULL;
+	map->valueUnion.map->buckets[bucket_num] = node;
+
+	if (map->valueUnion.map->last == NULL)
+	{
+		map->valueUnion.map->first = node;
+		map->valueUnion.map->last = node;
+		node->insertPrev = NULL;
+	}
+	else
+	{
+		node->insertPrev = map->valueUnion.map->last;
+		map->valueUnion.map->last->insertNext = node;
+		map->valueUnion.map->last = node;
+	}
+
+	map->valueUnion.map->size = map->valueUnion.map->size + 1;
+
+	if (((double)map->valueUnion.map->size) / ((double)PrtHashtableCapacities[map->valueUnion.map->capNum]) > ((double)PRT_MAXHASHLOAD))
+	{
+		PrtMapExpand(map);
+	}
+
+	return node;
+}
+
 PRT_VALUE ** PRT_CALL_CONV PrtMapGetLValue(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *key, _In_ PRT_BOOLEAN cloneKey, _In_ PRT_TYPE* mapType)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid map in map-lvalue.");
 	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Map argument must be a map.");
 	PrtAssert(mapType->typeKind == PRT_KIND_MAP, "Map type argument must be a map type.");
-	PRT_TYPE* valueType = mapType->typeUnion.map->codType;
-	return PrtMapUpdateHelper(map, key, cloneKey, PrtMkDefaultValue(valueType), PRT_FALSE);
+
+	PRT_MAPNODE* node = PrtMapGetValueNode(map, key, cloneKey);
+	return &node->value;
 }
 
 PRT_VALUE * PRT_CALL_CONV PrtMapGet(_In_ PRT_VALUE *map, _In_ PRT_VALUE* key)

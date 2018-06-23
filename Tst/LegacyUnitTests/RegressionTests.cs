@@ -14,9 +14,8 @@ namespace LegacyUnitTests
 {
 
     [TestFixture]
-    //Parallel execution is not working:
     [Parallelizable(ParallelScope.Children)]
-    //[NonParallelizable]
+    [Ignore("Too time-consuming")]
     public class RegressionTests
     {
         private ThreadLocal<LegacyCompiler> PCompiler { get; } = new ThreadLocal<LegacyCompiler>(() => new LegacyCompiler(true));

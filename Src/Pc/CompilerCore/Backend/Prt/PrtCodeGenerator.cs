@@ -675,6 +675,11 @@ namespace Microsoft.Pc.Backend.Prt
             output.Write(bodyWriter);
         }
 
+        private static string GetVariableReference(CompilationContext context, Function function, IVariableRef variableRef)
+        {
+            return $"&({GetVariablePointer(context, function, variableRef.Variable)})";
+        }
+
         private static void WriteStmt(CompilationContext context, Function function, IPStmt stmt, TextWriter output)
         {
             context.WriteLine(output, $"// {stmt.GetType().Name}");
@@ -720,7 +725,7 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
-                        context.Write(output, $", &{PrtTranslationUtils.GetPrtNameForDecl(context, argVar.Variable)}");
+                        context.Write(output, $", {GetVariableReference(context, function, argVar)}");
                     }
 
                     context.WriteLine(output, ");");
@@ -730,10 +735,10 @@ namespace Microsoft.Pc.Backend.Prt
                     var funArgs = funCallStmt.ArgsList.Cast<ILinearRef>().ToList();
 
                     // Put all the arguments in the args array
-                    foreach (var arg in funArgs.Select((arg, i) => new {arg.Variable, i}))
+                    foreach (var arg in funArgs.Select((arg, i) => new {arg, i}))
                     {
                         context.WriteLine(
-                            output, $"{FunCallArgsArrayName}[{arg.i}] = &{PrtTranslationUtils.GetPrtNameForDecl(context, arg.Variable)};");
+                            output, $"{FunCallArgsArrayName}[{arg.i}] = {GetVariableReference(context, function, arg.arg)};");
                     }
 
                     // Call the function and immediately free the value
@@ -741,7 +746,7 @@ namespace Microsoft.Pc.Backend.Prt
 
                     // Free and set to null all the moved arguments
                     var toFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
-                                        .Select(arg => PrtTranslationUtils.GetPrtNameForDecl(context, arg.Variable));
+                                        .Select(arg => GetVariablePointer(context, function, arg.Variable));
                     foreach (string argName in toFree)
                     {
                         context.WriteLine(output, $"PrtFreeValue({argName});");
@@ -758,7 +763,7 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         Debug.Assert(gotoStmt.Payload is IVariableRef);
                         var gotoArg = (IVariableRef) gotoStmt.Payload;
-                        context.Write(output, $"1, &{PrtTranslationUtils.GetPrtNameForDecl(context, gotoArg.Variable)}");
+                        context.Write(output, $"1, {GetVariableReference(context, function, gotoArg)}");
                     }
                     else
                     {
@@ -788,12 +793,12 @@ namespace Microsoft.Pc.Backend.Prt
                     Debug.Assert(insertStmt.Value is IVariableRef);
                     WriteExpr(context, output, function, insertStmt.Value);
                     context.WriteLine(output, ", PRT_FALSE);");
-                    Variable insertValueVar = ((IVariableRef) insertStmt.Value).Variable;
-                    context.WriteLine(output, $"{PrtTranslationUtils.GetPrtNameForDecl(context, insertValueVar)} = NULL;");
+                    var insertValueVar = (IVariableRef) insertStmt.Value;
+                    context.WriteLine(output, $"*({GetVariableReference(context, function, insertValueVar)}) = NULL;");
                     break;
                 case MoveAssignStmt moveAssignStmt:
                     context.WriteLine(output, "{");
-                    string movedVarName = PrtTranslationUtils.GetPrtNameForDecl(context, moveAssignStmt.FromVariable);
+                    string movedVarName = GetVariablePointer(context, function, moveAssignStmt.FromVariable);
 
                     // Free old value
                     context.Write(output, "PrtFreeValue(");
@@ -828,14 +833,14 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
-                        context.Write(output, $", &{PrtTranslationUtils.GetPrtNameForDecl(context, argVar.Variable)}");
+                        context.Write(output, $", {GetVariableReference(context, function, argVar)}");
                     }
 
                     context.WriteLine(output, ");");
 
                     Debug.Assert(raiseStmt.PEvent is IVariableRef);
                     var raiseEventVar = (IVariableRef) raiseStmt.PEvent;
-                    context.WriteLine(output, $"{PrtTranslationUtils.GetPrtNameForDecl(context, raiseEventVar.Variable)} = NULL;");
+                    context.WriteLine(output, $"*({GetVariableReference(context, function, raiseEventVar)}) = NULL;");
                     context.WriteLine(output, "goto p_return;");
                     break;
                 case ReceiveStmt receiveStmt:
@@ -886,14 +891,14 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         Debug.Assert(sendArgExpr is IVariableRef);
                         var argVar = (IVariableRef) sendArgExpr;
-                        context.Write(output, $", &{PrtTranslationUtils.GetPrtNameForDecl(context, argVar.Variable)}");
+                        context.Write(output, $", {GetVariableReference(context, function, argVar)}");
                     }
 
                     context.WriteLine(output, ");");
 
                     Debug.Assert(sendStmt.Evt is IVariableRef);
                     var sendEventVar = (IVariableRef) sendStmt.Evt;
-                    context.WriteLine(output, $"{PrtTranslationUtils.GetPrtNameForDecl(context, sendEventVar.Variable)} = NULL;");
+                    context.WriteLine(output, $"*({GetVariableReference(context, function, sendEventVar)}) = NULL;");
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     context.WriteLine(output, "{");
@@ -901,7 +906,7 @@ namespace Microsoft.Pc.Backend.Prt
                     string tmpName = context.Names.GetTemporaryName("SWAP");
 
                     // Can only swap local variables, so this is safe. Otherwise would have to call a second WriteLValue
-                    string swappedName = PrtTranslationUtils.GetPrtNameForDecl(context, swapAssignStmt.OldLocation);
+                    string swappedName = GetVariablePointer(context, function, swapAssignStmt.OldLocation);
 
                     // Save l-value
                     context.Write(output, $"PRT_VALUE** {lvName} = &(");
@@ -1117,7 +1122,7 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
-                        context.Write(output, $", &{PrtTranslationUtils.GetPrtNameForDecl(context, argVar.Variable)}");
+                        context.Write(output, $", {GetVariableReference(context, function, argVar)}");
                     }
 
                     context.Write(output, ")->id)");
@@ -1143,12 +1148,10 @@ namespace Microsoft.Pc.Backend.Prt
                 case FunCallExpr funCallExpr:
                     string funImplName = context.Names.GetNameForFunctionImpl(funCallExpr.Function);
                     var funArgs = funCallExpr.Arguments.Cast<ILinearRef>().ToList();
-                    var argSetup =
-                        funArgs.Select(
-                            (arg, i) => $"({FunCallArgsArrayName}[{i}] = &{PrtTranslationUtils.GetPrtNameForDecl(context, arg.Variable)})");
+                    var argSetup = funArgs.Select((arg, i) => $"({FunCallArgsArrayName}[{i}] = {GetVariableReference(context, function, arg)})");
                     var funCall = new[] {$"({FunCallRetValName} = {funImplName}(context, {FunCallArgsArrayName}))"};
                     var argsFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
-                                          .Select(arg => PrtTranslationUtils.GetPrtNameForDecl(context, arg.Variable))
+                                          .Select(arg => GetVariablePointer(context, function, arg.Variable))
                                           .Select(varName => $"(PrtFreeValue({varName}), {varName} = NULL)");
                     var resRetrieve = new[] {$"({FunCallRetValName})"};
                     string fullCall = string.Join(", ", argSetup.Concat(funCall).Concat(argsFree).Concat(resRetrieve));
@@ -1183,7 +1186,7 @@ namespace Microsoft.Pc.Backend.Prt
                     var ntArgs = (IReadOnlyList<IVariableRef>) namedTupleExpr.TupleFields;
                     string ntTypeName = context.Names.GetNameForType(namedTupleExpr.Type);
                     string namedTupleBody =
-                        string.Join(", ", ntArgs.Select(v => $"&{PrtTranslationUtils.GetPrtNameForDecl(context, v.Variable)}"));
+                        string.Join(", ", ntArgs.Select(v => GetVariableReference(context, function, v)));
                     context.Write(output, $"(PrtMkTuple(&{ntTypeName}, {namedTupleBody}))");
                     break;
                 case NondetExpr _:
@@ -1228,7 +1231,7 @@ namespace Microsoft.Pc.Backend.Prt
                     var utArgs = (IReadOnlyList<IVariableRef>) unnamedTupleExpr.TupleFields;
                     string utTypeName = context.Names.GetNameForType(unnamedTupleExpr.Type);
                     string tupleBody =
-                        string.Join(", ", utArgs.Select(v => $"&{PrtTranslationUtils.GetPrtNameForDecl(context, v.Variable)}"));
+                        string.Join(", ", utArgs.Select(v => GetVariableReference(context, function, v)));
                     context.Write(output, $"(PrtMkTuple(&{utTypeName}, {tupleBody}))");
                     break;
                 case ValuesExpr valuesExpr:
@@ -1263,31 +1266,32 @@ namespace Microsoft.Pc.Backend.Prt
             }
         }
 
-        private static void WriteVariableAccess(CompilationContext context, TextWriter output, Function function, Variable variable)
+        private static string GetVariablePointer(CompilationContext context, Function function, Variable variable)
         {
             if (variable.Role.HasFlag(VariableRole.Param))
             {
                 // dereference, since params are passed by reference.
-                context.Write(output, "*");
-                context.Write(output, PrtTranslationUtils.GetPrtNameForDecl(context, variable));
-                // => *name
+                return $"*{PrtTranslationUtils.GetPrtNameForDecl(context, variable)}";
             }
-            else if (variable.Role.HasFlag(VariableRole.Field))
+            
+            if (variable.Role.HasFlag(VariableRole.Field))
             {
                 // TODO: is this always correct? I think the iterator ordering of a List should be consistent...
                 int varIdx = function.Owner.Fields.ToList().IndexOf(variable);
-                context.Write(output, $"p_this->varValues[{varIdx}]");
-                // => p_this->varValues[#]
+                return $"p_this->varValues[{varIdx}]";
             }
-            else if (variable.Role.HasFlag(VariableRole.Temp) || variable.Role.HasFlag(VariableRole.Local))
+
+            if (variable.Role.HasFlag(VariableRole.Temp) || variable.Role.HasFlag(VariableRole.Local))
             {
-                context.Write(output, PrtTranslationUtils.GetPrtNameForDecl(context, variable));
-                // => name
+                return PrtTranslationUtils.GetPrtNameForDecl(context, variable);
             }
-            else
-            {
-                throw new ArgumentOutOfRangeException(nameof(variable));
-            }
+
+            throw new ArgumentOutOfRangeException(nameof(variable));
+        }
+
+        private static void WriteVariableAccess(CompilationContext context, TextWriter output, Function function, Variable variable)
+        {
+            context.Write(output, GetVariablePointer(context, function, variable));
         }
 
         private static string UnOpToStr(UnaryOpType operation)

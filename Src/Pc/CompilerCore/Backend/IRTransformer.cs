@@ -116,6 +116,10 @@ namespace Microsoft.Pc.Backend
                     var (ctorTemp, ctorStore) = SaveInTemporary(new CtorExpr(location, ctorExpr.Interface, ctorArgs));
                     deps.Add(ctorStore);
                     return (ctorTemp, deps);
+                case DefaultExpr defaultExpr:
+                    var (defTemp, defStore) = SaveInTemporary(defaultExpr);
+                    deps.Add(defStore);
+                    return (defTemp, deps);
                 case FairNondetExpr fairNondetExpr:
                     var (fndTemp, fndStore) = SaveInTemporary(fairNondetExpr);
                     deps.Add(fndStore);

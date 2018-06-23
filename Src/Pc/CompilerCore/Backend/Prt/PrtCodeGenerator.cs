@@ -17,9 +17,10 @@ namespace Microsoft.Pc.Backend.Prt
 {
     public class PrtCodeGenerator : ICodeGenerator
     {
-        private const string FunCallArgsArrayName = "FUNARGS";
-        private const string FunCallRetValName = "FUNRETVAL";
-        private const string FunResultValName = "retval";
+        private const string FunCallArgsArrayName = "_P_GEN_funargs";
+        private const string FunCallRetValName = "_P_GEN_funval";
+        private const string FunResultValName = "_P_GEN_retval";
+        private const string FunNullStaticName = "_P_GEN_null";
 
         public IReadOnlyList<CompiledFile> GenerateCode(ITranslationErrorHandler handler, ICompilerOutput log, string projectName,
                                                         Scope globalScope)
@@ -655,6 +656,8 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(bodyWriter, $"return {FunResultValName};");
 
             // Write gathered literals to the prologue
+            context.WriteLine(output, $"PRT_VALUE {FunNullStaticName} = {{ PRT_VALUE_KIND_NULL, {{ .ev = PRT_SPECIAL_EVENT_NULL }} }};");
+
             foreach (var literal in context.GetRegisteredIntLiterals(function))
             {
                 context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_INT, {{ .nt = {literal.Key} }} }};");
@@ -1016,17 +1019,9 @@ namespace Microsoft.Pc.Backend.Prt
             switch (expr)
             {
                 case CloneExpr cloneExpr:
-                    bool isAllocating = IsAllocatingTerm(cloneExpr.Term);
-                    if (!isAllocating)
-                    {
-                        context.Write(output, "PrtCloneValue(");
-                        WriteExpr(context, output, function, cloneExpr.Term);
-                        context.Write(output, ")");
-                    }
-                    else
-                    {
-                        WriteExpr(context, output, function, cloneExpr.Term);
-                    }
+                    context.Write(output, "PrtCloneValue(");
+                    WriteExpr(context, output, function, cloneExpr.Term);
+                    context.Write(output, ")");
                     break;
                 case BinOpExpr binOpExpr:
                     IPExpr binOpLhs = binOpExpr.Lhs;
@@ -1193,7 +1188,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, "(PrtMkNondetBoolValue())");
                     break;
                 case NullLiteralExpr _:
-                    context.Write(output, "PrtMkNullValue()");
+                    context.Write(output, $"(&{FunNullStaticName})");
                     break;
                 case SeqAccessExpr seqAccessExpr:
                     context.Write(output, "PrtSeqGet(");
@@ -1242,27 +1237,6 @@ namespace Microsoft.Pc.Backend.Prt
                 case VariableAccessExpr variableAccessExpr:
                     WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
                     break;
-            }
-        }
-
-        private static bool IsAllocatingTerm(IExprTerm term)
-        {
-            switch (term)
-            {
-                case DefaultExpr _:
-                case NullLiteralExpr _:
-                    return true;
-                case EnumElemRefExpr _:
-                case EventRefExpr _:
-                case FloatLiteralExpr _:
-                case IntLiteralExpr _:
-                case BoolLiteralExpr _:
-                case LinearAccessRefExpr _:
-                case ThisRefExpr _:
-                case VariableAccessExpr _:
-                    return false;
-                default:
-                    throw new ArgumentOutOfRangeException(nameof(term));
             }
         }
 

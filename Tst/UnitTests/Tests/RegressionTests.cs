@@ -88,8 +88,7 @@ namespace UnitTests.Tests
                 Console.WriteLine($"Exit code = {exitCode}");
             }
         }
-
-        [Test]
+        
         [TestCaseSource(nameof(TestCases))]
         public void TestAllRegressions(DirectoryInfo testDir, Dictionary<TestType, TestConfig> testConfigs)
         {

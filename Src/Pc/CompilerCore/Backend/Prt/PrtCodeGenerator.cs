@@ -685,10 +685,10 @@ namespace Microsoft.Pc.Backend.Prt
 
         private static void WriteStmt(CompilationContext context, Function function, IPStmt stmt, TextWriter output)
         {
-            context.WriteLine(output, $"// {stmt.GetType().Name}");
+            context.WriteLine(output, $"// [{context.Handler.LocationResolver.GetLocation(stmt)}] {stmt.GetType().Name}");
             switch (stmt)
             {
-                case AnnounceStmt announceStmt:
+                case AnnounceStmt _:
                     // TODO: Ankush needs to implement this in Prt
                     break;
                 case AssertStmt assertStmt:

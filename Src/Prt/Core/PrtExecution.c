@@ -820,7 +820,6 @@ DoAction:
 		
 		PRT_VALUE** refLocals[1] = { &context->currentPayload };
 		doFun->implementation((PRT_MACHINEINST *)context, refLocals);
-		PrtFreeTriggerPayload(context);
 	}
 	goto CheckLastOperation;
 

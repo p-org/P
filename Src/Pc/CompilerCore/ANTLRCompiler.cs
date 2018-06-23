@@ -50,11 +50,6 @@ namespace Microsoft.Pc
                     IRTransformer.SimplifyMethod(fun);
                 }
 
-#if DEBUG
-                // Validate linear type ownership after IR lowering.
-                LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
-#endif
-
                 // Run the selected backend on the project and write the files.
                 ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.compilerOutput);
                 string projectName = options.projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0].Name);

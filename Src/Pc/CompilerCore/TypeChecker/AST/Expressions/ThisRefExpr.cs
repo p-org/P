@@ -10,12 +10,13 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
         {
             SourceLocation = sourceLocation;
             Value = value;
+            Type = new PermissionType(value);
         }
 
         public Machine Value { get; }
 
         public ParserRuleContext SourceLocation { get; }
 
-        public PLanguageType Type { get; } = PrimitiveType.Machine;
+        public PLanguageType Type { get; }
     }
 }

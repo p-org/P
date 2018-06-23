@@ -289,3 +289,4 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /tmp
 /**/obj/
 nupkgs/
+/Tst/temp_builds

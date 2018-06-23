@@ -62,5 +62,7 @@ namespace UnitTestsCore
 
         public static string TestResultsDirectory { get; } =
             Path.Combine(TestDirectory, $"TestResult_{BuildConfiguration}_{Platform}");
+
+        public static readonly string ScratchParentDirectory = Path.Combine(TestDirectory, "temp_builds");
     }
 }

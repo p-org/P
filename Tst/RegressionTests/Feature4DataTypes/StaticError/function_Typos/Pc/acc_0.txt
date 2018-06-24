@@ -1,6 +1,3 @@
-=================================
-         Console output          
-=================================
 OUT: ?(0,0,0,0): error PC1001: Name appears more than once in name tuple or named tuple type: a
 OUT: ?(0,0,0,0): error PC1001: Name appears more than once in name tuple or named tuple type: x
 OUT: function_Typos.p(4,3,8,3): error PC1001: No start state in machine

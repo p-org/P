@@ -2,6 +2,10 @@
 
 namespace UnitTests.Validators
 {
+    /// <inheritdoc />
+    /// <summary>
+    /// Validates that the compiler ran without issue.
+    /// </summary>
     public class CompileSuccessValidator : ITestResultsValidator
     {
         public bool ValidateResult(string stdout, string stderr, int? exitCode)
@@ -9,7 +13,7 @@ namespace UnitTests.Validators
             return exitCode == 0;
         }
 
-        public bool ValidateException(TestRunException testRunException)
+        public bool ValidateException(CompilerTestException compilerTestException)
         {
             return false;
         }

@@ -4,6 +4,9 @@ using System.Text;
 
 namespace UnitTests.Core
 {
+    /// <summary>
+    /// Test configuration details. Currently ignored, but parsed for future use.
+    /// </summary>
     public class TestConfig
     {
         public List<string> Includes { get; } = new List<string>();

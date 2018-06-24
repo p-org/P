@@ -1,12 +1,9 @@
-=================================
-         Console output          
-=================================
 OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state S
+OUT: <StateLog> Machine Main(1) entered state Main.S
 OUT: <CreateLog> Machine XYZ(2) is created
-OUT: <StateLog> Machine XYZ(2) entered state init
+OUT: <StateLog> Machine XYZ(2) entered state XYZ.init
 OUT: <RaiseLog> Machine Main(1) raised event halt with payload null
-OUT: <ExitLog> Machine Main(1) exiting state S
-OUT: <HaltLog> Machine Main(1) halted in state S
+OUT: <ExitLog> Machine Main(1) exiting state Main.S
+OUT: <HaltLog> Machine Main(1) halted in state Main.S
 OUT: 
 EXIT: 0

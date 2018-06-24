@@ -321,11 +321,11 @@ namespace Microsoft.Pc.Backend.Prt
                         context.WriteLine(output, "{");
                         for (var i = 0; i < stateData.Dos.Count; i++)
                         {
-                            (PEvent triggerEvent, Function transFun) = stateData.Dos[i];
+                            (PEvent triggerEvent, Function doFun) = stateData.Dos[i];
                             string triggerName = PrtTranslationUtils.GetPrtNameForDecl(context, triggerEvent);
                             string comma = i == stateData.Dos.Count - 1 ? "" : ",";
-                            string funName = transFun != null ? PrtTranslationUtils.GetPrtNameForDecl(context, transFun) : "_P_NO_OP";
-                            context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, &{funName} }}{comma}");
+                            string funName = doFun != null ? $"&{PrtTranslationUtils.GetPrtNameForDecl(context, doFun)}" : "NULL";
+                            context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {funName} }}{comma}");
                         }
 
                         context.WriteLine(output, "};");

@@ -1,27 +1,24 @@
-=================================
-         Console output          
-=================================
 OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Init
+OUT: <StateLog> Machine Main(1) entered state Main.Init
 OUT: <RaiseLog> Machine Main(1) raised event unit with payload null
-OUT: <ExitLog> Machine Main(1) exiting state Init
-OUT: <StateLog> Machine Main(1) entered state XYZ
+OUT: <ExitLog> Machine Main(1) exiting state Main.Init
+OUT: <StateLog> Machine Main(1) entered state Main.XYZ
 OUT: <EnqueueLog> Enqueued event unit with payload null on Machine Main(1)
 OUT: <DequeueLog> Dequeued event unit with payload null by Machine Main(1)
-OUT: <ExitLog> Machine Main(1) exiting state XYZ
-OUT: <StateLog> Machine Main(1) entered state XYZ
+OUT: <ExitLog> Machine Main(1) exiting state Main.XYZ
+OUT: <StateLog> Machine Main(1) entered state Main.XYZ
 OUT: <EnqueueLog> Enqueued event unit with payload null on Machine Main(1)
 OUT: <DequeueLog> Dequeued event unit with payload null by Machine Main(1)
-OUT: <ExitLog> Machine Main(1) exiting state XYZ
-OUT: <StateLog> Machine Main(1) entered state XYZ
+OUT: <ExitLog> Machine Main(1) exiting state Main.XYZ
+OUT: <StateLog> Machine Main(1) entered state Main.XYZ
 OUT: <EnqueueLog> Enqueued event unit with payload null on Machine Main(1)
 OUT: <DequeueLog> Dequeued event unit with payload null by Machine Main(1)
-OUT: <ExitLog> Machine Main(1) exiting state XYZ
-OUT: <StateLog> Machine Main(1) entered state XYZ
+OUT: <ExitLog> Machine Main(1) exiting state Main.XYZ
+OUT: <StateLog> Machine Main(1) entered state Main.XYZ
 OUT: <EnqueueLog> Enqueued event unit with payload null on Machine Main(1)
 OUT: <DequeueLog> Dequeued event unit with payload null by Machine Main(1)
-OUT: <ExitLog> Machine Main(1) exiting state XYZ
-OUT: <StateLog> Machine Main(1) entered state XYZ
+OUT: <ExitLog> Machine Main(1) exiting state Main.XYZ
+OUT: <StateLog> Machine Main(1) entered state Main.XYZ
 OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
 OUT: 
 EXIT: 1

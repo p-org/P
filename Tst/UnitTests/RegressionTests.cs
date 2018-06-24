@@ -40,7 +40,7 @@ namespace UnitTests
     [Parallelizable(ParallelScope.Children)]
     public class RegressionTests
     {
-        private static IEnumerable<TestCaseData> TestCases =>
+        private static IEnumerable<TestCaseData> RegressionTestSuite =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
 
         private static void AssertTestCase(CompilerTestCase testCase)
@@ -89,14 +89,10 @@ namespace UnitTests
                 Console.WriteLine($"Exit code = {exitCode}");
             }
         }
-        
-        [TestCaseSource(nameof(TestCases))]
-        public void TestAllRegressions(DirectoryInfo testDir, Dictionary<TestType, TestConfig> testConfigs)
-        {
-            DirectoryInfo tempDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
-            var factory = new TestCaseFactory(tempDir);
 
-            CompilerTestCase testCase = factory.CreateTestCase(testDir, testConfigs);
+        [TestCaseSource(nameof(RegressionTestSuite))]
+        public void TestAllRegressions(CompilerTestCase testCase)
+        {
             AssertTestCase(testCase);
         }
 
@@ -104,10 +100,10 @@ namespace UnitTests
         public void TestTemp()
         {
             DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestTemp"));
-            FileInfo[] inputFiles = {new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p")) };
+            FileInfo[] inputFiles = {new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p"))};
 
-            var testCase = new CompilerTestCase(tempDir, new ExecutionRunner(inputFiles),
-                                                new ExecutionOutputValidator(code => code == 0, "", ""));
+            var testCase = new CompilerTestCase(tempDir, new PrtRunner(inputFiles),
+                                                new ExecutionOutputValidator(0, null, null));
 
             AssertTestCase(testCase);
         }

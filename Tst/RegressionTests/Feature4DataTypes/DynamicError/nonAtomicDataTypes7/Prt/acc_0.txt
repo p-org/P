@@ -1,8 +1,5 @@
-=================================
-         Console output          
-=================================
 OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state S
+OUT: <StateLog> Machine Main(1) entered state Main.S
 OUT: 
 ERROR: ASSERT: Invalid map get; key not found
 EXIT: 1

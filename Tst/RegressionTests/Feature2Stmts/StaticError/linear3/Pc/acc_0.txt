@@ -1,6 +1,3 @@
-=================================
-         Console output          
-=================================
 OUT: linear3.p(18,4,18,7): error PC1001: Parameter passed with swap not available at callee return
 OUT: linear3.p(21,4,21,8): error PC1001: Variable is not available
 OUT: linear3.p(29,4,29,8): error PC1001: Variable is not available

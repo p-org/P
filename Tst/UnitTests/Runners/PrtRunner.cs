@@ -8,18 +8,25 @@ using UnitTests.Core;
 
 namespace UnitTests.Runners
 {
-    public class ExecutionRunner : ICompilerTestRunner
+    /// <inheritdoc />
+    /// <summary>
+    /// Runs a test using the Prt backend, calling MSBuild in the process
+    /// </summary>
+    public class PrtRunner : ICompilerTestRunner
     {
-        private readonly DirectoryInfo prtTestProjDirectory;
+        private readonly DirectoryInfo prtTestProjDirectory = new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
         private readonly IReadOnlyList<FileInfo> sources;
 
-        public ExecutionRunner(IReadOnlyList<FileInfo> sources)
+        /// <summary>
+        /// Create a new test runner from the given P source files
+        /// </summary>
+        /// <param name="sources">P source files to compile</param>
+        public PrtRunner(IReadOnlyList<FileInfo> sources)
         {
             this.sources = sources;
-            prtTestProjDirectory = Directory.CreateDirectory(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
         }
 
-        public int? RunTest(DirectoryInfo scratchDirectory, out string testStdout, out string testStderr)
+        public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             DoCompile(scratchDirectory);
 
@@ -32,18 +39,22 @@ namespace UnitTests.Runners
             }
 
             // Copy tester into destination directory.
-            FileHelper.CopyFiles(prtTestProjDirectory, tmpDirName);
-            if (!RunMsBuildExe(tmpDirName, out testStdout))
+            CopyFiles(prtTestProjDirectory, tmpDirName);
+            if (!RunMsBuildExe(tmpDirName, out stdout, out stderr))
             {
-                throw new TestRunException(TestCaseError.GeneratedSourceCompileFailed);
+                throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed);
             }
 
-            return ProcessHelper.RunWithOutput(
-                Path.Combine(tmpDirName, Constants.BuildConfiguration, Constants.Platform, Constants.CTesterExecutableName),
-                tmpDirName,
-                Enumerable.Empty<string>(),
-                out testStdout,
-                out testStderr);
+            string testerExeName = Path.Combine(tmpDirName, Constants.BuildConfiguration, Constants.Platform, Constants.CTesterExecutableName);
+            return ProcessHelper.RunWithOutput(tmpDirName, out stdout, out stderr, testerExeName);
+        }
+
+        private static void CopyFiles(DirectoryInfo src, string target)
+        {
+            foreach (var file in src.GetFiles())
+            {
+                File.Copy(file.FullName, Path.Combine(target, file.Name), true);
+            }
         }
 
         private void DoCompile(DirectoryInfo scratchDirectory)
@@ -59,21 +70,20 @@ namespace UnitTests.Runners
 
             if (!success)
             {
-                throw new TestRunException(TestCaseError.TranslationFailed);
+                throw new CompilerTestException(TestCaseError.TranslationFailed);
             }
         }
 
-        private static bool RunMsBuildExe(string tmpDir, out string output)
+        private static bool RunMsBuildExe(string tmpDir, out string stdout, out string stderr)
         {
             const string msbuildpath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe";
             int exitStatus = ProcessHelper.RunWithOutput(
-                msbuildpath,
                 tmpDir,
-                new[] {$"/p:Configuration={Constants.BuildConfiguration}", $"/p:Platform={Constants.Platform}", "/t:Build"},
-                out string stdout,
-                out string stderr
-            );
-            output = $"{stdout}\n{stderr}";
+                out stdout,
+                out stderr,
+                msbuildpath,
+                $"/p:Configuration={Constants.BuildConfiguration}",
+                $"/p:Platform={Constants.Platform}", "/t:Build");
             return exitStatus == 0;
         }
 

@@ -1,9 +1,6 @@
-=================================
-         Console output          
-=================================
 OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state S
+OUT: <StateLog> Machine Main(1) entered state Main.S
 OUT: <CreateLog> Machine XYZ(2) is created
-OUT: <StateLog> Machine XYZ(2) entered state init
+OUT: <StateLog> Machine XYZ(2) entered state XYZ.init
 OUT: 
 EXIT: 0

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,59 +7,54 @@ using NUnit.Framework;
 
 namespace UnitTests.Core
 {
+    /// <summary>
+    /// Load test cases from disk for NUnit
+    /// </summary>
     public static class TestCaseLoader
     {
-        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
-        private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Combined",
-           "RegressionTests\\Feature1SMLevelDecls",  "RegressionTests\\Feature2Stmts", "RegressionTests\\Feature3Exprs",
-           "RegressionTests\\Feature4DataTypes", "RegressionTests\\Integration"
-            };
-        //To run Liveness tests, set Settings.PtWithPSharp to true:
-        //private static readonly List<string> TestDirs = new List<string> { "Liveness" };
+        private static readonly List<string> TestDirs = new List<string>
+        {
+            "RegressionTests\\Combined",
+            "RegressionTests\\Feature1SMLevelDecls",
+            "RegressionTests\\Feature2Stmts",
+            "RegressionTests\\Feature3Exprs",
+            "RegressionTests\\Feature4DataTypes",
+            "RegressionTests\\Integration"
+        };
+
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName)
         {
-            //Remove previous TestResultsDirectory:
-            try
-            {
-                if (Directory.Exists(Constants.TestResultsDirectory))
-                {
-                    Directory.Delete(Constants.TestResultsDirectory, true);
-                }
-            }
-            catch (Exception e)
-            {
-                ConsoleHelper.WriteError("ERROR: Could not delete old test directory: {0}", e.Message);
-            }
-
-            //Remove old file with diffs:
-            File.Delete(Path.Combine(Constants.TestDirectory, Constants.DisplayDiffsFile));
-
+            var testDirNames = new[] {"Pc", "Prt"};
             return from testDir in TestDirs
-                   let baseDirectory = new DirectoryInfo(Path.Combine(directoryName, testDir))
-                   from testCaseDir in baseDirectory.EnumerateDirectories("*.*", SearchOption.AllDirectories)
-                   where testCaseDir.GetDirectories().Any(info => Enum.GetNames(typeof(TestType)).Contains(info.Name))
-                   select DirectoryToTestCase(testCaseDir, baseDirectory);
+                let baseDirectory = new DirectoryInfo(Path.Combine(directoryName, testDir))
+                from testCaseDir in baseDirectory.EnumerateDirectories("*.*", SearchOption.AllDirectories)
+                where testCaseDir.GetDirectories().Select(dir => dir.Name).Any(info => testDirNames.Contains(info))
+                select DirectoryToTestCase(testCaseDir, baseDirectory);
         }
 
         private static TestCaseData DirectoryToTestCase(DirectoryInfo dir, DirectoryInfo testRoot)
         {
             var variables = GetVariables(testRoot);
-            var testConfigs =
-                (from type in Enum.GetValues(typeof(TestType)).Cast<TestType>()
-                 let configPath = Path.Combine(dir.FullName, type.ToString(), Constants.TestConfigFileName)
-                 where File.Exists(configPath)
-                 select new { type, config = ParseTestConfig(configPath, variables) })
-                .ToDictionary(kv => kv.type, kv => kv.config);
+            TestConfig runConfig = null;
+            string configPath = Path.Combine(dir.FullName, "Prt", Constants.TestConfigFileName);
+            if (File.Exists(configPath))
+            {
+                runConfig = ParseTestConfig(configPath, variables);
+            }
 
-            var category = testRoot.Name + Constants.CategorySeparator + GetCategory(dir, testRoot);
-            return new TestCaseData(dir, testConfigs)
-                .SetName(category + Constants.CategorySeparator + dir.Name)
-                .SetCategory(category);
+            DirectoryInfo tempDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            var factory = new TestCaseFactory(tempDir);
+            CompilerTestCase testCase = factory.CreateTestCase(dir, runConfig);
+
+            string category = testRoot.Name + Constants.CategorySeparator + GetCategory(dir, testRoot);
+            string testName = category + Constants.CategorySeparator + dir.Name;
+            return new TestCaseData(testCase).SetName(testName).SetCategory(category);
         }
 
         private static Dictionary<string, string> GetVariables(DirectoryInfo testRoot)
         {
-            var binDir = Path.Combine(Constants.SolutionDirectory, "bld", "drops", Constants.BuildConfiguration, Constants.Platform, "binaries");
+            string binDir = Path.Combine(Constants.SolutionDirectory, "bld", "drops", Constants.BuildConfiguration, Constants.Platform,
+                                         "binaries");
             var variables = new Dictionary<string, string>
             {
                 {"platform", Constants.Platform},
@@ -83,6 +77,7 @@ namespace UnitTests.Core
                 dir = dir.Parent;
                 sep = Constants.CategorySeparator;
             }
+
             return category;
         }
 
@@ -90,16 +85,16 @@ namespace UnitTests.Core
         {
             var testConfig = new TestConfig();
 
-            foreach (var assignment in File.ReadLines(testConfigPath))
+            foreach (string assignment in File.ReadLines(testConfigPath))
             {
                 if (string.IsNullOrWhiteSpace(assignment))
                 {
                     continue;
                 }
 
-                var parts = assignment.Split(new[] { ':' }, 2).Select(x => x.Trim()).ToArray();
-                var key = parts[0];
-                var value = SubstituteVariables(parts[1], variables);
+                var parts = assignment.Split(new[] {':'}, 2).Select(x => x.Trim()).ToArray();
+                string key = parts[0];
+                string value = SubstituteVariables(parts[1], variables);
                 switch (key)
                 {
                     case "inc":
@@ -128,11 +123,11 @@ namespace UnitTests.Core
 
         private static string SubstituteVariables(string value, IDictionary<string, string> variables)
         {
-            // Replaces variables that use a syntax like $(VarName). Inner capture group gets the name.
-            return Regex.Replace(value, @"\$\(([^)]+)\)", match =>
+            // Replaces variables that use a syntax like $(VarName).
+            return Regex.Replace(value, @"\$\((?<VarName>[^)]+)\)", match =>
             {
-                var variableName = match.Groups[1].Value.ToLowerInvariant();
-                return variables.TryGetValue(variableName, out var variableValue) ? variableValue : match.Value;
+                string variableName = match.Groups["VarName"].Value.ToLowerInvariant();
+                return variables.TryGetValue(variableName, out string variableValue) ? variableValue : match.Value;
             });
         }
     }

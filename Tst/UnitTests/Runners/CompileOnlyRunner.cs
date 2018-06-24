@@ -8,15 +8,31 @@ using UnitTests.Core;
 
 namespace UnitTests.Runners
 {
-    public class TranslationRunner : ICompilerTestRunner
+    /// <inheritdoc />
+    /// <summary>
+    /// Only run the P compiler in memory. Don't touch the disk.
+    /// </summary>
+    public class CompileOnlyRunner : ICompilerTestRunner
     {
         private readonly IReadOnlyList<FileInfo> inputFiles;
 
-        public TranslationRunner(IReadOnlyList<FileInfo> inputFiles)
+        /// <summary>
+        /// Create a new compile runner
+        /// </summary>
+        /// <param name="inputFiles">The P source files to compile</param>
+        public CompileOnlyRunner(IReadOnlyList<FileInfo> inputFiles)
         {
             this.inputFiles = inputFiles;
         }
 
+        /// <inheritdoc />
+        /// <summary>
+        /// Run the compiler test without attempting to build the result
+        /// </summary>
+        /// <param name="scratchDirectory">Unused. Caller is responsible for cleanup.</param>
+        /// <param name="stdout">The output produced by the P compiler</param>
+        /// <param name="stderr">The error output produced by the P compiler</param>
+        /// <returns>Always returns 0, otherwise throws.</returns>
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             var compiler = new AntlrCompiler();
@@ -32,7 +48,7 @@ namespace UnitTests.Runners
             stderr = stderrWriter.ToString().Trim();
             if (!success)
             {
-                throw new TestRunException(TestCaseError.TranslationFailed, stderr);
+                throw new CompilerTestException(TestCaseError.TranslationFailed, stderr);
             }
 
             return 0;

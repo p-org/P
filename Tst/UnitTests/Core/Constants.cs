@@ -5,6 +5,9 @@ using System.Reflection;
 
 namespace UnitTests.Core
 {
+    /// <summary>
+    /// Constants used by the unit tests.
+    /// </summary>
     public static class Constants
     {
         public const string CategorySeparator = " | ";

@@ -7,9 +7,11 @@ using NUnit.Framework;
 
 namespace UnitTests.Core
 {
+    /// <summary>
+    /// Load test cases from disk for NUnit
+    /// </summary>
     public static class TestCaseLoader
     {
-        //private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
         private static readonly List<string> TestDirs = new List<string>
         {
             "RegressionTests\\Combined",
@@ -121,10 +123,10 @@ namespace UnitTests.Core
 
         private static string SubstituteVariables(string value, IDictionary<string, string> variables)
         {
-            // Replaces variables that use a syntax like $(VarName). Inner capture group gets the name.
-            return Regex.Replace(value, @"\$\(([^)]+)\)", match =>
+            // Replaces variables that use a syntax like $(VarName).
+            return Regex.Replace(value, @"\$\((?<VarName>[^)]+)\)", match =>
             {
-                string variableName = match.Groups[1].Value.ToLowerInvariant();
+                string variableName = match.Groups["VarName"].Value.ToLowerInvariant();
                 return variables.TryGetValue(variableName, out string variableValue) ? variableValue : match.Value;
             });
         }

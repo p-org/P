@@ -89,7 +89,7 @@ namespace UnitTests
                 Console.WriteLine($"Exit code = {exitCode}");
             }
         }
-        
+
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestAllRegressions(CompilerTestCase testCase)
         {
@@ -100,9 +100,9 @@ namespace UnitTests
         public void TestTemp()
         {
             DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestTemp"));
-            FileInfo[] inputFiles = {new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p")) };
+            FileInfo[] inputFiles = {new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p"))};
 
-            var testCase = new CompilerTestCase(tempDir, new ExecutionRunner(inputFiles),
+            var testCase = new CompilerTestCase(tempDir, new PrtRunner(inputFiles),
                                                 new ExecutionOutputValidator(0, null, null));
 
             AssertTestCase(testCase);

@@ -7,18 +7,31 @@ using UnitTests.Validators;
 
 namespace UnitTests.Core
 {
+    /// <summary>
+    /// Factory for creating test cases from structured directories on disk.
+    /// </summary>
     public class TestCaseFactory
     {
         private readonly DirectoryInfo testTempBaseDir;
 
+        /// <summary>
+        /// Create a new factory with the given scratch directory
+        /// </summary>
+        /// <param name="testTempBaseDir">The parent directory for each test's scratch directories</param>
         public TestCaseFactory(DirectoryInfo testTempBaseDir)
         {
             this.testTempBaseDir = testTempBaseDir;
         }
 
+        /// <summary>
+        /// Create a test case from the given directory and parsed Prt run configuration
+        /// </summary>
+        /// <param name="testDir">The directory containing P source files</param>
+        /// <param name="runConfig">The run configuration for the test, or null if compile-only</param>
+        /// <returns>The test case in a runnable state.</returns>
         public CompilerTestCase CreateTestCase(DirectoryInfo testDir, TestConfig runConfig)
         {
-            // eg. RegressionTests/F1/Correct/TestCaseName
+            // TODO: support other run configurations.
             var inputFiles = testDir.GetFiles("*.p");
             string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
                               .MakeRelativeUri(new Uri(testDir.FullName))
@@ -29,7 +42,7 @@ namespace UnitTests.Core
 
             if (runConfig != null)
             {
-                runner = new ExecutionRunner(inputFiles);
+                runner = new PrtRunner(inputFiles);
 
                 string expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
                 ParseExpectedOutput(expectedOutput, out string stdout, out string stderr, out int exitCode);
@@ -43,7 +56,7 @@ namespace UnitTests.Core
             }
             else
             {
-                runner = new TranslationRunner(inputFiles);
+                runner = new CompileOnlyRunner(inputFiles);
 
                 // TODO: validate information about the particular kind of compiler error
                 bool isStaticError = testName.Contains("/StaticError/");
@@ -54,6 +67,13 @@ namespace UnitTests.Core
             return new CompilerTestCase(tempDirName, runner, validator);
         }
 
+        /// <summary>
+        /// Parses an expected (golden) output file.
+        /// </summary>
+        /// <param name="expected">The file contents to parse</param>
+        /// <param name="stdout">The expected standard output</param>
+        /// <param name="stderr">The expected error output</param>
+        /// <param name="exitCode">The expected exit code</param>
         private void ParseExpectedOutput(string expected, out string stdout, out string stderr, out int exitCode)
         {
             exitCode = 0;
@@ -71,7 +91,7 @@ namespace UnitTests.Core
                 Match match = Regex.Match(line, @"^(?<tag>OUT|ERROR|EXIT): (?<text>.*)$");
                 if (!match.Success)
                 {
-                    throw new TestRunException(TestCaseError.InvalidOutputSpec);
+                    throw new CompilerTestException(TestCaseError.InvalidOutputSpec);
                 }
 
                 string tag = match.Groups["tag"].Value;
@@ -87,7 +107,7 @@ namespace UnitTests.Core
                     case "EXIT":
                         if (sawExitCode || !int.TryParse(lineText, out exitCode))
                         {
-                            throw new TestRunException(TestCaseError.InvalidOutputSpec);
+                            throw new CompilerTestException(TestCaseError.InvalidOutputSpec);
                         }
 
                         sawExitCode = true;
@@ -99,7 +119,7 @@ namespace UnitTests.Core
 
             if (!sawExitCode)
             {
-                throw new TestRunException(TestCaseError.InvalidOutputSpec);
+                throw new CompilerTestException(TestCaseError.InvalidOutputSpec);
             }
 
             stdout = stdoutBuilder.ToString();

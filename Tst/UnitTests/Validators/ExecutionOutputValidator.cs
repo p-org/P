@@ -1,13 +1,16 @@
-﻿using System;
-using UnitTests.Core;
+﻿using UnitTests.Core;
 
 namespace UnitTests.Validators
 {
+    /// <inheritdoc />
+    /// <summary>
+    /// Validates that the generated program ran with the expected output.
+    /// </summary>
     public class ExecutionOutputValidator : ITestResultsValidator
     {
+        private readonly int expectedExitCode;
         private readonly string expectedStderr;
         private readonly string expectedStdout;
-        private readonly int expectedExitCode;
 
         public ExecutionOutputValidator(int expectedExitCode, string expectedStdout, string expectedStderr)
         {
@@ -22,14 +25,16 @@ namespace UnitTests.Validators
             {
                 return false;
             }
+
             if (expectedStderr != null && !expectedStderr.Equals(stderr))
             {
                 return false;
             }
+
             return exitCode == expectedExitCode;
         }
 
-        public bool ValidateException(TestRunException testRunException)
+        public bool ValidateException(CompilerTestException compilerTestException)
         {
             return false;
         }

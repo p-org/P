@@ -1,5 +1,0 @@
-arg: ..\linear2.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: type checking for linear variables

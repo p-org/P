@@ -1,8 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: nonDetFunctionInExpr_11.p(41,4,41,7): error PC1001: Insert must be applied to a sequence
-OUT: nonDetFunctionInExpr_11.p(42,4,42,7): error PC1001: Insert must be applied to a sequence
-OUT: nonDetFunctionInExpr_11.p(44,18,44,19): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: Compilation failed
-EXIT: -1

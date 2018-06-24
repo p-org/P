@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Microsoft.Pc
 {
     public class SourceLocation
     {

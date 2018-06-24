@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
@@ -7,37 +6,34 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend.Prt
 {
-    public class CompilationContext
+
+    public class CompilationContext : CompilationContextBase
     {
         private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
         private readonly Dictionary<Machine, int> machineNumbering = new Dictionary<Machine, int>();
+        private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering = new Dictionary<Machine, Dictionary<State, int>>();
+
         private readonly ValueInternmentManager<bool> registeredBools;
         private readonly ValueInternmentManager<double> registeredFloats;
-
         private readonly ValueInternmentManager<int> registeredInts;
-        private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering = new Dictionary<Machine, Dictionary<State, int>>();
-        private bool lineHasBeenIndented;
 
         public CompilationContext(ITranslationErrorHandler handler, string projectName)
+            : base(handler, projectName)
         {
-            ProjectName = projectName;
-            Handler = handler;
+            Names = new NameManager($"P_{projectName.ToUpperInvariant()}_");
             HeaderFileName = $"{projectName}.h";
             SourceFileName = $"{projectName}.c";
-            Names = new NameManager($"P_{projectName.ToUpperInvariant()}_");
             registeredInts = new ValueInternmentManager<int>(Names);
             registeredFloats = new ValueInternmentManager<double>(Names);
             registeredBools = new ValueInternmentManager<bool>(Names);
         }
 
-        public string ProjectName { get; }
-        public ITranslationErrorHandler Handler { get; }
+        public NameManager Names { get; }
+
         public string HeaderFileName { get; }
         public string SourceFileName { get; }
-        public NameManager Names { get; }
         public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
         public HashSet<PLanguageType> WrittenTypes { get; } = new HashSet<PLanguageType>();
-        private int IndentationLevel { get; set; }
 
         public int GetNumberForInterface(Interface pInterface)
         {
@@ -80,88 +76,6 @@ namespace Microsoft.Pc.Backend.Prt
             name = internalNumbering.Count;
             internalNumbering.Add(state, name);
             return name;
-        }
-
-        public void WriteLine(TextWriter output, string format = "")
-        {
-            // Unindent for every } at the beginning of the line, save the index 
-            // of one past the last leading }.
-            int i;
-            for (i = 0; i < format.Length; i++)
-            {
-                if (format[i] == '}')
-                {
-                    IndentationLevel--;
-                }
-                else if (!char.IsWhiteSpace(format[i]))
-                {
-                    break;
-                }
-            }
-
-            // Do not indent preprocessor lines.
-            var indentation = new string(' ', 4 * IndentationLevel);
-            if (format.StartsWith("#") || lineHasBeenIndented)
-            {
-                indentation = "";
-            }
-
-            output.WriteLine(indentation + format);
-            lineHasBeenIndented = false;
-
-            // Compute indentation for future lines starting from after last leading }.
-            for (; i < format.Length; i++)
-            {
-                if (format[i] == '{')
-                {
-                    IndentationLevel++;
-                }
-                else if (format[i] == '}')
-                {
-                    IndentationLevel--;
-                }
-            }
-        }
-
-        public void Write(TextWriter output, string format)
-        {
-            // Unindent for every } at the beginning of the line, save the index 
-            // of one past the last leading }.
-            int i;
-            for (i = 0; i < format.Length; i++)
-            {
-                if (format[i] == '}')
-                {
-                    IndentationLevel--;
-                }
-                else if (!char.IsWhiteSpace(format[i]))
-                {
-                    break;
-                }
-            }
-
-            // Do not indent preprocessor lines.
-            var indentation = new string(' ', 4 * IndentationLevel);
-            if (format.StartsWith("#") || lineHasBeenIndented)
-            {
-                indentation = "";
-            }
-
-            output.Write(indentation + format);
-            lineHasBeenIndented = true;
-
-            // Compute indentation for future lines starting from after last leading }.
-            for (; i < format.Length; i++)
-            {
-                if (format[i] == '{')
-                {
-                    IndentationLevel++;
-                }
-                else if (format[i] == '}')
-                {
-                    IndentationLevel--;
-                }
-            }
         }
 
         public string RegisterLiteral(Function function, int value)

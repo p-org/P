@@ -8,6 +8,14 @@
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
   <ItemGroup>
+    <None Remove="TestSettings.settings" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="TestSettings.settings">
+      <Generator>SettingsSingleFileGenerator</Generator>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
     <PackageReference Include="Antlr4" Version="4.6.5-beta001" />
     <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.0.20171219.105559" />
     <PackageReference Include="Microsoft.Build" Version="15.6.85" />
@@ -18,6 +26,5 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Src\Pc\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Include="..\UnitTestsCore\UnitTestsCore.csproj" />
   </ItemGroup>
 </Project> 

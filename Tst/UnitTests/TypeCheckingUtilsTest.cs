@@ -3,7 +3,7 @@ using Microsoft.Pc.Backend.Prt;
 using Microsoft.Pc.TypeChecker;
 using NUnit.Framework;
 
-namespace UnitTests.Tests
+namespace UnitTests
 {
     [TestFixture]
     public class TypeCheckingUtilsTest

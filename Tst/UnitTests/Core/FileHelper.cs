@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace UnitTestsCore
+namespace UnitTests.Core
 {
     public class FileHelper
     {
@@ -19,14 +19,6 @@ namespace UnitTestsCore
             foreach (var file in src.GetFiles())
             {
                 File.Copy(file.FullName, Path.Combine(target, file.Name), true);
-            }
-        }
-
-        public static void SafeDelete(string filePath)
-        {
-            if (File.Exists(filePath))
-            {
-                File.Delete(filePath);
             }
         }
     }

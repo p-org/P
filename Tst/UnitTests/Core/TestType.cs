@@ -1,4 +1,4 @@
-﻿namespace UnitTestsCore
+﻿namespace UnitTests.Core
 {
     public enum TestType
     {

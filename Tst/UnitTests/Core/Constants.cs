@@ -3,14 +3,13 @@ using System.Diagnostics.Contracts;
 using System.IO;
 using System.Reflection;
 
-namespace UnitTestsCore
+namespace UnitTests.Core
 {
     public static class Constants
     {
         public const string CategorySeparator = " | ";
         public const string CRuntimeTesterDirectoryName = "PrtTester";
         public const string NewLinePattern = @"\r\n|\n\r|\n|\r";
-        public const string XmlProfileFileName = "TestProfile.xml";
         public const string PSolutionFileName = "P.sln";
         public const string TestDirectoryName = "Tst";
         public const string CTesterExecutableName = "tester.exe";
@@ -20,8 +19,7 @@ namespace UnitTestsCore
         public const string DiffTool = "kdiff3";
         public const string DisplayDiffsFile = "display-diffs.bat";
         public const string ActualOutputFileName = "check-output.log";
-        public const string FrontEndRegressionFileName = "frontend-regression.txt";
-        public const string SettingsResourceName = "UnitTestsCore.TestSettings.settings";
+        public const string SettingsResourceName = "UnitTests.TestSettings.settings";
 #if DEBUG
         public const string BuildConfiguration = "Debug";
 #else
@@ -56,7 +54,6 @@ namespace UnitTestsCore
         public static bool RunPc => (bool) Configuration["RunPc"];
         public static bool RunPrt => (bool) Configuration["RunPrt"];
         public static bool RunPt => (bool) Configuration["RunPt"];
-        public static bool RunZing => (bool) Configuration["RunZing"];
         public static bool RunAll => (bool) Configuration["RunAll"];
         public static bool PtWithPSharp => (bool) Configuration["PtWithPSharp"];
 

@@ -17,6 +17,5 @@
     <ProjectReference Include="..\UnitTestsCore\UnitTestsCore.csproj" />
     <ProjectReference Include="..\..\Src\Parsers\CParser\CParser.csproj" />
     <ProjectReference Include="..\..\Src\Pc\CompilerService\CompilerService.csproj" />
-    <ProjectReference Include="..\..\Src\Pc\LegacyCompiler\LegacyCompiler.csproj" />
   </ItemGroup>
 </Project>

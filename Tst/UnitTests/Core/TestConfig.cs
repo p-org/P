@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace UnitTestsCore
+namespace UnitTests.Core
 {
     public class TestConfig
     {

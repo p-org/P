@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using NUnit.Framework;
+using UnitTests.Core;
 using UnitTests.Runners;
 using UnitTests.Validators;
-using UnitTestsCore;
 
-namespace UnitTests.Tests
+namespace UnitTests
 {
     [SetUpFixture]
     public class RegressionScratchDirectorySetup
@@ -28,7 +29,7 @@ namespace UnitTests.Tests
                 RecursiveRemoveEmptyDirectories(subdir);
             }
 
-            if (dir.GetFileSystemInfos().Length == 0)
+            if (!dir.EnumerateFileSystemInfos().Any())
             {
                 dir.Delete();
             }

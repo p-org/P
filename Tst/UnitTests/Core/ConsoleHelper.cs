@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace UnitTestsCore
+namespace UnitTests.Core
 {
     public static class ConsoleHelper
     {

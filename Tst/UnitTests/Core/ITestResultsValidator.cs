@@ -1,4 +1,4 @@
-﻿namespace UnitTests
+﻿namespace UnitTests.Core
 {
     public interface ITestResultsValidator
     {

@@ -1,4 +1,5 @@
 ﻿using System;
+using UnitTests.Core;
 
 namespace UnitTests.Validators
 {

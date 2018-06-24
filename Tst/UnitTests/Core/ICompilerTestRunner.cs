@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace UnitTests
+namespace UnitTests.Core
 {
     public interface ICompilerTestRunner
     {

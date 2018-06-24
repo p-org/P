@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 
-namespace UnitTestsCore
+namespace UnitTests.Core
 {
-    public class ProcessHelper
+    public static class ProcessHelper
     {
         public static int RunWithOutput(
             string exeName,

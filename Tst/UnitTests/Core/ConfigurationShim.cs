@@ -6,7 +6,7 @@ using System.Linq;
 using System.Reflection;
 using System.Xml.Linq;
 
-namespace UnitTestsCore
+namespace UnitTests.Core
 {
     internal class ConfigurationShim
     {

@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using UnitTests.Runners;
 using UnitTests.Validators;
-using UnitTestsCore;
 
-namespace UnitTests
+namespace UnitTests.Core
 {
     public class TestCaseFactory
     {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace UnitTests
+namespace UnitTests.Core
 {
     [Serializable]
     public class TestRunException : Exception

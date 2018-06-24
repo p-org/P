@@ -1,4 +1,6 @@
-﻿namespace UnitTests.Validators
+﻿using UnitTests.Core;
+
+namespace UnitTests.Validators
 {
     public class StaticErrorValidator : ITestResultsValidator
     {

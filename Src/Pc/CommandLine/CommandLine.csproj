@@ -10,7 +10,5 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Include="..\LegacyCompiler\LegacyCompiler.csproj" />
-    <ProjectReference Include="..\CompilerService\CompilerService.csproj" />
   </ItemGroup>
 </Project>

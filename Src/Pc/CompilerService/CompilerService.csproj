@@ -9,6 +9,5 @@
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Include="..\LegacyCompiler\LegacyCompiler.csproj" />
   </ItemGroup>
 </Project>

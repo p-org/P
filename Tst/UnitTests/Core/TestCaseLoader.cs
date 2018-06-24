@@ -6,9 +6,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 
-namespace UnitTestsCore
+namespace UnitTests.Core
 {
-    public class TestCaseLoader
+    public static class TestCaseLoader
     {
         //private static readonly List<string> TestDirs = new List<string> { "RegressionTests" };
         private static readonly List<string> TestDirs = new List<string> { "RegressionTests\\Combined",

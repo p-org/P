@@ -4,7 +4,7 @@ using System.IO;
 using System.Linq;
 using Microsoft.Pc;
 using Microsoft.Pc.Backend;
-using UnitTestsCore;
+using UnitTests.Core;
 
 namespace UnitTests.Runners
 {

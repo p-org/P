@@ -42,24 +42,6 @@ namespace Microsoft.Pc.Backend.Prt
             return inOrder;
         }
 
-        public static IEnumerable<Function> AllMethods(Scope scope)
-        {
-            // TODO: There are like six copies of this function.
-            foreach (Function function in scope.Functions)
-            {
-                yield return function;
-            }
-
-            foreach (Machine machine in scope.Machines)
-            {
-                // includes anonymous functions
-                foreach (Function method in machine.Methods)
-                {
-                    yield return method;
-                }
-            }
-        }
-
         public static StateActionResults BuildActionSets(CompilationContext context, State state)
         {
             var defersSet = new NamedEventSet(state.Name + "_DEFERS", state.SourceLocation);

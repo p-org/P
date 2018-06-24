@@ -30,19 +30,13 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
         {
-            var statements = context.statement()
-                                    .Select(Visit)
-                                    .SelectMany(stmt => stmt is CompoundStmt compound ? compound.Statements : new List<IPStmt>{stmt})
-                                    .Where(stmt => !(stmt is NoStmt)).ToList();
+            var statements = context.statement().Select(Visit).ToList();
             return new CompoundStmt(context, statements);
         }
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
-            var statements = context.statement()
-                                    .Select(Visit)
-                                    .SelectMany(stmt => stmt is CompoundStmt compound ? compound.Statements : new List<IPStmt>{stmt})
-                                    .Where(stmt => !(stmt is NoStmt)).ToList();
+            var statements = context.statement().Select(Visit).ToList();
             return new CompoundStmt(context, statements);
         }
 

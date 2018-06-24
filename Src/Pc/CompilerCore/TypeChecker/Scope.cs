@@ -86,6 +86,22 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
 
+        public IEnumerable<Function> GetAllMethods()
+        {
+            foreach (Function fun in Functions)
+            {
+                yield return fun;
+            }
+
+            foreach (Machine machine in Machines)
+            {
+                foreach (Function method in machine.Methods)
+                {
+                    yield return method;
+                }
+            }
+        }
+
         #region Overloaded getters
 
         public bool Get(string name, out EnumElem tree) { return enumElems.TryGetValue(name, out tree); }

@@ -70,7 +70,7 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(cSource.Stream);
 
             context.WriteLine(cSource.Stream, "// Function implementation prototypes:");
-            foreach (Function function in PrtTranslationUtils.AllMethods(globalScope))
+            foreach (Function function in globalScope.GetAllMethods())
             {
                 string functionName = context.Names.GetNameForFunctionImpl(function);
                 context.WriteLine(cSource.Stream, $"PRT_VALUE* {functionName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs);");

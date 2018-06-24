@@ -24,7 +24,8 @@ namespace Microsoft.Pc.Backend
         public static void SimplifyMethod(Function function)
         {
             var transformer = new IRTransformer(function);
-            function.Body = transformer.SimplifyFunctionBody(function.Body);
+            IPStmt functionBody = function.Body;
+            function.Body = new CompoundStmt(functionBody.SourceLocation, transformer.SimplifyStatement(functionBody));
         }
 
         private (VariableAccessExpr, IPStmt) SaveInTemporary(IPExpr expr)
@@ -210,33 +211,6 @@ namespace Microsoft.Pc.Backend
                     throw new ArgumentOutOfRangeException(nameof(expr));
             }
         }
-        private static CompoundStmt Flatten(CompoundStmt stmt)
-        {
-            var newBody = new List<IPStmt>();
-            foreach (IPStmt innerStmt in stmt.Statements)
-            {
-                if (innerStmt is CompoundStmt nested)
-                {
-                    newBody.AddRange(nested.Statements);
-                }
-                else
-                {
-                    newBody.Add(innerStmt);
-                }
-            }
-
-            return new CompoundStmt(stmt.SourceLocation, newBody);
-        }
-
-        private CompoundStmt SimplifyFunctionBody(CompoundStmt functionBody)
-        {
-            return Flatten(new CompoundStmt(functionBody.SourceLocation, SimplifyStatement(functionBody)));
-        }
-
-        private static CloneExpr MakeClone(IExprTerm expr)
-        {
-            return new CloneExpr(expr);
-        }
 
         private List<IPStmt> SimplifyStatement(IPStmt statement)
         {
@@ -274,7 +248,7 @@ namespace Microsoft.Pc.Backend
                     }
                     else
                     {
-                        assignment = new AssignStmt(location, assignLV, MakeClone(assignRV));
+                        assignment = new AssignStmt(location, assignLV, new CloneExpr(assignRV));
                     }
                     return assignLVDeps.Concat(assignRVDeps).Concat(new[]{assignment}).ToList();
                 case CompoundStmt compoundStmt:
@@ -302,7 +276,7 @@ namespace Microsoft.Pc.Backend
                                   .ToList();
                 case GotoStmt gotoStmt:
                     var (gotoPayload, gotoDeps) = SimplifyExpression(gotoStmt.Payload);
-                    var (gotoArgTmp, gotoArgDep) = SaveInTemporary(MakeClone(gotoPayload));
+                    var (gotoArgTmp, gotoArgDep) = SaveInTemporary(new CloneExpr(gotoPayload));
                     return gotoDeps.Concat(new[]
                                    {
                                        gotoArgDep,
@@ -357,7 +331,7 @@ namespace Microsoft.Pc.Backend
                     return deps.Concat(new[] { new PrintStmt(location, printStmt.Message, newArgs) }).ToList();
                 case RaiseStmt raiseStmt:
                     var (raiseEvent, raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
-                    var (raiseEventTmp, raiseEventTempDep) = SaveInTemporary(MakeClone(raiseEvent));
+                    var (raiseEventTmp, raiseEventTempDep) = SaveInTemporary(new CloneExpr(raiseEvent));
 
                     var (raiseArgs, raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);
 
@@ -372,7 +346,8 @@ namespace Microsoft.Pc.Backend
                 case ReceiveStmt receiveStmt:
                     foreach (Function recvCase in receiveStmt.Cases.Values)
                     {
-                        recvCase.Body = SimplifyFunctionBody(recvCase.Body);
+                        IPStmt functionBody = recvCase.Body;
+                        recvCase.Body = new CompoundStmt(functionBody.SourceLocation, SimplifyStatement(functionBody));
                     }
 
                     return new List<IPStmt> {receiveStmt};
@@ -394,15 +369,15 @@ namespace Microsoft.Pc.Backend
                     var (returnValue, returnValueDeps) = SimplifyExpression(returnStmt.ReturnValue);
                     return returnValueDeps.Concat(new[]
                                           {
-                                              new ReturnStmt(location, MakeClone(returnValue))
+                                              new ReturnStmt(location, new CloneExpr(returnValue))
                                           })
                                           .ToList();
                 case SendStmt sendStmt:
                     var (sendMachine, sendMachineDeps) = SimplifyExpression(sendStmt.MachineExpr);
-                    var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(MakeClone(sendMachine));
+                    var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(new CloneExpr(sendMachine));
 
                     var (sendEvent, sendEventDeps) = SimplifyExpression(sendStmt.Evt);
-                    var (sendEventAccessExpr, sendEventAssn) = SaveInTemporary(MakeClone(sendEvent));
+                    var (sendEventAccessExpr, sendEventAssn) = SaveInTemporary(new CloneExpr(sendEvent));
 
                     var (sendArgs, sendArgDeps) = SimplifyArgPack(sendStmt.ArgsList);
 
@@ -426,7 +401,7 @@ namespace Microsoft.Pc.Backend
                                       .ToList();
                 case WhileStmt whileStmt:
                     var (condExpr, condDeps) = SimplifyExpression(whileStmt.Condition);
-                    var (condTemp, condStore) = SaveInTemporary(MakeClone(condExpr));
+                    var (condTemp, condStore) = SaveInTemporary(new CloneExpr(condExpr));
                     var whileBody = SimplifyStatement(whileStmt.Body);
                     whileBody.AddRange(condDeps);
                     whileBody.Add(condStore);
@@ -476,7 +451,7 @@ namespace Microsoft.Pc.Backend
                         break;
                     // ...but clone literals and visible variables/fields.
                     default:
-                        var (temp, tempDep) = SaveInTemporary(MakeClone(argExpr));
+                        var (temp, tempDep) = SaveInTemporary(new CloneExpr(argExpr));
                         deps.Add(tempDep);
                         funArgs[i] = new LinearAccessRefExpr(temp.SourceLocation, temp.Variable, LinearType.Move);
                         break;

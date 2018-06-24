@@ -7,7 +7,6 @@ using Antlr4.Runtime.Atn;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.Backend;
-using Microsoft.Pc.Backend.Debugging;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
@@ -44,8 +43,7 @@ namespace Microsoft.Pc
                 Scope scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
 
                 // Convert functions to lowered SSA form with explicit cloning
-                var allFunctions = TopLevelFunctions(scope).ToList();
-                foreach (var fun in allFunctions)
+                foreach (Function fun in scope.GetAllMethods())
                 {
                     IRTransformer.SimplifyMethod(fun);
                 }
@@ -58,7 +56,7 @@ namespace Microsoft.Pc
                     output.WriteMessage($"Writing {compiledFile.FileName}...", SeverityKind.Info);
                     output.WriteFile(compiledFile);
                 }
-                
+
                 return true;
             }
             catch (TranslationException e)
@@ -70,29 +68,13 @@ namespace Microsoft.Pc
 
         public bool Link(ICompilerOutput output, CommandLineOptions options)
         {
-            output.WriteMessage("Linking not yet implemented in Antlr toolchain.", SeverityKind.Info);
+            output.WriteMessage("Linking not yet implemented in Antlr toolchain.", SeverityKind.Warning);
             return true;
-        }
-
-        private static IEnumerable<Function> TopLevelFunctions(Scope globalScope)
-        {
-            foreach (Function fun in globalScope.Functions)
-            {
-                yield return fun;
-            }
-
-            foreach (Machine machine in globalScope.Machines)
-            {
-                foreach (Function method in machine.Methods)
-                {
-                    yield return method;
-                }
-            }
         }
 
         private static PParser.ProgramContext Parse(ITranslationErrorHandler handler, FileInfo inputFile)
         {
-            var fileText = File.ReadAllText(inputFile.FullName);
+            string fileText = File.ReadAllText(inputFile.FullName);
             var fileStream = new AntlrInputStream(fileText);
             var lexer = new PLexer(fileStream);
             var tokens = new CommonTokenStream(lexer);

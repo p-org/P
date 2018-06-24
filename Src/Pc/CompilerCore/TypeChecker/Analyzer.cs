@@ -22,7 +22,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // Step 3: Fill function bodies
-            List<Function> allFunctions = AllFunctions(globalScope).ToList();
+            List<Function> allFunctions = globalScope.GetAllMethods().ToList();
             foreach (Function machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
@@ -139,22 +139,6 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             return globalScope;
-        }
-
-        private static IEnumerable<Function> AllFunctions(Scope globalScope)
-        {
-            foreach (Function fun in globalScope.Functions)
-            {
-                yield return fun;
-            }
-
-            foreach (Machine machine in globalScope.Machines)
-            {
-                foreach (Function method in machine.Methods)
-                {
-                    yield return method;
-                }
-            }
         }
 
         private static IEnumerable<IPModuleExpr> AllModuleExprs(Scope globalScope)

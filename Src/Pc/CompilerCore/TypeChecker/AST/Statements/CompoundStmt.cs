@@ -5,13 +5,26 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class CompoundStmt : IPStmt
     {
-        public CompoundStmt(ParserRuleContext sourceLocation, List<IPStmt> statements)
+        private readonly List<IPStmt> statements;
+
+        public CompoundStmt(ParserRuleContext sourceLocation, IEnumerable<IPStmt> statements)
         {
             SourceLocation = sourceLocation;
-            Statements = statements;
+            this.statements = new List<IPStmt>();
+            foreach (IPStmt statement in statements)
+            {
+                if (statement is CompoundStmt compound)
+                {
+                    this.statements.AddRange(compound.statements);
+                }
+                else if (!(statement is NoStmt))
+                {
+                    this.statements.Add(statement);
+                }
+            }
         }
 
-        public List<IPStmt> Statements { get; }
+        public IReadOnlyList<IPStmt> Statements => statements;
 
         public ParserRuleContext SourceLocation { get; }
     }

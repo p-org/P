@@ -3,6 +3,7 @@
     public enum TestCaseError
     {
         TranslationFailed,
-        GeneratedSourceCompileFailed
+        GeneratedSourceCompileFailed,
+        InvalidOutputSpec
     }
 }

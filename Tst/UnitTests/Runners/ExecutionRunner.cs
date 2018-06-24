@@ -19,7 +19,7 @@ namespace UnitTests.Runners
             prtTestProjDirectory = Directory.CreateDirectory(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
         }
 
-        public int? RunTest(DirectoryInfo scratchDirectory, out string testStdout, out string testStderr)
+        public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             DoCompile(scratchDirectory);
 
@@ -32,8 +32,8 @@ namespace UnitTests.Runners
             }
 
             // Copy tester into destination directory.
-            FileHelper.CopyFiles(prtTestProjDirectory, tmpDirName);
-            if (!RunMsBuildExe(tmpDirName, out testStdout))
+            CopyFiles(prtTestProjDirectory, tmpDirName);
+            if (!RunMsBuildExe(tmpDirName, out stdout, out stderr))
             {
                 throw new TestRunException(TestCaseError.GeneratedSourceCompileFailed);
             }
@@ -42,8 +42,16 @@ namespace UnitTests.Runners
                 Path.Combine(tmpDirName, Constants.BuildConfiguration, Constants.Platform, Constants.CTesterExecutableName),
                 tmpDirName,
                 Enumerable.Empty<string>(),
-                out testStdout,
-                out testStderr);
+                out stdout,
+                out stderr);
+        }
+
+        private static void CopyFiles(DirectoryInfo src, string target)
+        {
+            foreach (var file in src.GetFiles())
+            {
+                File.Copy(file.FullName, Path.Combine(target, file.Name), true);
+            }
         }
 
         private void DoCompile(DirectoryInfo scratchDirectory)
@@ -63,17 +71,16 @@ namespace UnitTests.Runners
             }
         }
 
-        private static bool RunMsBuildExe(string tmpDir, out string output)
+        private static bool RunMsBuildExe(string tmpDir, out string stdout, out string stderr)
         {
             const string msbuildpath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe";
             int exitStatus = ProcessHelper.RunWithOutput(
                 msbuildpath,
                 tmpDir,
                 new[] {$"/p:Configuration={Constants.BuildConfiguration}", $"/p:Platform={Constants.Platform}", "/t:Build"},
-                out string stdout,
-                out string stderr
+                out stdout,
+                out stderr
             );
-            output = $"{stdout}\n{stderr}";
             return exitStatus == 0;
         }
 

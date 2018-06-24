@@ -853,7 +853,7 @@ static PRT_MAPNODE* PrtMapGetValueNode(_Inout_ PRT_VALUE *map, _In_ PRT_VALUE *k
 
 	// If we couldn't find a node matching our key in the bucket...
 	PRT_MAPNODE* node = (PRT_MAPNODE *)PrtMalloc(sizeof(PRT_MAPNODE));
-	PrtAssert(node, "PrtMalloc failed to allocate new map node");
+	PrtAssert(node != NULL, "PrtMalloc failed to allocate new map node");
 
 	node->key = cloneKey == PRT_TRUE ? PrtCloneValue(key) : key;
 	node->value = NULL;

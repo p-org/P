@@ -26,12 +26,12 @@ namespace UnitTests.Core
             string mStdout = "", mStderr = "";
 
             var proc = new Process {StartInfo = psi};
-            proc.OutputDataReceived += (s, e) => { mStdout += $"OUT: {e.Data}\n"; };
+            proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
             proc.ErrorDataReceived += (s, e) =>
             {
                 if (!string.IsNullOrWhiteSpace(e.Data))
                 {
-                    mStderr += $"ERROR: {e.Data}\n";
+                    mStderr += $"{e.Data}\n";
                 }
             };
 

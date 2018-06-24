@@ -11,7 +11,7 @@ namespace UnitTests.Core
 
         public CompilerTestCase(DirectoryInfo scratchDirectory, ICompilerTestRunner runner, ITestResultsValidator validator)
         {
-            this.ScratchDirectory = scratchDirectory;
+            ScratchDirectory = scratchDirectory;
             this.runner = runner;
             this.validator = validator;
         }
@@ -29,12 +29,7 @@ namespace UnitTests.Core
             }
             catch (TestRunException e)
             {
-                if (!validator.ValidateException(e))
-                {
-                    throw;
-                }
-
-                return true;
+                return validator.ValidateException(e);
             }
         }
     }

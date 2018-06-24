@@ -1,11 +1,8 @@
-=================================
-         Console output          
-=================================
 OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Real1_Init
+OUT: <StateLog> Machine Main(1) entered state Main.Real1_Init
 OUT: <EnqueueLog> Enqueued event E2 with payload null on Machine Main(1)
 OUT: <DequeueLog> Dequeued event E2 with payload null by Machine Main(1)
-OUT: <ActionLog> Machine Main(1) executed action in state Real1_Init
+OUT: <ActionLog> Machine Main(1) executed action in state Main.Real1_Init
 OUT: exiting with PRT_STATUS_ASSERT (assertion failure)
 OUT: 
 EXIT: 1

@@ -1,6 +1,3 @@
-=================================
-         Console output          
-=================================
 OUT: IgnoredNullEvent.p(23,9,23,13): error PC1001: Syntax error - Syntax error, unexpected NULL, expecting ID, or HALT
 OUT: Compilation failed
 EXIT: -1

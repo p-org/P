@@ -40,7 +40,7 @@ namespace UnitTests
     [Parallelizable(ParallelScope.Children)]
     public class RegressionTests
     {
-        private static IEnumerable<TestCaseData> TestCases =>
+        private static IEnumerable<TestCaseData> RegressionTestSuite =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
 
         private static void AssertTestCase(CompilerTestCase testCase)
@@ -90,13 +90,9 @@ namespace UnitTests
             }
         }
         
-        [TestCaseSource(nameof(TestCases))]
-        public void TestAllRegressions(DirectoryInfo testDir, Dictionary<TestType, TestConfig> testConfigs)
+        [TestCaseSource(nameof(RegressionTestSuite))]
+        public void TestAllRegressions(CompilerTestCase testCase)
         {
-            DirectoryInfo tempDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
-            var factory = new TestCaseFactory(tempDir);
-
-            CompilerTestCase testCase = factory.CreateTestCase(testDir, testConfigs);
             AssertTestCase(testCase);
         }
 
@@ -107,7 +103,7 @@ namespace UnitTests
             FileInfo[] inputFiles = {new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p")) };
 
             var testCase = new CompilerTestCase(tempDir, new ExecutionRunner(inputFiles),
-                                                new ExecutionOutputValidator(code => code == 0, "", ""));
+                                                new ExecutionOutputValidator(0, null, null));
 
             AssertTestCase(testCase);
         }

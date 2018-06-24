@@ -76,7 +76,19 @@ namespace UnitTests.Runners
 
         private static bool RunMsBuildExe(string tmpDir, out string stdout, out string stderr)
         {
-            const string msbuildpath = @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe";
+            string[] msbuildpaths = new[]
+            {
+                @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe",
+                @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe",
+                Environment.GetEnvironmentVariable("MSBUILD") ?? ""
+            };
+
+            string msbuildpath = msbuildpaths.FirstOrDefault(File.Exists);
+            if (msbuildpath == null)
+            {
+                throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed, "Could not find MSBuild");
+            }
+
             int exitStatus = ProcessHelper.RunWithOutput(
                 tmpDir,
                 out stdout,

@@ -100,9 +100,14 @@ namespace UnitTests
         public void TestTemp()
         {
             DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestTemp"));
-            FileInfo[] inputFiles = {new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p"))};
+            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p"));
 
-            var testCase = new CompilerTestCase(tempDir, new PrtRunner(inputFiles),
+            if (!tempFilePath.Exists)
+            {
+                return;
+            }
+
+            var testCase = new CompilerTestCase(tempDir, new PrtRunner(new[] { tempFilePath }),
                                                 new ExecutionOutputValidator(0, null, null));
 
             AssertTestCase(testCase);

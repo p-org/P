@@ -112,7 +112,7 @@ namespace Microsoft.Pc.Backend.PSharp
         {
             foreach (var field in machine.Fields)
             {
-                context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {field.Name}");
+                context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)}");
             }
             foreach (var method in machine.Methods)
             {
@@ -137,22 +137,22 @@ namespace Microsoft.Pc.Backend.PSharp
                     switch (stateAction)
                     {
                         case EventDefer _:
-                            deferredEvents.Add($"typeof({pEvent.Name})");
+                            deferredEvents.Add($"typeof({context.Names.GetNameForDecl(pEvent)})");
                             break;
                         case EventDoAction eventDoAction:
                             context.WriteLine(output, $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({context.Names.GetNameForDecl(eventDoAction.Target)}))]");
                             break;
                         case EventGotoState eventGotoState when eventGotoState.TransitionFunction == null:
-                            context.WriteLine(output, $"[OnEventGotoState(typeof({pEvent.Name}), typeof({eventGotoState.Target.Name}))]");
+                            context.WriteLine(output, $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}))]");
                             break;
                         case EventGotoState eventGotoState when eventGotoState.TransitionFunction != null:
-                            context.WriteLine(output, $"[OnEventGotoState(typeof({pEvent.Name}), typeof({eventGotoState.Target.Name}), nameof({eventGotoState.TransitionFunction.Name}))]");
+                            context.WriteLine(output, $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}), nameof({context.Names.GetNameForDecl(eventGotoState.TransitionFunction)}))]");
                             break;
                         case EventIgnore _:
-                            ignoredEvents.Add($"typeof({pEvent.Name})");
+                            ignoredEvents.Add($"typeof({context.Names.GetNameForDecl(pEvent)})");
                             break;
                         case EventPushState eventPushState:
-                            context.WriteLine(output, $"[OnEventPushState(typeof({pEvent.Name}), typeof({eventPushState.Target.Name}))]");
+                            context.WriteLine(output, $"[OnEventPushState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventPushState.Target)}))]");
                             break;
                     }
                 }
@@ -166,7 +166,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 }
                 if (state.Exit != null)
                 {
-                    context.WriteLine(output, $"[OnExit(nameof({state.Exit.Name}))]");
+                    context.WriteLine(output, $"[OnExit(nameof({context.Names.GetNameForDecl(state.Exit)}))]");
                 }
                 context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : MachineState");
                 context.WriteLine(output, "{");

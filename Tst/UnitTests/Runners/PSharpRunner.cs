@@ -18,10 +18,15 @@ namespace UnitTests.Runners
 
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
-            var compiledFiles = DoCompile(scratchDirectory);
+            var compiledFiles = DoCompile(scratchDirectory).ToArray();
             var psharpPath = Path.Combine(Constants.SolutionDirectory, "Ext", "PSharp", "bin", "Microsoft.PSharp.dll");
             var args = new[] {$"/r:{psharpPath}", "/t:library"}.Concat(compiledFiles.Select(file => file.Name)).ToArray();
-            return ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
+            var exitCode = ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
+            foreach (FileInfo compiledFile in compiledFiles)
+            {
+                stdout += $"{compiledFile.Name}\n===\n{File.ReadAllText(compiledFile.FullName)}\n\n";
+            }
+            return exitCode;
         }
 
         private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)

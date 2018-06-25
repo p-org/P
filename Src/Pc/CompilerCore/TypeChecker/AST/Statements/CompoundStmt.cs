@@ -7,8 +7,13 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
     {
         private readonly List<IPStmt> statements;
 
-        public CompoundStmt(IPStmt statement) : this(statement.SourceLocation, new []{statement})
+        public static CompoundStmt FromStatement(IPStmt statement)
         {
+            if (statement is CompoundStmt compound)
+            {
+                return compound;
+            }
+            return new CompoundStmt(statement.SourceLocation, new [] {statement});
         }
 
         public CompoundStmt(ParserRuleContext sourceLocation, IEnumerable<IPStmt> statements)

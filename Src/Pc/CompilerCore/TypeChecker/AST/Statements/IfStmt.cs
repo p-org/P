@@ -8,8 +8,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
         {
             SourceLocation = sourceLocation;
             Condition = condition;
-            ThenBranch = new CompoundStmt(thenBranch);
-            ElseBranch = elseBranch == null ? null : new CompoundStmt(elseBranch);
+            ThenBranch = CompoundStmt.FromStatement(thenBranch);
+            ElseBranch = elseBranch == null ? null : CompoundStmt.FromStatement(elseBranch);
         }
 
         public IPExpr Condition { get; }

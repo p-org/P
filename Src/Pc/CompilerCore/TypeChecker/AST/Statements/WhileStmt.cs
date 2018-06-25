@@ -8,11 +8,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
         {
             SourceLocation = sourceLocation;
             Condition = condition;
-            Body = body;
+            Body = CompoundStmt.FromStatement(body);
         }
 
         public IPExpr Condition { get; }
-        public IPStmt Body { get; }
+        public CompoundStmt Body { get; }
 
         public ParserRuleContext SourceLocation { get; }
     }

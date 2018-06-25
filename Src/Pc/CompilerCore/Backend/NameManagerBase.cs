@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.States;
@@ -35,7 +36,42 @@ namespace Microsoft.Pc.Backend
             return name;
         }
 
-        public string GetNameForNode(IPDecl node, string prefix = "")
+        public string GetNameForDecl(IPDecl decl)
+        {
+            if (decl == null)
+            {
+                throw new ArgumentNullException(nameof(decl));
+            }
+
+            if (TryGetNameForNode(decl, out string name))
+            {
+                return name;
+            }
+
+            string declName = ComputeNameForDecl(decl);
+            return SetNameForNode(decl, declName);
+        }
+
+        protected abstract string ComputeNameForDecl(IPDecl decl);
+
+        protected string SetNameForNode(IPDecl node, string name)
+        {
+            if (declNames.TryGetValue(node, out string existing))
+            {
+                throw new ArgumentException($"Decl {node.Name} already has name {existing}", nameof(node));
+            }
+
+            name = AdjustName(name);
+            declNames.Add(node, name);
+            return name;
+        }
+
+        protected bool TryGetNameForNode(IPDecl node, out string name)
+        {
+            return declNames.TryGetValue(node, out name);
+        }
+
+        protected string GetNameForNode(IPDecl node, string thisPrefix = "")
         {
             if (declNames.TryGetValue(node, out string name))
             {
@@ -56,7 +92,7 @@ namespace Microsoft.Pc.Backend
             }
             else
             {
-                name = NamePrefix + prefix + name;
+                name = NamePrefix + thisPrefix + name;
             }
 
             name = AdjustName(name);

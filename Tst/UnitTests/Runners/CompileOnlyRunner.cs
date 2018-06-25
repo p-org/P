@@ -20,7 +20,7 @@ namespace UnitTests.Runners
         /// <summary>
         /// Create a new compile runner
         /// </summary>
-        /// <param name="compilerOutput1"></param>
+        /// <param name="compilerOutput"></param>
         /// <param name="inputFiles">The P source files to compile</param>
         public CompileOnlyRunner(CompilerOutput compilerOutput, IReadOnlyList<FileInfo> inputFiles)
         {

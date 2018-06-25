@@ -118,7 +118,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 }
                 if (state.Entry != null)
                 {
-                    context.WriteLine(output, $"[OnEntry(nameof({state.Entry.Name}))]");
+                    context.WriteLine(output, $"[OnEntry(nameof({context.Names.GetNameForDecl(state.Entry)}))]");
                 }
                 foreach (var eventHandler in state.AllEventHandlers)
                 {
@@ -127,23 +127,23 @@ namespace Microsoft.Pc.Backend.PSharp
                     switch (stateAction)
                     {
                         case EventDefer _:
-                            context.WriteLine(output, $"[Defer(typeof({pEvent.Name}))]");
+                            context.WriteLine(output, $"[Defer(typeof({context.Names.GetNameForDecl(pEvent)}))]");
                             break;
                         case EventDoAction eventDoAction:
-                            context.WriteLine(output, $"[OnEventDoAction(typeof({pEvent.Name}), nameof({eventDoAction.Target.Name}))]");
+                            context.WriteLine(output, $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({context.Names.GetNameForDecl(eventDoAction.Target)}))]");
                             break;
                         case EventGotoState eventGotoState:
-                            context.WriteLine(output, $"[OnEventGotoState(typeof({pEvent.Name}), nameof({eventGotoState.Target.Name}))]");
+                            context.WriteLine(output, $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({context.Names.GetNameForDecl(eventGotoState.Target)}))]");
                             break;
                         case EventIgnore _:
-                            context.WriteLine(output, $"[Ignore(typeof({pEvent.Name}))]");
+                            context.WriteLine(output, $"[Ignore(typeof({context.Names.GetNameForDecl(pEvent)}))]");
                             break;
                         case EventPushState eventPushState:
-                            context.WriteLine(output, $"[OnEventPushState(typeof({pEvent.Name}), nameof({eventPushState.Target.Name}))]");
+                            context.WriteLine(output, $"[OnEventPushState(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({context.Names.GetNameForDecl(eventPushState.Target)}))]");
                             break;
                     }
                 }
-                context.WriteLine(output, $"class {state.Name} : MachineState");
+                context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : MachineState");
                 context.WriteLine(output, "{");
                 context.WriteLine(output, "}");
             }

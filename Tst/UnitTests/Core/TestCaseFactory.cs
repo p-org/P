@@ -2,6 +2,7 @@
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using Microsoft.Pc;
 using UnitTests.Runners;
 using UnitTests.Validators;
 
@@ -56,7 +57,7 @@ namespace UnitTests.Core
             }
             else
             {
-                runner = new CompileOnlyRunner(inputFiles);
+                runner = new CompileOnlyRunner(CompilerOutput.C, inputFiles);
 
                 // TODO: validate information about the particular kind of compiler error
                 bool isStaticError = testName.Contains("/StaticError/");

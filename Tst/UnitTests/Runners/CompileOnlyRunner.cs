@@ -15,14 +15,17 @@ namespace UnitTests.Runners
     public class CompileOnlyRunner : ICompilerTestRunner
     {
         private readonly IReadOnlyList<FileInfo> inputFiles;
+        private readonly CompilerOutput compilerOutput;
 
         /// <summary>
         /// Create a new compile runner
         /// </summary>
+        /// <param name="compilerOutput1"></param>
         /// <param name="inputFiles">The P source files to compile</param>
-        public CompileOnlyRunner(IReadOnlyList<FileInfo> inputFiles)
+        public CompileOnlyRunner(CompilerOutput compilerOutput, IReadOnlyList<FileInfo> inputFiles)
         {
             this.inputFiles = inputFiles;
+            this.compilerOutput = compilerOutput;
         }
 
         /// <inheritdoc />
@@ -41,7 +44,7 @@ namespace UnitTests.Runners
             var outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
             bool success = compiler.Compile(outputStream, new CommandLineOptions
             {
-                compilerOutput = CompilerOutput.C,
+                compilerOutput = compilerOutput,
                 inputFileNames = inputFiles.Select(file => file.FullName).ToList()
             });
             stdout = stdoutWriter.ToString().Trim();

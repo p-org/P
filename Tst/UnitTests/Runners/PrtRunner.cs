@@ -76,8 +76,7 @@ namespace UnitTests.Runners
 
         private static bool RunMsBuildExe(string tmpDir, out string stdout, out string stderr)
         {
-            string[] msbuildpaths = new[]
-            {
+            string[] msbuildpaths = {
                 @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe",
                 @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe",
                 Environment.GetEnvironmentVariable("MSBUILD") ?? ""

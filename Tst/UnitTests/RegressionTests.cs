@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using NUnit.Framework;
@@ -43,64 +42,19 @@ namespace UnitTests
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
 
-        private static void AssertTestCase(CompilerTestCase testCase)
-        {
-            if (!testCase.EvaluateTest(out string stdout, out string stderr, out var exitCode))
-            {
-                Console.WriteLine("Test failed!\n");
-                WriteOutput(stdout, stderr, exitCode);
-                Assert.Fail($"EXIT: {exitCode}\n{stderr}");
-            }
-
-            Console.WriteLine("Test succeeded!\n");
-            WriteOutput(stdout, stderr, exitCode);
-
-            // Delete ONLY if inside the solution directory
-            SafeDeleteDirectory(testCase.ScratchDirectory);
-        }
-
-        private static void SafeDeleteDirectory(DirectoryInfo toDelete)
-        {
-            var safeBase = new DirectoryInfo(Constants.SolutionDirectory);
-            for (DirectoryInfo scratch = toDelete; scratch.Parent != null; scratch = scratch.Parent)
-            {
-                if (string.Compare(scratch.FullName, safeBase.FullName, StringComparison.InvariantCultureIgnoreCase) == 0)
-                {
-                    toDelete.Delete(true);
-                    return;
-                }
-            }
-        }
-
-        private static void WriteOutput(string stdout, string stderr, int? exitCode)
-        {
-            if (!string.IsNullOrEmpty(stdout))
-            {
-                Console.WriteLine($"STDOUT\n======\n{stdout}\n\n");
-            }
-
-            if (!string.IsNullOrEmpty(stderr))
-            {
-                Console.WriteLine($"STDERR\n======\n{stderr}\n\n");
-            }
-
-            if (exitCode != null)
-            {
-                Console.WriteLine($"Exit code = {exitCode}");
-            }
-        }
+        
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestAllRegressions(CompilerTestCase testCase)
         {
-            AssertTestCase(testCase);
+            TestAssertions.AssertTestCase(testCase);
         }
 
         [Test]
         public void TestTemp()
         {
             DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestTemp"));
-            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "fun.p"));
+            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
 
             if (!tempFilePath.Exists)
             {
@@ -110,7 +64,7 @@ namespace UnitTests
             var testCase = new CompilerTestCase(tempDir, new PrtRunner(new[] { tempFilePath }),
                                                 new ExecutionOutputValidator(0, null, null));
 
-            AssertTestCase(testCase);
+            TestAssertions.AssertTestCase(testCase);
         }
     }
 }

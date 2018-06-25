@@ -8,13 +8,13 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
         {
             SourceLocation = sourceLocation;
             Condition = condition;
-            ThenBranch = thenBranch;
-            ElseBranch = elseBranch;
+            ThenBranch = new CompoundStmt(thenBranch);
+            ElseBranch = elseBranch == null ? null : new CompoundStmt(elseBranch);
         }
 
         public IPExpr Condition { get; }
-        public IPStmt ThenBranch { get; }
-        public IPStmt ElseBranch { get; }
+        public CompoundStmt ThenBranch { get; }
+        public CompoundStmt ElseBranch { get; }
 
         public ParserRuleContext SourceLocation { get; }
     }

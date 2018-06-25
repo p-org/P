@@ -101,6 +101,7 @@ namespace Microsoft.Pc.Backend.Prt
         private static void WriteSourceDecl(CompilationContext context, IPDecl decl, TextWriter output)
         {
             string declName = PrtTranslationUtils.GetPrtNameForDecl(context, decl);
+            var declLocation = context.Handler.LocationResolver.GetLocation(decl);
             switch (decl)
             {
                 case EnumElem _:
@@ -117,6 +118,7 @@ namespace Microsoft.Pc.Backend.Prt
                     Debug.Assert((isAnon && signature.Count <= 1) || !isAnon);
                     string payloadType = isAnon && signature.Count == 1 ? $"&{context.Names.GetNameForType(signature[0])}" : "NULL";
 
+                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
                     context.WriteLine(output, "{");
                     WriteFunctionBody(context, function, output);
@@ -147,6 +149,7 @@ namespace Microsoft.Pc.Backend.Prt
                         ifaceRecvSetName = PrtTranslationUtils.GetPrtNameForDecl(context, interfaceEventSet);
                     }
 
+                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_INTERFACEDECL {declName} =");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"{context.GetNumberForInterface(@interface)}U,");
@@ -219,6 +222,7 @@ namespace Microsoft.Pc.Backend.Prt
                     }
 
                     uint maxQueueSize = machine.Assert ?? uint.MaxValue;
+                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_MACHINEDECL {declName} = ");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"{context.GetNumberForMachine(machine)}U,");
@@ -242,6 +246,7 @@ namespace Microsoft.Pc.Backend.Prt
                     var eventDeclNames = namedEventSet.Events.Select(x => "&" + PrtTranslationUtils.GetPrtNameForDecl(context, x)).ToList();
                     string eventDeclArrBody = string.Join(", ", eventDeclNames);
                     eventDeclArrBody = string.IsNullOrEmpty(eventDeclArrBody) ? "NULL" : eventDeclArrBody;
+                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_EVENTDECL* {innerSetName}[] = {{ {eventDeclArrBody} }};");
                     context.WriteLine(output, $"PRT_EVENTSETDECL {declName} =");
                     context.WriteLine(output, "{");
@@ -259,6 +264,7 @@ namespace Microsoft.Pc.Backend.Prt
                     long eventBound = Math.Min(pEvent.Assert == -1 ? uint.MaxValue : (uint) pEvent.Assert,
                                                pEvent.Assume == -1 ? uint.MaxValue : (uint) pEvent.Assume);
 
+                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_EVENTDECL {declName} = ");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, "{ PRT_VALUE_KIND_EVENT, 0U },");
@@ -274,6 +280,7 @@ namespace Microsoft.Pc.Backend.Prt
                     // does not produce a struct definition
                     return;
                 case TypeDef typeDef:
+                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_TYPE* {declName} = &{context.Names.GetNameForType(typeDef.Type)};");
                     return;
                 case Variable _:
@@ -332,6 +339,7 @@ namespace Microsoft.Pc.Backend.Prt
                         context.WriteLine(output);
                     }
 
+                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"#define {declName} \\");
                     context.WriteLine(output, "{ \\");
                     context.WriteLine(output, $"\"{state.QualifiedName}\", \\");
@@ -608,6 +616,9 @@ namespace Microsoft.Pc.Backend.Prt
 
         private static void WriteFunctionBody(CompilationContext context, Function function, TextWriter output)
         {
+            var funLocation = context.Handler.LocationResolver.GetLocation(function);
+            context.WriteLine(output, $"#line {funLocation.Line} \"{funLocation.File.Name}\"");
+
             for (var i = 0; i < function.Signature.Parameters.Count; i++)
             {
                 Variable argument = function.Signature.Parameters[i];
@@ -641,6 +652,9 @@ namespace Microsoft.Pc.Backend.Prt
 
             // Write the body into a temporary buffer so that forward declarations can be found and added
             var bodyWriter = new StringWriter();
+            var bodyLocation = context.Handler.LocationResolver.GetLocation(function.Body);
+            context.WriteLine(bodyWriter, $"#line {bodyLocation.Line} \"{bodyLocation.File.Name}\"");
+
             foreach (IPStmt stmt in function.Body.Statements)
             {
                 WriteStmt(context, function, stmt, bodyWriter);
@@ -685,7 +699,8 @@ namespace Microsoft.Pc.Backend.Prt
 
         private static void WriteStmt(CompilationContext context, Function function, IPStmt stmt, TextWriter output)
         {
-            context.WriteLine(output, $"// [{context.Handler.LocationResolver.GetLocation(stmt)}] {stmt.GetType().Name}");
+            var stmtLocation = context.Handler.LocationResolver.GetLocation(stmt);
+            context.WriteLine(output, $"#line {stmtLocation.Line} \"{stmtLocation.File.Name}\"");
             switch (stmt)
             {
                 case AnnounceStmt _:
@@ -694,8 +709,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case AssertStmt assertStmt:
                     context.Write(output, "PrtAssert(PrtPrimGetBool(");
                     WriteExpr(context, output, function, assertStmt.Assertion);
-                    var messageLocation = context.Handler.LocationResolver.GetLocation(assertStmt);
-                    context.WriteLine(output, $"), \"[{messageLocation}] {assertStmt.Message}\");");
+                    context.WriteLine(output, $"), \"{assertStmt.Message}\");");
                     break;
                 case AssignStmt assignStmt:
                     // Lookup lvalue
@@ -938,10 +952,10 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output);
         }
 
-        private static void WritePrintStmt(CompilationContext context, TextWriter output, PrintStmt printStmt1, Function function)
+        private static void WritePrintStmt(CompilationContext context, TextWriter output, PrintStmt printStmt, Function function)
         {
             // format is {str0, n1, str1, n2, ..., nK, strK}
-            var printMessageParts = PrtTranslationUtils.ParsePrintMessage(printStmt1.Message);
+            var printMessageParts = PrtTranslationUtils.ParsePrintMessage(printStmt.Message);
 
             // Optimize for simple case.
             if (printMessageParts.Length == 1)
@@ -957,8 +971,8 @@ namespace Microsoft.Pc.Backend.Prt
             context.Write(output, "PrtFormatPrintf(\"");
             context.Write(output, (string) printMessageParts[0]);
             context.Write(output, "\", ");
-            context.Write(output, printStmt1.Args.Count.ToString());
-            foreach (IPExpr printArg in printStmt1.Args)
+            context.Write(output, printStmt.Args.Count.ToString());
+            foreach (IPExpr printArg in printStmt.Args)
             {
                 context.Write(output, ", ");
                 WriteExpr(context, output, function, printArg);

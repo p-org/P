@@ -129,6 +129,15 @@ namespace Microsoft.Pc.Backend.PSharp
                 case GotoStmt gotoStmt:
                     break;
                 case IfStmt ifStmt:
+                    context.Write(output, "if (");
+                    WriteExpr(context, output, ifStmt.Condition);
+                    context.WriteLine(output, ")");
+                    WriteStmt(context, output, ifStmt.ThenBranch);
+                    if (ifStmt.ElseBranch != null)
+                    {
+                        context.WriteLine(output, "else");
+                        WriteStmt(context, output, ifStmt.ElseBranch);
+                    }
                     break;
                 case InsertStmt insertStmt:
                     break;
@@ -139,6 +148,8 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PopStmt popStmt:
                     break;
                 case PrintStmt printStmt:
+                    // P uses the same syntax as the C# WriteLine syntax:
+                    context.Write(output, $"runtime.WriteLine(\"\"");
                     break;
                 case RaiseStmt raiseStmt:
                     break;

@@ -16,7 +16,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public SourceLocation GetLocation(ParserRuleContext decl)
         {
-            if (decl == null)
+            if (decl == null || decl.Equals(ParserRuleContext.EmptyContext))
             {
                 return new SourceLocation
                 {

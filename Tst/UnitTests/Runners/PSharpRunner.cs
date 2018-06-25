@@ -20,7 +20,7 @@ namespace UnitTests.Runners
         {
             var compiledFiles = DoCompile(scratchDirectory);
             var psharpPath = Path.Combine(Constants.SolutionDirectory, "Ext", "PSharp", "bin", "Microsoft.PSharp.dll");
-            var args = new[] {$"/r:{psharpPath}"}.Concat(compiledFiles.Select(file => file.Name)).ToArray();
+            var args = new[] {$"/r:{psharpPath}", "/t:library"}.Concat(compiledFiles.Select(file => file.Name)).ToArray();
             return ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
         }
 

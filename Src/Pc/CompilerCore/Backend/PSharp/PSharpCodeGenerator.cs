@@ -9,6 +9,7 @@ using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.AST.Statements;
+using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend.PSharp
@@ -71,8 +72,16 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case PEvent pEvent:
+                    context.WriteLine(output, $"internal class {pEvent.Name} : Event");
+                    context.WriteLine(output, "{");
+                    WriteEvent(context, output, pEvent);
+                    context.WriteLine(output, "}");
                     break;
                 case Machine machine:
+                    context.WriteLine(output, $"internal class {machine.Name} : Machine");
+                    context.WriteLine(output, "{");
+                    WriteMachine(context, output, machine);
+                    context.WriteLine(output, "}");
                     break;
                 case PEnum pEnum:
                     context.WriteLine(output, $"public enum {declName}");
@@ -86,6 +95,56 @@ namespace Microsoft.Pc.Backend.PSharp
                 default:
                     context.WriteLine(output, $"// TODO: {decl.GetType().Name} {declName}");
                     break;
+            }
+        }
+
+        private void WriteEvent(CompilationContext context, StringWriter output, PEvent pEvent)
+        {
+            if (pEvent.PayloadType.CanonicalRepresentation != "null")
+            {
+                var payloadType = GetCSharpType(context, pEvent.PayloadType);
+                context.WriteLine(output, $"public {payloadType} payload;");
+            }
+        }
+
+        private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
+        {
+            foreach (var state in machine.States)
+            {
+                if (state.IsStart)
+                {
+                    context.WriteLine(output, $"[Start]");
+                }
+                if (state.Entry != null)
+                {
+                    context.WriteLine(output, $"[OnEntry(nameof({state.Entry.Name}))]");
+                }
+                foreach (var eventHandler in state.AllEventHandlers)
+                {
+                    var pEvent = eventHandler.Key;
+                    var stateAction = eventHandler.Value;
+                    switch (stateAction)
+                    {
+                        case EventDefer _:
+                            context.WriteLine(output, $"[Defer(typeof({pEvent.Name}))]");
+                            break;
+                        case EventDoAction eventDoAction:
+                            context.WriteLine(output, $"[OnEventDoAction(typeof({pEvent.Name}), nameof({eventDoAction.Target.Name}))]");
+                            break;
+                        case EventGotoState eventGotoState:
+                            context.WriteLine(output, $"[OnEventGotoState(typeof({pEvent.Name}), nameof({eventGotoState.Target.Name}))]");
+                            break;
+                        case EventIgnore _:
+                            context.WriteLine(output, $"[Ignore(typeof({pEvent.Name}))]");
+                            break;
+                        case EventPushState eventPushState:
+                            context.WriteLine(output, $"[OnEventPushState(typeof({pEvent.Name}), nameof({eventPushState.Target.Name}))]");
+                            break;
+                    }
+                }
+                context.WriteLine(output, $"class {state.Name} : MachineState");
+                context.WriteLine(output, "{");
+                context.WriteLine(output, "}");
             }
         }
 

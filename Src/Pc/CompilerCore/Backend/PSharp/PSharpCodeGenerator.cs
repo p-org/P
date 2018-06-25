@@ -71,7 +71,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     WriteFunction(context, output, function);
                     context.WriteLine(output, "}");
                     break;
-                case PEvent pEvent:
+                case PEvent pEvent when !pEvent.IsBuiltIn:
                     context.WriteLine(output, $"internal class {pEvent.Name} : Event");
                     context.WriteLine(output, "{");
                     WriteEvent(context, output, pEvent);
@@ -86,7 +86,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PEnum pEnum:
                     context.WriteLine(output, $"public enum {declName}");
                     context.WriteLine(output, "{");
-                    foreach(var enumElem in pEnum.Values)
+                    foreach (var enumElem in pEnum.Values)
                     {
                         context.WriteLine(output, $"{declName} = {enumElem.Value},");
                     }
@@ -100,7 +100,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent pEvent)
         {
-            if (pEvent.PayloadType.CanonicalRepresentation != "null")
+            if (!pEvent.PayloadType.IsSameTypeAs(PrimitiveType.Null))
             {
                 var payloadType = GetCSharpType(context, pEvent.PayloadType);
                 context.WriteLine(output, $"public {payloadType} payload;");
@@ -109,6 +109,14 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
+            foreach (var field in machine.Fields)
+            {
+                context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {field.Name}");
+            }
+            foreach (var method in machine.Methods)
+            {
+                WriteFunction(context, output, method);
+            }
             foreach (var state in machine.States)
             {
                 if (state.IsStart)
@@ -119,6 +127,8 @@ namespace Microsoft.Pc.Backend.PSharp
                 {
                     context.WriteLine(output, $"[OnEntry(nameof({state.Entry.Name}))]");
                 }
+                var deferredEvents = new List<string>();
+                var ignoredEvents = new List<string>();
                 foreach (var eventHandler in state.AllEventHandlers)
                 {
                     var pEvent = eventHandler.Key;
@@ -126,21 +136,36 @@ namespace Microsoft.Pc.Backend.PSharp
                     switch (stateAction)
                     {
                         case EventDefer _:
-                            context.WriteLine(output, $"[Defer(typeof({pEvent.Name}))]");
+                            deferredEvents.Add($"typeof({pEvent.Name})");
                             break;
                         case EventDoAction eventDoAction:
                             context.WriteLine(output, $"[OnEventDoAction(typeof({pEvent.Name}), nameof({eventDoAction.Target.Name}))]");
                             break;
-                        case EventGotoState eventGotoState:
-                            context.WriteLine(output, $"[OnEventGotoState(typeof({pEvent.Name}), nameof({eventGotoState.Target.Name}))]");
+                        case EventGotoState eventGotoState when eventGotoState.TransitionFunction == null:
+                            context.WriteLine(output, $"[OnEventGotoState(typeof({pEvent.Name}), typeof({eventGotoState.Target.Name}))]");
+                            break;
+                        case EventGotoState eventGotoState when eventGotoState.TransitionFunction != null:
+                            context.WriteLine(output, $"[OnEventGotoState(typeof({pEvent.Name}), typeof({eventGotoState.Target.Name}), nameof({eventGotoState.TransitionFunction.Name}))]");
                             break;
                         case EventIgnore _:
-                            context.WriteLine(output, $"[Ignore(typeof({pEvent.Name}))]");
+                            ignoredEvents.Add($"typeof({pEvent.Name})");
                             break;
                         case EventPushState eventPushState:
-                            context.WriteLine(output, $"[OnEventPushState(typeof({pEvent.Name}), nameof({eventPushState.Target.Name}))]");
+                            context.WriteLine(output, $"[OnEventPushState(typeof({pEvent.Name}), typeof({eventPushState.Target.Name}))]");
                             break;
                     }
+                }
+                if (deferredEvents.Count > 0)
+                {
+                    context.WriteLine(output, $"[DeferEvents({string.Join(", ", deferredEvents.AsEnumerable())})]");
+                }
+                if (ignoredEvents.Count > 0)
+                {
+                    context.WriteLine(output, $"[IgnoreEvents({string.Join(", ", ignoredEvents.AsEnumerable())})]");
+                }
+                if (state.Exit != null)
+                {
+                    context.WriteLine(output, $"[OnExit(nameof({state.Exit.Name}))]");
                 }
                 context.WriteLine(output, $"class {state.Name} : MachineState");
                 context.WriteLine(output, "{");
@@ -152,7 +177,7 @@ namespace Microsoft.Pc.Backend.PSharp
         {
             bool isStatic = function.Owner == null;
             string staticKeyword = isStatic ? "static " : "";
-            string returnType = GetCSharpType(context, function.Signature.ReturnType);
+            string returnType = function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null) ? "void" : GetCSharpType(context, function.Signature.ReturnType);
             string functionName = context.Names.GetNameForNode(function);
             var functionParameters = string.Join(", ", function.Signature.Parameters.Select(param => $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForNode(param)}"));
             context.WriteLine(output, $"public {staticKeyword}{returnType} {functionName}({functionParameters})");

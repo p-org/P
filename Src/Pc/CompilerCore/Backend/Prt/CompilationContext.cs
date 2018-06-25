@@ -20,7 +20,7 @@ namespace Microsoft.Pc.Backend.Prt
         public CompilationContext(ITranslationErrorHandler handler, string projectName)
             : base(handler, projectName)
         {
-            Names = new NameManager($"P_{projectName.ToUpperInvariant()}_");
+            Names = new PrtNameManager($"P_{projectName.ToUpperInvariant()}_");
             HeaderFileName = $"{projectName}.h";
             SourceFileName = $"{projectName}.c";
             registeredInts = new ValueInternmentManager<int>(Names);
@@ -28,7 +28,7 @@ namespace Microsoft.Pc.Backend.Prt
             registeredBools = new ValueInternmentManager<bool>(Names);
         }
 
-        public NameManager Names { get; }
+        public PrtNameManager Names { get; }
 
         public string HeaderFileName { get; }
         public string SourceFileName { get; }

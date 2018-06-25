@@ -6,11 +6,11 @@ namespace Microsoft.Pc.Backend.Prt
 {
     internal class ValueInternmentManager<T>
     {
-        private readonly NameManager nameManager;
+        private readonly PrtNameManager nameManager;
         private readonly string typeName = typeof(T).Name.ToUpper();
         private readonly IDictionary<Function, IDictionary<T, string>> valueInternmentTable;
 
-        public ValueInternmentManager(NameManager nameManager)
+        public ValueInternmentManager(PrtNameManager nameManager)
         {
             this.nameManager = nameManager;
             valueInternmentTable = new Dictionary<Function, IDictionary<T, string>>();

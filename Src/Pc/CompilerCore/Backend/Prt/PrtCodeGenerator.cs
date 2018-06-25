@@ -74,7 +74,7 @@ namespace Microsoft.Pc.Backend.Prt
             {
                 string functionName = context.Names.GetNameForFunctionImpl(function);
                 context.WriteLine(cSource.Stream, $"PRT_VALUE* {functionName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs);");
-                context.WriteLine(cSource.Stream, $"extern PRT_FUNDECL {PrtTranslationUtils.GetPrtNameForDecl(context, function)};");
+                context.WriteLine(cSource.Stream, $"extern PRT_FUNDECL {context.Names.GetNameForDecl(function)};");
                 context.WriteLine(cSource.Stream);
             }
 
@@ -100,7 +100,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         private static void WriteSourceDecl(CompilationContext context, IPDecl decl, TextWriter output)
         {
-            string declName = PrtTranslationUtils.GetPrtNameForDecl(context, decl);
+            string declName = context.Names.GetNameForDecl(decl);
             var declLocation = context.Handler.LocationResolver.GetLocation(decl);
             switch (decl)
             {
@@ -139,14 +139,14 @@ namespace Microsoft.Pc.Backend.Prt
                     string ifaceRecvSetName;
                     if (@interface.ReceivableEvents is NamedEventSet set)
                     {
-                        ifaceRecvSetName = PrtTranslationUtils.GetPrtNameForDecl(context, set);
+                        ifaceRecvSetName = context.Names.GetNameForDecl(set);
                     }
                     else
                     {
                         var interfaceEventSet = new NamedEventSet(@interface.Name + "_RECV", @interface.SourceLocation);
                         interfaceEventSet.AddEvents(@interface.ReceivableEvents.Events);
                         WriteSourceDecl(context, interfaceEventSet, output);
-                        ifaceRecvSetName = PrtTranslationUtils.GetPrtNameForDecl(context, interfaceEventSet);
+                        ifaceRecvSetName = context.Names.GetNameForDecl(interfaceEventSet);
                     }
 
                     context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
@@ -186,7 +186,7 @@ namespace Microsoft.Pc.Backend.Prt
 
                     string stateArrayName = context.Names.GetTemporaryName($"{machine.Name}_STATES");
                     string stateArrayBody =
-                        string.Join(", ", machineStatesInOrder.Select(st => PrtTranslationUtils.GetPrtNameForDecl(context, st)));
+                        string.Join(", ", machineStatesInOrder.Select(st => context.Names.GetNameForDecl(st)));
                     context.WriteLine(output, $"PRT_STATEDECL {stateArrayName}[] = {{ {stateArrayBody} }};");
                     context.WriteLine(output);
 
@@ -201,7 +201,7 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         methodArrayName = context.Names.GetTemporaryName($"{machine.Name}_METHODS");
                         string methodArrayBody =
-                            string.Join(", ", machineMethods.Select(m => $"&{PrtTranslationUtils.GetPrtNameForDecl(context, m)}"));
+                            string.Join(", ", machineMethods.Select(m => $"&{context.Names.GetNameForDecl(m)}"));
                         context.WriteLine(output, $"PRT_FUNDECL* {methodArrayName}[] = {{ {methodArrayBody} }};");
                         context.WriteLine(output);
                     }
@@ -243,7 +243,7 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case NamedEventSet namedEventSet:
                     string innerSetName = context.Names.GetTemporaryName(namedEventSet.Name + "_INNER");
-                    var eventDeclNames = namedEventSet.Events.Select(x => "&" + PrtTranslationUtils.GetPrtNameForDecl(context, x)).ToList();
+                    var eventDeclNames = namedEventSet.Events.Select(x => "&" + context.Names.GetNameForDecl(x)).ToList();
                     string eventDeclArrBody = string.Join(", ", eventDeclNames);
                     eventDeclArrBody = string.IsNullOrEmpty(eventDeclArrBody) ? "NULL" : eventDeclArrBody;
                     context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
@@ -290,9 +290,9 @@ namespace Microsoft.Pc.Backend.Prt
                 case State state:
                     string stateEntryFunName = state.Entry == null
                         ? "&_P_NO_OP"
-                        : $"&{PrtTranslationUtils.GetPrtNameForDecl(context, state.Entry)}";
+                        : $"&{context.Names.GetNameForDecl(state.Entry)}";
                     string stateExitFunName =
-                        state.Exit == null ? "&_P_NO_OP" : $"&{PrtTranslationUtils.GetPrtNameForDecl(context, state.Exit)}";
+                        state.Exit == null ? "&_P_NO_OP" : $"&{context.Names.GetNameForDecl(state.Exit)}";
 
                     int stateIndex = context.GetNumberForState(state);
                     PrtTranslationUtils.StateActionResults stateData = PrtTranslationUtils.BuildActionSets(context, state);
@@ -310,7 +310,7 @@ namespace Microsoft.Pc.Backend.Prt
                         for (var i = 0; i < stateData.Trans.Count; i++)
                         {
                             (PEvent triggerEvent, int destIndex, string transFunRef) = stateData.Trans[i];
-                            string triggerName = PrtTranslationUtils.GetPrtNameForDecl(context, triggerEvent);
+                            string triggerName = context.Names.GetNameForDecl(triggerEvent);
                             string comma = i == stateData.Trans.Count - 1 ? "" : ",";
                             context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {destIndex}, {transFunRef} }}{comma}");
                         }
@@ -329,9 +329,9 @@ namespace Microsoft.Pc.Backend.Prt
                         for (var i = 0; i < stateData.Dos.Count; i++)
                         {
                             (PEvent triggerEvent, Function doFun) = stateData.Dos[i];
-                            string triggerName = PrtTranslationUtils.GetPrtNameForDecl(context, triggerEvent);
+                            string triggerName = context.Names.GetNameForDecl(triggerEvent);
                             string comma = i == stateData.Dos.Count - 1 ? "" : ",";
-                            string funName = doFun != null ? $"&{PrtTranslationUtils.GetPrtNameForDecl(context, doFun)}" : "NULL";
+                            string funName = doFun != null ? $"&{context.Names.GetNameForDecl(doFun)}" : "NULL";
                             context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {funName} }}{comma}");
                         }
 
@@ -345,9 +345,9 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"\"{state.QualifiedName}\", \\");
                     context.WriteLine(output, $"{stateData.Trans.Count}U, \\");
                     context.WriteLine(output, $"{stateData.Dos.Count}U, \\");
-                    context.WriteLine(output, $"&{PrtTranslationUtils.GetPrtNameForDecl(context, stateData.DefersSet)}, \\");
-                    context.WriteLine(output, $"&{PrtTranslationUtils.GetPrtNameForDecl(context, stateData.TransSet)}, \\");
-                    context.WriteLine(output, $"&{PrtTranslationUtils.GetPrtNameForDecl(context, stateData.DosSet)}, \\");
+                    context.WriteLine(output, $"&{context.Names.GetNameForDecl(stateData.DefersSet)}, \\");
+                    context.WriteLine(output, $"&{context.Names.GetNameForDecl(stateData.TransSet)}, \\");
+                    context.WriteLine(output, $"&{context.Names.GetNameForDecl(stateData.DosSet)}, \\");
                     context.WriteLine(output, $"{transArrName}, \\");
                     context.WriteLine(output, $"{dosArrName}, \\");
                     context.WriteLine(output, $"{stateEntryFunName}, \\");
@@ -478,7 +478,7 @@ namespace Microsoft.Pc.Backend.Prt
             eventsList = new[] {nullEvent, haltEvent}.Concat(eventsList);
 
             string eventArrayName = context.Names.GetTemporaryName("ALL_EVENTS");
-            string eventArrayBody = string.Join(", ", eventsList.Select(ev => "&" + PrtTranslationUtils.GetPrtNameForDecl(context, ev)));
+            string eventArrayBody = string.Join(", ", eventsList.Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             eventArrayBody = string.IsNullOrEmpty(eventArrayBody) ? "NULL" : eventArrayBody;
             context.WriteLine(output, $"PRT_EVENTDECL* {eventArrayName}[] = {{ {eventArrayBody} }};");
 
@@ -486,7 +486,7 @@ namespace Microsoft.Pc.Backend.Prt
             string machineArrayName = context.Names.GetTemporaryName("ALL_MACHINES");
             string machineArrayBody = string.Join(", ", PrtTranslationUtils
                                                         .ToOrderedListByPermutation(globalScope.Machines, context.GetNumberForMachine)
-                                                        .Select(ev => "&" + PrtTranslationUtils.GetPrtNameForDecl(context, ev)));
+                                                        .Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             machineArrayBody = string.IsNullOrEmpty(machineArrayBody) ? "NULL" : machineArrayBody;
             context.WriteLine(output, $"PRT_MACHINEDECL* {machineArrayName}[] = {{ {machineArrayBody} }};");
 
@@ -494,14 +494,14 @@ namespace Microsoft.Pc.Backend.Prt
             string interfaceArrayName = context.Names.GetTemporaryName("ALL_INTERFACES");
             string interfaceArrayBody = string.Join(", ", PrtTranslationUtils
                                                           .ToOrderedListByPermutation(globalScope.Interfaces, context.GetNumberForInterface)
-                                                          .Select(ev => "&" + PrtTranslationUtils.GetPrtNameForDecl(context, ev)));
+                                                          .Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             interfaceArrayBody = string.IsNullOrEmpty(interfaceArrayBody) ? "NULL" : interfaceArrayBody;
             context.WriteLine(output, $"PRT_INTERFACEDECL* {interfaceArrayName}[] = {{ {interfaceArrayBody} }};");
 
             // generate functions array
             string funcArrayName = context.Names.GetTemporaryName("ALL_FUNCTIONS");
             string funcArrayBody =
-                string.Join(", ", globalScope.Functions.Select(ev => "&" + PrtTranslationUtils.GetPrtNameForDecl(context, ev)));
+                string.Join(", ", globalScope.Functions.Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             funcArrayBody = string.IsNullOrEmpty(funcArrayBody) ? "NULL" : funcArrayBody;
             context.WriteLine(output, $"PRT_FUNDECL* {funcArrayName}[] = {{ {funcArrayBody} }};");
 
@@ -535,7 +535,7 @@ namespace Microsoft.Pc.Backend.Prt
 
                 context.WriteLine(output, $"int {machineDefMapName}[] = {{ {string.Join(",", realMachineDefMap)} }};");
 
-                context.WriteLine(output, $"PRT_PROGRAMDECL {PrtTranslationUtils.GetPrtNameForDecl(context, impl)} = {{");
+                context.WriteLine(output, $"PRT_PROGRAMDECL {context.Names.GetNameForDecl(impl)} = {{");
                 context.WriteLine(output, $"{globalScope.Events.Count()}U,");
                 context.WriteLine(output, $"{globalScope.Machines.Count()}U,");
                 context.WriteLine(output, $"{globalScope.Interfaces.Count()}U,");
@@ -579,14 +579,14 @@ namespace Microsoft.Pc.Backend.Prt
             string eventSetName;
             if (machine.Receives is NamedEventSet mRecvSet)
             {
-                eventSetName = PrtTranslationUtils.GetPrtNameForDecl(context, mRecvSet);
+                eventSetName = context.Names.GetNameForDecl(mRecvSet);
             }
             else
             {
                 var machineTempRecvSet = new NamedEventSet(machine.Name + "_RECV", machine.SourceLocation);
                 machineTempRecvSet.AddEvents(machine.Receives.Events);
                 WriteSourceDecl(context, machineTempRecvSet, output);
-                eventSetName = PrtTranslationUtils.GetPrtNameForDecl(context, machineTempRecvSet);
+                eventSetName = context.Names.GetNameForDecl(machineTempRecvSet);
             }
 
             return eventSetName;
@@ -597,14 +597,14 @@ namespace Microsoft.Pc.Backend.Prt
             string eventSetName;
             if (machine.Sends is NamedEventSet mSendSet)
             {
-                eventSetName = PrtTranslationUtils.GetPrtNameForDecl(context, mSendSet);
+                eventSetName = context.Names.GetNameForDecl(mSendSet);
             }
             else
             {
                 var machineTempSendSet = new NamedEventSet(machine.Name + "_SEND", machine.SourceLocation);
                 machineTempSendSet.AddEvents(machine.Sends.Events);
                 WriteSourceDecl(context, machineTempSendSet, output);
-                eventSetName = PrtTranslationUtils.GetPrtNameForDecl(context, machineTempSendSet);
+                eventSetName = context.Names.GetNameForDecl(machineTempSendSet);
             }
 
             return eventSetName;
@@ -622,13 +622,13 @@ namespace Microsoft.Pc.Backend.Prt
             for (var i = 0; i < function.Signature.Parameters.Count; i++)
             {
                 Variable argument = function.Signature.Parameters[i];
-                string varName = PrtTranslationUtils.GetPrtNameForDecl(context, argument);
+                string varName = context.Names.GetNameForDecl(argument);
                 context.WriteLine(output, $"PRT_VALUE** {varName} = argRefs[{i}];");
             }
 
             foreach (Variable localVariable in function.LocalVariables)
             {
-                string varName = PrtTranslationUtils.GetPrtNameForDecl(context, localVariable);
+                string varName = context.Names.GetNameForDecl(localVariable);
                 string varTypeName = context.Names.GetNameForType(localVariable.Type);
                 // TODO: optimize away PrtMkDefaultValue if liveness shows no usages before assignments.
                 context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
@@ -663,7 +663,7 @@ namespace Microsoft.Pc.Backend.Prt
             bodyWriter.WriteLine("p_return:");
             foreach (Variable localVariable in function.LocalVariables)
             {
-                string varName = PrtTranslationUtils.GetPrtNameForDecl(context, localVariable);
+                string varName = context.Names.GetNameForDecl(localVariable);
                 context.WriteLine(bodyWriter, $"PrtFreeValue({varName}); {varName} = NULL;");
             }
 
@@ -1148,7 +1148,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, $"(&{enumLiteralName})");
                     break;
                 case EventRefExpr eventRefExpr:
-                    context.Write(output, $"(&{PrtTranslationUtils.GetPrtNameForDecl(context, eventRefExpr.Value)}.value)");
+                    context.Write(output, $"(&{context.Names.GetNameForDecl(eventRefExpr.Value)}.value)");
                     break;
                 case FairNondetExpr _:
                     context.Write(output, "(PrtMkNondetBoolValue())");
@@ -1262,7 +1262,7 @@ namespace Microsoft.Pc.Backend.Prt
             if (variable.Role.HasFlag(VariableRole.Param))
             {
                 // dereference, since params are passed by reference.
-                return $"*{PrtTranslationUtils.GetPrtNameForDecl(context, variable)}";
+                return $"*{context.Names.GetNameForDecl(variable)}";
             }
             
             if (variable.Role.HasFlag(VariableRole.Field))
@@ -1274,7 +1274,7 @@ namespace Microsoft.Pc.Backend.Prt
 
             if (variable.Role.HasFlag(VariableRole.Temp) || variable.Role.HasFlag(VariableRole.Local))
             {
-                return PrtTranslationUtils.GetPrtNameForDecl(context, variable);
+                return context.Names.GetNameForDecl(variable);
             }
 
             throw new ArgumentOutOfRangeException(nameof(variable));
@@ -1378,7 +1378,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         private static void WriteExternDeclaration(CompilationContext context, TextWriter output, IPDecl decl)
         {
-            string declName = PrtTranslationUtils.GetPrtNameForDecl(context, decl);
+            string declName = context.Names.GetNameForDecl(decl);
             switch (decl)
             {
                 case EnumElem enumElem:
@@ -1403,7 +1403,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"// DECL(NamedModule, {decl.Name}) => {declName}");
                     break;
                 case PEnum pEnum:
-                    string enumBody = string.Join(", ", pEnum.Values.Select(val => $"{PrtTranslationUtils.GetPrtNameForDecl(context, val)} = {val.Value}"));
+                    string enumBody = string.Join(", ", pEnum.Values.Select(val => $"{context.Names.GetNameForDecl(val)} = {val.Value}"));
                     context.WriteLine(output, $"typedef enum {declName} {{ {enumBody} }} {declName};");
                     context.WriteLine(output);
                     break;

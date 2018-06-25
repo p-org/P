@@ -9,7 +9,7 @@ namespace Microsoft.Pc.Backend.PSharp
         private ICompilerOutput log;
         private string projectName;
 
-        public NameManager Names { get; }
+        public PSharpNameManager Names { get; }
 
         public CompilationContext(ITranslationErrorHandler handler, ICompilerOutput log, string projectName)
             : base(handler, projectName)
@@ -17,7 +17,7 @@ namespace Microsoft.Pc.Backend.PSharp
             this.handler = handler;
             this.log = log;
             this.projectName = projectName;
-            this.Names = new NameManager("PGEN_");
+            this.Names = new PSharpNameManager("PGEN_");
 
             FileName = $"{projectName}.cs";
             GlobalFunctionClassName = $"GlobalFunctions_{projectName}";
@@ -25,7 +25,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
         public string GetStaticMethodQualifiedName(Function function)
         {
-            return $"{GlobalFunctionClassName}.{Names.GetNameForNode(function)}";
+            return $"{GlobalFunctionClassName}.{Names.GetNameForDecl(function)}";
         }
 
         public string GlobalFunctionClassName { get; }

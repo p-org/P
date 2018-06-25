@@ -67,7 +67,7 @@ namespace Microsoft.Pc.Backend.Prt
                         transSet.AddEvent(pEvent);
                         string transFunName = eventGotoState.TransitionFunction == null
                             ? "_P_NO_OP"
-                            : GetPrtNameForDecl(context, eventGotoState.TransitionFunction);
+                            : context.Names.GetNameForDecl(eventGotoState.TransitionFunction);
                         trans.Add((pEvent, context.GetNumberForState(eventGotoState.Target), "&" + transFunName));
                         break;
                     case EventIgnore _:
@@ -143,47 +143,6 @@ namespace Microsoft.Pc.Backend.Prt
 
             parts.Add(sb.ToString());
             return parts.ToArray();
-        }
-
-        public static string GetPrtNameForDecl(CompilationContext context, IPDecl decl)
-        {
-            if (decl == null)
-            {
-                throw new ArgumentNullException(nameof(decl));
-            }
-
-            var computedPrefix = "";
-            switch (decl)
-            {
-                case EnumElem enumElem:
-                    computedPrefix = $"{enumElem.ParentEnum.Name}_";
-                    break;
-                case PEvent pEvent:
-                    if (pEvent.IsNullEvent)
-                    {
-                        return "_P_EVENT_NULL_STRUCT";
-                    }
-
-                    if (pEvent.IsHaltEvent)
-                    {
-                        return "_P_EVENT_HALT_STRUCT";
-                    }
-
-                    break;
-                case Implementation impl:
-                    return $"P_GEND_IMPL_{impl.Name}";
-            }
-
-            if (DeclNameParts.TryGetValue(decl.GetType(), out string prefix))
-            {
-                prefix += "_";
-            }
-            else
-            {
-                prefix = "";
-            }
-
-            return context.Names.GetNameForNode(decl, prefix + computedPrefix);
         }
 
         public class StateActionResults

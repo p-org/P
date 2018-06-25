@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Pc.Backend.ASTExt;
@@ -22,7 +23,7 @@ namespace Microsoft.Pc.Backend.PSharp
             log.WriteMessage("P# code generation in progress.", SeverityKind.Warning);
             var context = new CompilationContext(handler, log, projectName);
             CompiledFile csharpSource = GenerateSource(context, globalScope);
-            return new List<CompiledFile>() { csharpSource };
+            return new List<CompiledFile> { csharpSource };
         }
 
         private CompiledFile GenerateSource(CompilationContext context, Scope globalScope)
@@ -62,7 +63,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
         {
-            string declName = context.Names.GetNameForNode(decl);
+            string declName = context.Names.GetNameForDecl(decl);
             switch (decl)
             {
                 case Function function:
@@ -71,14 +72,14 @@ namespace Microsoft.Pc.Backend.PSharp
                     WriteFunction(context, output, function);
                     context.WriteLine(output, "}");
                     break;
-                case PEvent pEvent:
-                    context.WriteLine(output, $"internal class {pEvent.Name} : Event");
+                case PEvent pEvent when !pEvent.IsBuiltIn:
+                    context.WriteLine(output, $"internal class {declName} : Event");
                     context.WriteLine(output, "{");
                     WriteEvent(context, output, pEvent);
                     context.WriteLine(output, "}");
                     break;
                 case Machine machine:
-                    context.WriteLine(output, $"internal class {machine.Name} : Machine");
+                    context.WriteLine(output, $"internal class {declName} : Machine");
                     context.WriteLine(output, "{");
                     WriteMachine(context, output, machine);
                     context.WriteLine(output, "}");
@@ -153,8 +154,8 @@ namespace Microsoft.Pc.Backend.PSharp
             bool isStatic = function.Owner == null;
             string staticKeyword = isStatic ? "static " : "";
             string returnType = GetCSharpType(context, function.Signature.ReturnType);
-            string functionName = context.Names.GetNameForNode(function);
-            var functionParameters = string.Join(", ", function.Signature.Parameters.Select(param => $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForNode(param)}"));
+            string functionName = context.Names.GetNameForDecl(function);
+            var functionParameters = string.Join(", ", function.Signature.Parameters.Select(param => $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)}"));
             context.WriteLine(output, $"public {staticKeyword}{returnType} {functionName}({functionParameters})");
             WriteStmt(context, output, function.Body);
         }
@@ -252,7 +253,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case TupleAccessExpr tupleAccessExpr:
                     throw new NotImplementedException();
                 case VariableAccessExpr variableAccessExpr:
-                    context.Write(output, context.Names.GetNameForNode(variableAccessExpr.Variable));
+                    context.Write(output, context.Names.GetNameForDecl(variableAccessExpr.Variable));
                     break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(lvalue));
@@ -293,10 +294,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
                     EnumElem enumElem = enumElemRefExpr.Value;
-                    context.Write(output, $"{context.Names.GetNameForNode(enumElem.ParentEnum)}.{context.Names.GetNameForNode(enumElem)}");
+                    context.Write(output, $"{context.Names.GetNameForDecl(enumElem.ParentEnum)}.{context.Names.GetNameForDecl(enumElem)}");
                     break;
                 case EventRefExpr eventRefExpr:
-                    context.Write(output, $"new {context.Names.GetNameForNode(eventRefExpr.Value)}()");
+                    context.Write(output, $"new {context.Names.GetNameForDecl(eventRefExpr.Value)}()");
                     break;
                 case FairNondetExpr _:
                     context.Write(output, "this.FairRandom()");
@@ -316,7 +317,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
                     string swapKeyword = linearAccessRefExpr.LinearType.Equals(LinearType.Swap) ? "ref " : "";
-                    context.Write(output, $"{swapKeyword}{context.Names.GetNameForNode(linearAccessRefExpr.Variable)}");
+                    context.Write(output, $"{swapKeyword}{context.Names.GetNameForDecl(linearAccessRefExpr.Variable)}");
                     break;
                 case NamedTupleExpr namedTupleExpr:
                     throw new NotImplementedException();
@@ -365,7 +366,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case BoundedType _:
                     return "Machine";
                 case EnumType enumType:
-                    return context.Names.GetNameForNode(enumType.EnumDecl);
+                    return context.Names.GetNameForDecl(enumType.EnumDecl);
                 case ForeignType _:
                     throw new NotImplementedException();
                 case MapType mapType:
@@ -400,7 +401,7 @@ namespace Microsoft.Pc.Backend.PSharp
             switch (returnType.Canonicalize())
             {
                 case EnumType enumType:
-                    return $"({context.Names.GetNameForNode(enumType.EnumDecl)})(0)";
+                    return $"({context.Names.GetNameForDecl(enumType.EnumDecl)})(0)";
                 case MapType mapType:
                     return $"new {GetCSharpType(context, mapType)}()";
                 case SequenceType sequenceType:

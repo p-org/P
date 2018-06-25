@@ -5,22 +5,23 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend.Prt
 {
 
-    public class NameManager : NameManagerBase
+    public class PrtNameManager : NameManagerBase
     {
         private readonly ConditionalWeakTable<IPDecl, string> funcNames = new ConditionalWeakTable<IPDecl, string>();
         private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
 
-        public NameManager(string namePrefix)
+        public PrtNameManager(string namePrefix)
             : base(namePrefix)
         {
         }
 
-        public ImmutableHashSet<PLanguageType> UsedTypes => typeNames.Keys.ToImmutableHashSet();
+        public IEnumerable<PLanguageType> UsedTypes => typeNames.Keys.ToImmutableHashSet();
         
         public string GetNameForFunctionImpl(Function function, string prefix = "")
         {
@@ -49,6 +50,79 @@ namespace Microsoft.Pc.Backend.Prt
             typeNames.Add(type, name);
             return name;
         }
+
+        protected override string ComputeNameForDecl(IPDecl decl)
+        {
+            var enumName = "";
+            switch (decl)
+            {
+                case EnumElem enumElem:
+                    enumName = $"{enumElem.ParentEnum.Name}_";
+                    break;
+                case PEvent pEvent:
+                    if (pEvent.IsNullEvent)
+                    {
+                        return "_P_EVENT_NULL_STRUCT";
+                    }
+
+                    if (pEvent.IsHaltEvent)
+                    {
+                        return "_P_EVENT_HALT_STRUCT";
+                    }
+
+                    break;
+                case Implementation impl:
+                    return $"P_GEND_IMPL_{impl.Name}";
+            }
+
+            if (DeclNameParts.TryGetValue(decl.GetType(), out string declTypePart))
+            {
+                declTypePart += "_";
+            }
+            else
+            {
+                declTypePart = "";
+            }
+
+            string name = decl.Name;
+            if (decl is State state)
+            {
+                name = state.QualifiedName;
+            }
+            name = string.IsNullOrEmpty(name) ? "Anon" : name;
+            name = name.Replace('.', '_');
+
+            if (name.StartsWith("$"))
+            {
+                name = "PTMP_" + name.Substring(1);
+            }
+            else
+            {
+                name = NamePrefix + declTypePart + enumName + name;
+            }
+
+            return name;
+        }
+
+        private static readonly Dictionary<Type, string> DeclNameParts = new Dictionary<Type, string>
+        {
+            {typeof(EnumElem), "ENUMELEM"},
+            {typeof(Function), "FUNCTION"},
+            {typeof(Implementation), "IMPL"},
+            {typeof(Interface), "I"},
+            {typeof(Machine), "MACHINE"},
+            {typeof(NamedEventSet), "EVENTSET"},
+            {typeof(NamedModule), "MODULE"},
+            {typeof(PEnum), "ENUM"},
+            {typeof(PEvent), "EVENT"},
+            {typeof(RefinementTest), "REFINEMENT_TEST"},
+            {typeof(SafetyTest), "SAFETY_TEST"},
+            {typeof(State), "STATE"},
+            {typeof(StateGroup), "STATEGROUP"},
+            {typeof(TypeDef), "TYPEDEF"},
+            {typeof(Variable), "VAR"}
+        };
+
 
         private string SimplifiedRep(PLanguageType type)
         {

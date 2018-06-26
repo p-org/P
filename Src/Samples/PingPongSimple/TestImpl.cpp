@@ -7,13 +7,11 @@ extern "C" {
 #include "PingPongSimple.h"
 #include "Prt.h"
 }
-#include "DgmlGraphWriter.h"
 #include <string>
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;
 PRT_INT64 sendMessageSeqNumber = 0;
-DgmlGraphWriter dgmlMonitor;
 
 /* the Stubs */
 
@@ -34,8 +32,6 @@ std::wstring ConvertToUnicode(const char* str)
 
 static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
-    // This LogHandler shows how to use the dgmlMonitor to create a DGML graph of the state machine transitions that
-	// were recorded by this LogHandler.  The DGML identifiers computed below are designed to ensure the correct DGML graph is built.
 	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
 
 	std::wstring machineName = ConvertToUnicode((const char*)program->machines[c->instanceOf]->name);
@@ -76,12 +72,10 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	switch (step)
 	{
 	case PRT_STEP_HALT:
-		dgmlMonitor.NavigateLink(stateId.c_str(), stateLabel.c_str(), stateId.c_str(), stateLabel.c_str(), L"halt", 0);
 		break;
 	case PRT_STEP_ENQUEUE:
 		break;
 	case PRT_STEP_DEQUEUE:
-		dgmlMonitor.NavigateLink(senderStateId.c_str(), senderStateLabel.c_str(), stateId.c_str(), stateLabel.c_str(), eventName.c_str(), 0);
 		break;
 	case PRT_STEP_ENTRY:
 		break;
@@ -172,7 +166,6 @@ Also note that the machine hosting the main machine does not host container mach
 
 int main(int argc, char *argv[])
 {
-	bool dgml = false;
 	bool cooperative = false;
 	for (int i = 0; i < argc; i++)
 	{
@@ -180,26 +173,11 @@ int main(int argc, char *argv[])
 		if (arg[0] == '/' || arg[0] == '-')
 		{
 			char* name = arg + 1;
-			if (strcmp(name, "dgml") == 0)
-			{
-				dgml = true;
-			}
-			else if (strcmp(name, "cooperative") == 0)
+			if (strcmp(name, "cooperative") == 0)
 			{
 				cooperative = true;
 			}
 		}
-	}
-
-	if (dgml) {
-
-		// Attempt to connect to Visual Studio running on some machine.  This instance of VS 2015 needs to have the DgmlTestMonitor VSIX extension
-		// installed, and the DgmlTestMonitor window needs to be open.  Then you will see the state machine building & animating in real time.
-		dgmlMonitor.Connect("10.137.62.126");
-
-		// Either way you need to also start a new graph file on disk. If you have not connected to VS then this file will be written
-		// at the time you call dgmlMonitor.Close(), otherwise VS will maintain the graph inside VS.
-		dgmlMonitor.NewGraph(L"d:\\temp\\trace.dgml");
 	}
 
     PRT_GUID processGuid;
@@ -231,10 +209,6 @@ int main(int argc, char *argv[])
 			SleepEx(1000, PRT_TRUE); // SleepEx allows the Win32 Timer to execute.
 		}
     }
-
-	if (dgml) {
-		dgmlMonitor.Close();
-	}
 
     return 0;
 

@@ -162,12 +162,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="MainFunction.c" />
-    <PCompile Include="PingPong.p" />
   </ItemGroup>
   <ItemGroup>
+    <PCompile Include="PingPong.p" />
     <PCompile Include="PrtDistHelp.p" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="PingPong.p" />
     <None Include="PrtDistHelp.p" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

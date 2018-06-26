@@ -58,7 +58,7 @@ namespace UnitTests.Runners
 
         private void DoCompile(DirectoryInfo scratchDirectory)
         {
-            var compiler = new AntlrCompiler();
+            var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);
             bool success = compiler.Compile(outputStream, new CommandLineOptions
             {

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
+﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <RootNamespace>Microsoft.Pc</RootNamespace>
@@ -21,13 +21,13 @@
     <PackageReference Include="System.ValueTuple" Version="4.5.0" />
   </ItemGroup>
   <ItemGroup>
-    <Antlr4 Include="Antlr/PParser.g4">
+    <Antlr4 Include="Parser/PParser.g4">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>Microsoft.Pc</CustomToolNamespace>
       <Listener>True</Listener>
       <Visitor>True</Visitor>
     </Antlr4>
-    <Antlr4 Include="Antlr/PLexer.g4">
+    <Antlr4 Include="Parser/PLexer.g4">
       <Generator>MSBuild:Compile</Generator>
       <CustomToolNamespace>Microsoft.Pc</CustomToolNamespace>
     </Antlr4>

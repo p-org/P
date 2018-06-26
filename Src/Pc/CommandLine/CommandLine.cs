@@ -10,7 +10,7 @@
                 return -1;
             }
 
-            ICompiler compiler = new AntlrCompiler();
+            ICompiler compiler = new Compiler();
             var output = new StandardOutput();
             bool result = compiler.Compile(output, options);
             return result ? 0 : -1;

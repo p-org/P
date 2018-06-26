@@ -1,4 +1,0 @@
-arg: -et:SentNullDetected.trace
-inc: SentNullDetected.trace
-del: SentNullDetected.trace
-dsc: zinger.exe, Zinger: "sent null event" exception

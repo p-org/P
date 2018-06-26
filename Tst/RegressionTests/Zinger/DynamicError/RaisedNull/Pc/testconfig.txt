@@ -1,5 +1,0 @@
-arg: ..\RaisedNullDetected.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, Zinger: "raised null event" exception

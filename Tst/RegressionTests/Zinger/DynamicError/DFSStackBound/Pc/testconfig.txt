@@ -1,5 +1,0 @@
-arg: ..\DFSStackBound.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, Testing the DFS stack bound option in Zing

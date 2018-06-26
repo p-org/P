@@ -38,7 +38,7 @@ namespace UnitTests.Runners
         /// <returns>Always returns 0, otherwise throws.</returns>
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
-            var compiler = new AntlrCompiler();
+            var compiler = new Compiler();
             var stdoutWriter = new StringWriter();
             var stderrWriter = new StringWriter();
             var outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);

@@ -11,7 +11,7 @@ using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc
 {
-    public class AntlrCompiler : ICompiler
+    public class Compiler : ICompiler
     {
         public bool Compile(ICompilerOutput output, CommandLineOptions options)
         {

@@ -1,7 +1,4 @@
-=================================
-         Console output          
-=================================
 OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state S
+OUT: <StateLog> Machine Main(1) entered state Main.S
 OUT: 
 EXIT: 0

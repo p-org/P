@@ -63,7 +63,7 @@ machine Process {
 			count = 0;
 		}
 		on myCount goto inits;
-		on init do (payload: (machine, machine)) { initaction(payload); }
+		on init do initaction;
 		on Resp goto SendCount;
 	}
 	fun initaction(payload: (machine, machine)) {

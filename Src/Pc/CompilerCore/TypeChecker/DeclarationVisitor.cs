@@ -191,7 +191,7 @@ namespace Microsoft.Pc.TypeChecker
             IEventSet eventSet;
             if (context.RECEIVES() == null)
             {
-                eventSet = UniversalEventSet.Instance;
+                eventSet = CurrentScope.UniversalEventSet;
             }
             else
             {
@@ -221,9 +221,13 @@ namespace Microsoft.Pc.TypeChecker
             // cardinality? 
             var hasAssume = context.cardinality()?.ASSUME() != null;
             var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            machine.Assume = hasAssume ? cardinality : -1;
-            machine.Assert = hasAssert ? cardinality : -1;
+            var cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            if (cardinality > uint.MaxValue)
+            {
+                throw Handler.IssueError(context.cardinality(), "assume/assert not in uint32 range.");
+            }
+            machine.Assume = hasAssume ? (uint?)cardinality : null;
+            machine.Assert = hasAssert ? (uint?)cardinality : null;
 
             // receivesSends*
             foreach (var receivesSends in context.receivesSends())
@@ -260,12 +264,12 @@ namespace Microsoft.Pc.TypeChecker
 
             if (machine.Receives == null)
             {
-                machine.Receives = UniversalEventSet.Instance;
+                machine.Receives = CurrentScope.UniversalEventSet;
             }
 
             if (machine.Sends == null)
             {
-                machine.Sends = UniversalEventSet.Instance;
+                machine.Sends = CurrentScope.UniversalEventSet;
             }
 
             // machineBody
@@ -384,6 +388,7 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitGroup(PParser.GroupContext context)
         {
             var group = (StateGroup) nodesToDeclarations.Get(context);
+            group.OwningMachine = CurrentMachine;
             using (currentScope.NewContext(group.Scope))
             {
                 foreach (var groupItemContext in context.groupItem())
@@ -417,6 +422,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             // STATE name=iden
             var state = (State) nodesToDeclarations.Get(context);
+            state.OwningMachine = CurrentMachine;
 
             // START? 
             state.IsStart = context.START() != null;

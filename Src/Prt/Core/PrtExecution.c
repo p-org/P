@@ -1,5 +1,8 @@
 #include "PrtExecution.h"
 
+// Can only run one P program at a time
+PRT_PROGRAMDECL *program;
+
 PRT_TYPE NullType =
 {
 	PRT_KIND_NULL,
@@ -20,9 +23,7 @@ PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
     },
 	"null",
 	0,
-	&NullType,
-	0,
-	NULL
+	&NullType
 };
 
 PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
@@ -33,8 +34,17 @@ PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
     },
 	"halt",
 	4294967295U,
-	&AnyType,
-	0,
+	&AnyType
+};
+
+PRT_VALUE* PRT_CALL_CONV _P_NO_OP_IMPL(_Inout_ struct PRT_MACHINEINST *context, _Inout_ PRT_VALUE*** refLocals) {
+	return NULL;
+}
+
+PRT_FUNDECL _P_NO_OP =
+{
+	"_P_NO_OP",
+	&_P_NO_OP_IMPL,
 	NULL
 };
 
@@ -44,30 +54,7 @@ PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 /* Initialize the function to default print fucntion*/
 PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
 
-void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
-{
-	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
-	PrtAssert(PrtIsValidValue(*value), "value is not valid");
 
-	PRT_VALUE *oldValue = context->varValues[varIndex];
-	if (status == PRT_FUN_PARAM_MOVE)
-	{
-		if (oldValue != NULL)
-		{
-			PrtFreeValue(oldValue);
-			oldValue = NULL;
-		}
-		context->varValues[varIndex] = *value;
-		*value = NULL;
-	}
-	else 
-	{
-		PrtAssert(PrtIsValidValue(oldValue), "lhs value is not valid");
-		PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
-		context->varValues[varIndex] = *value;
-		*value = oldValue;
-	}	
-}
 
 void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
@@ -86,30 +73,6 @@ void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ P
 	PrtSetGlobalVarEx(context, varIndex, value, PRT_TRUE);
 }
 
-void PRT_CALL_CONV PrtSetLocalVarLinear(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE **value, _In_ PRT_TYPE *type)
-{
-	PrtAssert(status != PRT_FUN_PARAM_CLONE, "status is not valid");
-	PrtAssert(PrtIsValidValue(*value), "value is not valid");
-
-	PRT_VALUE *oldValue = locals[varIndex];
-	if (status == PRT_FUN_PARAM_MOVE)
-	{
-		if (oldValue != NULL)
-		{
-			PrtFreeValue(oldValue);
-			oldValue = NULL;
-		}
-		locals[varIndex] = *value;
-		*value = NULL;
-	}
-	else
-	{
-		PrtAssert(PrtIsValidValue(oldValue), "lhs value is not valid");
-		PrtAssert(type == NULL || PrtInhabitsType(oldValue, type), "lhs value must be member of rhs type");
-		locals[varIndex] = *value;
-		*value = oldValue;
-	}
-}
 
 void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
 {
@@ -165,28 +128,16 @@ _In_  PRT_UINT32				instanceOf,
 _In_  PRT_VALUE					*payload
 )
 {
+	PrtLockMutex(process->processLock);
+
 	PRT_UINT32 packSize;
-	PRT_UINT32 nVars;
 	PRT_UINT8 eQSize;
 	PRT_MACHINEINST_PRIV *context;
 	PRT_UINT32 i;
 
-	PrtLockMutex(process->processLock);
-
-
-	nVars = program->machines[instanceOf]->nVars;
 	eQSize = PRT_QUEUE_LEN_DEFAULT;
 
-	//
-	// Allocate memory for state machine context
-	//
-	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
-
-	//assign the interface name
-	context->interfaceBound = interfaceName;
-	//
-	// Add it to the array of machines in the process
-	//
+	// Make space in process list for new machine
 	PRT_UINT32 numMachines = process->numMachines;
 	PRT_UINT32 machineCount = process->machineCount;
 	PRT_MACHINEINST **machines = process->machines;
@@ -207,6 +158,14 @@ _In_  PRT_VALUE					*payload
 		process->machines = newMachines;
 		process->machineCount = 2 * machineCount;
 	}
+
+	// Allocate memory for state machine context
+	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
+
+	// Assign the interface name
+	context->interfaceBound = interfaceName;
+
+	// Add it to the process list
 	machines[numMachines] = (PRT_MACHINEINST *)context;
 	process->numMachines++;
 
@@ -233,7 +192,6 @@ _In_  PRT_VALUE					*payload
 
 	// Initialize Machine Internal Variables
 	//
-	context->currentState = program->machines[context->instanceOf]->initStateIndex;
 	context->isRunning = PRT_FALSE;
 	context->isHalted = PRT_FALSE; 
     context->nextOperation = EntryOperation;
@@ -245,26 +203,25 @@ _In_  PRT_VALUE					*payload
 	context->currentTrigger = NULL;
 	context->currentPayload = PrtCloneValue(payload);
 
-	//
-	// Allocate memory for local variables and initialize them
-	//
+	// Initialize machine-dependent per-instance state
+	PRT_MACHINEDECL* curMachineDecl = program->machines[instanceOf];
+	PRT_UINT32 nVars = curMachineDecl->nVars;
+	
+	context->currentState = curMachineDecl->initStateIndex;
 	context->varValues = NULL;
 	if (nVars > 0)
 	{
 		context->varValues = PrtCalloc(nVars, sizeof(PRT_VALUE*));
 		for (i = 0; i < nVars; i++)
 		{
-			context->varValues[i] = PrtMkDefaultValue(program->machines[instanceOf]->vars[i].type);
+			context->varValues[i] = PrtMkDefaultValue(curMachineDecl->vars[i].type);
 		}
 	}
-
-	context->receive = NULL;
 
 	//
 	// Initialize various stacks
 	//
 	context->callStack.length = 0;
-	context->funStack.length = 0;
 
 	//
 	// Initialize event queue
@@ -297,6 +254,7 @@ _In_  PRT_VALUE					*payload
 	//Initialize state machine lock
 	//
 	context->stateMachineLock = PrtCreateMutex();
+	context->packedReceiveCases = NULL;
 
 	//
 	//Log
@@ -352,7 +310,8 @@ _In_ PRT_VALUE					*payload
 	{
 		// drop the event silently
 		PrtUnlockMutex(context->stateMachineLock);
-		// which means we must free the payload now, since we are not storing it in the queue.
+		// which means we must free the payload and event now, since we are not storing them in the queue.
+		PrtFreeValue(event);
 		PrtFreeValue(payload);
 		return;
 	}
@@ -388,7 +347,7 @@ _In_ PRT_VALUE					*payload
 	//
 	// Add event to the queue
 	//
-	queue->events[tail].trigger = PrtCloneValue(event);
+	queue->events[tail].trigger = event;
 	queue->events[tail].payload = payload;
 	if (state != NULL) {
 		queue->events[tail].state = *state;
@@ -407,9 +366,11 @@ _In_ PRT_VALUE					*payload
 	//
 	PrtLog(PRT_STEP_ENQUEUE, state, context, event, payload);
 
-	// Check if this event unblocks a blocking "receive" operation.  
-    if (context->receive != NULL)
-    {
+	// Check if this event unblocks a blocking "receive" operation.
+	// TODO: This needs to be fixed after the receive is implemented
+    //if (context->receive != NULL)
+	if (FALSE)
+	{
         if (PrtIsEventReceivable(context, PrtPrimGetEvent(event)))
         {
             // receive is now unblocked, so tell the next call to PrtStepStateMachine to pick
@@ -481,6 +442,23 @@ PRT_VALUE *MakeTupleFromArray(_In_ PRT_TYPE *tupleType, _In_ PRT_VALUE **elems)
 	return payload;
 }
 
+PRT_VALUE *PrtMkTuple(_In_ PRT_TYPE *tupleType, ...)
+{
+	PRT_UINT32 arity = tupleType->typeUnion.tuple->arity;
+	PRT_VALUE *tup = PrtMkDefaultValue(tupleType);
+
+	va_list argp;
+	va_start(argp, tupleType);
+	for (PRT_UINT32 i = 0; i < arity; i++) {
+		PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
+		PrtTupleSetEx(tup, i, *argPtr, PRT_FALSE);
+		*argPtr = NULL;
+	}
+	va_end(argp);
+
+	return tup;
+}
+
 void
 PrtGoto(
 	_Inout_ PRT_MACHINEINST_PRIV		*context,
@@ -506,28 +484,9 @@ PrtGoto(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
-			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtGoto");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -559,7 +518,7 @@ PrtRaise(
 	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
 	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
 	context->lastOperation = RaiseStatement;
-	context->currentTrigger = PrtCloneValue(event);
+	context->currentTrigger = event;
 	PRT_VALUE *payload = NULL;
 	if (numArgs == 0)
 	{
@@ -572,28 +531,9 @@ PrtRaise(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
-			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtRaise");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -614,11 +554,10 @@ PrtRaise(
 
 PRT_BOOLEAN
 PrtReceive(
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_Inout_ PRT_FUNSTACK_INFO		*funStackInfo,
-_In_ PRT_UINT16					receiveIndex
+_Inout_ PRT_MACHINEINST_PRIV	*context
 )
 {
+	/*
 	PRT_FUNDECL *funDecl = funStackInfo->funDecl; 
 	for (PRT_UINT32 i = 0; i < funDecl->nReceives; i++)
 	{
@@ -642,25 +581,12 @@ _In_ PRT_UINT16					receiveIndex
 		PrtPushFrame(context, funStackInfo);
 		return PRT_FALSE;
 	}
+	*/
+	return PRT_FALSE;
 }
 
-PRT_FUNSTACK_INFO *
-PrtTopOfFunStack(
-_In_ PRT_MACHINEINST_PRIV	*context)
-{
-	PrtAssert(0 < context->funStack.length, "Illegal fun stack access");
-	return &context->funStack.funs[0];
-}
 
-PRT_FUNSTACK_INFO *
-PrtBottomOfFunStack(
-_In_ PRT_MACHINEINST_PRIV	*context)
-{
-	PrtAssert(0 < context->funStack.length, "Illegal fun stack access");
-	return &context->funStack.funs[context->funStack.length - 1];
-}
-
-static void 
+void 
 PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)
 {
 	if (context->currentTrigger != NULL)
@@ -675,206 +601,6 @@ PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)
 	}
 }
 
-void
-PrtPushNewEventHandlerFrame(
-	_Inout_ PRT_MACHINEINST_PRIV	*context,
-	_In_ PRT_FUNDECL				*funDecl,
-	_In_ PRT_FUN_PARAM_STATUS       payloadStatus,
-	_In_ PRT_VALUE					**locals
-)
-{
-	PrtAssert(payloadStatus != PRT_FUN_PARAM_CLONE, "Incorrect payload status value");
-	PRT_UINT16 length = context->funStack.length;
-	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
-	context->funStack.length = length + 1;
-	context->funStack.funs[length].funDecl = funDecl;
-	PRT_BOOLEAN freeLocals = PRT_FALSE;
-	PRT_VALUE ***refArgs = NULL;
-	if (locals == NULL && funDecl->maxNumLocals != 0)
-	{
-		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		freeLocals = PRT_TRUE;
-	}
-	PRT_UINT32 count = funDecl->numEnvVars;
-	if (funDecl->name == NULL)
-	{
-		PrtAssert(0 < count, "numEnvVars must be positive for anonymous function");
-		PRT_UINT32 payloadIndex = count - 1;
-		if (locals[payloadIndex] != NULL)
-		{
-			PrtFreeValue(locals[payloadIndex]);
-		}
-		locals[payloadIndex] = context->currentPayload;
-		context->currentPayload = NULL;
-		refArgs = PrtCalloc(1, sizeof(PRT_VALUE **));
-		if (payloadStatus == PRT_FUN_PARAM_SWAP)
-		{
-			refArgs[0] = &context->currentPayload;
-		}
-		else 
-		{
-			if (context->currentTrigger != NULL)
-			{
-				PrtFreeValue(context->currentTrigger);
-				context->currentTrigger = NULL;
-			}
-		}
-	}
-	else
-	{
-		PrtAssert(funDecl->numParameters == 0, "Number of parameters must be zero for a named function used as an event handler");
-		if (payloadStatus != PRT_FUN_PARAM_SWAP)
-		{
-			PrtFreeTriggerPayload(context);
-		}
-	}
-	if (funDecl->localsNmdTupType != NULL)
-	{
-		PRT_UINT32 size = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-		for (PRT_UINT32 i = 0; i < size; i++)
-		{
-			PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
-			if (locals[count] != NULL)
-			{
-				PrtFreeValue(locals[count]);
-			}
-			locals[count] = PrtMkDefaultValue(indexType);
-			count++;
-		}
-	}
-	context->funStack.funs[length].locals = locals;
-	context->funStack.funs[length].freeLocals = freeLocals;
-	context->funStack.funs[length].refArgs = refArgs;
-	context->funStack.funs[length].returnTo = 0xFFFF;
-	context->funStack.funs[length].rcase = NULL;
-}
-
-void
-PrtPushNewFrame(
-	_Inout_ PRT_MACHINEINST_PRIV	*context,
-	_In_ PRT_BOOLEAN				isFunApp,
-	_In_ PRT_FUNDECL				*funDecl,
-	...
-)
-{
-	PRT_UINT16 length = context->funStack.length;
-	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
-	context->funStack.length = length + 1;
-	context->funStack.funs[length].funDecl = funDecl;
-	PRT_VALUE **locals = NULL;
-	PRT_VALUE ***refArgs = NULL;
-	PRT_BOOLEAN freeLocals = PRT_FALSE;
-	if (funDecl->maxNumLocals == 0)
-	{
-		PrtAssert(funDecl->localsNmdTupType == NULL, "Incorrect maxNumLocals value");
-	}
-	else
-	{
-		PRT_UINT32 numLocals = 0;
-		if (funDecl->localsNmdTupType != NULL)
-		{
-			numLocals = funDecl->localsNmdTupType->typeUnion.nmTuple->arity;
-		}
-		locals = PrtCalloc(funDecl->maxNumLocals, sizeof(PRT_VALUE *));
-		freeLocals = PRT_TRUE;
-		PRT_UINT32 numParameters = funDecl->numParameters;
-		PRT_UINT32 count = 0;
-		if (0 < numParameters)
-		{
-			if (!isFunApp)
-			{
-				refArgs = PrtCalloc(numParameters, sizeof(PRT_VALUE **));
-			}
-			va_list argp;
-			va_start(argp, funDecl);
-			for (PRT_UINT32 i = 0; i < numParameters; i++)
-			{
-#if __PX4_NUTTX
-                PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-				PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-				PRT_VALUE *arg;
-				PRT_VALUE **argPtr;
-				switch (argStatus)
-				{
-				case PRT_FUN_PARAM_CLONE:
-					arg = va_arg(argp, PRT_VALUE *);
-					if (isFunApp)
-					{
-						locals[count] = arg;
-					}
-					else
-					{
-						locals[count] = PrtCloneValue(arg);
-					}
-					break;
-				case PRT_FUN_PARAM_SWAP:
-					PrtAssert(!isFunApp, "Illegal status value");
-					argPtr = va_arg(argp, PRT_VALUE **);
-					refArgs[count] = argPtr;
-					locals[count] = *argPtr;
-					*argPtr = NULL;
-					break;
-				case PRT_FUN_PARAM_MOVE:
-					PrtAssert(!isFunApp, "Illegal status value");
-					argPtr = va_arg(argp, PRT_VALUE **);
-					locals[count] = *argPtr;
-					*argPtr = NULL;
-					break;
-				}
-				count++;
-			}
-			va_end(argp);
-		}
-		for (PRT_UINT32 i = 0; i < numLocals; i++)
-		{
-			PRT_TYPE *indexType = funDecl->localsNmdTupType->typeUnion.nmTuple->fieldTypes[i];
-			locals[count] = PrtMkDefaultValue(indexType);
-			count++;
-		}
-	}
-	context->funStack.funs[length].locals = locals;
-	context->funStack.funs[length].freeLocals = freeLocals;
-	context->funStack.funs[length].refArgs = refArgs;
-	context->funStack.funs[length].returnTo = 0xFFFF;
-	context->funStack.funs[length].rcase = NULL;
-}
-
-void
-PrtPushFrame(
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_FUNSTACK_INFO			*funStackInfo
-)
-{
-	PRT_UINT16 length = context->funStack.length;
-	PrtAssert(length < PRT_MAX_FUNSTACK_DEPTH, "Fun stack overflow");
-	context->funStack.length = length + 1;
-	context->funStack.funs[length].funDecl = funStackInfo->funDecl;
-	context->funStack.funs[length].locals = funStackInfo->locals;
-	context->funStack.funs[length].refArgs = funStackInfo->refArgs;
-	context->funStack.funs[length].freeLocals = funStackInfo->freeLocals;
-	context->funStack.funs[length].returnTo = funStackInfo->returnTo;
-	context->funStack.funs[length].rcase = funStackInfo->rcase;
-}
-
-void
-PrtPopFrame(
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_Inout_ PRT_FUNSTACK_INFO *funStackInfo
-)
-{
-	PRT_UINT16 length = context->funStack.length;
-	PrtAssert(0 < length, "Fun stack underflow");
-	PRT_UINT16 top = length - 1;
-	funStackInfo->funDecl = context->funStack.funs[top].funDecl;
-	funStackInfo->locals = context->funStack.funs[top].locals;
-	funStackInfo->refArgs = context->funStack.funs[top].refArgs;
-	funStackInfo->freeLocals = context->funStack.funs[top].freeLocals;
-	funStackInfo->returnTo = context->funStack.funs[top].returnTo;
-	funStackInfo->rcase = context->funStack.funs[top].rcase;
-	context->funStack.length = top;
-}
 
 void
 PrtPushState(
@@ -1015,8 +741,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
 	PRT_FUNDECL *exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
-	PrtPushNewEventHandlerFrame(context, exitFun, PRT_FUN_PARAM_SWAP, NULL);
-	PrtGetExitFunction(context)((PRT_MACHINEINST *)context);
+	PrtGetExitFunction(context)((PRT_MACHINEINST *)context, NULL);
 }
 
 FORCEINLINE
@@ -1030,8 +755,8 @@ PrtRunTransitionFunction(
 	context->lastOperation = ReturnStatement; 
 	PRT_FUNDECL *transFun = stateDecl->transitions[transIndex].transFun;
 	PRT_DBG_ASSERT(transFun != NULL, "Must be valid function");
-	PrtPushNewEventHandlerFrame(context, transFun, PRT_FUN_PARAM_SWAP, NULL);
-	transFun->implementation((PRT_MACHINEINST *)context);
+	PRT_VALUE** refLocals[1] = { &context->currentPayload };
+	transFun->implementation((PRT_MACHINEINST *)context, refLocals);
 }
 
 static PRT_BOOLEAN
@@ -1063,17 +788,15 @@ DoEntry:
 	PrtUpdateCurrentDeferredSet(context);
 
 	context->lastOperation = ReturnStatement;
-	if (context->funStack.length == 0)
-	{
-		PRT_MACHINESTATE state;
-		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-		PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
-		PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
-		PRT_FUNDECL *entryFun = currentState->entryFun;
-		PrtPushNewEventHandlerFrame(context, entryFun, PRT_FUN_PARAM_MOVE, NULL);
-	}
-	PRT_FUNDECL *funDecl = PrtBottomOfFunStack(context)->funDecl;
-	funDecl->implementation((PRT_MACHINEINST *)context);
+	PRT_MACHINESTATE state;
+	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
+	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
+	PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
+	
+	PRT_FUNDECL *entryFun = currentState->entryFun;
+	PRT_VALUE** refLocals[1] = { &context->currentPayload };
+	entryFun->implementation((PRT_MACHINEINST *)context, refLocals);
+	
 	goto CheckLastOperation;
 
 DoAction:
@@ -1091,20 +814,17 @@ DoAction:
 	}
 	else
 	{
-		if (context->funStack.length == 0)
-		{
-			PRT_MACHINESTATE state;
-			PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-			PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
-			PrtPushNewEventHandlerFrame(context, doFun, PRT_FUN_PARAM_MOVE, NULL);
-		}
-		funDecl = PrtBottomOfFunStack(context)->funDecl;
-		funDecl->implementation((PRT_MACHINEINST *)context);
+		PRT_MACHINESTATE state;
+		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
+		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
+		
+		PRT_VALUE** refLocals[1] = { &context->currentPayload };
+		doFun->implementation((PRT_MACHINEINST *)context, refLocals);
 	}
 	goto CheckLastOperation;
 
 CheckLastOperation:
-	if (context->receive != NULL)
+	if (context->packedReceiveCases != NULL)
 	{
 		// We are at a blocking "receive"; so, wait for PrtSendPrivate to unblock us.
 		context->nextOperation = ReceiveOperation;
@@ -1132,11 +852,13 @@ CheckLastOperation:
 		switch (context->exitReason)
 		{
 		case NotExit:
+			PrtFreeTriggerPayload(context); // ??
 			context->nextOperation = DequeueOperation;
 			hasMoreWork = PRT_TRUE;
 			goto Finish;
 
 		case OnPopStatement:
+			PrtFreeTriggerPayload(context); // ??
 			hasMoreWork = !PrtPopState(context, PRT_TRUE);
 			context->nextOperation = DequeueOperation;
 			context->exitReason = NotExit;
@@ -1185,8 +907,8 @@ DoDequeue:
 	lockHeld = PRT_TRUE;
 	PrtLockMutex(context->stateMachineLock);
 
-	PrtAssert(context->receive == NULL, "Machine must not be blocked at a receive");
-	if (PrtDequeueEvent(context, NULL))
+	PrtAssert(context->packedReceiveCases == NULL, "Machine must not be blocked at a receive");
+	if (PrtDequeueEvent(context))
 	{
 		lockHeld = PRT_FALSE;
 		PrtUnlockMutex(context->stateMachineLock);
@@ -1199,7 +921,7 @@ DoDequeue:
 	}
 
 DoHandleEvent:
-	PrtAssert(context->receive == NULL, "Must not be blocked at a receive");
+	PrtAssert(context->packedReceiveCases == NULL, "Must not be blocked at a receive");
 	if (context->currentTrigger != NULL)
 	{
 		eventValue = PrtPrimGetEvent(context->currentTrigger);
@@ -1235,7 +957,7 @@ DoHandleEvent:
 	}
 
 DoReceive:
-	PrtAssert(context->receive != NULL, "Must be blocked at a receive");
+	PrtAssert(context->packedReceiveCases != NULL, "Must be blocked at a receive");
 	// This is a no-op because we are still blocked on receive until PrtSendPrivate notices
 	// we receive the unblocking event.  We do this instead of checking for receive != null
 	// so that we can be sure to unlock the stateMachineLock once and only once.
@@ -1409,8 +1131,7 @@ RemoveElementFromQueue(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 i)
 
 PRT_BOOLEAN
 PrtDequeueEvent(
-	_Inout_ PRT_MACHINEINST_PRIV	*context,
-	_Inout_ PRT_FUNSTACK_INFO		*frame
+	_Inout_ PRT_MACHINEINST_PRIV	*context
 )
 {
 	PRT_EVENTQUEUE *queue = &context->eventQueue;
@@ -1423,7 +1144,7 @@ PrtDequeueEvent(
 		PRT_UINT32 index = (head + i) % queueLength;
 		PRT_EVENT e = queue->events[index];
 		PRT_UINT32 triggerIndex = PrtPrimGetEvent(e.trigger);
-		if (context->receive == NULL)
+		if (context->packedReceiveCases == NULL)
 		{
 			if (!PrtIsEventDeferred(triggerIndex, context->currentDeferredSetCompact))
 			{
@@ -1446,6 +1167,8 @@ PrtDequeueEvent(
 				context->currentPayload = e.payload;
 				RemoveElementFromQueue(context, i);
 
+				//TODO: Need to handle receive correctly
+				/*
 				PrtLog(PRT_STEP_DEQUEUE, &e.state, context, e.trigger, e.payload);
 				for (PRT_UINT32 j = 0; j < context->receive->nCases; j++)
 				{
@@ -1457,13 +1180,14 @@ PrtDequeueEvent(
 						break;
 					}
 				}
-				context->receive = NULL;
+				*/
+				context->packedReceiveCases = NULL;
 				return PRT_TRUE;
 			}
 		}
 	}
 
-	if (context->receive == NULL)
+	if (context->packedReceiveCases == NULL)
 	{
 		if (PrtStateHasDefaultTransitionOrAction(context))
 		{
@@ -1481,7 +1205,9 @@ PrtDequeueEvent(
 	}
 	else
 	{
-		PRT_BOOLEAN hasDefaultCase = (context->receive->caseSet->packedEvents[0] & 0x1) == 1;
+		//TODO: Need to handle receive correctly
+		/*
+		PRT_BOOLEAN hasDefaultCase = (context->packedReceiveCases[0] & 0x1) == 1;
 		if (hasDefaultCase)
 		{
 			PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
@@ -1505,6 +1231,8 @@ PrtDequeueEvent(
 		{
 			return PRT_FALSE;
 		}
+		*/
+		return PRT_FALSE;
 	}
 }
 
@@ -1539,72 +1267,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	return 1 + (PRT_UINT16)(highestEventIndex / (sizeof(PRT_UINT32) * 8));
 }
 
-PRT_VALUE *
-PrtWrapFunStmt(
-_Inout_ PRT_FUNSTACK_INFO		*frame,
-_In_ PRT_UINT16					funCallIndex,
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_FUNDECL				*funDecl
-)
-{
-	PRT_SM_FUN fun = funDecl->implementation;
-	PRT_VALUE *returnValue = fun((PRT_MACHINEINST *)context);
-	if (context->receive != NULL)
-	{
-		frame->returnTo = funCallIndex;
-		PrtPushFrame(context, frame);
-	}
-	else
-	{
-		frame->returnTo = 0xFFFF;
-	}
-	return returnValue;
-}
 
-void
-PrtFreeLocals(
-	_In_ PRT_MACHINEINST_PRIV		*context,
-	_Inout_ PRT_FUNSTACK_INFO		*frame
-)
-{
-	if (frame->locals == NULL)
-	{
-		return;
-	}
-
-	PRT_FUNDECL *funDecl = frame->funDecl;
-	PRT_UINT32 numParameters = funDecl->numParameters;
-	if (frame->refArgs != NULL)
-	{
-		for (PRT_UINT32 i = 0; i < numParameters; i++)
-		{
-			if (frame->refArgs[i] != NULL)
-			{
-				*(frame->refArgs[i]) = frame->locals[i];
-				frame->locals[i] = NULL;
-			}
-		}
-		PrtFree(frame->refArgs);
-	}
-	else
-	{
-		for (PRT_UINT32 i = 0; i < numParameters; i++)
-		{
-			frame->locals[i] = NULL;
-		}
-	}
-	if (frame->freeLocals)
-	{
-		for (PRT_UINT32 i = 0; i < funDecl->maxNumLocals; i++)
-		{
-			if (frame->locals[i] != NULL)
-			{
-				PrtFreeValue(frame->locals[i]);
-			}
-		}
-		PrtFree(frame->locals);
-	}
-}
 
 FORCEINLINE
 PRT_SM_FUN
@@ -1814,7 +1477,7 @@ PrtStateHasDefaultTransitionOrAction(
 _In_ PRT_MACHINEINST_PRIV			*context
 )
 {
-	PrtAssert(context->receive == NULL, "This function should not be called at a receive");
+	PrtAssert(context->packedReceiveCases == NULL, "This function should not be called at a receive");
 	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
 	PRT_BOOLEAN hasDefaultTransition = (stateDecl->transSet->packedEvents[0] & 0x1) == 1;
 	PRT_BOOLEAN hasDefaultAction = (context->currentActionSetCompact[0] & 0x1) == 1;
@@ -1837,9 +1500,8 @@ _In_ PRT_MACHINEINST_PRIV *context,
 _In_ PRT_UINT32		eventIndex
 )
 {
-	PRT_RECEIVEDECL	*receive = context->receive;
-	PrtAssert(receive != NULL, "PrtIsEventReceivable should be called only at a receive");
-	PRT_UINT32 *caseSet = receive->caseSet->packedEvents;
+	PrtAssert(context->packedReceiveCases != NULL, "PrtIsEventReceivable should be called only at a receive");
+	PRT_UINT32 *caseSet = context->packedReceiveCases;
 	return (caseSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
 }
 
@@ -2086,12 +1748,6 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 		}
 	}
 
-	for (PRT_INT32 i = 0; i < context->funStack.length; i++)
-	{
-		PRT_FUNSTACK_INFO *info = &context->funStack.funs[i];
-		PrtFreeLocals(context, info);
-	}
-
 	if (context->currentActionSetCompact != NULL)
 	{
 		PrtFree(context->currentActionSetCompact);
@@ -2220,10 +1876,6 @@ _In_ PRT_VALUE *id
 	PrtHandleError(PRT_STATUS_ILLEGAL_SEND, (PRT_MACHINEINST_PRIV *)context);
 }
 
-#include "PrtExecution.h"
-
-PRT_PROGRAMDECL *program;
-
 /*********************************************************************************
 
 Public Functions
@@ -2258,42 +1910,11 @@ void PrtTraverseEventset(PRT_EVENTSETDECL *evset, PRT_BOOLEAN doInstall)
 	}
 }
 
-void PrtTraverseFun(PRT_FUNDECL *fun, PRT_BOOLEAN doInstall)
-{
-	for (PRT_UINT32 i = 0; i < fun->nReceives; i++)
-	{
-		PrtTraverseEventset(fun->receives[i].caseSet, doInstall);
-	}
-}
-
 void PrtTraverseState(PRT_STATEDECL *state, PRT_BOOLEAN doInstall)
 {
 	PrtTraverseEventset(state->defersSet, doInstall);
 	PrtTraverseEventset(state->doSet, doInstall);
 	PrtTraverseEventset(state->transSet, doInstall);
-
-	if (state->entryFun != NULL)
-	{
-		PrtTraverseFun(state->entryFun, doInstall);
-	}
-	if (state->exitFun != NULL)
-	{
-		PrtTraverseFun(state->exitFun, doInstall);
-	}
-	for (PRT_UINT32 i = 0; i < state->nDos; i++)
-	{
-		if (state->dos[i].doFun != NULL)
-		{
-			PrtTraverseFun(state->dos[i].doFun, doInstall);
-		}
-	}
-	for (PRT_UINT32 i = 0; i < state->nTransitions; i++)
-	{
-		if (state->transitions[i].transFun != NULL)
-		{
-			PrtTraverseFun(state->transitions[i].transFun, doInstall);
-		}
-	}
 }
 
 void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
@@ -2301,10 +1922,6 @@ void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
 	for (PRT_UINT32 i = 0; i < machine->nStates; i++)
 	{
 		PrtTraverseState(&machine->states[i], doInstall);
-	}
-	for (PRT_UINT32 i = 0; i < machine->nFuns; i++)
-	{
-		PrtTraverseFun(machine->funs[i], doInstall);
 	}
 }
 
@@ -2320,10 +1937,6 @@ void PrtInstallProgram(_In_ PRT_PROGRAMDECL *p)
 	{
 		p->machines[i]->declIndex = i;
 		PrtTraverseMachine(p->machines[i], PRT_TRUE);
-	}
-	for (PRT_UINT32 i = 0; i < p->nGlobalFuns; i++)
-	{
-		PrtTraverseFun(p->globalFuns[i], PRT_TRUE);
 	}
 	for (PRT_UINT32 i = 0; i < p->nForeignTypes; i++)
 	{
@@ -2342,10 +1955,6 @@ void PrtUninstallProgram()
 	{
 		program->machines[i]->declIndex = 0;
 		PrtTraverseMachine(program->machines[i], PRT_FALSE);
-	}
-	for (PRT_UINT32 i = 0; i < program->nGlobalFuns; i++)
-	{
-		PrtTraverseFun(program->globalFuns[i], PRT_FALSE);
 	}
 	for (PRT_UINT32 i = 0; i < program->nForeignTypes; i++)
 	{
@@ -2377,6 +1986,18 @@ PrtStartProcess(
 	process->schedulerInfo = NULL;
 	process->terminating = PRT_FALSE;
 	return (PRT_PROCESS *)process;
+}
+
+PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtLookupMachineByName(_In_ PRT_STRING name, _Out_ PRT_UINT32* id)
+{
+	*id = 0;
+	for (PRT_UINT32 i = 0; i < program->nMachines; i++) {
+		if (strcmp(name, program->machines[i]->name) == 0) {
+			*id = i;
+			return PRT_TRUE;
+		}
+	}
+	return PRT_FALSE;
 }
 
 PRT_API PRT_BOOLEAN
@@ -2524,6 +2145,19 @@ PrtStopProcess(
 	PrtFree(process);
 }
 
+PRT_BOOLEAN PrtInterfaceInCreatesSet(PRT_UINT32 interfaceCreated, PRT_INTERFACESETDECL* creates)
+{
+	for(PRT_UINT32 i = 0; i < creates->nInterfaces; i++)
+	{
+		if(interfaceCreated == creates->interfacesIndex[i])
+		{
+			return PRT_TRUE;
+		}
+	}
+
+	return PRT_FALSE;
+}
+
 PRT_MACHINEINST *
 PrtMkInterface(
 	_In_ PRT_MACHINEINST*		creator,
@@ -2534,9 +2168,11 @@ PrtMkInterface(
 {
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
 	PRT_VALUE *payload = NULL;
-	PRT_UINT32 interfaceName = program->linkMap[context->interfaceBound][IName];
-	PRT_UINT32 instanceOf = program->machineDefMap[interfaceName];
+	PRT_UINT32 interfaceCreated = program->linkMap[context->interfaceBound][IName];
+	const PRT_UINT32 instance_of = program->interfaceDefMap[interfaceCreated];
 
+	// Check the CreateOk condition
+	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[creator->instanceOf]->creates), "Created Inteface is not in the creates set of the machine");
 
 	if (numArgs == 0)
 	{
@@ -2549,42 +2185,25 @@ PrtMkInterface(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
+			//TODO: Confirm if the code below is correct.
 			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkInterface");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
 
 		if (numArgs > 1)
 		{
-			PRT_MACHINEDECL *machineDecl = program->machines[instanceOf];
+			PRT_MACHINEDECL *machineDecl = program->machines[instance_of];
 			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
 			PRT_TYPE *payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
 	}
-	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, interfaceName, instanceOf, payload);
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, interfaceCreated, instance_of, payload);
 	// must now free this payload because PrtMkMachinePrivate clones it.
 	PrtFreeValue(payload);
 	return result;
@@ -2598,8 +2217,8 @@ PrtMkMachine(
 	...
 )
 {
-	PRT_VALUE *payload = NULL;
-	PRT_UINT32 instanceOf = program->machineDefMap[interfaceName];
+	PRT_VALUE *payload;
+	PRT_UINT32 instanceOf = program->interfaceDefMap[interfaceName];
 
 	if (numArgs == 0)
 	{
@@ -2612,28 +2231,11 @@ PrtMkMachine(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
+
 			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtMkMachine");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -2700,28 +2302,12 @@ PrtSend(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
 			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSend");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			//TODO: Confirm if the code below is correct.
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
+			
 		}
 		va_end(argp);
 		payload = args[0];
@@ -2760,28 +2346,11 @@ PRT_CALL_CONV PrtSendInternal(
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-#if __PX4_NUTTX
-			PRT_FUN_PARAM_STATUS argStatus = (PRT_FUN_PARAM_STATUS)va_arg(argp, int);
-#else
-			PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
-#endif
-			PRT_VALUE *arg;
 			PRT_VALUE **argPtr;
-			switch (argStatus)
-			{
-			case PRT_FUN_PARAM_CLONE:
-				arg = va_arg(argp, PRT_VALUE *);
-				args[i] = PrtCloneValue(arg);
-				break;
-			case PRT_FUN_PARAM_SWAP:
-				PrtAssert(PRT_FALSE, "Illegal parameter type in PrtSendInternal");
-				break;
-			case PRT_FUN_PARAM_MOVE:
-				argPtr = va_arg(argp, PRT_VALUE **);
-				args[i] = *argPtr;
-				*argPtr = NULL;
-				break;
-			}
+			//TODO: Confirm if the code below is correct.
+			argPtr = va_arg(argp, PRT_VALUE **);
+			args[i] = *argPtr;
+			*argPtr = NULL;
 		}
 		va_end(argp);
 		payload = args[0];
@@ -3339,8 +2908,6 @@ void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
 	PRT_VALUE **args = (PRT_VALUE **)PrtCalloc(numArgs, sizeof(PRT_VALUE *));
 	for (PRT_UINT32 i = 0; i < numArgs; i++)
 	{
-		// skip over arg status
-		PRT_FUN_PARAM_STATUS argStatus = va_arg(argp, PRT_FUN_PARAM_STATUS);
 		args[i] = va_arg(argp, PRT_VALUE *);
 	}
 	numSegs = va_arg(argp, PRT_UINT32);

@@ -1,19 +1,20 @@
 ﻿using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.AST;
+using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend.ASTExt
 {
     internal class CloneExpr : IPExpr
     {
-        public CloneExpr(IPExpr subExpr)
+        public CloneExpr(IExprTerm term)
         {
-            SubExpr = subExpr;
-            SourceLocation = subExpr.SourceLocation;
-            Type = subExpr.Type;
+            Term = term;
+            SourceLocation = term.SourceLocation;
+            Type = term.Type;
         }
 
-        public IPExpr SubExpr { get; }
+        public IExprTerm Term { get; }
 
         public ParserRuleContext SourceLocation { get; }
         public PLanguageType Type { get; }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Antlr4.Runtime;
 using Antlr4.Runtime.Misc;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -15,6 +16,7 @@ namespace Microsoft.Pc.TypeChecker
             Scope globalScope)
         {
             var modExprVisitor = new ModuleExprVisitor(handler, globalScope);
+           
             // first do all the named modules
             foreach (NamedModule mod in globalScope.NamedModules)
             {
@@ -36,12 +38,30 @@ namespace Microsoft.Pc.TypeChecker
                 test.RightModExpr = modExprVisitor.Visit(context.modExpr()[1]);
             }
 
-            // all the implementations
-            foreach (Implementation impl in globalScope.Implementations)
+            if (globalScope.Implementations.Any())
             {
-                var context = (PParser.ImplementationDeclContext) impl.SourceLocation;
-                impl.ModExpr = modExprVisitor.Visit(context.modExpr());
+                // all user defind implementations
+                foreach (Implementation impl in globalScope.Implementations)
+                {
+                    var context = (PParser.ImplementationDeclContext)impl.SourceLocation;
+                    impl.ModExpr = modExprVisitor.Visit(context.modExpr());
+                }
             }
+            else
+            {
+                var defaultImplDecl = new Implementation(ParserRuleContext.EmptyContext, "DefaultImpl");
+                // create bindings from each machine to itself
+                var defaultBindings = new List<Tuple<Interface, Machine>>();
+                foreach (var machine in globalScope.Machines.Where(m => !m.IsSpec))
+                {
+                    globalScope.Get(machine.Name, out Interface @interface);
+                    defaultBindings.Add(new Tuple<Interface, Machine>(@interface, machine));
+                }
+                defaultImplDecl.ModExpr = new BindModuleExpr(ParserRuleContext.EmptyContext, defaultBindings);
+
+                globalScope.AddDefaultImpl(defaultImplDecl);
+            }
+                
         }
     }
 

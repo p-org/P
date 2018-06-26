@@ -8,9 +8,13 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <LangVersion>7.1</LangVersion>
+  </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\CompilerCore\CompilerCore.csproj" />
-    <ProjectReference Include="..\LegacyCompiler\LegacyCompiler.csproj" />
-    <ProjectReference Include="..\CompilerService\CompilerService.csproj" />
   </ItemGroup>
 </Project>

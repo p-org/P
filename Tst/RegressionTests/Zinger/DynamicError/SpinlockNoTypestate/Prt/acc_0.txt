@@ -1,9 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Init
-OUT: <CreateLog> Machine Rule(2) is created
-OUT: <StateLog> Machine Rule(2) entered state Start
-OUT: 
-EXIT: 0

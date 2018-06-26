@@ -94,6 +94,7 @@ extern "C"{
 	
 	extern PRT_EVENTDECL _P_EVENT_NULL_STRUCT;
 	extern PRT_EVENTDECL _P_EVENT_HALT_STRUCT;
+	extern PRT_FUNDECL   _P_NO_OP;
 
 	//
 	// Max call stack size of each machine
@@ -185,22 +186,6 @@ extern "C"{
 		PRT_UINT16			length;
 	} PRT_STATESTACK;
 
-	typedef struct PRT_FUNSTACK_INFO
-	{
-		PRT_FUNDECL			*funDecl;
-		PRT_VALUE			**locals;
-		PRT_BOOLEAN			freeLocals; 
-		PRT_VALUE			***refArgs;
-		PRT_UINT16			returnTo;
-		PRT_CASEDECL		*rcase;
-	} PRT_FUNSTACK_INFO;
-
-	typedef struct PRT_FUNSTACK
-	{
-		PRT_FUNSTACK_INFO	funs[PRT_MAX_FUNSTACK_DEPTH];
-		PRT_UINT16			length;
-	} PRT_FUNSTACK;
-
 	typedef struct PRT_EVENTSTACK
 	{
 		PRT_EVENT			events[PRT_MAX_EVENTSTACK_DEPTH];
@@ -220,9 +205,8 @@ extern "C"{
 		PRT_UINT32			eventValue;
 		PRT_BOOLEAN			isHalted;
 		PRT_UINT32			currentState;
-		PRT_RECEIVEDECL		*receive;
 		PRT_STATESTACK		callStack;
-		PRT_FUNSTACK		funStack;
+		PRT_UINT32			*packedReceiveCases;
 		PRT_UINT32			destStateIndex;
 		PRT_VALUE			*currentTrigger;
 		PRT_VALUE			*currentPayload;
@@ -250,6 +234,13 @@ extern "C"{
 		_In_ PRT_ERROR_FUN errorFun,
 		_In_ PRT_LOG_FUN loggerFun
 	);
+
+	/** Get the number of the machine in the installed process by name.
+	* @param[in] the name of the machine to find
+	* @param[out] the id of the machine with the given name
+	* @returns True if the machine was found, else false.
+	*/
+	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtLookupMachineByName(_In_ PRT_STRING name, _Out_ PRT_UINT32* id);
 
 	/** Set the scheduling policy for this process.  The default policy is TaskNeutral
 	*   @param[in] policy The new policy.
@@ -414,15 +405,6 @@ extern "C"{
 	/** Sets a global variable to variable
 	* @param[in,out] context The context to modify.
 	* @param[in] varIndex The index of the variable to modify.
-	* @param[in] status Indicates whether this operation is move or swap
-	* @param[in,out] value The pointer to the value to move or swap
-	* @param[in]     type The type of data pointed to by value
-	*/
-	PRT_API void PRT_CALL_CONV PrtSetGlobalVarLinear(_Inout_ PRT_MACHINEINST_PRIV * context, _In_ PRT_UINT32 varIndex, _In_ PRT_FUN_PARAM_STATUS status, _Inout_ PRT_VALUE ** value, _In_ PRT_TYPE *type);
-
-	/** Sets a global variable to variable
-	* @param[in,out] context The context to modify.
-	* @param[in] varIndex The index of the variable to modify.
 	* @param[in] value The value to set. (Will be cloned if cloneValue is PRT_TRUE)
 	* @param[in] cloneValue Only set to PRT_FALSE if value will be forever owned by this machine.
 	*/
@@ -436,14 +418,6 @@ extern "C"{
 		_In_  PRT_VALUE					*payload
 		);
 
-	PRT_API void PRT_CALL_CONV PrtSetLocalVarLinear(
-		_Inout_ PRT_VALUE **locals,
-		_In_ PRT_UINT32 varIndex,
-		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value,
-		_In_ PRT_TYPE *type
-	);
-
 	PRT_API void PRT_CALL_CONV PrtSetLocalVarEx(
 		_Inout_ PRT_VALUE **locals,
 		_In_ PRT_UINT32 varIndex,
@@ -451,9 +425,15 @@ extern "C"{
 		_In_ PRT_BOOLEAN cloneValue
 		);
 
-	PRT_VALUE *MakeTupleFromArray(
+	PRT_API PRT_VALUE* PRT_CALL_CONV MakeTupleFromArray(
 		_In_ PRT_TYPE *tupleType, 
 		_In_ PRT_VALUE **elems
+		);
+
+	PRT_API PRT_VALUE* PRT_CALL_CONV
+	    PrtMkTuple(
+			_In_ PRT_TYPE *tupleType, 
+			...
 		);
 	
 	void
@@ -478,6 +458,11 @@ extern "C"{
 		_In_ PRT_VALUE						*event,
 		_In_ PRT_UINT32						numArgs,
 		...
+		);
+
+	PRT_API void PRT_CALL_CONV
+		PrtFreeTriggerPayload(
+			_In_ PRT_MACHINEINST_PRIV	*context
 		);
 
 	void
@@ -524,8 +509,7 @@ extern "C"{
 
 	PRT_BOOLEAN
 		PrtDequeueEvent(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_Inout_ PRT_FUNSTACK_INFO		*frame
+		_Inout_ PRT_MACHINEINST_PRIV	*context
 		);
 
 	FORCEINLINE
@@ -736,63 +720,10 @@ extern "C"{
 		_Inout_ PRT_MACHINEINST_PRIV		*context
 		);
 
-	PRT_FUNSTACK_INFO *
-		PrtTopOfFunStack(
-		_In_ PRT_MACHINEINST_PRIV	*context
-		);
-
-	PRT_FUNSTACK_INFO *
-		PrtBottomOfFunStack(
-		_In_ PRT_MACHINEINST_PRIV	*context
-		);
-
-	void
-		PrtPushNewEventHandlerFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_FUNDECL				*funDecl,
-		_In_ PRT_FUN_PARAM_STATUS       payloadStatus, 
-		_In_ PRT_VALUE					**locals
-		);
-
-	void
-		PrtPushNewFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_BOOLEAN				isFunApp,
-		_In_ PRT_FUNDECL				*funDecl,
-		...
-		);
-
-	PRT_API void
-		PrtPushFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_FUNSTACK_INFO *funStackInfo
-		);
-
-	PRT_API void
-		PrtPopFrame(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_Inout_ PRT_FUNSTACK_INFO *funStackInfo
-		);
-
-	PRT_API void
-		PrtFreeLocals(
-		_In_ PRT_MACHINEINST_PRIV		*context,
-		_Inout_ PRT_FUNSTACK_INFO		*frame
-		);
-
-	PRT_API PRT_VALUE *
-		PrtWrapFunStmt(
-		_Inout_ PRT_FUNSTACK_INFO		*frame,
-		_In_ PRT_UINT16					funCallIndex,
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_In_ PRT_FUNDECL				*funDecl
-		);
 
 	PRT_API PRT_BOOLEAN
 		PrtReceive(
-		_Inout_ PRT_MACHINEINST_PRIV	*context,
-		_Inout_ PRT_FUNSTACK_INFO		*funStackInfo,
-		_In_ PRT_UINT16					receiveIndex
+		_Inout_ PRT_MACHINEINST_PRIV	*context
 		);
 
 	PRT_API void

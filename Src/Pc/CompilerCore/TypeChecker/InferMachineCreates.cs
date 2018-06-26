@@ -13,11 +13,13 @@ namespace Microsoft.Pc.TypeChecker
     {
         public static void Populate(Machine machine)
         {
+            var interfaces = new InterfaceSet();
             foreach (Function function in machine.Methods)
             {
-                machine.Creates = new InterfaceSet();
-                machine.Creates.AddInterfaces(InferCreates(function));
+                interfaces.AddInterfaces(InferCreates(function));
             }
+
+            machine.Creates = interfaces;
         }
 
         public static IEnumerable<Interface> InferCreates(IPAST tree)
@@ -33,13 +35,12 @@ namespace Microsoft.Pc.TypeChecker
                 case AssertStmt assertStmt:
                     return InferCreatesForExpr(assertStmt.Assertion);
                 case AssignStmt assignStmt:
-                    return InferCreatesForExpr(assignStmt.Variable)
+                    return InferCreatesForExpr(assignStmt.Location)
                         .Union(InferCreatesForExpr(assignStmt.Value));
                 case CompoundStmt compoundStmt:
                     return compoundStmt.Statements.SelectMany(InferCreates);
                 case CtorStmt ctorStmt:
-                    var res = new List<Interface>();
-                    res.Add(ctorStmt.Interface);
+                    var res = new []{ctorStmt.Interface};
                     return res.Union(ctorStmt.Arguments.SelectMany(InferCreatesForExpr));
                 case FunCallStmt funCallStmt:
                     return InferCreates(funCallStmt.Fun)
@@ -100,12 +101,9 @@ namespace Microsoft.Pc.TypeChecker
                     return InferCreatesForExpr(containsKeyExpr.Key)
                         .Union(InferCreatesForExpr(containsKeyExpr.Map));
                 case CloneExpr cloneExpr:
-                    return InferCreatesForExpr(cloneExpr.SubExpr);
+                    return InferCreatesForExpr(cloneExpr.Term);
                 case CtorExpr ctorExpr:
-                    var res = new List<Interface>
-                    {
-                        ctorExpr.Interface
-                    };
+                    var res = new []{ctorExpr.Interface};
                     return res.Union(ctorExpr.Arguments.SelectMany(InferCreatesForExpr));
                 case FunCallExpr funCallExpr:
                     return InferCreates(funCallExpr.Function)

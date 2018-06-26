@@ -17,7 +17,7 @@ namespace Microsoft.Pc.TypeChecker
 
         public ExprVisitor(Function method, ITranslationErrorHandler handler)
         {
-            this.table = method.Scope;
+            table = method.Scope;
             this.method = method;
             this.handler = handler;
         }
@@ -444,13 +444,11 @@ namespace Microsoft.Pc.TypeChecker
         public override IPExpr VisitNamedTupleBody(PParser.NamedTupleBodyContext context)
         {
             var fields = context._values.Select(Visit).ToArray();
-            var entries = context._names.Zip(fields,
-                                             (fieldName, value) => new NamedTupleEntry
-                                             {
-                                                 Name = fieldName.GetText(),
-                                                 Type = value.Type
-                                             })
-                                 .ToArray();
+            var entries = new NamedTupleEntry[fields.Length];
+            for (var i = 0; i < fields.Length; i++)
+            {
+                entries[i] = new NamedTupleEntry { Name = context._names[i].GetText(), FieldNo = i, Type = fields[i].Type };
+            }
             var type = new NamedTupleType(entries);
             return new NamedTupleExpr(context, fields, type);
         }

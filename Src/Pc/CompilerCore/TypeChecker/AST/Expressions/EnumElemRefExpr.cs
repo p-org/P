@@ -4,16 +4,16 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
-    public class EnumElemRefExpr : IPExpr
+    public class EnumElemRefExpr : IStaticTerm<EnumElem>
     {
-        public EnumElemRefExpr(ParserRuleContext sourceLocation, EnumElem enumElem)
+        public EnumElemRefExpr(ParserRuleContext sourceLocation, EnumElem value)
         {
             SourceLocation = sourceLocation;
-            EnumElem = enumElem;
-            Type = new EnumType(EnumElem.ParentEnum);
+            Value = value;
+            Type = new EnumType(Value.ParentEnum);
         }
 
-        public EnumElem EnumElem { get; }
+        public EnumElem Value { get; }
         public PLanguageType Type { get; }
         public ParserRuleContext SourceLocation { get; }
     }

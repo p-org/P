@@ -85,7 +85,7 @@ namespace Microsoft.Pc.TypeChecker
             string symbolName = context.name.GetText();
             PEvent decl = CurrentScope.Put(symbolName, context);
             nodesToDeclarations.Put(context, decl);
-            UniversalEventSet.Instance.AddEvent(decl); // TODO: do we actually want to do this?
+            CurrentScope.UniversalEventSet.AddEvent(decl);
             return null;
         }
 

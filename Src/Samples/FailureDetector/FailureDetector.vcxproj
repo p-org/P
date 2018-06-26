@@ -24,7 +24,7 @@
     <RootNamespace>FailureDetector</RootNamespace>
     <ProjectName>FailureDetector</ProjectName>
     <Keyword>Win32Proj</Keyword>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>$(WindowsSDKVer)</WindowsTargetPlatformVersion>
     <DisableFastUpToDateCheck>True</DisableFastUpToDateCheck>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -96,7 +96,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>$(StandardPDefinitions);_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -118,7 +118,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>$(StandardPDefinitions);_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
     </ClCompile>
@@ -140,7 +140,7 @@
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -160,7 +160,7 @@
       <Optimization>MaxSpeed</Optimization>
       <PreprocessorDefinitions>$(StandardPDefinitions);NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated;..\Timer\PGenerated</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
     </ClCompile>
     <Link>
@@ -180,16 +180,18 @@
     <PCompile Include="Driver.p" />
     <PCompile Include="FailureDetector.p" />
     <PCompile Include="PrtDistHelp.p" />
+    <PCompile Include="..\Timer\TimerHeader.p"/>
   </ItemGroup>
   <ItemGroup>
+    <None Include="Driver.p" />
     <None Include="FailureDetector.p" />
     <None Include="PrtDistHelp.p" />
+    <None Include="..\Timer\TimerHeader.p"/>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Timer\Timer.vcxproj">
       <Project>{25142dd0-bc85-4156-8691-416ff932d341}</Project>
     </ProjectReference>
-    <PLibraryReference Include="..\Timer\PGenerated\Timer.4ml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <Import Project="$([MSBuild]::GetDirectoryNameOfFileAbove($(MSBuildThisFileDirectory), P.sln))\Bld\Targets\p.targets" />

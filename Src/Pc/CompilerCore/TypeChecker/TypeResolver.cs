@@ -107,7 +107,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
 
                     names.Add(fieldName);
-                    fields[i] = new NamedTupleEntry {Name = fieldName, Type = Visit(field.type())};
+                    fields[i] = new NamedTupleEntry {Name = fieldName, FieldNo = i, Type = Visit(field.type())};
                 }
 
                 return new NamedTupleType(fields);

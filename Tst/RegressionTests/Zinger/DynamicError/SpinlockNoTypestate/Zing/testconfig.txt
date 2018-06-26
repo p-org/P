@@ -1,5 +1,0 @@
-arg: -et:SpinlockNoTypestate.trace
-arg: -m
-inc: SpinlockNoTypestate.trace
-del: SpinlockNoTypestate.trace
-dsc: zinger.exe, Zing: "-m" option

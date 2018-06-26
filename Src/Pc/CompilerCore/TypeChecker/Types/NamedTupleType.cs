@@ -17,7 +17,7 @@ namespace Microsoft.Pc.TypeChecker.Types
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.OriginalRepresentation}"))})";
             CanonicalRepresentation =
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.CanonicalRepresentation}"))})";
-            _allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
+            allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
             {
                 return Fields.SelectMany(f => f.Type.AllowedPermissions).ToList();
             });
@@ -42,9 +42,10 @@ namespace Microsoft.Pc.TypeChecker.Types
             return new NamedTupleType(Fields.Select(f => new NamedTupleEntry
                                             {
                                                 Name = f.Name,
+                                                FieldNo = f.FieldNo,
                                                 Type = f.Type.Canonicalize()
                                             })
-                                            .ToList());
+                                            .ToArray());
         }
 
         public bool LookupEntry(string name, out NamedTupleEntry entry)
@@ -52,7 +53,7 @@ namespace Microsoft.Pc.TypeChecker.Types
             return lookupTable.TryGetValue(name, out entry);
         }
 
-        private Lazy<IReadOnlyList<PEvent>> _allowedPermissions;
-        public override IReadOnlyList<PEvent> AllowedPermissions => _allowedPermissions.Value;
+        private readonly Lazy<IReadOnlyList<PEvent>> allowedPermissions;
+        public override IReadOnlyList<PEvent> AllowedPermissions => allowedPermissions.Value;
     }
 }

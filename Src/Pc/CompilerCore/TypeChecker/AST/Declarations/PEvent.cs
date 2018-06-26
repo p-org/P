@@ -25,5 +25,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
+
+        public bool IsHaltEvent => string.Equals(Name, "halt");
+        public bool IsNullEvent => string.Equals(Name, "null");
+        public bool IsBuiltIn => IsHaltEvent || IsNullEvent;
     }
 }

@@ -28,6 +28,22 @@ namespace Microsoft.Pc.TypeChecker.AST.States
 
         public IStateAction this[PEvent index] { get => actions[index]; set => actions[index] = value; }
 
+        public string QualifiedName
+        {
+            get
+            {
+                string name = Name;
+                IStateContainer parent = Container;
+                while (parent != null)
+                {
+                    name = parent.Name + "." + name;
+                    parent = parent.ParentStateContainer;
+                }
+
+                return name;
+            }
+        }
+
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
 

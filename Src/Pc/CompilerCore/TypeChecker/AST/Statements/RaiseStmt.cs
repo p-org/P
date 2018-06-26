@@ -1,10 +1,11 @@
+using System.Collections.Generic;
 using Antlr4.Runtime;
 
 namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class RaiseStmt : IPStmt
     {
-        public RaiseStmt(ParserRuleContext sourceLocation, IPExpr pEvent, IPExpr[] payload)
+        public RaiseStmt(ParserRuleContext sourceLocation, IPExpr pEvent, IReadOnlyList<IPExpr> payload)
         {
             SourceLocation = sourceLocation;
             PEvent = pEvent;
@@ -12,7 +13,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
         }
 
         public IPExpr PEvent { get; }
-        public IPExpr[] Payload { get; }
+        public IReadOnlyList<IPExpr> Payload { get; }
 
         public ParserRuleContext SourceLocation { get; }
     }

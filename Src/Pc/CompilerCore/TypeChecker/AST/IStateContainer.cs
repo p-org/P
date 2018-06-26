@@ -3,7 +3,7 @@ using Microsoft.Pc.TypeChecker.AST.States;
 
 namespace Microsoft.Pc.TypeChecker.AST
 {
-    public interface IStateContainer
+    public interface IStateContainer : IPDecl
     {
         IStateContainer ParentStateContainer { get; }
         IEnumerable<State> States { get; }

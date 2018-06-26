@@ -6,7 +6,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class FunCallStmt : IPStmt
     {
-        public FunCallStmt(ParserRuleContext sourceLocation, Function fun, List<IPExpr> argsList)
+        public FunCallStmt(ParserRuleContext sourceLocation, Function fun, IReadOnlyList<IPExpr> argsList)
         {
             SourceLocation = sourceLocation;
             Fun = fun;
@@ -14,7 +14,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
         }
 
         public Function Fun { get; }
-        public List<IPExpr> ArgsList { get; }
+        public IReadOnlyList<IPExpr> ArgsList { get; }
 
         public ParserRuleContext SourceLocation { get; }
     }

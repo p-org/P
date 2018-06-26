@@ -4,14 +4,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
 {
     public class AssignStmt : IPStmt
     {
-        public AssignStmt(ParserRuleContext sourceLocation, IPExpr variable, IPExpr value)
+        public AssignStmt(ParserRuleContext sourceLocation, IPExpr location, IPExpr value)
         {
             SourceLocation = sourceLocation;
-            Variable = variable;
+            Location = location;
             Value = value;
         }
 
-        public IPExpr Variable { get; }
+        public IPExpr Location { get; }
         public IPExpr Value { get; }
 
         public ParserRuleContext SourceLocation { get; }

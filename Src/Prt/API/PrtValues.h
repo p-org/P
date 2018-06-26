@@ -32,17 +32,11 @@ extern "C"{
 		PRT_UINT64 data4;   /**< 0 Fourth data field (64 bits) */
 	} PRT_GUID;
 
-	typedef enum PRT_FUN_PARAM_STATUS
-	{
-		PRT_FUN_PARAM_CLONE,
-		PRT_FUN_PARAM_MOVE,
-		PRT_FUN_PARAM_SWAP
-	} PRT_FUN_PARAM_STATUS;
-
 	typedef enum PRT_SPECIAL_EVENT
 	{
-		PRT_SPECIAL_EVENT_NULL = 0,  /**< The id of the null event */
-		PRT_SPECIAL_EVENT_HALT = 1   /**< The id of the halt event */
+		PRT_SPECIAL_EVENT_NULL = 0,   /**< The id of the null event */
+		PRT_SPECIAL_EVENT_HALT = 1,   /**< The id of the halt event */
+		PRT_EVENT_USER_START = 2      /**< The first event id available to user code */
 	} PRT_SPECIAL_EVENT;
 
 	/**
@@ -281,20 +275,6 @@ extern "C"{
 	/** Sets an element in a (named) tuple by index.
 	* @param[in,out] tuple A (named) tuple to mutate.
 	* @param[in]     index A 0-based element index.
-	* @param[in]     status Indicates whether this operation is move or swap
-	* @param[in,out] value The pointer to the value to move or swap
-	* @param[in]     type The type of data pointed to by value
-	*/
-	PRT_API void PRT_CALL_CONV PrtTupleSetLinear(
-		_Inout_ PRT_VALUE *tuple,
-		_In_ PRT_UINT32 index,
-		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value,
-		_In_ PRT_TYPE *type);
-
-	/** Sets an element in a (named) tuple by index.
-	* @param[in,out] tuple A (named) tuple to mutate.
-	* @param[in]     index A 0-based element index.
 	* @param[in]     value The value to set (will be cloned if cloneValue is PRT_TRUE).
 	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this tuple.
 	*/
@@ -313,6 +293,15 @@ extern "C"{
 		_In_ PRT_VALUE *tuple, 
 		_In_ PRT_UINT32 index);
 
+	/** Gets a pointer to the element in a (named) tuple. Only used for internal manipulation of state variables.
+	* @param[in] tuple A (named) tuple.
+	* @param[in] index A 0-based element index.
+	* @returns The pointer to element at index i.
+	*/
+	PRT_API PRT_VALUE ** PRT_CALL_CONV PrtTupleGetLValue(
+		_In_ PRT_VALUE *tuple,
+		_In_ PRT_UINT32 index);
+
 	/** Gets an element in a sequence without cloning. Only used for internal manipulation of state variables.
 	* @param[in] seq   A sequence.
 	* @param[in] index A 0-based index s.t. 0 <= index < size(seq).
@@ -320,6 +309,15 @@ extern "C"{
 	*/
 	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNC(
 		_In_ PRT_VALUE *seq, 
+		_In_ PRT_VALUE *index);
+
+	/** Gets a pointer to an element in a sequence. Only used for internal manipulation of state variables.
+	* @param[in] seq   A sequence.
+	* @param[in] index A 0-based index s.t. 0 <= index < size(seq).
+	* @returns The pointer to the value at index.
+	*/
+	PRT_API PRT_VALUE ** PRT_CALL_CONV PrtSeqGetLValue(
+		_In_ PRT_VALUE *seq,
 		_In_ PRT_VALUE *index);
 
 	/** Gets a value from a map without cloning. Only used for internal manipulation of state variables.
@@ -350,20 +348,6 @@ extern "C"{
 		_Inout_ PRT_VALUE *seq, 
 		_In_ PRT_VALUE *index, 
 		_In_ PRT_VALUE *value);
-
-	/** Updates the sequence at index.
-	* @param[in,out] seq   A sequence to mutate.
-	* @param[in]     index The name of the element to set. A value must already exist at this index.
-	* @param[in]     status Indicates whether this operation is move or swap
-	* @param[in,out] value The pointer to the value to move or swap
-	* @param[in]     type The type of data pointed to by value
-	*/
-	PRT_API void PRT_CALL_CONV PrtSeqUpdateLinear(
-		_Inout_ PRT_VALUE *seq,
-		_In_ PRT_VALUE *index,
-		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value,
-		_In_ PRT_TYPE *type);
 
 	/** Updates the sequence at index.
 	* @param[in,out] seq   A sequence to mutate.
@@ -429,9 +413,9 @@ extern "C"{
 	* @param[in] index A 0-based index s.t. 0 <= index < size(seq).
 	* @returns The value at index (clones). Caller is responsible for freeing.
 	*/
-	PRT_API PRT_VALUE * PRT_CALL_CONV PrtSeqGetNCIntIndex(
-		_In_ PRT_VALUE *seq,
-		_In_ PRT_INT index);
+	PRT_API PRT_VALUE** PrtSeqGetNCIntIndex(
+	_In_ PRT_VALUE* seq,
+	     _In_ PRT_INT index);
 
 	/** Removes the value at index from the sequence, and shortens the sequence by one.
 	* seq[index] must be defined. Removal causes:
@@ -465,24 +449,6 @@ extern "C"{
 	* @param[in,out] map   A map to mutate.
 	* @param[in]     key   The key to update (will be cloned if cloneKey is PRT_TRUE).
 	* @param[in]     cloneKey Only set to false if key will be forever owned by this map.
-	* @param[in]     status Indicates whether this operation is move or swap
-	* @param[in,out] value The pointer to the value to move or swap
-	* @param[in]     type The type of data pointed to by value
-	*/
-	PRT_API void PRT_CALL_CONV PrtMapUpdateLinear(
-		_Inout_ PRT_VALUE *map,
-		_In_ PRT_VALUE *key,
-		_In_ PRT_BOOLEAN cloneKey,
-		_In_ PRT_FUN_PARAM_STATUS status,
-		_Inout_ PRT_VALUE **value,
-		_In_ PRT_TYPE *type);
-
-	/** Updates the map at key.
-	* If key is not in the map, then adds it.
-	* If key is already in the map, then changes its mapping.
-	* @param[in,out] map   A map to mutate.
-	* @param[in]     key   The key to update (will be cloned if cloneKey is PRT_TRUE).
-	* @param[in]     cloneKey Only set to false if key will be forever owned by this map.
 	* @param[in]     value The value to which the key maps (will be cloned if cloneValue is PRT_TRUE).
 	* @param[in]     cloneValue Only set to PRT_FALSE if value will be forever owned by this map.
 	*/
@@ -492,6 +458,20 @@ extern "C"{
 		_In_ PRT_BOOLEAN cloneKey, 
 		_In_ PRT_VALUE *value, 
 		_In_ PRT_BOOLEAN cloneValue);
+
+	/** Returns a pointer to the value at key location in the map.
+	* If key is not in the map, then stores a NULL value and returns a pointer to it.
+	* If key is already in the map, then returns a pointer to the mapped value.
+	* @param[in,out] map   A map to mutate.
+	* @param[in]     key   The key to update (will be cloned if cloneKey is PRT_TRUE).
+	* @param[in]     cloneKey Only set to false if key will be forever owned by this map.
+	*/
+	PRT_API PRT_VALUE ** PRT_CALL_CONV PrtMapGetLValue(
+		_Inout_ PRT_VALUE *map,
+		_In_ PRT_VALUE *key,
+		_In_ PRT_BOOLEAN cloneKey,
+		_In_ PRT_TYPE* mapType
+	);
 
 	/** Updates the map at key.
 	* If key is not in the map, then adds it.
@@ -593,6 +573,15 @@ extern "C"{
 	* @returns The hash code.
 	*/
 	PRT_API PRT_UINT32 PRT_CALL_CONV PrtGetHashCodeValue(_In_ PRT_VALUE *value);
+
+	/** Removes the value at index from the sequence, and shortens the sequence by one.
+	* seq[index] must be defined. Removal causes:
+	* For all i > index, if seq[i] is defined, then seq'[i - 1] = seq[i].
+	* For all i < index, if seq[i] is defined, then seq'[i] = seq[i].
+	* @param[in,out] seq   A sequence to mutate.
+	* @param[in]     index An 0-based index s.t. 0 <= index < size(seq).
+	*/
+	PRT_API void PRT_CALL_CONV PrtRemoveByKey(_Inout_ PRT_VALUE *mapOrSeq, _In_ PRT_VALUE *key);
 
 	/** Returns `true` if values are equivalent; `false` otherwise.
 	* @param[in] value1 The first value.

@@ -27,7 +27,15 @@ namespace Microsoft.Pc.Backend.Debugging
 
         protected override void WriteTypeRef(PLanguageType type) { WriteParts(type.OriginalRepresentation); }
 
-        protected override void WriteDeclRef(IPDecl decl) { WriteParts(decl.Name); }
+        protected override void WriteDeclRef(IPDecl decl)
+        {
+            string name = decl.Name;
+            if (decl is State state)
+            {
+                name = state.QualifiedName;
+            }
+            WriteParts(name);
+        }
 
         protected override void WriteStringList(IEnumerable<string> strs) { JoinObjects(strs); }
 
@@ -80,7 +88,9 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteStmt(machine.IsSpec ? "spec " : "",
                               "machine ",
                               machine);
-                    WriteStmt("  assert ", machine.Assert, " assume ", machine.Assume);
+                    string machineAssume = machine.Assume?.ToString() ?? "max";
+                    string machineAssert = machine.Assert?.ToString() ?? "max";
+                    WriteStmt("  assert ", machineAssert, " assume ", machineAssume);
                     WriteStmt("  receives ", WriteEventSet(machine.Receives));
                     WriteStmt("  sends ", WriteEventSet(machine.Sends));
                     if (machine.IsSpec)
@@ -151,7 +161,7 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteStmt("assert ", assertStmt.Assertion, ", \"", assertStmt.Message, "\";");
                     break;
                 case AssignStmt assignStmt:
-                    WriteStmt(assignStmt.Variable, " = ", assignStmt.Value, ";");
+                    WriteStmt(assignStmt.Location, " = ", assignStmt.Value, ";");
                     break;
                 case CompoundStmt compoundStmt:
                     foreach (IPStmt stmt in compoundStmt.Statements)
@@ -349,7 +359,8 @@ namespace Microsoft.Pc.Backend.Debugging
                 case EnumElem _:
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(tree));
+                    WriteStmt($"// UNKNOWN declaration {tree.GetType().FullName}");
+                    break;
             }
         }
 
@@ -435,7 +446,7 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteParts("(", containsKeyExpr.Key, ") in (", containsKeyExpr.Map, ")");
                     break;
                 case CloneExpr cloneExpr:
-                    WriteParts("$Clone(", cloneExpr.SubExpr, ")");
+                    WriteParts("$Clone(", cloneExpr.Term, ")");
                     break;
                 case CtorExpr ctorExpr:
                     WriteParts("new ", ctorExpr.Interface, "(", ctorExpr.Arguments, ")");
@@ -444,10 +455,10 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteParts("default(", defaultExpr.Type, ")");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
-                    WriteParts(enumElemRefExpr.EnumElem);
+                    WriteParts(enumElemRefExpr.Value);
                     break;
                 case EventRefExpr eventRefExpr:
-                    WriteParts(eventRefExpr.PEvent);
+                    WriteParts(eventRefExpr.Value);
                     break;
                 case FairNondetExpr _:
                     WriteParts("$$");
@@ -576,7 +587,6 @@ namespace Microsoft.Pc.Backend.Debugging
                 case NamedEventSet namedEventSet:
                     return namedEventSet.Name;
                 case null:
-                case UniversalEventSet _:
                     return "<all>";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(eventSet));

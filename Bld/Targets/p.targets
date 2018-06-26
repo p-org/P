@@ -8,51 +8,28 @@
     <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
-    <PCompileOptions>/generate:C /t:$(ProjectName).4ml /shared /outputDir:$(PGeneratedDir)</PCompileOptions>
-    <PLinkOptions>$(PLinkOptions) /generate:C /shared /link /outputDir:$(PGeneratedDir)</PLinkOptions>
-    <PCompileOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PCompileOptions) /profile</PCompileOptions>
-    <PLinkOptions Condition="'$(PCOMPILE_PROFILE)'=='1'">$(PLinkOptions) /profile</PLinkOptions>
+    <PCompileOptions>/generate:C /t:$(ProjectName) /outputDir:$(PGeneratedDir)</PCompileOptions>
   </PropertyGroup>
 
   <!-- Invoke pc.exe - pc.exe will do the right thing based on which p files (or include files) have actually changed. -->
   <Target Name="CompileP" Inputs="@(PCompile);"
-          Outputs="$(PGeneratedDir)\$(ProjectName).4ml;$(PGeneratedDir)\$(ProjectName).c;$(PGeneratedDir)\$(ProjectName).h;"
+          Outputs="$(PGeneratedDir)\$(ProjectName).c;$(PGeneratedDir)\$(ProjectName).h;"
           BeforeTargets="BeforeBuildGenerateSources" >
 
     <ItemGroup>
-      <PLink Include="$(PGeneratedDir)\$(ProjectName).4ml"/>
       <ClCompile Include="$(PGeneratedDir)\$(ProjectName).c"/>
     </ItemGroup>
 
       <ItemGroup>
-        <FileWrites Include="$(PGeneratedDir)\$(ProjectName).4ml" />
         <FileWrites Include="$(PGeneratedDir)\$(ProjectName).c" />
         <FileWrites Include="$(PGeneratedDir)\$(ProjectName).h" />
       </ItemGroup>
       
       <Message Importance="high" Text="########## compiling p files @(PCompile)  ##################" />
-      <Exec Command="$(DropFolder)\Binaries\pc.exe $(PCompileOptions) @(PLibraryReference->'/r:%(FullPath)',' ') @(PCompile->'%(FullPath)',' ')"/>
+      <Exec Command="$(DropFolder)\Binaries\pc.exe $(PCompileOptions) @(PCompile->'%(FullPath)',' ')"/>
       <Message Importance="high" Text="########## compiling p files complete ##################" />
 
     </Target>
-
-  <Target Name="LinkP" Inputs="@(PLink);" Outputs="$(PGeneratedDir)\linker.c;$(PGeneratedDir)\linker.h"
-          Condition="'$(LinkCompiled)'=='true'"
-          DependsOnTargets="CompileP" BeforeTargets="BeforeBuildGenerateSources" >
-    <ItemGroup>
-      <FileWrites Include="$(PGeneratedDir)\linker.c" />
-      <FileWrites Include="$(PGeneratedDir)\linker.h" />
-    </ItemGroup>
-    
-    <!-- must always include linker.c in the final C++ compile -->
-    <ItemGroup>
-      <ClCompile Include="$(PGeneratedDir)\linker.c"/>
-    </ItemGroup>
-    
-    <Message Importance="high" Text="########## generating p linker.c  ##################" />
-    <Exec Command="$(DropFolder)\Binaries\pc.exe $(PLinkOptions) @(PLibraryReference->'/r:%(FullPath)',' ') /r:@(PLink)"/>
-    <Message Importance="high" Text="########## generating p linker complete ##################" />
-  </Target>
 
   <Target Name="CleanCompileP" Condition="'@(PCompile)' != ''" >   
     <RemoveDir Directories="$(PGeneratedDir)"/>

@@ -7,7 +7,7 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
-    public class Machine : IStateContainer, IHasScope, IPDecl
+    public class Machine : IStateContainer, IHasScope
     {
         private readonly List<Variable> fields = new List<Variable>();
         private readonly Dictionary<string, StateGroup> groups = new Dictionary<string, StateGroup>();
@@ -23,8 +23,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         }
 
         public bool IsSpec { get; }
-        public int Assume { get; set; } = -1;
-        public int Assert { get; set; } = -1;
+        public uint? Assume { get; set; }
+        public uint? Assert { get; set; }
         public IEventSet Receives { get; set; }
         public IEventSet Sends { get; set; }
         public IInterfaceSet Creates { get; set; }
@@ -81,6 +81,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         {
             Debug.Assert(state.Container == null);
             state.Container = this;
+            state.OwningMachine = this;
             states.Add(state.Name, state);
         }
 
@@ -88,6 +89,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         {
             Debug.Assert(group.ParentStateContainer == null);
             group.ParentStateContainer = this;
+            group.OwningMachine = this;
             groups.Add(group.Name, group);
         }
 

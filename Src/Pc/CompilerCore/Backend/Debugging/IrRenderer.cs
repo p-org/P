@@ -16,7 +16,7 @@ namespace Microsoft.Pc.Backend.Debugging
         {
             foreach(var machine in scope.Machines)
             {
-                var createdMachines = new HashSet<Machine>();
+                var createdMachines = new HashSet<Value>();
                 foreach(var method in machine.Methods)
                 {
                     createdMachines.UnionWith(GatherMachines(method.Body));

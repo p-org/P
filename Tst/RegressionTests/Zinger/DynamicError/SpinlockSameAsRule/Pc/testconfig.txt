@@ -1,5 +1,0 @@
-arg: ..\SpinlockSameAsRule.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, Feature Integration: Spinlock SLIC rule

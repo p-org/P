@@ -4,18 +4,19 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.TypeChecker.AST.Expressions
 {
-    public class ThisRefExpr : IPExpr
+    public class ThisRefExpr : IStaticTerm<Machine>
     {
-        public ThisRefExpr(ParserRuleContext sourceLocation, Machine machine)
+        public ThisRefExpr(ParserRuleContext sourceLocation, Machine value)
         {
             SourceLocation = sourceLocation;
-            Machine = machine;
+            Value = value;
+            Type = new PermissionType(value);
         }
 
-        public Machine Machine { get; }
+        public Machine Value { get; }
 
         public ParserRuleContext SourceLocation { get; }
 
-        public PLanguageType Type { get; } = PrimitiveType.Machine;
+        public PLanguageType Type { get; }
     }
 }

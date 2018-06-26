@@ -1,4 +1,4 @@
-#include "linker.h"
+#include "main.h"
 
 void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 {
@@ -195,7 +195,7 @@ int main(int argc, char *argv[])
 		processGuid.data2 = 0;
 		processGuid.data3 = 0;
 		processGuid.data4 = 0;
-		process = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log);
+		process = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, ErrorHandler, Log);
 		if (cooperative)
 		{
 			PrtSetSchedulingPolicy(process, PRT_SCHEDULINGPOLICY_COOPERATIVE);
@@ -212,7 +212,10 @@ int main(int argc, char *argv[])
 
 		PrtUpdateAssertFn(MyAssert);
 
-		PrtMkMachine(process, P_MACHINE_Main, 1, PRT_FUN_PARAM_CLONE, payload);
+		PRT_UINT32 mainMachine = 0;
+		PRT_BOOLEAN foundMachine = PrtLookupMachineByName("Main", &mainMachine);
+		PrtAssert(foundMachine, "No 'Main' machine found!");
+		PrtMkMachine(process, mainMachine, 1, &payload);
 
 		if (cooperative)
 		{

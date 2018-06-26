@@ -1,5 +1,0 @@
-arg: ..\TransDecl_DoDecl.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: 1.7/1.8 Transition/Do declarations

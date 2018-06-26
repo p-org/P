@@ -5,7 +5,7 @@ using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.AST.States
 {
-    public class StateGroup : IStateContainer, IHasScope, IPDecl
+    public class StateGroup : IStateContainer, IHasScope
     {
         private readonly Dictionary<string, StateGroup> groups = new Dictionary<string, StateGroup>();
         private readonly Dictionary<string, State> states = new Dictionary<string, State>();
@@ -31,6 +31,7 @@ namespace Microsoft.Pc.TypeChecker.AST.States
         {
             Debug.Assert(state.Container == null);
             state.Container = this;
+            state.OwningMachine = OwningMachine;
             states.Add(state.Name, state);
         }
 
@@ -38,6 +39,7 @@ namespace Microsoft.Pc.TypeChecker.AST.States
         {
             Debug.Assert(group.ParentStateContainer == null);
             group.ParentStateContainer = this;
+            group.OwningMachine = OwningMachine;
             groups.Add(group.Name, group);
         }
 

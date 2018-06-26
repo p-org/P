@@ -22,7 +22,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // Step 3: Fill function bodies
-            List<Function> allFunctions = AllFunctions(globalScope).ToList();
+            List<Function> allFunctions = globalScope.GetAllMethods().ToList();
             foreach (Function machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
@@ -64,14 +64,14 @@ namespace Microsoft.Pc.TypeChecker
             // Step 8: Fill the module expressions
             ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
 
-            // Step 9: Check that all module expressions are wellformed
+            // Step 9: Check that all module expressions are well-formed
             foreach (IPModuleExpr moduleExpr in AllModuleExprs(globalScope))
             {
                 ModuleSystemTypeChecker.CheckWellFormedness(handler, moduleExpr);
             }
 
-            // Step 9: Check the test and implementation declarations
-            // TODO: like test decls have main in them, refinement relation holds for refinement test cases.
+            // Step 10: Check the test and implementation declarations
+            // TODO: like test decls have main in them, refinement relation holds for refinement test cases, implementations are closed.
 
 
             return globalScope;
@@ -119,12 +119,12 @@ namespace Microsoft.Pc.TypeChecker
 
         private static Scope BuildGlobalScope(ITranslationErrorHandler handler, PParser.ProgramContext[] programUnits)
         {
-            var globalScope = new Scope(handler);
+            var globalScope = Scope.CreateGlobalScope(handler);
             var nodesToDeclarations = new ParseTreeProperty<IPDecl>();
 
             // Add built-in events to the table.
-            globalScope.Put("halt", (PParser.EventDeclContext) null);
             globalScope.Put("null", (PParser.EventDeclContext) null);
+            globalScope.Put("halt", (PParser.EventDeclContext) null);
 
             // Step 1: Create mapping of names to declaration stubs
             foreach (PParser.ProgramContext programUnit in programUnits)
@@ -139,22 +139,6 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             return globalScope;
-        }
-
-        private static IEnumerable<Function> AllFunctions(Scope globalScope)
-        {
-            foreach (Function fun in globalScope.Functions)
-            {
-                yield return fun;
-            }
-
-            foreach (Machine machine in globalScope.Machines)
-            {
-                foreach (Function method in machine.Methods)
-                {
-                    yield return method;
-                }
-            }
         }
 
         private static IEnumerable<IPModuleExpr> AllModuleExprs(Scope globalScope)

@@ -30,23 +30,13 @@ namespace Microsoft.Pc.TypeChecker
 
         public override IPStmt VisitFunctionBody(PParser.FunctionBodyContext context)
         {
-            List<IPStmt> statements = context.statement().Select(Visit).Where(stmt => !(stmt is NoStmt)).ToList();
-            if (statements.Count == 0)
-            {
-                return new NoStmt(context);
-            }
-
+            var statements = context.statement().Select(Visit).ToList();
             return new CompoundStmt(context, statements);
         }
 
         public override IPStmt VisitCompoundStmt(PParser.CompoundStmtContext context)
         {
-            List<IPStmt> statements = context.statement().Select(Visit).Where(stmt => !(stmt is NoStmt)).ToList();
-            if (statements.Count == 0)
-            {
-                return new NoStmt(context);
-            }
-
+            var statements = context.statement().Select(Visit).ToList();
             return new CompoundStmt(context, statements);
         }
 
@@ -56,6 +46,11 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.IssueError(
                     context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+            }
+
+            if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
+            {
+                throw handler.IssueError(context, "pop can only appear in functions that do not return a value.");
             }
 
             method.CanChangeState = true;
@@ -76,19 +71,31 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             string message = context.StringLiteral()?.GetText() ?? "";
+            if (message.StartsWith("\""))
+            {
+                message = message.Substring(1, message.Length - 2);
+            }
             return new AssertStmt(context, assertion, message);
         }
 
         public override IPStmt VisitPrintStmt(PParser.PrintStmtContext context)
         {
             string message = context.StringLiteral().GetText();
+            message = message.Substring(1, message.Length - 2); // strip beginning / end double quote
             int numNecessaryArgs = TypeCheckingUtils.PrintStmtNumArgs(message);
             if (numNecessaryArgs == -1)
             {
                 throw handler.InvalidPrintFormat(context, context.StringLiteral().Symbol);
             }
 
-            List<IPExpr> args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            var args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToList();
+            foreach (IPExpr arg in args)
+            {
+                if (arg is LinearAccessRefExpr)
+                {
+                    throw handler.IssueError(arg.SourceLocation, "Print statement never copies. Do not specify swap or move.");
+                }
+            }
             if (args.Count != numNecessaryArgs)
             {
                 throw handler.IncorrectArgumentCount(context, args.Count, numNecessaryArgs);
@@ -232,7 +239,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitWhileStmt(PParser.WhileStmtContext context)
         {
             IPExpr condition = exprVisitor.Visit(context.expr());
-            if (condition.Type != PrimitiveType.Bool)
+            if (!Equals(condition.Type, PrimitiveType.Bool))
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
@@ -244,7 +251,7 @@ namespace Microsoft.Pc.TypeChecker
         public override IPStmt VisitIfStmt(PParser.IfStmtContext context)
         {
             IPExpr condition = exprVisitor.Visit(context.expr());
-            if (condition.Type != PrimitiveType.Bool)
+            if (!Equals(condition.Type, PrimitiveType.Bool))
             {
                 throw handler.TypeMismatch(context.expr(), condition.Type, PrimitiveType.Bool);
             }
@@ -311,7 +318,7 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             if (evtExpr is EventRefExpr eventRef)
             {
-                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
+                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
             }
 
             return new RaiseStmt(context, evtExpr, args);
@@ -346,7 +353,7 @@ namespace Microsoft.Pc.TypeChecker
 
             if (evtExpr is EventRefExpr eventRef)
             {
-                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.PEvent.PayloadType, args);
+                TypeCheckingUtils.ValidatePayloadTypes(handler, context, eventRef.Value.PayloadType, args);
             }
 
             return new SendStmt(context, machineExpr, evtExpr, args);
@@ -354,7 +361,7 @@ namespace Microsoft.Pc.TypeChecker
 
         private static bool IsDefinitelyNullEvent(IPExpr evtExpr)
         {
-            return evtExpr is NullLiteralExpr || evtExpr is EventRefExpr evtRef && evtRef.PEvent.Name.Equals("null");
+            return evtExpr is NullLiteralExpr || evtExpr is EventRefExpr evtRef && evtRef.Value.Name.Equals("null");
         }
 
         public override IPStmt VisitAnnounceStmt(PParser.AnnounceStmtContext context)
@@ -403,6 +410,14 @@ namespace Microsoft.Pc.TypeChecker
             PLanguageType expectedType =
                 state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
             IPExpr[] rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
+            foreach (IPExpr arg in rvaluesList)
+            {
+                if (arg is LinearAccessRefExpr linearArg && linearArg.LinearType == LinearType.Swap)
+                {
+                    throw handler.InvalidSwap(linearArg, "swap not allowed on goto");
+                }
+            }
+
             IPExpr payload;
             if (rvaluesList.Length == 0)
             {

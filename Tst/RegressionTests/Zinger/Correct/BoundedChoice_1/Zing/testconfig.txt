@@ -1,2 +1,0 @@
-arg: -bc:2
-dsc: zinger.exe, Testing Bounded Choice Operator in Zing

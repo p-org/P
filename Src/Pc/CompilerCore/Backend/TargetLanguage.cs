@@ -1,19 +1,27 @@
 ﻿using System.Collections.Generic;
+using Microsoft.Pc.Backend.Prt;
+using Microsoft.Pc.Backend.PSharp;
 
 namespace Microsoft.Pc.Backend
 {
-    public class TargetLanguage
+    public static class TargetLanguage
     {
-        private static readonly IDictionary<CompilerOutput, ICodeGenerator> _backendMap = new Dictionary<CompilerOutput, ICodeGenerator>();
+        private static readonly IDictionary<CompilerOutput, ICodeGenerator> BackendMap = new Dictionary<CompilerOutput, ICodeGenerator>();
 
-        public static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)
+        static TargetLanguage()
         {
-            _backendMap[name] = generator;
+            RegisterCodeGenerator(CompilerOutput.PSharp, new PSharpCodeGenerator());
+            RegisterCodeGenerator(CompilerOutput.C, new PrtCodeGenerator());
+        }
+
+        private static void RegisterCodeGenerator(CompilerOutput name, ICodeGenerator generator)
+        {
+            BackendMap[name] = generator;
         }
 
         public static ICodeGenerator GetCodeGenerator(CompilerOutput languageName)
         {
-            return _backendMap[languageName];
+            return BackendMap[languageName];
         }
     }
 }

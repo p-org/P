@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker.AST;
@@ -30,19 +31,26 @@ namespace Microsoft.Pc.TypeChecker
         private readonly IDictionary<string, RefinementTest> refinementTests = new Dictionary<string, RefinementTest>();
         private readonly IDictionary<string, NamedModule> namedModules = new Dictionary<string, NamedModule>();
 
-        public Scope(ITranslationErrorHandler handler, Scope parent = null)
+        public EventSet UniversalEventSet { get; }
+
+        public static Scope CreateGlobalScope(ITranslationErrorHandler handler)
+        {
+            return new Scope(handler);
+        }
+
+        private Scope(ITranslationErrorHandler handler, Scope parent = null)
         {
             this.handler = handler;
             parent?.children.Remove(this);
             Parent = parent;
             parent?.children.Add(this);
+
+            UniversalEventSet = parent == null ? new EventSet() : parent.UniversalEventSet;
         }
 
-        public Scope Parent { get; set; }
+        private Scope Parent { get; }
 
         public Scope MakeChildScope() { return new Scope(handler, this); }
-
-        public IEnumerable<Scope> Children => children;
 
         public IEnumerable<IPDecl> AllDecls =>
             EnumElems.Cast<IPDecl>()
@@ -77,6 +85,22 @@ namespace Microsoft.Pc.TypeChecker
         public IEnumerable<RefinementTest> RefinementTests => refinementTests.Values;
         public IEnumerable<Implementation> Implementations => implementations.Values;
         public IEnumerable<NamedModule> NamedModules => namedModules.Values;
+
+        public IEnumerable<Function> GetAllMethods()
+        {
+            foreach (Function fun in Functions)
+            {
+                yield return fun;
+            }
+
+            foreach (Machine machine in Machines)
+            {
+                foreach (Function method in machine.Methods)
+                {
+                    yield return method;
+                }
+            }
+        }
 
         #region Overloaded getters
 
@@ -575,17 +599,14 @@ namespace Microsoft.Pc.TypeChecker
 
         #endregion
 
-        #region unique name generator
-        private IDictionary<string, int> namesCounter = new Dictionary<string, int>();
+        #region Add Default Impl. Declaration
 
-        private string GetUniqueName(string name)
+        public void AddDefaultImpl(Implementation defaultImplDecl)
         {
-            if (namesCounter.ContainsKey(name))
-                namesCounter[name] += 1;
-            else
-                namesCounter.Add(name, 1);
-            return string.Concat(name, namesCounter[name]);
+            Debug.Assert(!implementations.Any());
+            implementations.Add(defaultImplDecl.Name, defaultImplDecl);
         }
+
         #endregion
     }
 }

@@ -10,7 +10,7 @@ namespace Microsoft.Pc.Backend
         }
 
         public string FileName { get; }
-        public StringWriter Stream { get; }
+        public StringWriter Stream { get; } = new StringWriter();
         public string Contents => Stream.GetStringBuilder().ToString();
     }
 }

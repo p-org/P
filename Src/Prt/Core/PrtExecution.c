@@ -369,7 +369,7 @@ _In_ PRT_VALUE					*payload
 	// Check if this event unblocks a blocking "receive" operation.
 	// TODO: This needs to be fixed after the receive is implemented
     //if (context->receive != NULL)
-	if (FALSE)
+	if (PRT_FALSE)
 	{
         if (PrtIsEventReceivable(context, PrtPrimGetEvent(event)))
         {

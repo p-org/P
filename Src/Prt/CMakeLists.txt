@@ -27,7 +27,7 @@ elseif(LINUX OR MACOSX)
 	set ( User_PATH ${P_Prt_Src_Path}/LinuxUser/ )
 endif()
 
-set( PrtUser_Output_PATH ${PROJECT_SOURCE_DIR}/../Bld/Drops/PrtUser/)
+set( PrtUser_Output_PATH ${PROJECT_SOURCE_DIR}/../Bld/Drops/Prt/)
 set( LIBRARY_OUTPUT_PATH ${PrtUser_Output_PATH}/lib/ )
 set( LIBRARY_OUTPUT_INCLUDE_PATH ${PrtUser_Output_PATH}/include/ )
 

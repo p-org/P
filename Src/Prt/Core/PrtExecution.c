@@ -369,7 +369,7 @@ _In_ PRT_VALUE					*payload
 	// Check if this event unblocks a blocking "receive" operation.
 	// TODO: This needs to be fixed after the receive is implemented
     //if (context->receive != NULL)
-	if (FALSE)
+	if (PRT_FALSE)
 	{
         if (PrtIsEventReceivable(context, PrtPrimGetEvent(event)))
         {
@@ -1812,13 +1812,20 @@ _In_opt_z_ PRT_CSTRING message
 	}
 	else if (message == NULL)
 	{
-		fprintf_s(stderr, "ASSERT");
+		PrtPrintf("ASSERT");
 	}
 	else
 	{
-		fprintf_s(stderr, "ASSERT: %s", message);
+		char buffer[256];
+		int n_chars_written = snprintf(buffer, 256, "ASSERT: %s", message);
+		//Truncate on overflow
+		if (n_chars_written >= 256)
+		{
+			buffer[255] = '\0';
+		}
+		PrtPrintf(buffer);
 	}
-	exit(1);
+	abort();
 }
 
 void PRT_CALL_CONV

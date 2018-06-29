@@ -7,10 +7,10 @@ git clean -fdx
 
 git submodule update --init --recursive
 
-mkdir Ext/nupkgs
-dotnet build Ext/Formula/Src/Extensions/FormulaCodeGeneratorTask/FormulaCodeGeneratorTask.csproj
-dotnet pack Ext/Formula/Src/Core/Core.csproj --output ../../../nupkgs
+dotnet build -c Release P.sln
 
-dotnet build PLinux.sln
+popd
 
+pushd .
+mkdir -p build; cd build; cmake ../../Src; make
 popd

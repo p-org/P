@@ -143,7 +143,7 @@ namespace Microsoft.Pc
         private static bool IsLegalPFile(string fileName, out string fullPathName)
         {
             fullPathName = null;
-            if (fileName.Length <= 2 || !fileName.EndsWith(".p"))
+            if (fileName.Length <= 2 || !fileName.EndsWith(".p") || !File.Exists(Path.GetFullPath(fileName)))
             {
                 return false;
             }

@@ -24,7 +24,7 @@ namespace Microsoft.Pc
             {
                 string arg = x;
                 string colonArg = null;
-                if (arg[0] == '-' || arg[0] == '/')
+                if (arg[0] == '-')
                 {
                     int colonIndex = arg.IndexOf(':');
                     if (colonIndex >= 0)
@@ -89,6 +89,7 @@ namespace Microsoft.Pc
                             break;
 
                         default:
+                            commandLineFileNames.Add(arg);
                             output.WriteMessage($"Unknown Command {arg.Substring(1)}", SeverityKind.Error);
                             return false;
                     }
@@ -170,10 +171,10 @@ namespace Microsoft.Pc
         public static void PrintUsage()
         {
             var output = new StandardOutput();
-            output.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [/t:tfile] [options]", SeverityKind.Info);
-            output.WriteMessage("/t:tfile             -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
-            output.WriteMessage("/outputDir:path         -- where to write the generated files", SeverityKind.Info);
-            output.WriteMessage("/generate:[C,P#]", SeverityKind.Info);
+            output.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]", SeverityKind.Info);
+            output.WriteMessage("-t:tfile           -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
+            output.WriteMessage("-outputDir:path    -- where to write the generated files", SeverityKind.Info);
+            output.WriteMessage("-generate:[C,P#]", SeverityKind.Info);
             output.WriteMessage("    C   : generate C", SeverityKind.Info);
             output.WriteMessage("    P#  : generate P#", SeverityKind.Info);
         }

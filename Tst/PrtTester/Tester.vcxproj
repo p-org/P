@@ -20,10 +20,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{65DF9D53-1461-43AE-9A50-43E7C4D55E05}</ProjectGuid>
+    <ProjectGuid>{E0A9EC98-55A7-4434-8EB3-2801B015F00A}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Tester</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>$(WindowsSDKVer)</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

@@ -35,9 +35,9 @@ namespace UnitTests.Runners
             var outputStream = new TestExecutionStream(scratchDirectory);
             bool success = compiler.Compile(outputStream, new CommandLineOptions
             {
-                compilerOutput = CompilerOutput.PSharp,
-                inputFileNames = sources.Select(file => file.FullName).ToList(),
-                projectName = "Main"
+                OutputLanguage = CompilerOutput.PSharp,
+                InputFileNames = sources.Select(file => file.FullName).ToList(),
+                ProjectName = "Main"
             });
 
             if (!success)

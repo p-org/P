@@ -11,6 +11,10 @@ namespace Microsoft.Pc.TypeChecker
     {
         public static void CheckAllPathsReturn(ITranslationErrorHandler handler, Function function)
         {
+            if (function.IsForeign)
+            {
+                return;
+            }
             if (!SurelyReturns(function.Body) &&
                 !function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {

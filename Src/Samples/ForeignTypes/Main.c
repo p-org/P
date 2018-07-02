@@ -60,9 +60,15 @@ int main(int argc, char *argv[])
 	processGuid.data2 = 0;
 	processGuid.data3 = 0;
 	processGuid.data4 = 0;
-	process = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log);
+	process = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, ErrorHandler, Log);
 	payload = PrtMkNullValue();
-	PrtMkMachine(process, P_MACHINE_TestMachine, 1, PRT_FUN_PARAM_CLONE, payload);
+	PRT_UINT32 machineId;
+	PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("TestMachine", &machineId);
+	if (foundMainMachine == PRT_FALSE) {
+		printf("%s\n", "FAILED TO FIND TestMachine");
+		exit(1);
+	}
+	PrtMkMachine(process, machineId, 1, &payload);
 	PrtFreeValue(payload);
 	PrtStopProcess(process);
 }

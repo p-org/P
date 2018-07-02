@@ -15,7 +15,7 @@ namespace Microsoft.Pc
     {
         public bool Compile(ICompilerOutput output, CommandLineOptions options)
         {
-            if (options.inputFileNames.Count == 0)
+            if (options.InputFileNames.Count == 0)
             {
                 output.WriteMessage("No input files specified.", SeverityKind.Error);
                 return false;
@@ -24,7 +24,7 @@ namespace Microsoft.Pc
             try
             {
                 // Compilation job details
-                var inputFiles = options.inputFileNames.Select(name => new FileInfo(name)).ToArray();
+                var inputFiles = options.InputFileNames.Select(name => new FileInfo(name)).ToArray();
                 var trees = new PParser.ProgramContext[inputFiles.Length];
                 var originalFiles = new ParseTreeProperty<FileInfo>();
                 ILocationResolver locationResolver = new DefaultLocationResolver(originalFiles);
@@ -48,8 +48,8 @@ namespace Microsoft.Pc
                 }
 
                 // Run the selected backend on the project and write the files.
-                ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.compilerOutput);
-                string projectName = options.projectName ?? Path.GetFileNameWithoutExtension(inputFiles[0].Name);
+                ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.OutputLanguage);
+                string projectName = options.ProjectName ?? Path.GetFileNameWithoutExtension(inputFiles[0].Name);
                 foreach (CompiledFile compiledFile in backend.GenerateCode(handler, output, projectName, scope))
                 {
                     output.WriteMessage($"Writing {compiledFile.FileName}...", SeverityKind.Info);

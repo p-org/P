@@ -13,7 +13,8 @@ namespace Microsoft.Pc.Backend.Prt
 
     public class PrtNameManager : NameManagerBase
     {
-        private readonly ConditionalWeakTable<IPDecl, string> funcNames = new ConditionalWeakTable<IPDecl, string>();
+        private readonly ConditionalWeakTable<Function, string> funcNames = new ConditionalWeakTable<Function, string>();
+        private readonly ConditionalWeakTable<ForeignType, string> foreignTypeDeclNames = new ConditionalWeakTable<ForeignType, string>();
         private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
 
         public PrtNameManager(string namePrefix)
@@ -23,15 +24,18 @@ namespace Microsoft.Pc.Backend.Prt
 
         public IEnumerable<PLanguageType> UsedTypes => typeNames.Keys.ToImmutableHashSet();
         
-        public string GetNameForFunctionImpl(Function function, string prefix = "")
+        public string GetNameForFunctionImpl(Function function)
         {
             if (funcNames.TryGetValue(function, out string name))
             {
                 return name;
             }
 
-            name = function.IsAnon ? "Anon" : function.Name;
-            name = AdjustName(NamePrefix + prefix + name + "_IMPL");
+            string namePrefix = function.IsForeign ? "P_FUN_" : NamePrefix;
+            string methodName = function.IsAnon ? "Anon" : function.Name;
+            string nameSuffix = function.IsForeign ? "_FOREIGN" : "_IMPL";
+            name = AdjustName(namePrefix + methodName + nameSuffix);
+
             funcNames.Add(function, name);
             return name;
         }
@@ -132,8 +136,8 @@ namespace Microsoft.Pc.Backend.Prt
                     return "B";
                 case EnumType _:
                     return "E";
-                case ForeignType _:
-                    return "F";
+                case ForeignType foreign:
+                    return foreign.CanonicalRepresentation;
                 case MapType mapType:
                     return $"MK{SimplifiedRep(mapType.KeyType)}V{SimplifiedRep(mapType.ValueType)}";
                 case PermissionType _:
@@ -162,6 +166,18 @@ namespace Microsoft.Pc.Backend.Prt
                     throw new ArgumentException("typedefs should be impossible after canonicalization", nameof(type));
             }
             throw new ArgumentException("unrecognized type kind", nameof(type));
+        }
+
+        public string GetNameForForeignTypeDecl(ForeignType foreignType)
+        {
+            if (foreignTypeDeclNames.TryGetValue(foreignType, out var name))
+            {
+                return name;
+            }
+
+            name = AdjustName(NamePrefix + foreignType.CanonicalRepresentation);
+            foreignTypeDeclNames.Add(foreignType, name);
+            return name;
         }
     }
 }

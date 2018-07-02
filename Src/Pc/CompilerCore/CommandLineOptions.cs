@@ -8,10 +8,10 @@ namespace Microsoft.Pc
 {
     public class CommandLineOptions
     {
-        public string outputDir { get; set; }
-        public CompilerOutput compilerOutput { get; set; } = CompilerOutput.C;
-        public List<string> inputFileNames { get; set; } = new List<string>();
-        public string projectName { get; set; }
+        public DirectoryInfo OutputDirectory { get; set; }
+        public CompilerOutput OutputLanguage { get; set; } = CompilerOutput.C;
+        public List<string> InputFileNames { get; set; } = new List<string>();
+        public string ProjectName { get; set; }
 
         public static bool ParseArguments(IEnumerable<string> args, out CommandLineOptions options)
         {
@@ -60,10 +60,10 @@ namespace Microsoft.Pc
                                         "Missing generation argument, expecting generate:[C,P#]");
                                     return false;
                                 case "C":
-                                    options.compilerOutput = CompilerOutput.C;
+                                    options.OutputLanguage = CompilerOutput.C;
                                     break;
                                 case "P#":
-                                    options.compilerOutput = CompilerOutput.PSharp;
+                                    options.OutputLanguage = CompilerOutput.PSharp;
                                     break;
                                 default:
                                     Console.WriteLine(
@@ -82,7 +82,7 @@ namespace Microsoft.Pc
                                 return false;
                             }
 
-                            options.outputDir = Path.GetFullPath(colonArg);
+                            options.OutputDirectory = Directory.CreateDirectory(colonArg);
                             break;
 
                         default: return false;
@@ -101,7 +101,7 @@ namespace Microsoft.Pc
             {
                 if (IsLegalPFile(inputFileName, out string fullPathName))
                 {
-                    options.inputFileNames.Add(fullPathName);
+                    options.InputFileNames.Add(fullPathName);
                 }
                 else
                 {
@@ -114,23 +114,23 @@ namespace Microsoft.Pc
                 return false;
             }
 
-            if (options.inputFileNames.Count == 0)
+            if (options.InputFileNames.Count == 0)
             {
                 Console.WriteLine("At least one .p file must be provided");
                 return false;
             }
 
-            string unitFileName = targetName ?? Path.GetFileNameWithoutExtension(options.inputFileNames[0]);
+            string unitFileName = targetName ?? Path.GetFileNameWithoutExtension(options.InputFileNames[0]);
             if (!IsLegalUnitName(unitFileName))
             {
                 Console.WriteLine("{0} is not a legal name for a compilation unit", unitFileName);
                 return false;
             }
-            options.projectName = unitFileName;
+            options.ProjectName = unitFileName;
 
-            if (options.outputDir == null)
+            if (options.OutputDirectory == null)
             {
-                options.outputDir = Directory.GetCurrentDirectory();
+                options.OutputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
             }
 
             return true;

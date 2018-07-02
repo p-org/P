@@ -151,9 +151,6 @@ typedef struct PRT_FOREIGNTYPEDECL
 	PRT_FOREIGN_GETHASHCODE hashFun;       /**< Function that hashes a value */
 	PRT_FOREIGN_ISEQUAL     isEqualFun;    /**< Function that tests equality of values */
 	PRT_FOREIGN_TOSTRING    toStringFun;   /**< Function that converts a value to a string */
-
-	PRT_UINT32      nAnnotations;   /**< Number of annotations                              */
-	void            **annotations;  /**< An array of annotations                            */
 } PRT_FOREIGNTYPEDECL;
 
 /** Makes an instance of a primitive type.

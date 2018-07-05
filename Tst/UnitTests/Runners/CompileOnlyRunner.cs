@@ -44,8 +44,8 @@ namespace UnitTests.Runners
             var outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
             bool success = compiler.Compile(outputStream, new CommandLineOptions
             {
-                compilerOutput = compilerOutput,
-                inputFileNames = inputFiles.Select(file => file.FullName).ToList()
+                OutputLanguage = compilerOutput,
+                InputFileNames = inputFiles.Select(file => file.FullName).ToList()
             });
             stdout = stdoutWriter.ToString().Trim();
             stderr = stderrWriter.ToString().Trim();

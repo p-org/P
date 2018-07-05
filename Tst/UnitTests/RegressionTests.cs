@@ -41,9 +41,7 @@ namespace UnitTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
-
         
-
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestAllRegressions(CompilerTestCase testCase)
         {

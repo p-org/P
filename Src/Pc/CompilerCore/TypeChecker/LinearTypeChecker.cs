@@ -24,7 +24,7 @@ namespace Microsoft.Pc.TypeChecker
         public static void AnalyzeMethods(ITranslationErrorHandler handler, IEnumerable<Function> allFunctions)
         {
             var checker = new LinearTypeChecker(handler);
-            foreach (Function function in allFunctions)
+            foreach (var function in allFunctions)
             {
                 checker.CheckFunction(function);
             }
@@ -34,6 +34,13 @@ namespace Microsoft.Pc.TypeChecker
 
         private void CheckFunction(Function method)
         {
+            if (method.IsForeign)
+            {
+                // If you move or swap into a foreign function, it becomes
+                // your responsibility to make sure everything works.
+                return;
+            }
+
             var unavailable = ProcessStatement(new HashSet<Variable>(), method.Body);
             allUnavailableParams.UnionWith(unavailable.Where(var => var.Role.Equals(VariableRole.Param)));
         }

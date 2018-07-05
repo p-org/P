@@ -4,8 +4,15 @@ using Microsoft.Pc.Backend;
 
 namespace Microsoft.Pc
 {
-    public class StandardOutput : ICompilerOutput
+    public class DefaultCompilerOutput : ICompilerOutput
     {
+        private readonly DirectoryInfo outputDirectory;
+
+        public DefaultCompilerOutput(DirectoryInfo outputDirectory)
+        {
+            this.outputDirectory = outputDirectory;
+        }
+
         public virtual void WriteMessage(string msg, SeverityKind severity)
         {
             ConsoleColor defaultColor = Console.ForegroundColor;
@@ -31,7 +38,8 @@ namespace Microsoft.Pc
 
         public virtual void WriteFile(CompiledFile file)
         {
-            File.WriteAllText(file.FileName, file.Contents);
+            string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
+            File.WriteAllText(outputPath, file.Contents);
         }
     }
 }

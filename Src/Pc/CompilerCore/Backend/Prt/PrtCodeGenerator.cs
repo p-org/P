@@ -74,7 +74,10 @@ namespace Microsoft.Pc.Backend.Prt
             {
                 string functionName = context.Names.GetNameForFunctionImpl(function);
                 context.WriteLine(cSource.Stream, $"PRT_VALUE* {functionName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs);");
-                context.WriteLine(cSource.Stream, $"extern PRT_FUNDECL {context.Names.GetNameForDecl(function)};");
+                if (!function.IsForeign)
+                {
+                    context.WriteLine(cSource.Stream, $"extern PRT_FUNDECL {context.Names.GetNameForDecl(function)};");
+                }
                 context.WriteLine(cSource.Stream);
             }
 
@@ -111,26 +114,10 @@ namespace Microsoft.Pc.Backend.Prt
                     // Declares a type. Instantitated by usage.
                     return;
                 case Function function:
-                    string functionImplName = context.Names.GetNameForFunctionImpl(function);
-                    bool isAnon = string.IsNullOrEmpty(function.Name);
-                    string functionName = isAnon ? "NULL" : $"\"{function.Name}\"";
-                    var signature = function.Signature.ParameterTypes.ToList();
-                    Debug.Assert((isAnon && signature.Count <= 1) || !isAnon);
-                    string payloadType = isAnon && signature.Count == 1 ? $"&{context.Names.GetNameForType(signature[0])}" : "NULL";
-
-                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
-                    context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
-                    context.WriteLine(output, "{");
-                    WriteFunctionBody(context, function, output);
-                    context.WriteLine(output, "}");
-                    context.WriteLine(output);
-                    context.WriteLine(output, $"PRT_FUNDECL {declName} =");
-                    context.WriteLine(output, "{");
-                    context.WriteLine(output, $"{functionName},"); // name of function in original program, NULL if anon
-                    context.WriteLine(output, $"&{functionImplName},"); // pointer to implementation
-                    context.WriteLine(output, $"{payloadType}"); // payload type for anonymous functions
-                    context.WriteLine(output, "};");
-                    context.WriteLine(output);
+                    if (!function.IsForeign)
+                    {
+                        WriteNormalFunction(context, output, function);
+                    }
                     break;
                 case Implementation _:
                     // does not produce a struct definition - aside from ProgramDecl
@@ -371,6 +358,33 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output);
         }
 
+        private static void WriteNormalFunction(CompilationContext context, TextWriter output, Function function)
+        {
+            string declName = context.Names.GetNameForDecl(function);
+            var declLocation = context.Handler.LocationResolver.GetLocation(function);
+
+            string functionImplName = context.Names.GetNameForFunctionImpl(function);
+            bool isAnon = string.IsNullOrEmpty(function.Name);
+            string functionName = isAnon ? "NULL" : $"\"{function.Name}\"";
+            var signature = function.Signature.ParameterTypes.ToList();
+            Debug.Assert((isAnon && signature.Count <= 1) || !isAnon);
+            string payloadType = isAnon && signature.Count == 1 ? $"&{context.Names.GetNameForType(signature[0])}" : "NULL";
+
+            context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
+            context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
+            context.WriteLine(output, "{");
+            WriteFunctionBody(context, function, output);
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+            context.WriteLine(output, $"PRT_FUNDECL {declName} =");
+            context.WriteLine(output, "{");
+            context.WriteLine(output, $"{functionName},"); // name of function in original program, NULL if anon
+            context.WriteLine(output, $"&{functionImplName},"); // pointer to implementation
+            context.WriteLine(output, $"{payloadType}"); // payload type for anonymous functions
+            context.WriteLine(output, "};");
+            context.WriteLine(output);
+        }
+
         private static string WriteTypeDefinition(CompilationContext context, PLanguageType type, TextWriter output)
         {
             type = type.Canonicalize();
@@ -391,7 +405,27 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_INT, {{ NULL }} }};");
                     break;
                 case ForeignType foreignType:
-                    context.WriteLine(output, $"// TODO: implement types like {foreignType.CanonicalRepresentation}");
+                    string foreignTypeName = foreignType.CanonicalRepresentation;
+
+                    context.WriteLine(output, $"extern PRT_UINT64 PRT_FOREIGN_MKDEF_{foreignTypeName}_IMPL(void);");
+                    context.WriteLine(output, $"extern PRT_UINT64 PRT_FOREIGN_CLONE_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output, $"extern void PRT_FOREIGN_FREE_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output, $"extern PRT_UINT32 PRT_FOREIGN_GETHASHCODE_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output, $"extern PRT_BOOLEAN PRT_FOREIGN_ISEQUAL_{foreignTypeName}_IMPL(PRT_UINT64, PRT_UINT64);");
+                    context.WriteLine(output, $"extern PRT_STRING PRT_FOREIGN_TOSTRING_{foreignTypeName}_IMPL(PRT_UINT64);");
+
+                    string foreignTypeDeclName = context.Names.GetNameForForeignTypeDecl(foreignType);
+                    context.WriteLine(output, $"static PRT_FOREIGNTYPEDECL {foreignTypeDeclName} = {{");
+                    context.WriteLine(output, "0U,");
+                    context.WriteLine(output, $"\"{foreignTypeName}\",");
+                    context.WriteLine(output, $"PRT_FOREIGN_MKDEF_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"PRT_FOREIGN_CLONE_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"PRT_FOREIGN_FREE_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"PRT_FOREIGN_GETHASHCODE_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"PRT_FOREIGN_ISEQUAL_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"PRT_FOREIGN_TOSTRING_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, "};");
+                    context.WriteLine(output, $"PRT_TYPE {typeGenName} = {{ PRT_KIND_FOREIGN, {{ .foreignType = &{foreignTypeDeclName} }} }};");
                     break;
                 case MapType mapType:
                     string mapKeyTypeName = WriteTypeDefinition(context, mapType.KeyType, output);
@@ -499,11 +533,21 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output, $"PRT_INTERFACEDECL* {interfaceArrayName}[] = {{ {interfaceArrayBody} }};");
 
             // generate functions array
+            var allFunctions = globalScope.Functions.Where(f => !f.IsForeign).ToList();
             string funcArrayName = context.Names.GetTemporaryName("ALL_FUNCTIONS");
             string funcArrayBody =
-                string.Join(", ", globalScope.Functions.Select(ev => "&" + context.Names.GetNameForDecl(ev)));
+                string.Join(", ", allFunctions.Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             funcArrayBody = string.IsNullOrEmpty(funcArrayBody) ? "NULL" : funcArrayBody;
             context.WriteLine(output, $"PRT_FUNDECL* {funcArrayName}[] = {{ {funcArrayBody} }};");
+
+            // generate foreign types array
+            var foreignTypes = context.WrittenTypes.Where(t => t is ForeignType).Cast<ForeignType>().ToList();
+            string foreignTypesArrayName = context.Names.GetTemporaryName("ALL_FOREIGN_TYPES");
+            string foreignTypesArrayBody = string.Join(", ",
+                foreignTypes
+                    .Select(t => $"&{context.Names.GetNameForForeignTypeDecl(t)}"));
+            foreignTypesArrayBody = string.IsNullOrEmpty(foreignTypesArrayBody) ? "NULL" : foreignTypesArrayBody;
+            context.WriteLine(output, $"PRT_FOREIGNTYPEDECL* {foreignTypesArrayName}[] = {{ {foreignTypesArrayBody} }};");
 
             foreach (Implementation impl in globalScope.Implementations)
             {
@@ -539,13 +583,13 @@ namespace Microsoft.Pc.Backend.Prt
                 context.WriteLine(output, $"{globalScope.Events.Count()}U,");
                 context.WriteLine(output, $"{globalScope.Machines.Count()}U,");
                 context.WriteLine(output, $"{globalScope.Interfaces.Count()}U,");
-                context.WriteLine(output, $"{globalScope.Functions.Count()}U,");
-                context.WriteLine(output, "0U,"); // TODO: foreign types
+                context.WriteLine(output, $"{allFunctions.Count}U,");
+                context.WriteLine(output, $"{foreignTypes.Count}U,");
                 context.WriteLine(output, $"{eventArrayName},");
                 context.WriteLine(output, $"{machineArrayName},");
                 context.WriteLine(output, $"{interfaceArrayName},");
                 context.WriteLine(output, $"{funcArrayName},");
-                context.WriteLine(output, "NULL,"); // TODO: foreign types
+                context.WriteLine(output, $"{foreignTypesArrayName},");
                 context.WriteLine(output, $"{linkMapName},");
                 context.WriteLine(output, $"{machineDefMapName}");
                 context.WriteLine(output, "};");
@@ -1381,10 +1425,9 @@ namespace Microsoft.Pc.Backend.Prt
             string declName = context.Names.GetNameForDecl(decl);
             switch (decl)
             {
-                case EnumElem enumElem:
-                    // TODO: do we write enum elements here?
+                case EnumElem _:
                     break;
-                case Function _:
+                case Function function when !function.IsForeign:
                     context.WriteLine(output, $"extern PRT_FUNDECL {declName};");
                     break;
                 case Implementation _:

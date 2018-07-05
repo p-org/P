@@ -29,6 +29,11 @@ namespace Microsoft.Pc.TypeChecker
                 case null:
                     throw new ArgumentNullException(nameof(tree));
                 case Function function:
+                    if (function.IsForeign)
+                    {
+                        // TODO: make foreign functions declare the list of machines they create.
+                        return Enumerable.Empty<Interface>();
+                    }
                     return InferCreates(function.Body);
                 case AnnounceStmt announce:
                     return InferCreatesForExpr(announce.PEvent).Union(InferCreatesForExpr(announce.Payload));

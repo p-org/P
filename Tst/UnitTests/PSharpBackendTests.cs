@@ -11,7 +11,7 @@ namespace UnitTests
 {
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    internal class PSharpBackendTests
+    public class PSharpBackendTests
     {
         [Test]
         public void TestCompilePSharpTemp()

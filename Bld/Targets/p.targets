@@ -6,9 +6,10 @@
     <!-- So this new property unifies that difference and moves everything to 'x86' -->
     <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
     <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
+    <PDllPath>"$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\AnyCPU\Binaries\Pc.dll"</PDllPath>
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
-    <PCompileOptions>/generate:C /t:$(ProjectName) /outputDir:$(PGeneratedDir)</PCompileOptions>
+    <PCompileOptions>-generate:C "-t:$(ProjectName)" "-outputDir:$(PGeneratedDir)"</PCompileOptions>
   </PropertyGroup>
 
   <!-- Invoke pc.exe - pc.exe will do the right thing based on which p files (or include files) have actually changed. -->
@@ -26,7 +27,7 @@
       </ItemGroup>
       
       <Message Importance="high" Text="########## compiling p files @(PCompile)  ##################" />
-      <Exec Command="$(DropFolder)\Binaries\pc.exe $(PCompileOptions) @(PCompile->'%(FullPath)',' ')"/>
+      <Exec Command="dotnet $(PDllPath) $(PCompileOptions) @(PCompile->'&quot;%(FullPath)&quot;',' ')"/>
       <Message Importance="high" Text="########## compiling p files complete ##################" />
 
     </Target>

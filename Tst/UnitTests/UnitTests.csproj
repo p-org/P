@@ -15,4 +15,4 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Src\Pc\CompilerCore\CompilerCore.csproj" />
   </ItemGroup>
-</Project> 
+</Project>

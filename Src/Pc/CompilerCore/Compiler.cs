@@ -1,8 +1,8 @@
 ﻿using System;
 using System.IO;
+using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.Backend;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -13,16 +13,13 @@ namespace Microsoft.Pc
     {
         public void Compile(ICompilationJob job)
         {
-            // Compilation job details
-            var trees = new PParser.ProgramContext[job.InputFiles.Count];
-
             // Run parser on every input file
-            for (var i = 0; i < job.InputFiles.Count; i++)
+            var trees = job.InputFiles.Select(file =>
             {
-                FileInfo inputFile = job.InputFiles[i];
-                trees[i] = Parse(job.Handler, inputFile);
-                job.LocationResolver.RegisterRoot(trees[i], inputFile);
-            }
+                PParser.ProgramContext tree = Parse(job.Handler, file);
+                job.LocationResolver.RegisterRoot(tree, file);
+                return tree;
+            }).ToArray();
 
             // Run typechecker and produce AST
             Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
@@ -51,6 +48,10 @@ namespace Microsoft.Pc
             var parser = new PParser(tokens);
             parser.RemoveErrorListeners();
 
+            // As currently implemented, P can be parsed by SLL. However, if extensions to the
+            // language are later added, this will remain robust. There is a performance penalty
+            // when a file doesn't parse (it is parsed twice), but most of the time we expect
+            // programs to compile and for code generation to take about as long as parsing.
             try
             {
                 // Stage 1: use fast SLL parsing strategy
@@ -66,6 +67,29 @@ namespace Microsoft.Pc
                 parser.Interpreter.PredictionMode = PredictionMode.Ll;
                 parser.ErrorHandler = new DefaultErrorStrategy();
                 return parser.program();
+            }
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// This error listener converts Antlr parse errors into translation exceptions via the
+        /// active error handler.
+        /// </summary>
+        private class PParserErrorListener : IAntlrErrorListener<IToken>
+        {
+            private readonly ITranslationErrorHandler handler;
+            private readonly FileInfo inputFile;
+
+            public PParserErrorListener(FileInfo inputFile, ITranslationErrorHandler handler)
+            {
+                this.inputFile = inputFile;
+                this.handler = handler;
+            }
+
+            public void SyntaxError(IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine,
+                string msg, RecognitionException e)
+            {
+                throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
             }
         }
     }

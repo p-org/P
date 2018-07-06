@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
-using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
-using Antlr4.Runtime.Tree;
 using Microsoft.Pc.Antlr;
 using Microsoft.Pc.Backend;
 using Microsoft.Pc.TypeChecker;
@@ -13,62 +11,35 @@ namespace Microsoft.Pc
 {
     public class Compiler : ICompiler
     {
-        public bool Compile(ICompilerOutput output, CommandLineOptions options)
+        public void Compile(ICompilationJob job)
         {
-            if (options.InputFileNames.Count == 0)
+            // Compilation job details
+            var trees = new PParser.ProgramContext[job.InputFiles.Count];
+
+            // Run parser on every input file
+            for (var i = 0; i < job.InputFiles.Count; i++)
             {
-                output.WriteMessage("No input files specified.", SeverityKind.Error);
-                return false;
+                FileInfo inputFile = job.InputFiles[i];
+                trees[i] = Parse(job.Handler, inputFile);
+                job.LocationResolver.RegisterRoot(trees[i], inputFile);
             }
 
-            try
+            // Run typechecker and produce AST
+            Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+
+            // Convert functions to lowered SSA form with explicit cloning
+            foreach (Function fun in scope.GetAllMethods())
             {
-                // Compilation job details
-                var inputFiles = options.InputFileNames.Select(name => new FileInfo(name)).ToArray();
-                var trees = new PParser.ProgramContext[inputFiles.Length];
-                var originalFiles = new ParseTreeProperty<FileInfo>();
-                ILocationResolver locationResolver = new DefaultLocationResolver(originalFiles);
-                ITranslationErrorHandler handler = new DefaultTranslationErrorHandler(locationResolver, output);
-
-                // Run parser on every input file
-                for (var i = 0; i < inputFiles.Length; i++)
-                {
-                    FileInfo inputFile = inputFiles[i];
-                    trees[i] = Parse(handler, inputFile);
-                    originalFiles.Put(trees[i], inputFile);
-                }
-
-                // Run typechecker and produce AST
-                Scope scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
-
-                // Convert functions to lowered SSA form with explicit cloning
-                foreach (Function fun in scope.GetAllMethods())
-                {
-                    IRTransformer.SimplifyMethod(fun);
-                }
-
-                // Run the selected backend on the project and write the files.
-                ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.OutputLanguage);
-                string projectName = options.ProjectName ?? Path.GetFileNameWithoutExtension(inputFiles[0].Name);
-                foreach (CompiledFile compiledFile in backend.GenerateCode(handler, output, projectName, scope))
-                {
-                    output.WriteMessage($"Writing {compiledFile.FileName}...", SeverityKind.Info);
-                    output.WriteFile(compiledFile);
-                }
-
-                return true;
+                IRTransformer.SimplifyMethod(fun);
             }
-            catch (TranslationException e)
+
+            // Run the selected backend on the project and write the files.
+            var compiledFiles = job.Backend.GenerateCode(job, scope);
+            foreach (CompiledFile file in compiledFiles)
             {
-                output.WriteMessage(e.Message, SeverityKind.Error);
-                return false;
+                job.Output.WriteMessage($"Writing {file.FileName}...", SeverityKind.Info);
+                job.Output.WriteFile(file);
             }
-        }
-
-        public bool Link(ICompilerOutput output, CommandLineOptions options)
-        {
-            output.WriteMessage("Linking not yet implemented in Antlr toolchain.", SeverityKind.Warning);
-            return true;
         }
 
         private static PParser.ProgramContext Parse(ITranslationErrorHandler handler, FileInfo inputFile)

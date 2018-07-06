@@ -15,11 +15,9 @@ namespace Microsoft.Pc.Backend.PSharp
 {
     public class PSharpCodeGenerator : ICodeGenerator
     {
-        public IReadOnlyList<CompiledFile> GenerateCode(ITranslationErrorHandler handler, ICompilerOutput log, string projectName,
-                                                        Scope globalScope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
         {
-            log.WriteMessage("P# code generation in progress.", SeverityKind.Warning);
-            var context = new CompilationContext(handler, log, projectName);
+            var context = new CompilationContext(job);
             CompiledFile csharpSource = GenerateSource(context, globalScope);
             return new List<CompiledFile> {csharpSource};
         }

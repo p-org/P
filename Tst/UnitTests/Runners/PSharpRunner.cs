@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Pc;
+using Microsoft.Pc.Backend;
 using UnitTests.Core;
 
 namespace UnitTests.Runners
@@ -33,18 +34,8 @@ namespace UnitTests.Runners
         {
             var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);
-            bool success = compiler.Compile(outputStream, new CommandLineOptions
-            {
-                OutputLanguage = CompilerOutput.PSharp,
-                InputFileNames = sources.Select(file => file.FullName).ToList(),
-                ProjectName = "Main"
-            });
-
-            if (!success)
-            {
-                throw new CompilerTestException(TestCaseError.TranslationFailed);
-            }
-
+            var compilationJob = new CompilationJob(outputStream, CompilerOutput.PSharp, sources, "Main");
+            compiler.Compile(compilationJob);
             return outputStream.OutputFiles;
         }
 

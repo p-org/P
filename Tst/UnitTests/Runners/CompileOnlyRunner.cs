@@ -1,24 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using Microsoft.Pc;
 using Microsoft.Pc.Backend;
+using Microsoft.Pc.TypeChecker;
 using UnitTests.Core;
 
 namespace UnitTests.Runners
 {
     /// <inheritdoc />
     /// <summary>
-    /// Only run the P compiler in memory. Don't touch the disk.
+    ///     Only run the P compiler in memory. Don't touch the disk.
     /// </summary>
     public class CompileOnlyRunner : ICompilerTestRunner
     {
-        private readonly IReadOnlyList<FileInfo> inputFiles;
         private readonly CompilerOutput compilerOutput;
+        private readonly IReadOnlyList<FileInfo> inputFiles;
 
         /// <summary>
-        /// Create a new compile runner
+        ///     Create a new compile runner
         /// </summary>
         /// <param name="compilerOutput"></param>
         /// <param name="inputFiles">The P source files to compile</param>
@@ -30,7 +30,7 @@ namespace UnitTests.Runners
 
         /// <inheritdoc />
         /// <summary>
-        /// Run the compiler test without attempting to build the result
+        ///     Run the compiler test without attempting to build the result
         /// </summary>
         /// <param name="scratchDirectory">Unused. Caller is responsible for cleanup.</param>
         /// <param name="stdout">The output produced by the P compiler</param>
@@ -42,16 +42,19 @@ namespace UnitTests.Runners
             var stdoutWriter = new StringWriter();
             var stderrWriter = new StringWriter();
             var outputStream = new TestCaseOutputStream(stdoutWriter, stderrWriter);
-            bool success = compiler.Compile(outputStream, new CommandLineOptions
+
+            var job = new CompilationJob(outputStream, compilerOutput, inputFiles);
+
+            try
             {
-                OutputLanguage = compilerOutput,
-                InputFileNames = inputFiles.Select(file => file.FullName).ToList()
-            });
-            stdout = stdoutWriter.ToString().Trim();
-            stderr = stderrWriter.ToString().Trim();
-            if (!success)
+                compiler.Compile(job);
+                stdout = stdoutWriter.ToString().Trim();
+                stderr = stderrWriter.ToString().Trim();
+            }
+            catch (TranslationException exception)
             {
-                throw new CompilerTestException(TestCaseError.TranslationFailed, stderr);
+                job.Output.WriteMessage(exception.Message, SeverityKind.Error);
+                throw new CompilerTestException(TestCaseError.TranslationFailed, exception.Message);
             }
 
             return 0;
@@ -86,12 +89,12 @@ namespace UnitTests.Runners
 
             public void WriteFile(CompiledFile file)
             {
-                int nameLength = file.FileName.Length;
-                int headerWidth = Math.Max(40, nameLength + 4);
+                var nameLength = file.FileName.Length;
+                var headerWidth = Math.Max(40, nameLength + 4);
                 var hdash = new string('=', headerWidth);
                 stdout.WriteLine(hdash);
-                int prePadding = (headerWidth - nameLength) / 2 - 1;
-                int postPadding = headerWidth - prePadding - nameLength - 2;
+                var prePadding = (headerWidth - nameLength) / 2 - 1;
+                var postPadding = headerWidth - prePadding - nameLength - 2;
                 stdout.WriteLine($"={new string(' ', prePadding)}{file.FileName}{new string(' ', postPadding)}=");
                 stdout.WriteLine(hdash);
                 stdout.Write(file.Contents);

@@ -17,9 +17,9 @@ namespace Microsoft.Pc.Backend.Prt
         private readonly ValueInternmentManager<double> registeredFloats;
         private readonly ValueInternmentManager<int> registeredInts;
 
-        public CompilationContext(ITranslationErrorHandler handler, string projectName)
-            : base(handler, projectName)
+        public CompilationContext(ICompilationJob job) : base(job)
         {
+            string projectName = job.ProjectName;
             Names = new PrtNameManager($"P_{projectName.ToUpperInvariant()}_");
             HeaderFileName = $"{projectName}.h";
             SourceFileName = $"{projectName}.c";

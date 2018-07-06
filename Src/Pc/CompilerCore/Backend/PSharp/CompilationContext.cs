@@ -1,26 +1,18 @@
-﻿using Microsoft.Pc.TypeChecker;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+﻿using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.Backend.PSharp
 {
-    class CompilationContext : CompilationContextBase
+    internal class CompilationContext : CompilationContextBase
     {
-        private ITranslationErrorHandler handler;
-        private ICompilerOutput log;
-        private string projectName;
-
         public PSharpNameManager Names { get; }
 
-        public CompilationContext(ITranslationErrorHandler handler, ICompilerOutput log, string projectName)
-            : base(handler, projectName)
+        public CompilationContext(ICompilationJob job)
+            : base(job)
         {
-            this.handler = handler;
-            this.log = log;
-            this.projectName = projectName;
-            this.Names = new PSharpNameManager("PGEN_");
+            Names = new PSharpNameManager("PGEN_");
 
-            FileName = $"{projectName}.cs";
-            GlobalFunctionClassName = $"GlobalFunctions_{projectName}";
+            FileName = $"{ProjectName}.cs";
+            GlobalFunctionClassName = $"GlobalFunctions_{ProjectName}";
         }
 
         public string GetStaticMethodQualifiedName(Function function)
@@ -30,6 +22,6 @@ namespace Microsoft.Pc.Backend.PSharp
 
         public string GlobalFunctionClassName { get; }
 
-        public string FileName { get; internal set; }
+        public string FileName { get; }
     }
 }

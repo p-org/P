@@ -12,10 +12,6 @@ namespace Microsoft.Pc.TypeChecker
 {
     public interface ITranslationErrorHandler
     {
-        // TODO: don't do this
-        ILocationResolver LocationResolver { get; }
-
-        void IssueWarning(ParserRuleContext location, string message);
         Exception IssueError(ParserRuleContext location, string message);
         Exception IssueError(ParserRuleContext ctx, IToken location, string message);
 
@@ -65,5 +61,8 @@ namespace Microsoft.Pc.TypeChecker
         Exception InvalidHideInterfaceExpr(ParserRuleContext location, string message);
         Exception InvalidRenameExpr(ParserRuleContext location, string message);
         Exception InvalidCompositionExpr(ParserRuleContext location, string message);
+
+        // General errors
+        Exception NoInputFiles(string message);
     }
 }

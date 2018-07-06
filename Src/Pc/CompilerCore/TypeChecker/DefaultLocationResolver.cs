@@ -7,12 +7,7 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class DefaultLocationResolver : ILocationResolver
     {
-        private readonly ParseTreeProperty<FileInfo> originalFiles;
-
-        public DefaultLocationResolver(ParseTreeProperty<FileInfo> originalFiles)
-        {
-            this.originalFiles = originalFiles;
-        }
+        private readonly ParseTreeProperty<FileInfo> originalFiles = new ParseTreeProperty<FileInfo>();
 
         public SourceLocation GetLocation(ParserRuleContext decl)
         {
@@ -57,6 +52,11 @@ namespace Microsoft.Pc.TypeChecker
         public SourceLocation GetLocation(IPAST node)
         {
             return GetLocation(node.SourceLocation);
+        }
+
+        public void RegisterRoot(ParserRuleContext root, FileInfo inputFile)
+        {
+            originalFiles.Put(root, inputFile);
         }
 
         private static IParseTree GetRoot(IParseTree node)

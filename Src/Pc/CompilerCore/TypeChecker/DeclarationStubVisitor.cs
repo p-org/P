@@ -187,7 +187,7 @@ namespace Microsoft.Pc.TypeChecker
             Function decl = CurrentScope.Put(symbolName, context);
             decl.Scope = CurrentScope.MakeChildScope();
             nodesToDeclarations.Put(context, decl);
-            return null;
+            return VisitChildrenWithNewScope(decl, context);
         }
 
         #endregion

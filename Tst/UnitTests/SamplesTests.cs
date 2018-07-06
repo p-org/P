@@ -26,5 +26,21 @@ namespace UnitTests
 
             TestAssertions.AssertTestCase(testCase);
         }
+
+        [Test]
+        public void TestTimer()
+        {
+            var tempDir =
+                Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, nameof(TestForeignTypes)));
+            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Src", "Samples", "Timer",
+                "TimerHeader.p"));
+
+            var testCase = new CompilerTestCase(
+                tempDir,
+                new CompileOnlyRunner(CompilerOutput.C, new[] { tempFilePath }),
+                new CompileSuccessValidator());
+
+            TestAssertions.AssertTestCase(testCase);
+        }
     }
 }

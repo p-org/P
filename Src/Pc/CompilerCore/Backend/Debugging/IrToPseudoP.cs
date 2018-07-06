@@ -270,8 +270,8 @@ namespace Microsoft.Pc.Backend.Debugging
                     break;
                 case State state:
                     string start = state.IsStart ? "start " : "";
-                    string temp = state.Temperature.Equals(StateTemperature.COLD) ? "cold " :
-                                  state.Temperature.Equals(StateTemperature.HOT) ? "hot " : "warm ";
+                    string temp = state.Temperature.Equals(StateTemperature.Cold) ? "cold " :
+                                  state.Temperature.Equals(StateTemperature.Hot) ? "hot " : "warm ";
                     WriteStmt(start, temp, "state ", state);
                     WriteStmt("{");
                     Indent();

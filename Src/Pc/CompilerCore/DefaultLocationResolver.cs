@@ -1,9 +1,10 @@
 using System.IO;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
+using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Microsoft.Pc
 {
     public class DefaultLocationResolver : ILocationResolver
     {

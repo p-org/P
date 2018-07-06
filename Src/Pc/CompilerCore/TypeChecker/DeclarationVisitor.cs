@@ -7,6 +7,7 @@ using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
+using Microsoft.Pc.Util;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -429,10 +430,10 @@ namespace Microsoft.Pc.TypeChecker
 
             // temperature=(HOT | COLD)?
             state.Temperature = context.temperature == null
-                                    ? StateTemperature.WARM
-                                    : context.temperature.Text.Equals("HOT")
-                                        ? StateTemperature.HOT
-                                        : StateTemperature.COLD;
+                                    ? StateTemperature.Warm
+                                    : context.HOT() != null
+                                        ? StateTemperature.Hot
+                                        : StateTemperature.Cold;
 
             // LBRACE stateBodyItem* RBRACE ;
             foreach (var stateBodyItemContext in context.stateBodyItem())

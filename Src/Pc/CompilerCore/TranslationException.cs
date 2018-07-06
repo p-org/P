@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Microsoft.Pc
 {
     public class TranslationException : Exception
     {

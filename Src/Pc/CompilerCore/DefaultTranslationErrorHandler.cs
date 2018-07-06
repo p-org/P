@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
+using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Expressions;
@@ -9,7 +10,7 @@ using Microsoft.Pc.TypeChecker.AST.Statements;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Microsoft.Pc
 {
     public class DefaultTranslationErrorHandler : ITranslationErrorHandler
     {

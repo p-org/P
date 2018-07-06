@@ -8,7 +8,7 @@ using Microsoft.Pc.TypeChecker.AST.Statements;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Microsoft.Pc
 {
     public interface ITranslationErrorHandler
     {

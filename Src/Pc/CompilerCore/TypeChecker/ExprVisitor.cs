@@ -129,7 +129,8 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 default:
                 {
-                    throw new ArgumentException($"Unknown keyword expression {context.fun.Text}", nameof(context));
+                    throw handler.InternalError(context,
+                        new ArgumentException($"Unknown keyword expression {context.fun.Text}", nameof(context)));
                 }
             }
         }
@@ -144,8 +145,7 @@ namespace Microsoft.Pc.TypeChecker
 
             if (method.Owner?.IsSpec == true)
             {
-                throw handler.IssueError(
-                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                throw handler.IllegalMonitorOperation(context, context.NEW().Symbol, method.Owner);
             }
 
             IPExpr[] arguments = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), this).ToArray();
@@ -218,7 +218,8 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     return new UnaryOpExpr(context, UnaryOpType.Not, subExpr);
                 default:
-                    throw new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context));
+                    throw handler.InternalError(context,
+                        new ArgumentException($"Unknown unary op `{context.op.Text}`", nameof(context)));
             }
         }
 
@@ -299,7 +300,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     return logicCtors[op](lhs, rhs);
                 default:
-                    throw new ArgumentException($"unknown binary operation {op}", nameof(context));
+                    throw handler.InternalError(context, new ArgumentException($"unknown binary operation {op}", nameof(context)));
             }
         }
 
@@ -354,7 +355,8 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 throw handler.IncomparableTypes(context, oldType, newType);
             }
-            throw new ArgumentException(nameof(context));
+
+            throw handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context), "invalid cast"));
         }
 
         public override IPExpr VisitPrimitive(PParser.PrimitiveContext context)
@@ -396,8 +398,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 if (method.Owner.IsSpec)
                 {
-                    throw handler.IssueError(
-                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                    throw handler.IllegalMonitorOperation(context, context.NONDET().Symbol, method.Owner);
                 }
                 method.IsNondeterministic = true;
                 return new NondetExpr(context);
@@ -406,8 +407,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 if (method.Owner.IsSpec)
                 {
-                    throw handler.IssueError(
-                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                    throw handler.IllegalMonitorOperation(context, context.FAIRNONDET().Symbol, method.Owner);
                 }
                 method.IsNondeterministic = true;
                 return new FairNondetExpr(context);
@@ -426,13 +426,12 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 if (method.Owner.IsSpec)
                 {
-                    throw handler.IssueError(
-                        context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                    throw handler.IllegalMonitorOperation(context, context.THIS().Symbol, method.Owner);
                 }
                 return new ThisRefExpr(context, method.Owner);
             }
 
-            throw new ArgumentException("unknown primitive", nameof(context));
+            throw handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context), "unknown primitive"));
         }
 
         public override IPExpr VisitUnnamedTupleBody(PParser.UnnamedTupleBodyContext context)

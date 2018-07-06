@@ -18,8 +18,7 @@ namespace Microsoft.Pc.TypeChecker
             if (!SurelyReturns(function.Body) &&
                 !function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                throw handler.IssueError(function.Body.SourceLocation,
-                                         $"function {function.Name} might not return a value.");
+                throw handler.NotAllPathsReturn(function);
             }
         }
 

@@ -50,8 +50,6 @@ namespace Microsoft.Pc.Backend.Debugging
         {
             switch (tree)
             {
-                case null:
-                    throw new ArgumentNullException(nameof(tree));
                 case Function function:
                     if (string.IsNullOrEmpty(function.Name))
                     {

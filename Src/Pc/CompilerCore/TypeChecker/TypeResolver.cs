@@ -61,8 +61,7 @@ namespace Microsoft.Pc.TypeChecker
                                 typeDef.Type = Visit(typedefDecl.type());
                                 break;
                             default:
-                                throw handler.InternalError(typeDef.SourceLocation,
-                                                            $"Grammar changed without updating {nameof(TypeVisitor)}");
+                                throw handler.InternalError(typeDef.SourceLocation, new ArgumentOutOfRangeException(nameof(context)));
                         }
                     }
 
@@ -126,8 +125,7 @@ namespace Microsoft.Pc.TypeChecker
                     case "data": return PrimitiveType.Data;
                     case "any": return PrimitiveType.Any;
                     default:
-                        throw new ArgumentException($"INTERNAL ERROR: Unrecognized type `{name}`!",
-                                                    nameof(context));
+                        throw handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context)));
                 }
             }
 

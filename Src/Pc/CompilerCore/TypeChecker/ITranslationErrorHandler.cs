@@ -12,11 +12,6 @@ namespace Microsoft.Pc.TypeChecker
 {
     public interface ITranslationErrorHandler
     {
-        Exception IssueError(ParserRuleContext location, string message);
-        Exception IssueError(ParserRuleContext ctx, IToken location, string message);
-
-        Exception DuplicateEnumValue(PParser.NumberedEnumElemContext location, PEnum pEnum);
-
         Exception DuplicateStartState(
             ParserRuleContext location,
             State duplicateStart,
@@ -40,7 +35,6 @@ namespace Microsoft.Pc.TypeChecker
         Exception BinOpTypeMismatch(PParser.BinExprContext location, PLanguageType lhsType, PLanguageType rhsType);
         Exception ParseFailure(FileInfo file, string message);
         Exception EmittedNullEvent(IPExpr evtExpr);
-        Exception InternalError(ParserRuleContext location, string message);
         Exception MissingStartState(Machine machine);
         Exception ChangedStateMidTransition(ParserRuleContext location, Function method);
         Exception NonDeterministicFunctionInSpecMachine(Function machineFunction);
@@ -49,9 +43,7 @@ namespace Microsoft.Pc.TypeChecker
         Exception UseWithoutOwnership(VariableAccessExpr variable);
         Exception MovedField(MoveAssignStmt moveAssignStmt);
         Exception SwapAssignUnavailable(SwapAssignStmt swapAssignStmt, Variable variable);
-        Exception SwappedField(SwapAssignStmt swapAssignStmt, Variable variable);
         Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol);
-        Exception CreatedSpecMachine(ParserRuleContext location, Machine machine);
 
         // module system related
         Exception InvalidBindExpr(ParserRuleContext location, string message);
@@ -63,6 +55,16 @@ namespace Microsoft.Pc.TypeChecker
         Exception InvalidCompositionExpr(ParserRuleContext location, string message);
 
         // General errors
-        Exception NoInputFiles(string message);
+        Exception InternalError(ParserRuleContext location, Exception inner);
+        Exception TwoStartStates(Machine machine, State state);
+        Exception ValueOutOfRange(ParserRuleContext location, string type);
+        Exception NullTransitionInMonitor(ParserRuleContext location, Machine monitor);
+        Exception IllegalMonitorOperation(ParserRuleContext location, IToken operation, Machine monitor);
+        Exception DeferredEventInMonitor(ParserRuleContext location, Machine monitor);
+        Exception NotAllPathsReturn(Function function);
+        Exception ExpectedMonitor(ParserRuleContext location, Machine machine);
+        Exception PopInNonVoidFunction(ParserRuleContext context);
+        Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation);
+        Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent);
     }
 }

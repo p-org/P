@@ -161,18 +161,18 @@ namespace Microsoft.Pc.TypeChecker
             var monList = new List<Machine>();
             foreach (PParser.IdenContext monName in context.idenList()._names)
             {
-                if (!globalScope.Get(monName.GetText(), out Machine mon))
+                if (!globalScope.Get(monName.GetText(), out Machine monitor))
                 {
                     throw handler.MissingDeclaration(monName, "spec machine", monName.GetText());
                 }
 
-                if (!mon.IsSpec)
+                if (!monitor.IsSpec)
                 {
-                    handler.IssueError(monName, $"expected a specification machine instead of {mon.Name}");
+                    throw handler.ExpectedMonitor(monName, monitor);
                 }
                 else
                 {
-                    monList.Add(mon);
+                    monList.Add(monitor);
                 }
             }
 

@@ -495,7 +495,8 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_TUPLE, {{ .tuple = &{tupStructName} }} }};");
                     break;
                 case TypeDefType _:
-                    throw new ArgumentException("typedefs shouldn't be possible after canonicalization", nameof(type));
+                    Debug.Fail("typedefs shouldn't be possible after canonicalization");
+                    throw new ArgumentOutOfRangeException(nameof(type), "typedefs shouldn't be possible after canonicalization");
             }
 
             context.WrittenTypes.Add(type);
@@ -1069,7 +1070,7 @@ namespace Microsoft.Pc.Backend.Prt
                     WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(expr));
+                    throw context.Handler.InternalError(expr.SourceLocation, new ArgumentOutOfRangeException(nameof(expr)));
             }
         }
 
@@ -1140,7 +1141,7 @@ namespace Microsoft.Pc.Backend.Prt
                             coerceCtor = "PrtMkFloatValue";
                             break;
                         default:
-                            throw new ArgumentException(nameof(coerceExpr.NewType));
+                            throw context.Handler.InternalError(coerceExpr.SourceLocation, new ArgumentOutOfRangeException(nameof(coerceExpr.NewType)));
                     }
 
                     string coerceUnpack;
@@ -1154,7 +1155,7 @@ namespace Microsoft.Pc.Backend.Prt
                             coerceUnpack = "PrtPrimGetFloat";
                             break;
                         default:
-                            throw new ArgumentException(nameof(coerceExpr.SubExpr));
+                            throw context.Handler.InternalError(coerceExpr.SourceLocation, new ArgumentOutOfRangeException(nameof(coerceExpr.SubExpr.Type)));
                     }
 
                     context.Write(output, $"{coerceCtor}({coerceUnpack}(");
@@ -1319,7 +1320,7 @@ namespace Microsoft.Pc.Backend.Prt
                 return context.Names.GetNameForDecl(variable);
             }
 
-            throw new ArgumentOutOfRangeException(nameof(variable));
+            throw context.Handler.InternalError(variable.SourceLocation, new ArgumentOutOfRangeException(nameof(variable)));
         }
 
         private static void WriteVariableAccess(CompilationContext context, TextWriter output, Function function, Variable variable)
@@ -1336,7 +1337,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case UnaryOpType.Not:
                     return "!";
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
+                    throw new ArgumentOutOfRangeException(nameof(operation));
             }
         }
 
@@ -1396,7 +1397,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case BinOpType.Or:
                     return "||";
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
+                    throw new ArgumentOutOfRangeException(nameof(binOpType));
             }
         }
 
@@ -1464,8 +1465,9 @@ namespace Microsoft.Pc.Backend.Prt
                 case TypeDef typeDef:
                     context.WriteLine(output, $"extern PRT_TYPE* {declName};");
                     break;
-                case Variable _:
-                    throw new ArgumentOutOfRangeException(nameof(decl), "can't have global P variables");
+                case Variable variable:
+                    throw context.Handler.InternalError(variable.SourceLocation,
+                        new ArgumentOutOfRangeException(nameof(decl), "can't have global P variables"));
                 case State state:
                     context.WriteLine(output, $"// DECL(State, {decl.Name}) => {declName}");
                     break;

@@ -81,7 +81,7 @@ namespace Microsoft.Pc.TypeChecker
             switch (statement)
             {
                 case null:
-                    throw new ArgumentOutOfRangeException(nameof(statement));
+                    throw handler.InternalError(statement.SourceLocation, new ArgumentOutOfRangeException(nameof(statement)));
                 case CompoundStmt compoundStmt:
                     unavailable = compoundStmt.Statements.Aggregate(unavailable, ProcessStatement);
                     break;
@@ -230,7 +230,7 @@ namespace Microsoft.Pc.TypeChecker
                     // nothing to check
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(statement));
+                    throw handler.InternalError(statement.SourceLocation, new ArgumentOutOfRangeException(nameof(statement)));
             }
 
             return unavailable;
@@ -266,7 +266,7 @@ namespace Microsoft.Pc.TypeChecker
             switch (expression)
             {
                 case null:
-                    throw new ArgumentOutOfRangeException(nameof(expression));
+                    throw handler.InternalError(expression.SourceLocation, new ArgumentOutOfRangeException(nameof(expression)));
                 case CloneExpr cloneExpr:
                     unavailable = ProcessExpr(unavailable, cloneExpr.Term);
                     break;
@@ -355,7 +355,7 @@ namespace Microsoft.Pc.TypeChecker
                     // nothing to do
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(expression));
+                    throw handler.InternalError(expression.SourceLocation, new ArgumentOutOfRangeException(nameof(expression)));
             }
 
             return unavailable;

@@ -20,17 +20,6 @@ namespace Microsoft.Pc.TypeChecker
             this.locationResolver = locationResolver;
         }
 
-        public Exception IssueError(ParserRuleContext location, string message)
-        {
-            return IssueError(location, location.Start, message);
-        }
-
-        public Exception DuplicateEnumValue(PParser.NumberedEnumElemContext location, PEnum pEnum)
-        {
-            return IssueError(location,
-                $"enum element {location.name.GetText()} in {pEnum.Name} duplicates previous value");
-        }
-
         public Exception DuplicateStartState(
             ParserRuleContext location,
             State duplicateStart,
@@ -142,11 +131,6 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(evtExpr.SourceLocation, "cannot send null events");
         }
 
-        public Exception InternalError(ParserRuleContext location, string message)
-        {
-            return IssueError(location, $"internal error: {message}");
-        }
-
         public Exception MissingStartState(Machine machine)
         {
             return IssueError(machine.SourceLocation, $"Value {machine.Name} has no start state");
@@ -192,26 +176,11 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(swapAssignStmt.SourceLocation, $"variable {variable.Name} unavailable during swap");
         }
 
-        public Exception SwappedField(SwapAssignStmt swapAssignStmt, Variable variable)
-        {
-            return IssueError(swapAssignStmt.SourceLocation, $"cannot swap field {variable.Name}");
-        }
-
         public Exception InvalidPrintFormat(PParser.PrintStmtContext context, IToken symbol)
         {
             return IssueError(context,
                 symbol,
                 "Print format placeholders must contain only digits. Escape braces by doubling them.");
-        }
-
-        public Exception CreatedSpecMachine(ParserRuleContext location, Machine machine)
-        {
-            return IssueError(location, $"tried to create spec machine {machine.Name} with new.");
-        }
-
-        public Exception IssueError(ParserRuleContext ctx, IToken location, string message)
-        {
-            return new TranslationException($"[{locationResolver.GetLocation(ctx, location)}] {message}");
         }
 
         public Exception InvalidBindExpr(ParserRuleContext location, string message)
@@ -251,9 +220,72 @@ namespace Microsoft.Pc.TypeChecker
             return IssueError(location, $"invalid composition operation. {message}");
         }
 
-        public Exception NoInputFiles(string message)
+        public Exception InternalError(ParserRuleContext location, Exception inner)
         {
-            return new TranslationException(message);
+            return IssueError(location, inner.Message);
+        }
+
+        public Exception TwoStartStates(Machine machine, State state)
+        {
+            return IssueError(machine.SourceLocation,
+                $"machine {machine.Name} has two start states, {machine.StartState.Name} and {state.Name}.");
+        }
+
+        public Exception ValueOutOfRange(ParserRuleContext location, string type)
+        {
+            return IssueError(location, $"value not in range for {type}.");
+        }
+
+        public Exception NullTransitionInMonitor(ParserRuleContext location, Machine monitor)
+        {
+            return IssueError(location, $"cannot transition on null event in monitor {monitor.Name}");
+        }
+
+        public Exception IllegalMonitorOperation(ParserRuleContext location, IToken operation, Machine monitor)
+        {
+            return IssueError(location, operation,
+                $"{monitor.Name}: $, $$, this, new, send, announce, receive, and pop are not allowed in monitors");
+        }
+
+        public Exception DeferredEventInMonitor(ParserRuleContext location, Machine monitor)
+        {
+            return IssueError(location, $"{monitor.Name}: Cannot defer events in monitors.");
+        }
+
+        public Exception NotAllPathsReturn(Function function)
+        {
+            return IssueError(function.Body.SourceLocation,
+                $"not all paths in function {DeclarationName(function)} return a value!");
+        }
+
+        public Exception ExpectedMonitor(ParserRuleContext location, Machine machine)
+        {
+            return IssueError(location, $"expected a specification machine, but got {machine.Name}");
+        }
+
+        public Exception PopInNonVoidFunction(ParserRuleContext context)
+        {
+            return IssueError(context, "pop only allowed in functions that do not return a value.");
+        }
+
+        public Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation)
+        {
+            return IssueError(argSourceLocation, "Print is a pure statement and so does not require linear arguments.");
+        }
+
+        public Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent)
+        {
+            return IssueError(location, $"Event {pEvent.Name} appears twice in receive statement argument list");
+        }
+
+        private Exception IssueError(ParserRuleContext location, string message)
+        {
+            return IssueError(location, location.Start, message);
+        }
+
+        private Exception IssueError(ParserRuleContext ctx, IToken location, string message)
+        {
+            return new TranslationException($"[{locationResolver.GetLocation(ctx, location)}] {message}");
         }
 
         private string DeclarationName(IPDecl method)

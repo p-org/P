@@ -44,13 +44,12 @@ namespace Microsoft.Pc.TypeChecker
         {
             if (machine?.IsSpec == true)
             {
-                throw handler.IssueError(
-                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                throw handler.IllegalMonitorOperation(context, context.POP().Symbol, machine);
             }
 
             if (!method.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
             {
-                throw handler.IssueError(context, "pop can only appear in functions that do not return a value.");
+                throw handler.PopInNonVoidFunction(context);
             }
 
             method.CanChangeState = true;
@@ -93,7 +92,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 if (arg is LinearAccessRefExpr)
                 {
-                    throw handler.IssueError(arg.SourceLocation, "Print statement never copies. Do not specify swap or move.");
+                    throw handler.PrintStmtLinearArgument(arg.SourceLocation);
                 }
             }
             if (args.Count != numNecessaryArgs)
@@ -147,7 +146,7 @@ namespace Microsoft.Pc.TypeChecker
 
                         return new SwapAssignStmt(context, variable, refVariable);
                     default:
-                        throw new ArgumentOutOfRangeException();
+                        throw handler.InternalError(linearRef.SourceLocation, new ArgumentOutOfRangeException(nameof(context)));
                 }
             }
 
@@ -328,8 +327,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             if (machine?.IsSpec == true)
             {
-                throw handler.IssueError(
-                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                throw handler.IllegalMonitorOperation(context, context.SEND().Symbol, machine);
             }
 
             IPExpr machineExpr = exprVisitor.Visit(context.machine);
@@ -368,8 +366,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             if (machine?.IsSpec == true)
             {
-                throw handler.IssueError(
-                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                throw handler.IllegalMonitorOperation(context, context.ANNOUNCE().Symbol, machine);
             }
 
             IPExpr evtExpr = exprVisitor.Visit(context.expr());
@@ -444,8 +441,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             if (machine?.IsSpec == true)
             {
-                throw handler.IssueError(
-                    context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
+                throw handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine);
             }
 
             var cases = new Dictionary<PEvent, Function>();
@@ -477,7 +473,7 @@ namespace Microsoft.Pc.TypeChecker
 
                     if (cases.ContainsKey(pEvent))
                     {
-                        throw handler.IssueError(eventIdContext, $"duplicate case for event {pEvent.Name} in receive");
+                        throw handler.DuplicateReceiveCase(eventIdContext, pEvent);
                     }
 
                     PLanguageType expectedType =

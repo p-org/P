@@ -22,7 +22,7 @@ namespace Microsoft.Pc.TypeChecker
             machine.Creates = interfaces;
         }
 
-        public static IEnumerable<Interface> InferCreates(IPAST tree, ITranslationErrorHandler handler)
+        private static IEnumerable<Interface> InferCreates(IPAST tree, ITranslationErrorHandler handler)
         {
             switch (tree)
             {
@@ -89,7 +89,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public static IEnumerable<Interface> InferCreatesForExpr(IPExpr expr, ITranslationErrorHandler handler)
+        private static IEnumerable<Interface> InferCreatesForExpr(IPExpr expr, ITranslationErrorHandler handler)
         {
             switch (expr)
             {

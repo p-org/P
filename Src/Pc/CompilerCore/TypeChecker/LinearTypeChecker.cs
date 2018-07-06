@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Linq;
 using Microsoft.Pc.Backend.ASTExt;
 using Microsoft.Pc.TypeChecker.AST;
@@ -78,10 +79,9 @@ namespace Microsoft.Pc.TypeChecker
 
         private ISet<Variable> ProcessStatement(ISet<Variable> unavailable, IPStmt statement)
         {
+            Contract.Requires(statement != null);
             switch (statement)
             {
-                case null:
-                    throw handler.InternalError(statement.SourceLocation, new ArgumentOutOfRangeException(nameof(statement)));
                 case CompoundStmt compoundStmt:
                     unavailable = compoundStmt.Statements.Aggregate(unavailable, ProcessStatement);
                     break;
@@ -263,10 +263,9 @@ namespace Microsoft.Pc.TypeChecker
 
         private ISet<Variable> ProcessExpr(ISet<Variable> unavailable, IPExpr expression)
         {
+            Contract.Requires(expression != null);
             switch (expression)
             {
-                case null:
-                    throw handler.InternalError(expression.SourceLocation, new ArgumentOutOfRangeException(nameof(expression)));
                 case CloneExpr cloneExpr:
                     unavailable = ProcessExpr(unavailable, cloneExpr.Term);
                     break;

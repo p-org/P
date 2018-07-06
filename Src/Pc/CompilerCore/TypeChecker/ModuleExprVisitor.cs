@@ -170,10 +170,8 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw handler.ExpectedMonitor(monName, monitor);
                 }
-                else
-                {
-                    monList.Add(monitor);
-                }
+
+                monList.Add(monitor);
             }
 
             return new AssertModuleExpr(context, monList, Visit(context.modExpr()));

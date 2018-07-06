@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Pc.TypeChecker;
-using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
 
@@ -11,25 +9,6 @@ namespace Microsoft.Pc.Backend.Prt
 {
     public static class PrtTranslationUtils
     {
-        private static readonly Dictionary<Type, string> DeclNameParts = new Dictionary<Type, string>
-        {
-            {typeof(EnumElem), "ENUMELEM"},
-            {typeof(Function), "FUNCTION"},
-            {typeof(Implementation), "IMPL"},
-            {typeof(Interface), "I"},
-            {typeof(Machine), "MACHINE"},
-            {typeof(NamedEventSet), "EVENTSET"},
-            {typeof(NamedModule), "MODULE"},
-            {typeof(PEnum), "ENUM"},
-            {typeof(PEvent), "EVENT"},
-            {typeof(RefinementTest), "REFINEMENT_TEST"},
-            {typeof(SafetyTest), "SAFETY_TEST"},
-            {typeof(State), "STATE"},
-            {typeof(StateGroup), "STATEGROUP"},
-            {typeof(TypeDef), "TYPEDEF"},
-            {typeof(Variable), "VAR"}
-        };
-
         public static IList<T> ToOrderedListByPermutation<T>(IEnumerable<T> enumerable, Func<T, int> perm)
         {
             var items = enumerable.ToList();

@@ -23,12 +23,14 @@ namespace Microsoft.Pc.Backend
 
         public static void SimplifyMethod(Function function)
         {
-            if (!function.IsForeign)
+            if (function.IsForeign)
             {
-                var transformer = new IRTransformer(function);
-                IPStmt functionBody = function.Body;
-                function.Body = new CompoundStmt(functionBody.SourceLocation, transformer.SimplifyStatement(functionBody));
+                return;
             }
+
+            var transformer = new IRTransformer(function);
+            IPStmt functionBody = function.Body;
+            function.Body = new CompoundStmt(functionBody.SourceLocation, transformer.SimplifyStatement(functionBody));
         }
 
         private (VariableAccessExpr, IPStmt) SaveInTemporary(IPExpr expr)
@@ -399,7 +401,7 @@ namespace Microsoft.Pc.Backend
                     Variable rhs = swapAssignStmt.OldLocation;
                     return swapVarDeps.Concat(new[]
                                       {
-                                          new SwapAssignStmt(swapAssignStmt.SourceLocation, swapVar, rhs), 
+                                          new SwapAssignStmt(swapAssignStmt.SourceLocation, swapVar, rhs)
                                       })
                                       .ToList();
                 case WhileStmt whileStmt:

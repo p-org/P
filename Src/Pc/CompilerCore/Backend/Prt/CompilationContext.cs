@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;

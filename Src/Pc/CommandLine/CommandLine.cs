@@ -1,6 +1,4 @@
-﻿using Microsoft.Pc.TypeChecker;
-
-namespace Microsoft.Pc
+﻿namespace Microsoft.Pc
 {
     public static class CommandLine
     {

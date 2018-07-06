@@ -6,14 +6,14 @@ namespace Microsoft.Pc
 {
     public class DefaultCompilerOutput : ICompilerOutput
     {
-        private DirectoryInfo outputDirectory;
+        private readonly DirectoryInfo outputDirectory;
 
         public DefaultCompilerOutput(DirectoryInfo outputDirectory)
         {
             this.outputDirectory = outputDirectory;
         }
 
-        public virtual void WriteMessage(string msg, SeverityKind severity)
+        public void WriteMessage(string msg, SeverityKind severity)
         {
             ConsoleColor defaultColor = Console.ForegroundColor;
             switch (severity)
@@ -36,7 +36,7 @@ namespace Microsoft.Pc
             Console.ForegroundColor = defaultColor;
         }
 
-        public virtual void WriteFile(CompiledFile file)
+        public void WriteFile(CompiledFile file)
         {
             string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
             File.WriteAllText(outputPath, file.Contents);

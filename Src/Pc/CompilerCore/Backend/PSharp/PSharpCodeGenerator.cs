@@ -48,7 +48,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "using System.IO;");
             context.WriteLine(output);
             context.WriteLine(output, $"namespace {context.ProjectName}");
-            context.WriteLine(output, "{");;
+            context.WriteLine(output, "{");
             context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName} {{}}");
         }
 
@@ -121,7 +121,7 @@ namespace Microsoft.Pc.Backend.PSharp
             {
                 if (state.IsStart)
                 {
-                    context.WriteLine(output, $"[Start]");
+                    context.WriteLine(output, "[Start]");
                 }
 
                 if (state.Entry != null)

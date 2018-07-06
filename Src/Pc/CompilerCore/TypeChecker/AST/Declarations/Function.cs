@@ -57,15 +57,14 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         #region Analysis results
 
         // TODO: decouple this? turn it into flags? a mix?
-        public bool? IsPure { get; set; }
         public bool IsForeign => Body == null;
         public bool IsAnon => string.IsNullOrEmpty(Name);
 
         public bool? CanChangeState { get; set; }
         public bool? CanCommunicate { get; set; }
         public bool? IsNondeterministic { get; set; }
-        public IReadOnlyCollection<Function> Callers => callers;
-        public IReadOnlyCollection<Function> Callees => callees;
+        public IEnumerable<Function> Callers => callers;
+        public IEnumerable<Function> Callees => callees;
 
         #endregion
     }

@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using Antlr4.Runtime;
 using Microsoft.Pc.TypeChecker;
 
 namespace Microsoft.Pc.Backend

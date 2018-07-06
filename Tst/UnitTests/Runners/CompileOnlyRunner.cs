@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using Microsoft.Pc;
 using Microsoft.Pc.Backend;
-using Microsoft.Pc.TypeChecker;
 using UnitTests.Core;
 
 namespace UnitTests.Runners

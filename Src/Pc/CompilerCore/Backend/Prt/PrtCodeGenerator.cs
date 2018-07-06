@@ -1439,9 +1439,11 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"extern PRT_MACHINEDECL {declName};");
                     break;
                 case NamedEventSet namedEventSet:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(NamedEventSet, {decl.Name}) => {declName}");
                     break;
                 case NamedModule namedModule:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(NamedModule, {decl.Name}) => {declName}");
                     break;
                 case PEnum pEnum:
@@ -1457,21 +1459,25 @@ namespace Microsoft.Pc.Backend.Prt
 
                     break;
                 case RefinementTest refinementTest:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(RefinementTest, {decl.Name}) => {declName}");
                     break;
                 case SafetyTest safetyTest:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(SafetyTest, {decl.Name}) => {declName}");
                     break;
-                case TypeDef typeDef:
+                case TypeDef _:
                     context.WriteLine(output, $"extern PRT_TYPE* {declName};");
                     break;
                 case Variable variable:
                     throw context.Handler.InternalError(variable.SourceLocation,
                         new ArgumentOutOfRangeException(nameof(decl), "can't have global P variables"));
                 case State state:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(State, {decl.Name}) => {declName}");
                     break;
                 case StateGroup stateGroup:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(StateGroup, {decl.Name}) => {declName}");
                     break;
             }

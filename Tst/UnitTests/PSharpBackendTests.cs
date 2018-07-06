@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
+﻿using System.IO;
 using NUnit.Framework;
 using UnitTests.Core;
 using UnitTests.Runners;

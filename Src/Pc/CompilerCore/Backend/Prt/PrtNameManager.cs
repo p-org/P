@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using Microsoft.Pc.TypeChecker.AST;
@@ -22,7 +21,7 @@ namespace Microsoft.Pc.Backend.Prt
         {
         }
 
-        public IEnumerable<PLanguageType> UsedTypes => typeNames.Keys.ToImmutableHashSet();
+        public IEnumerable<PLanguageType> UsedTypes => typeNames.Keys;
         
         public string GetNameForFunctionImpl(Function function)
         {

@@ -9,7 +9,7 @@
     <PDllPath>"$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\AnyCPU\Binaries\Pc.dll"</PDllPath>
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
-    <PCompileOptions>/generate:C "/t:$(ProjectName)" "/outputDir:$(PGeneratedDir)"</PCompileOptions>
+    <PCompileOptions>-generate:C "-t:$(ProjectName)" "-outputDir:$(PGeneratedDir)"</PCompileOptions>
   </PropertyGroup>
 
   <!-- Invoke pc.exe - pc.exe will do the right thing based on which p files (or include files) have actually changed. -->
@@ -18,7 +18,7 @@
           BeforeTargets="BeforeBuildGenerateSources" >
 
     <ItemGroup>
-      <ClCompile Include="$(PGeneratedDir)\$(ProjectName).c"/>
+      <ClCompile Include="$(PGeneratedDir)\$(ProjectName).c" Condition=" '$(PLibBuild)' != 'TRUE'"/>
     </ItemGroup>
 
       <ItemGroup>

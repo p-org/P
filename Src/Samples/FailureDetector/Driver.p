@@ -1,5 +1,4 @@
 fun CreateNode(container: machine) : machine
-[container = container]
 {
 	var newMachine: machine;
 	newMachine = new Node();

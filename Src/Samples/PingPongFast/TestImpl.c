@@ -4,7 +4,6 @@
 #include "stdafx.h"
 #include "PingPongFast.h"
 #include "Prt.h"
-#include <stdio.h>
 
 /* Global variables */
 PRT_PROCESS* ContainerProcess;
@@ -51,7 +50,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* senderState, PRT_MACHINE
 		state.machineName = "App";
 		state.stateId = 0;
 		state.stateName = "LogHandler";
-		PrtSend(&state, receiver, haltEvent, 1, PRT_FUN_PARAM_CLONE, nullValue);
+		PrtSend(&state, receiver, haltEvent, 1, &nullValue);
 		PrtFreeValue(nullValue);
     }
 }
@@ -120,11 +119,17 @@ int main(int argc, char *argv[])
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;
     processGuid.data4 = 0;
-    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, LogHandler);
+    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, PrtDistSMExceptionHandler, LogHandler);
 
     //create main machine 
     PRT_VALUE* payload = PrtMkNullValue();
-    PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
+	PRT_UINT32 machineId;
+	PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("Client", &machineId);
+	if (foundMainMachine == PRT_FALSE) {
+		printf("%s\n", "FAILED TO FIND TestMachine");
+		exit(1);
+	}
+	PrtMkMachine(ContainerProcess, machineId, 1, &payload);
     PrtFreeValue(payload);
 
     return 0;

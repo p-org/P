@@ -396,7 +396,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.NONDET() != null)
             {
-                if (method.Owner.IsSpec)
+                if (method.Owner?.IsSpec == true)
                 {
                     throw handler.IllegalMonitorOperation(context, context.NONDET().Symbol, method.Owner);
                 }
@@ -405,7 +405,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.FAIRNONDET() != null)
             {
-                if (method.Owner.IsSpec)
+                if (method.Owner?.IsSpec == true)
                 {
                     throw handler.IllegalMonitorOperation(context, context.FAIRNONDET().Symbol, method.Owner);
                 }

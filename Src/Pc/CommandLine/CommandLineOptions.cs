@@ -18,12 +18,14 @@ namespace Microsoft.Pc
 
         private static bool IsFileSystemCaseInsensitive => isFileSystemCaseInsensitive.Value;
 
+        private static readonly DefaultCompilerOutput CommandlineOutput = new DefaultCompilerOutput(new DirectoryInfo(Directory.GetCurrentDirectory()));
         public static bool ParseArguments(IEnumerable<string> args, out CompilationJob job)
         {
             job = null;
 
             var outputLanguage = CompilerOutput.C;
             DirectoryInfo outputDirectory = null;
+            
             var commandLineFileNames = new List<string>();
             var inputFiles = new List<FileInfo>();
             string targetName = null;
@@ -32,7 +34,7 @@ namespace Microsoft.Pc
             {
                 var arg = x;
                 string colonArg = null;
-                if (arg[0] == '-' || arg[0] == '/')
+                if (arg[0] == '-')
                 {
                     var colonIndex = arg.IndexOf(':');
                     if (colonIndex >= 0)
@@ -47,7 +49,7 @@ namespace Microsoft.Pc
                         case "target":
                             if (colonArg == null)
                             {
-                                Console.WriteLine("Missing target name");
+                                CommandlineOutput.WriteMessage("Missing target name", SeverityKind.Error);
                             }
                             else if (targetName == null)
                             {
@@ -55,7 +57,7 @@ namespace Microsoft.Pc
                             }
                             else
                             {
-                                Console.WriteLine("Only one target must be specified");
+                                CommandlineOutput.WriteMessage("Only one target must be specified", SeverityKind.Error);
                             }
 
                             break;
@@ -65,8 +67,7 @@ namespace Microsoft.Pc
                             switch (colonArg?.ToLowerInvariant())
                             {
                                 case null:
-                                    Console.WriteLine(
-                                        "Missing generation argument, expecting generate:[C,P#]");
+                                    CommandlineOutput.WriteMessage("Missing generation argument, expecting generate:[C,P#]", SeverityKind.Error);
                                     return false;
                                 case "c":
                                     outputLanguage = CompilerOutput.C;
@@ -75,7 +76,7 @@ namespace Microsoft.Pc
                                     outputLanguage = CompilerOutput.PSharp;
                                     break;
                                 default:
-                                    Console.WriteLine($"Unrecognized generate option '{colonArg}', expecting C or P#");
+                                    CommandlineOutput.WriteMessage($"Unrecognized generate option '{colonArg}', expecting C or P#", SeverityKind.Error);
                                     return false;
                             }
 
@@ -85,14 +86,17 @@ namespace Microsoft.Pc
                         case "outputdir":
                             if (colonArg == null)
                             {
-                                Console.WriteLine("Must supply path for output directory");
+                                CommandlineOutput.WriteMessage("Must supply path for output directory", SeverityKind.Error);
                                 return false;
                             }
 
                             outputDirectory = Directory.CreateDirectory(colonArg);
                             break;
 
-                        default: return false;
+                        default:
+                            commandLineFileNames.Add(arg);
+                            CommandlineOutput.WriteMessage($"Unknown Command {arg.Substring(1)}", SeverityKind.Error);
+                            return false;
                     }
                 }
                 else
@@ -100,8 +104,6 @@ namespace Microsoft.Pc
                     commandLineFileNames.Add(arg);
                 }
             }
-
-            var fileCheck = true;
 
             // Each command line file name must be a legal P file name
             foreach (var inputFileName in commandLineFileNames)
@@ -112,27 +114,23 @@ namespace Microsoft.Pc
                 }
                 else
                 {
-                    fileCheck = false;
+                    CommandlineOutput.WriteMessage($"Illegal P file name {fullPathName} or file {fullPathName} not found", SeverityKind.Error);
                 }
-            }
-
-            if (!fileCheck)
-            {
-                return false;
             }
 
             if (inputFiles.Count == 0)
             {
-                Console.WriteLine("At least one .p file must be provided");
+                CommandlineOutput.WriteMessage("At least one .p file must be provided", SeverityKind.Error);
                 return false;
             }
 
-            var unitFileName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
-            if (!IsLegalUnitName(unitFileName))
+            string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
+            if (!IsLegalUnitName(projectName))
             {
-                Console.WriteLine("{0} is not a legal name for a compilation unit", unitFileName);
+                CommandlineOutput.WriteMessage($"{projectName} is not a legal protject name", SeverityKind.Error);
                 return false;
             }
+
 
             if (outputDirectory == null)
             {
@@ -140,7 +138,7 @@ namespace Microsoft.Pc
             }
 
             job = new CompilationJob(new DefaultCompilerOutput(outputDirectory), outputLanguage, inputFiles,
-                unitFileName);
+                projectName);
             return true;
         }
 
@@ -152,9 +150,8 @@ namespace Microsoft.Pc
         private static bool IsLegalPFile(string fileName, out FileInfo file)
         {
             file = null;
-            if (fileName.Length <= 2 || !fileName.EndsWith(".p"))
+            if (fileName.Length <= 2 || !fileName.EndsWith(".p") || !File.Exists(Path.GetFullPath(fileName)))
             {
-                Console.WriteLine("Illegal file name: {0}", fileName);
                 return false;
             }
 
@@ -171,13 +168,12 @@ namespace Microsoft.Pc
 
         public static void PrintUsage()
         {
-            Console.WriteLine("USAGE: Pc.exe file1.p [file2.p ...] [/t:tfile] [options]");
-            Console.WriteLine(
-                "/t:tfile             -- name of output file produced for this compilation unit; if not supplied then file1");
-            Console.WriteLine("/outputDir:path         -- where to write the generated files");
-            Console.WriteLine("/generate:[C,P#]");
-            Console.WriteLine("    C   : generate C");
-            Console.WriteLine("    P#  : generate P#");
+            CommandlineOutput.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("-t:tfile           -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("-outputDir:path    -- where to write the generated files", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("-generate:[C,P#]", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    C   : generate C", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    P#  : generate P#", SeverityKind.Info);
         }
     }
 }

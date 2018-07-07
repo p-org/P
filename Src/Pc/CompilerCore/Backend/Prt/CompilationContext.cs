@@ -18,10 +18,9 @@ namespace Microsoft.Pc.Backend.Prt
 
         public CompilationContext(ICompilationJob job) : base(job)
         {
-            string projectName = job.ProjectName;
-            Names = new PrtNameManager($"P_{projectName.ToUpperInvariant()}_");
-            HeaderFileName = $"{projectName}.h";
-            SourceFileName = $"{projectName}.c";
+            Names = new PrtNameManager($"P_");
+            HeaderFileName = $"{job.ProjectName}.h";
+            SourceFileName = $"{job.ProjectName}.c";
             registeredInts = new ValueInternmentManager<int>(Names);
             registeredFloats = new ValueInternmentManager<double>(Names);
             registeredBools = new ValueInternmentManager<bool>(Names);

@@ -14,12 +14,12 @@ namespace UnitTests.Core
     {
         private static readonly List<string> TestDirs = new List<string>
         {
-            "RegressionTests\\Combined",
-            "RegressionTests\\Feature1SMLevelDecls",
-            "RegressionTests\\Feature2Stmts",
-            "RegressionTests\\Feature3Exprs",
-            "RegressionTests\\Feature4DataTypes",
-            "RegressionTests\\Integration"
+            Path.Combine("RegressionTests","Combined"),
+            Path.Combine("RegressionTests","Feature1SMLevelDecls"),
+            Path.Combine("RegressionTests","Feature2Stmts"),
+            Path.Combine("RegressionTests","Feature3Exprs"),
+            Path.Combine("RegressionTests","Feature4DataTypes"),
+            Path.Combine("RegressionTests","Integration")
         };
 
         public static IEnumerable<TestCaseData> FindTestCasesInDirectory(string directoryName)
@@ -34,11 +34,11 @@ namespace UnitTests.Core
 
         private static TestCaseData DirectoryToTestCase(DirectoryInfo dir, DirectoryInfo testRoot)
         {
-            var variables = GetVariables(testRoot);
             TestConfig runConfig = null;
             string configPath = Path.Combine(dir.FullName, "Prt", Constants.TestConfigFileName);
             if (File.Exists(configPath))
             {
+                var variables = GetVariables(testRoot);
                 runConfig = ParseTestConfig(configPath, variables);
             }
 

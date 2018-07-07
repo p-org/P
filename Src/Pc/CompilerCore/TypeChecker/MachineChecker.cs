@@ -1,7 +1,7 @@
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
@@ -13,23 +13,16 @@ namespace Microsoft.Pc.TypeChecker
         public static void Validate(ITranslationErrorHandler handler, Machine machine)
         {
             State startState = FindStartState(machine, handler);
-            PLanguageType startStatePayloadType = GetStatePayload(startState, handler);
-            if (!startStatePayloadType.IsSameTypeAs(machine.PayloadType))
-            {
-                throw handler.InternalError(machine.SourceLocation,
-                                            "machine payload type is not the same as start state's entry payload type");
-            }
-
+            PLanguageType startStatePayloadType = GetStatePayload(startState);
+            Debug.Assert(startStatePayloadType.IsSameTypeAs(machine.PayloadType));
             ValidateTransitions(handler, machine);
         }
-
-        
 
         private static void ValidateTransitions(ITranslationErrorHandler handler, Machine machine)
         {
             foreach (State state in machine.AllStates())
             {
-                foreach (KeyValuePair<PEvent, IStateAction> pair in state.AllEventHandlers)
+                foreach (var pair in state.AllEventHandlers)
                 {
                     PEvent handledEvent = pair.Key;
                     switch (pair.Value)
@@ -38,7 +31,7 @@ namespace Microsoft.Pc.TypeChecker
                             if (eventDoAction.Target != null)
                             {
                                 ValidateEventPayloadToTransitionTarget(handler, eventDoAction.SourceLocation,
-                                                                       handledEvent.PayloadType, eventDoAction.Target);
+                                    handledEvent.PayloadType, eventDoAction.Target);
                             }
 
                             break;
@@ -46,15 +39,15 @@ namespace Microsoft.Pc.TypeChecker
                             if (eventGotoState.Target.Entry != null)
                             {
                                 ValidateEventPayloadToTransitionTarget(handler, eventGotoState.SourceLocation,
-                                                                       handledEvent.PayloadType,
-                                                                       eventGotoState.Target.Entry);
+                                    handledEvent.PayloadType,
+                                    eventGotoState.Target.Entry);
                             }
 
                             if (eventGotoState.TransitionFunction != null)
                             {
                                 ValidateEventPayloadToTransitionTarget(handler, eventGotoState.SourceLocation,
-                                                                       handledEvent.PayloadType,
-                                                                       eventGotoState.TransitionFunction);
+                                    handledEvent.PayloadType,
+                                    eventGotoState.TransitionFunction);
                             }
 
                             break;
@@ -62,8 +55,8 @@ namespace Microsoft.Pc.TypeChecker
                             if (eventPushState.Target.Entry != null)
                             {
                                 ValidateEventPayloadToTransitionTarget(handler, eventPushState.SourceLocation,
-                                                                       handledEvent.PayloadType,
-                                                                       eventPushState.Target.Entry);
+                                    handledEvent.PayloadType,
+                                    eventPushState.Target.Entry);
                             }
 
                             break;
@@ -73,15 +66,15 @@ namespace Microsoft.Pc.TypeChecker
                 if (state.Exit?.Signature.Parameters.Count > 0)
                 {
                     throw handler.IncorrectArgumentCount(state.SourceLocation, state.Exit.Signature.Parameters.Count,
-                                                         0);
+                        0);
                 }
             }
         }
 
         private static void ValidateEventPayloadToTransitionTarget(ITranslationErrorHandler handler,
-                                                                   ParserRuleContext sourceLocation,
-                                                                   PLanguageType eventPayloadType,
-                                                                   Function targetFunction)
+            ParserRuleContext sourceLocation,
+            PLanguageType eventPayloadType,
+            Function targetFunction)
         {
             IReadOnlyList<PLanguageType> entrySignature = targetFunction.Signature.ParameterTypes.ToList();
             if (entrySignature.Count == 0)
@@ -122,19 +115,14 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        private static PLanguageType GetStatePayload(State startState, ITranslationErrorHandler handler)
+        private static PLanguageType GetStatePayload(State startState)
         {
             if (!(startState.Entry?.Signature.Parameters.Count > 0))
             {
                 return PrimitiveType.Null;
             }
 
-            if (startState.Entry.Signature.Parameters.Count != 1)
-            {
-                throw handler.InternalError(startState.OwningMachine.SourceLocation,
-                                            "Allowed start state entry with multiple parameters");
-            }
-
+            Debug.Assert(startState.Entry.Signature.Parameters.Count == 1, "Allowed start state entry with multiple parameters");
             return startState.Entry.Signature.Parameters[0].Type;
         }
 
@@ -151,16 +139,12 @@ namespace Microsoft.Pc.TypeChecker
                     }
                     else
                     {
-                        throw handler.InternalError(state.SourceLocation,
-                                                    $"Two start states {state.Name} occurs twice in all states list");
+                        throw handler.TwoStartStates(machine, state);
                     }
                 }
             }
-
-            if (foundStartState && machine.StartState == null)
-            {
-                throw handler.InternalError(machine.SourceLocation, "machine has unregistered start state");
-            }
+            
+            Debug.Assert(!(foundStartState && machine.StartState == null), "machine has unregistered start state");
 
             if (!foundStartState || machine.StartState == null)
             {

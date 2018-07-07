@@ -60,17 +60,8 @@ namespace UnitTests.Runners
         {
             var compiler = new Compiler();
             var outputStream = new TestExecutionStream(scratchDirectory);
-            bool success = compiler.Compile(outputStream, new CommandLineOptions
-            {
-                OutputLanguage = CompilerOutput.C,
-                InputFileNames = sources.Select(file => file.FullName).ToList(),
-                ProjectName = "main"
-            });
-
-            if (!success)
-            {
-                throw new CompilerTestException(TestCaseError.TranslationFailed);
-            }
+            var compilationJob = new CompilationJob(outputStream, CompilerOutput.C, sources, "main");
+            compiler.Compile(compilationJob);
         }
 
         private static bool RunMsBuildExe(string tmpDir, out string stdout, out string stderr)

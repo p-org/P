@@ -4,16 +4,24 @@
     {
         public static int Main(string[] args)
         {
-            if (!CommandLineOptions.ParseArguments(args, out var options))
+            ICompiler compiler = new Compiler();
+
+            if (!CommandLineOptions.ParseArguments(args, out CompilationJob job))
             {
                 CommandLineOptions.PrintUsage();
                 return -1;
             }
-
-            ICompiler compiler = new Compiler();
-            var output = new DefaultCompilerOutput(options.OutputDirectory);
-            bool result = compiler.Compile(output, options);
-            return result ? 0 : -1;
+            
+            try
+            {
+                compiler.Compile(job);
+                return 0;
+            }
+            catch (TranslationException e)
+            {
+                job.Output.WriteMessage(e.Message, SeverityKind.Error);
+                return 1;
+            }
         }
     }
 }

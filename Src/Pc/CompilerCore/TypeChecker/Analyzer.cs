@@ -22,7 +22,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // Step 3: Fill function bodies
-            List<Function> allFunctions = globalScope.GetAllMethods().ToList();
+            var allFunctions = globalScope.GetAllMethods().ToList();
             foreach (Function machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
@@ -58,7 +58,7 @@ namespace Microsoft.Pc.TypeChecker
             // Step 7: Infer the creates set for each machine.
             foreach (Machine machine in globalScope.Machines)
             {
-                InferMachineCreates.Populate(machine);
+                InferMachineCreates.Populate(machine, handler);
             }
 
             // Step 8: Fill the module expressions

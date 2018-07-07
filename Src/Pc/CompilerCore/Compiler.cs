@@ -3,8 +3,6 @@ using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
-using Antlr4.Runtime.Tree;
-using Microsoft.Pc.Antlr;
 using Microsoft.Pc.Backend;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -13,62 +11,32 @@ namespace Microsoft.Pc
 {
     public class Compiler : ICompiler
     {
-        public bool Compile(ICompilerOutput output, CommandLineOptions options)
+        public void Compile(ICompilationJob job)
         {
-            if (options.InputFileNames.Count == 0)
+            // Run parser on every input file
+            var trees = job.InputFiles.Select(file =>
             {
-                output.WriteMessage("No input files specified.", SeverityKind.Error);
-                return false;
+                PParser.ProgramContext tree = Parse(job.Handler, file);
+                job.LocationResolver.RegisterRoot(tree, file);
+                return tree;
+            }).ToArray();
+
+            // Run typechecker and produce AST
+            Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+
+            // Convert functions to lowered SSA form with explicit cloning
+            foreach (Function fun in scope.GetAllMethods())
+            {
+                IRTransformer.SimplifyMethod(fun);
             }
 
-            try
+            // Run the selected backend on the project and write the files.
+            var compiledFiles = job.Backend.GenerateCode(job, scope);
+            foreach (CompiledFile file in compiledFiles)
             {
-                // Compilation job details
-                var inputFiles = options.InputFileNames.Select(name => new FileInfo(name)).ToArray();
-                var trees = new PParser.ProgramContext[inputFiles.Length];
-                var originalFiles = new ParseTreeProperty<FileInfo>();
-                ILocationResolver locationResolver = new DefaultLocationResolver(originalFiles);
-                ITranslationErrorHandler handler = new DefaultTranslationErrorHandler(locationResolver, output);
-
-                // Run parser on every input file
-                for (var i = 0; i < inputFiles.Length; i++)
-                {
-                    FileInfo inputFile = inputFiles[i];
-                    trees[i] = Parse(handler, inputFile);
-                    originalFiles.Put(trees[i], inputFile);
-                }
-
-                // Run typechecker and produce AST
-                Scope scope = Analyzer.AnalyzeCompilationUnit(handler, trees);
-
-                // Convert functions to lowered SSA form with explicit cloning
-                foreach (Function fun in scope.GetAllMethods())
-                {
-                    IRTransformer.SimplifyMethod(fun);
-                }
-
-                // Run the selected backend on the project and write the files.
-                ICodeGenerator backend = TargetLanguage.GetCodeGenerator(options.OutputLanguage);
-                string projectName = options.ProjectName ?? Path.GetFileNameWithoutExtension(inputFiles[0].Name);
-                foreach (CompiledFile compiledFile in backend.GenerateCode(handler, output, projectName, scope))
-                {
-                    output.WriteMessage($"Writing {compiledFile.FileName}...", SeverityKind.Info);
-                    output.WriteFile(compiledFile);
-                }
-
-                return true;
+                job.Output.WriteMessage($"Writing {file.FileName}...", SeverityKind.Info);
+                job.Output.WriteFile(file);
             }
-            catch (TranslationException e)
-            {
-                output.WriteMessage(e.Message, SeverityKind.Error);
-                return false;
-            }
-        }
-
-        public bool Link(ICompilerOutput output, CommandLineOptions options)
-        {
-            output.WriteMessage("Linking not yet implemented in Antlr toolchain.", SeverityKind.Warning);
-            return true;
         }
 
         private static PParser.ProgramContext Parse(ITranslationErrorHandler handler, FileInfo inputFile)
@@ -80,6 +48,10 @@ namespace Microsoft.Pc
             var parser = new PParser(tokens);
             parser.RemoveErrorListeners();
 
+            // As currently implemented, P can be parsed by SLL. However, if extensions to the
+            // language are later added, this will remain robust. There is a performance penalty
+            // when a file doesn't parse (it is parsed twice), but most of the time we expect
+            // programs to compile and for code generation to take about as long as parsing.
             try
             {
                 // Stage 1: use fast SLL parsing strategy
@@ -95,6 +67,29 @@ namespace Microsoft.Pc
                 parser.Interpreter.PredictionMode = PredictionMode.Ll;
                 parser.ErrorHandler = new DefaultErrorStrategy();
                 return parser.program();
+            }
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// This error listener converts Antlr parse errors into translation exceptions via the
+        /// active error handler.
+        /// </summary>
+        private class PParserErrorListener : IAntlrErrorListener<IToken>
+        {
+            private readonly ITranslationErrorHandler handler;
+            private readonly FileInfo inputFile;
+
+            public PParserErrorListener(FileInfo inputFile, ITranslationErrorHandler handler)
+            {
+                this.inputFile = inputFile;
+                this.handler = handler;
+            }
+
+            public void SyntaxError(IRecognizer recognizer, IToken offendingSymbol, int line, int charPositionInLine,
+                string msg, RecognitionException e)
+            {
+                throw handler.ParseFailure(inputFile, $"line {line}:{charPositionInLine} {msg}");
             }
         }
     }

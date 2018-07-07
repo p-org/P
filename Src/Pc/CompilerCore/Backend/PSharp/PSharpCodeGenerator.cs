@@ -15,11 +15,9 @@ namespace Microsoft.Pc.Backend.PSharp
 {
     public class PSharpCodeGenerator : ICodeGenerator
     {
-        public IReadOnlyList<CompiledFile> GenerateCode(ITranslationErrorHandler handler, ICompilerOutput log, string projectName,
-                                                        Scope globalScope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
         {
-            log.WriteMessage("P# code generation in progress.", SeverityKind.Warning);
-            var context = new CompilationContext(handler, log, projectName);
+            var context = new CompilationContext(job);
             CompiledFile csharpSource = GenerateSource(context, globalScope);
             return new List<CompiledFile> {csharpSource};
         }
@@ -50,7 +48,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "using System.IO;");
             context.WriteLine(output);
             context.WriteLine(output, $"namespace {context.ProjectName}");
-            context.WriteLine(output, "{");;
+            context.WriteLine(output, "{");
             context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName} {{}}");
         }
 
@@ -123,7 +121,7 @@ namespace Microsoft.Pc.Backend.PSharp
             {
                 if (state.IsStart)
                 {
-                    context.WriteLine(output, $"[Start]");
+                    context.WriteLine(output, "[Start]");
                 }
 
                 if (state.Entry != null)

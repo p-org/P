@@ -22,10 +22,9 @@ namespace Microsoft.Pc.Backend.Prt
         private const string FunResultValName = "_P_GEN_retval";
         private const string FunNullStaticName = "_P_GEN_null";
 
-        public IReadOnlyList<CompiledFile> GenerateCode(ITranslationErrorHandler handler, ICompilerOutput log, string projectName,
-                                                        Scope globalScope)
+        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
         {
-            var context = new CompilationContext(handler, projectName);
+            var context = new CompilationContext(job);
             CompiledFile cHeader = GenerateHeaderFile(context, globalScope);
             CompiledFile cSource = GenerateSourceFile(context, globalScope);
             return new List<CompiledFile> {cHeader, cSource};
@@ -62,7 +61,7 @@ namespace Microsoft.Pc.Backend.Prt
 
             // Write all the type definitions and function implementation prototypes
             context.WriteLine(cSource.Stream, "// Type universe for program:");
-            foreach (PLanguageType type in context.UsedTypes)
+            foreach (PLanguageType type in context.UsedTypes.ToArray())
             {
                 WriteTypeDefinition(context, type, cSource.Stream);
             }
@@ -104,7 +103,7 @@ namespace Microsoft.Pc.Backend.Prt
         private static void WriteSourceDecl(CompilationContext context, IPDecl decl, TextWriter output)
         {
             string declName = context.Names.GetNameForDecl(decl);
-            var declLocation = context.Handler.LocationResolver.GetLocation(decl);
+            var declLocation = context.LocationResolver.GetLocation(decl);
             switch (decl)
             {
                 case EnumElem _:
@@ -361,7 +360,7 @@ namespace Microsoft.Pc.Backend.Prt
         private static void WriteNormalFunction(CompilationContext context, TextWriter output, Function function)
         {
             string declName = context.Names.GetNameForDecl(function);
-            var declLocation = context.Handler.LocationResolver.GetLocation(function);
+            var declLocation = context.LocationResolver.GetLocation(function);
 
             string functionImplName = context.Names.GetNameForFunctionImpl(function);
             bool isAnon = string.IsNullOrEmpty(function.Name);
@@ -496,7 +495,8 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_TUPLE, {{ .tuple = &{tupStructName} }} }};");
                     break;
                 case TypeDefType _:
-                    throw new ArgumentException("typedefs shouldn't be possible after canonicalization", nameof(type));
+                    Debug.Fail("typedefs shouldn't be possible after canonicalization");
+                    throw new ArgumentOutOfRangeException(nameof(type), "typedefs shouldn't be possible after canonicalization");
             }
 
             context.WrittenTypes.Add(type);
@@ -660,7 +660,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         private static void WriteFunctionBody(CompilationContext context, Function function, TextWriter output)
         {
-            var funLocation = context.Handler.LocationResolver.GetLocation(function);
+            var funLocation = context.LocationResolver.GetLocation(function);
             context.WriteLine(output, $"#line {funLocation.Line} \"{funLocation.File.Name}\"");
 
             for (var i = 0; i < function.Signature.Parameters.Count; i++)
@@ -696,7 +696,7 @@ namespace Microsoft.Pc.Backend.Prt
 
             // Write the body into a temporary buffer so that forward declarations can be found and added
             var bodyWriter = new StringWriter();
-            var bodyLocation = context.Handler.LocationResolver.GetLocation(function.Body);
+            var bodyLocation = context.LocationResolver.GetLocation(function.Body);
             context.WriteLine(bodyWriter, $"#line {bodyLocation.Line} \"{bodyLocation.File.Name}\"");
 
             foreach (IPStmt stmt in function.Body.Statements)
@@ -743,7 +743,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         private static void WriteStmt(CompilationContext context, Function function, IPStmt stmt, TextWriter output)
         {
-            var stmtLocation = context.Handler.LocationResolver.GetLocation(stmt);
+            var stmtLocation = context.LocationResolver.GetLocation(stmt);
             context.WriteLine(output, $"#line {stmtLocation.Line} \"{stmtLocation.File.Name}\"");
             switch (stmt)
             {
@@ -909,7 +909,6 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case ReceiveStmt receiveStmt:
                     // TODO: implement. Daan's the man!
-                    context.Handler.IssueWarning(receiveStmt.SourceLocation, "RECEIVE NOT IMPLEMENTED CURRENTLY. INSERTING CRASH.");
                     context.WriteLine(output, "PrtAssert(PRT_FALSE, \"receive not yet implemented!\");");
                     /*
                      * Ideal template:
@@ -1071,7 +1070,7 @@ namespace Microsoft.Pc.Backend.Prt
                     WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(expr));
+                    throw context.Handler.InternalError(expr.SourceLocation, new ArgumentOutOfRangeException(nameof(expr)));
             }
         }
 
@@ -1142,7 +1141,7 @@ namespace Microsoft.Pc.Backend.Prt
                             coerceCtor = "PrtMkFloatValue";
                             break;
                         default:
-                            throw new ArgumentException(nameof(coerceExpr.NewType));
+                            throw context.Handler.InternalError(coerceExpr.SourceLocation, new ArgumentOutOfRangeException(nameof(coerceExpr.NewType)));
                     }
 
                     string coerceUnpack;
@@ -1156,7 +1155,7 @@ namespace Microsoft.Pc.Backend.Prt
                             coerceUnpack = "PrtPrimGetFloat";
                             break;
                         default:
-                            throw new ArgumentException(nameof(coerceExpr.SubExpr));
+                            throw context.Handler.InternalError(coerceExpr.SourceLocation, new ArgumentOutOfRangeException(nameof(coerceExpr.SubExpr.Type)));
                     }
 
                     context.Write(output, $"{coerceCtor}({coerceUnpack}(");
@@ -1321,7 +1320,7 @@ namespace Microsoft.Pc.Backend.Prt
                 return context.Names.GetNameForDecl(variable);
             }
 
-            throw new ArgumentOutOfRangeException(nameof(variable));
+            throw context.Handler.InternalError(variable.SourceLocation, new ArgumentOutOfRangeException(nameof(variable)));
         }
 
         private static void WriteVariableAccess(CompilationContext context, TextWriter output, Function function, Variable variable)
@@ -1338,7 +1337,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case UnaryOpType.Not:
                     return "!";
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(operation), operation, null);
+                    throw new ArgumentOutOfRangeException(nameof(operation));
             }
         }
 
@@ -1398,7 +1397,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case BinOpType.Or:
                     return "||";
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(binOpType), binOpType, null);
+                    throw new ArgumentOutOfRangeException(nameof(binOpType));
             }
         }
 
@@ -1440,9 +1439,11 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"extern PRT_MACHINEDECL {declName};");
                     break;
                 case NamedEventSet namedEventSet:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(NamedEventSet, {decl.Name}) => {declName}");
                     break;
                 case NamedModule namedModule:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(NamedModule, {decl.Name}) => {declName}");
                     break;
                 case PEnum pEnum:
@@ -1458,20 +1459,25 @@ namespace Microsoft.Pc.Backend.Prt
 
                     break;
                 case RefinementTest refinementTest:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(RefinementTest, {decl.Name}) => {declName}");
                     break;
                 case SafetyTest safetyTest:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(SafetyTest, {decl.Name}) => {declName}");
                     break;
-                case TypeDef typeDef:
+                case TypeDef _:
                     context.WriteLine(output, $"extern PRT_TYPE* {declName};");
                     break;
-                case Variable _:
-                    throw new ArgumentOutOfRangeException(nameof(decl), "can't have global P variables");
+                case Variable variable:
+                    throw context.Handler.InternalError(variable.SourceLocation,
+                        new ArgumentOutOfRangeException(nameof(decl), "can't have global P variables"));
                 case State state:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(State, {decl.Name}) => {declName}");
                     break;
                 case StateGroup stateGroup:
+                    // TODO: what to do here?
                     context.WriteLine(output, $"// DECL(StateGroup, {decl.Name}) => {declName}");
                     break;
             }

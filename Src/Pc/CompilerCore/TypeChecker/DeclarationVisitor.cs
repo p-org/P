@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime.Tree;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
+using Microsoft.Pc.Util;
 
 namespace Microsoft.Pc.TypeChecker
 {
@@ -91,7 +93,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             else
             {
-                throw Handler.InternalError(context, "grammar requires enum declarations to have element lists");
+                Debug.Fail("grammar requires enum declarations to have element lists");
             }
             return pEnum;
         }
@@ -224,7 +226,7 @@ namespace Microsoft.Pc.TypeChecker
             var cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
             if (cardinality > uint.MaxValue)
             {
-                throw Handler.IssueError(context.cardinality(), "assume/assert not in uint32 range.");
+                throw Handler.ValueOutOfRange(context.cardinality(), "uint32");
             }
             machine.Assume = hasAssume ? (uint?)cardinality : null;
             machine.Assert = hasAssert ? (uint?)cardinality : null;
@@ -258,7 +260,7 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 else
                 {
-                    throw Handler.InternalError(receivesSends, "grammar changed surrounding receives/sends.");
+                    Debug.Fail("grammar changed surrounding receives/sends.");
                 }
             }
 
@@ -348,7 +350,7 @@ namespace Microsoft.Pc.TypeChecker
                         CurrentMachine.AddGroup(group);
                         break;
                     default:
-                        throw Handler.InternalError(machineEntryContext, "invalid machine entry");
+                        throw Handler.InternalError(machineEntryContext, new ArgumentOutOfRangeException(nameof(context)));
                 }
             }
             return null;
@@ -360,8 +362,7 @@ namespace Microsoft.Pc.TypeChecker
                           context.funDecl() ??
                           (IParseTree) context.group() ??
                           context.stateDecl() ??
-                          throw Handler.InternalError(context,
-                                                      "machine entry was none of a variable, function, group, or state declaration");
+                          throw Handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context)));
             return Visit(subExpr);
         }
 
@@ -403,7 +404,7 @@ namespace Microsoft.Pc.TypeChecker
                             break;
                         default:
                             throw Handler.InternalError(groupItemContext,
-                                                        "group item was neither state group nor state");
+                                                        new ArgumentOutOfRangeException(nameof(context)));
                     }
                 }
             }
@@ -414,7 +415,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             var item = (IParseTree) context.stateDecl() ??
                        context.group() ??
-                       throw Handler.InternalError(context, "group item was neither state group nor group");
+                       throw Handler.InternalError(context, new ArgumentOutOfRangeException(nameof(context)));
             return Visit(item);
         }
 
@@ -429,10 +430,10 @@ namespace Microsoft.Pc.TypeChecker
 
             // temperature=(HOT | COLD)?
             state.Temperature = context.temperature == null
-                                    ? StateTemperature.WARM
-                                    : context.temperature.Text.Equals("HOT")
-                                        ? StateTemperature.HOT
-                                        : StateTemperature.COLD;
+                                    ? StateTemperature.Warm
+                                    : context.HOT() != null
+                                        ? StateTemperature.Hot
+                                        : StateTemperature.Cold;
 
             // LBRACE stateBodyItem* RBRACE ;
             foreach (var stateBodyItemContext in context.stateBodyItem())
@@ -449,8 +450,7 @@ namespace Microsoft.Pc.TypeChecker
 
                             if (action.Trigger.Name.Equals("null") && CurrentMachine.IsSpec)
                             {
-                                throw Handler.IssueError(action.SourceLocation,
-                                                         "Transition on null event not allowed in spec machines");
+                                throw Handler.NullTransitionInMonitor(action.SourceLocation, CurrentMachine);
                             }
                             state[action.Trigger] = action;
                         }
@@ -474,7 +474,7 @@ namespace Microsoft.Pc.TypeChecker
                         }
                         break;
                     default:
-                        throw Handler.InternalError(stateBodyItemContext, "state body item not recognized");
+                        throw Handler.InternalError(stateBodyItemContext, new ArgumentOutOfRangeException(nameof(context)));
                 }
             }
 
@@ -482,7 +482,7 @@ namespace Microsoft.Pc.TypeChecker
             {
                 if (CurrentMachine.StartState != null)
                 {
-                    throw Handler.DuplicateDeclaration(context, state, CurrentMachine.StartState);
+                    throw Handler.DuplicateStartState(context, state, CurrentMachine.StartState, CurrentMachine);
                 }
                 CurrentMachine.StartState = state;
                 CurrentMachine.PayloadType = state.Entry?.Signature.Parameters.ElementAtOrDefault(0)?.Type ?? PrimitiveType.Null;
@@ -531,10 +531,9 @@ namespace Microsoft.Pc.TypeChecker
 
         public override object VisitStateDefer(PParser.StateDeferContext context)
         { 
-
             if (CurrentMachine.IsSpec)
             {
-                throw Handler.IssueError(context, "Event cannot be deferred in spec machine");
+                throw Handler.DeferredEventInMonitor(context, CurrentMachine);
             }
 
             // DEFER nonDefaultEventList

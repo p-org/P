@@ -1,6 +1,7 @@
-namespace Microsoft.Pc {
-    public interface ICompiler {
-        bool Compile(ICompilerOutput output, CommandLineOptions options);
-        bool Link(ICompilerOutput output, CommandLineOptions options);
+namespace Microsoft.Pc
+{
+    public interface ICompiler
+    {
+        void Compile(ICompilationJob job);
     }
 }

@@ -33,11 +33,11 @@ namespace Microsoft.Pc.TypeChecker
                     CheckWellFormedness(handler, hideIExpr);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(moduleExpr), "Unknown module expression");
+                    throw handler.InternalError(moduleExpr.SourceLocation, new ArgumentOutOfRangeException(nameof(moduleExpr)));
             }
         }
 
-        public static void CheckWellFormedness(ITranslationErrorHandler handler, AssertModuleExpr assertExpr)
+        private static void CheckWellFormedness(ITranslationErrorHandler handler, AssertModuleExpr assertExpr)
         {
             if (assertExpr.ModuleInfo != null)
             {
@@ -105,7 +105,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public static void CheckWellFormedness(ITranslationErrorHandler handler, BindModuleExpr bindExpr)
+        private static void CheckWellFormedness(ITranslationErrorHandler handler, BindModuleExpr bindExpr)
         {
             if (bindExpr.ModuleInfo != null)
             {
@@ -168,7 +168,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public static void CheckWellFormedness(ITranslationErrorHandler handler, RenameModuleExpr renameExpr)
+        private static void CheckWellFormedness(ITranslationErrorHandler handler, RenameModuleExpr renameExpr)
         {
             if (renameExpr.ModuleInfo != null)
             {
@@ -269,7 +269,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public static void CheckWellFormedness(ITranslationErrorHandler handler, UnionOrComposeModuleExpr composeExpr)
+        private static void CheckWellFormedness(ITranslationErrorHandler handler, UnionOrComposeModuleExpr composeExpr)
         {
             if (composeExpr.ModuleInfo != null)
             {
@@ -419,7 +419,7 @@ namespace Microsoft.Pc.TypeChecker
                 composeExpr.ComponentModules.SelectMany(m => m.ModuleInfo.Creates.Interfaces));
         }
 
-        public static void CheckWellFormedness(ITranslationErrorHandler handler, HideEventModuleExpr hideEExpr)
+        private static void CheckWellFormedness(ITranslationErrorHandler handler, HideEventModuleExpr hideEExpr)
         {
             if (hideEExpr.ModuleInfo != null)
             {
@@ -507,7 +507,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        public static void CheckWellFormedness(ITranslationErrorHandler handler, HideInterfaceModuleExpr hideIExpr)
+        private static void CheckWellFormedness(ITranslationErrorHandler handler, HideInterfaceModuleExpr hideIExpr)
         {
             if (hideIExpr.ModuleInfo != null)
             {

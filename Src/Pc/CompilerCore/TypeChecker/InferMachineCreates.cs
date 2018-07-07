@@ -11,130 +11,128 @@ namespace Microsoft.Pc.TypeChecker
 {
     public static class InferMachineCreates
     {
-        public static void Populate(Machine machine)
+        public static void Populate(Machine machine, ITranslationErrorHandler handler)
         {
             var interfaces = new InterfaceSet();
             foreach (Function function in machine.Methods)
             {
-                interfaces.AddInterfaces(InferCreates(function));
+                interfaces.AddInterfaces(InferCreates(function, handler));
             }
 
             machine.Creates = interfaces;
         }
 
-        public static IEnumerable<Interface> InferCreates(IPAST tree)
+        private static IEnumerable<Interface> InferCreates(IPAST tree, ITranslationErrorHandler handler)
         {
             switch (tree)
             {
-                case null:
-                    throw new ArgumentNullException(nameof(tree));
                 case Function function:
                     if (function.IsForeign)
                     {
                         // TODO: make foreign functions declare the list of machines they create.
                         return Enumerable.Empty<Interface>();
                     }
-                    return InferCreates(function.Body);
+                    return InferCreates(function.Body, handler);
                 case AnnounceStmt announce:
-                    return InferCreatesForExpr(announce.PEvent).Union(InferCreatesForExpr(announce.Payload));
+                    return InferCreatesForExpr(announce.PEvent, handler).Union(InferCreatesForExpr(announce.Payload, handler));
                 case AssertStmt assertStmt:
-                    return InferCreatesForExpr(assertStmt.Assertion);
+                    return InferCreatesForExpr(assertStmt.Assertion, handler);
                 case AssignStmt assignStmt:
-                    return InferCreatesForExpr(assignStmt.Location)
-                        .Union(InferCreatesForExpr(assignStmt.Value));
+                    return InferCreatesForExpr(assignStmt.Location, handler)
+                        .Union(InferCreatesForExpr(assignStmt.Value, handler));
                 case CompoundStmt compoundStmt:
-                    return compoundStmt.Statements.SelectMany(InferCreates);
+                    return compoundStmt.Statements.SelectMany(tree1 => InferCreates(tree1, handler));
                 case CtorStmt ctorStmt:
                     var res = new []{ctorStmt.Interface};
-                    return res.Union(ctorStmt.Arguments.SelectMany(InferCreatesForExpr));
+                    return res.Union(ctorStmt.Arguments.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case FunCallStmt funCallStmt:
-                    return InferCreates(funCallStmt.Fun)
-                        .Union(funCallStmt.ArgsList.SelectMany(InferCreatesForExpr));
+                    return InferCreates(funCallStmt.Fun, handler)
+                        .Union(funCallStmt.ArgsList.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case GotoStmt gotoStmt:
-                    return InferCreatesForExpr(gotoStmt.Payload);
+                    return InferCreatesForExpr(gotoStmt.Payload, handler);
                 case IfStmt ifStmt:
-                    return InferCreatesForExpr(ifStmt.Condition)
-                           .Union(InferCreates(ifStmt.ThenBranch))
-                           .Union(InferCreates(ifStmt.ElseBranch));
+                    return InferCreatesForExpr(ifStmt.Condition, handler)
+                           .Union(InferCreates(ifStmt.ThenBranch, handler))
+                           .Union(InferCreates(ifStmt.ElseBranch, handler));
                 case InsertStmt insertStmt:
-                    return InferCreatesForExpr(insertStmt.Variable)
-                           .Union(InferCreatesForExpr(insertStmt.Index))
-                           .Union(InferCreatesForExpr(insertStmt.Value));
+                    return InferCreatesForExpr(insertStmt.Variable, handler)
+                           .Union(InferCreatesForExpr(insertStmt.Index, handler))
+                           .Union(InferCreatesForExpr(insertStmt.Value, handler));
                 case MoveAssignStmt moveAssignStmt:
-                    return InferCreatesForExpr(moveAssignStmt.ToLocation);
+                    return InferCreatesForExpr(moveAssignStmt.ToLocation, handler);
                 case NoStmt _:
                     return Enumerable.Empty<Interface>();
                 case PopStmt _:
                     return Enumerable.Empty<Interface>();
                 case PrintStmt printStmt:
-                    return printStmt.Args.SelectMany(InferCreatesForExpr);
+                    return printStmt.Args.SelectMany(expr => InferCreatesForExpr(expr, handler));
                 case RaiseStmt raiseStmt:
-                    return InferCreatesForExpr(raiseStmt.PEvent)
-                        .Union(raiseStmt.Payload.SelectMany(InferCreatesForExpr));
+                    return InferCreatesForExpr(raiseStmt.PEvent, handler)
+                        .Union(raiseStmt.Payload.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case ReceiveStmt receiveStmt:
-                    return receiveStmt.Cases.SelectMany(x => InferCreates(x.Value));
+                    return receiveStmt.Cases.SelectMany(x => InferCreates(x.Value, handler));
                 case RemoveStmt removeStmt:
-                    return InferCreatesForExpr(removeStmt.Variable)
-                        .Union(InferCreatesForExpr(removeStmt.Value));
+                    return InferCreatesForExpr(removeStmt.Variable, handler)
+                        .Union(InferCreatesForExpr(removeStmt.Value, handler));
                 case ReturnStmt returnStmt:
-                    return InferCreatesForExpr(returnStmt.ReturnValue);
+                    return InferCreatesForExpr(returnStmt.ReturnValue, handler);
                 case SendStmt sendStmt:
-                    return InferCreatesForExpr(sendStmt.MachineExpr)
-                           .Union(InferCreatesForExpr(sendStmt.Evt))
-                           .Union(sendStmt.ArgsList.SelectMany(InferCreatesForExpr));
+                    return InferCreatesForExpr(sendStmt.MachineExpr, handler)
+                           .Union(InferCreatesForExpr(sendStmt.Evt, handler))
+                           .Union(sendStmt.ArgsList.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case SwapAssignStmt swapAssignStmt:
-                    return InferCreatesForExpr(swapAssignStmt.NewLocation);
+                    return InferCreatesForExpr(swapAssignStmt.NewLocation, handler);
                 case WhileStmt whileStmt:
-                    return InferCreatesForExpr(whileStmt.Condition).Union(InferCreates(whileStmt.Body));
+                    return InferCreatesForExpr(whileStmt.Condition, handler).Union(InferCreates(whileStmt.Body, handler));
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(tree));
+                    throw handler.InternalError(tree.SourceLocation, new ArgumentOutOfRangeException(nameof(tree)));
             }
         }
 
-        public static IEnumerable<Interface> InferCreatesForExpr(IPExpr expr)
+        private static IEnumerable<Interface> InferCreatesForExpr(IPExpr expr, ITranslationErrorHandler handler)
         {
             switch (expr)
             {
                 case BinOpExpr binOpExpr:
-                    return InferCreatesForExpr(binOpExpr.Lhs)
-                        .Union(InferCreatesForExpr(binOpExpr.Rhs));
+                    return InferCreatesForExpr(binOpExpr.Lhs, handler)
+                        .Union(InferCreatesForExpr(binOpExpr.Rhs, handler));
                 case CastExpr castExpr:
-                    return InferCreatesForExpr(castExpr.SubExpr);
+                    return InferCreatesForExpr(castExpr.SubExpr, handler);
                 case CoerceExpr coerceExpr:
-                    return InferCreatesForExpr(coerceExpr.SubExpr);
+                    return InferCreatesForExpr(coerceExpr.SubExpr, handler);
                 case ContainsKeyExpr containsKeyExpr:
-                    return InferCreatesForExpr(containsKeyExpr.Key)
-                        .Union(InferCreatesForExpr(containsKeyExpr.Map));
+                    return InferCreatesForExpr(containsKeyExpr.Key, handler)
+                        .Union(InferCreatesForExpr(containsKeyExpr.Map, handler));
                 case CloneExpr cloneExpr:
-                    return InferCreatesForExpr(cloneExpr.Term);
+                    return InferCreatesForExpr(cloneExpr.Term, handler);
                 case CtorExpr ctorExpr:
                     var res = new []{ctorExpr.Interface};
-                    return res.Union(ctorExpr.Arguments.SelectMany(InferCreatesForExpr));
+                    return res.Union(ctorExpr.Arguments.SelectMany(expr1 => InferCreatesForExpr(expr1, handler)));
                 case FunCallExpr funCallExpr:
-                    return InferCreates(funCallExpr.Function)
-                        .Union(funCallExpr.Arguments.SelectMany(InferCreatesForExpr));
+                    return InferCreates(funCallExpr.Function, handler)
+                        .Union(funCallExpr.Arguments.SelectMany(expr1 => InferCreatesForExpr(expr1, handler)));
                 case KeysExpr keysExpr:
-                    return InferCreatesForExpr(keysExpr.Expr);
+                    return InferCreatesForExpr(keysExpr.Expr, handler);
                 case MapAccessExpr mapAccessExpr:
-                    return InferCreatesForExpr(mapAccessExpr.MapExpr)
-                        .Union(InferCreatesForExpr(mapAccessExpr.IndexExpr));
+                    return InferCreatesForExpr(mapAccessExpr.MapExpr, handler)
+                        .Union(InferCreatesForExpr(mapAccessExpr.IndexExpr, handler));
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    return InferCreatesForExpr(namedTupleAccessExpr.SubExpr);
+                    return InferCreatesForExpr(namedTupleAccessExpr.SubExpr, handler);
                 case NamedTupleExpr namedTupleExpr:
-                    return namedTupleExpr.TupleFields.SelectMany(InferCreatesForExpr);
+                    return namedTupleExpr.TupleFields.SelectMany(expr1 => InferCreatesForExpr(expr1, handler));
                 case SeqAccessExpr seqAccessExpr:
-                    return InferCreatesForExpr(seqAccessExpr.SeqExpr)
-                        .Union(InferCreatesForExpr(seqAccessExpr.IndexExpr));
+                    return InferCreatesForExpr(seqAccessExpr.SeqExpr, handler)
+                        .Union(InferCreatesForExpr(seqAccessExpr.IndexExpr, handler));
                 case SizeofExpr sizeofExpr:
-                    return InferCreatesForExpr(sizeofExpr.Expr);
+                    return InferCreatesForExpr(sizeofExpr.Expr, handler);
                 case TupleAccessExpr tupleAccessExpr:
-                    return InferCreatesForExpr(tupleAccessExpr.SubExpr);
+                    return InferCreatesForExpr(tupleAccessExpr.SubExpr, handler);
                 case UnaryOpExpr unaryOpExpr:
-                    return InferCreatesForExpr(unaryOpExpr.SubExpr);
+                    return InferCreatesForExpr(unaryOpExpr.SubExpr, handler);
                 case UnnamedTupleExpr unnamedTupleExpr:
-                    return unnamedTupleExpr.TupleFields.SelectMany(InferCreatesForExpr);
+                    return unnamedTupleExpr.TupleFields.SelectMany(expr1 => InferCreatesForExpr(expr1, handler));
                 case ValuesExpr valuesExpr:
-                    return InferCreatesForExpr(valuesExpr.Expr);
+                    return InferCreatesForExpr(valuesExpr.Expr, handler);
                 default:
                     return Enumerable.Empty<Interface>();
             }

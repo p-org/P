@@ -10,11 +10,13 @@ namespace Microsoft.Pc.Backend
 
         public string ProjectName { get; }
         public ITranslationErrorHandler Handler { get; }
+        public ILocationResolver LocationResolver { get; }
 
-        protected CompilationContextBase(ITranslationErrorHandler handler, string projectName)
+        protected CompilationContextBase(ICompilationJob job)
         {
-            Handler = handler;
-            ProjectName = projectName;
+            Handler = job.Handler;
+            ProjectName = job.ProjectName;
+            LocationResolver = job.LocationResolver;
         }
 
         public void WriteLine(TextWriter output, string format = "")

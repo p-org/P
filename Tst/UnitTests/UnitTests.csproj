@@ -7,17 +7,7 @@
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <LangVersion>7.1</LangVersion>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <LangVersion>7.1</LangVersion>
-  </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Antlr4" Version="4.6.5-beta001" />
-    <PackageReference Include="JetBrains.dotMemoryUnit" Version="3.0.20171219.105559" />
-    <PackageReference Include="Microsoft.Build" Version="15.6.85" />
-    <PackageReference Include="Microsoft.Build.Framework" Version="15.6.85" />
     <PackageReference Include="NUnit" Version="3.10.1" />
     <PackageReference Include="NUnit3TestAdapter" Version="3.10.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.7.2" />
@@ -25,4 +15,4 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Src\Pc\CompilerCore\CompilerCore.csproj" />
   </ItemGroup>
-</Project> 
+</Project>

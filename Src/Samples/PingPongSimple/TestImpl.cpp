@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
     processGuid.data2 = 1; //nodeId
     processGuid.data3 = 0;
     processGuid.data4 = 0;
-    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_PROGRAM, PrtDistSMExceptionHandler, LogHandler);
+    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, PrtDistSMExceptionHandler, LogHandler);
 
 	if (cooperative)
 	{
@@ -194,7 +194,13 @@ int main(int argc, char *argv[])
 
     //create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();
-    PrtMkMachine(ContainerProcess, P_MACHINE_Client, 1, PRT_FUN_PARAM_CLONE, payload);
+	PRT_UINT32 machineId;
+	PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("Client", &machineId);
+	if (foundMainMachine == PRT_FALSE) {
+		printf("%s\n", "FAILED TO FIND TestMachine");
+		exit(1);
+	}
+	PrtMkMachine(ContainerProcess, machineId, 1, &payload);
 	PrtFreeValue(payload);
 
     // Wait for the timer.

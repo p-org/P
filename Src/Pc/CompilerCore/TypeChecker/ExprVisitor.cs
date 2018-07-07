@@ -394,7 +394,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.NONDET() != null)
             {
-                if (method.Owner.IsSpec)
+                if (method.Owner?.IsSpec == true)
                 {
                     throw handler.IssueError(
                         context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");
@@ -404,7 +404,7 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.FAIRNONDET() != null)
             {
-                if (method.Owner.IsSpec)
+                if (method.Owner?.IsSpec == true)
                 {
                     throw handler.IssueError(
                         context, "$, $$, this, new, send, announce, receive, and pop are not allowed in spec machines");

@@ -408,7 +408,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             PLanguageType expectedType =
-                state.Entry.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
+                state.Entry?.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
             IPExpr[] rvaluesList = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             foreach (IPExpr arg in rvaluesList)
             {
@@ -484,7 +484,7 @@ namespace Microsoft.Pc.TypeChecker
                         recvHandler.Signature.ParameterTypes.ElementAtOrDefault(0) ?? PrimitiveType.Null;
                     if (!expectedType.IsAssignableFrom(pEvent.PayloadType))
                     {
-                        throw handler.TypeMismatch(caseContext.anonEventHandler().funParam(), expectedType,
+                        throw handler.TypeMismatch(caseContext.anonEventHandler(), expectedType,
                                                    pEvent.PayloadType);
                     }
 

@@ -77,7 +77,6 @@ spec M observes M_Ping, M_Pong {
 }
 
 fun _CREATEMACHINE(cner: machine, typeOfMachine: int, param : any, newMachine: machine) : machine
-[container = cner]
 {
 	if(typeOfMachine == 1)
 	{

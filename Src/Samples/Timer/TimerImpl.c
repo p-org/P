@@ -58,9 +58,9 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 	//printf("Entering Timer Callback\n");	
 	TimerContext *timerContext = (TimerContext *)arg;
 	PRT_MACHINEINST *context = timerContext->clientContext;
-	PRT_VALUE *ev = &P_TIMER_EVENT_TIMEOUT.value;
+	PRT_VALUE *ev = &P_EVENT_TIMEOUT.value;
 	PRT_MACHINEINST* clientMachine = PrtGetMachine(context->process, context->id);
-	PRT_VALUE *timerId = PrtMkForeignValue((PRT_UINT64)timerContext, P_TIMER_TYPEDEF_TimerPtr);
+	PRT_VALUE *timerId = PrtMkForeignValue((PRT_UINT64)timerContext, P_TYPEDEF_TimerPtr);
 	PRT_MACHINESTATE state;
 	state.machineId = timerContext->timerInstance;
 	state.machineName = "Timer";
@@ -80,7 +80,7 @@ PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **owner
 	numTimerInstances++;
 
 	PrtAssert(timerContext->timer != NULL, "CreateWaitableTimer failed");
-	return PrtMkForeignValue((PRT_UINT64)timerContext, P_TIMER_TYPEDEF_TimerPtr);
+	return PrtMkForeignValue((PRT_UINT64)timerContext, P_TYPEDEF_TimerPtr);
 }
 
 PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer, PRT_VALUE **time)
@@ -114,11 +114,11 @@ PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer
 	timerContext->started = FALSE;
 	success = CancelWaitableTimer(timerContext->timer);
 	if (success) {
-		ev = &P_TIMER_EVENT_CANCEL_SUCCESS.value;
+		ev = &P_EVENT_CANCEL_SUCCESS.value;
 		PrtSend(&state, timerContext->clientContext, ev, 1, *timer);
 	}
 	else {
-		ev = &P_TIMER_EVENT_CANCEL_FAILURE.value;
+		ev = &P_EVENT_CANCEL_FAILURE.value;
 		PrtSend(&state, timerContext->clientContext, ev, 1, *timer);
 	}
 

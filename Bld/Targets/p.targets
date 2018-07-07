@@ -18,7 +18,7 @@
           BeforeTargets="BeforeBuildGenerateSources" >
 
     <ItemGroup>
-      <ClCompile Include="$(PGeneratedDir)\$(ProjectName).c"/>
+      <ClCompile Include="$(PGeneratedDir)\$(ProjectName).c" Condition=" '$(PLibBuild)' != 'TRUE'"/>
     </ItemGroup>
 
       <ItemGroup>

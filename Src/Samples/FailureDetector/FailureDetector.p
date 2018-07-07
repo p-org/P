@@ -71,8 +71,8 @@ machine FailureDetector {
 		var timerCanceled: bool;
 		CancelTimer(timer);
 		receive {
-			case CANCEL_SUCCESS: { timerCanceled = true; }
-			case CANCEL_FAILURE: { timerCanceled = false; }
+			case CANCEL_SUCCESS: (payload: TimerPtr) { timerCanceled = true; }
+			case CANCEL_FAILURE: (payload: TimerPtr) { timerCanceled = false; }
 		}
 		return timerCanceled;
 	 }

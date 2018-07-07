@@ -38,5 +38,5 @@ PRT_UINT64 PRT_FOREIGN_CLONE_StringType_IMPL(PRT_UINT64 frgnVal)
 
 PRT_VALUE *P_FUN_GetPassword_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE*** argRefs)
 {
-	return PrtMkDefaultValue(P_FOREIGNTYPES_TYPEDEF_StringType);
+	return PrtMkDefaultValue(P_TYPEDEF_StringType);
 }

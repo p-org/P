@@ -3,7 +3,7 @@
 <Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <PropertyGroup>
     <WindowsSDKVer Condition="'$(WindowsSDKVersion)'!=''">$(WindowsSDKVersion.TrimEnd('\'))</WindowsSDKVer>    
-    <WindowsSDKVer Condition="'$(WindowsSDKVersion)'==''">10.0.14393.0</WindowsSDKVer>
+    <WindowsSDKVer Condition="'$(WindowsSDKVersion)'==''">10.0.17134.0</WindowsSDKVer>
     <UnifiedPlatform>$(Platform)</UnifiedPlatform>
     <!-- C++ projects use "Win32" for "x86" platform and .NET projects use 'x86' -->
     <!-- So this new property unifies that difference and moves everything to 'x86' -->

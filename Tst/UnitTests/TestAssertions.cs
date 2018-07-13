@@ -30,7 +30,13 @@ namespace UnitTests
             {
                 if (string.Compare(scratch.FullName, safeBase.FullName, StringComparison.InvariantCultureIgnoreCase) == 0)
                 {
-                    toDelete.Delete(true);
+                    if (toDelete.Exists)
+                    {
+                        // TODO: bug in VS test runner occasionally runs Tear Down fixture in parallel with certain tests.
+                        // this sometimes causes an empty directory to be deleted twice, which throws a FileNotFound
+                        // exception here. 
+                        toDelete.Delete(true);
+                    }
                     return;
                 }
             }

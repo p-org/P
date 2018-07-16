@@ -10,6 +10,7 @@ namespace Microsoft.Pc.Backend.Prt
     {
         private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
         private readonly Dictionary<Machine, int> machineNumbering = new Dictionary<Machine, int>();
+        private readonly Dictionary<PEvent, int> eventNumbering = new Dictionary<PEvent, int>();
         private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering = new Dictionary<Machine, Dictionary<State, int>>();
 
         private readonly ValueInternmentManager<bool> registeredBools;
@@ -33,31 +34,36 @@ namespace Microsoft.Pc.Backend.Prt
         public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
         public HashSet<PLanguageType> WrittenTypes { get; } = new HashSet<PLanguageType>();
 
-        public int GetNumberForInterface(Interface pInterface)
+        #region Numbering helpers
+
+        private static int GetOrAddNumber<T>(IDictionary<T, int> dict, T declaration)
         {
-            if (interfaceNumbering.TryGetValue(pInterface, out int name))
+            if (dict.TryGetValue(declaration, out int number))
             {
-                return name;
+                return number;
             }
 
-            name = interfaceNumbering.Count;
-            interfaceNumbering.Add(pInterface, name);
-            return name;
+            number = dict.Count;
+            dict.Add(declaration, number);
+            return number;
         }
 
-        public int GetNumberForMachine(Machine machine)
+        public int GetDeclNumber(Interface pInterface)
         {
-            if (machineNumbering.TryGetValue(machine, out int name))
-            {
-                return name;
-            }
-
-            name = machineNumbering.Count;
-            machineNumbering.Add(machine, name);
-            return name;
+            return GetOrAddNumber(interfaceNumbering, pInterface);
         }
 
-        public int GetNumberForState(State state)
+        public int GetDeclNumber(Machine machine)
+        {
+            return GetOrAddNumber(machineNumbering, machine);
+        }
+
+        public int GetDeclNumber(PEvent ev)
+        {
+            return GetOrAddNumber(eventNumbering, ev);
+        }
+
+        public int GetDeclNumber(State state)
         {
             Machine machine = state.OwningMachine;
             if (!stateNumbering.TryGetValue(machine, out var internalNumbering))
@@ -66,15 +72,10 @@ namespace Microsoft.Pc.Backend.Prt
                 stateNumbering.Add(machine, internalNumbering);
             }
 
-            if (internalNumbering.TryGetValue(state, out int name))
-            {
-                return name;
-            }
-
-            name = internalNumbering.Count;
-            internalNumbering.Add(state, name);
-            return name;
+            return GetOrAddNumber(internalNumbering, state);
         }
+
+        #endregion
 
         public string RegisterLiteral(Function function, int value)
         {

@@ -17,53 +17,69 @@ namespace Microsoft.Pc.Backend.Prt
 {
     public class PrtCodeGenerator : ICodeGenerator
     {
+        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
+        {
+            return PrtCodeGeneratorImpl.GenerateCode(job, globalScope);
+        }
+    }
+
+    internal class PrtCodeGeneratorImpl
+    {
+        private readonly CompilationContext context;
+
+        private PrtCodeGeneratorImpl(CompilationContext context)
+        {
+            this.context = context;
+        }
+
+        public static IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
+        {
+            var context = new CompilationContext(job);
+            var generator = new PrtCodeGeneratorImpl(context);
+            CompiledFile cHeader = generator.GenerateHeaderFile(globalScope);
+            CompiledFile cSource = generator.GenerateSourceFile(globalScope);
+            return new List<CompiledFile> {cHeader, cSource};
+        }
+
         private const string FunCallArgsArrayName = "_P_GEN_funargs";
         private const string FunCallRetValName = "_P_GEN_funval";
         private const string FunResultValName = "_P_GEN_retval";
         private const string FunNullStaticName = "_P_GEN_null";
 
-        public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
-        {
-            var context = new CompilationContext(job);
-            CompiledFile cHeader = GenerateHeaderFile(context, globalScope);
-            CompiledFile cSource = GenerateSourceFile(context, globalScope);
-            return new List<CompiledFile> {cHeader, cSource};
-        }
-
         #region Top-level generation methods
 
-        private static CompiledFile GenerateHeaderFile(CompilationContext context, Scope globalScope)
+        private CompiledFile GenerateHeaderFile(Scope globalScope)
         {
             var cHeader = new CompiledFile(context.HeaderFileName);
 
-            WriteHeaderPrologue(context, cHeader.Stream);
+            WriteHeaderPrologue(cHeader.Stream);
             foreach (IPDecl decl in globalScope.AllDecls)
             {
-                WriteExternDeclaration(context, cHeader.Stream, decl);
+                WriteExternDeclaration(cHeader.Stream, decl);
             }
 
-            WriteHeaderEpilogue(context, cHeader.Stream);
+            WriteHeaderEpilogue(cHeader.Stream);
             return cHeader;
         }
 
-        private static CompiledFile GenerateSourceFile(CompilationContext context, Scope globalScope)
+        private CompiledFile GenerateSourceFile(Scope globalScope)
         {
             var cSource = new CompiledFile(context.SourceFileName);
             // Write includes and common macros, if any
-            WriteSourcePrologue(context, cSource.Stream);
+            WriteSourcePrologue(cSource.Stream);
 
             // Write the machine and function bodies into temporary buffer
             var bodyWriter = new StringWriter();
             foreach (IPDecl decl in globalScope.AllDecls)
             {
-                WriteSourceDecl(context, decl, bodyWriter);
+                WriteSourceDecl(bodyWriter, decl);
             }
 
             // Write all the type definitions and function implementation prototypes
             context.WriteLine(cSource.Stream, "// Type universe for program:");
             foreach (PLanguageType type in context.UsedTypes.ToArray())
             {
-                WriteTypeDefinition(context, type, cSource.Stream);
+                WriteTypeDefinition(cSource.Stream, type);
             }
 
             context.WriteLine(cSource.Stream);
@@ -72,11 +88,13 @@ namespace Microsoft.Pc.Backend.Prt
             foreach (Function function in globalScope.GetAllMethods())
             {
                 string functionName = context.Names.GetNameForFunctionImpl(function);
-                context.WriteLine(cSource.Stream, $"PRT_VALUE* {functionName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs);");
+                context.WriteLine(cSource.Stream,
+                    $"PRT_VALUE* {functionName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs);");
                 if (!function.IsForeign)
                 {
                     context.WriteLine(cSource.Stream, $"extern PRT_FUNDECL {context.Names.GetNameForDecl(function)};");
                 }
+
                 context.WriteLine(cSource.Stream);
             }
 
@@ -86,7 +104,7 @@ namespace Microsoft.Pc.Backend.Prt
             cSource.Stream.GetStringBuilder().Append(bodyWriter);
 
             // Finally, write the overall program decl
-            WriteProgramDecl(context, globalScope, cSource.Stream);
+            WriteProgramDecl(cSource.Stream, globalScope);
             return cSource;
         }
 
@@ -94,13 +112,13 @@ namespace Microsoft.Pc.Backend.Prt
 
         #region Declaration level methods
 
-        private static void WriteSourcePrologue(CompilationContext context, TextWriter output)
+        private void WriteSourcePrologue(TextWriter output)
         {
             context.WriteLine(output, $"#include \"{context.HeaderFileName}\"");
             context.WriteLine(output);
         }
 
-        private static void WriteSourceDecl(CompilationContext context, IPDecl decl, TextWriter output)
+        private void WriteSourceDecl(TextWriter output, IPDecl decl)
         {
             string declName = context.Names.GetNameForDecl(decl);
             var declLocation = context.LocationResolver.GetLocation(decl);
@@ -115,8 +133,9 @@ namespace Microsoft.Pc.Backend.Prt
                 case Function function:
                     if (!function.IsForeign)
                     {
-                        WriteNormalFunction(context, output, function);
+                        WriteNormalFunction(output, function);
                     }
+
                     break;
                 case Implementation _:
                     // does not produce a struct definition - aside from ProgramDecl
@@ -131,14 +150,14 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         var interfaceEventSet = new NamedEventSet(@interface.Name + "_RECV", @interface.SourceLocation);
                         interfaceEventSet.AddEvents(@interface.ReceivableEvents.Events);
-                        WriteSourceDecl(context, interfaceEventSet, output);
+                        WriteSourceDecl(output, interfaceEventSet);
                         ifaceRecvSetName = context.Names.GetNameForDecl(interfaceEventSet);
                     }
 
                     context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_INTERFACEDECL {declName} =");
                     context.WriteLine(output, "{");
-                    context.WriteLine(output, $"{context.GetNumberForInterface(@interface)}U,");
+                    context.WriteLine(output, $"{context.GetDeclNumber(@interface)}U,");
                     context.WriteLine(output, $"\"{@interface.Name}\",");
                     context.WriteLine(output, $"&{context.Names.GetNameForType(@interface.PayloadType)},");
                     context.WriteLine(output, $"&{ifaceRecvSetName}");
@@ -155,7 +174,8 @@ namespace Microsoft.Pc.Backend.Prt
                         {
                             Variable field = machineFields[i];
                             string sep = i == machineFields.Count - 1 ? "" : ",";
-                            context.WriteLine(output, $"{{ \"{field.Name}\", &{context.Names.GetNameForType(field.Type)} }}{sep}");
+                            context.WriteLine(output,
+                                $"{{ \"{field.Name}\", &{context.Names.GetNameForType(field.Type)} }}{sep}");
                         }
 
                         context.WriteLine(output, "};");
@@ -166,8 +186,8 @@ namespace Microsoft.Pc.Backend.Prt
                     var machineStatesInOrder = new State[machineStates.Count];
                     foreach (State state in machineStates)
                     {
-                        WriteSourceDecl(context, state, output);
-                        machineStatesInOrder[context.GetNumberForState(state)] = state;
+                        WriteSourceDecl(output, state);
+                        machineStatesInOrder[context.GetDeclNumber(state)] = state;
                     }
 
                     string stateArrayName = context.Names.GetTemporaryName($"{machine.Name}_STATES");
@@ -179,7 +199,7 @@ namespace Microsoft.Pc.Backend.Prt
                     var machineMethods = machine.Methods.ToList();
                     foreach (Function machineMethod in machineMethods)
                     {
-                        WriteSourceDecl(context, machineMethod, output);
+                        WriteSourceDecl(output, machineMethod);
                     }
 
                     var methodArrayName = "NULL";
@@ -192,18 +212,19 @@ namespace Microsoft.Pc.Backend.Prt
                         context.WriteLine(output);
                     }
 
-                    string machineRecvSetName = GetReceivesNameOrMkTemp(machine, context, output);
-                    string machineSendSetName = GetSendsNameOrMkTemp(machine, context, output);
+                    string machineRecvSetName = GetReceivesNameOrMkTemp(output, machine);
+                    string machineSendSetName = GetSendsNameOrMkTemp(output, machine);
                     var machineCreatesName = "NULL";
                     if (machine.Creates.Interfaces.Any())
                     {
                         var createsInterfaces = machine.Creates.Interfaces.ToList();
                         machineCreatesName = context.Names.GetTemporaryName($"{machine.Name}_CREATES");
                         string createsArrayName = context.Names.GetTemporaryName($"{machine.Name}_CREATES_ARR");
-                        string createsArrayBody = string.Join(", ", createsInterfaces.Select(context.GetNumberForInterface));
+                        string createsArrayBody = string.Join(", ", createsInterfaces.Select(context.GetDeclNumber));
                         context.WriteLine(output, $"PRT_UINT32 {createsArrayName}[] = {{ {createsArrayBody} }};");
                         context.WriteLine(
-                            output, $"PRT_INTERFACESETDECL {machineCreatesName} = {{ {createsInterfaces.Count}, {createsArrayName} }};");
+                            output,
+                            $"PRT_INTERFACESETDECL {machineCreatesName} = {{ {createsInterfaces.Count}, {createsArrayName} }};");
                         machineCreatesName = "&" + machineCreatesName;
                     }
 
@@ -211,7 +232,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_MACHINEDECL {declName} = ");
                     context.WriteLine(output, "{");
-                    context.WriteLine(output, $"{context.GetNumberForMachine(machine)}U,");
+                    context.WriteLine(output, $"{context.GetDeclNumber(machine)}U,");
                     context.WriteLine(output, $"\"{machine.Name}\",");
                     context.WriteLine(output, $"&{machineRecvSetName},");
                     context.WriteLine(output, $"&{machineSendSetName},");
@@ -220,7 +241,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"{machineStatesInOrder.Length}U,");
                     context.WriteLine(output, $"{machineMethods.Count}U,");
                     context.WriteLine(output, $"{maxQueueSize}U,");
-                    context.WriteLine(output, $"{context.GetNumberForState(machine.StartState)}U,");
+                    context.WriteLine(output, $"{context.GetDeclNumber(machine.StartState)}U,");
                     context.WriteLine(output, $"{fieldArrayName},");
                     context.WriteLine(output, $"{stateArrayName},");
                     context.WriteLine(output, $"{methodArrayName}");
@@ -229,7 +250,8 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case NamedEventSet namedEventSet:
                     string innerSetName = context.Names.GetTemporaryName(namedEventSet.Name + "_INNER");
-                    var eventDeclNames = namedEventSet.Events.Select(x => "&" + context.Names.GetNameForDecl(x)).ToList();
+                    var eventDeclNames = namedEventSet.Events.Select(x => "&" + context.Names.GetNameForDecl(x))
+                        .ToList();
                     string eventDeclArrBody = string.Join(", ", eventDeclNames);
                     eventDeclArrBody = string.IsNullOrEmpty(eventDeclArrBody) ? "NULL" : eventDeclArrBody;
                     context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
@@ -248,7 +270,7 @@ namespace Microsoft.Pc.Backend.Prt
                     return;
                 case PEvent pEvent when !pEvent.IsBuiltIn:
                     long eventBound = Math.Min(pEvent.Assert == -1 ? uint.MaxValue : (uint) pEvent.Assert,
-                                               pEvent.Assume == -1 ? uint.MaxValue : (uint) pEvent.Assume);
+                        pEvent.Assume == -1 ? uint.MaxValue : (uint) pEvent.Assume);
 
                     context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
                     context.WriteLine(output, $"PRT_EVENTDECL {declName} = ");
@@ -280,12 +302,13 @@ namespace Microsoft.Pc.Backend.Prt
                     string stateExitFunName =
                         state.Exit == null ? "&_P_NO_OP" : $"&{context.Names.GetNameForDecl(state.Exit)}";
 
-                    int stateIndex = context.GetNumberForState(state);
-                    PrtTranslationUtils.StateActionResults stateData = PrtTranslationUtils.BuildActionSets(context, state);
+                    int stateIndex = context.GetDeclNumber(state);
+                    PrtTranslationUtils.StateActionResults stateData =
+                        PrtTranslationUtils.BuildActionSets(context, state);
 
-                    WriteSourceDecl(context, stateData.DefersSet, output);
-                    WriteSourceDecl(context, stateData.TransSet, output);
-                    WriteSourceDecl(context, stateData.DosSet, output);
+                    WriteSourceDecl(output, stateData.DefersSet);
+                    WriteSourceDecl(output, stateData.TransSet);
+                    WriteSourceDecl(output, stateData.DosSet);
 
                     var transArrName = "NULL";
                     if (stateData.Trans.Count != 0)
@@ -298,7 +321,8 @@ namespace Microsoft.Pc.Backend.Prt
                             (PEvent triggerEvent, int destIndex, string transFunRef) = stateData.Trans[i];
                             string triggerName = context.Names.GetNameForDecl(triggerEvent);
                             string comma = i == stateData.Trans.Count - 1 ? "" : ",";
-                            context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {destIndex}, {transFunRef} }}{comma}");
+                            context.WriteLine(output,
+                                $"{{ {stateIndex}, &{triggerName}, {destIndex}, {transFunRef} }}{comma}");
                         }
 
                         context.WriteLine(output, "};");
@@ -343,12 +367,12 @@ namespace Microsoft.Pc.Backend.Prt
                 case StateGroup stateGroup:
                     foreach (State state in stateGroup.States)
                     {
-                        WriteSourceDecl(context, state, output);
+                        WriteSourceDecl(output, state);
                     }
 
                     foreach (StateGroup subGroup in stateGroup.Groups)
                     {
-                        WriteSourceDecl(context, subGroup, output);
+                        WriteSourceDecl(output, subGroup);
                     }
 
                     break;
@@ -357,7 +381,7 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output);
         }
 
-        private static void WriteNormalFunction(CompilationContext context, TextWriter output, Function function)
+        private void WriteNormalFunction(TextWriter output, Function function)
         {
             string declName = context.Names.GetNameForDecl(function);
             var declLocation = context.LocationResolver.GetLocation(function);
@@ -367,12 +391,14 @@ namespace Microsoft.Pc.Backend.Prt
             string functionName = isAnon ? "NULL" : $"\"{function.Name}\"";
             var signature = function.Signature.ParameterTypes.ToList();
             Debug.Assert((isAnon && signature.Count <= 1) || !isAnon);
-            string payloadType = isAnon && signature.Count == 1 ? $"&{context.Names.GetNameForType(signature[0])}" : "NULL";
+            string payloadType = isAnon && signature.Count == 1
+                ? $"&{context.Names.GetNameForType(signature[0])}"
+                : "NULL";
 
             context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
             context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
             context.WriteLine(output, "{");
-            WriteFunctionBody(context, function, output);
+            WriteFunctionBody(output, function);
             context.WriteLine(output, "}");
             context.WriteLine(output);
             context.WriteLine(output, $"PRT_FUNDECL {declName} =");
@@ -384,7 +410,7 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output);
         }
 
-        private static string WriteTypeDefinition(CompilationContext context, PLanguageType type, TextWriter output)
+        private string WriteTypeDefinition(TextWriter output, PLanguageType type)
         {
             type = type.Canonicalize();
 
@@ -407,11 +433,15 @@ namespace Microsoft.Pc.Backend.Prt
                     string foreignTypeName = foreignType.CanonicalRepresentation;
 
                     context.WriteLine(output, $"extern PRT_UINT64 PRT_FOREIGN_MKDEF_{foreignTypeName}_IMPL(void);");
-                    context.WriteLine(output, $"extern PRT_UINT64 PRT_FOREIGN_CLONE_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output,
+                        $"extern PRT_UINT64 PRT_FOREIGN_CLONE_{foreignTypeName}_IMPL(PRT_UINT64);");
                     context.WriteLine(output, $"extern void PRT_FOREIGN_FREE_{foreignTypeName}_IMPL(PRT_UINT64);");
-                    context.WriteLine(output, $"extern PRT_UINT32 PRT_FOREIGN_GETHASHCODE_{foreignTypeName}_IMPL(PRT_UINT64);");
-                    context.WriteLine(output, $"extern PRT_BOOLEAN PRT_FOREIGN_ISEQUAL_{foreignTypeName}_IMPL(PRT_UINT64, PRT_UINT64);");
-                    context.WriteLine(output, $"extern PRT_STRING PRT_FOREIGN_TOSTRING_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output,
+                        $"extern PRT_UINT32 PRT_FOREIGN_GETHASHCODE_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output,
+                        $"extern PRT_BOOLEAN PRT_FOREIGN_ISEQUAL_{foreignTypeName}_IMPL(PRT_UINT64, PRT_UINT64);");
+                    context.WriteLine(output,
+                        $"extern PRT_STRING PRT_FOREIGN_TOSTRING_{foreignTypeName}_IMPL(PRT_UINT64);");
 
                     string foreignTypeDeclName = context.Names.GetNameForForeignTypeDecl(foreignType);
                     context.WriteLine(output, $"static PRT_FOREIGNTYPEDECL {foreignTypeDeclName} = {{");
@@ -424,20 +454,23 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"PRT_FOREIGN_ISEQUAL_{foreignTypeName}_IMPL,");
                     context.WriteLine(output, $"PRT_FOREIGN_TOSTRING_{foreignTypeName}_IMPL,");
                     context.WriteLine(output, "};");
-                    context.WriteLine(output, $"PRT_TYPE {typeGenName} = {{ PRT_KIND_FOREIGN, {{ .foreignType = &{foreignTypeDeclName} }} }};");
+                    context.WriteLine(output,
+                        $"PRT_TYPE {typeGenName} = {{ PRT_KIND_FOREIGN, {{ .foreignType = &{foreignTypeDeclName} }} }};");
                     break;
                 case MapType mapType:
-                    string mapKeyTypeName = WriteTypeDefinition(context, mapType.KeyType, output);
-                    string mapValueTypeName = WriteTypeDefinition(context, mapType.ValueType, output);
+                    string mapKeyTypeName = WriteTypeDefinition(output, mapType.KeyType);
+                    string mapValueTypeName = WriteTypeDefinition(output, mapType.ValueType);
                     string mapTypeDeclName = context.Names.GetTemporaryName("MAPTYPE");
-                    context.WriteLine(output, $"static PRT_MAPTYPE {mapTypeDeclName} = {{ &{mapKeyTypeName}, &{mapValueTypeName} }};");
-                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MAP, {{ .map = &{mapTypeDeclName} }} }};");
+                    context.WriteLine(output,
+                        $"static PRT_MAPTYPE {mapTypeDeclName} = {{ &{mapKeyTypeName}, &{mapValueTypeName} }};");
+                    context.WriteLine(output,
+                        $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MAP, {{ .map = &{mapTypeDeclName} }} }};");
                     break;
                 case NamedTupleType namedTupleType:
                     string ntNamesArrayName = context.Names.GetTemporaryName("NMDTUP_N");
                     string ntTypesArrayName = context.Names.GetTemporaryName("NMDTUP_T");
                     string ntStructName = context.Names.GetTemporaryName("NMDTUP");
-                    var typeDeclNames = namedTupleType.Types.Select(t => WriteTypeDefinition(context, t, output));
+                    var typeDeclNames = namedTupleType.Types.Select(t => WriteTypeDefinition(output, t));
                     context.WriteLine(
                         output,
                         $"static PRT_STRING {ntNamesArrayName}[] = {{ {string.Join(", ", namedTupleType.Names.Select(name => "\"" + name + "\""))} }};");
@@ -447,7 +480,8 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(
                         output,
                         $"static PRT_NMDTUPTYPE {ntStructName} = {{ {namedTupleType.Types.Count}U, {ntNamesArrayName}, {ntTypesArrayName} }};");
-                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NMDTUP, {{ .nmTuple = &{ntStructName} }} }};");
+                    context.WriteLine(output,
+                        $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NMDTUP, {{ .nmTuple = &{ntStructName} }} }};");
                     break;
                 case PermissionType _:
                     // TODO: implement full permission types in runtime
@@ -479,31 +513,35 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"// TODO: implement types like {primitiveType.CanonicalRepresentation}");
                     break;
                 case SequenceType sequenceType:
-                    string seqElementTypeName = WriteTypeDefinition(context, sequenceType.ElementType, output);
+                    string seqElementTypeName = WriteTypeDefinition(output, sequenceType.ElementType);
                     string seqTypeDeclName = context.Names.GetTemporaryName("SEQTYPE");
                     context.WriteLine(output, $"static PRT_SEQTYPE {seqTypeDeclName} = {{ &{seqElementTypeName} }};");
-                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_SEQ, {{ .seq = &{seqTypeDeclName} }} }};");
+                    context.WriteLine(output,
+                        $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_SEQ, {{ .seq = &{seqTypeDeclName} }} }};");
                     break;
                 case TupleType tupleType:
                     string tupTypesArrayName = context.Names.GetTemporaryName("TUP_T");
                     string tupStructName = context.Names.GetTemporaryName("TUP");
-                    var tupTypeDeclNames = tupleType.Types.Select(t => WriteTypeDefinition(context, t, output));
+                    var tupTypeDeclNames = tupleType.Types.Select(t => WriteTypeDefinition(output, t));
                     context.WriteLine(
                         output,
                         $"static PRT_TYPE* {tupTypesArrayName}[] = {{ {string.Join(", ", tupTypeDeclNames.Select(n => "&" + n))} }};");
-                    context.WriteLine(output, $"static PRT_TUPTYPE {tupStructName} = {{ {tupleType.Types.Count}U, {tupTypesArrayName} }};");
-                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_TUPLE, {{ .tuple = &{tupStructName} }} }};");
+                    context.WriteLine(output,
+                        $"static PRT_TUPTYPE {tupStructName} = {{ {tupleType.Types.Count}U, {tupTypesArrayName} }};");
+                    context.WriteLine(output,
+                        $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_TUPLE, {{ .tuple = &{tupStructName} }} }};");
                     break;
                 case TypeDefType _:
                     Debug.Fail("typedefs shouldn't be possible after canonicalization");
-                    throw new ArgumentOutOfRangeException(nameof(type), "typedefs shouldn't be possible after canonicalization");
+                    throw new ArgumentOutOfRangeException(nameof(type),
+                        "typedefs shouldn't be possible after canonicalization");
             }
 
             context.WrittenTypes.Add(type);
             return typeGenName;
         }
 
-        private static void WriteProgramDecl(CompilationContext context, Scope globalScope, TextWriter output)
+        private void WriteProgramDecl(TextWriter output, Scope globalScope)
         {
             // generate event array
             var eventsList = globalScope.Events.Where(e => !e.IsBuiltIn);
@@ -519,16 +557,16 @@ namespace Microsoft.Pc.Backend.Prt
             // generate machine array
             string machineArrayName = context.Names.GetTemporaryName("ALL_MACHINES");
             string machineArrayBody = string.Join(", ", PrtTranslationUtils
-                                                        .ToOrderedListByPermutation(globalScope.Machines, context.GetNumberForMachine)
-                                                        .Select(ev => "&" + context.Names.GetNameForDecl(ev)));
+                .ToOrderedListByPermutation(globalScope.Machines, context.GetDeclNumber)
+                .Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             machineArrayBody = string.IsNullOrEmpty(machineArrayBody) ? "NULL" : machineArrayBody;
             context.WriteLine(output, $"PRT_MACHINEDECL* {machineArrayName}[] = {{ {machineArrayBody} }};");
 
             // generate interface array
             string interfaceArrayName = context.Names.GetTemporaryName("ALL_INTERFACES");
             string interfaceArrayBody = string.Join(", ", PrtTranslationUtils
-                                                          .ToOrderedListByPermutation(globalScope.Interfaces, context.GetNumberForInterface)
-                                                          .Select(ev => "&" + context.Names.GetNameForDecl(ev)));
+                .ToOrderedListByPermutation(globalScope.Interfaces, context.GetDeclNumber)
+                .Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             interfaceArrayBody = string.IsNullOrEmpty(interfaceArrayBody) ? "NULL" : interfaceArrayBody;
             context.WriteLine(output, $"PRT_INTERFACEDECL* {interfaceArrayName}[] = {{ {interfaceArrayBody} }};");
 
@@ -547,13 +585,14 @@ namespace Microsoft.Pc.Backend.Prt
                 foreignTypes
                     .Select(t => $"&{context.Names.GetNameForForeignTypeDecl(t)}"));
             foreignTypesArrayBody = string.IsNullOrEmpty(foreignTypesArrayBody) ? "NULL" : foreignTypesArrayBody;
-            context.WriteLine(output, $"PRT_FOREIGNTYPEDECL* {foreignTypesArrayName}[] = {{ {foreignTypesArrayBody} }};");
+            context.WriteLine(output,
+                $"PRT_FOREIGNTYPEDECL* {foreignTypesArrayName}[] = {{ {foreignTypesArrayBody} }};");
 
             foreach (Implementation impl in globalScope.Implementations)
             {
                 var linkMap = impl.ModExpr.ModuleInfo.LinkMap;
 
-                var trueLinkMap = ResolveLinkMap(globalScope, context, linkMap);
+                var trueLinkMap = ResolveLinkMap(globalScope, linkMap);
                 var mapNames = Enumerable.Repeat("NULL", trueLinkMap.Length).ToArray();
                 for (var i = 0; i < trueLinkMap.Length; i++)
                 {
@@ -574,7 +613,7 @@ namespace Microsoft.Pc.Backend.Prt
                 var realMachineDefMap = Enumerable.Repeat(-1, trueLinkMap.Length).ToArray();
                 foreach (var linking in machineDefMap)
                 {
-                    realMachineDefMap[context.GetNumberForInterface(linking.Key)] = context.GetNumberForMachine(linking.Value);
+                    realMachineDefMap[context.GetDeclNumber(linking.Key)] = context.GetDeclNumber(linking.Value);
                 }
 
                 context.WriteLine(output, $"int {machineDefMapName}[] = {{ {string.Join(",", realMachineDefMap)} }};");
@@ -596,21 +635,20 @@ namespace Microsoft.Pc.Backend.Prt
             }
         }
 
-        private static int[][] ResolveLinkMap(Scope globalScope, CompilationContext context,
-                                              IDictionary<Interface, IDictionary<Interface, Interface>> linkMap)
+        private int[][] ResolveLinkMap(Scope globalScope, IDictionary<Interface, IDictionary<Interface, Interface>> linkMap)
         {
             int nInterfaces = globalScope.Interfaces.Count();
             var maps = new int[nInterfaces][];
             foreach (var keyValuePair in linkMap)
             {
-                int firstInterfaceIndex = context.GetNumberForInterface(keyValuePair.Key);
+                int firstInterfaceIndex = context.GetDeclNumber(keyValuePair.Key);
                 Debug.Assert(maps[firstInterfaceIndex] == null);
                 maps[firstInterfaceIndex] = Enumerable.Repeat(-1, nInterfaces).ToArray();
 
                 foreach (var finalMapping in keyValuePair.Value)
                 {
-                    int secondInterfaceIndex = context.GetNumberForInterface(finalMapping.Key);
-                    int finalInterfaceIndex = context.GetNumberForInterface(finalMapping.Value);
+                    int secondInterfaceIndex = context.GetDeclNumber(finalMapping.Key);
+                    int finalInterfaceIndex = context.GetDeclNumber(finalMapping.Value);
                     maps[firstInterfaceIndex][secondInterfaceIndex] = finalInterfaceIndex;
                 }
             }
@@ -618,7 +656,7 @@ namespace Microsoft.Pc.Backend.Prt
             return maps;
         }
 
-        private static string GetReceivesNameOrMkTemp(Machine machine, CompilationContext context, TextWriter output)
+        private string GetReceivesNameOrMkTemp(TextWriter output, Machine machine)
         {
             string eventSetName;
             if (machine.Receives is NamedEventSet mRecvSet)
@@ -629,14 +667,14 @@ namespace Microsoft.Pc.Backend.Prt
             {
                 var machineTempRecvSet = new NamedEventSet(machine.Name + "_RECV", machine.SourceLocation);
                 machineTempRecvSet.AddEvents(machine.Receives.Events);
-                WriteSourceDecl(context, machineTempRecvSet, output);
+                WriteSourceDecl(output, machineTempRecvSet);
                 eventSetName = context.Names.GetNameForDecl(machineTempRecvSet);
             }
 
             return eventSetName;
         }
 
-        private static string GetSendsNameOrMkTemp(Machine machine, CompilationContext context, TextWriter output)
+        private string GetSendsNameOrMkTemp(TextWriter output, Machine machine)
         {
             string eventSetName;
             if (machine.Sends is NamedEventSet mSendSet)
@@ -647,7 +685,7 @@ namespace Microsoft.Pc.Backend.Prt
             {
                 var machineTempSendSet = new NamedEventSet(machine.Name + "_SEND", machine.SourceLocation);
                 machineTempSendSet.AddEvents(machine.Sends.Events);
-                WriteSourceDecl(context, machineTempSendSet, output);
+                WriteSourceDecl(output, machineTempSendSet);
                 eventSetName = context.Names.GetNameForDecl(machineTempSendSet);
             }
 
@@ -658,7 +696,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         #region Function body methods
 
-        private static void WriteFunctionBody(CompilationContext context, Function function, TextWriter output)
+        private void WriteFunctionBody(TextWriter output, Function function)
         {
             var funLocation = context.LocationResolver.GetLocation(function);
             context.WriteLine(output, $"#line {funLocation.Line} \"{funLocation.File.Name}\"");
@@ -701,10 +739,10 @@ namespace Microsoft.Pc.Backend.Prt
 
             foreach (IPStmt stmt in function.Body.Statements)
             {
-                WriteStmt(context, function, stmt, bodyWriter);
+                WriteStmt(bodyWriter, function, stmt);
             }
-            
-            bodyWriter.WriteLine("p_return:");
+
+            bodyWriter.WriteLine($"{context.Names.GetReturnLabel(function)}:");
             foreach (Variable localVariable in function.LocalVariables)
             {
                 string varName = context.Names.GetNameForDecl(localVariable);
@@ -714,16 +752,19 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(bodyWriter, $"return {FunResultValName};");
 
             // Write gathered literals to the prologue
-            context.WriteLine(output, $"PRT_VALUE {FunNullStaticName} = {{ PRT_VALUE_KIND_NULL, {{ .ev = PRT_SPECIAL_EVENT_NULL }} }};");
+            context.WriteLine(output,
+                $"PRT_VALUE {FunNullStaticName} = {{ PRT_VALUE_KIND_NULL, {{ .ev = PRT_SPECIAL_EVENT_NULL }} }};");
 
             foreach (var literal in context.GetRegisteredIntLiterals(function))
             {
-                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_INT, {{ .nt = {literal.Key} }} }};");
+                context.WriteLine(output,
+                    $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_INT, {{ .nt = {literal.Key} }} }};");
             }
 
             foreach (var literal in context.GetRegisteredFloatLiterals(function))
             {
-                context.WriteLine(output, $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_FLOAT, {{ .ft = {literal.Key} }} }};");
+                context.WriteLine(output,
+                    $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_FLOAT, {{ .ft = {literal.Key} }} }};");
             }
 
             foreach (var literal in context.GetRegisteredBoolLiterals(function))
@@ -736,12 +777,12 @@ namespace Microsoft.Pc.Backend.Prt
             output.Write(bodyWriter);
         }
 
-        private static string GetVariableReference(CompilationContext context, Function function, IVariableRef variableRef)
+        private string GetVariableReference(Function function, IVariableRef variableRef)
         {
-            return $"&({GetVariablePointer(context, function, variableRef.Variable)})";
+            return $"&({GetVariablePointer(function, variableRef.Variable)})";
         }
 
-        private static void WriteStmt(CompilationContext context, Function function, IPStmt stmt, TextWriter output)
+        private void WriteStmt(TextWriter output, Function function, IPStmt stmt)
         {
             var stmtLocation = context.LocationResolver.GetLocation(stmt);
             context.WriteLine(output, $"#line {stmtLocation.Line} \"{stmtLocation.File.Name}\"");
@@ -752,14 +793,14 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case AssertStmt assertStmt:
                     context.Write(output, "PrtAssert(PrtPrimGetBool(");
-                    WriteExpr(context, output, function, assertStmt.Assertion);
+                    WriteExpr(output, function, assertStmt.Assertion);
                     context.WriteLine(output, $"), \"{assertStmt.Message}\");");
                     break;
                 case AssignStmt assignStmt:
                     // Lookup lvalue
                     string lvalName = context.Names.GetTemporaryName("LVALUE");
                     context.Write(output, $"PRT_VALUE** {lvalName} = &(");
-                    WriteLValue(context, output, function, assignStmt.Location);
+                    WriteLValue(output, function, assignStmt.Location);
                     context.WriteLine(output, ");");
 
                     // Free old value
@@ -767,26 +808,27 @@ namespace Microsoft.Pc.Backend.Prt
 
                     // Assign new value
                     context.Write(output, $"*{lvalName} = ");
-                    WriteExpr(context, output, function, assignStmt.Value);
+                    WriteExpr(output, function, assignStmt.Value);
                     context.WriteLine(output, ";");
                     break;
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");
                     foreach (IPStmt pStmt in compoundStmt.Statements)
                     {
-                        WriteStmt(context, function, pStmt, output);
+                        WriteStmt(output, function, pStmt);
                     }
 
                     context.WriteLine(output, "}");
                     break;
                 case CtorStmt ctorStmt:
                     context.Write(
-                        output, $"PrtMkInterface(context, {context.GetNumberForInterface(ctorStmt.Interface)}, {ctorStmt.Arguments.Count}");
+                        output,
+                        $"PrtMkInterface(context, {context.GetDeclNumber(ctorStmt.Interface)}, {ctorStmt.Arguments.Count}");
                     foreach (IPExpr pExpr in ctorStmt.Arguments)
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
-                        context.Write(output, $", {GetVariableReference(context, function, argVar)}");
+                        context.Write(output, $", {GetVariableReference(function, argVar)}");
                     }
 
                     context.WriteLine(output, ");");
@@ -799,7 +841,7 @@ namespace Microsoft.Pc.Backend.Prt
                     foreach (var arg in funArgs.Select((arg, i) => new {arg, i}))
                     {
                         context.WriteLine(
-                            output, $"{FunCallArgsArrayName}[{arg.i}] = {GetVariableReference(context, function, arg.arg)};");
+                            output, $"{FunCallArgsArrayName}[{arg.i}] = {GetVariableReference(function, arg.arg)};");
                     }
 
                     // Call the function and immediately free the value
@@ -807,7 +849,7 @@ namespace Microsoft.Pc.Backend.Prt
 
                     // Free and set to null all the moved arguments
                     var toFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
-                                        .Select(arg => GetVariablePointer(context, function, arg.Variable));
+                        .Select(arg => GetVariablePointer(function, arg.Variable));
                     foreach (string argName in toFree)
                     {
                         context.WriteLine(output, $"PrtFreeValue({argName});");
@@ -818,13 +860,13 @@ namespace Microsoft.Pc.Backend.Prt
                 case GotoStmt gotoStmt:
                     context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
 
-                    int destStateIndex = context.GetNumberForState(gotoStmt.State);
+                    int destStateIndex = context.GetDeclNumber(gotoStmt.State);
                     context.Write(output, $"PrtGoto(p_this, {destStateIndex}U, ");
                     if (gotoStmt.Payload != null)
                     {
                         Debug.Assert(gotoStmt.Payload is IVariableRef);
                         var gotoArg = (IVariableRef) gotoStmt.Payload;
-                        context.Write(output, $"1, {GetVariableReference(context, function, gotoArg)}");
+                        context.Write(output, $"1, {GetVariableReference(function, gotoArg)}");
                     }
                     else
                     {
@@ -835,41 +877,41 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case IfStmt ifStmt:
                     context.Write(output, "if (PrtPrimGetBool(");
-                    WriteExpr(context, output, function, ifStmt.Condition);
+                    WriteExpr(output, function, ifStmt.Condition);
                     context.WriteLine(output, "))");
-                    WriteStmt(context, function, ifStmt.ThenBranch, output);
+                    WriteStmt(output, function, ifStmt.ThenBranch);
                     if (ifStmt.ElseBranch != null)
                     {
                         context.WriteLine(output, "else");
-                        WriteStmt(context, function, ifStmt.ElseBranch, output);
+                        WriteStmt(output, function, ifStmt.ElseBranch);
                     }
 
                     break;
                 case InsertStmt insertStmt:
                     context.Write(output, "PrtSeqInsertEx(");
-                    WriteLValue(context, output, function, insertStmt.Variable);
+                    WriteLValue(output, function, insertStmt.Variable);
                     context.Write(output, ", ");
-                    WriteExpr(context, output, function, insertStmt.Index);
+                    WriteExpr(output, function, insertStmt.Index);
                     context.Write(output, ", ");
                     Debug.Assert(insertStmt.Value is IVariableRef);
-                    WriteExpr(context, output, function, insertStmt.Value);
+                    WriteExpr(output, function, insertStmt.Value);
                     context.WriteLine(output, ", PRT_FALSE);");
                     var insertValueVar = (IVariableRef) insertStmt.Value;
-                    context.WriteLine(output, $"*({GetVariableReference(context, function, insertValueVar)}) = NULL;");
+                    context.WriteLine(output, $"*({GetVariableReference(function, insertValueVar)}) = NULL;");
                     break;
                 case MoveAssignStmt moveAssignStmt:
                     context.WriteLine(output, "{");
-                    string movedVarName = GetVariablePointer(context, function, moveAssignStmt.FromVariable);
+                    string movedVarName = GetVariablePointer(function, moveAssignStmt.FromVariable);
 
                     // Get reference to old value
                     string movedLValue = context.Names.GetTemporaryName("LVALUE");
                     context.Write(output, $"PRT_VALUE** {movedLValue} = &(");
-                    WriteLValue(context, output, function, moveAssignStmt.ToLocation);
+                    WriteLValue(output, function, moveAssignStmt.ToLocation);
                     context.WriteLine(output, ");");
 
                     // Free old value
                     context.WriteLine(output, $"PrtFreeValue(*{movedLValue});");
-                    
+
                     // Move variable to lvalue location
                     context.WriteLine(output, $"*{movedLValue} = {movedVarName};");
 
@@ -883,54 +925,75 @@ namespace Microsoft.Pc.Backend.Prt
                 case PopStmt _:
                     context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
                     context.WriteLine(output, "PrtPop(p_this);");
-                    context.WriteLine(output, "goto p_return;");
+                    context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
                     break;
                 case PrintStmt printStmt:
-                    WritePrintStmt(context, output, printStmt, function);
+                    WritePrintStmt(output, printStmt, function);
                     break;
                 case RaiseStmt raiseStmt:
                     context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
                     context.Write(output, "PrtRaise(p_this, ");
-                    WriteExpr(context, output, function, raiseStmt.PEvent);
+                    WriteExpr(output, function, raiseStmt.PEvent);
                     context.Write(output, $", {raiseStmt.Payload.Count}");
                     foreach (IPExpr pExpr in raiseStmt.Payload)
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
-                        context.Write(output, $", {GetVariableReference(context, function, argVar)}");
+                        context.Write(output, $", {GetVariableReference(function, argVar)}");
                     }
 
                     context.WriteLine(output, ");");
 
                     Debug.Assert(raiseStmt.PEvent is IVariableRef);
                     var raiseEventVar = (IVariableRef) raiseStmt.PEvent;
-                    context.WriteLine(output, $"*({GetVariableReference(context, function, raiseEventVar)}) = NULL;");
-                    context.WriteLine(output, "goto p_return;");
+                    context.WriteLine(output, $"*({GetVariableReference(function, raiseEventVar)}) = NULL;");
+                    context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
                     break;
                 case ReceiveStmt receiveStmt:
-                    // TODO: implement. Daan's the man!
-                    context.WriteLine(output, "PrtAssert(PRT_FALSE, \"receive not yet implemented!\");");
-                    /*
-                     * Ideal template:
-                     * PRT_VALUE* payload = NULL; int allowedEventIds[] = { ... };
-                     * int eventId = PrtReceiveAsync(context, allowedEventIds, &payload);
-                     * switch(eventId) {
-                     *     case X: {
-                     *         PRT_VALUE* actual_payload_var_name = payload;
-                     *         // statements
-                     *     } break;
-                     *     // more cases
-                     *     default:
-                     *         PrtAssert(false, "issue in receive");
-                     *         break;
-                     * }
-                     */
+                    string allowedEventIdsName = context.Names.GetTemporaryName("allowedEventIds");
+                    string allowedEventIdsValue =
+                        string.Join(", ", receiveStmt.Cases.Keys.Select(context.GetDeclNumber));
+                    context.WriteLine(output, $"PRT_UINT32 {allowedEventIdsName}[] = {{ {allowedEventIdsValue} }};");
+
+                    string payloadName = context.Names.GetTemporaryName("allowedEventIds");
+                    context.WriteLine(output, $"PRT_VALUE* {payloadName} = NULL;");
+
+                    // TODO: implement PrtReceiveAsync. Daan's the man!
+                    string eventIdName = context.Names.GetTemporaryName("eventId");
+                    context.WriteLine(output,
+                        $"PRT_UINT32 {eventIdName} = PrtReceiveAsync(context, {allowedEventIdsName}, &{payloadName});");
+
+                    context.WriteLine(output, $"switch ({eventIdName}) {{");
+                    foreach (var receiveCase in receiveStmt.Cases)
+                    {
+                        var ev = receiveCase.Key;
+                        var fn = receiveCase.Value;
+                        context.WriteLine(output, $"case {context.GetDeclNumber(ev)}: {{");
+
+                        Debug.Assert(fn.Signature.Parameters.Count <= 1);
+
+                        if (fn.Signature.Parameters.Any())
+                        {
+                            string realPayloadName = context.Names.GetNameForDecl(fn.Signature.Parameters[0]);
+                            context.WriteLine(output, $"PRT_VALUE* {realPayloadName} = {payloadName};");
+                            
+                            // Get the return label just for the side effect of setting a nice name
+                            context.Names.GetReturnLabel(fn, $"recv_{ev.Name.ToLowerInvariant()}_ret");
+                        }
+
+                        context.WriteLine(output, "} break;");
+                    }
+
+                    context.WriteLine(output, "default: {");
+                    context.WriteLine(output, "PrtAssert(PRT_FALSE, \"receive returned unhandled event\");");
+                    context.WriteLine(output, "}");
+                    context.WriteLine(output, "}");
                     break;
                 case RemoveStmt removeStmt:
                     context.Write(output, "PrtRemoveByKey(");
-                    WriteLValue(context, output, function, removeStmt.Variable);
+                    WriteLValue(output, function, removeStmt.Variable);
                     context.Write(output, ", ");
-                    WriteExpr(context, output, function, removeStmt.Value);
+                    WriteExpr(output, function, removeStmt.Value);
                     context.WriteLine(output, ");");
                     break;
                 case ReturnStmt returnStmt:
@@ -938,30 +1001,30 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         context.WriteLine(output, $"PrtFreeValue({FunResultValName});");
                         context.Write(output, $"{FunResultValName} = ");
-                        WriteExpr(context, output, function, returnStmt.ReturnValue);
+                        WriteExpr(output, function, returnStmt.ReturnValue);
                         context.WriteLine(output, ";");
                     }
 
-                    context.WriteLine(output, "goto p_return;");
+                    context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
                     break;
                 case SendStmt sendStmt:
                     context.Write(output, "PrtSendInternal(context, PrtGetMachine(context->process, ");
-                    WriteExpr(context, output, function, sendStmt.MachineExpr);
+                    WriteExpr(output, function, sendStmt.MachineExpr);
                     context.Write(output, "), ");
-                    WriteExpr(context, output, function, sendStmt.Evt);
+                    WriteExpr(output, function, sendStmt.Evt);
                     context.Write(output, $", {sendStmt.ArgsList.Count}");
                     foreach (IPExpr sendArgExpr in sendStmt.ArgsList)
                     {
                         Debug.Assert(sendArgExpr is IVariableRef);
                         var argVar = (IVariableRef) sendArgExpr;
-                        context.Write(output, $", {GetVariableReference(context, function, argVar)}");
+                        context.Write(output, $", {GetVariableReference(function, argVar)}");
                     }
 
                     context.WriteLine(output, ");");
 
                     Debug.Assert(sendStmt.Evt is IVariableRef);
                     var sendEventVar = (IVariableRef) sendStmt.Evt;
-                    context.WriteLine(output, $"*({GetVariableReference(context, function, sendEventVar)}) = NULL;");
+                    context.WriteLine(output, $"*({GetVariableReference(function, sendEventVar)}) = NULL;");
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     context.WriteLine(output, "{");
@@ -969,11 +1032,11 @@ namespace Microsoft.Pc.Backend.Prt
                     string tmpName = context.Names.GetTemporaryName("SWAP");
 
                     // Can only swap local variables, so this is safe. Otherwise would have to call a second WriteLValue
-                    string swappedName = GetVariablePointer(context, function, swapAssignStmt.OldLocation);
+                    string swappedName = GetVariablePointer(function, swapAssignStmt.OldLocation);
 
                     // Save l-value
                     context.Write(output, $"PRT_VALUE** {lvName} = &(");
-                    WriteLValue(context, output, function, swapAssignStmt.NewLocation);
+                    WriteLValue(output, function, swapAssignStmt.NewLocation);
                     context.WriteLine(output, ");");
                     context.WriteLine(output, $"PRT_VALUE* {tmpName} = *{lvName};");
 
@@ -986,16 +1049,16 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case WhileStmt whileStmt:
                     context.Write(output, "while (PrtPrimGetBool(");
-                    WriteExpr(context, output, function, whileStmt.Condition);
+                    WriteExpr(output, function, whileStmt.Condition);
                     context.WriteLine(output, "))");
-                    WriteStmt(context, function, whileStmt.Body, output);
+                    WriteStmt(output, function, whileStmt.Body);
                     break;
             }
 
             context.WriteLine(output);
         }
 
-        private static void WritePrintStmt(CompilationContext context, TextWriter output, PrintStmt printStmt, Function function)
+        private void WritePrintStmt(TextWriter output, PrintStmt printStmt, Function function)
         {
             // format is {str0, n1, str1, n2, ..., nK, strK}
             var printMessageParts = PrtTranslationUtils.ParsePrintMessage(printStmt.Message);
@@ -1018,7 +1081,7 @@ namespace Microsoft.Pc.Backend.Prt
             foreach (IPExpr printArg in printStmt.Args)
             {
                 context.Write(output, ", ");
-                WriteExpr(context, output, function, printArg);
+                WriteExpr(output, function, printArg);
             }
 
             context.Write(output, ", ");
@@ -1037,50 +1100,51 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output, ");");
         }
 
-        private static void WriteLValue(CompilationContext context, TextWriter output, Function function, IPExpr expr)
+        private void WriteLValue(TextWriter output, Function function, IPExpr expr)
         {
             switch (expr)
             {
                 case MapAccessExpr mapAccessExpr:
                     // TODO: optimize out key copy when possible
                     context.Write(output, "*(PrtMapGetLValue(");
-                    WriteLValue(context, output, function, mapAccessExpr.MapExpr);
+                    WriteLValue(output, function, mapAccessExpr.MapExpr);
                     context.Write(output, ", ");
-                    WriteExpr(context, output, function, mapAccessExpr.IndexExpr);
+                    WriteExpr(output, function, mapAccessExpr.IndexExpr);
                     context.Write(output, $", PRT_TRUE, &{context.Names.GetNameForType(mapAccessExpr.MapExpr.Type)}))");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, "*(PrtTupleGetLValue(");
-                    WriteLValue(context, output, function, namedTupleAccessExpr.SubExpr);
+                    WriteLValue(output, function, namedTupleAccessExpr.SubExpr);
                     context.Write(output, $", {namedTupleAccessExpr.Entry.FieldNo}))");
                     break;
                 case SeqAccessExpr seqAccessExpr:
                     context.Write(output, "*(PrtSeqGetLValue(");
-                    WriteLValue(context, output, function, seqAccessExpr.SeqExpr);
+                    WriteLValue(output, function, seqAccessExpr.SeqExpr);
                     context.Write(output, ", ");
-                    WriteExpr(context, output, function, seqAccessExpr.IndexExpr);
+                    WriteExpr(output, function, seqAccessExpr.IndexExpr);
                     context.Write(output, "))");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, "*(PrtTupleGetLValue(");
-                    WriteLValue(context, output, function, tupleAccessExpr.SubExpr);
+                    WriteLValue(output, function, tupleAccessExpr.SubExpr);
                     context.Write(output, $", {tupleAccessExpr.FieldNo}))");
                     break;
                 case VariableAccessExpr variableAccessExpr:
-                    WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
+                    WriteVariableAccess(output, function, variableAccessExpr.Variable);
                     break;
                 default:
-                    throw context.Handler.InternalError(expr.SourceLocation, new ArgumentOutOfRangeException(nameof(expr)));
+                    throw context.Handler.InternalError(expr.SourceLocation,
+                        new ArgumentOutOfRangeException(nameof(expr)));
             }
         }
 
-        private static void WriteExpr(CompilationContext context, TextWriter output, Function function, IPExpr expr)
+        private void WriteExpr(TextWriter output, Function function, IPExpr expr)
         {
             switch (expr)
             {
                 case CloneExpr cloneExpr:
                     context.Write(output, "PrtCloneValue(");
-                    WriteExpr(context, output, function, cloneExpr.Term);
+                    WriteExpr(output, function, cloneExpr.Term);
                     context.Write(output, ")");
                     break;
                 case BinOpExpr binOpExpr:
@@ -1093,9 +1157,9 @@ namespace Microsoft.Pc.Backend.Prt
                     {
                         string negate = binOpType == BinOpType.Eq ? "" : "!";
                         context.Write(output, $"PrtMkBoolValue({negate}PrtIsEqualValue(");
-                        WriteExpr(context, output, function, binOpLhs);
+                        WriteExpr(output, function, binOpLhs);
                         context.Write(output, ", ");
-                        WriteExpr(context, output, function, binOpRhs);
+                        WriteExpr(output, function, binOpRhs);
                         context.Write(output, "))");
                     }
                     else
@@ -1106,13 +1170,13 @@ namespace Microsoft.Pc.Backend.Prt
                         context.Write(output, $"{binOpBuilder}(");
 
                         context.Write(output, $"{binOpGetter}(");
-                        WriteExpr(context, output, function, binOpLhs);
+                        WriteExpr(output, function, binOpLhs);
                         context.Write(output, ")");
 
                         context.Write(output, $" {BinOpToStr(binOpType)} ");
 
                         context.Write(output, $"{binOpGetter}(");
-                        WriteExpr(context, output, function, binOpRhs);
+                        WriteExpr(output, function, binOpRhs);
                         context.Write(output, ")");
 
                         context.Write(output, ")");
@@ -1126,7 +1190,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case CastExpr castExpr:
                     string castTypeName = context.Names.GetNameForType(castExpr.Type);
                     context.Write(output, "PrtCloneValue(PrtCastValue(");
-                    WriteExpr(context, output, function, castExpr.SubExpr);
+                    WriteExpr(output, function, castExpr.SubExpr);
                     context.Write(output, $", &{castTypeName}))");
                     break;
                 case CoerceExpr coerceExpr:
@@ -1141,7 +1205,8 @@ namespace Microsoft.Pc.Backend.Prt
                             coerceCtor = "PrtMkFloatValue";
                             break;
                         default:
-                            throw context.Handler.InternalError(coerceExpr.SourceLocation, new ArgumentOutOfRangeException(nameof(coerceExpr.NewType)));
+                            throw context.Handler.InternalError(coerceExpr.SourceLocation,
+                                new ArgumentOutOfRangeException(nameof(coerceExpr.NewType)));
                     }
 
                     string coerceUnpack;
@@ -1155,29 +1220,30 @@ namespace Microsoft.Pc.Backend.Prt
                             coerceUnpack = "PrtPrimGetFloat";
                             break;
                         default:
-                            throw context.Handler.InternalError(coerceExpr.SourceLocation, new ArgumentOutOfRangeException(nameof(coerceExpr.SubExpr.Type)));
+                            throw context.Handler.InternalError(coerceExpr.SourceLocation,
+                                new ArgumentOutOfRangeException(nameof(coerceExpr.SubExpr.Type)));
                     }
 
                     context.Write(output, $"{coerceCtor}({coerceUnpack}(");
-                    WriteExpr(context, output, function, coerceExpr.SubExpr);
+                    WriteExpr(output, function, coerceExpr.SubExpr);
                     context.Write(output, "))");
                     break;
                 case ContainsKeyExpr containsKeyExpr:
                     context.Write(output, "PrtMkBoolValue(PrtMapExists(");
-                    WriteExpr(context, output, function, containsKeyExpr.Map);
+                    WriteExpr(output, function, containsKeyExpr.Map);
                     context.Write(output, ", ");
-                    WriteExpr(context, output, function, containsKeyExpr.Key);
+                    WriteExpr(output, function, containsKeyExpr.Key);
                     context.Write(output, "));");
                     break;
                 case CtorExpr ctorExpr:
                     context.Write(
                         output,
-                        $"PrtCloneValue(PrtMkInterface(context, {context.GetNumberForInterface(ctorExpr.Interface)}, {ctorExpr.Arguments.Count}");
+                        $"PrtCloneValue(PrtMkInterface(context, {context.GetDeclNumber(ctorExpr.Interface)}, {ctorExpr.Arguments.Count}");
                     foreach (IPExpr pExpr in ctorExpr.Arguments)
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
-                        context.Write(output, $", {GetVariableReference(context, function, argVar)}");
+                        context.Write(output, $", {GetVariableReference(function, argVar)}");
                     }
 
                     context.Write(output, ")->id)");
@@ -1203,11 +1269,12 @@ namespace Microsoft.Pc.Backend.Prt
                 case FunCallExpr funCallExpr:
                     string funImplName = context.Names.GetNameForFunctionImpl(funCallExpr.Function);
                     var funArgs = funCallExpr.Arguments.Cast<ILinearRef>().ToList();
-                    var argSetup = funArgs.Select((arg, i) => $"({FunCallArgsArrayName}[{i}] = {GetVariableReference(context, function, arg)})");
+                    var argSetup = funArgs.Select((arg, i) =>
+                        $"({FunCallArgsArrayName}[{i}] = {GetVariableReference(function, arg)})");
                     var funCall = new[] {$"({FunCallRetValName} = {funImplName}(context, {FunCallArgsArrayName}))"};
                     var argsFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
-                                          .Select(arg => GetVariablePointer(context, function, arg.Variable))
-                                          .Select(varName => $"(PrtFreeValue({varName}), {varName} = NULL)");
+                        .Select(arg => GetVariablePointer(function, arg.Variable))
+                        .Select(varName => $"(PrtFreeValue({varName}), {varName} = NULL)");
                     var resRetrieve = new[] {$"({FunCallRetValName})"};
                     string fullCall = string.Join(", ", argSetup.Concat(funCall).Concat(argsFree).Concat(resRetrieve));
                     context.Write(output, $"({fullCall})");
@@ -1218,30 +1285,30 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case KeysExpr keysExpr:
                     context.Write(output, "PrtMapGetKeys(");
-                    WriteExpr(context, output, function, keysExpr.Expr);
+                    WriteExpr(output, function, keysExpr.Expr);
                     context.Write(output, ")");
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
                     // TODO: what's special about linear refs here?
-                    WriteVariableAccess(context, output, function, linearAccessRefExpr.Variable);
+                    WriteVariableAccess(output, function, linearAccessRefExpr.Variable);
                     break;
                 case MapAccessExpr mapAccessExpr:
                     context.Write(output, "PrtMapGet(");
-                    WriteExpr(context, output, function, mapAccessExpr.MapExpr);
+                    WriteExpr(output, function, mapAccessExpr.MapExpr);
                     context.Write(output, ", ");
-                    WriteExpr(context, output, function, mapAccessExpr.IndexExpr);
+                    WriteExpr(output, function, mapAccessExpr.IndexExpr);
                     context.Write(output, ")");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, "PrtTupleGet(");
-                    WriteExpr(context, output, function, namedTupleAccessExpr.SubExpr);
+                    WriteExpr(output, function, namedTupleAccessExpr.SubExpr);
                     context.Write(output, $", {namedTupleAccessExpr.Entry.FieldNo})");
                     break;
                 case NamedTupleExpr namedTupleExpr:
                     var ntArgs = (IReadOnlyList<IVariableRef>) namedTupleExpr.TupleFields;
                     string ntTypeName = context.Names.GetNameForType(namedTupleExpr.Type);
                     string namedTupleBody =
-                        string.Join(", ", ntArgs.Select(v => GetVariableReference(context, function, v)));
+                        string.Join(", ", ntArgs.Select(v => GetVariableReference(function, v)));
                     context.Write(output, $"(PrtMkTuple(&{ntTypeName}, {namedTupleBody}))");
                     break;
                 case NondetExpr _:
@@ -1252,15 +1319,17 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case SeqAccessExpr seqAccessExpr:
                     context.Write(output, "PrtSeqGet(");
-                    WriteExpr(context, output, function, seqAccessExpr.SeqExpr);
+                    WriteExpr(output, function, seqAccessExpr.SeqExpr);
                     context.Write(output, ", ");
-                    WriteExpr(context, output, function, seqAccessExpr.IndexExpr);
+                    WriteExpr(output, function, seqAccessExpr.IndexExpr);
                     context.Write(output, ")");
                     break;
                 case SizeofExpr sizeofExpr:
-                    var sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Expr.Type, TypeKind.Map) ? "PrtMapSizeOf" : "PrtSeqSizeOf";
+                    var sizeofFun = PLanguageType.TypeIsOfKind(sizeofExpr.Expr.Type, TypeKind.Map)
+                        ? "PrtMapSizeOf"
+                        : "PrtSeqSizeOf";
                     context.Write(output, $"PrtMkIntValue({sizeofFun}(");
-                    WriteExpr(context, output, function, sizeofExpr.Expr);
+                    WriteExpr(output, function, sizeofExpr.Expr);
                     context.Write(output, "))");
                     break;
                 case ThisRefExpr _:
@@ -1268,7 +1337,7 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     context.Write(output, "PrtTupleGet(");
-                    WriteExpr(context, output, function, tupleAccessExpr.SubExpr);
+                    WriteExpr(output, function, tupleAccessExpr.SubExpr);
                     context.Write(output, $", {tupleAccessExpr.FieldNo})");
                     break;
                 case UnaryOpExpr unaryOpExpr:
@@ -1277,7 +1346,7 @@ namespace Microsoft.Pc.Backend.Prt
 
                     context.Write(output, UnOpToStr(unaryOpExpr.Operation));
                     context.Write(output, $"{unOpGetter}(");
-                    WriteExpr(context, output, function, unaryOpExpr.SubExpr);
+                    WriteExpr(output, function, unaryOpExpr.SubExpr);
                     context.Write(output, ")");
 
                     context.Write(output, ")");
@@ -1286,28 +1355,28 @@ namespace Microsoft.Pc.Backend.Prt
                     var utArgs = (IReadOnlyList<IVariableRef>) unnamedTupleExpr.TupleFields;
                     string utTypeName = context.Names.GetNameForType(unnamedTupleExpr.Type);
                     string tupleBody =
-                        string.Join(", ", utArgs.Select(v => GetVariableReference(context, function, v)));
+                        string.Join(", ", utArgs.Select(v => GetVariableReference(function, v)));
                     context.Write(output, $"(PrtMkTuple(&{utTypeName}, {tupleBody}))");
                     break;
                 case ValuesExpr valuesExpr:
                     context.Write(output, "PrtMapGetValues(");
-                    WriteExpr(context, output, function, valuesExpr.Expr);
+                    WriteExpr(output, function, valuesExpr.Expr);
                     context.Write(output, ")");
                     break;
                 case VariableAccessExpr variableAccessExpr:
-                    WriteVariableAccess(context, output, function, variableAccessExpr.Variable);
+                    WriteVariableAccess(output, function, variableAccessExpr.Variable);
                     break;
             }
         }
 
-        private static string GetVariablePointer(CompilationContext context, Function function, Variable variable)
+        private string GetVariablePointer(Function function, Variable variable)
         {
             if (variable.Role.HasFlag(VariableRole.Param))
             {
                 // dereference, since params are passed by reference.
                 return $"*{context.Names.GetNameForDecl(variable)}";
             }
-            
+
             if (variable.Role.HasFlag(VariableRole.Field))
             {
                 // TODO: is this always correct? I think the iterator ordering of a List should be consistent...
@@ -1320,12 +1389,13 @@ namespace Microsoft.Pc.Backend.Prt
                 return context.Names.GetNameForDecl(variable);
             }
 
-            throw context.Handler.InternalError(variable.SourceLocation, new ArgumentOutOfRangeException(nameof(variable)));
+            throw context.Handler.InternalError(variable.SourceLocation,
+                new ArgumentOutOfRangeException(nameof(variable)));
         }
 
-        private static void WriteVariableAccess(CompilationContext context, TextWriter output, Function function, Variable variable)
+        private void WriteVariableAccess(TextWriter output, Function function, Variable variable)
         {
-            context.Write(output, GetVariablePointer(context, function, variable));
+            context.Write(output, GetVariablePointer(function, variable));
         }
 
         private static string UnOpToStr(UnaryOpType operation)
@@ -1405,7 +1475,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         #region Header methods
 
-        private static void WriteHeaderPrologue(CompilationContext context, TextWriter output)
+        private void WriteHeaderPrologue(TextWriter output)
         {
             string includeGuardMacro = $"P_{Regex.Replace(context.ProjectName.ToUpperInvariant(), @"\s+", "")}_H_";
             context.WriteLine(output, "#pragma once");
@@ -1419,7 +1489,7 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output);
         }
 
-        private static void WriteExternDeclaration(CompilationContext context, TextWriter output, IPDecl decl)
+        private void WriteExternDeclaration(TextWriter output, IPDecl decl)
         {
             string declName = context.Names.GetNameForDecl(decl);
             switch (decl)
@@ -1447,7 +1517,8 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"// DECL(NamedModule, {decl.Name}) => {declName}");
                     break;
                 case PEnum pEnum:
-                    string enumBody = string.Join(", ", pEnum.Values.Select(val => $"{context.Names.GetNameForDecl(val)} = {val.Value}"));
+                    string enumBody = string.Join(", ",
+                        pEnum.Values.Select(val => $"{context.Names.GetNameForDecl(val)} = {val.Value}"));
                     context.WriteLine(output, $"typedef enum {declName} {{ {enumBody} }} {declName};");
                     context.WriteLine(output);
                     break;
@@ -1483,7 +1554,7 @@ namespace Microsoft.Pc.Backend.Prt
             }
         }
 
-        private static void WriteHeaderEpilogue(CompilationContext context, TextWriter output)
+        private void WriteHeaderEpilogue(TextWriter output)
         {
             string includeGuardMacro = $"P_{Regex.Replace(context.ProjectName.ToUpperInvariant(), @"\s+", "")}_H_";
             context.WriteLine(output);

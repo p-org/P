@@ -13,6 +13,7 @@ namespace Microsoft.Pc.Backend.Prt
     public class PrtNameManager : NameManagerBase
     {
         private readonly ConditionalWeakTable<Function, string> funcNames = new ConditionalWeakTable<Function, string>();
+        private readonly ConditionalWeakTable<Function, string> retLabels = new ConditionalWeakTable<Function, string>();
         private readonly ConditionalWeakTable<ForeignType, string> foreignTypeDeclNames = new ConditionalWeakTable<ForeignType, string>();
         private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
 
@@ -36,6 +37,18 @@ namespace Microsoft.Pc.Backend.Prt
             name = AdjustName(namePrefix + methodName + nameSuffix);
 
             funcNames.Add(function, name);
+            return name;
+        }
+
+        public string GetReturnLabel(Function function, string hint = "p_return")
+        {
+            if (retLabels.TryGetValue(function, out string name))
+            {
+                return name;
+            }
+
+            name = AdjustName(hint);
+            retLabels.Add(function, name);
             return name;
         }
 

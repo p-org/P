@@ -47,7 +47,7 @@ namespace Microsoft.Pc.Backend.Prt
                         string transFunName = eventGotoState.TransitionFunction == null
                             ? "_P_NO_OP"
                             : context.Names.GetNameForDecl(eventGotoState.TransitionFunction);
-                        trans.Add((pEvent, context.GetNumberForState(eventGotoState.Target), "&" + transFunName));
+                        trans.Add((pEvent, context.GetDeclNumber(eventGotoState.Target), "&" + transFunName));
                         break;
                     case EventIgnore _:
                         dosSet.AddEvent(pEvent);
@@ -55,7 +55,7 @@ namespace Microsoft.Pc.Backend.Prt
                         break;
                     case EventPushState eventPushState:
                         transSet.AddEvent(pEvent);
-                        trans.Add((pEvent, context.GetNumberForState(eventPushState.Target), "NULL"));
+                        trans.Add((pEvent, context.GetDeclNumber(eventPushState.Target), "NULL"));
                         break;
                 }
             }

@@ -585,6 +585,19 @@ _Inout_ PRT_MACHINEINST_PRIV	*context
 	return PRT_FALSE;
 }
 
+PRT_UINT32 PrtReceiveAsync(
+	_Inout_ PRT_MACHINEINST_PRIV *context,
+	_In_    PRT_UINT32           *handledEvents,
+	_Out_   PRT_VALUE            *payload)
+{
+	// 1) Register handledEvents (maybe as bitfield) with the machine 
+	//    as the current receive event set.
+	// 2) Set up effect via libhandler, register callback with the
+	//    machine context.
+	// 3) Upon resume, pass values back to payload and return value.
+	PrtAssert(PRT_FALSE, "receive not yet implemented!");
+	return PRT_SPECIAL_EVENT_NULL;
+}
 
 void 
 PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)

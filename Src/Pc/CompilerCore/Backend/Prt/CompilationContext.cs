@@ -5,13 +5,14 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend.Prt
 {
-
     public class CompilationContext : CompilationContextBase
     {
         private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
         private readonly Dictionary<Machine, int> machineNumbering = new Dictionary<Machine, int>();
         private readonly Dictionary<PEvent, int> userEventNumbering = new Dictionary<PEvent, int>();
-        private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering = new Dictionary<Machine, Dictionary<State, int>>();
+
+        private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering =
+            new Dictionary<Machine, Dictionary<State, int>>();
 
         private readonly ValueInternmentManager<bool> registeredBools;
         private readonly ValueInternmentManager<double> registeredFloats;
@@ -19,7 +20,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         public CompilationContext(ICompilationJob job) : base(job)
         {
-            Names = new PrtNameManager($"P_");
+            Names = new PrtNameManager("P_");
             HeaderFileName = $"{job.ProjectName}.h";
             SourceFileName = $"{job.ProjectName}.c";
             registeredInts = new ValueInternmentManager<int>(Names);

@@ -729,7 +729,7 @@ extern "C"{
 		PrtReceiveAsync(
 		_Inout_ PRT_MACHINEINST_PRIV *context,
 		_In_    PRT_UINT32           *handledEvents,
-		_Out_   PRT_VALUE            *payload
+		_Out_   PRT_VALUE            **payload
 		);
 
 	PRT_API void

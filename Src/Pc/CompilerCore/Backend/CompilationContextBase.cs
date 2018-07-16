@@ -62,7 +62,7 @@ namespace Microsoft.Pc.Backend
 
         public void Write(TextWriter output, string format)
         {
-            // Unindent for every } at the beginning of the line, save the index 
+            // Unindent for every } at the beginning of the line, store the index 
             // of one past the last leading }.
             int i;
             for (i = 0; i < format.Length; i++)

@@ -588,7 +588,7 @@ _Inout_ PRT_MACHINEINST_PRIV	*context
 PRT_UINT32 PrtReceiveAsync(
 	_Inout_ PRT_MACHINEINST_PRIV *context,
 	_In_    PRT_UINT32           *handledEvents,
-	_Out_   PRT_VALUE            *payload)
+	_Out_   PRT_VALUE            **payload)
 {
 	// 1) Register handledEvents (maybe as bitfield) with the machine 
 	//    as the current receive event set.

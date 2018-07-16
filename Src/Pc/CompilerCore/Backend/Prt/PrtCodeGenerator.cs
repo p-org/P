@@ -125,10 +125,10 @@ namespace Microsoft.Pc.Backend.Prt
             switch (decl)
             {
                 case EnumElem _:
-                    // Member of a type. Instantitated by usage.
+                    // Member of a type. Instantiated by usage.
                     return;
                 case PEnum _:
-                    // Declares a type. Instantitated by usage.
+                    // Declares a type. Instantiated by usage.
                     return;
                 case Function function:
                     if (!function.IsForeign)
@@ -696,24 +696,9 @@ namespace Microsoft.Pc.Backend.Prt
         {
             var funLocation = context.LocationResolver.GetLocation(function);
             context.WriteLine(output, $"#line {funLocation.Line} \"{funLocation.File.Name}\"");
-
-            for (var i = 0; i < function.Signature.Parameters.Count; i++)
-            {
-                Variable argument = function.Signature.Parameters[i];
-                string varName = context.Names.GetNameForDecl(argument);
-                context.WriteLine(output, $"PRT_VALUE** {varName} = argRefs[{i}];");
-            }
-
-            foreach (Variable localVariable in function.LocalVariables)
-            {
-                string varName = context.Names.GetNameForDecl(localVariable);
-                string varTypeName = context.Names.GetNameForType(localVariable.Type);
-                // TODO: optimize away PrtMkDefaultValue if liveness shows no usages before assignments.
-                context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
-            }
-
-            context.WriteLine(output, $"PRT_VALUE* {FunCallRetValName} = NULL;");
+            
             // TODO: figure out how many args are actually necessary based on function calls.
+            context.WriteLine(output, $"PRT_VALUE* {FunCallRetValName} = NULL;");
             context.WriteLine(output, $"PRT_VALUE** {FunCallArgsArrayName}[32];");
             context.WriteLine(output, "PRT_MACHINEINST_PRIV* p_this = (PRT_MACHINEINST_PRIV*)context;");
             if (function.Signature.ReturnType.IsSameTypeAs(PrimitiveType.Null))
@@ -726,7 +711,34 @@ namespace Microsoft.Pc.Backend.Prt
                 context.WriteLine(output, $"PRT_VALUE* {FunResultValName} = PrtMkDefaultValue(&{nameForReturnType});");
             }
 
-            context.WriteLine(output);
+            for (var i = 0; i < function.Signature.Parameters.Count; i++)
+            {
+                Variable argument = function.Signature.Parameters[i];
+                string varName = context.Names.GetNameForDecl(argument);
+                context.WriteLine(output, $"PRT_VALUE** {varName} = argRefs[{i}];");
+            }
+
+            WriteFunctionStatements(output, function, "p_return");
+        }
+
+        private void WriteFunctionStatements(TextWriter output, Function function, string returnLabelHint)
+        {
+            string returnLabel = context.Names.GetReturnLabel(function, returnLabelHint);
+
+            foreach (Variable localVariable in function.LocalVariables)
+            {
+                string varName = context.Names.GetNameForDecl(localVariable);
+                string varTypeName = context.Names.GetNameForType(localVariable.Type);
+                // TODO: optimize away PrtMkDefaultValue if liveness shows no usages before assignments.
+                var varLocation = context.LocationResolver.GetLocation(localVariable);
+                context.WriteLine(output, $"#line {varLocation.Line} \"{varLocation.File.Name}\"");
+                context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
+            }
+
+            if (function.LocalVariables.Any())
+            {
+                context.WriteLine(output);
+            }
 
             // Write the body into a temporary buffer so that forward declarations can be found and added
             var bodyWriter = new StringWriter();
@@ -738,7 +750,7 @@ namespace Microsoft.Pc.Backend.Prt
                 WriteStmt(bodyWriter, function, stmt);
             }
 
-            bodyWriter.WriteLine($"{context.Names.GetReturnLabel(function)}:");
+            bodyWriter.WriteLine($"{returnLabel}:");
             foreach (Variable localVariable in function.LocalVariables)
             {
                 string varName = context.Names.GetNameForDecl(localVariable);
@@ -951,7 +963,7 @@ namespace Microsoft.Pc.Backend.Prt
                         string.Join(", ", receiveStmt.Cases.Keys.Select(context.GetDeclNumber));
                     context.WriteLine(output, $"PRT_UINT32 {allowedEventIdsName}[] = {{ {allowedEventIdsValue} }};");
 
-                    string payloadName = context.Names.GetTemporaryName("allowedEventIds");
+                    string payloadName = context.Names.GetTemporaryName("payload");
                     context.WriteLine(output, $"PRT_VALUE* {payloadName} = NULL;");
 
                     // TODO: implement PrtReceiveAsync. Daan's the man!
@@ -971,11 +983,10 @@ namespace Microsoft.Pc.Backend.Prt
                         if (fn.Signature.Parameters.Any())
                         {
                             string realPayloadName = context.Names.GetNameForDecl(fn.Signature.Parameters[0]);
-                            context.WriteLine(output, $"PRT_VALUE* {realPayloadName} = {payloadName};");
-                            
-                            // Get the return label just for the side effect of setting a nice name
-                            context.Names.GetReturnLabel(fn, $"recv_{ev.Name.ToLowerInvariant()}_ret");
+                            context.WriteLine(output, $"PRT_VALUE** {realPayloadName} = &{payloadName};");
                         }
+
+                        WriteFunctionStatements(output, fn, $"recv_{ev.Name.ToLowerInvariant()}_ret");
 
                         context.WriteLine(output, "} break;");
                     }

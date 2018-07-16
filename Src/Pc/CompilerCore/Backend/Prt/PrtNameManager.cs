@@ -9,7 +9,6 @@ using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend.Prt
 {
-
     public class PrtNameManager : NameManagerBase
     {
         private readonly ConditionalWeakTable<Function, string> funcNames = new ConditionalWeakTable<Function, string>();
@@ -23,7 +22,19 @@ namespace Microsoft.Pc.Backend.Prt
         }
 
         public IEnumerable<PLanguageType> UsedTypes => typeNames.Keys;
-        
+
+        public string GetReturnLabel(Function function, string hint = "p_return")
+        {
+            if (retLabels.TryGetValue(function, out string name))
+            {
+                return name;
+            }
+
+            name = AdjustName(hint);
+            retLabels.Add(function, name);
+            return name;
+        }
+
         public string GetNameForFunctionImpl(Function function)
         {
             if (funcNames.TryGetValue(function, out string name))
@@ -40,18 +51,6 @@ namespace Microsoft.Pc.Backend.Prt
             return name;
         }
 
-        public string GetReturnLabel(Function function, string hint = "p_return")
-        {
-            if (retLabels.TryGetValue(function, out string name))
-            {
-                return name;
-            }
-
-            name = AdjustName(hint);
-            retLabels.Add(function, name);
-            return name;
-        }
-
         public string GetNameForType(PLanguageType type)
         {
             type = type.Canonicalize();
@@ -64,6 +63,18 @@ namespace Microsoft.Pc.Backend.Prt
             name = NamePrefix + "GEND_TYPE_" + SimplifiedRep(type);
             name = AdjustName(name);
             typeNames.Add(type, name);
+            return name;
+        }
+
+        public string GetNameForForeignTypeDecl(ForeignType foreignType)
+        {
+            if (foreignTypeDeclNames.TryGetValue(foreignType, out var name))
+            {
+                return name;
+            }
+
+            name = AdjustName(NamePrefix + foreignType.CanonicalRepresentation);
+            foreignTypeDeclNames.Add(foreignType, name);
             return name;
         }
 
@@ -178,18 +189,6 @@ namespace Microsoft.Pc.Backend.Prt
                     throw new ArgumentException("typedefs should be impossible after canonicalization", nameof(type));
             }
             throw new ArgumentException("unrecognized type kind", nameof(type));
-        }
-
-        public string GetNameForForeignTypeDecl(ForeignType foreignType)
-        {
-            if (foreignTypeDeclNames.TryGetValue(foreignType, out var name))
-            {
-                return name;
-            }
-
-            name = AdjustName(NamePrefix + foreignType.CanonicalRepresentation);
-            foreignTypeDeclNames.Add(foreignType, name);
-            return name;
         }
     }
 }

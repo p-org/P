@@ -10,7 +10,7 @@ namespace Microsoft.Pc.Backend.Prt
     {
         private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
         private readonly Dictionary<Machine, int> machineNumbering = new Dictionary<Machine, int>();
-        private readonly Dictionary<PEvent, int> eventNumbering = new Dictionary<PEvent, int>();
+        private readonly Dictionary<PEvent, int> userEventNumbering = new Dictionary<PEvent, int>();
         private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering = new Dictionary<Machine, Dictionary<State, int>>();
 
         private readonly ValueInternmentManager<bool> registeredBools;
@@ -60,7 +60,20 @@ namespace Microsoft.Pc.Backend.Prt
 
         public int GetDeclNumber(PEvent ev)
         {
-            return GetOrAddNumber(eventNumbering, ev);
+            if (ev.IsNullEvent)
+            {
+                return 0;
+            }
+
+            if (ev.IsHaltEvent)
+            {
+                return 1;
+            }
+
+            // There are two built-in events, which have predetermined numbers.
+            // User-defined events have a minimum id of 2, but GetOrAddNumber
+            // assigns sequentially from 0.
+            return 2 + GetOrAddNumber(userEventNumbering, ev);
         }
 
         public int GetDeclNumber(State state)

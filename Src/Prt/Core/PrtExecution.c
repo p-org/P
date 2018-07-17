@@ -2083,8 +2083,7 @@ PrtSetSchedulingPolicy(PRT_PROCESS *process, PRT_SCHEDULINGPOLICY policy)
 }
 
 PRT_API void
-PrtRunProcess(PRT_PROCESS *process
-)
+PrtRunProcess(PRT_PROCESS *process)
 {
 	while (1)
 	{

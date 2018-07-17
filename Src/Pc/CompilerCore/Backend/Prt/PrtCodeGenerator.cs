@@ -993,8 +993,9 @@ namespace Microsoft.Pc.Backend.Prt
 
                     context.WriteLine(output, "default: {");
                     context.WriteLine(output, "PrtAssert(PRT_FALSE, \"receive returned unhandled event\");");
+                    context.WriteLine(output, "} break;");
                     context.WriteLine(output, "}");
-                    context.WriteLine(output, "}");
+                    context.WriteLine(output, $"PrtFreeValue({payloadName});");
                     break;
                 case RemoveStmt removeStmt:
                     context.Write(output, "PrtRemoveByKey(");

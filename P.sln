@@ -68,8 +68,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "CompilerCore", "Src\Pc\Comp
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PrtWinUser", "Src\Prt\WinUser\PrtWinUser.vcxproj", "{F8C72C0E-450C-4AE1-9885-31B8565C1D63}"
 	ProjectSection(ProjectDependencies) = postProject
-		{48B4C337-CD13-4826-B6A1-DA97CE71511B} = {48B4C337-CD13-4826-B6A1-DA97CE71511B}
-		{BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF} = {BA59B6B9-A623-4E8A-8D78-CE80E9BF2BAF}
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE} = {E48C6A35-8732-4436-80D8-D51F7CB7EFDE}
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PrtTester", "PrtTester", "{7762B1FA-C4DC-4917-8651-7ECBBC632D8C}"
@@ -84,10 +83,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Prt", "Prt", "{EF1EE1AD-F41
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PSharp", "PSharp", "{3EE34D1D-3011-4778-8A95-799E921D2DCF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhandler", "..\libhandler\ide\msvc\libhandler.vcxproj", "{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}"
+EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
@@ -213,6 +211,16 @@ Global
 		{E0A9EC98-55A7-4434-8EB3-2801B015F00A}.Release|Any CPU.ActiveCfg = Release|Win32
 		{E0A9EC98-55A7-4434-8EB3-2801B015F00A}.Release|x64.ActiveCfg = Release|x64
 		{E0A9EC98-55A7-4434-8EB3-2801B015F00A}.Release|x86.ActiveCfg = Release|Win32
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Debug|Any CPU.ActiveCfg = Debug|Win32
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Debug|x64.ActiveCfg = Debug|x64
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Debug|x64.Build.0 = Debug|x64
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Debug|x86.ActiveCfg = Debug|Win32
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Debug|x86.Build.0 = Debug|Win32
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Release|Any CPU.ActiveCfg = Release|Win32
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Release|x64.ActiveCfg = Release|x64
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Release|x64.Build.0 = Release|x64
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Release|x86.ActiveCfg = Release|Win32
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -232,9 +240,13 @@ Global
 		{E0A9EC98-55A7-4434-8EB3-2801B015F00A} = {7762B1FA-C4DC-4917-8651-7ECBBC632D8C}
 		{EF1EE1AD-F41F-4E64-A771-F45239BF20E2} = {D47A1CE9-D9FF-4CE8-B06F-D320FE9565E9}
 		{3EE34D1D-3011-4778-8A95-799E921D2DCF} = {D47A1CE9-D9FF-4CE8-B06F-D320FE9565E9}
+		{E48C6A35-8732-4436-80D8-D51F7CB7EFDE} = {D641DC13-F2F0-4365-963A-DCFC80BABCAA}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {BD6B0E25-71B7-4A8F-8D0F-946BA6D47C7C}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

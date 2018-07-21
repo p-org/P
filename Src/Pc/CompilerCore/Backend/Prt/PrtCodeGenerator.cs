@@ -719,6 +719,7 @@ namespace Microsoft.Pc.Backend.Prt
             }
 
             WriteFunctionStatements(output, function, "p_return");
+            context.WriteLine(output, $"return {FunResultValName};");
         }
 
         private void WriteFunctionStatements(TextWriter output, Function function, string returnLabelHint)
@@ -750,14 +751,12 @@ namespace Microsoft.Pc.Backend.Prt
                 WriteStmt(bodyWriter, function, stmt);
             }
 
-            bodyWriter.WriteLine($"{returnLabel}:");
+            bodyWriter.WriteLine($"{returnLabel}: ;");
             foreach (Variable localVariable in function.LocalVariables)
             {
                 string varName = context.Names.GetNameForDecl(localVariable);
                 context.WriteLine(bodyWriter, $"PrtFreeValue({varName}); {varName} = NULL;");
             }
-
-            context.WriteLine(bodyWriter, $"return {FunResultValName};");
 
             // Write gathered literals to the prologue
             context.WriteLine(output,

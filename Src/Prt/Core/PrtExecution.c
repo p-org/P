@@ -161,7 +161,7 @@ _In_  PRT_VALUE					*payload
 	}
 
 	// Allocate memory for state machine context
-	context = (PRT_MACHINEINST_PRIV*)PrtMalloc(sizeof(PRT_MACHINEINST_PRIV));
+	context = (PRT_MACHINEINST_PRIV*)PrtCalloc(1, sizeof(PRT_MACHINEINST_PRIV));
 
 	// Assign the interface name
 	context->interfaceBound = interfaceName;

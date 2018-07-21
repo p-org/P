@@ -217,6 +217,10 @@ extern "C"{
 		PRT_UINT32          *inheritedActionSetCompact;
 		PRT_UINT32          *currentActionSetCompact;
 		PRT_UINT32			interfaceBound;
+
+		// Receive info
+		void*               receiveResumption;
+		PRT_UINT32*         receiveAllowedEvents;
 	} PRT_MACHINEINST_PRIV;
 
 	/** Starts a new Process running program.
@@ -727,9 +731,9 @@ extern "C"{
 
 	PRT_API PRT_UINT32
 		PrtReceiveAsync(
-		_Inout_ PRT_MACHINEINST_PRIV *context,
-		_In_    PRT_UINT32           *handledEvents,
-		_Out_   PRT_VALUE            **payload
+		_In_    PRT_UINT32       nHandledEvents,
+		_In_    PRT_UINT32      *handledEvents,
+		_Out_   PRT_VALUE       **payload
 		);
 
 	PRT_API void

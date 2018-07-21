@@ -586,22 +586,84 @@ _Inout_ PRT_MACHINEINST_PRIV	*context
 	return PRT_FALSE;
 }
 
+#pragma region Receive Implementation
+
+typedef struct _receive_result_t {
+	int        eventId;
+	PRT_VALUE* payload;
+} receive_result_t;
+
+typedef receive_result_t* receive_result_ptr;
+typedef PRT_UINT32* event_id_list_ptr;
+
+#define lh_receive_result_ptr_value(v)      ((receive_result_ptr)lh_ptr_value(v))
+#define lh_value_receive_result_ptr(r)      lh_value_ptr(r)
+
+#define lh_event_id_list_ptr_value(v)      ((event_id_list_ptr)lh_ptr_value(v))
+#define lh_value_event_id_list_ptr(r)      lh_value_ptr(r)
+
+LH_DEFINE_EFFECT1(prt, receive);
+LH_DEFINE_OP1(prt, receive, receive_result_ptr, event_id_list_ptr);
+
 PRT_UINT32 PrtReceiveAsync(
-	_Inout_ PRT_MACHINEINST_PRIV *context,
-	_In_    PRT_UINT32           *handledEvents,
-	_Out_   PRT_VALUE            **payload)
+	_In_    PRT_UINT32      nHandledEvents,
+	_In_    PRT_UINT32      *handledEvents,
+	_Out_   PRT_VALUE       **payload)
 {
-	// 1) Register handledEvents (maybe as bitfield) with the machine 
-	//    as the current receive event set.
-	// 2) Set up effect via libhandler, register callback with the
-	//    machine context.
-	// 3) Upon resume, pass values back to payload and return value.
-	PrtAssert(PRT_FALSE, "receive not yet implemented!");
-	return PRT_SPECIAL_EVENT_NULL;
+	PRT_UINT32* receiveAllowedEvents  = PrtMalloc((nHandledEvents + 1) * sizeof(*receiveAllowedEvents));
+	memcpy(receiveAllowedEvents, handledEvents, nHandledEvents * sizeof(*receiveAllowedEvents));
+	receiveAllowedEvents[nHandledEvents] = (PRT_UINT32)(-1);
+
+	receive_result_t* res = prt_receive(receiveAllowedEvents);
+	*payload = res->payload;
+	int eventId = res->eventId;
+	PrtFree(res);
+	return eventId;
 }
 
-void 
-PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV	*context)
+// Await an asynchronous request
+static lh_value _prt_receive(lh_resume r, lh_value local, lh_value arg) {
+	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)lh_ptr_value(local);
+	context->receiveResumption = r;
+	context->receiveAllowedEvents = lh_event_id_list_ptr_value(arg);
+
+	// this exits our receive handler to the main event loop
+	return lh_value_null;
+}
+
+// The main async handler
+static const lh_operation _prt_ops[] = {
+	{ LH_OP_GENERAL, LH_OPTAG(prt,receive), &_prt_receive },
+	{ LH_OP_NULL, lh_op_null, NULL }
+};
+
+static const lh_handlerdef _prt_handler_def = {
+	LH_EFFECT(prt), NULL, NULL, NULL, _prt_ops
+};
+
+lh_value _prt_receive_handler(PRT_MACHINEINST_PRIV* context, lh_value(*action)(lh_value), lh_value arg) {
+	return lh_handle(&_prt_handler_def, lh_value_ptr(context), action, arg);
+}
+
+typedef struct _receive_handler_args_t {
+	PRT_MACHINEINST* context;
+	PRT_VALUE***     args;
+	PRT_SM_FUN       fun;
+} receive_handler_args_t;
+
+lh_value receive_handler_action(lh_value rargsv) {
+	receive_handler_args_t* rargs = (receive_handler_args_t*)lh_value_any_ptr(rargsv);
+	return lh_value_ptr(rargs->fun(rargs->context, rargs->args));
+}
+
+void* prt_receive_handler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN action, PRT_VALUE*** args) {
+	receive_handler_args_t rargs = { (PRT_MACHINEINST*)context, args, action };
+	return lh_ptr_value(_prt_receive_handler(context, &receive_handler_action, lh_value_any_ptr(&rargs)));
+}
+
+#pragma endregion 
+
+void PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV *context)
 {
 	if (context->currentTrigger != NULL)
 	{
@@ -755,7 +817,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
 	PRT_FUNDECL *exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
-	PrtGetExitFunction(context)((PRT_MACHINEINST *)context, NULL);
+	prt_receive_handler(context, PrtGetExitFunction(context), NULL);
 }
 
 FORCEINLINE
@@ -770,7 +832,38 @@ PrtRunTransitionFunction(
 	PRT_FUNDECL *transFun = stateDecl->transitions[transIndex].transFun;
 	PRT_DBG_ASSERT(transFun != NULL, "Must be valid function");
 	PRT_VALUE** refLocals[1] = { &context->currentPayload };
-	transFun->implementation((PRT_MACHINEINST *)context, refLocals);
+	prt_receive_handler(context, transFun->implementation, refLocals);
+}
+
+void PrtResume(PRT_MACHINEINST_PRIV* context, PRT_UINT32 eventId) {
+	receive_result_t* res = (receive_result_t*)PrtMalloc(sizeof(*res));
+	res->eventId = eventId;
+	res->payload = context->currentPayload;
+	context->currentPayload = NULL;
+
+	lh_resume resume = context->receiveResumption;
+	PrtFree(context->receiveAllowedEvents);
+	context->receiveResumption = NULL;
+	context->receiveAllowedEvents = NULL;
+	lh_release_resume(resume, lh_value_ptr(context), lh_value_receive_result_ptr(res));
+}
+
+bool PrtReceiveWaitingOnEvent(PRT_MACHINEINST_PRIV* context, PRT_UINT32 event_value)
+{
+	if (context->receiveAllowedEvents == NULL)
+	{
+		return false;
+	}
+
+	const PRT_UINT32 sentinel = (PRT_UINT32)(-1);
+	for (PRT_UINT32* event_id = context->receiveAllowedEvents; *event_id != sentinel; event_id++)
+	{
+		if (*event_id == event_value)
+		{
+			return true;
+		}
+	}
+	return false;
 }
 
 static PRT_BOOLEAN
@@ -809,7 +902,7 @@ DoEntry:
 	
 	PRT_FUNDECL *entryFun = currentState->entryFun;
 	PRT_VALUE** refLocals[1] = { &context->currentPayload };
-	entryFun->implementation((PRT_MACHINEINST *)context, refLocals);
+	prt_receive_handler(context, entryFun->implementation, refLocals);
 	
 	goto CheckLastOperation;
 
@@ -833,7 +926,7 @@ DoAction:
 		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
 		
 		PRT_VALUE** refLocals[1] = { &context->currentPayload };
-		doFun->implementation((PRT_MACHINEINST *)context, refLocals);
+		prt_receive_handler(context, doFun->implementation, refLocals);
 	}
 	goto CheckLastOperation;
 
@@ -946,7 +1039,21 @@ DoHandleEvent:
 	{
 		eventValue = context->eventValue;
 	}
-	if (PrtIsPushTransition(context, eventValue))
+
+	/*
+	receive_result_t* res = (receive_result_t*)malloc(sizeof(receive_result_t));
+	res->payload = NULL;
+	res->eventId = 0;
+	lh_release_resume(r, local //current machine
+	, lh_value_ptr(res));
+	*/
+
+	if (PrtReceiveWaitingOnEvent(context, eventValue))
+	{
+		PrtResume(context, eventValue);
+		goto CheckLastOperation;
+	}
+	else if (PrtIsPushTransition(context, eventValue))
 	{
 		PrtTakeTransition(context, eventValue);
 		goto DoEntry;

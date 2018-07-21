@@ -958,8 +958,8 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case ReceiveStmt receiveStmt:
                     string allowedEventIdsName = context.Names.GetTemporaryName("allowedEventIds");
-                    string allowedEventIdsValue =
-                        string.Join(", ", receiveStmt.Cases.Keys.Select(context.GetDeclNumber));
+                    var receiveEventIds = receiveStmt.Cases.Keys.Select(context.GetDeclNumber).ToList();
+                    string allowedEventIdsValue = string.Join(", ", receiveEventIds);
                     context.WriteLine(output, $"PRT_UINT32 {allowedEventIdsName}[] = {{ {allowedEventIdsValue} }};");
 
                     string payloadName = context.Names.GetTemporaryName("payload");
@@ -968,7 +968,7 @@ namespace Microsoft.Pc.Backend.Prt
                     // TODO: implement PrtReceiveAsync. Daan's the man!
                     string eventIdName = context.Names.GetTemporaryName("eventId");
                     context.WriteLine(output,
-                        $"PRT_UINT32 {eventIdName} = PrtReceiveAsync(context, {allowedEventIdsName}, &{payloadName});");
+                        $"PRT_UINT32 {eventIdName} = PrtReceiveAsync({receiveEventIds.Count}U, {allowedEventIdsName}, &{payloadName});");
 
                     context.WriteLine(output, $"switch ({eventIdName}) {{");
                     foreach (var receiveCase in receiveStmt.Cases)

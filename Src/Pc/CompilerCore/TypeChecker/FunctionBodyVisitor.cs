@@ -1,3 +1,4 @@
+using System.Diagnostics.Contracts;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.Statements;
 
@@ -18,11 +19,7 @@ namespace Microsoft.Pc.TypeChecker
         
         public static void PopulateMethod(ITranslationErrorHandler handler, Function fun)
         {
-            if (fun.Body != null)
-            {
-                return;
-            }
-            
+            Contract.Requires(fun.Body == null);
             var visitor = new FunctionBodyVisitor(handler, fun.Owner, fun);
             visitor.Visit(fun.SourceLocation);
         }

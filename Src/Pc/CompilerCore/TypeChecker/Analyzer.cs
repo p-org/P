@@ -39,6 +39,7 @@ namespace Microsoft.Pc.TypeChecker
             // Step 5: Verify purity invariants
             foreach (Function machineFunction in allFunctions)
             {
+                // TODO: is this checked earlier?
                 if (machineFunction.Owner?.IsSpec == true && machineFunction.IsNondeterministic == true)
                 {
                     throw handler.NonDeterministicFunctionInSpecMachine(machineFunction);

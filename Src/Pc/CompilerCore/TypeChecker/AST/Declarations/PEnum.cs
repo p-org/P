@@ -17,7 +17,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         }
 
         public IEnumerable<EnumElem> Values => elements;
-        public int Count => elements.Count;
 
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }

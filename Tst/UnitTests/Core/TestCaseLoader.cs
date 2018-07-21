@@ -42,13 +42,9 @@ namespace UnitTests.Core
                 runConfig = ParseTestConfig(configPath, variables);
             }
 
-            DirectoryInfo tempDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
-            var factory = new TestCaseFactory(tempDir);
-            CompilerTestCase testCase = factory.CreateTestCase(dir, runConfig);
-
             string category = testRoot.Name + Constants.CategorySeparator + GetCategory(dir, testRoot);
             string testName = category + Constants.CategorySeparator + dir.Name;
-            return new TestCaseData(testCase).SetName(testName).SetCategory(category);
+            return new TestCaseData(dir, runConfig).SetName(testName).SetCategory(category);
         }
 
         private static Dictionary<string, string> GetVariables(DirectoryInfo testRoot)

@@ -43,8 +43,11 @@ namespace UnitTests
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
         
         [TestCaseSource(nameof(RegressionTestSuite))]
-        public void TestAllRegressions(CompilerTestCase testCase)
+        public void TestAllRegressions(DirectoryInfo testDir, TestConfig runConfig)
         {
+            var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            var factory = new TestCaseFactory(scratchDir);
+            var testCase = factory.CreateTestCase(testDir, runConfig);
             TestAssertions.AssertTestCase(testCase);
         }
 

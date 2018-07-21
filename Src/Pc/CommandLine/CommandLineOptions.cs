@@ -127,7 +127,7 @@ namespace Microsoft.Pc
             string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
             if (!IsLegalUnitName(projectName))
             {
-                CommandlineOutput.WriteMessage($"{projectName} is not a legal protject name", SeverityKind.Error);
+                CommandlineOutput.WriteMessage($"{projectName} is not a legal project name", SeverityKind.Error);
                 return false;
             }
 

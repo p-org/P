@@ -19,6 +19,15 @@ namespace Microsoft.Pc.Backend
             LocationResolver = job.LocationResolver;
         }
 
+
+        /// <summary>
+        /// Writes a line to the given output stream, taking curly brace indentation into account.
+        /// This function is called extremely frequently, so some care has been taken to optimize
+        /// it for performance. In particular, it does not allocate any memory that isn't part
+        /// of the output stream.
+        /// </summary>
+        /// <param name="output">The output stream to write to</param>
+        /// <param name="format">The line to print</param>
         public void WriteLine(TextWriter output, string format = "")
         {
             // Unindent for every } at the beginning of the line, save the index 
@@ -37,13 +46,16 @@ namespace Microsoft.Pc.Backend
             }
 
             // Do not indent preprocessor lines.
-            var indentation = new string(' ', 4 * IndentationLevel);
-            if (format.StartsWith("#") || lineHasBeenIndented)
+            if (!(format.Length > 0 && format[0] == '#') && !lineHasBeenIndented)
             {
-                indentation = "";
+                // skipping an allocation here
+                for (int j = 0; j < 4 * IndentationLevel; j++)
+                {
+                    output.Write(' ');
+                }
             }
+            output.WriteLine(format);
 
-            output.WriteLine(indentation + format);
             lineHasBeenIndented = false;
 
             // Compute indentation for future lines starting from after last leading }.
@@ -78,13 +90,16 @@ namespace Microsoft.Pc.Backend
             }
 
             // Do not indent preprocessor lines.
-            var indentation = new string(' ', 4 * IndentationLevel);
-            if (format.StartsWith("#") || lineHasBeenIndented)
+            if (!format.StartsWith("#") && !lineHasBeenIndented)
             {
-                indentation = "";
+                // skipping an allocation here
+                for (int j = 0; j < 4 * IndentationLevel; j++)
+                {
+                    output.Write(' ');
+                }
             }
+            output.Write(format);
 
-            output.Write(indentation + format);
             lineHasBeenIndented = true;
 
             // Compute indentation for future lines starting from after last leading }.

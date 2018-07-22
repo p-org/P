@@ -842,9 +842,11 @@ void PrtResume(PRT_MACHINEINST_PRIV* context, PRT_UINT32 eventId) {
 	context->currentPayload = NULL;
 
 	lh_resume resume = context->receiveResumption;
-	PrtFree(context->receiveAllowedEvents);
 	context->receiveResumption = NULL;
+
+	PrtFree(context->receiveAllowedEvents);
 	context->receiveAllowedEvents = NULL;
+
 	lh_release_resume(resume, lh_value_ptr(context), lh_value_receive_result_ptr(res));
 }
 
@@ -872,7 +874,6 @@ PrtStepStateMachine(
 )
 {
 	PRT_BOOLEAN lockHeld = PRT_FALSE;
-	PRT_DODECL *currActionDecl;
 	PRT_UINT32 eventValue;
 	PRT_BOOLEAN hasMoreWork = PRT_FALSE;
 
@@ -906,8 +907,8 @@ DoEntry:
 	
 	goto CheckLastOperation;
 
-DoAction:
-	currActionDecl = PrtGetAction(context, eventValue);
+DoAction:;
+	PRT_DODECL *currActionDecl = PrtGetAction(context, eventValue);
 	PRT_FUNDECL *doFun = currActionDecl->doFun;
 	context->lastOperation = ReturnStatement;
 	if (doFun == NULL)
@@ -2049,6 +2050,9 @@ void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
 void PrtInstallProgram(_In_ PRT_PROGRAMDECL *p)
 {
 	PrtAssert(p != NULL && program == NULL, "p and program must be non-NULL");
+
+	lh_register_malloc(PrtMalloc, PrtCalloc, PrtRealloc, PrtFree);
+
 	program = p;
 	for (PRT_UINT32 i = 0; i < p->nEvents; i++)
 	{

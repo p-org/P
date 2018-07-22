@@ -964,8 +964,7 @@ namespace Microsoft.Pc.Backend.Prt
 
                     string payloadName = context.Names.GetTemporaryName("payload");
                     context.WriteLine(output, $"PRT_VALUE* {payloadName} = NULL;");
-
-                    // TODO: implement PrtReceiveAsync. Daan's the man!
+                    
                     string eventIdName = context.Names.GetTemporaryName("eventId");
                     context.WriteLine(output,
                         $"PRT_UINT32 {eventIdName} = PrtReceiveAsync({receiveEventIds.Count}U, {allowedEventIdsName}, &{payloadName});");

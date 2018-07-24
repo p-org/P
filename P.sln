@@ -83,7 +83,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Prt", "Prt", "{EF1EE1AD-F41
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "PSharp", "PSharp", "{3EE34D1D-3011-4778-8A95-799E921D2DCF}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhandler", "..\libhandler\ide\msvc\libhandler.vcxproj", "{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libhandler", "Ext\libhandler\ide\msvc\libhandler.vcxproj", "{E48C6A35-8732-4436-80D8-D51F7CB7EFDE}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

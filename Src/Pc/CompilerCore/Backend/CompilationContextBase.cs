@@ -5,6 +5,7 @@ namespace Microsoft.Pc.Backend
 {
     public abstract class CompilationContextBase
     {
+        public ICompilationJob Job { get; }
         private bool lineHasBeenIndented;
         private int IndentationLevel { get; set; }
 
@@ -14,6 +15,7 @@ namespace Microsoft.Pc.Backend
 
         protected CompilationContextBase(ICompilationJob job)
         {
+            Job = job;
             Handler = job.Handler;
             ProjectName = job.ProjectName;
             LocationResolver = job.LocationResolver;

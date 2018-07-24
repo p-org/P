@@ -24,6 +24,7 @@ namespace Microsoft.Pc
             Backend = TargetLanguage.GetCodeGenerator(outputLanguage);
         }
 
+        public bool GenerateSourceMaps { get; } = false;
         public ICompilerOutput Output { get; }
 
         public string ProjectName { get; }

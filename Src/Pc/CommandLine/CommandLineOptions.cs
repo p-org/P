@@ -29,6 +29,7 @@ namespace Microsoft.Pc
             var commandLineFileNames = new List<string>();
             var inputFiles = new List<FileInfo>();
             string targetName = null;
+            bool generateSourceMaps = false;
 
             foreach (var x in args)
             {
@@ -93,6 +94,22 @@ namespace Microsoft.Pc
                             outputDirectory = Directory.CreateDirectory(colonArg);
                             break;
 
+                        case "s":
+                        case "sourcemaps":
+                            switch (colonArg?.ToLowerInvariant())
+                            {
+                                case null:
+                                case "true":
+                                    generateSourceMaps = true;
+                                    break;
+                                case "false":
+                                    generateSourceMaps = false;
+                                    break;
+                                default:
+                                    CommandlineOutput.WriteMessage("sourcemaps argument must be either 'true' or 'false'", SeverityKind.Error);
+                                    return false;
+                            }
+                            break;
                         default:
                             commandLineFileNames.Add(arg);
                             CommandlineOutput.WriteMessage($"Unknown Command {arg.Substring(1)}", SeverityKind.Error);
@@ -169,11 +186,14 @@ namespace Microsoft.Pc
         public static void PrintUsage()
         {
             CommandlineOutput.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("-t:tfile           -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("-outputDir:path    -- where to write the generated files", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("-t:tfile                   -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("-outputDir:path            -- where to write the generated files", SeverityKind.Info);
             CommandlineOutput.WriteMessage("-generate:[C,P#]", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    C   : generate C", SeverityKind.Info);
             CommandlineOutput.WriteMessage("    P#  : generate P#", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("-sourcemaps[:(true|false)] -- enable or disable generating source maps", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("                              in the compiled output. may confuse some", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("                              debuggers.", SeverityKind.Info);
         }
     }
 }

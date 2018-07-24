@@ -108,6 +108,14 @@ namespace Microsoft.Pc.Backend.Prt
             return cSource;
         }
 
+        private void TraceSourceLine(TextWriter output, SourceLocation location)
+        {
+            if (context.Job.GenerateSourceMaps)
+            {
+                context.WriteLine(output, $"#line {location.Line} \"{location.File.Name}\"");
+            }
+        }
+
         #endregion
 
         #region Declaration level methods
@@ -154,7 +162,7 @@ namespace Microsoft.Pc.Backend.Prt
                         ifaceRecvSetName = context.Names.GetNameForDecl(interfaceEventSet);
                     }
 
-                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
+                    TraceSourceLine(output, declLocation);
                     context.WriteLine(output, $"PRT_INTERFACEDECL {declName} =");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"{context.GetDeclNumber(@interface)}U,");
@@ -229,7 +237,7 @@ namespace Microsoft.Pc.Backend.Prt
                     }
 
                     uint maxQueueSize = machine.Assert ?? uint.MaxValue;
-                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
+                    TraceSourceLine(output, declLocation);
                     context.WriteLine(output, $"PRT_MACHINEDECL {declName} = ");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, $"{context.GetDeclNumber(machine)}U,");
@@ -254,7 +262,7 @@ namespace Microsoft.Pc.Backend.Prt
                         .ToList();
                     string eventDeclArrBody = string.Join(", ", eventDeclNames);
                     eventDeclArrBody = string.IsNullOrEmpty(eventDeclArrBody) ? "NULL" : eventDeclArrBody;
-                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
+                    TraceSourceLine(output, declLocation);
                     context.WriteLine(output, $"PRT_EVENTDECL* {innerSetName}[] = {{ {eventDeclArrBody} }};");
                     context.WriteLine(output, $"PRT_EVENTSETDECL {declName} =");
                     context.WriteLine(output, "{");
@@ -272,7 +280,7 @@ namespace Microsoft.Pc.Backend.Prt
                     long eventBound = Math.Min(pEvent.Assert == -1 ? uint.MaxValue : (uint) pEvent.Assert,
                         pEvent.Assume == -1 ? uint.MaxValue : (uint) pEvent.Assume);
 
-                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
+                    TraceSourceLine(output, declLocation);
                     context.WriteLine(output, $"PRT_EVENTDECL {declName} = ");
                     context.WriteLine(output, "{");
                     context.WriteLine(output, "{ PRT_VALUE_KIND_EVENT, 0U },");
@@ -288,7 +296,7 @@ namespace Microsoft.Pc.Backend.Prt
                     // does not produce a struct definition
                     return;
                 case TypeDef typeDef:
-                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
+                    TraceSourceLine(output, declLocation);
                     context.WriteLine(output, $"PRT_TYPE* {declName} = &{context.Names.GetNameForType(typeDef.Type)};");
                     return;
                 case Variable _:
@@ -349,7 +357,7 @@ namespace Microsoft.Pc.Backend.Prt
                         context.WriteLine(output);
                     }
 
-                    context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
+                    TraceSourceLine(output, declLocation);
                     context.WriteLine(output, $"#define {declName} \\");
                     context.WriteLine(output, "{ \\");
                     context.WriteLine(output, $"\"{state.QualifiedName}\", \\");
@@ -395,7 +403,7 @@ namespace Microsoft.Pc.Backend.Prt
                 ? $"&{context.Names.GetNameForType(signature[0])}"
                 : "NULL";
 
-            context.WriteLine(output, $"#line {declLocation.Line} \"{declLocation.File.Name}\"");
+            TraceSourceLine(output, declLocation);
             context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
             context.WriteLine(output, "{");
             WriteFunctionBody(output, function);
@@ -695,8 +703,8 @@ namespace Microsoft.Pc.Backend.Prt
         private void WriteFunctionBody(TextWriter output, Function function)
         {
             var funLocation = context.LocationResolver.GetLocation(function);
-            context.WriteLine(output, $"#line {funLocation.Line} \"{funLocation.File.Name}\"");
-            
+            TraceSourceLine(output, funLocation);
+
             // TODO: figure out how many args are actually necessary based on function calls.
             context.WriteLine(output, $"PRT_VALUE* {FunCallRetValName} = NULL;");
             context.WriteLine(output, $"PRT_VALUE** {FunCallArgsArrayName}[32];");
@@ -732,7 +740,7 @@ namespace Microsoft.Pc.Backend.Prt
                 string varTypeName = context.Names.GetNameForType(localVariable.Type);
                 // TODO: optimize away PrtMkDefaultValue if liveness shows no usages before assignments.
                 var varLocation = context.LocationResolver.GetLocation(localVariable);
-                context.WriteLine(output, $"#line {varLocation.Line} \"{varLocation.File.Name}\"");
+                TraceSourceLine(output, varLocation);
                 context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
             }
 
@@ -744,7 +752,7 @@ namespace Microsoft.Pc.Backend.Prt
             // Write the body into a temporary buffer so that forward declarations can be found and added
             var bodyWriter = new StringWriter();
             var bodyLocation = context.LocationResolver.GetLocation(function.Body);
-            context.WriteLine(bodyWriter, $"#line {bodyLocation.Line} \"{bodyLocation.File.Name}\"");
+            TraceSourceLine(output, bodyLocation);
 
             foreach (IPStmt stmt in function.Body.Statements)
             {
@@ -792,7 +800,7 @@ namespace Microsoft.Pc.Backend.Prt
         private void WriteStmt(TextWriter output, Function function, IPStmt stmt)
         {
             var stmtLocation = context.LocationResolver.GetLocation(stmt);
-            context.WriteLine(output, $"#line {stmtLocation.Line} \"{stmtLocation.File.Name}\"");
+            TraceSourceLine(output, stmtLocation);
             switch (stmt)
             {
                 case AnnounceStmt _:

@@ -8,6 +8,7 @@ namespace Microsoft.Pc
     public interface ICompilationJob
     {
         string ProjectName { get; }
+        bool GenerateSourceMaps { get; }
         ICompilerOutput Output { get; }
         ICodeGenerator Backend { get; }
         IReadOnlyList<FileInfo> InputFiles { get; }

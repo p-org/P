@@ -724,11 +724,6 @@ extern "C"{
 		_Inout_ PRT_MACHINEINST_PRIV		*context
 		);
 
-	PRT_API PRT_BOOLEAN
-		PrtReceive(
-		_Inout_ PRT_MACHINEINST_PRIV	*context
-		);
-
 	PRT_API PRT_UINT32
 		PrtReceiveAsync(
 		_In_    PRT_UINT32       nHandledEvents,

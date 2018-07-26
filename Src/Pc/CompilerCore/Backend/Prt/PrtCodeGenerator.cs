@@ -965,6 +965,8 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
                     break;
                 case ReceiveStmt receiveStmt:
+                    context.Job.Output.WriteMessage("Receive is not yet stable!", SeverityKind.Warning);
+
                     string allowedEventIdsName = context.Names.GetTemporaryName("allowedEventIds");
                     var receiveEventIds = receiveStmt.Cases.Keys.Select(context.GetDeclNumber).ToList();
                     string allowedEventIdsValue = string.Join(", ", receiveEventIds);

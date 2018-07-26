@@ -20,6 +20,10 @@ namespace UnitTests.Core
 
         public void WriteMessage(string msg, SeverityKind severity)
         {
+            if (severity != SeverityKind.Info)
+            {
+                Console.Write($"{severity}: ");
+            }
             Console.WriteLine(msg);
         }
 

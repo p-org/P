@@ -136,7 +136,8 @@ extern "C"{
 		ReturnStatement,
 		PopStatement,
 		RaiseStatement,
-		GotoStatement
+		GotoStatement,
+		ReceiveStatement
 	} PRT_LASTOPERATION;
 
     typedef enum PRT_NEXTOPERATION
@@ -221,6 +222,7 @@ extern "C"{
 		// Receive info
 		void*               receiveResumption;
 		PRT_UINT32*         receiveAllowedEvents;
+		PRT_VALUE***        receiveArguments;
 	} PRT_MACHINEINST_PRIV;
 
 	/** Starts a new Process running program.

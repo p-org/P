@@ -558,6 +558,7 @@ static lh_value _prt_receive(lh_resume r, lh_value local, lh_value arg) {
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)lh_ptr_value(local);
 	context->receiveResumption = r;
 	context->receiveAllowedEvents = lh_event_id_list_ptr_value(arg);
+	context->lastOperation = ReceiveStatement;
 
 	// this exits our receive handler to the main event loop
 	return lh_value_null;
@@ -590,6 +591,7 @@ lh_value receive_handler_action(lh_value rargsv) {
 
 void* prt_receive_handler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN action, PRT_VALUE*** args) {
 	receive_handler_args_t rargs = { (PRT_MACHINEINST*)context, args, action };
+	context->receiveArguments = args;
 	return lh_ptr_value(_prt_receive_handler(context, &receive_handler_action, lh_value_any_ptr(&rargs)));
 }
 
@@ -789,16 +791,14 @@ PRT_BOOLEAN PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
 	return PrtCallEventHandler(context, trans_fun->implementation);
 }
 
-PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function)
+PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 {
-	// By default, assume transition functions return, rather than pop or something else
-	context->lastOperation = ReturnStatement;
-
-	// Run the transition function and handle any receives by deferring to the event loop
-	PRT_VALUE*** p_ref_locals = PrtCalloc(1, sizeof(*p_ref_locals));
-	p_ref_locals[0] = &context->currentPayload;
-	prt_receive_handler(context, function, p_ref_locals);
-	PrtFree(p_ref_locals);
+	if (context->lastOperation != ReceiveStatement)
+	{
+		PrtFreeValue(**context->receiveArguments);
+		PrtFree(context->receiveArguments);
+		context->receiveArguments = 0;
+	}
 
 	switch (context->lastOperation)
 	{
@@ -810,6 +810,9 @@ PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN functi
 		return PrtCallExitHandler(context);
 	case RaiseStatement:
 		context->nextOperation = HandleEventOperation;
+		return PRT_TRUE;
+	case ReceiveStatement:
+		context->nextOperation = DequeueOperation;
 		return PRT_TRUE;
 	case ReturnStatement:
 		switch (context->exitReason)
@@ -852,6 +855,21 @@ PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN functi
 	}
 }
 
+PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function)
+{
+	// By default, assume transition functions return, rather than pop or something else
+	context->lastOperation = ReturnStatement;
+
+	// Run the transition function and handle any receives by deferring to the event loop
+	PRT_VALUE*** p_ref_locals = PrtCalloc(2, sizeof(*p_ref_locals));
+	p_ref_locals[0] = (PRT_VALUE**) &p_ref_locals[1];
+	p_ref_locals[1] = (PRT_VALUE**) context->currentPayload;
+	context->currentPayload = NULL;
+	prt_receive_handler(context, function, p_ref_locals);
+
+	return PrtHandleUserReturn(context);
+}
+
 PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
 {
 	PRT_UINT32 eventValue;
@@ -868,8 +886,9 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
 
 	if (PrtReceiveWaitingOnEvent(context, eventValue))
 	{
+		context->lastOperation = ReturnStatement;
 		PrtResume(context, eventValue);
-		return PRT_TRUE;
+		return PrtHandleUserReturn(context);
 	}
 
 	if (PrtIsPushTransition(context, eventValue))

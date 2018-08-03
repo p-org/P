@@ -61,7 +61,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public bool IsAnon => string.IsNullOrEmpty(Name);
 
         public bool? CanChangeState { get; set; }
-        public bool? CanCommunicate { get; set; }
+        public bool? CanReceiveEvent { get; set; }
         public bool? IsNondeterministic { get; set; }
         public IEnumerable<Function> Callers => callers;
         public IEnumerable<Function> Callees => callees;

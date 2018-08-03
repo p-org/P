@@ -31,12 +31,12 @@ namespace Microsoft.Pc.TypeChecker
 
             // Step 4: Propagate purity properties
             ApplyPropagations(allFunctions,
-                              CreatePropagation(fn => fn.CanCommunicate, (fn, value) => fn.CanCommunicate = value,
+                              CreatePropagation(fn => fn.CanReceiveEvent, (fn, value) => fn.CanReceiveEvent = value,
                                                 true),
                               CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value,
                                                 true));
 
-            // Step 5: Verify purity invariants
+            // Step 5: Verify capability restrictions
             foreach (Function machineFunction in allFunctions)
             {
                 // TODO: is this checked earlier?
@@ -45,7 +45,7 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.NonDeterministicFunctionInSpecMachine(machineFunction);
                 }
 
-                if (machineFunction.CanChangeState == true &&
+                if ((machineFunction.CanChangeState == true || machineFunction.CanReceiveEvent == true) &&
                     (machineFunction.Role.HasFlag(FunctionRole.TransitionFunction) ||
                      machineFunction.Role.HasFlag(FunctionRole.ExitHandler)))
                 {

@@ -144,19 +144,8 @@ extern "C"{
     {
         EntryOperation,
         DequeueOperation,
-        HandleEventOperation,
-        ReceiveOperation
+        HandleEventOperation
     } PRT_NEXTOPERATION;
-
-	typedef enum PRT_EXITREASON
-	{
-		NotExit,
-		OnTransition,
-		OnTransitionAfterExit,
-		OnPopStatement,
-		OnGotoStatement,
-		OnUnhandledEvent
-	} PRT_EXITREASON;
 
 	typedef struct PRT_EVENT
 	{
@@ -202,8 +191,6 @@ extern "C"{
 		PRT_RECURSIVE_MUTEX stateMachineLock;
 		PRT_BOOLEAN			isRunning;
         PRT_NEXTOPERATION   nextOperation;
-		PRT_EXITREASON		exitReason;
-		PRT_UINT32			eventValue;
 		PRT_BOOLEAN			isHalted;
 		PRT_UINT32			currentState;
 		PRT_STATESTACK		callStack;
@@ -222,7 +209,7 @@ extern "C"{
 		// Receive info
 		void*               receiveResumption;
 		PRT_UINT32*         receiveAllowedEvents;
-		PRT_VALUE***        receiveArguments;
+		PRT_VALUE***        handlerArguments;
 	} PRT_MACHINEINST_PRIV;
 
 	/** Starts a new Process running program.
@@ -515,7 +502,9 @@ extern "C"{
 
 	PRT_BOOLEAN
 		PrtDequeueEvent(
-		_Inout_ PRT_MACHINEINST_PRIV	*context
+		_Inout_ PRT_MACHINEINST_PRIV	*context,
+		_Out_ PRT_VALUE **trigger,
+		_Out_ PRT_VALUE **payload
 		);
 
 	FORCEINLINE

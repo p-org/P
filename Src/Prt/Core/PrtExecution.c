@@ -61,10 +61,6 @@ void PrtSetTriggerPayload(_Inout_ PRT_MACHINEINST_PRIV *context, PRT_VALUE* trig
 	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
 	context->currentTrigger = trigger;
 	context->currentPayload = payload;
-	if (context->handlerArguments == NULL) {
-		context->handlerArguments = PrtMalloc(sizeof(*context->handlerArguments));
-		context->handlerArguments[0] = &context->currentPayload;
-	}
 }
 
 void PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV *context)
@@ -73,8 +69,6 @@ void PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV *context)
 	context->currentTrigger = NULL;
 	PrtFreeValue(context->currentPayload);
 	context->currentPayload = NULL;
-	PrtFree(context->handlerArguments);
-	context->handlerArguments = NULL;
 }
 
 void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
@@ -216,7 +210,9 @@ _In_  PRT_VALUE					*payload
 	context->lastOperation = ReturnStatement;
 
 	context->destStateIndex = 0;
+
 	PrtSetTriggerPayload(context, NULL, PrtCloneValue(payload));
+	context->handlerArguments = &context->currentPayload;
 
 	// Initialize machine-dependent per-instance state
 	PRT_MACHINEDECL* curMachineDecl = program->machines[instanceOf];
@@ -766,7 +762,7 @@ PRT_LASTOPERATION PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* entryFun = currentState->entryFun;
-	return PrtCallEventHandler(context, entryFun->implementation, context->handlerArguments);
+	return PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
 }
 
 PRT_LASTOPERATION PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
@@ -788,7 +784,7 @@ PRT_LASTOPERATION PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
 	const PRT_UINT32 trans_index = PrtFindTransition(context, PrtPrimGetEvent(context->currentTrigger));
 	PRT_STATEDECL *state_decl = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL *trans_fun = state_decl->transitions[trans_index].transFun;
-	const PRT_LASTOPERATION operation = PrtCallEventHandler(context, trans_fun->implementation, context->handlerArguments);
+	const PRT_LASTOPERATION operation = PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
 	PrtAssert(operation == ReturnStatement, "transition handlers must not call raise, goto, receive, or pop.");
 	return operation;
 }
@@ -892,7 +888,7 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context, PRT_VALUE* trigger, PR
 
 			// on eventValue do <fun>
 			PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
-			PrtCallEventHandler(context, do_fun->implementation, context->handlerArguments);
+			PrtCallEventHandler(context, do_fun->implementation, &context->handlerArguments);
 			return PrtHandleUserReturn(context);
 		}
 
@@ -1986,7 +1982,11 @@ PrtStopProcess(
 		PRT_MACHINEINST *context = privateProcess->machines[i];
 		PRT_MACHINEINST_PRIV * privContext = (PRT_MACHINEINST_PRIV *)context;
 
-		PrtAssert(privContext->receiveResumption == NULL, "Prt: TODO: cleanup blocked machines");
+		if (privContext->receiveResumption != NULL)
+		{
+			const PRT_LASTOPERATION op = PrtResume(privContext, -1, NULL);
+			PrtAssert(op == ReturnStatement, "cleanup of blocked machine failed.");
+		}
 
 		PrtCleanupMachine(privContext);
 		if (privContext->stateMachineLock != NULL)

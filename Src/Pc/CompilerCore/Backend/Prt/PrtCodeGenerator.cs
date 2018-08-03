@@ -734,25 +734,10 @@ namespace Microsoft.Pc.Backend.Prt
         {
             string returnLabel = context.Names.GetReturnLabel(function, returnLabelHint);
 
-            foreach (Variable localVariable in function.LocalVariables)
-            {
-                string varName = context.Names.GetNameForDecl(localVariable);
-                string varTypeName = context.Names.GetNameForType(localVariable.Type);
-                // TODO: optimize away PrtMkDefaultValue if liveness shows no usages before assignments.
-                var varLocation = context.LocationResolver.GetLocation(localVariable);
-                TraceSourceLine(output, varLocation);
-                context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
-            }
-
-            if (function.LocalVariables.Any())
-            {
-                context.WriteLine(output);
-            }
-
             // Write the body into a temporary buffer so that forward declarations can be found and added
             var bodyWriter = new StringWriter();
             var bodyLocation = context.LocationResolver.GetLocation(function.Body);
-            TraceSourceLine(output, bodyLocation);
+            TraceSourceLine(bodyWriter, bodyLocation);
 
             foreach (IPStmt stmt in function.Body.Statements)
             {
@@ -764,6 +749,31 @@ namespace Microsoft.Pc.Backend.Prt
             {
                 string varName = context.Names.GetNameForDecl(localVariable);
                 context.WriteLine(bodyWriter, $"PrtFreeValue({varName}); {varName} = NULL;");
+            }
+
+            // Write local variable declarations to the prologue
+            foreach (Variable localVariable in function.LocalVariables)
+            {
+                var varLocation = context.LocationResolver.GetLocation(localVariable);
+                TraceSourceLine(output, varLocation);
+
+                string varName = context.Names.GetNameForDecl(localVariable);
+                if (localVariable.Role.HasFlag(VariableRole.Temp))
+                {
+                    // temporaries are never read before being written.
+                    context.WriteLine(output, $"PRT_VALUE* {varName} = NULL;");
+                }
+                else
+                {
+                    // TODO: optimize away PrtMkDefaultValue if liveness shows no usages before assignments.
+                    string varTypeName = context.Names.GetNameForType(localVariable.Type);
+                    context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
+                }
+            }
+
+            if (function.LocalVariables.Any())
+            {
+                context.WriteLine(output);
             }
 
             // Write gathered literals to the prologue
@@ -972,9 +982,12 @@ namespace Microsoft.Pc.Backend.Prt
                     string allowedEventIdsValue = string.Join(", ", receiveEventIds);
                     context.WriteLine(output, $"PRT_UINT32 {allowedEventIdsName}[] = {{ {allowedEventIdsValue} }};");
 
-                    string payloadName = context.Names.GetTemporaryName("payload");
-                    context.WriteLine(output, $"PRT_VALUE* {payloadName} = NULL;");
-                    
+                    var payloadVariable = new Variable(context.Names.GetTemporaryName("payload"), receiveStmt.SourceLocation, VariableRole.Temp);
+                    function.AddLocalVariable(payloadVariable);
+
+                    string payloadName = context.Names.GetNameForDecl(payloadVariable);
+                    context.WriteLine(output, $"PrtFreeValue({payloadName}); {payloadName} = NULL;");
+
                     string eventIdName = context.Names.GetTemporaryName("eventId");
                     context.WriteLine(output,
                         $"PRT_UINT32 {eventIdName} = PrtReceiveAsync({receiveEventIds.Count}U, {allowedEventIdsName}, &{payloadName});");
@@ -998,12 +1011,21 @@ namespace Microsoft.Pc.Backend.Prt
 
                         context.WriteLine(output, "} break;");
                     }
+                    
+                    // Cleanup case -- free the current result and return NULL
+                    context.WriteLine(output, "case (PRT_UINT32)(-1): {");
+                    context.WriteLine(output, $"PrtFreeValue({FunResultValName});");
+                    context.WriteLine(output, $"{FunResultValName} = NULL;");
+                    context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
+                    context.WriteLine(output, "} break;");
 
+                    // Default case -- catch erroneous resumptions
                     context.WriteLine(output, "default: {");
                     context.WriteLine(output, "PrtAssert(PRT_FALSE, \"receive returned unhandled event\");");
                     context.WriteLine(output, "} break;");
                     context.WriteLine(output, "}");
-                    context.WriteLine(output, $"PrtFreeValue({payloadName});");
+
+                    context.WriteLine(output, $"PrtFreeValue({payloadName}); {payloadName} = NULL;");
                     break;
                 case RemoveStmt removeStmt:
                     context.Write(output, "PrtRemoveByKey(");

@@ -155,7 +155,7 @@ namespace Microsoft.Pc
             }
 
             job = new CompilationJob(new DefaultCompilerOutput(outputDirectory), outputLanguage, inputFiles,
-                projectName);
+                projectName, generateSourceMaps);
             return true;
         }
 

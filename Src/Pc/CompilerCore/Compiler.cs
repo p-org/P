@@ -16,7 +16,7 @@ namespace Microsoft.Pc
             // Run parser on every input file
             var trees = job.InputFiles.Select(file =>
             {
-                PParser.ProgramContext tree = Parse(job.Handler, file);
+                PParser.ProgramContext tree = Parse(job, file);
                 job.LocationResolver.RegisterRoot(tree, file);
                 return tree;
             }).ToArray();
@@ -39,7 +39,7 @@ namespace Microsoft.Pc
             }
         }
 
-        private static PParser.ProgramContext Parse(ITranslationErrorHandler handler, FileInfo inputFile)
+        private static PParser.ProgramContext Parse(ICompilationJob job, FileInfo inputFile)
         {
             string fileText = File.ReadAllText(inputFile.FullName);
             var fileStream = new AntlrInputStream(fileText);
@@ -62,8 +62,9 @@ namespace Microsoft.Pc
             catch (Exception e) when (e is RecognitionException || e is OperationCanceledException)
             {
                 // Stage 2: use slower LL(*) parsing strategy
+                job.Output.WriteMessage("Reverting to LL(*) parsing strategy.", SeverityKind.Warning);
                 tokens.Reset();
-                parser.AddErrorListener(new PParserErrorListener(inputFile, handler));
+                parser.AddErrorListener(new PParserErrorListener(inputFile, job.Handler));
                 parser.Interpreter.PredictionMode = PredictionMode.Ll;
                 parser.ErrorHandler = new DefaultErrorStrategy();
                 return parser.program();

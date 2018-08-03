@@ -9,7 +9,7 @@ namespace Microsoft.Pc
 {
     public class CompilationJob : ICompilationJob
     {
-        public CompilationJob(ICompilerOutput output, CompilerOutput outputLanguage, IReadOnlyList<FileInfo> inputFiles, string projectName = null)
+        public CompilationJob(ICompilerOutput output, CompilerOutput outputLanguage, IReadOnlyList<FileInfo> inputFiles, string projectName = null, bool generateSourceMaps = false)
         {
             if (!inputFiles.Any())
             {
@@ -22,9 +22,10 @@ namespace Microsoft.Pc
             LocationResolver = new DefaultLocationResolver();
             Handler = new DefaultTranslationErrorHandler(LocationResolver);
             Backend = TargetLanguage.GetCodeGenerator(outputLanguage);
+            GenerateSourceMaps = generateSourceMaps;
         }
 
-        public bool GenerateSourceMaps { get; } = false;
+        public bool GenerateSourceMaps { get; }
         public ICompilerOutput Output { get; }
 
         public string ProjectName { get; }

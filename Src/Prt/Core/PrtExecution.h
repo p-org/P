@@ -209,7 +209,7 @@ extern "C"{
 		// Receive info
 		void*               receiveResumption;
 		PRT_UINT32*         receiveAllowedEvents;
-		PRT_VALUE***        handlerArguments;
+		PRT_VALUE**         handlerArguments;
 	} PRT_MACHINEINST_PRIV;
 
 	/** Starts a new Process running program.

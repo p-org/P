@@ -839,7 +839,7 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context, PRT_VALUE* trigger, PR
 		if (PrtReceiveWaitingOnEvent(context, eventValue))
 		{
 			PrtResume(context, eventValue, payload);
-			// TODO: memory leak of trigger here?
+			PrtFreeValue(trigger);
 			return PrtHandleUserReturn(context);
 		}
 
@@ -1985,6 +1985,9 @@ PrtStopProcess(
 	{
 		PRT_MACHINEINST *context = privateProcess->machines[i];
 		PRT_MACHINEINST_PRIV * privContext = (PRT_MACHINEINST_PRIV *)context;
+
+		PrtAssert(privContext->receiveResumption == NULL, "Prt: TODO: cleanup blocked machines");
+
 		PrtCleanupMachine(privContext);
 		if (privContext->stateMachineLock != NULL)
 		{

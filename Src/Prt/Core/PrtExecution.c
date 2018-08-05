@@ -159,7 +159,8 @@ _In_  PRT_VALUE					*payload
 		process->machines = machines;
 		process->machineCount = 1;
 	}
-	else if (machineCount == numMachines) {
+	else if (machineCount == numMachines)
+	{
 		PRT_MACHINEINST **newMachines = (PRT_MACHINEINST **)PrtCalloc(2 * machineCount, sizeof(PRT_MACHINEINST *));
 		for (i = 0; i < machineCount; i++)
 		{
@@ -2030,7 +2031,7 @@ PrtMkInterface(
 	const PRT_UINT32 instance_of = program->interfaceDefMap[interfaceCreated];
 
 	// Check the CreateOk condition
-	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[creator->instanceOf]->creates), "Created Inteface is not in the creates set of the machine");
+	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[creator->instanceOf]->creates), "Created interface is not in the creates set of the machine");
 
 	if (numArgs == 0)
 	{

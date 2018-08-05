@@ -2,17 +2,17 @@
 
 // Type names
 
-ANY      : 'any' ;
-BOOL     : 'bool' ;
-ENUM     : 'enum' ;
-EVENT    : 'event' ;
-EVENTSET : 'eventset' ;
-FLOAT    : 'float' ;
-INT      : 'int' ;
-MACHINE  : 'machine' ;
+ANY       : 'any' ;
+BOOL      : 'bool' ;
+ENUM      : 'enum' ;
+EVENT     : 'event' ;
+EVENTSET  : 'eventset' ;
+FLOAT     : 'float' ;
+INT       : 'int' ;
+MACHINE   : 'machine' ;
 INTERFACE : 'interface' ;
-MAP      : 'map' ;
-SEQ      : 'seq' ;
+MAP       : 'map' ;
+SEQ       : 'seq' ;
 DATA      : 'data' ;
 
 // Keywords
@@ -70,12 +70,12 @@ TEST           : 'test' ;
 REFINES        : 'refines' ;
 
 // module constructors
-COMPOSE			: 'compose' ;
-UNION			: 'union'	;
-HIDEE			: 'hidee' ;
-HIDEI			: 'hidei' ;
-RENAME			: 'rename' ;
-SAFE			: 'safe' ;
+COMPOSE        : 'compose' ;
+UNION          : 'union'    ;
+HIDEE          : 'hidee' ;
+HIDEI          : 'hidei' ;
+RENAME         : 'rename' ;
+SAFE           : 'safe' ;
 
 // machine annotations
 RECEIVES  : 'receives' ;
@@ -101,7 +101,7 @@ fragment EscapeSequence : '\\' . ;
 // Symbols
 
 FAIRNONDET : '$$' ;
-NONDET : '$' ;
+NONDET     : '$'  ;
 
 LNOT   : '!' ;
 LAND   : '&&' ;

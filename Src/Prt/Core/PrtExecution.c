@@ -751,8 +751,9 @@ bool PrtReceiveWaitingOnEvent(PRT_MACHINEINST_PRIV* context, PRT_UINT32 event_va
 }
 
 PRT_LASTOPERATION PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args);
+PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context);
 
-PRT_LASTOPERATION PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
+PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 {
 	PrtUpdateCurrentActionsSet(context);
 	PrtUpdateCurrentDeferredSet(context);
@@ -763,7 +764,8 @@ PRT_LASTOPERATION PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* entryFun = currentState->entryFun;
-	return PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
+	PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
+	return PrtHandleUserReturn(context);
 }
 
 PRT_LASTOPERATION PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
@@ -844,8 +846,7 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context, PRT_VALUE* trigger, PR
 		if (PrtIsPushTransition(context, eventValue))
 		{
 			PrtTakeTransition(context, eventValue);
-			PrtCallEntryHandler(context);
-			return PrtHandleUserReturn(context);
+			return PrtCallEntryHandler(context);
 		}
 
 		// on eventValue ...
@@ -912,8 +913,7 @@ PrtStepStateMachine(
 	{
 	case EntryOperation:
 		// entry { ... } / entry <fun>
-		PrtCallEntryHandler(context);
-		return PrtHandleUserReturn(context);
+		return PrtCallEntryHandler(context);
 	case DequeueOperation:
 		PrtLockMutex(context->stateMachineLock);
 		PRT_VALUE *trigger, *payload;
@@ -1554,6 +1554,7 @@ PrtCleanupMachine(
 _Inout_ PRT_MACHINEINST_PRIV			*context
 )
 {
+	// Set the halted flag
 	PrtLockMutex(context->stateMachineLock);
 	if (context->isHalted)
 	{
@@ -1561,7 +1562,17 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 		return;
 	}
 	context->isHalted = PRT_TRUE;
+	PrtUnlockMutex(context->stateMachineLock);
 
+	// If the machine is blocked on a receive, let it clean up
+	if (context->receiveResumption != NULL)
+	{
+		const PRT_LASTOPERATION op = PrtResume(context, -1, NULL);
+		PrtAssert(op == ReturnStatement, "cleanup of blocked machine failed.");
+	}
+
+	// Free machine's state
+	PrtLockMutex(context->stateMachineLock);
 	if (context->eventQueue.events != NULL)
 	{
 		PRT_EVENT *queue = context->eventQueue.events;
@@ -1982,12 +1993,6 @@ PrtStopProcess(
 	{
 		PRT_MACHINEINST *context = privateProcess->machines[i];
 		PRT_MACHINEINST_PRIV * privContext = (PRT_MACHINEINST_PRIV *)context;
-
-		if (privContext->receiveResumption != NULL)
-		{
-			const PRT_LASTOPERATION op = PrtResume(privContext, -1, NULL);
-			PrtAssert(op == ReturnStatement, "cleanup of blocked machine failed.");
-		}
 
 		PrtCleanupMachine(privContext);
 		if (privContext->stateMachineLock != NULL)

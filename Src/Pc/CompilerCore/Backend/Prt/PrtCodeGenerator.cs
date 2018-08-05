@@ -807,6 +807,15 @@ namespace Microsoft.Pc.Backend.Prt
             return $"&({GetVariablePointer(function, variableRef.Variable)})";
         }
 
+        private void WriteCleanupCheck(TextWriter output, Function function)
+        {
+            context.WriteLine(output, "if (p_this->isHalted == PRT_TRUE) {");
+            context.WriteLine(output, $"PrtFreeValue({FunResultValName});");
+            context.WriteLine(output, $"{FunResultValName} = NULL;");
+            context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
+            context.WriteLine(output, "}");
+        }
+
         private void WriteStmt(TextWriter output, Function function, IPStmt stmt)
         {
             var stmtLocation = context.LocationResolver.GetLocation(stmt);
@@ -835,6 +844,12 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, $"*{lvalName} = ");
                     WriteExpr(output, function, assignStmt.Value);
                     context.WriteLine(output, ";");
+
+                    // If we called external code, check for cleanup.
+                    if (assignStmt.Value is FunCallExpr || assignStmt.Value is CtorExpr)
+                    {
+                        WriteCleanupCheck(output, function);
+                    }
                     break;
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");
@@ -857,6 +872,7 @@ namespace Microsoft.Pc.Backend.Prt
                     }
 
                     context.WriteLine(output, ");");
+                    WriteCleanupCheck(output, function);
                     break;
                 case FunCallStmt funCallStmt:
                     string funImplName = context.Names.GetNameForFunctionImpl(funCallStmt.Fun);
@@ -881,6 +897,7 @@ namespace Microsoft.Pc.Backend.Prt
                         context.WriteLine(output, $"{argName} = NULL;");
                     }
 
+                    WriteCleanupCheck(output, function);
                     break;
                 case GotoStmt gotoStmt:
                     context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
@@ -980,51 +997,54 @@ namespace Microsoft.Pc.Backend.Prt
                     string allowedEventIdsName = context.Names.GetTemporaryName("allowedEventIds");
                     var receiveEventIds = receiveStmt.Cases.Keys.Select(context.GetDeclNumber).ToList();
                     string allowedEventIdsValue = string.Join(", ", receiveEventIds);
-                    context.WriteLine(output, $"PRT_UINT32 {allowedEventIdsName}[] = {{ {allowedEventIdsValue} }};");
-
+                    
                     var payloadVariable = new Variable(context.Names.GetTemporaryName("payload"), receiveStmt.SourceLocation, VariableRole.Temp);
                     function.AddLocalVariable(payloadVariable);
 
                     string payloadName = context.Names.GetNameForDecl(payloadVariable);
-                    context.WriteLine(output, $"PrtFreeValue({payloadName}); {payloadName} = NULL;");
-
                     string eventIdName = context.Names.GetTemporaryName("eventId");
+
+                    // Set up call to PrtReceiveAsync
+                    context.WriteLine(output, $"PRT_UINT32 {allowedEventIdsName}[] = {{ {allowedEventIdsValue} }};");
+                    context.WriteLine(output, $"PrtFreeValue({payloadName}); {payloadName} = NULL;");
                     context.WriteLine(output,
                         $"PRT_UINT32 {eventIdName} = PrtReceiveAsync({receiveEventIds.Count}U, {allowedEventIdsName}, &{payloadName});");
 
+                    // Might wake up with the cleanup flag set.
+                    WriteCleanupCheck(output, function);
+
+                    // Write each case as a switch
                     context.WriteLine(output, $"switch ({eventIdName}) {{");
                     foreach (var receiveCase in receiveStmt.Cases)
                     {
-                        var ev = receiveCase.Key;
-                        var fn = receiveCase.Value;
-                        context.WriteLine(output, $"case {context.GetDeclNumber(ev)}: {{");
+                        var caseEvent = receiveCase.Key;
+                        var caseFunction = receiveCase.Value;
+                        context.WriteLine(output, $"case {context.GetDeclNumber(caseEvent)}: {{");
 
-                        Debug.Assert(fn.Signature.Parameters.Count <= 1);
+                        Debug.Assert(caseFunction.Signature.Parameters.Count <= 1);
 
-                        if (fn.Signature.Parameters.Any())
+                        if (caseFunction.Signature.Parameters.Any())
                         {
-                            string realPayloadName = context.Names.GetNameForDecl(fn.Signature.Parameters[0]);
+                            string realPayloadName = context.Names.GetNameForDecl(caseFunction.Signature.Parameters[0]);
                             context.WriteLine(output, $"PRT_VALUE** {realPayloadName} = &{payloadName};");
                         }
 
-                        WriteFunctionStatements(output, fn, $"recv_{ev.Name.ToLowerInvariant()}_ret");
-
+                        function.AddLocalVariables(caseFunction.LocalVariables);
+                        foreach (IPStmt caseStmt in caseFunction.Body.Statements)
+                        {
+                            WriteStmt(output, function, caseStmt);
+                        }
+                        
                         context.WriteLine(output, "} break;");
                     }
                     
-                    // Cleanup case -- free the current result and return NULL
-                    context.WriteLine(output, "case (PRT_UINT32)(-1): {");
-                    context.WriteLine(output, $"PrtFreeValue({FunResultValName});");
-                    context.WriteLine(output, $"{FunResultValName} = NULL;");
-                    context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
-                    context.WriteLine(output, "} break;");
-
                     // Default case -- catch erroneous resumptions
                     context.WriteLine(output, "default: {");
                     context.WriteLine(output, "PrtAssert(PRT_FALSE, \"receive returned unhandled event\");");
                     context.WriteLine(output, "} break;");
                     context.WriteLine(output, "}");
 
+                    // Clean up the payload now since it loses scope in P source.
                     context.WriteLine(output, $"PrtFreeValue({payloadName}); {payloadName} = NULL;");
                     break;
                 case RemoveStmt removeStmt:
@@ -1063,6 +1083,11 @@ namespace Microsoft.Pc.Backend.Prt
                     Debug.Assert(sendStmt.Evt is IVariableRef);
                     var sendEventVar = (IVariableRef) sendStmt.Evt;
                     context.WriteLine(output, $"*({GetVariableReference(function, sendEventVar)}) = NULL;");
+
+                    // Send can immediately schedule work on another machine. It does this via a recursive call to PrtScheduleWork,
+                    // which is almost certainly the Wrong Thing To Do (tm).
+                    // TODO: fix the underlying problem and remove this check.
+                    WriteCleanupCheck(output, function);
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     context.WriteLine(output, "{");

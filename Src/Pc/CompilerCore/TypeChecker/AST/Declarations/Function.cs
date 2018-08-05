@@ -48,6 +48,11 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public void AddLocalVariable(Variable local) { localVariables.Add(local); }
 
+        public void AddLocalVariables(IEnumerable<Variable> variables)
+        {
+            localVariables.AddRange(variables);
+        }
+
         public void AddCallee(Function callee)
         {
             callee.callers.Add(this);

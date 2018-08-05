@@ -41,6 +41,8 @@ namespace Microsoft.Pc.TypeChecker
                     return true;
                 case RaiseStmt _:
                     return true;
+                case ReceiveStmt receive:
+                    return receive.Cases.Values.All(fn => SurelyReturns(fn.Body));
                 default:
                     return false;
             }

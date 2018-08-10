@@ -863,6 +863,7 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
 
 			// always more to do...
 			context->operation = DequeueOrReceive;
+			context->postHandlerOperation = DequeueOrReceive;
 			return PRT_TRUE;
 		}
 

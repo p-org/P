@@ -311,7 +311,7 @@ namespace Microsoft.Pc.TypeChecker
                 throw handler.TypeMismatch(context.expr(), evtExpr.Type, PrimitiveType.Event);
             }
 
-            method.CanReceiveEvent = true;
+            method.CanRaiseEvent = true;
 
             IPExpr[] args = TypeCheckingUtils.VisitRvalueList(context.rvalueList(), exprVisitor).ToArray();
             if (evtExpr is EventRefExpr eventRef)
@@ -443,8 +443,6 @@ namespace Microsoft.Pc.TypeChecker
             {
                 throw handler.IllegalMonitorOperation(context, context.RECEIVE().Symbol, machine);
             }
-
-            method.CanReceiveEvent = true;
 
             var cases = new Dictionary<PEvent, Function>();
             foreach (PParser.RecvCaseContext caseContext in context.recvCase())

@@ -31,7 +31,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // Step 4: Propagate purity properties
             ApplyPropagations(allFunctions,
-                              CreatePropagation(fn => fn.CanReceiveEvent, (fn, value) => fn.CanReceiveEvent = value,
+                              CreatePropagation(fn => fn.CanRaiseEvent, (fn, value) => fn.CanRaiseEvent = value,
                                                 true),
                               CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value,
                                                 true));
@@ -45,7 +45,7 @@ namespace Microsoft.Pc.TypeChecker
                     throw handler.NonDeterministicFunctionInSpecMachine(machineFunction);
                 }
 
-                if ((machineFunction.CanChangeState == true || machineFunction.CanReceiveEvent == true) &&
+                if ((machineFunction.CanChangeState == true || machineFunction.CanRaiseEvent == true) &&
                     (machineFunction.Role.HasFlag(FunctionRole.TransitionFunction) ||
                      machineFunction.Role.HasFlag(FunctionRole.ExitHandler)))
                 {

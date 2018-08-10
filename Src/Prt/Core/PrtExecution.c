@@ -749,8 +749,6 @@ bool PrtReceiveWaitingOnEvent(PRT_MACHINEINST_PRIV* context, PRT_UINT32 event_va
 	return false;
 }
 
-PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args);
-
 PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 {
 	PrtAssert(
@@ -785,6 +783,14 @@ PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 	return PRT_TRUE;
 }
 
+PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args)
+{
+	PrtAssert(context->receiveResumption == NULL && context->receiveAllowedEvents == NULL, "When waiting on receive, must resume");
+	context->returnKind = ReturnStatement;
+	prt_receive_handler(context, function, args);
+	return PrtHandleUserReturn(context);
+}
+
 PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 {
 	PrtUpdateCurrentActionsSet(context);
@@ -817,14 +823,6 @@ PRT_BOOLEAN PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
 	PRT_STATEDECL *state_decl = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL *trans_fun = state_decl->transitions[trans_index].transFun;
 	return PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
-}
-
-PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args)
-{
-	PrtAssert(context->receiveResumption == NULL && context->receiveAllowedEvents == NULL, "When waiting on receive, must resume");
-	context->returnKind = ReturnStatement;
-	prt_receive_handler(context, function, args);
-	return PrtHandleUserReturn(context);
 }
 
 PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
@@ -904,7 +902,6 @@ PrtStepStateMachine(
 	switch (context->operation)
 	{
 	case StateEntry:
-		// entry { ... } / entry <fun>
 		context->postHandlerOperation = DequeueOrReceive;
 		return PrtCallEntryHandler(context);
 	case DequeueOrReceive:
@@ -927,20 +924,26 @@ PrtStepStateMachine(
 	case ExitState:
 		return PrtCallExitHandler(context);
 	case PopState:
+		PRT_DBG_ASSERT(context->postHandlerOperation == PopState, "pop should only be reachable through ExitState(PopState)");
 		context->operation = DequeueOrReceive;
+		context->postHandlerOperation = DequeueOrReceive;
 		return !PrtPopState(context, PRT_TRUE);
 	case GotoState:
+		PRT_DBG_ASSERT(context->postHandlerOperation == GotoState, "goto should only be reachable through ExitState(GotoState)");
 		context->currentState = context->destStateIndex;
 		context->operation = StateEntry;
 		return PRT_TRUE;
 	case HandleTransition:
+		PRT_DBG_ASSERT(context->postHandlerOperation == HandleTransition, "transition handlers should only be reachable through ExitState(HandleTransition)");
 		context->postHandlerOperation = TakeTransition;
 		return PrtCallTransitionHandler(context);
 	case TakeTransition:
+		PRT_DBG_ASSERT(context->postHandlerOperation == TakeTransition, "state transitions should only be reachable through HandleTransition");
 		PrtTakeTransition(context, PrtPrimGetEvent(context->currentTrigger));
 		context->operation = StateEntry;
 		return PRT_TRUE;
 	case UnhandledEvent:
+		PRT_DBG_ASSERT(context->postHandlerOperation == UnhandledEvent, "unhandled state popping should only be reachable through ExitState(UnhandledEvent)");
 		context->operation = HandleCurrentEvent;
 		return !PrtPopState(context, PRT_FALSE);
 	}

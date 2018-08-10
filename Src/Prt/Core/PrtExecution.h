@@ -131,21 +131,27 @@ extern "C"{
 
 	} PRT_PROCESS_PRIV;
 
-	typedef enum PRT_LASTOPERATION
+	typedef enum PRT_RETURN_KIND
 	{
 		ReturnStatement,
 		PopStatement,
 		RaiseStatement,
 		GotoStatement,
 		ReceiveStatement
-	} PRT_LASTOPERATION;
+	} PRT_RETURN_KIND;
 
-    typedef enum PRT_NEXTOPERATION
+    typedef enum PRT_OPERATION
     {
-        EntryOperation,
-        DequeueOperation,
-        HandleEventOperation
-    } PRT_NEXTOPERATION;
+        StateEntry,
+        DequeueEvent,
+        HandleCurrentEvent,
+		ReceiveLoop,
+		ExitState,
+		PopState,
+		GotoState,
+		HandleTransition,
+		TakeTransition
+    } PRT_OPERATION;
 
 	typedef struct PRT_EVENT
 	{
@@ -182,33 +188,46 @@ extern "C"{
 		PRT_UINT16			length;
 	} PRT_EVENTSTACK;
 
-	typedef struct PRT_MACHINEINST_PRIV {
-		PRT_PROCESS		    *process;     
-		PRT_UINT32			instanceOf;   
-		PRT_VALUE			*id;          
-		PRT_VALUE           *recvMap;
-		PRT_VALUE			**varValues;
+	typedef struct PRT_MACHINEINST_PRIV
+	{
+		// Identity bookkeeping
+		PRT_PROCESS*        process;
+		PRT_UINT32          instanceOf;
+		PRT_VALUE*          id;
 		PRT_RECURSIVE_MUTEX stateMachineLock;
-		PRT_BOOLEAN			isRunning;
-        PRT_NEXTOPERATION   nextOperation;
-		PRT_BOOLEAN			isHalted;
-		PRT_UINT32			currentState;
-		PRT_STATESTACK		callStack;
-		PRT_UINT32			*packedReceiveCases;
-		PRT_UINT32			destStateIndex;
-		PRT_VALUE			*currentTrigger;
-		PRT_VALUE			*currentPayload;
-		PRT_EVENTQUEUE		eventQueue;
-		PRT_LASTOPERATION	lastOperation;
-		PRT_UINT32          *inheritedDeferredSetCompact;
-		PRT_UINT32          *currentDeferredSetCompact;
-		PRT_UINT32          *inheritedActionSetCompact;
-		PRT_UINT32          *currentActionSetCompact;
-		PRT_UINT32			interfaceBound;
 
-		// Receive info
+		// Machine fields (as defined in P source)
+		PRT_VALUE**         varValues;
+
+		// Distributed 
+		PRT_VALUE*          recvMap;
+
+		// Machine execution management
+		PRT_OPERATION       operation;
+		PRT_OPERATION       postHandlerOperation;
+		PRT_BOOLEAN         isRunning;
+		PRT_BOOLEAN         isHalted;
+		PRT_VALUE*          currentTrigger;
+		PRT_VALUE*          currentPayload;
+
+		// Machine state management
+		PRT_UINT32          currentState;
+		PRT_STATESTACK      callStack;
+		PRT_EVENTQUEUE      eventQueue;
+		PRT_UINT32*         inheritedDeferredSetCompact;
+		PRT_UINT32*         currentDeferredSetCompact;
+		PRT_UINT32*         inheritedActionSetCompact;
+		PRT_UINT32*         currentActionSetCompact;
+		PRT_UINT32          interfaceBound;
+
+		// Extended return info
+		PRT_UINT32          destStateIndex; // `goto` statement destination
+		PRT_RETURN_KIND     returnKind;     // which statement caused function return
+
+		// Receive statement info
 		void*               receiveResumption;
-		PRT_UINT32*         receiveAllowedEvents;
+		PRT_UINT32*         receiveAllowedEvents; // TODO: redundant
+		PRT_UINT32*         packedReceiveCases;   // keep this one.
 		PRT_VALUE**         handlerArguments;
 	} PRT_MACHINEINST_PRIV;
 

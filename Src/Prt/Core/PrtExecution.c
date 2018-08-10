@@ -776,10 +776,8 @@ PRT_RETURN_KIND PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* exitFun = currentState->exitFun;
-	// exit handler are always 0-ary
-	const PRT_RETURN_KIND operation = PrtCallEventHandler(context, exitFun->implementation, NULL);
-	PrtAssert(operation == ReturnStatement, "exit handlers must not call raise, goto, receive, or pop.");
-	return operation;
+	// exit handlers are always 0-ary
+	return PrtCallEventHandler(context, exitFun->implementation, NULL);
 }
 
 PRT_RETURN_KIND PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
@@ -787,13 +785,17 @@ PRT_RETURN_KIND PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
 	const PRT_UINT32 trans_index = PrtFindTransition(context, PrtPrimGetEvent(context->currentTrigger));
 	PRT_STATEDECL *state_decl = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL *trans_fun = state_decl->transitions[trans_index].transFun;
-	const PRT_RETURN_KIND operation = PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
-	PrtAssert(operation == ReturnStatement, "transition handlers must not call raise, goto, receive, or pop.");
-	return operation;
+	return PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
 }
 
 PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 {
+	PrtAssert(
+		context->postHandlerOperation == DequeueEvent || 
+		context->returnKind == ReturnStatement ||
+		context->returnKind == ReceiveStatement,
+		"Can only pop, goto, or raise in entry and action handlers. Not allowed for exit or transition.");
+
 	switch (context->returnKind)
 	{
 	case PopStatement:
@@ -811,8 +813,7 @@ PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 		context->operation = ReceiveLoop;
 		break;
 	case ReturnStatement:
-		context->operation = DequeueEvent;
-		context->postHandlerOperation = DequeueEvent;
+		context->operation = context->postHandlerOperation;
 		break;
 	default:
 		PRT_DBG_ASSERT(0, "Unexpected case in switch");
@@ -829,69 +830,58 @@ PRT_RETURN_KIND PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN fu
 	return context->returnKind;
 }
 
-PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context, PRT_VALUE* trigger, PRT_VALUE* payload)
+PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
 {
-	const PRT_UINT32 eventValue = PrtPrimGetEvent(trigger);
-	PRT_BOOLEAN pop_failed;
+	PrtAssert(context->receiveResumption == NULL, "Should be in ReceiveLoop state");
 
-	do {
-		// receive { case eventValue { ... } }
-		if (PrtReceiveWaitingOnEvent(context, eventValue))
-		{
-			PrtResume(context, eventValue, payload);
-			PrtFreeValue(trigger);
-			return PrtHandleUserReturn(context);
-		}
+	const PRT_UINT32 eventValue = PrtPrimGetEvent(context->currentTrigger);
 
-		// on eventValue push state ;
-		if (PrtIsPushTransition(context, eventValue))
+	// on eventValue push state ;
+	if (PrtIsPushTransition(context, eventValue))
+	{
+		PrtTakeTransition(context, eventValue);
+		context->operation = StateEntry;
+		return PRT_TRUE;
+	}
+
+	// on eventValue ...
+	if (PrtIsTransitionPresent(context, eventValue))
+	{
+		context->operation = ExitState;
+		context->postHandlerOperation = HandleTransition;
+		return PRT_TRUE;
+	}
+
+	if (PrtIsActionInstalled(eventValue, context->currentActionSetCompact))
+	{
+		PRT_DODECL *curr_action_decl = PrtGetAction(context, eventValue);
+		PRT_FUNDECL *do_fun = curr_action_decl->doFun;
+		PRT_MACHINESTATE state;
+		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
+
+		// ignore eventValue
+		if (do_fun == NULL)
 		{
-			PrtTakeTransition(context, eventValue);
-			context->operation = StateEntry;
+			PRT_VALUE* event = PrtMkEventValue(eventValue);
+			PrtLog(PRT_STEP_IGNORE, &state, context, event, NULL);
+			PrtFreeValue(event);
+
+			// always more to do...
+			context->operation = DequeueEvent;
 			return PRT_TRUE;
 		}
 
-		// on eventValue ...
-		if (PrtIsTransitionPresent(context, eventValue))
-		{
-			context->operation = ExitState;
-			context->postHandlerOperation = HandleTransition;
-			return PRT_TRUE;
-		}
+		// on eventValue do <fun>
+		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
+		PrtCallEventHandler(context, do_fun->implementation, &context->handlerArguments);
+		return PrtHandleUserReturn(context);
+	}
 
-		if (PrtIsActionInstalled(eventValue, context->currentActionSetCompact))
-		{
-			PRT_DODECL *curr_action_decl = PrtGetAction(context, eventValue);
-			PRT_FUNDECL *do_fun = curr_action_decl->doFun;
-			PRT_MACHINESTATE state;
-			PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-
-			// ignore eventValue
-			if (do_fun == NULL)
-			{
-				PRT_VALUE* event = PrtMkEventValue(eventValue);
-				PrtLog(PRT_STEP_IGNORE, &state, context, event, NULL);
-				PrtFreeValue(event);
-
-				// always more to do...
-				context->operation = DequeueEvent;
-				return PRT_TRUE;
-			}
-
-			// on eventValue do <fun>
-			PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
-			PrtCallEventHandler(context, do_fun->implementation, &context->handlerArguments);
-			return PrtHandleUserReturn(context);
-		}
-
-		// event unhandled; try popping and retrying until there's an error.
-		PrtCallExitHandler(context);
-		pop_failed = PrtPopState(context, PRT_FALSE);
-	} while (pop_failed == PRT_FALSE);
-
-	return PRT_FALSE;
+	// event unhandled; try popping and retrying until there's an error.
+	context->operation = ExitState;
+	context->postHandlerOperation = UnhandledEvent;
+	return PRT_TRUE;
 }
-
 
 static PRT_BOOLEAN
 PrtStepStateMachine(
@@ -906,6 +896,7 @@ PrtStepStateMachine(
 	{
 	case StateEntry:
 		// entry { ... } / entry <fun>
+		context->postHandlerOperation = DequeueEvent;
 		return PrtCallEntryHandler(context);
 	case DequeueEvent:
 		PrtAssert(context->receiveResumption == NULL, "Should be in ReceiveLoop state");
@@ -921,8 +912,9 @@ PrtStepStateMachine(
 
 		return did_dequeue;
 	case HandleCurrentEvent:
-		// Either a raise or a normal dequeue
-		return PrtHandleEvent(context, context->currentTrigger, context->currentPayload);
+		// Either a raise or a normal dequeue; offload to complex function
+		context->postHandlerOperation = DequeueEvent;
+		return PrtHandleEvent(context);
 	case ReceiveLoop:
 		PrtAssert(context->receiveResumption != NULL, "Should be in DequeueEvent state");
 
@@ -930,14 +922,18 @@ PrtStepStateMachine(
 		did_dequeue = PrtDequeueEvent(context, &trigger, &payload);
 		PrtUnlockMutex(context->stateMachineLock);
 
-		// otherwise, keep waiting on receive.
-		return did_dequeue == PRT_TRUE && PrtHandleEvent(context, trigger, payload);
+		if (did_dequeue == PRT_TRUE)
+		{
+			const PRT_UINT32 eventValue = PrtPrimGetEvent(trigger);
+			PrtResume(context, eventValue, payload);
+			PrtFreeValue(trigger);
+			return PrtHandleUserReturn(context);
+		}
+
+		return did_dequeue;
 	case ExitState:
 		PrtCallExitHandler(context);
-		// exit either receives or returns (no pop, raise, or goto)
-
-		context->operation = context->postHandlerOperation;
-		return PRT_TRUE;
+		return PrtHandleUserReturn(context);
 	case PopState:
 		context->operation = DequeueEvent;
 		return !PrtPopState(context, PRT_TRUE);
@@ -948,14 +944,14 @@ PrtStepStateMachine(
 	case HandleTransition:
 		context->postHandlerOperation = TakeTransition;
 		PrtCallTransitionHandler(context);
-		// transition handler either receives or returns (no pop, raise, or goto)
-
-		context->operation = context->postHandlerOperation;
-		return PRT_TRUE;
+		return PrtHandleUserReturn(context);
 	case TakeTransition:
 		PrtTakeTransition(context, PrtPrimGetEvent(context->currentTrigger));
 		context->operation = StateEntry;
 		return PRT_TRUE;
+	case UnhandledEvent:
+		context->operation = HandleCurrentEvent;
+		return !PrtPopState(context, PRT_FALSE);
 	}
 
 	return PRT_FALSE;

@@ -150,7 +150,8 @@ extern "C"{
 		PopState,
 		GotoState,
 		HandleTransition,
-		TakeTransition
+		TakeTransition,
+		UnhandledEvent
     } PRT_OPERATION;
 
 	typedef struct PRT_EVENT

@@ -143,9 +143,8 @@ extern "C"{
     typedef enum PRT_OPERATION
     {
         StateEntry,
-        DequeueEvent,
+        DequeueOrReceive,
         HandleCurrentEvent,
-		ReceiveLoop,
 		ExitState,
 		PopState,
 		GotoState,

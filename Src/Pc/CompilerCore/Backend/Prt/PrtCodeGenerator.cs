@@ -900,8 +900,6 @@ namespace Microsoft.Pc.Backend.Prt
                     WriteCleanupCheck(output, function);
                     break;
                 case GotoStmt gotoStmt:
-                    context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
-
                     int destStateIndex = context.GetDeclNumber(gotoStmt.State);
                     context.Write(output, $"PrtGoto(p_this, {destStateIndex}U, ");
                     if (gotoStmt.Payload != null)
@@ -965,7 +963,6 @@ namespace Microsoft.Pc.Backend.Prt
                 case NoStmt _:
                     return;
                 case PopStmt _:
-                    context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
                     context.WriteLine(output, "PrtPop(p_this);");
                     context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
                     break;
@@ -973,7 +970,6 @@ namespace Microsoft.Pc.Backend.Prt
                     WritePrintStmt(output, printStmt, function);
                     break;
                 case RaiseStmt raiseStmt:
-                    context.WriteLine(output, "PrtFreeTriggerPayload(p_this);");
                     context.Write(output, "PrtRaise(p_this, ");
                     WriteExpr(output, function, raiseStmt.PEvent);
                     context.Write(output, $", {raiseStmt.Payload.Count}");

@@ -55,20 +55,19 @@ PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 /* Initialize the function to default print fucntion*/
 PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
 
-void PrtSetTriggerPayload(_Inout_ PRT_MACHINEINST_PRIV *context, PRT_VALUE* trigger, PRT_VALUE* payload)
-{
-	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
-	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
-	context->currentTrigger = trigger;
-	context->currentPayload = payload;
-}
-
 void PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV *context)
 {
 	PrtFreeValue(context->currentTrigger);
 	context->currentTrigger = NULL;
 	PrtFreeValue(context->currentPayload);
 	context->currentPayload = NULL;
+}
+
+void PrtSetTriggerPayload(_Inout_ PRT_MACHINEINST_PRIV *context, PRT_VALUE* trigger, PRT_VALUE* payload)
+{
+	PrtFreeTriggerPayload(context);
+	context->currentTrigger = trigger;
+	context->currentPayload = payload;
 }
 
 void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
@@ -652,8 +651,8 @@ _Inout_ PRT_MACHINEINST_PRIV		*context
 )
 {
 	context->returnKind = PopStatement;
-	PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
-	PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
+	//PrtAssert(context->currentTrigger == NULL, "currentTrigger must be null");
+	//PrtAssert(context->currentPayload == NULL, "currentPayload must be null");
 	// Actual pop happens in PrtPopState; the exit function must be executed first.
 }
 
@@ -900,15 +899,16 @@ PrtStepStateMachine(
 		return PrtCallEntryHandler(context);
 	case DequeueEvent:
 		PrtAssert(context->receiveResumption == NULL, "Should be in ReceiveLoop state");
-		PrtFreeTriggerPayload(context);
-
+		
 		PrtLockMutex(context->stateMachineLock);
-		if ((did_dequeue = PrtDequeueEvent(context, &trigger, &payload)) == PRT_TRUE)
+		did_dequeue = PrtDequeueEvent(context, &trigger, &payload);
+		PrtUnlockMutex(context->stateMachineLock);
+
+		if (did_dequeue == PRT_TRUE)
 		{
 			PrtSetTriggerPayload(context, trigger, payload);
 			context->operation = HandleCurrentEvent;
 		}
-		PrtUnlockMutex(context->stateMachineLock);
 
 		return did_dequeue;
 	case HandleCurrentEvent:

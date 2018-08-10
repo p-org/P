@@ -749,7 +749,7 @@ bool PrtReceiveWaitingOnEvent(PRT_MACHINEINST_PRIV* context, PRT_UINT32 event_va
 	return false;
 }
 
-PRT_RETURN_KIND PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args);
+PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args);
 
 PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 {
@@ -796,8 +796,7 @@ PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
 
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* entryFun = currentState->entryFun;
-	PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
-	return PrtHandleUserReturn(context);
+	return PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
 }
 
 PRT_BOOLEAN PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
@@ -809,8 +808,7 @@ PRT_BOOLEAN PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
 	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL* exitFun = currentState->exitFun;
 	// exit handlers are always 0-ary
-	PrtCallEventHandler(context, exitFun->implementation, NULL);
-	return PrtHandleUserReturn(context);
+	return PrtCallEventHandler(context, exitFun->implementation, NULL);
 }
 
 PRT_BOOLEAN PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
@@ -818,16 +816,15 @@ PRT_BOOLEAN PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
 	const PRT_UINT32 trans_index = PrtFindTransition(context, PrtPrimGetEvent(context->currentTrigger));
 	PRT_STATEDECL *state_decl = PrtGetCurrentStateDecl(context);
 	PRT_FUNDECL *trans_fun = state_decl->transitions[trans_index].transFun;
-	PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
-	return PrtHandleUserReturn(context);
+	return PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
 }
 
-PRT_RETURN_KIND PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args)
+PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args)
 {
 	PrtAssert(context->receiveResumption == NULL && context->receiveAllowedEvents == NULL, "When waiting on receive, must resume");
 	context->returnKind = ReturnStatement;
 	prt_receive_handler(context, function, args);
-	return context->returnKind;
+	return PrtHandleUserReturn(context);
 }
 
 PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
@@ -873,8 +870,7 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
 
 		// on eventValue do <fun>
 		PrtLog(PRT_STEP_DO, &state, context, NULL, NULL);
-		PrtCallEventHandler(context, do_fun->implementation, &context->handlerArguments);
-		return PrtHandleUserReturn(context);
+		return PrtCallEventHandler(context, do_fun->implementation, &context->handlerArguments);
 	}
 
 	// event unhandled; try popping and retrying until there's an error.

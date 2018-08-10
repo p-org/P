@@ -7,20 +7,20 @@ PRT_PROGRAMDECL *program;
 PRT_TYPE NullType =
 {
 	PRT_KIND_NULL,
-	(struct PRT_MAPTYPE *)NULL
+	{(struct PRT_MAPTYPE *)NULL}
 };
 
 PRT_TYPE AnyType = 
 {
 	PRT_KIND_ANY,
-	(struct PRT_MAPTYPE *)NULL
+	{(struct PRT_MAPTYPE *)NULL}
 };
 
 PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
 {
     {
         PRT_VALUE_KIND_NULL,
-        PRT_SPECIAL_EVENT_NULL
+	    { .ev = PRT_SPECIAL_EVENT_NULL }
     },
 	"null",
 	0,
@@ -31,7 +31,7 @@ PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
 {
     {
         PRT_VALUE_KIND_EVENT,
-        PRT_SPECIAL_EVENT_HALT
+        {.ev = PRT_SPECIAL_EVENT_HALT }
     },
 	"halt",
 	4294967295U,
@@ -448,7 +448,7 @@ PrtGoto(
 {
 	context->returnKind = GotoStatement;
 	context->destStateIndex = destStateIndex;
-	PRT_VALUE *payload = NULL;
+	PRT_VALUE *payload;
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
@@ -494,7 +494,7 @@ PrtRaise(
 	PrtAssert(!PrtIsSpecialEvent(event), "Raised event must not be null");
 	context->returnKind = RaiseStatement;
 	
-	PRT_VALUE *payload = NULL;
+	PRT_VALUE *payload;
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
@@ -750,47 +750,11 @@ bool PrtReceiveWaitingOnEvent(PRT_MACHINEINST_PRIV* context, PRT_UINT32 event_va
 }
 
 PRT_RETURN_KIND PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args);
-PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context);
-
-PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
-{
-	PrtUpdateCurrentActionsSet(context);
-	PrtUpdateCurrentDeferredSet(context);
-
-	PRT_MACHINESTATE state;
-	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-	PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
-
-	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
-	PRT_FUNDECL* entryFun = currentState->entryFun;
-	PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
-	return PrtHandleUserReturn(context);
-}
-
-PRT_RETURN_KIND PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
-{
-	PRT_MACHINESTATE state;
-	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
-	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
-
-	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
-	PRT_FUNDECL* exitFun = currentState->exitFun;
-	// exit handlers are always 0-ary
-	return PrtCallEventHandler(context, exitFun->implementation, NULL);
-}
-
-PRT_RETURN_KIND PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
-{
-	const PRT_UINT32 trans_index = PrtFindTransition(context, PrtPrimGetEvent(context->currentTrigger));
-	PRT_STATEDECL *state_decl = PrtGetCurrentStateDecl(context);
-	PRT_FUNDECL *trans_fun = state_decl->transitions[trans_index].transFun;
-	return PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
-}
 
 PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 {
 	PrtAssert(
-		context->postHandlerOperation == DequeueOrReceive || 
+		context->postHandlerOperation == DequeueOrReceive ||
 		context->returnKind == ReturnStatement ||
 		context->returnKind == ReceiveStatement,
 		"Can only pop, goto, or raise in entry and action handlers. Not allowed for exit or transition.");
@@ -819,6 +783,43 @@ PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 		return PRT_FALSE;
 	}
 	return PRT_TRUE;
+}
+
+PRT_BOOLEAN PrtCallEntryHandler(PRT_MACHINEINST_PRIV* context)
+{
+	PrtUpdateCurrentActionsSet(context);
+	PrtUpdateCurrentDeferredSet(context);
+
+	PRT_MACHINESTATE state;
+	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
+	PrtLog(PRT_STEP_ENTRY, &state, context, NULL, NULL);
+
+	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
+	PRT_FUNDECL* entryFun = currentState->entryFun;
+	PrtCallEventHandler(context, entryFun->implementation, &context->handlerArguments);
+	return PrtHandleUserReturn(context);
+}
+
+PRT_BOOLEAN PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
+{
+	PRT_MACHINESTATE state;
+	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
+	PrtLog(PRT_STEP_EXIT, &state, context, NULL, NULL);
+
+	PRT_STATEDECL* currentState = PrtGetCurrentStateDecl(context);
+	PRT_FUNDECL* exitFun = currentState->exitFun;
+	// exit handlers are always 0-ary
+	PrtCallEventHandler(context, exitFun->implementation, NULL);
+	return PrtHandleUserReturn(context);
+}
+
+PRT_BOOLEAN PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
+{
+	const PRT_UINT32 trans_index = PrtFindTransition(context, PrtPrimGetEvent(context->currentTrigger));
+	PRT_STATEDECL *state_decl = PrtGetCurrentStateDecl(context);
+	PRT_FUNDECL *trans_fun = state_decl->transitions[trans_index].transFun;
+	PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
+	return PrtHandleUserReturn(context);
 }
 
 PRT_RETURN_KIND PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args)
@@ -904,8 +905,6 @@ PrtStepStateMachine(
 {
 	PrtAssert(context->isRunning, "The caller should have set context->isRunning to TRUE");
 
-	PRT_VALUE *trigger, *payload;
-	PRT_BOOLEAN did_dequeue;
 	switch (context->operation)
 	{
 	case StateEntry:
@@ -914,17 +913,23 @@ PrtStepStateMachine(
 		return PrtCallEntryHandler(context);
 	case DequeueOrReceive:
 		PrtLockMutex(context->stateMachineLock);
-		did_dequeue = PrtDequeueEvent(context, &trigger, &payload);
+		// If the machine is blocked on a receive statement, then
+		// PrtDequeueEvent is guaranteed to return an event meant
+		// for that receive statement.
+		PRT_VALUE *trigger, *payload;
+		const PRT_BOOLEAN did_dequeue = PrtDequeueEvent(context, &trigger, &payload);
 		PrtUnlockMutex(context->stateMachineLock);
 
+		// Similarly to above, PrtDequeueOrReceive will either
+		// kick off a new event handling sequence or resume the
+		// blocked event handler
 		return did_dequeue && PrtDequeueOrReceive(context, trigger, payload);
 	case HandleCurrentEvent:
 		// Either a raise or a normal dequeue; offload to complex function
 		context->postHandlerOperation = DequeueOrReceive;
 		return PrtHandleEvent(context);
 	case ExitState:
-		PrtCallExitHandler(context);
-		return PrtHandleUserReturn(context);
+		return PrtCallExitHandler(context);
 	case PopState:
 		context->operation = DequeueOrReceive;
 		return !PrtPopState(context, PRT_TRUE);
@@ -934,8 +939,7 @@ PrtStepStateMachine(
 		return PRT_TRUE;
 	case HandleTransition:
 		context->postHandlerOperation = TakeTransition;
-		PrtCallTransitionHandler(context);
-		return PrtHandleUserReturn(context);
+		return PrtCallTransitionHandler(context);
 	case TakeTransition:
 		PrtTakeTransition(context, PrtPrimGetEvent(context->currentTrigger));
 		context->operation = StateEntry;
@@ -1203,11 +1207,11 @@ _In_ PRT_MACHINEINST_PRIV		*context,
 _In_ PRT_UINT32					currEvent
 )
 {
-	PRT_BOOLEAN isActionInstalled = PRT_FALSE;
 	PRT_UINT32 ui, nActions;
 	PRT_DODECL *actionDecl = NULL;
 	//check if action is defined for the current state
-	isActionInstalled = PrtIsActionInstalled(currEvent, PrtGetActionsPacked(context, context->currentState));
+	PRT_BOOLEAN isActionInstalled =
+		PrtIsActionInstalled(currEvent, PrtGetActionsPacked(context, context->currentState));
 	if (isActionInstalled)
 	{
 		//
@@ -2014,8 +2018,8 @@ PrtMkInterface(
 )
 {
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
-	PRT_VALUE *payload = NULL;
-	PRT_UINT32 interfaceCreated = program->linkMap[context->interfaceBound][IName];
+	PRT_VALUE *payload;
+	const PRT_UINT32 interfaceCreated = program->linkMap[context->interfaceBound][IName];
 	const PRT_UINT32 instance_of = program->interfaceDefMap[interfaceCreated];
 
 	// Check the CreateOk condition
@@ -2131,7 +2135,7 @@ PrtSend(
 	...
 )
 {
-	PRT_VALUE *payload = NULL;
+	PRT_VALUE *payload;
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
@@ -2174,7 +2178,7 @@ PRT_CALL_CONV PrtSendInternal(
 	PRT_MACHINESTATE senderState;
 	PrtGetMachineState(sender, &senderState);
 
-	PRT_VALUE *payload = NULL;
+	PRT_VALUE *payload;
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
@@ -2245,18 +2249,11 @@ static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_
 
 static void PrtUserPrintFloat(_In_ PRT_FLOAT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
 {
-	if (sizeof(PRT_FLOAT) == 4)
-	{
-		PRT_UINT32 written = *numCharsWritten;
-		ResizeBuffer(buffer, bufferSize, written, 32);
-		*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%f", i);
-	}
-	else
-	{
-		PRT_UINT32 written = *numCharsWritten;
-		ResizeBuffer(buffer, bufferSize, written, 64);
-		*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%lf", (double)i);
-	}
+	const int flt_size = sizeof(PRT_FLOAT);
+	const PRT_UINT32 written = *numCharsWritten;
+	ResizeBuffer(buffer, bufferSize, written, 8 * flt_size);
+	const char* fmt = flt_size == 4 ? "%f" : "%lf";
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, fmt, i);
 }
 
 static void PrtUserPrintInt(_In_ PRT_INT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
@@ -2681,9 +2678,9 @@ PRT_STRING PRT_CALL_CONV PrtCopyString(_In_ const PRT_STRING value)
 	{
 		return NULL;
 	}
-	size_t bufferSize = strlen(value) + 1;
+	const size_t bufferSize = strlen(value) + 1;
 	PRT_STRING buffer = (PRT_STRING)PrtCalloc(bufferSize, sizeof(char));
-	strcpy_s(buffer, bufferSize, (const char*)value);
+	strcpy_s(buffer, bufferSize, value);
 	return buffer;
 }
 

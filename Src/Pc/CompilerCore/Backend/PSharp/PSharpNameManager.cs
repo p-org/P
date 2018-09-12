@@ -11,6 +11,7 @@ namespace Microsoft.Pc.Backend.PSharp
         protected override string ComputeNameForDecl(IPDecl decl)
         {
             string name = decl.Name;
+            name = string.IsNullOrEmpty(name) ? "Anon" : name;
             if (name.StartsWith("$"))
             {
                 name = "TMP_" + name.Substring(1);

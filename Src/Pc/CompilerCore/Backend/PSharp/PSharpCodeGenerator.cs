@@ -68,11 +68,14 @@ namespace Microsoft.Pc.Backend.PSharp
                     WriteFunction(context, output, function);
                     context.WriteLine(output, "}");
                     break;
-                case PEvent pEvent when !pEvent.IsBuiltIn:
-                    context.WriteLine(output, $"internal class {declName} : Event");
-                    context.WriteLine(output, "{");
-                    WriteEvent(context, output, pEvent);
-                    context.WriteLine(output, "}");
+                case PEvent pEvent:
+                    if (!pEvent.IsBuiltIn)
+                    {
+                        context.WriteLine(output, $"internal class {declName} : Event");
+                        context.WriteLine(output, "{");
+                        WriteEvent(context, output, pEvent);
+                        context.WriteLine(output, "}");
+                    }
                     break;
                 case Machine machine:
                     context.WriteLine(output, $"internal class {declName} : Machine");
@@ -98,18 +101,22 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent pEvent)
         {
+            // generate the payload type
             if (!pEvent.PayloadType.IsSameTypeAs(PrimitiveType.Null))
             {
                 string payloadType = GetCSharpType(context, pEvent.PayloadType);
                 context.WriteLine(output, $"public {payloadType} payload;");
             }
+
+            // add a constructor to initialize the assert and assume fields
+            context.WriteLine(output, $"public {pEvent.Name} (): base({pEvent.Assert}, {pEvent.Assume});" + "{ }");
         }
 
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
             foreach (Variable field in machine.Fields)
             {
-                context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)}");
+                context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)}");
             }
 
             foreach (Function method in machine.Methods)
@@ -226,6 +233,10 @@ namespace Microsoft.Pc.Backend.PSharp
                 case AnnounceStmt announceStmt:
                     break;
                 case AssertStmt assertStmt:
+                    context.Write(output, "this.Assert(");
+                    WriteExpr(context, output, assertStmt.Assertion);
+                    context.Write(output, ",");
+                    context.Write(output, $"\"{assertStmt.Message}\"");
                     break;
                 case AssignStmt assignStmt:
                     WriteLValue(context, output, assignStmt.Location);
@@ -478,7 +489,7 @@ namespace Microsoft.Pc.Backend.PSharp
             switch (returnType.Canonicalize())
             {
                 case BoundedType _:
-                    return "Machine";
+                    return "object";
                 case EnumType enumType:
                     return context.Names.GetNameForDecl(enumType.EnumDecl);
                 case ForeignType _:
@@ -488,7 +499,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NamedTupleType _:
                     throw new NotImplementedException();
                 case PermissionType _:
-                    return "Machine";
+                    return "Permissions";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "object";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
@@ -500,7 +511,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "Event";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
-                    return "Machine";
+                    return "Permissions";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return "void";
                 case SequenceType sequenceType:

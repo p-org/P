@@ -22,6 +22,7 @@ namespace PSharpExtensions
         public string interfaceName;
         public List<string> sends;
         public List<string> creates;
+        public Permissions self;
     }
 
     public abstract class PProgram

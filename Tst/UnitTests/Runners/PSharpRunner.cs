@@ -19,8 +19,11 @@ namespace UnitTests.Runners
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             var compiledFiles = DoCompile(scratchDirectory).ToArray();
-            var psharpPath = Path.Combine(Constants.SolutionDirectory, "Ext", "PSharp", "bin", "Microsoft.PSharp.dll");
-            var args = new[] {$"/r:{psharpPath}", "/t:library"}.Concat(compiledFiles.Select(file => file.Name)).ToArray();
+            //var csharpreferences = {"netstandard.dll", "System.Runtime"}
+            var psharpPath = Path.Combine(Constants.SolutionDirectory, "Ext", "psharp", "bin", "Microsoft.PSharp.dll");
+            var psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Drops","Debug","AnyCPU","Binaries","PSharpExtensions.dll");
+
+            var args = new[] {$"/r:{psharpPath}", $"/r:\"{psharpExtensionsPath}\"","/r:netstandard.dll", "/r:System.Runtime.dll", "/t:library" }.Concat(compiledFiles.Select(file => file.Name)).ToArray();
             var exitCode = ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
             foreach (FileInfo compiledFile in compiledFiles)
             {

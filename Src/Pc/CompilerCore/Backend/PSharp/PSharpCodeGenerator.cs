@@ -44,8 +44,10 @@ namespace Microsoft.Pc.Backend.PSharp
         {
             context.WriteLine(output, "using Microsoft.PSharp;");
             context.WriteLine(output, "using System;");
+            context.WriteLine(output, "using System.Runtime;");
             context.WriteLine(output, "using System.Collections.Generic;");
             context.WriteLine(output, "using System.IO;");
+            context.WriteLine(output, "using PSharpExtensions;");
             context.WriteLine(output);
             context.WriteLine(output, $"namespace {context.ProjectName}");
             context.WriteLine(output, "{");
@@ -78,7 +80,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     break;
                 case Machine machine:
-                    context.WriteLine(output, $"internal class {declName} : Machine");
+                    context.WriteLine(output, $"internal class {declName} : PMachine");
                     context.WriteLine(output, "{");
                     WriteMachine(context, output, machine);
                     context.WriteLine(output, "}");
@@ -116,7 +118,7 @@ namespace Microsoft.Pc.Backend.PSharp
         {
             foreach (Variable field in machine.Fields)
             {
-                context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)}");
+                context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
             }
 
             foreach (Function method in machine.Methods)
@@ -375,6 +377,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ")");
                     break;
                 case CtorExpr ctorExpr:
+                    context.Write(output, "null;");
                     break;
                 case DefaultExpr defaultExpr:
                     context.Write(output, GetDefaultValue(context, defaultExpr.Type));
@@ -420,7 +423,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ").Count");
                     break;
                 case ThisRefExpr _:
-                    context.Write(output, "this");
+                    context.Write(output, "this.self");
                     break;
                 case UnaryOpExpr unaryOpExpr:
                     context.Write(output, $"{UnOpToStr(unaryOpExpr.Operation)}(");

@@ -109,7 +109,7 @@ namespace Microsoft.Pc.Backend.PSharp
             }
 
             // add a constructor to initialize the assert and assume fields
-            context.WriteLine(output, $"public {pEvent.Name} (): base({pEvent.Assert}, {pEvent.Assume});" + "{ }");
+            context.WriteLine(output, $"public {pEvent.Name} (): base({pEvent.Assert}, {pEvent.Assume})" + "{ }");
         }
 
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)

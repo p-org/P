@@ -19,13 +19,15 @@ namespace UnitTests.Runners
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             var compiledFiles = DoCompile(scratchDirectory).ToArray();
-            //var csharpreferences = {"netstandard.dll", "System.Runtime"}
+            var dependencies = new List<String>{"netstandard.dll", "System.Runtime.dll"};
             var psharpPath = Path.Combine(Constants.SolutionDirectory, "Ext", "psharp", "bin", "Microsoft.PSharp.dll");
             var psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Drops","Debug","AnyCPU","Binaries","PSharpExtensions.dll");
-
-            var args = new[] {$"/r:{psharpPath}", $"/r:\"{psharpExtensionsPath}\"","/r:netstandard.dll", "/r:System.Runtime.dll", "/t:library" }.Concat(compiledFiles.Select(file => file.Name)).ToArray();
+            dependencies.Add(psharpExtensionsPath);
+            dependencies.Add(psharpPath);
+            var args = new[] {"/t:library"}.Concat(dependencies.Select(dep => $"/r:{dep}"))
+                                           .Concat(compiledFiles.Select(file => file.Name)).ToArray();
             var exitCode = ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
-            foreach (FileInfo compiledFile in compiledFiles)
+            foreach (var compiledFile in compiledFiles)
             {
                 stdout += $"{compiledFile.Name}\n===\n{File.ReadAllText(compiledFile.FullName)}\n\n";
             }

@@ -291,3 +291,4 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /**/obj/
 nupkgs/
 /Tst/temp_builds
+*.db

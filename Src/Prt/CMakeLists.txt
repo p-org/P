@@ -1,7 +1,19 @@
 set ( P_Prt_Src_Path ${CMAKE_CURRENT_SOURCE_DIR} )
 set ( API_PATH ${P_Prt_Src_Path}/API/ )
 set ( Core_PATH ${P_Prt_Src_Path}/Core/ )
-set ( LIBHANDLER_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/inc)
+set ( LIBHANDLER_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/)
+set ( LIBHANDLERINC_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/inc)
+set ( LIBHANDLEROUT_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/out)
+set ( LIBHANDLERLIB_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/out/gcc-amd64-linux-gnu/debug/libhandler.a)
+
+ADD_CUSTOM_TARGET( 
+  libhandler
+  COMMAND ./configure
+  COMMAND make depend
+  COMMAND make
+  WORKING_DIRECTORY ${LIBHANDLER_PATH}
+)
+
 if(SGX)
     set ( User_PATH ${P_Prt_Src_Path}/SGXUser/Trusted )
     set ( User_ADDITIONAL_SOURCE_FILES ${User_PATH}/PrtEnclave_t.c )
@@ -38,6 +50,7 @@ file ( GLOB User_SRC ${User_PATH}/*.c ${User_PATH}/*.h  )
 set ( PrtUserSrc ${API_SRC} ${Core_SRC} ${User_SRC} ${User_ADDITIONAL_SOURCE_FILES} )
 
 add_library(Prt OBJECT ${PrtUserSrc})
+add_dependencies(Prt libhandler)
 
 if (NOT Win32 AND NOT DEFINED SGX)
 	find_package(Threads REQUIRED)
@@ -58,19 +71,21 @@ ENDIF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
 
 # add_library(Prt_test OBJECT ${PrtUserSrc})
 if(SGX)
-    add_library(Prt_trusted_static STATIC $<TARGET_OBJECTS:Prt>)
+    add_library(Prt_trusted_static STATIC $<TARGET_OBJECTS:Prt> ${LIBHANDLERLIB_PATH})
     target_include_directories(Prt PUBLIC ${API_PATH})
-    target_include_directories(Prt PUBLIC ${LIBHANDLER_PATH})
+    target_include_directories(Prt PUBLIC ${LIBHANDLERINC_PATH})
+    target_include_directories(Prt PUBLIC ${LIBHANDLEROUT_PATH})
     target_include_directories(Prt PUBLIC ${Core_PATH})
     target_include_directories(Prt PUBLIC ${User_PATH})
     get_property(Prt_Published_Headers_PATHS TARGET Prt PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
     target_include_directories(Prt_trusted_static PUBLIC ${Prt_Published_Headers_PATHS})
     Publish_Library_Header(Prt_trusted_static)
 else()
-    add_library(Prt_shared SHARED $<TARGET_OBJECTS:Prt>)
-    add_library(Prt_static STATIC $<TARGET_OBJECTS:Prt>)
+    add_library(Prt_shared SHARED $<TARGET_OBJECTS:Prt> ${LIBHANDLERLIB_PATH})
+    add_library(Prt_static STATIC $<TARGET_OBJECTS:Prt> ${LIBHANDLERLIB_PATH})
     target_include_directories(Prt PUBLIC ${API_PATH})
-    target_include_directories(Prt PUBLIC ${LIBHANDLER_PATH})
+    target_include_directories(Prt PUBLIC ${LIBHANDLERINC_PATH})
+    target_include_directories(Prt PUBLIC ${LIBHANDLEROUT_PATH})
     target_include_directories(Prt PUBLIC ${Core_PATH})
     target_include_directories(Prt PUBLIC ${User_PATH})
     get_property(Prt_Published_Headers_PATHS TARGET Prt PROPERTY INTERFACE_INCLUDE_DIRECTORIES)

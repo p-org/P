@@ -26,5 +26,7 @@
     <None Include="PrtDistHelp.p">
       <Filter>P Sources</Filter>
     </None>
+    <None Include="Driver.p" />
+    <None Include="..\Timer\TimerHeader.p" />
   </ItemGroup>
 </Project>

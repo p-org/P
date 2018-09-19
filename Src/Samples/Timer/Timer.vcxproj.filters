@@ -14,8 +14,5 @@
     <ClCompile Include="TimerImpl.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PGenerated\Timer.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
   </ItemGroup>
 </Project>

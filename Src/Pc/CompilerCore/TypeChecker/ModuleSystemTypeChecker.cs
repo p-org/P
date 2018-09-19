@@ -364,7 +364,7 @@ namespace Microsoft.Pc.TypeChecker
 
             //check if the current module is wellformed
 
-            // 1) domain of interface def map is disjoint
+           
             // TODO: Woah, this is O(n^2). Can we get this down to O(n log n) at most?
             foreach (IPModuleExpr module1 in composeExpr.ComponentModules)
             {
@@ -388,6 +388,7 @@ namespace Microsoft.Pc.TypeChecker
                                                module2Info.Sends.Events)))
                                    .ToImmutableHashSet();
 
+                    // 1) domain of interface def map is disjoint
                     foreach (Interface @interface in module1Info.InterfaceDef.Keys.Intersect(
                         module2Info.InterfaceDef.Keys))
                     {
@@ -396,6 +397,7 @@ namespace Microsoft.Pc.TypeChecker
                                                              $"interface {@interface.Name} is bound in both the modules being composed");
                     }
 
+                    // 2) no private events in the sends or receives events
                     foreach (PEvent @event in allSendAndReceiveEvents.Intersect(allPrivateEvents))
                     {
                         throw handler.InvalidCompositionExpr(module1.SourceLocation,
@@ -403,6 +405,7 @@ namespace Microsoft.Pc.TypeChecker
                                                              $"after composition private event {@event.Name} belongs to both private and public (sends or receives) events");
                     }
 
+                    // 3) no private events in the sends or receives permissions
                     foreach (PEvent @event in allSendAndReceiveEvents)
                     {
                         var permissionsEmbedded = @event.PayloadType.AllowedPermissions;
@@ -415,6 +418,7 @@ namespace Microsoft.Pc.TypeChecker
                         }
                     }
 
+                    
                     var interfaceImplAndNotCreated1 =
                         module1Info.Creates.Interfaces.Except(module1Info.InterfaceDef.Keys);
                     var interfaceCreatedAndNotImpl1 =
@@ -459,9 +463,19 @@ namespace Microsoft.Pc.TypeChecker
                                                                  $"output creates are not disjoint, {@interface.Name} belongs to the creates of the composed module");
                         }
                     }
+
+                    foreach (Interface exportedOrCreatedInterface in module1.ModuleInfo.InterfaceDef.Keys.Union(module1.ModuleInfo.Creates.Interfaces))
+                    {
+                        foreach (var priEvent in module2.ModuleInfo.PrivateEvents.Events.Where(ev => exportedOrCreatedInterface.PayloadType.AllowedPermissions.Contains(ev)))
+                        {
+                            throw handler.InvalidHideEventExpr(module2.SourceLocation,
+                                $"private event {priEvent.Name} belongs to the permissions of the contructor type of public interface {exportedOrCreatedInterface.Name}");
+                        }
+                    }
                 }
             }
 
+            
             composeExpr.ModuleInfo = new ModuleInfo();
             ModuleInfo currentModuleInfo = composeExpr.ModuleInfo;
             //populate the attributes of the module
@@ -551,6 +565,15 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     throw handler.InvalidHideEventExpr(hideEExpr.SourceLocation,
                                                        $"event {privatePermission} cannot be made private as it belongs to allowed permission of {@event.Name} which is received or sent by the module");
+                }
+            }
+
+            foreach (Interface exportedOrCreatedInterface in hideEExpr.ModuleInfo.InterfaceDef.Keys.Union(hideEExpr.ModuleInfo.Creates.Interfaces))
+            {
+                foreach(var priEvent in hideEExpr.HideEvents.Events.Where(ev => exportedOrCreatedInterface.PayloadType.AllowedPermissions.Contains(ev)))
+                {
+                    throw handler.InvalidHideEventExpr(hideEExpr.SourceLocation,
+                        $"event {priEvent.Name} cannot be made private as it belongs to the permissions of the contructor type of interface {exportedOrCreatedInterface.Name}");
                 }
             }
 

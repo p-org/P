@@ -120,6 +120,7 @@
       <AdditionalIncludeDirectories>$(PSdkFolder)\Headers;.;;.\PGenerated</AdditionalIncludeDirectories>
       <DisableSpecificWarnings>4101;4102</DisableSpecificWarnings>
       <BrowseInformation>true</BrowseInformation>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -179,13 +180,13 @@
     <PCompile Include="Driver.p" />
     <PCompile Include="FailureDetector.p" />
     <PCompile Include="PrtDistHelp.p" />
-    <PCompile Include="..\Timer\TimerHeader.p"/>
+    <PCompile Include="..\Timer\TimerHeader.p" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Driver.p" />
     <None Include="FailureDetector.p" />
     <None Include="PrtDistHelp.p" />
-    <None Include="..\Timer\TimerHeader.p"/>
+    <None Include="..\Timer\TimerHeader.p" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Timer\Timer.vcxproj">

@@ -431,8 +431,8 @@ namespace Microsoft.Pc.Backend.Prt
 
             switch (type)
             {
-                case BoundedType boundedType:
-                    context.WriteLine(output, $"// TODO: implement types like {boundedType.CanonicalRepresentation}");
+                case DataType boundedType:
+                    context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_ANY, {{ NULL }} }};");
                     break;
                 case EnumType _:
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_INT, {{ NULL }} }};");
@@ -492,8 +492,6 @@ namespace Microsoft.Pc.Backend.Prt
                         $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_NMDTUP, {{ .nmTuple = &{ntStructName} }} }};");
                     break;
                 case PermissionType _:
-                    // TODO: implement full permission types in runtime
-                    context.WriteLine(output, "// TODO: implement full permission types in runtime");
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MACHINE, {{ NULL }} }};");
                     break;
                 case PrimitiveType primitiveType when Equals(primitiveType, PrimitiveType.Null):

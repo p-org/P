@@ -228,6 +228,7 @@ modExpr : LBRACE bindslist+=bindExpr (COMMA bindslist+=bindExpr)* RBRACE      # 
         | LPAREN op=HIDEI idenList IN modExpr RPAREN                          # HideInterfacesModuleExpr
         | LPAREN op=ASSERT  idenList IN modExpr RPAREN                        # AssertModuleExpr
         | LPAREN op=RENAME  oldName=iden TO newName=iden IN modExpr RPAREN    # RenameModuleExpr
+		| LPAREN op=MAIN mainMachine=iden IN modExpr RPAREN					  # MainMachineModuleExpr
         ;
 
 
@@ -235,8 +236,8 @@ bindExpr : (mName=iden | mName=iden RARROW iName=iden) ;
 
 namedModuleDecl : MODULE name=iden ASSIGN modExpr SEMI ;
 
-testDecl : TEST testName=iden COLON modExpr SEMI                  # SafetyTestDecl
-         | TEST testName=iden COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
+testDecl : TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr SEMI                  # SafetyTestDecl
+         | TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
          ;
 
-implementationDecl : IMPLEMENTATION implName= iden COLON modExpr SEMI ; 
+implementationDecl : IMPLEMENTATION implName= iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK)? COLON modExpr SEMI ; 

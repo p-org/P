@@ -5,10 +5,10 @@ using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc.TypeChecker.Types
 {
-    public class BoundedType : PLanguageType
+    public class DataType : PLanguageType
     {
 
-        public BoundedType(NamedEventSet eventSet) : base(TypeKind.Bounded)
+        public DataType(NamedEventSet eventSet) : base(TypeKind.Bounded)
         {
         }
 

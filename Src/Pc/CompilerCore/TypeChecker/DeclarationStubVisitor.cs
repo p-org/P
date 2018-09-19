@@ -206,6 +206,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             string symbolName = context.testName.GetText();
             SafetyTest decl = CurrentScope.Put(symbolName, context);
+            decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;
         }
@@ -214,6 +215,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             string symbolName = context.testName.GetText();
             RefinementTest decl = CurrentScope.Put(symbolName, context);
+            decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;
         }
@@ -222,6 +224,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             string symbolName = context.implName.GetText();
             Implementation decl = CurrentScope.Put(symbolName, context);
+            decl.Main = context.mainMachine?.GetText();
             nodesToDeclarations.Put(context, decl);
             return null;
         }

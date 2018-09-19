@@ -10,6 +10,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
         }
 
+        public string Main { get; set; }
         public IPModuleExpr ModExpr { get; set; }
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }

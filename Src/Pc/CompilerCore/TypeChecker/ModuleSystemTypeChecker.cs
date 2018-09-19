@@ -105,6 +105,86 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
+        internal static void CheckRefinementTest(ITranslationErrorHandler handler, RefinementTest test)
+        {
+            //check that the test module is closed with respect to creates
+            var notImplementedInterface =
+                test.LeftModExpr.ModuleInfo.Creates.Interfaces.Where(i =>
+                    !test.LeftModExpr.ModuleInfo.InterfaceDef.Keys.Contains(i));
+            var @interface = notImplementedInterface as Interface[] ?? notImplementedInterface.ToArray();
+            if (@interface.Any())
+            {
+                throw handler.NotClosed(test.SourceLocation,
+                    $"LHS test module is not closed with respect to created interfaces; interface {@interface.First()} is created but not implemented inside the module");
+            }
+
+
+            //check that the test module main machine exists
+            var hasMainMachine = test.LeftModExpr.ModuleInfo.InterfaceDef.Values.Any(m => m.Name == test.Main && !m.IsSpec);
+            if (!hasMainMachine)
+            {
+                throw handler.NoMain(test.SourceLocation,
+                    $"machine {test.Main} does not exist in the LHS test module");
+            }
+
+            //check that the test module is closed with respect to creates
+            notImplementedInterface =
+                test.RightModExpr.ModuleInfo.Creates.Interfaces.Where(i =>
+                    !test.RightModExpr.ModuleInfo.InterfaceDef.Keys.Contains(i));
+            @interface = notImplementedInterface as Interface[] ?? notImplementedInterface.ToArray();
+            if (@interface.Any())
+            {
+                throw handler.NotClosed(test.SourceLocation,
+                    $"RHS test module is not closed with respect to created interfaces; interface {@interface.First()} is created but not implemented inside the module");
+            }
+
+
+            //check that the test module main machine exists
+            hasMainMachine = test.RightModExpr.ModuleInfo.InterfaceDef.Values.Any(m => m.Name == test.Main && !m.IsSpec);
+            if (!hasMainMachine)
+            {
+                throw handler.NoMain(test.SourceLocation,
+                    $"machine {test.Main} does not exist in the RHS test module");
+            }
+
+            //todo: Implement the checks with respect to refinement relation
+            throw new NotImplementedException();
+        }
+
+        internal static void CheckSafetyTest(ITranslationErrorHandler handler, SafetyTest test)
+        {
+            //check that the test module is closed with respect to creates
+            var notImplementedInterface =
+                test.ModExpr.ModuleInfo.Creates.Interfaces.Where(i =>
+                    !test.ModExpr.ModuleInfo.InterfaceDef.Keys.Contains(i));
+            var @interface = notImplementedInterface as Interface[] ?? notImplementedInterface.ToArray();
+            if (@interface.Any())
+            {
+                throw handler.NotClosed(test.SourceLocation,
+                    $"test module is not closed with respect to created interfaces; interface {@interface.First()} is created but not implemented inside the module");
+            }
+           
+
+            //check that the test module main machine exists
+            var hasMainMachine = test.ModExpr.ModuleInfo.InterfaceDef.Values.Any(m => m.Name == test.Main && !m.IsSpec);
+            if (!hasMainMachine)
+            {
+                throw handler.NoMain(test.SourceLocation,
+                    $"machine {test.Main} does not exist in the test module");
+            }
+
+        }
+
+        internal static void CheckImplementationDecl(ITranslationErrorHandler handler, Implementation impl)
+        {
+            //check that the implementation module is closed with respect to creates
+            var notImplementedInterface =
+                impl.ModExpr.ModuleInfo.Creates.Interfaces.Where(i =>
+                    !impl.ModExpr.ModuleInfo.InterfaceDef.Keys.Contains(i));
+            throw handler.NotClosed(impl.SourceLocation,
+                $"implementation module is not closed with respect to created interfaces; interface {notImplementedInterface.First()} is created but not implemented inside the module");
+        }
+
         private static void CheckWellFormedness(ITranslationErrorHandler handler, BindModuleExpr bindExpr)
         {
             if (bindExpr.ModuleInfo != null)

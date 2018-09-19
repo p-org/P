@@ -491,7 +491,7 @@ namespace Microsoft.Pc.Backend.PSharp
         {
             switch (returnType.Canonicalize())
             {
-                case BoundedType _:
+                case DataType _:
                     return "object";
                 case EnumType enumType:
                     return context.Names.GetNameForDecl(enumType.EnumDecl);
@@ -551,7 +551,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType eventType when eventType.IsSameTypeAs(PrimitiveType.Event):
                 case PrimitiveType machineType when machineType.IsSameTypeAs(PrimitiveType.Machine):
                 case ForeignType _:
-                case BoundedType _:
+                case DataType _:
                     return "null";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(returnType));

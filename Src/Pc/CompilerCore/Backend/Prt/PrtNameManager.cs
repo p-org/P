@@ -155,7 +155,7 @@ namespace Microsoft.Pc.Backend.Prt
         {
             switch (type.Canonicalize())
             {
-                case BoundedType _:
+                case DataType _:
                     return "B";
                 case EnumType _:
                     return "E";

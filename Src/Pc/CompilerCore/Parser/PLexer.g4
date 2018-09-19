@@ -76,6 +76,7 @@ HIDEE          : 'hidee' ;
 HIDEI          : 'hidei' ;
 RENAME         : 'rename' ;
 SAFE           : 'safe' ;
+MAIN		   : 'main' ;
 
 // machine annotations
 RECEIVES  : 'receives' ;

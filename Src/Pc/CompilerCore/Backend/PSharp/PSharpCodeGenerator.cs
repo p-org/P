@@ -29,16 +29,35 @@ namespace Microsoft.Pc.Backend.PSharp
 
             WriteSourcePrologue(context, source.Stream);
 
+            // write the top level declarations
             foreach (IPDecl decl in globalScope.AllDecls)
             {
                 WriteDecl(context, source.Stream, decl);
             }
+            
 
             // TODO: generate tuple type classes.
 
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
+        }
+
+        private void WriteInitializeInterfaces(CompilationContext context, StringWriter output, IEnumerable<Interface> interfaces)
+        {
+            context.WriteLine(output, "public static void InitializeInterfaces() {");
+            foreach (var iface in interfaces)
+            {
+                context.Write(output, $"PProgram.AddInterface(\"{iface.Name}\"");
+                foreach (PEvent ev in iface.ReceivableEvents.Events)
+                {
+                    context.Write(output, ", ");
+                    context.Write(output, $"\"{ev.Name}\"");
+                }
+                context.WriteLine(output, ");");
+            }
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteSourcePrologue(CompilationContext context, StringWriter output)
@@ -62,7 +81,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)
         {
-            string declName = context.Names.GetNameForDecl(decl);
+            string declName;
             switch (decl)
             {
                 case Function function:
@@ -74,6 +93,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PEvent pEvent:
                     if (!pEvent.IsBuiltIn)
                     {
+                        declName = context.Names.GetNameForDecl(decl);
                         context.WriteLine(output, $"internal class {declName} : Event");
                         context.WriteLine(output, "{");
                         WriteEvent(context, output, pEvent);
@@ -81,12 +101,14 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     break;
                 case Machine machine:
+                    declName = context.Names.GetNameForDecl(decl);
                     context.WriteLine(output, $"internal class {declName} : PMachine");
                     context.WriteLine(output, "{");
                     WriteMachine(context, output, machine);
                     context.WriteLine(output, "}");
                     break;
                 case PEnum pEnum:
+                    declName = context.Names.GetNameForDecl(decl);
                     context.WriteLine(output, $"public enum {declName}");
                     context.WriteLine(output, "{");
                     foreach (EnumElem enumElem in pEnum.Values)
@@ -96,10 +118,114 @@ namespace Microsoft.Pc.Backend.PSharp
 
                     context.WriteLine(output, "}");
                     break;
+                case Implementation impl:
+                    WriteImplementationDecl(context, output, impl);
+                    break;
+                case SafetyTest safety:
+                    WriteSafetyTestDecl(context, output, safety);
+                    break;
+                case Interface pInterface:
+                    break;
                 default:
+                    declName = context.Names.GetNameForDecl(decl);
                     context.WriteLine(output, $"// TODO: {decl.GetType().Name} {declName}");
                     break;
             }
+        }
+
+        private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
+        {
+            context.WriteLine(output, $"public class {safety.Name} {{");
+            WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
+            WriteInitializeInterfaceDefMap(context, output, safety.ModExpr.ModuleInfo.InterfaceDef);
+            WriteInitializeMonitorMap(context, output, safety.ModExpr.ModuleInfo.MonitorMap);
+            WriteTestFunction(context, output, safety.Main);
+            context.WriteLine(output, "}");
+        }
+
+        private void WriteImplementationDecl(CompilationContext context, StringWriter output, Implementation impl)
+        {
+            context.WriteLine(output, $"public class {impl.Name} {{");
+            WriteInitializeLinkMap(context, output, impl.ModExpr.ModuleInfo.LinkMap);
+            WriteInitializeInterfaceDefMap(context, output, impl.ModExpr.ModuleInfo.InterfaceDef);
+            WriteInitializeMonitorMap(context, output, impl.ModExpr.ModuleInfo.MonitorMap);
+            WriteTestFunction(context, output, impl.Main);
+            context.WriteLine(output, "}");
+        }
+
+        private void WriteTestFunction(CompilationContext context, StringWriter output, string main)
+        {
+            context.WriteLine(output);
+            context.WriteLine(output, "[Microsoft.PSharp.Test]");
+            context.WriteLine(output, "public static void Execute(PSharpRuntime runtime) {");
+            context.WriteLine(output, "InitializeLinkMap();");
+            context.WriteLine(output, "InitializeInterfaceDefMap();");
+            context.WriteLine(output, "InitializeMonitorMap(runtime);");
+            context.WriteLine(output, $"runtime.CreateMachine(typeof({main}));");
+            context.WriteLine(output, "}");
+        }
+
+        private void WriteInitializeMonitorMap(CompilationContext context, StringWriter output, IDictionary<Machine, IEnumerable<Interface>> monitorMap)
+        {
+            // compute the reverse map
+            var machineMap = new Dictionary<string, List<string>>();
+            foreach (var monitor in monitorMap)
+            {
+                foreach (var machine in monitor.Value)
+                {
+                    if (!machineMap.ContainsKey(machine.Name))
+                    {
+                        machineMap[machine.Name] = new List<string>();
+                    }
+                    machineMap[machine.Name].Add(monitor.Key.Name);
+                }
+            }
+
+            context.WriteLine(output, "public static void InitializeMonitorMap(PSharpRuntime runtime) {");
+
+            foreach (var machine in machineMap)
+            {
+                context.WriteLine(output, $"PModule.monitorMap[{machine.Key}] = new List<string>();");
+                foreach (var monitor in machine.Value)
+                {
+                    context.WriteLine(output, $"PModule.monitorMap[{machine.Key}].Add({monitor});");
+                }
+            }
+            foreach (var monitor in monitorMap.Keys)
+            {
+                context.WriteLine(output, $"runtime.RegisterMonitor(typeof({monitor.Name}));");
+            }
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+        }
+
+        private void WriteInitializeInterfaceDefMap(CompilationContext context, StringWriter output, IDictionary<Interface, Machine> interfaceDef)
+        {
+            context.WriteLine(output, "public static void InitializeInterfaceDefMap() {");
+
+            foreach (var map in interfaceDef)
+            {
+                context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(\"{map.Key.Name}\", \"{map.Value.Name}\");");
+            }
+
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+        }
+
+        private void WriteInitializeLinkMap(CompilationContext context, StringWriter output, IDictionary<Interface, IDictionary<Interface, Interface>> linkMap)
+        {
+            
+            context.WriteLine(output, "public static void InitializeLinkMap() {");
+            foreach (var creatorInterface in linkMap)
+            {
+                context.WriteLine(output, $"PModule.linkMap[\"{creatorInterface.Key.Name}\"] = new Dictionary<string, string>();");
+                foreach (var clinkMap in creatorInterface.Value)
+                {
+                    context.WriteLine(output, $"PModule.linkMap[\"{creatorInterface.Key.Name}\"].Add(\"{clinkMap.Key.Name}\", \"{clinkMap.Value.Name}\");");
+                }
+            }
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent pEvent)
@@ -209,11 +335,14 @@ namespace Microsoft.Pc.Backend.PSharp
             string staticKeyword = isStatic ? "static " : "";
             string returnType = GetCSharpType(context, signature.ReturnType);
             string functionName = context.Names.GetNameForDecl(function);
-            string functionParameters =
-                string.Join(
+            string functionParameters = "";
+            if (!function.IsAnon)
+            {
+                functionParameters = string.Join(
                     ", ",
                     signature.Parameters.Select(param => $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)}"));
-
+            }
+                
             context.WriteLine(output, $"public {staticKeyword}{returnType} {functionName}({functionParameters})");
             WriteFunctionBody(context, output, function);
         }
@@ -221,6 +350,14 @@ namespace Microsoft.Pc.Backend.PSharp
         private void WriteFunctionBody(CompilationContext context, StringWriter output, Function function)
         {
             context.WriteLine(output, "{");
+            if (function.IsAnon)
+            {
+                if (function.Signature.Parameters.Any())
+                {
+                    var param = function.Signature.Parameters.First();
+                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = (this.ReceivedEvent as PEvent<{GetCSharpType(context, param.Type)}>).Payload;");
+                }
+            }
             foreach (Variable local in function.LocalVariables)
             {
                 PLanguageType type = local.Type;

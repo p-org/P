@@ -53,11 +53,11 @@ namespace PSharpExtensions
 
         public PMachineId CreateInterface(PMachine creator, string createInterface, object payload = null)
         {
-            var createdInterface = PProgram.linkMap[creator.interfaceName][createInterface];
+            var createdInterface = PModule.linkMap[creator.interfaceName][createInterface];
             this.Assert(this.creates.Contains(createdInterface), $"Machine {this.GetType().Name} cannot create interface {createdInterface}, not in its creates set");
-            var createMachine = PProgram.interfaceDefinitionMap[createdInterface];
+            var createMachine = PModule.interfaceDefinitionMap[createdInterface];
             var machineId = this.CreateMachine(Type.GetType(createMachine), new IntializeParametersEvent(new InitializeParameters(createdInterface, payload)));
-            return new PMachineId(machineId, PProgram.interfaces[createdInterface]);
+            return new PMachineId(machineId, PInterfaces.GetPermissions(createdInterface));
         }
 
         public void SendEvent(PMachine source, PMachineId target, Event ev, object payload = null)

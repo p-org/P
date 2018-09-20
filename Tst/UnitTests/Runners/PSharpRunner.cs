@@ -19,7 +19,7 @@ namespace UnitTests.Runners
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             var compiledFiles = DoCompile(scratchDirectory).ToArray();
-            var dependencies = new List<String>{"netstandard.dll", "System.Runtime.dll"};
+            var dependencies = new List<String>{"netstandard.dll", "System.Runtime.dll", "System.Collections.dll" };
             var psharpPath = Path.Combine(Constants.SolutionDirectory, "Ext", "psharp", "bin", "Microsoft.PSharp.dll");
             var psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Drops","Debug","AnyCPU","Binaries","PSharpExtensions.dll");
             dependencies.Add(psharpExtensionsPath);

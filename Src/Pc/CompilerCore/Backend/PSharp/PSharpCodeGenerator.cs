@@ -261,6 +261,15 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case CtorStmt ctorStmt:
+                    context.Write(output, "CreateInterface( ");
+                    context.Write(output, "this, ");
+                    context.Write(output, $"\"{ctorStmt.Interface.Name}\"");
+                    if (ctorStmt.Arguments.Any())
+                    {
+                        context.Write(output, $", ");
+                        WriteExpr(context, output, ctorStmt.Arguments.First());
+                    }
+                    context.WriteLine(output, ");");
                     break;
                 case FunCallStmt funCallStmt:
                     break;
@@ -404,7 +413,15 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ")");
                     break;
                 case CtorExpr ctorExpr:
-                    context.Write(output, "null;");
+                    context.Write(output, "CreateInterface( ");
+                    context.Write(output, "this, ");
+                    context.Write(output, $"\"{ctorExpr.Interface.Name}\"");
+                    if (ctorExpr.Arguments.Any())
+                    {
+                        context.Write(output, $", ");
+                        WriteExpr(context, output, ctorExpr.Arguments.First());
+                    }
+                    context.Write(output, ")");
                     break;
                 case DefaultExpr defaultExpr:
                     context.Write(output, GetDefaultValue(context, defaultExpr.Type));

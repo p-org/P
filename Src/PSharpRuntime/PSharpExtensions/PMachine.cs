@@ -51,7 +51,7 @@ namespace PSharpExtensions
             }
         }
 
-        public PMachineId CreateInterface(PMachine creator, string createInterface, object payload)
+        public PMachineId CreateInterface(PMachine creator, string createInterface, object payload = null)
         {
             var createdInterface = PProgram.linkMap[creator.interfaceName][createInterface];
             this.Assert(this.creates.Contains(createdInterface), $"Machine {this.GetType().Name} cannot create interface {createdInterface}, not in its creates set");

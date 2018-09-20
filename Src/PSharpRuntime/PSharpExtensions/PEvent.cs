@@ -9,11 +9,10 @@ namespace PSharpExtensions
 
     public class PEvent<T> : Event, IHasPayload<T>
     {
-        public PEvent()
-        {
+        protected static int AssertVal { get; set; }
+        protected static int AssumeVal { get; set; }
 
-        }
-        public PEvent(T payload)
+        public PEvent(T payload): base(AssertVal, AssumeVal)
         {
             this.Payload = payload;
         }

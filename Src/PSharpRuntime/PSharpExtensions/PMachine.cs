@@ -15,7 +15,7 @@ namespace PSharpExtensions
         public List<string> receives;
         public PMachineId self;
 
-        protected class InitializeParameters
+        public class InitializeParameters
         {
             public string InterfaceName { get; }
             public object Payload { get; }
@@ -27,7 +27,7 @@ namespace PSharpExtensions
             }
         }
 
-        protected class IntializeParametersEvent : PEvent<InitializeParameters>
+        public class IntializeParametersEvent : PEvent<InitializeParameters>
         {
             public IntializeParametersEvent(InitializeParameters payload) : base(payload)
             {
@@ -48,6 +48,10 @@ namespace PSharpExtensions
                 interfaceName = (@event.Payload as InitializeParameters).InterfaceName;
                 self = new PMachineId(this.Id, this.receives.ToList());
                 this.Raise(new ContructorEvent((@event.Payload as InitializeParameters).Payload));
+            }
+            else
+            {
+                throw new ArgumentException("Event type is incorrect:" + ReceivedEvent.GetType().Name);
             }
         }
 

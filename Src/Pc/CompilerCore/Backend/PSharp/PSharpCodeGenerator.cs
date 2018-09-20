@@ -35,6 +35,8 @@ namespace Microsoft.Pc.Backend.PSharp
                 WriteDecl(context, source.Stream, decl);
             }
             
+            // write the interface declarations 
+            WriteInitializeInterfaces(context, source.Stream, globalScope.Interfaces);
 
             // TODO: generate tuple type classes.
 
@@ -45,10 +47,11 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteInitializeInterfaces(CompilationContext context, StringWriter output, IEnumerable<Interface> interfaces)
         {
+            context.WriteLine(output, "public partial class PHelper {");
             context.WriteLine(output, "public static void InitializeInterfaces() {");
             foreach (var iface in interfaces)
             {
-                context.Write(output, $"PProgram.AddInterface(\"{iface.Name}\"");
+                context.Write(output, $"PInterfaces.AddInterface(\"{iface.Name}\"");
                 foreach (PEvent ev in iface.ReceivableEvents.Events)
                 {
                     context.Write(output, ", ");
@@ -56,6 +59,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 }
                 context.WriteLine(output, ");");
             }
+            context.WriteLine(output, "}");
             context.WriteLine(output, "}");
             context.WriteLine(output);
         }
@@ -93,30 +97,21 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PEvent pEvent:
                     if (!pEvent.IsBuiltIn)
                     {
-                        declName = context.Names.GetNameForDecl(decl);
-                        context.WriteLine(output, $"internal class {declName} : Event");
-                        context.WriteLine(output, "{");
                         WriteEvent(context, output, pEvent);
-                        context.WriteLine(output, "}");
                     }
                     break;
                 case Machine machine:
-                    declName = context.Names.GetNameForDecl(decl);
-                    context.WriteLine(output, $"internal class {declName} : PMachine");
-                    context.WriteLine(output, "{");
-                    WriteMachine(context, output, machine);
-                    context.WriteLine(output, "}");
+                    if (machine.IsSpec)
+                    {
+                        throw new NotImplementedException();
+                    }
+                    else
+                    {
+                        WriteMachine(context, output, machine);
+                    }
                     break;
                 case PEnum pEnum:
-                    declName = context.Names.GetNameForDecl(decl);
-                    context.WriteLine(output, $"public enum {declName}");
-                    context.WriteLine(output, "{");
-                    foreach (EnumElem enumElem in pEnum.Values)
-                    {
-                        context.WriteLine(output, $"{declName} = {enumElem.Value},");
-                    }
-
-                    context.WriteLine(output, "}");
+                    WriteEnum(context, output, pEnum);
                     break;
                 case Implementation impl:
                     WriteImplementationDecl(context, output, impl);
@@ -131,6 +126,19 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, $"// TODO: {decl.GetType().Name} {declName}");
                     break;
             }
+        }
+
+        private static void WriteEnum(CompilationContext context, StringWriter output, PEnum pEnum)
+        {
+            var declName = context.Names.GetNameForDecl(pEnum);
+            context.WriteLine(output, $"public enum {declName}");
+            context.WriteLine(output, "{");
+            foreach (EnumElem enumElem in pEnum.Values)
+            {
+                context.WriteLine(output, $"{declName} = {enumElem.Value},");
+            }
+
+            context.WriteLine(output, "}");
         }
 
         private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
@@ -158,10 +166,11 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output);
             context.WriteLine(output, "[Microsoft.PSharp.Test]");
             context.WriteLine(output, "public static void Execute(PSharpRuntime runtime) {");
+            context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "InitializeLinkMap();");
             context.WriteLine(output, "InitializeInterfaceDefMap();");
             context.WriteLine(output, "InitializeMonitorMap(runtime);");
-            context.WriteLine(output, $"runtime.CreateMachine(typeof({main}));");
+            context.WriteLine(output, $"runtime.CreateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof({main})));");
             context.WriteLine(output, "}");
         }
 
@@ -202,12 +211,10 @@ namespace Microsoft.Pc.Backend.PSharp
         private void WriteInitializeInterfaceDefMap(CompilationContext context, StringWriter output, IDictionary<Interface, Machine> interfaceDef)
         {
             context.WriteLine(output, "public static void InitializeInterfaceDefMap() {");
-
             foreach (var map in interfaceDef)
             {
                 context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(\"{map.Key.Name}\", \"{map.Value.Name}\");");
             }
-
             context.WriteLine(output, "}");
             context.WriteLine(output);
         }
@@ -230,19 +237,24 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteEvent(CompilationContext context, StringWriter output, PEvent pEvent)
         {
-            // generate the payload type
-            if (!pEvent.PayloadType.IsSameTypeAs(PrimitiveType.Null))
-            {
-                string payloadType = GetCSharpType(context, pEvent.PayloadType);
-                context.WriteLine(output, $"public {payloadType} payload;");
-            }
-
+            string declName = context.Names.GetNameForDecl(pEvent);
+            
+            // initialize the payload type
+            string payloadType = pEvent.PayloadType.IsSameTypeAs(PrimitiveType.Null)? "object": GetCSharpType(context, pEvent.PayloadType);
+            context.WriteLine(output, $"internal class {declName} : PEvent<{payloadType}>");
+            context.WriteLine(output, "{");
+            context.WriteLine(output, $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
             // add a constructor to initialize the assert and assume fields
-            context.WriteLine(output, $"public {pEvent.Name} (): base({pEvent.Assert}, {pEvent.Assume})" + "{ }");
+            context.WriteLine(output, $"public {pEvent.Name} ({payloadType} payload): base(payload)" + "{ }");
+            context.WriteLine(output, "}");
         }
 
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
+            string declName = context.Names.GetNameForDecl(machine);
+            context.WriteLine(output, $"internal class {declName} : PMachine");
+            context.WriteLine(output, "{");
+
             foreach (Variable field in machine.Fields)
             {
                 context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
@@ -325,6 +337,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 context.WriteLine(output, "{");
                 context.WriteLine(output, "}");
             }
+            context.WriteLine(output, "}");
         }
 
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
@@ -568,7 +581,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"{context.Names.GetNameForDecl(enumElem.ParentEnum)}.{context.Names.GetNameForDecl(enumElem)}");
                     break;
                 case EventRefExpr eventRefExpr:
-                    context.Write(output, $"new {context.Names.GetNameForDecl(eventRefExpr.Value)}()");
+                    context.Write(output, $"new {context.Names.GetNameForDecl(eventRefExpr.Value)}({GetDefaultValue(context, eventRefExpr.Value.PayloadType)})");
                     break;
                 case FairNondetExpr _:
                     context.Write(output, "this.FairRandom()");
@@ -730,6 +743,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PermissionType _:
                 case PrimitiveType anyType when anyType.IsSameTypeAs(PrimitiveType.Any):
                 case PrimitiveType eventType when eventType.IsSameTypeAs(PrimitiveType.Event):
+                case PrimitiveType nullType when nullType.IsSameTypeAs(PrimitiveType.Null):
                 case PrimitiveType machineType when machineType.IsSameTypeAs(PrimitiveType.Machine):
                 case ForeignType _:
                 case DataType _:

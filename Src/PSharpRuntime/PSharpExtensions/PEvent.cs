@@ -9,7 +9,10 @@ namespace PSharpExtensions
 
     public class PEvent<T> : Event, IHasPayload<T>
     {
+        public PEvent()
+        {
 
+        }
         public PEvent(T payload)
         {
             this.Payload = payload;

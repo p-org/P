@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Pc.Backend.ASTExt;
@@ -131,6 +132,10 @@ namespace Microsoft.Pc.Backend.PSharp
                 if (state.IsStart)
                 {
                     context.WriteLine(output, "[Start]");
+                    context.WriteLine(output, "[OnEntry(nameof(InitializeParametersFunction))]");
+                    context.WriteLine(output, $"[OnEventGotoState(typeof(ContructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
+                    context.WriteLine(output, $"class __InitState__ : MachineState {{ }}");
+                    context.WriteLine(output);
                 }
 
                 if (state.Entry != null)
@@ -293,6 +298,15 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, ");");
                     break;
                 case RaiseStmt raiseStmt:
+                    context.Write(output, "this.RaiseEvent(");
+                    context.Write(output, "this, ");
+                    WriteExpr(context, output, raiseStmt.PEvent);
+                    if (raiseStmt.Payload.Any())
+                    {
+                        context.Write(output, $", ");
+                        WriteExpr(context, output, raiseStmt.Payload.First());
+                    }
+                    context.WriteLine(output, $");");
                     break;
                 case ReceiveStmt receiveStmt:
                     break;
@@ -304,6 +318,19 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, ";");
                     break;
                 case SendStmt sendStmt:
+                    context.Write(output, "this.SendEvent(");
+                    context.Write(output, "this, ");
+                    WriteExpr(context, output, sendStmt.MachineExpr);
+                    context.Write(output, $",");
+                    WriteExpr(context, output, sendStmt.Evt);
+
+                    if (sendStmt.ArgsList.Any())
+                    {
+                        context.Write(output, $", ");
+                        WriteExpr(context, output, sendStmt.ArgsList.First());
+                    }
+
+                    context.WriteLine(output, $");");
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     break;
@@ -502,7 +529,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NamedTupleType _:
                     throw new NotImplementedException();
                 case PermissionType _:
-                    return "Permissions";
+                    return "PMachineId";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "object";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
@@ -514,7 +541,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "Event";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
-                    return "Permissions";
+                    return "PMachineId";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return "void";
                 case SequenceType sequenceType:

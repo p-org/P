@@ -180,9 +180,13 @@ namespace Microsoft.Pc.TypeChecker
             //check that the implementation module is closed with respect to creates
             var notImplementedInterface =
                 impl.ModExpr.ModuleInfo.Creates.Interfaces.Where(i =>
-                    !impl.ModExpr.ModuleInfo.InterfaceDef.Keys.Contains(i));
-            throw handler.NotClosed(impl.SourceLocation,
-                $"implementation module is not closed with respect to created interfaces; interface {notImplementedInterface.First()} is created but not implemented inside the module");
+                    !impl.ModExpr.ModuleInfo.InterfaceDef.Keys.Contains(i)).ToList();
+            if (notImplementedInterface.Any())
+            {
+                throw handler.NotClosed(impl.SourceLocation,
+                    $"implementation module is not closed with respect to created interfaces; interface {notImplementedInterface.First()} is created but not implemented inside the module");
+            }
+            
         }
 
         private static void CheckWellFormedness(ITranslationErrorHandler handler, BindModuleExpr bindExpr)

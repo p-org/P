@@ -452,6 +452,7 @@ namespace Microsoft.Pc.TypeChecker
                     {
                         Scope = table.MakeChildScope(),
                         Owner = method.Owner,
+                        ParentFunction = method,
                         Role = FunctionRole.ReceiveHandler
                     };
 
@@ -488,6 +489,7 @@ namespace Microsoft.Pc.TypeChecker
                 }
             }
 
+            method.CanReceive = true;
             return new ReceiveStmt(context, cases);
         }
 

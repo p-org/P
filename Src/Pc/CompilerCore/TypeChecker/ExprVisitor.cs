@@ -448,9 +448,16 @@ namespace Microsoft.Pc.TypeChecker
         {
             var fields = context._values.Select(Visit).ToArray();
             var entries = new NamedTupleEntry[fields.Length];
+            var names = new HashSet<string>();
             for (var i = 0; i < fields.Length; i++)
             {
-                entries[i] = new NamedTupleEntry { Name = context._names[i].GetText(), FieldNo = i, Type = fields[i].Type };
+                string entryName = context._names[i].GetText();
+                if (names.Contains(entryName))
+                {
+                    throw handler.DuplicateNamedTupleEntry(context._names[i], entryName);
+                }
+                names.Add(entryName);
+                entries[i] = new NamedTupleEntry { Name = entryName, FieldNo = i, Type = fields[i].Type };
             }
             var type = new NamedTupleType(entries);
             return new NamedTupleExpr(context, fields, type);

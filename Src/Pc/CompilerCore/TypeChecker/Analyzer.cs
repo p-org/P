@@ -31,10 +31,12 @@ namespace Microsoft.Pc.TypeChecker
 
             // Step 4: Propagate purity properties
             ApplyPropagations(allFunctions,
-                              CreatePropagation(fn => fn.CanRaiseEvent, (fn, value) => fn.CanRaiseEvent = value,
-                                                true),
-                              CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value,
-                                                true));
+                CreatePropagation(fn => fn.CanRaiseEvent, (fn, value) => fn.CanRaiseEvent = value,
+                    true),
+                CreatePropagation(fn => fn.CanReceive, (fn, value) => fn.CanReceive = value,
+                    true),
+                CreatePropagation(fn => fn.CanChangeState, (fn, value) => fn.CanChangeState = value,
+                    true));
 
             // Step 5: Verify capability restrictions
             foreach (Function machineFunction in allFunctions)

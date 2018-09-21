@@ -1,0 +1,5 @@
+arg: ..\receive19.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+dsc: pc.exe, early return in receive

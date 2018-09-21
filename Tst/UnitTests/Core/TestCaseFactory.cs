@@ -47,7 +47,7 @@ namespace UnitTests.Core
 
                 string expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
                 ParseExpectedOutput(expectedOutput, out string stdout, out string stderr, out int exitCode);
-                // TODO: fix golden outputs for dynamic error assertions
+                // TODO: fix golden outputs for dynamic error assertions (79 tests)
                 if (testName.Contains("/DynamicError/"))
                 {
                     stdout = null;

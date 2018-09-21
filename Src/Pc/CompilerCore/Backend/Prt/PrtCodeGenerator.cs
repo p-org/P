@@ -778,6 +778,13 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output,
                 $"PRT_VALUE {FunNullStaticName} = {{ PRT_VALUE_KIND_NULL, {{ .ev = PRT_SPECIAL_EVENT_NULL }} }};");
 
+            WriteRegisteredLiterals(output, function);
+
+            output.Write(bodyWriter);
+        }
+
+        private void WriteRegisteredLiterals(TextWriter output, Function function)
+        {
             foreach (var literal in context.GetRegisteredIntLiterals(function))
             {
                 context.WriteLine(output,
@@ -796,8 +803,6 @@ namespace Microsoft.Pc.Backend.Prt
                     output,
                     $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_BOOL, {{ .bl = {(literal.Key ? "PRT_TRUE" : "PRT_FALSE")} }} }};");
             }
-
-            output.Write(bodyWriter);
         }
 
         private string GetVariableReference(Function function, IVariableRef variableRef)
@@ -983,10 +988,17 @@ namespace Microsoft.Pc.Backend.Prt
                     Debug.Assert(raiseStmt.PEvent is IVariableRef);
                     var raiseEventVar = (IVariableRef) raiseStmt.PEvent;
                     context.WriteLine(output, $"*({GetVariableReference(function, raiseEventVar)}) = NULL;");
-                    context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
+
+                    Function raiseReturnTarget = function;
+                    while (raiseReturnTarget.ParentFunction != null)
+                    {
+                        raiseReturnTarget = raiseReturnTarget.ParentFunction;
+                    }
+
+                    context.WriteLine(output, $"goto {context.Names.GetReturnLabel(raiseReturnTarget)};");
                     break;
                 case ReceiveStmt receiveStmt:
-                    context.Job.Output.WriteMessage("Receive is not yet stable!", SeverityKind.Warning);
+                    // context.Job.Output.WriteMessage("Receive is not yet stable!", SeverityKind.Warning);
 
                     string allowedEventIdsName = context.Names.GetTemporaryName("allowedEventIds");
                     var receiveEventIds = receiveStmt.Cases.Keys.Select(context.GetDeclNumber).ToList();
@@ -1023,12 +1035,22 @@ namespace Microsoft.Pc.Backend.Prt
                             context.WriteLine(output, $"PRT_VALUE** {realPayloadName} = &{payloadName};");
                         }
 
-                        function.AddLocalVariables(caseFunction.LocalVariables);
+                        // Write case body into temporary buffer so that we can prepend literals
+                        var caseWriter = new StringWriter();
                         foreach (IPStmt caseStmt in caseFunction.Body.Statements)
                         {
-                            WriteStmt(output, function, caseStmt);
+                            WriteStmt(caseWriter, caseFunction, caseStmt);
                         }
-                        
+                        context.WriteLine(caseWriter, $"{context.Names.GetReturnLabel(caseFunction)}: ;");
+
+                        // Register local variables with containing function
+                        function.AddLocalVariables(caseFunction.LocalVariables);
+
+                        // Write the new literals that are found in the case
+                        WriteRegisteredLiterals(output, caseFunction);
+
+                        // Paste temporary buffer into output.
+                        context.Write(output, caseWriter.ToString());
                         context.WriteLine(output, "} break;");
                     }
                     

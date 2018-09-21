@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>net461</TargetFramework>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
@@ -12,7 +12,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Ext\psharp\Source\Core\Core.csproj" />
+    <PackageReference Include="Microsoft.PSharp" Version="1.3.5" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\..\PSharpRuntime\PSharpExtensions\PSharpExtensions.csproj" />
   </ItemGroup>
 

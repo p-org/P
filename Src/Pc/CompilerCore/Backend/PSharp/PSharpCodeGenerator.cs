@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using Microsoft.Pc.Backend.ASTExt;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST;
@@ -368,14 +369,22 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "{");
             context.WriteLine(output, "}");
         }
-
+        
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
             bool isStatic = function.Owner == null;
+            bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;
 
             string staticKeyword = isStatic ? "static " : "";
+            string asyncKeyword = isAsync ? "async " : "";
             string returnType = GetCSharpType(context, signature.ReturnType);
+
+            if (isAsync)
+            {
+                returnType = $"Task<{returnType}>";
+            }
+
             string functionName = context.Names.GetNameForDecl(function);
             string functionParameters = "";
             if (!function.IsAnon)
@@ -385,7 +394,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     signature.Parameters.Select(param => $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)}"));
             }
             
-            context.WriteLine(output, $"public {staticKeyword} {returnType} {functionName}({functionParameters})");
+            context.WriteLine(output, $"public {staticKeyword} {asyncKeyword} {returnType} {functionName}({functionParameters})");
             WriteFunctionBody(context, output, function);
         }
 
@@ -500,6 +509,19 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, $");");
                     break;
                 case ReceiveStmt receiveStmt:
+                    string eventName = context.Names.GetTemporaryName("recvEvent");
+                    string[] eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt)).ToArray();
+                    string recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
+                    context.WriteLine(output, $"var {eventName} = await this.Receive({recvArgs});");
+                    context.WriteLine(output, $"switch ({eventName}) {{");
+                    foreach (var recvCase in receiveStmt.Cases)
+                    {
+                        string caseName = context.Names.GetTemporaryName("evt");
+                        context.WriteLine(output, $"case {context.Names.GetNameForDecl(recvCase.Key)} {caseName}: {{");
+
+                        context.WriteLine(output, "} break;");
+                    }
+                    context.WriteLine(output, "}");
                     break;
                 case RemoveStmt removeStmt:
                     break;

@@ -1,0 +1,1 @@
+dsc: runtime, early return in receive

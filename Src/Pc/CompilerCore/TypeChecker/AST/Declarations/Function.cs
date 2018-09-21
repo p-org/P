@@ -36,6 +36,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public Function(ParserRuleContext sourceNode) : this("", sourceNode) { }
 
         public Machine Owner { get; set; }
+        public Function ParentFunction { get; set; }
         public FunctionSignature Signature { get; } = new FunctionSignature();
         public IEnumerable<Variable> LocalVariables => localVariables;
         public FunctionRole Role { get; set; }
@@ -67,7 +68,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public bool? CanChangeState { get; set; }
         public bool? CanRaiseEvent { get; set; }
+        public bool? CanReceive { get; set; }
         public bool? IsNondeterministic { get; set; }
+
         public IEnumerable<Function> Callers => callers;
         public IEnumerable<Function> Callees => callees;
 

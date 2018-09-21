@@ -213,7 +213,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "public static void InitializeInterfaceDefMap() {");
             foreach (var map in interfaceDef)
             {
-                context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(\"{map.Key.Name}\", \"{map.Value.Name}\");");
+                context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(\"{map.Key.Name}\", typeof({map.Value.Name}));");
             }
             context.WriteLine(output, "}");
             context.WriteLine(output);
@@ -244,7 +244,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, $"internal class {declName} : PEvent<{payloadType}>");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
-            // add a constructor to initialize the assert and assume fields
+            context.WriteLine(output, $"public {pEvent.Name}() : base(null) {{}}");
             context.WriteLine(output, $"public {pEvent.Name} ({payloadType} payload): base(payload)" + "{ }");
             context.WriteLine(output, "}");
         }
@@ -260,6 +260,9 @@ namespace Microsoft.Pc.Backend.PSharp
                 context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
             }
 
+            // create the constructor to initialize the sends, creates and receives list
+            WriteMachineContructor(context, output, machine);
+
             foreach (Function method in machine.Methods)
             {
                 WriteFunction(context, output, method);
@@ -267,76 +270,101 @@ namespace Microsoft.Pc.Backend.PSharp
 
             foreach (State state in machine.States)
             {
-                if (state.IsStart)
-                {
-                    context.WriteLine(output, "[Start]");
-                    context.WriteLine(output, "[OnEntry(nameof(InitializeParametersFunction))]");
-                    context.WriteLine(output, $"[OnEventGotoState(typeof(ContructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
-                    context.WriteLine(output, $"class __InitState__ : MachineState {{ }}");
-                    context.WriteLine(output);
-                }
-
-                if (state.Entry != null)
-                {
-                    context.WriteLine(output, $"[OnEntry(nameof({context.Names.GetNameForDecl(state.Entry)}))]");
-                }
-
-                var deferredEvents = new List<string>();
-                var ignoredEvents = new List<string>();
-                foreach (var eventHandler in state.AllEventHandlers)
-                {
-                    PEvent pEvent = eventHandler.Key;
-                    IStateAction stateAction = eventHandler.Value;
-                    switch (stateAction)
-                    {
-                        case EventDefer _:
-                            deferredEvents.Add($"typeof({context.Names.GetNameForDecl(pEvent)})");
-                            break;
-                        case EventDoAction eventDoAction:
-                            context.WriteLine(
-                                output,
-                                $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({context.Names.GetNameForDecl(eventDoAction.Target)}))]");
-                            break;
-                        case EventGotoState eventGotoState when eventGotoState.TransitionFunction == null:
-                            context.WriteLine(
-                                output,
-                                $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}))]");
-                            break;
-                        case EventGotoState eventGotoState when eventGotoState.TransitionFunction != null:
-                            context.WriteLine(
-                                output,
-                                $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}), nameof({context.Names.GetNameForDecl(eventGotoState.TransitionFunction)}))]");
-                            break;
-                        case EventIgnore _:
-                            ignoredEvents.Add($"typeof({context.Names.GetNameForDecl(pEvent)})");
-                            break;
-                        case EventPushState eventPushState:
-                            context.WriteLine(
-                                output,
-                                $"[OnEventPushState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventPushState.Target)}))]");
-                            break;
-                    }
-                }
-
-                if (deferredEvents.Count > 0)
-                {
-                    context.WriteLine(output, $"[DeferEvents({string.Join(", ", deferredEvents.AsEnumerable())})]");
-                }
-
-                if (ignoredEvents.Count > 0)
-                {
-                    context.WriteLine(output, $"[IgnoreEvents({string.Join(", ", ignoredEvents.AsEnumerable())})]");
-                }
-
-                if (state.Exit != null)
-                {
-                    context.WriteLine(output, $"[OnExit(nameof({context.Names.GetNameForDecl(state.Exit)}))]");
-                }
-
-                context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : MachineState");
-                context.WriteLine(output, "{");
-                context.WriteLine(output, "}");
+                WriteState(context, output, state);
             }
+            context.WriteLine(output, "}");
+        }
+
+        private static void WriteMachineContructor(CompilationContext context, StringWriter output, Machine machine)
+        {
+            string declName = context.Names.GetNameForDecl(machine);
+            context.WriteLine(output, $"public {declName}() {{");
+            foreach (var sEvent in machine.Sends.Events)
+            {
+                context.WriteLine(output, $"this.sends.Add(\"{sEvent.Name}\");");
+            }
+            foreach (var rEvent in machine.Receives.Events)
+            {
+                context.WriteLine(output, $"this.receives.Add(\"{rEvent.Name}\");");
+            }
+            foreach (var iCreate in machine.Creates.Interfaces)
+            {
+                context.WriteLine(output, $"this.creates.Add(\"{iCreate.Name}\");");
+            }
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+        }
+
+        private static void WriteState(CompilationContext context, StringWriter output, State state)
+        {
+            if (state.IsStart)
+            {
+                context.WriteLine(output, "[Start]");
+                context.WriteLine(output, "[OnEntry(nameof(InitializeParametersFunction))]");
+                context.WriteLine(output, $"[OnEventGotoState(typeof(ContructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
+                context.WriteLine(output, $"class __InitState__ : MachineState {{ }}");
+                context.WriteLine(output);
+            }
+
+            if (state.Entry != null)
+            {
+                context.WriteLine(output, $"[OnEntry(nameof({context.Names.GetNameForDecl(state.Entry)}))]");
+            }
+
+            var deferredEvents = new List<string>();
+            var ignoredEvents = new List<string>();
+            foreach (var eventHandler in state.AllEventHandlers)
+            {
+                PEvent pEvent = eventHandler.Key;
+                IStateAction stateAction = eventHandler.Value;
+                switch (stateAction)
+                {
+                    case EventDefer _:
+                        deferredEvents.Add($"typeof({context.Names.GetNameForDecl(pEvent)})");
+                        break;
+                    case EventDoAction eventDoAction:
+                        context.WriteLine(
+                            output,
+                            $"[OnEventDoAction(typeof({context.Names.GetNameForDecl(pEvent)}), nameof({context.Names.GetNameForDecl(eventDoAction.Target)}))]");
+                        break;
+                    case EventGotoState eventGotoState when eventGotoState.TransitionFunction == null:
+                        context.WriteLine(
+                            output,
+                            $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}))]");
+                        break;
+                    case EventGotoState eventGotoState when eventGotoState.TransitionFunction != null:
+                        context.WriteLine(
+                            output,
+                            $"[OnEventGotoState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventGotoState.Target)}), nameof({context.Names.GetNameForDecl(eventGotoState.TransitionFunction)}))]");
+                        break;
+                    case EventIgnore _:
+                        ignoredEvents.Add($"typeof({context.Names.GetNameForDecl(pEvent)})");
+                        break;
+                    case EventPushState eventPushState:
+                        context.WriteLine(
+                            output,
+                            $"[OnEventPushState(typeof({context.Names.GetNameForDecl(pEvent)}), typeof({context.Names.GetNameForDecl(eventPushState.Target)}))]");
+                        break;
+                }
+            }
+
+            if (deferredEvents.Count > 0)
+            {
+                context.WriteLine(output, $"[DeferEvents({string.Join(", ", deferredEvents.AsEnumerable())})]");
+            }
+
+            if (ignoredEvents.Count > 0)
+            {
+                context.WriteLine(output, $"[IgnoreEvents({string.Join(", ", ignoredEvents.AsEnumerable())})]");
+            }
+
+            if (state.Exit != null)
+            {
+                context.WriteLine(output, $"[OnExit(nameof({context.Names.GetNameForDecl(state.Exit)}))]");
+            }
+
+            context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : MachineState");
+            context.WriteLine(output, "{");
             context.WriteLine(output, "}");
         }
 

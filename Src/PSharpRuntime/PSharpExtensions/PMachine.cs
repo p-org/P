@@ -4,15 +4,16 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.PSharp;
+using System.Linq.Expressions;
 
 namespace PSharpExtensions
 {
     public class PMachine : Machine
     {
         public string interfaceName;
-        public List<string> sends;
-        public List<string> creates;
-        public List<string> receives;
+        public List<string> sends = new List<string>();
+        public List<string> creates = new List<string>();
+        public List<string> receives = new List<string>();
         public PMachineId self;
 
         public class InitializeParameters
@@ -60,23 +61,25 @@ namespace PSharpExtensions
             var createdInterface = PModule.linkMap[creator.interfaceName][createInterface];
             this.Assert(this.creates.Contains(createdInterface), $"Machine {this.GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = this.CreateMachine(Type.GetType(createMachine), new IntializeParametersEvent(new InitializeParameters(createdInterface, payload)));
+            var machineId = this.CreateMachine(createMachine, new IntializeParametersEvent(new InitializeParameters(createdInterface, payload)));
             return new PMachineId(machineId, PInterfaces.GetPermissions(createdInterface));
         }
 
         public void SendEvent(PMachine source, PMachineId target, Event ev, object payload = null)
         {
-            this.Assert(ev is Default, "Machine cannot send a null event");
+            this.Assert(!(ev is Default), "Machine cannot send a null event");
             this.Assert(this.sends.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
             this.Assert(target.Permissions.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
-            var @event = (Event)Activator.CreateInstance(ev.GetType(), BindingFlags.CreateInstance, payload);
+            ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length>0);
+            var @event = (Event)oneArgConstructor.Invoke(new object[]{payload});
             this.Send(target.Id, @event);
         }
 
         public void RaiseEvent(PMachine source, Event ev, object payload = null)
         {
-            this.Assert(ev is Default, "Machine cannot raise a null event");
-            var @event = (Event)Activator.CreateInstance(ev.GetType(), BindingFlags.CreateInstance, payload);
+            this.Assert(!(ev is Default), "Machine cannot raise a null event");
+            ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            var @event = (Event)oneArgConstructor.Invoke(new object[] { payload });
             this.Raise(@event);
         }
     }

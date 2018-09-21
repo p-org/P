@@ -812,10 +812,20 @@ namespace Microsoft.Pc.Backend.Prt
 
         private void WriteCleanupCheck(TextWriter output, Function function)
         {
+            var topFun = function;
+            while (topFun.ParentFunction != null)
+            {
+                topFun = topFun.ParentFunction;
+            }
+
+            context.WriteLine(output, "if (p_this->returnKind != ReturnStatement && p_this->returnKind != ReceiveStatement) {");
+            context.WriteLine(output, $"goto {context.Names.GetReturnLabel(topFun)};");
+            context.WriteLine(output, "}");
+
             context.WriteLine(output, "if (p_this->isHalted == PRT_TRUE) {");
             context.WriteLine(output, $"PrtFreeValue({FunResultValName});");
             context.WriteLine(output, $"{FunResultValName} = NULL;");
-            context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
+            context.WriteLine(output, $"goto {context.Names.GetReturnLabel(topFun)};");
             context.WriteLine(output, "}");
         }
 

@@ -15,12 +15,15 @@ machine Main {
 	fun foo() {
 		send this, E;
 		receive { 
-			case E: { raise F; } 
+			case E: { bar(); } 
 		}
 		receive {
 			case F: { }
 		}
 		x = x + 1;
+	}
+	fun bar() {
+		raise F;
 	}
 }
 

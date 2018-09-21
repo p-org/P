@@ -146,6 +146,7 @@
       <PreprocessorDefinitions>PRT_STATIC;PRT_PLAT_WINUSER;PRT_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>../WinUser/;../Core/;$(SolutionDir)Ext\libhandler\inc;../API/;</AdditionalIncludeDirectories>
       <BrowseInformation>true</BrowseInformation>
+      <MultiProcessorCompilation>false</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>

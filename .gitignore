@@ -218,6 +218,7 @@ $RECYCLE.BIN/
 /packages/
 
 # all P compiler generated output files.
+Bld/
 PGenerated/
 *.4ml
 !Src/**/Domains/*.4ml
@@ -290,3 +291,4 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /**/obj/
 nupkgs/
 /Tst/temp_builds
+*.db

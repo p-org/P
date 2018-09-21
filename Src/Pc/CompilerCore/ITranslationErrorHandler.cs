@@ -53,6 +53,7 @@ namespace Microsoft.Pc
         Exception InvalidHideInterfaceExpr(ParserRuleContext location, string message);
         Exception InvalidRenameExpr(ParserRuleContext location, string message);
         Exception InvalidCompositionExpr(ParserRuleContext location, string message);
+        Exception NotClosed(ParserRuleContext sourceLocation, string v);
 
         // General errors
         Exception InternalError(ParserRuleContext location, Exception inner);
@@ -66,5 +67,6 @@ namespace Microsoft.Pc
         Exception PopInNonVoidFunction(ParserRuleContext context);
         Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation);
         Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent);
+        Exception NoMain(ParserRuleContext sourceLocation, string v);
     }
 }

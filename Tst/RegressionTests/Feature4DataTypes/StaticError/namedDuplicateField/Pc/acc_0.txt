@@ -1,0 +1,4 @@
+OUT: float4.p(9,7,9,8): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
+OUT: float4.p(9,19,9,21): error PC1001: convert can be applied only to int, float or interface types
+OUT: Compilation failed
+EXIT: -1

@@ -189,6 +189,16 @@ namespace Microsoft.Pc
             return IssueError(location, $"invalid bind operation. {message}");
         }
 
+        public Exception NotClosed(ParserRuleContext sourceLocation, string message)
+        {
+            return IssueError(sourceLocation, $"Module not closed. {message}");
+        }
+
+        public Exception NoMain(ParserRuleContext sourceLocation, string message)
+        {
+            return IssueError(sourceLocation, $"Illegal main machine. {message}");
+        }
+
         public Exception InvalidAssertExpr(ParserRuleContext location, Machine monitor, PEvent illegalEvent)
         {
             return IssueError(location,
@@ -293,5 +303,6 @@ namespace Microsoft.Pc
         {
             return method.Name.Length > 0 ? method.Name : $"at {locationResolver.GetLocation(method.SourceLocation)}";
         }
+
     }
 }

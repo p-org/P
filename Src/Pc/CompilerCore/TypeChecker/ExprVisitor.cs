@@ -353,6 +353,10 @@ namespace Microsoft.Pc.TypeChecker
                         return new CoerceExpr(context, subExpr, newType);
                     }
                 }
+                else if (oldType.IsSameTypeAs(PrimitiveType.Machine) || oldType is PermissionType)
+                {
+                    //todo: this needs to be implemented
+                }
                 throw handler.IncomparableTypes(context, oldType, newType);
             }
 

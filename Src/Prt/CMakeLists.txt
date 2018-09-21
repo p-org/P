@@ -1,6 +1,17 @@
 set ( P_Prt_Src_Path ${CMAKE_CURRENT_SOURCE_DIR} )
 set ( API_PATH ${P_Prt_Src_Path}/API/ )
 set ( Core_PATH ${P_Prt_Src_Path}/Core/ )
+set ( LIBHANDLER_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/)
+set ( LIBHANDLERINC_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/inc)
+set ( LIBHANDLEROUT_PATH ${P_Prt_Src_Path}/../../Ext/libhandler/out)
+
+ADD_CUSTOM_TARGET( 
+  libhandler
+  COMMAND ./configure
+  COMMAND make depend
+  COMMAND make
+  WORKING_DIRECTORY ${LIBHANDLER_PATH}
+)
 
 if(SGX)
     set ( User_PATH ${P_Prt_Src_Path}/SGXUser/Trusted )
@@ -38,6 +49,7 @@ file ( GLOB User_SRC ${User_PATH}/*.c ${User_PATH}/*.h  )
 set ( PrtUserSrc ${API_SRC} ${Core_SRC} ${User_SRC} ${User_ADDITIONAL_SOURCE_FILES} )
 
 add_library(Prt OBJECT ${PrtUserSrc})
+add_dependencies(Prt libhandler)
 
 if (NOT Win32 AND NOT DEFINED SGX)
 	find_package(Threads REQUIRED)
@@ -60,6 +72,8 @@ ENDIF( CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64" )
 if(SGX)
     add_library(Prt_trusted_static STATIC $<TARGET_OBJECTS:Prt>)
     target_include_directories(Prt PUBLIC ${API_PATH})
+    target_include_directories(Prt PUBLIC ${LIBHANDLERINC_PATH})
+    target_include_directories(Prt PUBLIC ${LIBHANDLEROUT_PATH})
     target_include_directories(Prt PUBLIC ${Core_PATH})
     target_include_directories(Prt PUBLIC ${User_PATH})
     get_property(Prt_Published_Headers_PATHS TARGET Prt PROPERTY INTERFACE_INCLUDE_DIRECTORIES)
@@ -69,6 +83,8 @@ else()
     add_library(Prt_shared SHARED $<TARGET_OBJECTS:Prt>)
     add_library(Prt_static STATIC $<TARGET_OBJECTS:Prt>)
     target_include_directories(Prt PUBLIC ${API_PATH})
+    target_include_directories(Prt PUBLIC ${LIBHANDLERINC_PATH})
+    target_include_directories(Prt PUBLIC ${LIBHANDLEROUT_PATH})
     target_include_directories(Prt PUBLIC ${Core_PATH})
     target_include_directories(Prt PUBLIC ${User_PATH})
     get_property(Prt_Published_Headers_PATHS TARGET Prt PROPERTY INTERFACE_INCLUDE_DIRECTORIES)

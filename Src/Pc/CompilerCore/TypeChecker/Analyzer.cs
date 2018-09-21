@@ -72,7 +72,19 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             // Step 10: Check the test and implementation declarations
-            // TODO: like test decls have main in them, refinement relation holds for refinement test cases, implementations are closed.
+            foreach (Implementation impl in globalScope.Implementations)
+            {
+                ModuleSystemTypeChecker.CheckImplementationDecl(handler, impl);
+            }
+            foreach (SafetyTest test in globalScope.SafetyTests)
+            {
+                ModuleSystemTypeChecker.CheckSafetyTest(handler, test);
+            }
+            foreach (RefinementTest test in globalScope.RefinementTests)
+            {
+                ModuleSystemTypeChecker.CheckRefinementTest(handler, test);
+            }
+            
 
 
             return globalScope;

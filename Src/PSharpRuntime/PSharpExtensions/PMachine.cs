@@ -56,6 +56,11 @@ namespace PSharpExtensions
             }
         }
 
+        protected override bool OnException(string methodName, Exception ex)
+        {
+            return ex is PNonStandardReturnException;
+        }
+
         public PMachineId CreateInterface(PMachine creator, string createInterface, object payload = null)
         {
             var createdInterface = PModule.linkMap[creator.interfaceName][createInterface];
@@ -81,6 +86,7 @@ namespace PSharpExtensions
             ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new object[] { payload });
             this.Raise(@event);
+            throw new PNonStandardReturnException() {ReturnKind = NonStandardReturn.Raise};
         }
     }
 }

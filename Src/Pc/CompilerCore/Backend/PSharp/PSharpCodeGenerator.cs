@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Pc.Backend.ASTExt;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST;
@@ -383,8 +384,8 @@ namespace Microsoft.Pc.Backend.PSharp
                     ", ",
                     signature.Parameters.Select(param => $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)}"));
             }
-                
-            context.WriteLine(output, $"public {staticKeyword}{returnType} {functionName}({functionParameters})");
+            
+            context.WriteLine(output, $"public {staticKeyword} {returnType} {functionName}({functionParameters})");
             WriteFunctionBody(context, output, function);
         }
 
@@ -411,6 +412,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "}");
         }
 
+   
         private void WriteStmt(CompilationContext context, StringWriter output, IPStmt stmt)
         {
             switch (stmt)
@@ -452,6 +454,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case FunCallStmt funCallStmt:
                     break;
                 case GotoStmt gotoStmt:
+                    context.WriteLine(output, $"this.Goto<{gotoStmt.State.QualifiedName}>()");
                     break;
                 case IfStmt ifStmt:
                     context.Write(output, "if (");
@@ -473,6 +476,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NoStmt _:
                     break;
                 case PopStmt popStmt:
+                    context.WriteLine(output, $"this.Pop()");
                     break;
                 case PrintStmt printStmt:
                     context.Write(output, $"runtime.WriteLine(\"{printStmt.Message}\"");
@@ -582,6 +586,22 @@ namespace Microsoft.Pc.Backend.PSharp
                 case CastExpr castExpr:
                     throw new NotImplementedException();
                 case CoerceExpr coerceExpr:
+                    switch (coerceExpr.Type.Canonicalize())
+                    {
+                        case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
+                        case PrimitiveType oldType1 when oldType1.IsSameTypeAs(PrimitiveType.Int):
+                            context.Write(output, $"(({GetCSharpType(context, coerceExpr.NewType)}) ");
+                            WriteExpr(context, output, coerceExpr.SubExpr);
+                            context.Write(output, ")");
+                            break;
+                        case PermissionType _:
+                            context.Write(output, $"new PMachineId(");
+                            context.Write(output, "(");
+                            WriteExpr(context, output, coerceExpr.SubExpr);
+                            context.Write(output, ").Id, ");
+                            context.Write(output, $"PInterfaces.GetPermissions(\"{coerceExpr.NewType.CanonicalRepresentation}\"))");
+                            break;
+                    }
                     throw new NotImplementedException();
                 case ContainsKeyExpr containsKeyExpr:
                     context.Write(output, "(");

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
 using Microsoft.Pc.TypeChecker.AST;
 
@@ -37,10 +38,7 @@ namespace Microsoft.Pc.Backend
 
         public string GetNameForDecl(IPDecl decl)
         {
-            if (decl == null)
-            {
-                throw new ArgumentNullException(nameof(decl));
-            }
+            Contract.Requires(decl != null);
 
             if (TryGetNameForNode(decl, out var name))
             {

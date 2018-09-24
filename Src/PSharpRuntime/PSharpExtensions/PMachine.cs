@@ -15,6 +15,7 @@ namespace PSharpExtensions
         public List<string> creates = new List<string>();
         public List<string> receives = new List<string>();
         public PMachineId self;
+        protected object gotoPayload = null;
 
         public class InitializeParameters
         {
@@ -48,7 +49,7 @@ namespace PSharpExtensions
             {
                 interfaceName = (@event.Payload as InitializeParameters).InterfaceName;
                 self = new PMachineId(this.Id, this.receives.ToList());
-                this.Raise(new ContructorEvent((@event.Payload as InitializeParameters).Payload));
+                this.RaiseEvent(this, new ContructorEvent((@event.Payload as InitializeParameters).Payload));
             }
             else
             {
@@ -75,7 +76,7 @@ namespace PSharpExtensions
             this.Assert(!(ev is Default), "Machine cannot send a null event");
             this.Assert(this.sends.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
             this.Assert(target.Permissions.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
-            ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length>0);
+            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length>0);
             var @event = (Event)oneArgConstructor.Invoke(new object[]{payload});
             this.Send(target.Id, @event);
         }
@@ -83,10 +84,23 @@ namespace PSharpExtensions
         public void RaiseEvent(PMachine source, Event ev, object payload = null)
         {
             this.Assert(!(ev is Default), "Machine cannot raise a null event");
-            ConstructorInfo oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             var @event = (Event)oneArgConstructor.Invoke(new object[] { payload });
             this.Raise(@event);
             throw new PNonStandardReturnException() {ReturnKind = NonStandardReturn.Raise};
+        }
+
+        public void GotoState<T>(object payload) where T : MachineState
+        {
+            this.gotoPayload = payload;
+            this.Goto<T>();
+            throw new PNonStandardReturnException() { ReturnKind = NonStandardReturn.Goto };
+        }
+
+        public void PopState()
+        {
+            this.Pop();
+            throw new PNonStandardReturnException() { ReturnKind = NonStandardReturn.Pop };
         }
     }
 }

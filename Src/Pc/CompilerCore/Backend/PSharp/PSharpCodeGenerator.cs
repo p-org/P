@@ -215,7 +215,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "public static void InitializeInterfaceDefMap() {");
             foreach (var map in interfaceDef)
             {
-                context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(\"{map.Key.Name}\", typeof({map.Value.Name}));");
+                context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(\"{map.Key.Name}\", typeof({context.Names.GetNameForDecl(map.Value)}));");
             }
             context.WriteLine(output, "}");
             context.WriteLine(output);
@@ -450,7 +450,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case CtorStmt ctorStmt:
-                    context.Write(output, "CreateInterface( ");
+                    context.Write(output, "CreateInterface(");
                     context.Write(output, "this, ");
                     context.Write(output, $"\"{ctorStmt.Interface.Name}\"");
                     if (ctorStmt.Arguments.Any())
@@ -463,7 +463,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case FunCallStmt funCallStmt:
                     break;
                 case GotoStmt gotoStmt:
-                    context.WriteLine(output, $"this.Goto<{gotoStmt.State.QualifiedName}>()");
+                    context.WriteLine(output, $"this.GotoState<{gotoStmt.State.QualifiedName}>()");
                     break;
                 case IfStmt ifStmt:
                     context.Write(output, "if (");
@@ -485,7 +485,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NoStmt _:
                     break;
                 case PopStmt popStmt:
-                    context.WriteLine(output, $"this.Pop()");
+                    context.WriteLine(output, $"this.PopState()");
                     break;
                 case PrintStmt printStmt:
                     context.Write(output, $"runtime.WriteLine(\"{printStmt.Message}\"");

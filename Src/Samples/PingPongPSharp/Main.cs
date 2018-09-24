@@ -154,7 +154,7 @@ namespace Main
 
             // Creates a new P# runtime instance, and passes an optional configuration.
             var runtime = PSharpRuntime.Create(configuration);
-
+            
             // Executes the P# program.
             Execute(runtime);
 
@@ -167,6 +167,7 @@ namespace Main
         [Microsoft.PSharp.Test]
         public static void Execute(PSharpRuntime runtime)
         {
+            runtime.SetLogger(new PLogger());
             PHelper.InitializeInterfaces();
             InitializeLinkMap();
             InitializeInterfaceDefMap();

@@ -11,7 +11,7 @@ namespace PSharpExtensions
     /// <summary>
     /// Logger that writes text to the console.
     /// </summary>
-    public class PLogger : StateMachineLogger
+    public class PLogger : MachineLogger
     {
         /// <summary>
         /// Writes the specified string value.

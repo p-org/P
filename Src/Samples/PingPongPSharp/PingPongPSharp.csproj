@@ -16,6 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Ext\PSharp\Source\Core\Core.csproj" />
     <ProjectReference Include="..\..\PSharpRuntime\PSharpExtensions\PSharpExtensions.csproj" />
   </ItemGroup>
 

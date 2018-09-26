@@ -2,129 +2,104 @@ using Microsoft.PSharp;
 using System;
 using System.Runtime;
 using System.Collections.Generic;
+using System.Linq;
 using System.IO;
 using PSharpExtensions;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace Main
 {
     public static partial class GlobalFunctions_Main { }
-    internal class Ping : PEvent<PMachineId>
+    internal class e1 : PEvent<int>
     {
-        static Ping() { AssertVal = 1; AssumeVal = -1; }
-        public Ping() : base(null) { }
-        public Ping(PMachineId payload) : base(payload) { }
-    }
-    internal class Pong : PEvent<object>
-    {
-        static Pong() { AssertVal = 1; AssumeVal = -1; }
-        public Pong() : base(null) { }
-        public Pong(object payload) : base(payload) { }
-    }
-    internal class Success : PEvent<object>
-    {
-        static Success() { AssertVal = -1; AssumeVal = -1; }
-        public Success() : base(null) { }
-        public Success(object payload) : base(payload) { }
+        static e1() { AssertVal = -1; AssumeVal = -1; }
+        public e1() : base() { }
+        public e1(int payload) : base(payload) { }
     }
     internal class Main : PMachine
     {
-        private PMachineId pongId = null;
+        private PMachineId m = null;
         public Main()
         {
-            this.sends.Add("Ping");
-            this.sends.Add("Pong");
-            this.sends.Add("Success");
-            this.receives.Add("Ping");
-            this.receives.Add("Pong");
-            this.receives.Add("Success");
-            this.creates.Add("PONG");
+            this.sends.Add("e1");
+            this.receives.Add("e1");
+            this.creates.Add("Receiver");
         }
 
         public void Anon()
         {
             PMachineId TMP_tmp0 = null;
-            Event TMP_tmp1 = null;
-            TMP_tmp0 = CreateInterface(this, "PONG");
-            pongId = TMP_tmp0;
-            TMP_tmp1 = new Success(null);
-            this.RaiseEvent(this, TMP_tmp1);
-        }
-        public void Anon_1()
-        {
-            PMachineId TMP_tmp0_1 = null;
-            Event TMP_tmp1_1 = null;
-            PMachineId TMP_tmp2 = null;
-            Event TMP_tmp3 = null;
-            TMP_tmp0_1 = pongId;
-            TMP_tmp1_1 = new Ping(null);
-            TMP_tmp2 = this.self;
-            this.SendEvent(this, TMP_tmp0_1, TMP_tmp1_1, TMP_tmp2);
-            TMP_tmp3 = new Success(null);
-            this.RaiseEvent(this, TMP_tmp3);
+            PMachineId TMP_tmp1 = null;
+            Event TMP_tmp2 = null;
+            int TMP_tmp3 = 0;
+            PMachineId TMP_tmp4 = null;
+            Event TMP_tmp5 = null;
+            int TMP_tmp6 = 0;
+            TMP_tmp0 = CreateInterface(this, "Receiver");
+            m = TMP_tmp0;
+            TMP_tmp1 = m;
+            TMP_tmp2 = new e1(0);
+            TMP_tmp3 = 1;
+            this.SendEvent(this, TMP_tmp1, TMP_tmp2, TMP_tmp3);
+            TMP_tmp4 = m;
+            TMP_tmp5 = new e1(0);
+            TMP_tmp6 = 2;
+            this.SendEvent(this, TMP_tmp4, TMP_tmp5, TMP_tmp6);
         }
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
-        [OnEventGotoState(typeof(ContructorEvent), typeof(Ping_Init))]
+        [OnEventGotoState(typeof(ContructorEvent), typeof(Init))]
         class __InitState__ : MachineState { }
 
         [OnEntry(nameof(Anon))]
-        [OnEventGotoState(typeof(Success), typeof(Ping_SendPing))]
-        class Ping_Init : MachineState
-        {
-        }
-        [OnEntry(nameof(Anon_1))]
-        [OnEventGotoState(typeof(Success), typeof(Ping_WaitPong))]
-        class Ping_SendPing : MachineState
-        {
-        }
-        [OnEventGotoState(typeof(Pong), typeof(Ping_SendPing))]
-        class Ping_WaitPong : MachineState
-        {
-        }
-        class Done : MachineState
+        class Init : MachineState
         {
         }
     }
-    internal class PONG : PMachine
+    internal class Receiver : PMachine
     {
-        public PONG()
+        public Receiver()
         {
-            this.sends.Add("Ping");
-            this.sends.Add("Pong");
-            this.sends.Add("Success");
-            this.receives.Add("Ping");
-            this.receives.Add("Pong");
-            this.receives.Add("Success");
+            this.sends.Add("e1");
+            this.receives.Add("e1");
         }
 
-        public void Anon_2()
+        public async Task Anon_1()
         {
-        }
-        public void Anon_3()
-        {
-            PMachineId payload = (this.ReceivedEvent as PEvent<PMachineId>).Payload;
-            PMachineId TMP_tmp0_2 = null;
-            Event TMP_tmp1_2 = null;
-            Event TMP_tmp2_1 = null;
-            TMP_tmp0_2 = payload;
-            TMP_tmp1_2 = new Pong(null);
-            this.SendEvent(this, TMP_tmp0_2, TMP_tmp1_2);
-            TMP_tmp2_1 = new Success(null);
-            this.RaiseEvent(this, TMP_tmp2_1);
+            int i = 0;
+            int x = 0;
+            bool TMP_tmp0_1 = false;
+            bool TMP_tmp1_1 = false;
+            bool TMP_tmp2_1 = false;
+            int TMP_tmp3_1 = 0;
+            TMP_tmp0_1 = (i) < (2);
+            TMP_tmp1_1 = TMP_tmp0_1;
+            while (TMP_tmp1_1)
+            {
+                var PGEN_recvEvent = await this.Receive(typeof(e1));
+                switch (PGEN_recvEvent)
+                {
+                    case e1 PGEN_evt:
+                        {
+                        }
+                        break;
+                }
+                PModule.runtime.Logger.WriteLine("x = {0}\n", x);
+                TMP_tmp3_1 = (i) + (1);
+                i = TMP_tmp3_1;
+                TMP_tmp0_1 = (i) < (2);
+                TMP_tmp1_1 = TMP_tmp0_1;
+            }
+            PModule.runtime.WriteLine("done!\n");
         }
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
-        [OnEventGotoState(typeof(ContructorEvent), typeof(Pong_WaitPing))]
+        [OnEventGotoState(typeof(ContructorEvent), typeof(Init_1))]
         class __InitState__ : MachineState { }
 
-        [OnEntry(nameof(Anon_2))]
-        [OnEventGotoState(typeof(Ping), typeof(Pong_SendPong))]
-        class Pong_WaitPing : MachineState
-        {
-        }
-        [OnEntry(nameof(Anon_3))]
-        [OnEventGotoState(typeof(Success), typeof(Pong_WaitPing))]
-        class Pong_SendPong : MachineState
+        [OnEntry(nameof(Anon_1))]
+        class Init_1 : MachineState
         {
         }
     }
@@ -133,41 +108,26 @@ namespace Main
         public static void InitializeLinkMap()
         {
             PModule.linkMap["Main"] = new Dictionary<string, string>();
-            PModule.linkMap["Main"].Add("PONG", "PONG");
-            PModule.linkMap["PONG"] = new Dictionary<string, string>();
+            PModule.linkMap["Main"].Add("Receiver", "Receiver");
+            PModule.linkMap["Receiver"] = new Dictionary<string, string>();
         }
 
         public static void InitializeInterfaceDefMap()
         {
             PModule.interfaceDefinitionMap.Add("Main", typeof(Main));
-            PModule.interfaceDefinitionMap.Add("PONG", typeof(PONG));
+            PModule.interfaceDefinitionMap.Add("Receiver", typeof(Receiver));
         }
 
         public static void InitializeMonitorMap(PSharpRuntime runtime)
         {
         }
 
-        public static void Main(string[] args)
-        {
-            // Optional: increases verbosity level to see the P# runtime log.
-            var configuration = Configuration.Create().WithVerbosityEnabled(2);
-
-            // Creates a new P# runtime instance, and passes an optional configuration.
-            var runtime = PSharpRuntime.Create(configuration);
-            
-            // Executes the P# program.
-            Execute(runtime);
-
-            // The P# runtime executes asynchronously, so we wait
-            // to not terminate the process.
-            Console.WriteLine("Press Enter to terminate...");
-            Console.ReadLine();
-        }
 
         [Microsoft.PSharp.Test]
         public static void Execute(PSharpRuntime runtime)
         {
             runtime.SetLogger(new PLogger());
+            PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             InitializeLinkMap();
             InitializeInterfaceDefMap();
@@ -179,9 +139,12 @@ namespace Main
     {
         public static void InitializeInterfaces()
         {
-            PInterfaces.AddInterface("Main", "Ping", "Pong", "Success");
-            PInterfaces.AddInterface("PONG", "Ping", "Pong", "Success");
+            PInterfaces.AddInterface("Main", "e1");
+            PInterfaces.AddInterface("Receiver", "e1");
         }
     }
 
 }
+
+
+

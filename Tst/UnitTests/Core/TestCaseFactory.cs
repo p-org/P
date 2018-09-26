@@ -43,6 +43,7 @@ namespace UnitTests.Core
 
             if (runConfig != null)
             {
+                /*
                 runner = new PrtRunner(inputFiles);
 
                 string expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
@@ -54,6 +55,11 @@ namespace UnitTests.Core
                     stderr = null;
                 }
                 validator = new ExecutionOutputValidator(exitCode, stdout, stderr);
+                */
+                runner = new PSharpRunner(inputFiles);
+
+                bool isStaticError = testName.Contains("/StaticError/");
+                validator = isStaticError ? (ITestResultsValidator)new StaticErrorValidator() : new CompileSuccessValidator();
             }
             else
             {

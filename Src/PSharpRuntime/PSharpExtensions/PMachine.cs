@@ -5,6 +5,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.PSharp;
 using System.Linq.Expressions;
+using Microsoft.PSharp.Runtime;
 
 namespace PSharpExtensions
 {
@@ -57,9 +58,9 @@ namespace PSharpExtensions
             }
         }
 
-        protected override bool OnException(string methodName, Exception ex)
+        protected override OnExceptionOutcome OnException(string methodName, Exception ex)
         {
-            return ex is PNonStandardReturnException;
+            return ex is PNonStandardReturnException ? OnExceptionOutcome.HandledException : base.OnException(methodName, ex);
         }
 
         public PMachineId CreateInterface(PMachine creator, string createInterface, object payload = null)

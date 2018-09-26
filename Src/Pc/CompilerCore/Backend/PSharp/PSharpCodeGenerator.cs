@@ -72,8 +72,11 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "using System;");
             context.WriteLine(output, "using System.Runtime;");
             context.WriteLine(output, "using System.Collections.Generic;");
+            context.WriteLine(output, "using System.Linq;");
             context.WriteLine(output, "using System.IO;");
             context.WriteLine(output, "using PSharpExtensions;");
+            context.WriteLine(output, "using System.Threading;");
+            context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);
             context.WriteLine(output, $"namespace {context.ProjectName}");
             context.WriteLine(output, "{");
@@ -137,7 +140,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "{");
             foreach (EnumElem enumElem in pEnum.Values)
             {
-                context.WriteLine(output, $"{declName} = {enumElem.Value},");
+                context.WriteLine(output, $"{enumElem.Name} = {enumElem.Value},");
             }
 
             context.WriteLine(output, "}");
@@ -169,6 +172,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "[Microsoft.PSharp.Test]");
             context.WriteLine(output, "public static void Execute(PSharpRuntime runtime) {");
             context.WriteLine(output, "runtime.SetLogger(new PLogger());");
+            context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "InitializeLinkMap();");
             context.WriteLine(output, "InitializeInterfaceDefMap();");
@@ -247,7 +251,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, $"internal class {declName} : PEvent<{payloadType}>");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
-            context.WriteLine(output, $"public {pEvent.Name}() : base(null) {{}}");
+            context.WriteLine(output, $"public {pEvent.Name}() : base() {{}}");
             context.WriteLine(output, $"public {pEvent.Name} ({payloadType} payload): base(payload)" + "{ }");
             context.WriteLine(output, "}");
         }
@@ -377,13 +381,13 @@ namespace Microsoft.Pc.Backend.PSharp
             bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;
 
-            string staticKeyword = isStatic ? "static " : "";
-            string asyncKeyword = isAsync ? "async " : "";
+            string staticKeyword = isStatic ? "static" : "";
+            string asyncKeyword = isAsync ? "async" : "";
             string returnType = GetCSharpType(context, signature.ReturnType);
 
             if (isAsync)
             {
-                returnType = $"Task<{returnType}>";
+                returnType = returnType == "void" ? "Task" : $"Task<{returnType}>";
             }
 
             string functionName = context.Names.GetNameForDecl(function);
@@ -428,12 +432,14 @@ namespace Microsoft.Pc.Backend.PSharp
             switch (stmt)
             {
                 case AnnounceStmt announceStmt:
+                    throw new NotImplementedException();
                     break;
                 case AssertStmt assertStmt:
                     context.Write(output, "this.Assert(");
                     WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ",");
                     context.Write(output, $"\"{assertStmt.Message}\"");
+                    context.WriteLine(output, $");");
                     break;
                 case AssignStmt assignStmt:
                     WriteLValue(context, output, assignStmt.Location);
@@ -462,9 +468,12 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, ");");
                     break;
                 case FunCallStmt funCallStmt:
+                    throw new NotImplementedException();
                     break;
                 case GotoStmt gotoStmt:
-                    context.WriteLine(output, $"this.GotoState<{gotoStmt.State.QualifiedName}>()");
+                    context.Write(output, $"this.GotoState<{gotoStmt.State.QualifiedName}>(");
+                    WriteExpr(context, output, gotoStmt.Payload);
+                    context.WriteLine(output, ");");
                     break;
                 case IfStmt ifStmt:
                     context.Write(output, "if (");
@@ -478,6 +487,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     break;
                 case InsertStmt insertStmt:
+                    throw new NotImplementedException();
                     break;
                 case MoveAssignStmt moveAssignStmt:
                     WriteLValue(context, output, moveAssignStmt.ToLocation);
@@ -486,10 +496,10 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NoStmt _:
                     break;
                 case PopStmt popStmt:
-                    context.WriteLine(output, $"this.PopState()");
+                    context.WriteLine(output, $"this.PopState();");
                     break;
                 case PrintStmt printStmt:
-                    context.Write(output, $"runtime.WriteLine(\"{printStmt.Message}\"");
+                    context.Write(output, $"PModule.runtime.Logger.WriteLine(\"{printStmt.Message}\"");
                     foreach (IPExpr printArg in printStmt.Args)
                     {
                         context.Write(output, ", ");
@@ -547,6 +557,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, $");");
                     break;
                 case SwapAssignStmt swapAssignStmt:
+                    throw new NotImplementedException();
                     break;
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
@@ -652,7 +663,13 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"{context.Names.GetNameForDecl(enumElem.ParentEnum)}.{context.Names.GetNameForDecl(enumElem)}");
                     break;
                 case EventRefExpr eventRefExpr:
-                    context.Write(output, $"new {context.Names.GetNameForDecl(eventRefExpr.Value)}({GetDefaultValue(context, eventRefExpr.Value.PayloadType)})");
+                    var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
+                    string payloadExpr = "";
+                    if (!(eventName == "Halt" || eventName == "Default"))
+                    {
+                        payloadExpr = GetDefaultValue(context, eventRefExpr.Value.PayloadType);
+                    }
+                    context.Write(output, $"new {eventName}({payloadExpr})");
                     break;
                 case FairNondetExpr _:
                     context.Write(output, "this.FairRandom()");
@@ -661,6 +678,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"{floatLiteralExpr.Value}");
                     break;
                 case FunCallExpr funCallExpr:
+                    throw new NotImplementedException();
                     break;
                 case IntLiteralExpr intLiteralExpr:
                     context.Write(output, $"{intLiteralExpr.Value}");
@@ -800,7 +818,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case MapType mapType:
                     return $"new {GetCSharpType(context, mapType)}()";
                 case SequenceType sequenceType:
-                    return $"new <{GetCSharpType(context, sequenceType)}>()";
+                    return $"new {GetCSharpType(context, sequenceType)}()";
                 case NamedTupleType _:
                     throw new NotImplementedException();
                 case TupleType _:

@@ -46,7 +46,7 @@ namespace Microsoft.Pc.TypeChecker
                     var res = new []{ctorStmt.Interface};
                     return res.Union(ctorStmt.Arguments.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case FunCallStmt funCallStmt:
-                    return InferCreates(funCallStmt.Fun, handler)
+                    return InferCreates(funCallStmt.Function, handler)
                         .Union(funCallStmt.ArgsList.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case GotoStmt gotoStmt:
                     return InferCreatesForExpr(gotoStmt.Payload, handler);

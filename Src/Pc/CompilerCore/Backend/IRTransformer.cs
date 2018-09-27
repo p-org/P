@@ -276,7 +276,7 @@ namespace Microsoft.Pc.Backend
                     var (funCallArgs, funCallArgDeps) = SimplifyFunArgs(funCallStmt.ArgsList);
                     return funCallArgDeps.Concat(new[]
                                   {
-                                      new FunCallStmt(location, funCallStmt.Fun, funCallArgs)
+                                      new FunCallStmt(location, funCallStmt.Function, funCallArgs)
                                   })
                                   .ToList();
                 case GotoStmt gotoStmt:

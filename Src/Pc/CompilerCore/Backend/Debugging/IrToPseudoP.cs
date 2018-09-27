@@ -172,7 +172,7 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteStmt("new ", ctorStmt.Interface, "(", ctorStmt.Arguments, ");");
                     break;
                 case FunCallStmt funCallStmt:
-                    WriteStmt(funCallStmt.Fun, "(", funCallStmt.ArgsList, ");");
+                    WriteStmt(funCallStmt.Function, "(", funCallStmt.ArgsList, ");");
                     break;
                 case GotoStmt gotoStmt:
                     WriteStmt("goto ", gotoStmt.State, ", ", gotoStmt.Payload, ";");

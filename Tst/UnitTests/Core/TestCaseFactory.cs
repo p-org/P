@@ -63,7 +63,7 @@ namespace UnitTests.Core
             }
             else
             {
-                runner = new CompileOnlyRunner(CompilerOutput.C, inputFiles);
+                runner = new CompileOnlyRunner(CompilerOutput.PSharp, inputFiles);
 
                 // TODO: validate information about the particular kind of compiler error
                 bool isStaticError = testName.Contains("/StaticError/");

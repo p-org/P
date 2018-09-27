@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
@@ -79,6 +80,7 @@ namespace PSharpExtensions
             this.Assert(target.Permissions.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length>0);
             var @event = (Event)oneArgConstructor.Invoke(new object[]{payload});
+            Announce(@event);
             this.Send(target.Id, @event);
         }
 
@@ -93,6 +95,7 @@ namespace PSharpExtensions
 
         public void GotoState<T>(object payload) where T : MachineState
         {
+            //todo: goto parameter has to be initialized correctly
             this.gotoPayload = payload;
             this.Goto<T>();
             throw new PNonStandardReturnException() { ReturnKind = NonStandardReturn.Goto };
@@ -102,6 +105,26 @@ namespace PSharpExtensions
         {
             this.Pop();
             throw new PNonStandardReturnException() { ReturnKind = NonStandardReturn.Pop };
+        }
+
+        public void Announce(Event ev, object payload = null)
+        {
+            this.Assert(!(ev is Default), "Machine cannot announce a null event");
+            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            var @event = (Event)oneArgConstructor.Invoke(new object[] { payload });
+            Announce(@event);
+        }
+
+        private void Announce(Event ev)
+        {
+            this.Assert(!(ev is Default), "cannot send a null event");
+            foreach (var monitor in PModule.monitorMap[interfaceName])
+            {
+                if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))
+                {
+                    this.Monitor(monitor, ev);
+                }
+            }
         }
     }
 }

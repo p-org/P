@@ -55,7 +55,7 @@ namespace Microsoft.Pc.TypeChecker
 
             foreach (FunCallStmt funCallStmt in funCallStmts)
             {
-                CheckFunctionCall(funCallStmt.Fun, funCallStmt.ArgsList);
+                CheckFunctionCall(funCallStmt.Function, funCallStmt.ArgsList);
             }
         }
 

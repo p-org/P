@@ -888,7 +888,7 @@ namespace Microsoft.Pc.Backend.Prt
                     WriteCleanupCheck(output, function);
                     break;
                 case FunCallStmt funCallStmt:
-                    string funImplName = context.Names.GetNameForFunctionImpl(funCallStmt.Fun);
+                    string funImplName = context.Names.GetNameForFunctionImpl(funCallStmt.Function);
                     var funArgs = funCallStmt.ArgsList.Cast<ILinearRef>().ToList();
 
                     // Put all the arguments in the args array

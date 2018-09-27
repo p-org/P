@@ -108,7 +108,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case Machine machine:
                     if (machine.IsSpec)
                     {
-                        throw new NotImplementedException();
+                        WriteMonitor(context, output, machine);
                     }
                     else
                     {
@@ -133,6 +133,41 @@ namespace Microsoft.Pc.Backend.PSharp
             }
         }
 
+        private void WriteMonitor(CompilationContext context, StringWriter output, Machine machine)
+        {
+            string declName = context.Names.GetNameForDecl(machine);
+            context.WriteLine(output, $"internal class {declName} : PMonitor");
+            context.WriteLine(output, "{");
+
+            foreach (Variable field in machine.Fields)
+            {
+                context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
+            }
+
+            foreach (Function method in machine.Methods)
+            {
+                WriteFunction(context, output, method);
+            }
+
+            foreach (State state in machine.States)
+            {
+                WriteState(context, output, state);
+            }
+            context.WriteLine(output, "}");
+        }
+
+        private void WriteMonitorContructor(CompilationContext context, StringWriter output, Machine machine)
+        {
+            string declName = context.Names.GetNameForDecl(machine);
+            context.WriteLine(output, $"static {declName}() {{");
+            foreach (var sEvent in machine.Observes.Events)
+            {
+                context.WriteLine(output, $"observes.Add(\"{sEvent.Name}\");");
+            }
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+        }
+
         private static void WriteEnum(CompilationContext context, StringWriter output, PEnum pEnum)
         {
             var declName = context.Names.GetNameForDecl(pEnum);
@@ -151,6 +186,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, $"public class {safety.Name} {{");
             WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, safety.ModExpr.ModuleInfo.InterfaceDef);
+            WriteInitializeMonitorObserves(context, output, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
             WriteInitializeMonitorMap(context, output, safety.ModExpr.ModuleInfo.MonitorMap);
             WriteTestFunction(context, output, safety.Main);
             context.WriteLine(output, "}");
@@ -161,9 +197,27 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, $"public class {impl.Name} {{");
             WriteInitializeLinkMap(context, output, impl.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, impl.ModExpr.ModuleInfo.InterfaceDef);
+            WriteInitializeMonitorObserves(context, output, impl.ModExpr.ModuleInfo.MonitorMap.Keys);
             WriteInitializeMonitorMap(context, output, impl.ModExpr.ModuleInfo.MonitorMap);
             WriteTestFunction(context, output, impl.Main);
             context.WriteLine(output, "}");
+        }
+
+        private void WriteInitializeMonitorObserves(CompilationContext context, StringWriter output, ICollection<Machine> monitors)
+        {
+            context.WriteLine(output, "public static void InitializeMonitorObserves() {");
+
+            foreach (var monitor in monitors)
+            {
+                context.WriteLine(output, $"PModule.monitorObserves[\"{monitor.Name}\"] = new List<string>();");
+                foreach (var ev in monitor.Observes.Events)
+                {
+                    context.WriteLine(output, $"PModule.monitorObserves[\"{monitor.Name}\"].Add(\"{ev.Name}\");");
+                }
+            }
+
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
         }
 
         private void WriteTestFunction(CompilationContext context, StringWriter output, string main)
@@ -177,6 +231,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "InitializeLinkMap();");
             context.WriteLine(output, "InitializeInterfaceDefMap();");
             context.WriteLine(output, "InitializeMonitorMap(runtime);");
+            context.WriteLine(output, "InitializeMonitorObserves();");
             context.WriteLine(output, $"runtime.CreateMachine(typeof(_GodMachine), new _GodMachine.Config(typeof({main})));");
             context.WriteLine(output, "}");
         }
@@ -184,16 +239,16 @@ namespace Microsoft.Pc.Backend.PSharp
         private void WriteInitializeMonitorMap(CompilationContext context, StringWriter output, IDictionary<Machine, IEnumerable<Interface>> monitorMap)
         {
             // compute the reverse map
-            var machineMap = new Dictionary<string, List<string>>();
+            var machineMap = new Dictionary<string, List<Machine>>();
             foreach (var monitor in monitorMap)
             {
                 foreach (var machine in monitor.Value)
                 {
                     if (!machineMap.ContainsKey(machine.Name))
                     {
-                        machineMap[machine.Name] = new List<string>();
+                        machineMap[machine.Name] = new List<Machine>();
                     }
-                    machineMap[machine.Name].Add(monitor.Key.Name);
+                    machineMap[machine.Name].Add(monitor.Key);
                 }
             }
 
@@ -201,20 +256,21 @@ namespace Microsoft.Pc.Backend.PSharp
 
             foreach (var machine in machineMap)
             {
-                context.WriteLine(output, $"PModule.monitorMap[{machine.Key}] = new List<string>();");
+                context.WriteLine(output, $"PModule.monitorMap[\"{machine.Key}\"] = new List<Type>();");
                 foreach (var monitor in machine.Value)
                 {
-                    context.WriteLine(output, $"PModule.monitorMap[{machine.Key}].Add({monitor});");
+                    context.WriteLine(output, $"PModule.monitorMap[\"{machine.Key}\"].Add(typeof({context.Names.GetNameForDecl(monitor)});");
                 }
             }
             foreach (var monitor in monitorMap.Keys)
             {
-                context.WriteLine(output, $"runtime.RegisterMonitor(typeof({monitor.Name}));");
+                context.WriteLine(output, $"runtime.RegisterMonitor(typeof({context.Names.GetNameForDecl(monitor)}));");
             }
             context.WriteLine(output, "}");
             context.WriteLine(output);
         }
 
+        
         private void WriteInitializeInterfaceDefMap(CompilationContext context, StringWriter output, IDictionary<Interface, Machine> interfaceDef)
         {
             context.WriteLine(output, "public static void InitializeInterfaceDefMap() {");
@@ -304,13 +360,29 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private static void WriteState(CompilationContext context, StringWriter output, State state)
         {
-            if (state.IsStart)
+            if (state.IsStart && !state.OwningMachine.IsSpec)
             {
                 context.WriteLine(output, "[Start]");
                 context.WriteLine(output, "[OnEntry(nameof(InitializeParametersFunction))]");
                 context.WriteLine(output, $"[OnEventGotoState(typeof(ContructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
-                context.WriteLine(output, $"class __InitState__ : MachineState {{ }}");
+                context.WriteLine(output, "class __InitState__ : MachineState { }");
                 context.WriteLine(output);
+            }
+            if (state.IsStart && state.OwningMachine.IsSpec)
+            {
+                context.WriteLine(output, "[Start]");
+            }
+
+            if (state.OwningMachine.IsSpec)
+            {
+                if (state.Temperature == StateTemperature.Cold)
+                {
+                    context.WriteLine(output, $"[Cold]");
+                }
+                else if (state.Temperature == StateTemperature.Hot)
+                {
+                    context.WriteLine(output, $"[Hot]");
+                }
             }
 
             if (state.Entry != null)
@@ -370,7 +442,8 @@ namespace Microsoft.Pc.Backend.PSharp
                 context.WriteLine(output, $"[OnExit(nameof({context.Names.GetNameForDecl(state.Exit)}))]");
             }
 
-            context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : MachineState");
+            var stateType = state.OwningMachine.IsSpec ? "MonitorState" : "MachineState";
+            context.WriteLine(output, $"class {context.Names.GetNameForDecl(state)} : {stateType}");
             context.WriteLine(output, "{");
             context.WriteLine(output, "}");
         }
@@ -381,8 +454,8 @@ namespace Microsoft.Pc.Backend.PSharp
             bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;
 
-            string staticKeyword = isStatic ? "static" : "";
-            string asyncKeyword = isAsync ? "async" : "";
+            string staticKeyword = isStatic ? "static " : "";
+            string asyncKeyword = isAsync ? "async " : "";
             string returnType = GetCSharpType(context, signature.ReturnType);
 
             if (isAsync)
@@ -398,20 +471,32 @@ namespace Microsoft.Pc.Backend.PSharp
                     ", ",
                     signature.Parameters.Select(param => $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)}"));
             }
-            
-            context.WriteLine(output, $"public {staticKeyword} {asyncKeyword} {returnType} {functionName}({functionParameters})");
+
+            if (isStatic)
+            {
+                var seperator = functionParameters == "" ? "": ", ";
+                functionParameters += string.Concat(seperator, "PMachine currentMachine");
+            }
+
+            context.WriteLine(output, $"public {staticKeyword}{asyncKeyword}{returnType} {functionName}({functionParameters})");
             WriteFunctionBody(context, output, function);
         }
 
         private void WriteFunctionBody(CompilationContext context, StringWriter output, Function function)
-        {
+        { 
             context.WriteLine(output, "{");
+
+            //add the declaration of currentMachine
+            if (function.Owner != null)
+            {
+                context.WriteLine(output, $"{context.Names.GetNameForDecl(function.Owner)} currentMachine = this;");
+            }
             if (function.IsAnon)
             {
                 if (function.Signature.Parameters.Any())
                 {
                     var param = function.Signature.Parameters.First();
-                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = (this.ReceivedEvent as PEvent<{GetCSharpType(context, param.Type)}>).Payload;");
+                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = (currentMachine.ReceivedEvent as PEvent<{GetCSharpType(context, param.Type)}>).Payload;");
                 }
             }
             foreach (Variable local in function.LocalVariables)
@@ -419,6 +504,9 @@ namespace Microsoft.Pc.Backend.PSharp
                 PLanguageType type = local.Type;
                 context.WriteLine(output, $"{GetCSharpType(context, type)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
             }
+
+            
+
             foreach (IPStmt bodyStatement in function.Body.Statements)
             {
                 WriteStmt(context, output, bodyStatement);
@@ -432,14 +520,22 @@ namespace Microsoft.Pc.Backend.PSharp
             switch (stmt)
             {
                 case AnnounceStmt announceStmt:
-                    throw new NotImplementedException();
+                    context.Write(output, "currentMachine.Announce(");
+                    WriteExpr(context, output, announceStmt.PEvent);
+                    if (announceStmt.Payload != null)
+                    {
+                        context.Write(output, ", ");
+                        WriteExpr(context, output, announceStmt.Payload);
+                    }
+
+                    context.WriteLine(output, ");");
                     break;
                 case AssertStmt assertStmt:
-                    context.Write(output, "this.Assert(");
+                    context.Write(output, "currentMachine.Assert(");
                     WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ",");
                     context.Write(output, $"\"{assertStmt.Message}\"");
-                    context.WriteLine(output, $");");
+                    context.WriteLine(output, ");");
                     break;
                 case AssignStmt assignStmt:
                     WriteLValue(context, output, assignStmt.Location);
@@ -457,8 +553,8 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case CtorStmt ctorStmt:
-                    context.Write(output, "CreateInterface(");
-                    context.Write(output, "this, ");
+                    context.Write(output, "currentMachine.CreateInterface(");
+                    context.Write(output, "currentMachine, ");
                     context.Write(output, $"\"{ctorStmt.Interface.Name}\"");
                     if (ctorStmt.Arguments.Any())
                     {
@@ -468,10 +564,29 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, ");");
                     break;
                 case FunCallStmt funCallStmt:
-                    throw new NotImplementedException();
+                    var isStatic = funCallStmt.Function.Owner == null;
+                    var awaitMethod = funCallStmt.Function.CanReceive == true ? "await " : "";
+                    var globalFunctionClass = isStatic? $"{context.GlobalFunctionClassName}." : "";
+                    context.Write(output, $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
+                    var separator = "";
+
+                    
+                    foreach (var param in funCallStmt.ArgsList)
+                    {
+                        context.Write(output, separator);
+                        WriteExpr(context, output, param);
+                        separator = ", ";
+                    }
+
+                    if (isStatic)
+                    {
+                        context.Write(output, separator+"this");
+                    }
+
+                    context.WriteLine(output, ");");
                     break;
                 case GotoStmt gotoStmt:
-                    context.Write(output, $"this.GotoState<{gotoStmt.State.QualifiedName}>(");
+                    context.Write(output, $"currentMachine.GotoState<{gotoStmt.State.QualifiedName}>(");
                     WriteExpr(context, output, gotoStmt.Payload);
                     context.WriteLine(output, ");");
                     break;
@@ -480,7 +595,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     WriteExpr(context, output, ifStmt.Condition);
                     context.WriteLine(output, ")");
                     WriteStmt(context, output, ifStmt.ThenBranch);
-                    if (ifStmt.ElseBranch != null)
+                    if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Statements.Any())
                     {
                         context.WriteLine(output, "else");
                         WriteStmt(context, output, ifStmt.ElseBranch);
@@ -496,7 +611,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NoStmt _:
                     break;
                 case PopStmt popStmt:
-                    context.WriteLine(output, $"this.PopState();");
+                    context.WriteLine(output, $"currentMachine.PopState();");
                     break;
                 case PrintStmt printStmt:
                     context.Write(output, $"PModule.runtime.Logger.WriteLine(\"{printStmt.Message}\"");
@@ -509,8 +624,8 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, ");");
                     break;
                 case RaiseStmt raiseStmt:
-                    context.Write(output, "this.RaiseEvent(");
-                    context.Write(output, "this, ");
+                    context.Write(output, "currentMachine.RaiseEvent(");
+                    context.Write(output, "currentMachine, ");
                     WriteExpr(context, output, raiseStmt.PEvent);
                     if (raiseStmt.Payload.Any())
                     {
@@ -523,7 +638,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     string eventName = context.Names.GetTemporaryName("recvEvent");
                     string[] eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt)).ToArray();
                     string recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
-                    context.WriteLine(output, $"var {eventName} = await this.Receive({recvArgs});");
+                    context.WriteLine(output, $"var {eventName} = await currentMachine.Receive({recvArgs});");
                     context.WriteLine(output, $"switch ({eventName}) {{");
                     foreach (var recvCase in receiveStmt.Cases)
                     {
@@ -542,8 +657,8 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, ";");
                     break;
                 case SendStmt sendStmt:
-                    context.Write(output, "this.SendEvent(");
-                    context.Write(output, "this, ");
+                    context.Write(output, "currentMachine.SendEvent(");
+                    context.Write(output, "currentMachine, ");
                     WriteExpr(context, output, sendStmt.MachineExpr);
                     context.Write(output, $",");
                     WriteExpr(context, output, sendStmt.Evt);
@@ -645,8 +760,8 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ")");
                     break;
                 case CtorExpr ctorExpr:
-                    context.Write(output, "CreateInterface( ");
-                    context.Write(output, "this, ");
+                    context.Write(output, "currentMachine.CreateInterface( ");
+                    context.Write(output, "currentMachine, ");
                     context.Write(output, $"\"{ctorExpr.Interface.Name}\"");
                     if (ctorExpr.Arguments.Any())
                     {
@@ -672,13 +787,31 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"new {eventName}({payloadExpr})");
                     break;
                 case FairNondetExpr _:
-                    context.Write(output, "this.FairRandom()");
+                    context.Write(output, "currentMachine.FairRandom()");
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
                     context.Write(output, $"{floatLiteralExpr.Value}");
                     break;
                 case FunCallExpr funCallExpr:
-                    throw new NotImplementedException();
+                    var isStatic = funCallExpr.Function.Owner == null;
+                    var awaitMethod = funCallExpr.Function.CanReceive == true ? "await " : "";
+                    var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
+                    context.Write(output, $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");
+                    var separator = "";
+
+
+                    foreach (var param in funCallExpr.Arguments)
+                    {
+                        context.Write(output, separator);
+                        WriteExpr(context, output, param);
+                        separator = ", ";
+                    }
+
+                    if (isStatic)
+                    {
+                        context.Write(output, separator + "this");
+                    }
+                    context.Write(output, ")");
                     break;
                 case IntLiteralExpr intLiteralExpr:
                     context.Write(output, $"{intLiteralExpr.Value}");
@@ -695,7 +828,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NamedTupleExpr namedTupleExpr:
                     throw new NotImplementedException();
                 case NondetExpr _:
-                    context.Write(output, "this.Random()");
+                    context.Write(output, "currentMachine.Random()");
                     break;
                 case NullLiteralExpr _:
                     context.Write(output, "null");
@@ -706,7 +839,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ").Count");
                     break;
                 case ThisRefExpr _:
-                    context.Write(output, "this.self");
+                    context.Write(output, "currentMachine.self");
                     break;
                 case UnaryOpExpr unaryOpExpr:
                     context.Write(output, $"{UnOpToStr(unaryOpExpr.Operation)}(");

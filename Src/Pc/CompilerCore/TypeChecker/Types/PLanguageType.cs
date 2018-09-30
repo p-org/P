@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
@@ -49,6 +50,6 @@ namespace Microsoft.Pc.TypeChecker.Types
         /// <summary>
         /// represents the permissions embedded in a type
         /// </summary>
-        public abstract IReadOnlyList<PEvent> AllowedPermissions { get; }
+        public abstract Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
     }
 }

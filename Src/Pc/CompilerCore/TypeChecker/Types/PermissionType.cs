@@ -11,31 +11,23 @@ namespace Microsoft.Pc.TypeChecker.Types
         public PermissionType(Machine machine) : base(TypeKind.Base)
         {
             origin = machine;
-            EventSet = machine.Receives;
-            InitAllowedPermissions();
+            AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => machine.Receives.Events.ToList());
         }
 
         public PermissionType(Interface pInterface) : base(TypeKind.Base)
         {
             origin = pInterface;
-            EventSet = pInterface.ReceivableEvents;
-            InitAllowedPermissions();
+            AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => pInterface.ReceivableEvents.Events.ToList());
         }
 
         public PermissionType(NamedEventSet eventSet) : base(TypeKind.Base)
         {
             origin = eventSet;
-            EventSet = eventSet;
-            InitAllowedPermissions();
+            AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => eventSet.Events.ToList());
         }
 
-        private void InitAllowedPermissions()
-        {
-            allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => EventSet.Events.ToList());
-        }
 
         private readonly IPDecl origin;
-        public IEventSet EventSet { get; }
 
         public override string OriginalRepresentation => origin.Name;
         public override string CanonicalRepresentation => origin.Name;
@@ -44,7 +36,11 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             if (otherType is PermissionType permission)
             {
-                return permission.EventSet.IsSame(EventSet);
+                var eventSet1 = new EventSet();
+                var eventSet2 = new EventSet();
+                eventSet1.AddEvents(otherType.AllowedPermissions.Value);
+                eventSet2.AddEvents(AllowedPermissions.Value);
+                return eventSet1.IsSame(eventSet2);
             }
             return false;
         }
@@ -54,7 +50,6 @@ namespace Microsoft.Pc.TypeChecker.Types
             return this;
         }
 
-        private Lazy<IReadOnlyList<PEvent>> allowedPermissions;
-        public override IReadOnlyList<PEvent> AllowedPermissions => allowedPermissions.Value;
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
     }
 }

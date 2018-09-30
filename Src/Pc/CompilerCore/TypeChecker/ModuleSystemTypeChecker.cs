@@ -8,36 +8,57 @@ using Microsoft.Pc.TypeChecker.AST.ModuleExprs;
 
 namespace Microsoft.Pc.TypeChecker
 {
-    public static class ModuleSystemTypeChecker
+    public class ModuleSystemTypeChecker
     {
-        public static void CheckWellFormedness(ITranslationErrorHandler handler, IPModuleExpr moduleExpr)
+        private readonly ITranslationErrorHandler handler;
+        private readonly Scope globalScope;
+
+        private IEnumerable<PEvent> GetPermissions(IEnumerable<PEvent> allowed)
+        {
+            if (allowed == null)
+            {
+                return globalScope.UniversalEventSet.Events;
+            }
+            else
+            {
+                return allowed;
+            }
+        }
+
+        public ModuleSystemTypeChecker(ITranslationErrorHandler handler, Scope globalScope)
+        {
+            this.handler = handler;
+            this.globalScope = globalScope;
+        }
+
+        public void CheckWellFormedness(IPModuleExpr moduleExpr)
         {
             switch (moduleExpr)
             {
                 case AssertModuleExpr assertExpr:
-                    CheckWellFormedness(handler, assertExpr);
+                    CheckWellFormedness(assertExpr);
                     break;
                 case BindModuleExpr bindExpr:
-                    CheckWellFormedness(handler, bindExpr);
+                    CheckWellFormedness(bindExpr);
                     break;
                 case RenameModuleExpr renameExpr:
-                    CheckWellFormedness(handler, renameExpr);
+                    CheckWellFormedness(renameExpr);
                     break;
                 case UnionOrComposeModuleExpr uOrCExpr:
-                    CheckWellFormedness(handler, uOrCExpr);
+                    CheckWellFormedness(uOrCExpr);
                     break;
                 case HideEventModuleExpr hideEExpr:
-                    CheckWellFormedness(handler, hideEExpr);
+                    CheckWellFormedness(hideEExpr);
                     break;
                 case HideInterfaceModuleExpr hideIExpr:
-                    CheckWellFormedness(handler, hideIExpr);
+                    CheckWellFormedness(hideIExpr);
                     break;
                 default:
                     throw handler.InternalError(moduleExpr.SourceLocation, new ArgumentOutOfRangeException(nameof(moduleExpr)));
             }
         }
 
-        private static void CheckWellFormedness(ITranslationErrorHandler handler, AssertModuleExpr assertExpr)
+        private void CheckWellFormedness(AssertModuleExpr assertExpr)
         {
             if (assertExpr.ModuleInfo != null)
             {
@@ -45,7 +66,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             //check if the current module is wellformed
-            CheckWellFormedness(handler, assertExpr.ComponentModule);
+            CheckWellFormedness(assertExpr.ComponentModule);
 
             ModuleInfo componentModuleInfo = assertExpr.ComponentModule.ModuleInfo;
 
@@ -105,7 +126,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        internal static void CheckRefinementTest(ITranslationErrorHandler handler, RefinementTest test)
+        internal void CheckRefinementTest(RefinementTest test)
         {
             //check that the test module is closed with respect to creates
             var notImplementedInterface =
@@ -151,7 +172,7 @@ namespace Microsoft.Pc.TypeChecker
             throw new NotImplementedException();
         }
 
-        internal static void CheckSafetyTest(ITranslationErrorHandler handler, SafetyTest test)
+        internal void CheckSafetyTest(SafetyTest test)
         {
             //check that the test module is closed with respect to creates
             var notImplementedInterface =
@@ -175,7 +196,7 @@ namespace Microsoft.Pc.TypeChecker
 
         }
 
-        internal static void CheckImplementationDecl(ITranslationErrorHandler handler, Implementation impl)
+        internal void CheckImplementationDecl(Implementation impl)
         {
             //check that the implementation module is closed with respect to creates
             var notImplementedInterface =
@@ -183,13 +204,13 @@ namespace Microsoft.Pc.TypeChecker
                     !impl.ModExpr.ModuleInfo.InterfaceDef.Keys.Contains(i)).ToList();
             if (notImplementedInterface.Any())
             {
-                throw handler.NotClosed(impl.SourceLocation,
-                    $"implementation module is not closed with respect to created interfaces; interface {notImplementedInterface.First()} is created but not implemented inside the module");
+                throw handler.NotClosed(notImplementedInterface.First().SourceLocation,
+                    $"implementation module is not closed with respect to created interfaces; interface {notImplementedInterface.First().Name} is created but not implemented inside the module");
             }
             
         }
 
-        private static void CheckWellFormedness(ITranslationErrorHandler handler, BindModuleExpr bindExpr)
+        private void CheckWellFormedness(BindModuleExpr bindExpr)
         {
             if (bindExpr.ModuleInfo != null)
             {
@@ -252,7 +273,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        private static void CheckWellFormedness(ITranslationErrorHandler handler, RenameModuleExpr renameExpr)
+        private void CheckWellFormedness(RenameModuleExpr renameExpr)
         {
             if (renameExpr.ModuleInfo != null)
             {
@@ -260,7 +281,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             //check that component module is wellformed
-            CheckWellFormedness(handler, renameExpr.ComponentModule);
+            CheckWellFormedness(renameExpr.ComponentModule);
 
             //check that the module is wellformed
             ModuleInfo componentModuleInfo = renameExpr.ComponentModule.ModuleInfo;
@@ -353,7 +374,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        private static void CheckWellFormedness(ITranslationErrorHandler handler, UnionOrComposeModuleExpr composeExpr)
+        private void CheckWellFormedness(UnionOrComposeModuleExpr composeExpr)
         {
             if (composeExpr.ModuleInfo != null)
             {
@@ -363,7 +384,7 @@ namespace Microsoft.Pc.TypeChecker
             //check that all component modules are wellformed
             foreach (IPModuleExpr module in composeExpr.ComponentModules)
             {
-                CheckWellFormedness(handler, module);
+                CheckWellFormedness(module);
             }
 
             //check if the current module is wellformed
@@ -412,7 +433,7 @@ namespace Microsoft.Pc.TypeChecker
                     // 3) no private events in the sends or receives permissions
                     foreach (PEvent @event in allSendAndReceiveEvents)
                     {
-                        var permissionsEmbedded = @event.PayloadType.AllowedPermissions;
+                        var permissionsEmbedded = GetPermissions(@event.PayloadType.AllowedPermissions.Value);
                         foreach (PEvent privatePermission in allPrivateEvents.Where(
                             ev => permissionsEmbedded.Contains(ev)))
                         {
@@ -470,7 +491,7 @@ namespace Microsoft.Pc.TypeChecker
 
                     foreach (Interface exportedOrCreatedInterface in module1.ModuleInfo.InterfaceDef.Keys.Union(module1.ModuleInfo.Creates.Interfaces))
                     {
-                        foreach (var priEvent in module2.ModuleInfo.PrivateEvents.Events.Where(ev => exportedOrCreatedInterface.PayloadType.AllowedPermissions.Contains(ev)))
+                        foreach (var priEvent in module2.ModuleInfo.PrivateEvents.Events.Where(ev => GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions.Value).Contains(ev)))
                         {
                             throw handler.InvalidHideEventExpr(module2.SourceLocation,
                                 $"private event {priEvent.Name} belongs to the permissions of the contructor type of public interface {exportedOrCreatedInterface.Name}");
@@ -517,7 +538,7 @@ namespace Microsoft.Pc.TypeChecker
                 composeExpr.ComponentModules.SelectMany(m => m.ModuleInfo.Creates.Interfaces));
         }
 
-        private static void CheckWellFormedness(ITranslationErrorHandler handler, HideEventModuleExpr hideEExpr)
+        private void CheckWellFormedness(HideEventModuleExpr hideEExpr)
         {
             if (hideEExpr.ModuleInfo != null)
             {
@@ -525,7 +546,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             //check that component module is wellformed
-            CheckWellFormedness(handler, hideEExpr.ComponentModule);
+            CheckWellFormedness(hideEExpr.ComponentModule);
 
             //check if the current module is wellformed
             ModuleInfo componentModuleInfo = hideEExpr.ComponentModule.ModuleInfo;
@@ -563,7 +584,7 @@ namespace Microsoft.Pc.TypeChecker
                 componentModuleInfo.Sends.Events.Union(componentModuleInfo.Receives.Events);
             foreach (PEvent @event in eventsReceivedAndSent.Except(hideEExpr.HideEvents.Events))
             {
-                var permissionsEmbedded = @event.PayloadType.AllowedPermissions;
+                var permissionsEmbedded = GetPermissions(@event.PayloadType.AllowedPermissions.Value);
                 foreach (PEvent privatePermission in hideEExpr.HideEvents.Events.Where(
                     ev => permissionsEmbedded.Contains(ev)))
                 {
@@ -574,7 +595,7 @@ namespace Microsoft.Pc.TypeChecker
 
             foreach (Interface exportedOrCreatedInterface in hideEExpr.ModuleInfo.InterfaceDef.Keys.Union(hideEExpr.ModuleInfo.Creates.Interfaces))
             {
-                foreach(var priEvent in hideEExpr.HideEvents.Events.Where(ev => exportedOrCreatedInterface.PayloadType.AllowedPermissions.Contains(ev)))
+                foreach(var priEvent in hideEExpr.HideEvents.Events.Where(ev => GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions.Value).Contains(ev)))
                 {
                     throw handler.InvalidHideEventExpr(hideEExpr.SourceLocation,
                         $"event {priEvent.Name} cannot be made private as it belongs to the permissions of the contructor type of interface {exportedOrCreatedInterface.Name}");
@@ -614,7 +635,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        private static void CheckWellFormedness(ITranslationErrorHandler handler, HideInterfaceModuleExpr hideIExpr)
+        private void CheckWellFormedness(HideInterfaceModuleExpr hideIExpr)
         {
             if (hideIExpr.ModuleInfo != null)
             {
@@ -622,7 +643,7 @@ namespace Microsoft.Pc.TypeChecker
             }
 
             //check that component module is wellformed
-            CheckWellFormedness(handler, hideIExpr.ComponentModule);
+            CheckWellFormedness(hideIExpr.ComponentModule);
 
             //check if the current module is wellformed
             ModuleInfo componentModuleInfo = hideIExpr.ComponentModule.ModuleInfo;

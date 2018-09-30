@@ -68,5 +68,7 @@ namespace Microsoft.Pc
         Exception PrintStmtLinearArgument(ParserRuleContext argSourceLocation);
         Exception DuplicateReceiveCase(ParserRuleContext location, PEvent pEvent);
         Exception NoMain(ParserRuleContext sourceLocation, string v);
+        Exception IllegalTypeInCoerceExpr(ParserRuleContext context);
+        Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType);
     }
 }

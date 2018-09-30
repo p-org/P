@@ -17,10 +17,8 @@ namespace Microsoft.Pc.TypeChecker.Types
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.OriginalRepresentation}"))})";
             CanonicalRepresentation =
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.CanonicalRepresentation}"))})";
-            allowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() =>
-            {
-                return Fields.SelectMany(f => f.Type.AllowedPermissions).ToList();
-            });
+            AllowedPermissions = Fields.Any(f => f.Type.AllowedPermissions == null) ? null : new Lazy<IReadOnlyList<PEvent>>(() => Fields.SelectMany(f => f.Type.AllowedPermissions.Value).ToList());
+            
         }
 
         public IEnumerable<string> Names => Fields.Select(f => f.Name);
@@ -53,7 +51,6 @@ namespace Microsoft.Pc.TypeChecker.Types
             return lookupTable.TryGetValue(name, out entry);
         }
 
-        private readonly Lazy<IReadOnlyList<PEvent>> allowedPermissions;
-        public override IReadOnlyList<PEvent> AllowedPermissions => allowedPermissions.Value;
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
     }
 }

@@ -7,16 +7,23 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     internal class MapType : PLanguageType
     {
-        private readonly Lazy<IReadOnlyList<PEvent>> allowedPermissions;
 
         public MapType(PLanguageType keyType, PLanguageType valueType) : base(TypeKind.Map)
         {
             KeyType = keyType;
             ValueType = valueType;
-            allowedPermissions =
-                new Lazy<IReadOnlyList<PEvent>>(() => KeyType
-                                                      .AllowedPermissions.Concat(ValueType.AllowedPermissions)
-                                                      .ToList());
+            if ((KeyType.AllowedPermissions == null) || (ValueType.AllowedPermissions == null))
+            {
+                AllowedPermissions = null;
+            }
+            else
+            {
+                AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => KeyType
+                    .AllowedPermissions.Value.Concat(ValueType.AllowedPermissions.Value)
+                    .ToList());
+
+            }
+            
         }
 
         public PLanguageType KeyType { get; }
@@ -28,7 +35,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override string CanonicalRepresentation =>
             $"map[{KeyType.CanonicalRepresentation},{ValueType.CanonicalRepresentation}]";
 
-        public override IReadOnlyList<PEvent> AllowedPermissions => allowedPermissions.Value;
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

@@ -6,13 +6,10 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class TypeDefType : PLanguageType
     {
-        private readonly Lazy<IReadOnlyList<PEvent>> allowedPermissions;
-
         public TypeDefType(TypeDef typeDef) : base(TypeKind.TypeDef)
         {
             TypeDefDecl = typeDef;
-            allowedPermissions =
-                new Lazy<IReadOnlyList<PEvent>>(() => TypeDefDecl.Type.Canonicalize().AllowedPermissions);
+            AllowedPermissions = TypeDefDecl.Type.Canonicalize().AllowedPermissions;
         }
 
         public TypeDef TypeDefDecl { get; }
@@ -20,7 +17,8 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override string OriginalRepresentation => TypeDefDecl.Name;
 
         public override string CanonicalRepresentation => TypeDefDecl.Type.CanonicalRepresentation;
-        public override IReadOnlyList<PEvent> AllowedPermissions => allowedPermissions.Value;
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
+    
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

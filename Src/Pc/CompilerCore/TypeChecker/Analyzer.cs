@@ -67,28 +67,27 @@ namespace Microsoft.Pc.TypeChecker
             // Step 8: Fill the module expressions
             ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
 
+            ModuleSystemTypeChecker moduleTypeChecker = new ModuleSystemTypeChecker(handler, globalScope);
             // Step 9: Check that all module expressions are well-formed
             foreach (IPModuleExpr moduleExpr in AllModuleExprs(globalScope))
             {
-                ModuleSystemTypeChecker.CheckWellFormedness(handler, moduleExpr);
+                moduleTypeChecker.CheckWellFormedness(moduleExpr);
             }
 
             // Step 10: Check the test and implementation declarations
             foreach (Implementation impl in globalScope.Implementations)
             {
-                ModuleSystemTypeChecker.CheckImplementationDecl(handler, impl);
+                moduleTypeChecker.CheckImplementationDecl(impl);
             }
             foreach (SafetyTest test in globalScope.SafetyTests)
             {
-                ModuleSystemTypeChecker.CheckSafetyTest(handler, test);
+                moduleTypeChecker.CheckSafetyTest(test);
             }
             foreach (RefinementTest test in globalScope.RefinementTests)
             {
-                ModuleSystemTypeChecker.CheckRefinementTest(handler, test);
+                moduleTypeChecker.CheckRefinementTest(test);
             }
             
-
-
             return globalScope;
         }
 

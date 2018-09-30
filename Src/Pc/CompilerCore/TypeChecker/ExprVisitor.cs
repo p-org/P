@@ -319,6 +319,12 @@ namespace Microsoft.Pc.TypeChecker
             }
             if (context.cast.Text.Equals("to"))
             {
+                if (!(newType is PermissionType || newType.IsSameTypeAs(PrimitiveType.Int) ||
+                      newType.IsSameTypeAs(PrimitiveType.Float)))
+                {
+                    throw handler.IllegalTypeInCoerceExpr(context);
+                }
+
                 if (oldType.IsSameTypeAs(PrimitiveType.Int))
                 {
                     if (newType.IsSameTypeAs(PrimitiveType.Int))
@@ -355,7 +361,26 @@ namespace Microsoft.Pc.TypeChecker
                 }
                 else if (oldType.IsSameTypeAs(PrimitiveType.Machine) || oldType is PermissionType)
                 {
-                    //todo: this needs to be implemented
+                    if (newType.IsSameTypeAs(oldType))
+                    {
+                        return subExpr;
+                    }
+
+                    if (newType is PermissionType)
+                    {
+                        if (oldType.IsSameTypeAs(PrimitiveType.Machine))
+                        {
+                            return new CoerceExpr(context, subExpr, newType);
+                        }
+                        if (oldType is PermissionType)
+                        {
+                            if (newType.AllowedPermissions.Value.Any(x => !oldType.AllowedPermissions.Value.Contains(x)))
+                            {
+                                throw handler.IllegalInterfaceCoerce(context, oldType, newType);
+                            }
+                            return new CoerceExpr(context, subExpr, newType);
+                        }
+                    }
                 }
                 throw handler.IncomparableTypes(context, oldType, newType);
             }

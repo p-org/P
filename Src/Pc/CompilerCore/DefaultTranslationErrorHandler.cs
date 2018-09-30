@@ -76,6 +76,17 @@ namespace Microsoft.Pc
             return IssueError(location, $"named tuple has duplicate field '{duplicateName}'");
         }
 
+        public Exception IllegalTypeInCoerceExpr(ParserRuleContext location)
+        {
+            return IssueError(location, $"expected an interface or int or float type");
+        }
+
+        public Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType)
+        {
+            PEvent outlierEvent = newType.AllowedPermissions.Value.First(x => !oldType.AllowedPermissions.Value.Contains(x));
+            return IssueError(context, $"illegal Coerce, {oldType.OriginalRepresentation} permissions is not a superset of {newType.OriginalRepresentation} (e.g., event {outlierEvent.Name})");
+        }
+
         public Exception TypeMismatch(ParserRuleContext location, PLanguageType actual, params PLanguageType[] expected)
         {
             return IssueError(location,
@@ -106,6 +117,8 @@ namespace Microsoft.Pc
             return IssueError(location,
                 $"types {lhsType.OriginalRepresentation} and {rhsType.OriginalRepresentation} are incomparable");
         }
+
+        
 
         public Exception MisplacedThis(PParser.PrimitiveContext location)
         {

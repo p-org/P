@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
@@ -16,7 +17,7 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override string OriginalRepresentation => $"seq[{ElementType.OriginalRepresentation}]";
         public override string CanonicalRepresentation => $"seq[{ElementType.CanonicalRepresentation}]";
 
-        public override IReadOnlyList<PEvent> AllowedPermissions => ElementType.AllowedPermissions;
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions => ElementType.AllowedPermissions;
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

@@ -29,6 +29,12 @@ namespace Microsoft.Pc.TypeChecker
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
 
+            // Step 2: Validate no static handlers
+            foreach (Machine machine in globalScope.Machines)
+            {
+                MachineChecker.ValidateNoStaticHandlers(handler, machine);
+            }
+
             // Step 4: Propagate purity properties
             ApplyPropagations(allFunctions,
                 CreatePropagation(fn => fn.CanRaiseEvent, (fn, value) => fn.CanRaiseEvent = value,

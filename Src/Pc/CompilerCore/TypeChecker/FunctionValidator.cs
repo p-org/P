@@ -22,7 +22,7 @@ namespace Microsoft.Pc.TypeChecker
             }
         }
 
-        private static bool SurelyReturns(IPStmt stmt)
+        public static bool SurelyReturns(IPStmt stmt)
         {
             switch (stmt)
             {

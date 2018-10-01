@@ -534,7 +534,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"\"{assertStmt.Message}\"");
                     context.WriteLine(output, ");");
                     //last statement
-                    context.WriteLine(output, "throw new PUnreachableCodeException();");
+                    if (FunctionValidator.SurelyReturns(assertStmt))
+                    {
+                        context.WriteLine(output, "throw new PUnreachableCodeException();");
+                    }
                     break;
                 case AssignStmt assignStmt:
                     WriteLValue(context, output, assignStmt.Location);
@@ -642,7 +645,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     string eventName = context.Names.GetTemporaryName("recvEvent");
                     string[] eventTypeNames = receiveStmt.Cases.Keys.Select(evt => context.Names.GetNameForDecl(evt)).ToArray();
                     string recvArgs = string.Join(", ", eventTypeNames.Select(name => $"typeof({name})"));
-                    context.WriteLine(output, $"var {eventName} = await currentMachine.Receive({recvArgs});");
+                    context.WriteLine(output, $"var {eventName} = await currentMachine.ReceiveEvent({recvArgs});");
                     context.WriteLine(output, $"switch ({eventName}) {{");
                     foreach (var recvCase in receiveStmt.Cases)
                     {
@@ -747,7 +750,7 @@ namespace Microsoft.Pc.Backend.PSharp
                             context.Write(output, ")");
                             break;
                         case PermissionType _:
-                            context.Write(output, $"new PMachineId(");
+                            context.Write(output, $"new PMachineValue(");
                             context.Write(output, "(");
                             WriteExpr(context, output, coerceExpr.SubExpr);
                             context.Write(output, ").Id, ");
@@ -927,7 +930,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NamedTupleType _:
                     throw new NotImplementedException();
                 case PermissionType _:
-                    return "PMachineId";
+                    return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "object";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
@@ -939,7 +942,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "Event";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
-                    return "PMachineId";
+                    return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return "void";
                 case SequenceType sequenceType:

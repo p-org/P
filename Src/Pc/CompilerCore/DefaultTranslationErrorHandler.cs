@@ -89,7 +89,7 @@ namespace Microsoft.Pc
 
         public Exception StaticFunctionNotAllowedAsHandler(ParserRuleContext funName, string name)
         {
-            return IssueError(funName, $"global functions are not directly allowed as handlers, {name}");
+            return IssueError(funName, $"global functions or foreign functions are not directly allowed as handlers, {name}");
         }
 
         public Exception TypeMismatch(ParserRuleContext location, PLanguageType actual, params PLanguageType[] expected)

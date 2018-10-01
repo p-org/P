@@ -3,12 +3,12 @@ using Microsoft.PSharp;
 
 namespace PSharpExtensions
 {
-    public class PMachineId
+    public class PMachineValue
     {
         public MachineId Id { get; }
         public List<string> Permissions { get; }
 
-        public PMachineId(MachineId machine, List<string> permissions)
+        public PMachineValue(MachineId machine, List<string> permissions)
         {
             this.Id = machine;
             this.Permissions = permissions;

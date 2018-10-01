@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using Microsoft.PSharp;
 using System.Linq.Expressions;
+using System.Threading.Tasks;
 using Microsoft.PSharp.Runtime;
 
 namespace PSharpExtensions
@@ -16,7 +17,7 @@ namespace PSharpExtensions
         public List<string> sends = new List<string>();
         public List<string> creates = new List<string>();
         public List<string> receives = new List<string>();
-        public PMachineId self;
+        public PMachineValue self;
         protected object gotoPayload = null;
 
         public class InitializeParameters
@@ -50,7 +51,7 @@ namespace PSharpExtensions
             if (ReceivedEvent is IntializeParametersEvent @event)
             {
                 interfaceName = (@event.Payload as InitializeParameters).InterfaceName;
-                self = new PMachineId(this.Id, this.receives.ToList());
+                self = new PMachineValue(this.Id, this.receives.ToList());
                 this.RaiseEvent(this, new ContructorEvent((@event.Payload as InitializeParameters).Payload));
             }
             else
@@ -64,16 +65,16 @@ namespace PSharpExtensions
             return ex is PNonStandardReturnException ? OnExceptionOutcome.HandledException : base.OnException(methodName, ex);
         }
 
-        public PMachineId CreateInterface(PMachine creator, string createInterface, object payload = null)
+        public PMachineValue CreateInterface(PMachine creator, string createInterface, object payload = null)
         {
             var createdInterface = PModule.linkMap[creator.interfaceName][createInterface];
             this.Assert(this.creates.Contains(createdInterface), $"Machine {this.GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             var createMachine = PModule.interfaceDefinitionMap[createdInterface];
             var machineId = this.CreateMachine(createMachine, new IntializeParametersEvent(new InitializeParameters(createdInterface, payload)));
-            return new PMachineId(machineId, PInterfaces.GetPermissions(createdInterface));
+            return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
 
-        public void SendEvent(PMachine source, PMachineId target, Event ev, object payload = null)
+        public void SendEvent(PMachine source, PMachineValue target, Event ev, object payload = null)
         {
             this.Assert(!(ev is Default), "Machine cannot send a null event");
             this.Assert(this.sends.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
@@ -91,6 +92,11 @@ namespace PSharpExtensions
             var @event = (Event)oneArgConstructor.Invoke(new object[] { payload });
             this.Raise(@event);
             throw new PNonStandardReturnException() {ReturnKind = NonStandardReturn.Raise};
+        }
+
+        public Task<Event> ReceiveEvent(params Type[] events)
+        {
+            return this.Receive(events);
         }
 
         public void GotoState<T>(object payload) where T : MachineState

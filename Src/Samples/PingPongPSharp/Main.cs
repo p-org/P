@@ -88,7 +88,7 @@ namespace receive11
     internal class Main : PMachine
     {
         private int x = 0;
-        private PMachineId m = null;
+        private PMachineValue m = null;
         public Main()
         {
             this.sends.Add("E");
@@ -110,12 +110,12 @@ namespace receive11
         }
         public async Task Anon_4()
         {
-            PMachineId TMP_tmp0_2 = null;
+            PMachineValue TMP_tmp0_2 = null;
             Event TMP_tmp1 = null;
-            PMachineId TMP_tmp2 = null;
+            PMachineValue TMP_tmp2 = null;
             Event TMP_tmp3 = null;
             int TMP_tmp4 = 0;
-            PMachineId TMP_tmp5 = null;
+            PMachineValue TMP_tmp5 = null;
             TMP_tmp0_2 = this.self;
             TMP_tmp1 = new G(null);
             this.SendEvent(this, TMP_tmp0_2, TMP_tmp1);

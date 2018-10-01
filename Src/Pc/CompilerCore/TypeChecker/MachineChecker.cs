@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -16,6 +17,56 @@ namespace Microsoft.Pc.TypeChecker
             PLanguageType startStatePayloadType = GetStatePayload(startState);
             Debug.Assert(startStatePayloadType.IsSameTypeAs(machine.PayloadType));
             ValidateTransitions(handler, machine);
+        }
+
+        public static void ValidateNoStaticHandlers(ITranslationErrorHandler handler, Machine machine)
+        {
+            foreach (var state in machine.AllStates())
+            {
+                var illegalUsage = (state.Entry != null && IsStaticOrForeign(state.Entry));
+                if (illegalUsage)
+                {
+                    throw handler.StaticFunctionNotAllowedAsHandler(state.SourceLocation,
+                        state.Entry.Name);
+                }
+
+                illegalUsage = (state.Exit != null && IsStaticOrForeign(state.Exit));
+                if (illegalUsage)
+                {
+                    throw handler.StaticFunctionNotAllowedAsHandler(state.SourceLocation,
+                        state.Exit.Name);
+                }
+
+                foreach (var eventHandler in state.AllEventHandlers)
+                {
+                    foreach (var pair in state.AllEventHandlers)
+                    {
+                        PEvent handledEvent = pair.Key;
+                        switch (pair.Value)
+                        {
+                            case EventDoAction eventDoAction:
+                                if (eventDoAction.Target != null && IsStaticOrForeign(eventDoAction.Target))
+                                {
+                                    throw handler.StaticFunctionNotAllowedAsHandler(eventDoAction.SourceLocation,
+                                        eventDoAction.Target.Name);
+                                }
+                                break;
+                            case EventGotoState eventGotoState:
+                                if (eventGotoState.TransitionFunction != null && IsStaticOrForeign(eventGotoState.TransitionFunction))
+                                {
+                                    throw handler.StaticFunctionNotAllowedAsHandler(eventGotoState.SourceLocation,
+                                        eventGotoState.TransitionFunction.Name);
+                                }
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+
+        private static bool IsStaticOrForeign(Function function)
+        {
+            return (function.Owner == null || function.IsForeign);
         }
 
         private static void ValidateTransitions(ITranslationErrorHandler handler, Machine machine)

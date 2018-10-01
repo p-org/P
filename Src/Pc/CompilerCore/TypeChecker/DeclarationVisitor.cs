@@ -458,6 +458,7 @@ namespace Microsoft.Pc.TypeChecker
                     case Tuple<string, Function> entryOrExit:
                         if (entryOrExit.Item1.Equals("ENTRY"))
                         {
+                            
                             if (state.Entry != null)
                             {
                                 throw Handler.DuplicateStateEntry(stateBodyItemContext, state.Entry, state);
@@ -507,6 +508,7 @@ namespace Microsoft.Pc.TypeChecker
                 }
             }
             fun.Role |= FunctionRole.EntryHandler;
+
             return Tuple.Create("ENTRY", fun);
         }
 
@@ -597,7 +599,6 @@ namespace Microsoft.Pc.TypeChecker
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
                 }
 
-                // TODO: check that event and function signatures match. Need to do this after all events have had their payloads resolved.
                 actions.Add(new EventDoAction(eventIdContext, evt, fun));
             }
             return actions.ToArray();
@@ -646,6 +647,11 @@ namespace Microsoft.Pc.TypeChecker
             {
                 // SEMI
                 transitionFunction = null;
+            }
+
+            if (transitionFunction != null && transitionFunction.Owner == null)
+            {
+                throw Handler.StaticFunctionNotAllowedAsHandler(context.funName, transitionFunction.Name);
             }
 
             // GOTO stateName 

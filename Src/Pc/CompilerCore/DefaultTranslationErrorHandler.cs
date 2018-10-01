@@ -87,6 +87,11 @@ namespace Microsoft.Pc
             return IssueError(context, $"illegal Coerce, {oldType.OriginalRepresentation} permissions is not a superset of {newType.OriginalRepresentation} (e.g., event {outlierEvent.Name})");
         }
 
+        public Exception StaticFunctionNotAllowedAsHandler(ParserRuleContext funName, string name)
+        {
+            return IssueError(funName, $"global functions are not directly allowed as handlers, {name}");
+        }
+
         public Exception TypeMismatch(ParserRuleContext location, PLanguageType actual, params PLanguageType[] expected)
         {
             return IssueError(location,

@@ -1,4 +1,4 @@
-﻿namespace PSharpExtensions
+﻿namespace PrtSharp.PValues
 {
     // TODO: generate up to T1, ..., T8
     public interface IReadOnlyPrtTuple<out T1>

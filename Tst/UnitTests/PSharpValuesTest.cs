@@ -2,8 +2,8 @@
 using System.Linq;
 using Microsoft.Pc;
 using NUnit.Framework;
-using PSharpExtensions;
-using PSharpExtensions.Values;
+using PrtSharp;
+using PrtSharp.Values;
 
 namespace UnitTests
 {

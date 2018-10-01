@@ -1,9 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Microsoft.PSharp;
 
-namespace PSharpExtensions
+namespace PrtSharp
 {
 
     public class PModule

@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Microsoft.PSharp.IO;
 using Microsoft.PSharp;
+using Microsoft.PSharp.IO;
 
-namespace PSharpExtensions
+namespace PrtSharp
 {
     /// <summary>
     /// Logger that writes text to the console.

@@ -1,6 +1,6 @@
-﻿using PSharpExtensions.Values;
+﻿using PrtSharp.Values;
 
-namespace PSharpExtensions
+namespace PrtSharp
 {
     public static class PrtValues
     {

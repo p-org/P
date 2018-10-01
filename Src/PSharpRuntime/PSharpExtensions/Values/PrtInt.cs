@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PSharpExtensions.Values
+namespace PrtSharp.Values
 {
     [Serializable]
     public sealed class PrtInt : PPrimitiveValue<long>

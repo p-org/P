@@ -1,4 +1,4 @@
-﻿namespace PSharpExtensions.Values
+﻿namespace PrtSharp.Values
 {
     public interface IReadOnlyPrtTuple<out T1>
     {

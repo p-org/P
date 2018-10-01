@@ -1,9 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using Microsoft.PSharp;
 
-namespace PSharpExtensions
+namespace PrtSharp
 {
     public class _GodMachine : Machine
     {

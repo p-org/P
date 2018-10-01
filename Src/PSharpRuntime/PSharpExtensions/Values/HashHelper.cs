@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace PSharpExtensions.Values
+namespace PrtSharp.Values
 {
     internal static class HashHelper
     {

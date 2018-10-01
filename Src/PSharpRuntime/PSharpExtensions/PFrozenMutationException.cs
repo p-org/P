@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace PSharpExtensions
+namespace PrtSharp
 {
     public class PFrozenMutationException : Exception
     {

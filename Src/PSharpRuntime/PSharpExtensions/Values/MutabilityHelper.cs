@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace PSharpExtensions.Values
+﻿namespace PrtSharp.Values
 {
     public static class MutabilityHelper
     {

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace PSharpExtensions.Values
+namespace PrtSharp.Values
 {
     public sealed class PrtMap<TKey, TValue> : IPrtMutableValue, IDictionary<TKey, TValue>
         where TKey : class, IPrtValue

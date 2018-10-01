@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace PSharpExtensions.Values
+namespace PrtSharp.Values
 {
     public abstract class PPrimitiveValue<T> : IPrtValue
     {
@@ -28,7 +28,7 @@ namespace PSharpExtensions.Values
                 return false;
             }
 
-            return Equals((PPrimitiveValue<T>) val);
+            return Equals((object) (PPrimitiveValue<T>) val);
         }
 
         public override int GetHashCode()

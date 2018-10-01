@@ -1,4 +1,4 @@
-﻿namespace PSharpExtensions
+﻿namespace PrtSharp
 {
     public interface IPrtMutableValue : IPrtValue
     {

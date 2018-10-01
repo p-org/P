@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PSharpExtensions
+namespace PrtSharp.PValues
 {
     [Serializable]
     public sealed class PrtBoolValue : PPrimitiveValue<bool>

@@ -1,9 +1,6 @@
 ﻿using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Reflection;
-using System.Threading.Tasks;
 
-namespace PSharpExtensions
+namespace PrtSharp.PValues
 {
     public interface IPrtValue
     {

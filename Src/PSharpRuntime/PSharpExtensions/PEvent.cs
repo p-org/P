@@ -1,6 +1,6 @@
 ﻿using Microsoft.PSharp;
 
-namespace PSharpExtensions
+namespace PrtSharp
 {
     public interface IHasPayload<out T>
     {

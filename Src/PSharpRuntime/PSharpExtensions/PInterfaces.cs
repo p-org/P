@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 
-namespace PSharpExtensions
+namespace PrtSharp
 {
     public class PInterfaces
     {

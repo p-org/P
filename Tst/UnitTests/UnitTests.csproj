@@ -6,6 +6,7 @@
     <IsPackable>false</IsPackable>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <GenerateBindingRedirectsOutputType>true</GenerateBindingRedirectsOutputType>
+    <LangVersion>latest</LangVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="NUnit" Version="3.10.1" />
@@ -14,5 +15,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\Src\Pc\CompilerCore\CompilerCore.csproj" />
+    <ProjectReference Include="..\..\Src\PSharpRuntime\PSharpExtensions\PSharpExtensions.csproj" />
   </ItemGroup>
 </Project>

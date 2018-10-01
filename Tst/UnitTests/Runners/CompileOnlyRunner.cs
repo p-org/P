@@ -17,7 +17,7 @@ namespace UnitTests.Runners
         private readonly IReadOnlyList<FileInfo> inputFiles;
 
         /// <summary>
-        ///     Create a new compile runner
+        ///     Box a new compile runner
         /// </summary>
         /// <param name="compilerOutput"></param>
         /// <param name="inputFiles">The P source files to compile</param>

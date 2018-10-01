@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using Microsoft.Pc;
 using NUnit.Framework;
 using UnitTests.Core;
 using UnitTests.Runners;
@@ -43,12 +45,12 @@ namespace UnitTests
             TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
         
         [TestCaseSource(nameof(RegressionTestSuite))]
-        public void TestAllRegressions(DirectoryInfo testDir, TestConfig runConfig)
+        public void TestPrtRegressions(DirectoryInfo testDir, TestConfig runConfig)
         {
             var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
             var factory = new TestCaseFactory(scratchDir);
-            var testCase = factory.CreateTestCase(testDir, runConfig);
-            TestAssertions.AssertTestCase(testCase);
+            var testCaseC = factory.CreateTestCase(testDir, runConfig, CompilerOutput.C);
+            TestAssertions.AssertTestCase(testCaseC);
         }
 
         [Test]
@@ -66,6 +68,24 @@ namespace UnitTests
                                                 new ExecutionOutputValidator(0, null, null));
 
             TestAssertions.AssertTestCase(testCase);
+        }
+    }
+
+    [TestFixture]
+    [Parallelizable(ParallelScope.Children)]
+    public class PSharpRegressionTests
+    {
+        private static IEnumerable<TestCaseData> RegressionTestSuite =>
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
+
+        [TestCaseSource(nameof(RegressionTestSuite))]
+        public void TestPSharpRegressions(DirectoryInfo testDir, TestConfig runConfig)
+        {
+            // TODO: static error test cases are run twice here.
+            var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            var factory = new TestCaseFactory(scratchDir);
+            var testCasePSharp = factory.CreateTestCase(testDir, runConfig, CompilerOutput.PSharp);
+            TestAssertions.AssertTestCase(testCasePSharp);
         }
     }
 }

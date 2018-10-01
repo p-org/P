@@ -1,10 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Threading.Tasks;
 using Microsoft.Pc.Backend.ASTExt;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST;
@@ -607,7 +604,6 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case InsertStmt insertStmt:
                     throw new NotImplementedException();
-                    break;
                 case MoveAssignStmt moveAssignStmt:
                     WriteLValue(context, output, moveAssignStmt.ToLocation);
                     context.WriteLine(output, $" = {context.Names.GetNameForDecl(moveAssignStmt.FromVariable)};");
@@ -681,7 +677,6 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     throw new NotImplementedException();
-                    break;
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
                     WriteExpr(context, output, whileStmt.Condition);
@@ -896,6 +891,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     var key = context.Names.GetTemporaryName("k");
                     var val = context.Names.GetTemporaryName("v");
                     return $"({termName}).ToDictionary({key} => {RenderClone(context, map.KeyType, key + ".Key")}, {val} => {RenderClone(context, map.ValueType, val + ".Value")})";
+                case NamedTupleType type:
+                    throw new NotImplementedException("named tuple types");
+                case PermissionType type:
+                    throw new NotImplementedException("permission types");
                 case PrimitiveType type when type.IsSameTypeAs(PrimitiveType.Int):
                     return termName;
                 case PrimitiveType type when type.IsSameTypeAs(PrimitiveType.Float):
@@ -906,14 +905,16 @@ namespace Microsoft.Pc.Backend.PSharp
                     return termName;
                 case PrimitiveType type when type.IsSameTypeAs(PrimitiveType.Event):
                     return GetDefaultValue(context, type);
+                case TupleType type:
+                    throw new NotImplementedException("tuple types");
                 default:
                     throw new NotImplementedException($"Cloning {cloneType.OriginalRepresentation}");
             }
         }
 
-        private string GetCSharpType(CompilationContext context, PLanguageType returnType)
+        private string GetCSharpType(CompilationContext context, PLanguageType type)
         {
-            switch (returnType.Canonicalize())
+            switch (type.Canonicalize())
             {
                 case DataType _:
                     return "object";
@@ -946,7 +947,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case TupleType _:
                     throw new NotImplementedException();
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(returnType));
+                    throw new ArgumentOutOfRangeException(nameof(type));
             }
         }
 

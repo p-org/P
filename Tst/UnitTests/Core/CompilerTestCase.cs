@@ -14,7 +14,7 @@ namespace UnitTests.Core
         private readonly ITestResultsValidator validator;
 
         /// <summary>
-        /// Create a new test case with the given scratch directory, test runner, and validator
+        /// Box a new test case with the given scratch directory, test runner, and validator
         /// </summary>
         /// <param name="scratchDirectory">The scratch directory to use. Caller is responsible for cleaning up.</param>
         /// <param name="runner">The test runner to use</param>

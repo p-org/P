@@ -17,7 +17,7 @@ namespace UnitTests.Runners
         private readonly IReadOnlyList<FileInfo> sources;
 
         /// <summary>
-        /// Create a new test runner from the given P source files
+        /// Box a new test runner from the given P source files
         /// </summary>
         /// <param name="sources">P source files to compile</param>
         public PrtRunner(IReadOnlyList<FileInfo> sources)

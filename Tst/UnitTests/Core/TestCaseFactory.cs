@@ -16,7 +16,7 @@ namespace UnitTests.Core
         private readonly DirectoryInfo testTempBaseDir;
 
         /// <summary>
-        /// Create a new factory with the given scratch directory
+        /// Box a new factory with the given scratch directory
         /// </summary>
         /// <param name="testTempBaseDir">The parent directory for each test's scratch directories</param>
         public TestCaseFactory(DirectoryInfo testTempBaseDir)
@@ -25,12 +25,12 @@ namespace UnitTests.Core
         }
 
         /// <summary>
-        /// Create a test case from the given directory and parsed Prt run configuration
+        /// Box a test case from the given directory and parsed Prt run configuration
         /// </summary>
         /// <param name="testDir">The directory containing P source files</param>
         /// <param name="runConfig">The run configuration for the test, or null if compile-only</param>
         /// <returns>The test case in a runnable state.</returns>
-        public CompilerTestCase CreateTestCase(DirectoryInfo testDir, TestConfig runConfig)
+        public CompilerTestCase CreateTestCase(DirectoryInfo testDir, TestConfig runConfig, CompilerOutput output)
         {
             // TODO: support other run configurations.
             var inputFiles = testDir.GetFiles("*.p");
@@ -43,23 +43,36 @@ namespace UnitTests.Core
 
             if (runConfig != null)
             {
-                
-                runner = new PrtRunner(inputFiles);
+                string expectedOutput;
+                if (output.Equals(CompilerOutput.C))
+                {
+                    runner = new PrtRunner(inputFiles);
+                    expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
+                }
+                else if (output.Equals(CompilerOutput.PSharp))
+                {
+                    runner = new PSharpRunner(inputFiles);
+                    expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException();
+                }
 
-                string expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
-                ParseExpectedOutput(expectedOutput, out string stdout, out string stderr, out int exitCode);
                 // TODO: fix golden outputs for dynamic error assertions (79 tests)
+                ParseExpectedOutput(expectedOutput, out string stdout, out string stderr, out int exitCode);
                 if (testName.Contains("/DynamicError/"))
                 {
                     stdout = null;
                     stderr = null;
                 }
                 validator = new ExecutionOutputValidator(exitCode, stdout, stderr);
-                
-                /*runner = new PSharpRunner(inputFiles);
 
-                bool isStaticError = testName.Contains("/StaticError/");
-                validator = isStaticError ? (ITestResultsValidator)new StaticErrorValidator() : new CompileSuccessValidator();*/
+                // TODO: fix golden output for P#
+                if (output.Equals(CompilerOutput.PSharp))
+                {
+                    validator = new CompileSuccessValidator();
+                }
             }
             else
             {
@@ -70,7 +83,7 @@ namespace UnitTests.Core
                 validator = isStaticError ? (ITestResultsValidator) new StaticErrorValidator() : new CompileSuccessValidator();
             }
 
-            DirectoryInfo tempDirName = Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, testName));
+            DirectoryInfo tempDirName = Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, output.ToString(), testName));
             return new CompilerTestCase(tempDirName, runner, validator);
         }
 

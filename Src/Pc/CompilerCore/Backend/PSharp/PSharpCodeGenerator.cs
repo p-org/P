@@ -71,7 +71,8 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "using System.Collections.Generic;");
             context.WriteLine(output, "using System.Linq;");
             context.WriteLine(output, "using System.IO;");
-            context.WriteLine(output, "using PSharpExtensions;");
+            context.WriteLine(output, "using PrtSharp;");
+            context.WriteLine(output, "using PrtSharp.Values;");
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);

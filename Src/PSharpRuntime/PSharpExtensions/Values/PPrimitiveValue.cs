@@ -28,7 +28,7 @@ namespace PrtSharp.Values
                 return false;
             }
 
-            return Equals((object) (PPrimitiveValue<T>) val);
+            return Equals((PPrimitiveValue<T>) val);
         }
 
         public override int GetHashCode()
@@ -41,9 +41,9 @@ namespace PrtSharp.Values
             return value.ToString();
         }
 
-        public static implicit operator T(PPrimitiveValue<T> prtInt)
+        public static implicit operator T(PPrimitiveValue<T> prim)
         {
-            return prtInt.value;
+            return prim.value;
         }
 
         public abstract IPrtValue Clone();

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace PrtSharp.PValues
+namespace PrtSharp.Values
 {
     public class PMachineValue
     {

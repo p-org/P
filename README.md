@@ -5,7 +5,7 @@ P is a language for asynchronous event-driven programming. P allows the programm
 Manual
 =========
 
-Check the [P manual](https://github.com/p-org/P/blob/master/Doc/Manual/pmanual.pdf).
+Check the [P Wiki](https://github.com/p-org/P/wiki/Introduction-to-P-language).
 
 Information for building P framework is available [here](https://github.com/p-org/P/wiki).
 

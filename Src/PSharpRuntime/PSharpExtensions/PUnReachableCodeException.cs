@@ -7,21 +7,21 @@ using System.Threading.Tasks;
 
 namespace PSharpExtensions
 {
-    public class PUnReachableCodeException : Exception
+    public class PUnreachableCodeException : Exception
     {
-        public PUnReachableCodeException()
+        public PUnreachableCodeException()
         {
         }
 
-        public PUnReachableCodeException(string message) : base(message)
+        public PUnreachableCodeException(string message) : base(message)
         {
         }
 
-        public PUnReachableCodeException(string message, Exception innerException) : base(message, innerException)
+        public PUnreachableCodeException(string message, Exception innerException) : base(message, innerException)
         {
         }
 
-        protected PUnReachableCodeException(SerializationInfo info, StreamingContext context) : base(info, context)
+        protected PUnreachableCodeException(SerializationInfo info, StreamingContext context) : base(info, context)
         {
         }
     }

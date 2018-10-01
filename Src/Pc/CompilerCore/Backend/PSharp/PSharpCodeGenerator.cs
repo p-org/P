@@ -534,7 +534,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"\"{assertStmt.Message}\"");
                     context.WriteLine(output, ");");
                     //last statement
-                    context.WriteLine(output, "throw new PUnReachableCodeException();");
+                    context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
                 case AssignStmt assignStmt:
                     WriteLValue(context, output, assignStmt.Location);
@@ -589,7 +589,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     WriteExpr(context, output, gotoStmt.Payload);
                     context.WriteLine(output, ");");
                     //last statement
-                    context.WriteLine(output, "throw new PUnReachableCodeException();");
+                    context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
                 case IfStmt ifStmt:
                     context.Write(output, "if (");
@@ -613,7 +613,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PopStmt popStmt:
                     context.WriteLine(output, $"currentMachine.PopState();");
                     //last statement
-                    context.WriteLine(output, "throw new PUnReachableCodeException();");
+                    context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
                 case PrintStmt printStmt:
                     context.Write(output, $"PModule.runtime.Logger.WriteLine(\"{printStmt.Message}\"");
@@ -636,7 +636,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     context.WriteLine(output, $");");
                     //last statement
-                    context.WriteLine(output, "throw new PUnReachableCodeException();");
+                    context.WriteLine(output, "throw new PUnreachableCodeException();");
                     break;
                 case ReceiveStmt receiveStmt:
                     string eventName = context.Names.GetTemporaryName("recvEvent");

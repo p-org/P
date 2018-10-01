@@ -652,12 +652,14 @@ namespace Microsoft.Pc.Backend.PSharp
                     {
                         string caseName = context.Names.GetTemporaryName("evt");
                         context.WriteLine(output, $"case {context.Names.GetNameForDecl(recvCase.Key)} {caseName}: {{");
-
+                        
                         context.WriteLine(output, "} break;");
+                        throw new NotImplementedException();
                     }
                     context.WriteLine(output, "}");
                     break;
                 case RemoveStmt removeStmt:
+                    throw new NotImplementedException();
                     break;
                 case ReturnStmt returnStmt:
                     context.Write(output, "return ");

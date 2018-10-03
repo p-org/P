@@ -1,21 +1,18 @@
-module OSModule 
-private;
+module OSModule =
 {
-  LEDMachine, 
-  TimerMachine,
-  SwitchMachine
-}
+  LEDMachine -> LEDInterface, 
+  TimerMachine -> TimerInterface,
+  SwitchMachine -> SwitchInterface
+};
 
-module OSRDriverModule 
-private;
+module OSRDriverModule =
 {
-  OSRDriverMachine
-}
+  OSRDriverMachine -> OSRDriverInterface
+};
 
-module UserModule 
-private;
+module UserModule =
 {
   UserMachine
-}
+};
 
-implementation (rename UserMachine to Main in UserModule) || OSModule || OSRDriverModule;
+implementation impl[main = UserMachine]: (compose UserModule, OSModule, OSRDriverModule);

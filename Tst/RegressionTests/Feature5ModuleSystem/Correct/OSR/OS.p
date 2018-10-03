@@ -1,4 +1,4 @@
-machine SwitchMachine : SwitchInterface
+machine SwitchMachine
 sends eSwitchStatusChange; 
 {
 	var Driver: OSRDriverInterface;
@@ -23,7 +23,7 @@ sends eSwitchStatusChange;
     }
 }
 
-machine LEDMachine : LEDInterface
+machine LEDMachine
 sends eTransferSuccess, eTransferFailure;
 {
 	var Driver: OSRDriverInterface;
@@ -72,7 +72,7 @@ sends eTransferSuccess, eTransferFailure;
 	}
 }
 
-machine TimerMachine: TimerInterface
+machine TimerMachine
 sends eTimerFired, eStoppingFailure, eStoppingSuccess;
 {
 	var Driver : OSRDriverInterface;

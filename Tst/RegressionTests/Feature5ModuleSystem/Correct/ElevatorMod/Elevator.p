@@ -18,23 +18,17 @@ event eUnit assert 1;
 event eStopTimerReturned assert 1;
 event eObjectEncountered assert 1;
 
-type ElevatorInterface() = { eOpenDoor, eCloseDoor, eDoorOpened, eTimerFired, eStopTimerReturned, eDoorClosed, eObjectDetected, eDoorStopped,
-eOperationSuccess, eOperationFailure };
 
-type TimerInterface(machine) = { eStartDoorCloseTimer, eStopDoorCloseTimer };
-
-type DoorInterface(machine) = { eSendCommandToOpenDoor, eSendCommandToCloseDoor, eSendCommandToStopDoor, eSendCommandToResetDoor};
-
-machine Elevator : ElevatorInterface
+machine Elevator
 sends eSendCommandToResetDoor, eSendCommandToOpenDoor, eStartDoorCloseTimer, eSendCommandToCloseDoor, eSendCommandToStopDoor, eStopDoorCloseTimer;
 {
-    var TimerV: TimerInterface;
+    var TimerV: Timer;
     var DoorV: machine;
 
     start state Init {
         entry {
-            TimerV = new TimerInterface(this);
-            DoorV = new DoorInterface(this);
+            TimerV = new Timer(this);
+            DoorV = new Door(this);
             raise eUnit;
         }
 
@@ -139,11 +133,11 @@ sends eSendCommandToResetDoor, eSendCommandToOpenDoor, eStartDoorCloseTimer, eSe
 machine Main 
 sends eOpenDoor, eCloseDoor;
 {
-    var ElevatorV : ElevatorInterface;
+    var ElevatorV : Elevator;
 
     start state Init {
         entry {
-            ElevatorV = new ElevatorInterface();
+            ElevatorV = new Elevator();
             raise eUnit; 
         }
 
@@ -164,13 +158,13 @@ sends eOpenDoor, eCloseDoor;
     }
 }
 
-machine Door : DoorInterface
+machine Door
 sends eDoorOpened, eObjectDetected, eDoorClosed, eDoorStopped;
 {
-    var ElevatorV : ElevatorInterface;
+    var ElevatorV : Elevator;
 
     start state _Init {
-	entry (payload: machine) { ElevatorV = payload as ElevatorInterface; raise eUnit; }
+	entry (payload: machine) { ElevatorV = payload as Elevator; raise eUnit; }
         on eUnit goto Init;
     }
 
@@ -239,13 +233,13 @@ sends eDoorOpened, eObjectDetected, eDoorClosed, eDoorStopped;
     }
 }
 
-machine Timer : TimerInterface
+machine Timer
 sends eTimerFired, eOperationFailure, eOperationSuccess;
 {
-    var ElevatorV : ElevatorInterface;
+    var ElevatorV : Elevator;
 
     start state _Init {
-	entry (payload: machine) { ElevatorV = payload as ElevatorInterface; raise eUnit; }
+	entry (payload: machine) { ElevatorV = payload as Elevator; raise eUnit; }
         on eUnit goto Init;
     }
 
@@ -286,4 +280,12 @@ sends eTimerFired, eOperationFailure, eOperationSuccess;
         on eUnit goto Init;
     }
 }
+
+module Elevator = { Elevator, Door, Timer };
+
+module User = { Main };
+
+implementation impl[main = Main]: (compose Elevator, User);
+
+test testcase1[main = Main]: (compose Elevator, User);
 

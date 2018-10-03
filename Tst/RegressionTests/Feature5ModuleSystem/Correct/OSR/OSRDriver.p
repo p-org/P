@@ -1,4 +1,4 @@
-machine OSRDriverMachine : OSRDriverInterface
+machine OSRDriverMachine
 sends eUpdateBarGraphStateUsingControlTransfer, eSetLedStateToStableUsingControlTransfer, 
 eSetLedStateToUnstableUsingControlTransfer, eStartDebounceTimer, eStopTimer;
 {
@@ -11,9 +11,9 @@ eSetLedStateToUnstableUsingControlTransfer, eStartDebounceTimer, eStopTimer;
 	start state Driver_Init {
 		defer eSwitchStatusChange;
 		entry {
-			TimerV = new TimerInterface(this);
-			LEDV = new LEDInterface(this);
-			SwitchV = new SwitchInterface(this);
+			TimerV = new TimerInterface(this to OSRDriverInterface);
+			LEDV = new LEDInterface(this to OSRDriverInterface);
+			SwitchV = new SwitchInterface(this to OSRDriverInterface);
 			raise(eUnit);
 		}
 		

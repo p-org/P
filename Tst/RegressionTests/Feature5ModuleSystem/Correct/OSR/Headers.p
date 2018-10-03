@@ -21,20 +21,17 @@ event eUnit assert 1;
 
 
 //interfaces
-type OSRDriverInterface() = {
+interface OSRDriverInterface() receives
   eSwitchStatusChange, eD0Exit, eD0Entry, eOperationSuccess, eTransferSuccess,
-  eTransferFailure, eTimerFired, eTimerStopped,eStoppingSuccess, eStoppingFailure
-};
+  eTransferFailure, eTimerFired, eTimerStopped,eStoppingSuccess, eStoppingFailure;
 
-type SwitchInterface(OSRDriverInterface) = { eYes };
+interface SwitchInterface(OSRDriverInterface) receives eYes;
 
-type TimerInterface(OSRDriverInterface) = {
-  eStartDebounceTimer, eStopTimer
-};
-type LEDInterface(OSRDriverInterface) = {
+interface TimerInterface(OSRDriverInterface) receives eStartDebounceTimer, eStopTimer;
+
+interface LEDInterface(OSRDriverInterface) receives
   eUpdateBarGraphStateUsingControlTransfer, eSetLedStateToUnstableUsingControlTransfer,
-  eSetLedStateToStableUsingControlTransfer
-};
+  eSetLedStateToStableUsingControlTransfer;
 
 
 

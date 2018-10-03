@@ -2,23 +2,23 @@ event E1;
 event E2;
 event E3;
 
-type I1(int) = {E1, E2};
-type I2(int) = {E1};
-type I3(int) = {E3};
+interface I1(int) receives E1, E2;
+interface I2(int) receives E1;
+interface I3(int) receives E3;
 
 machine Main {
 	start state S {
 		entry {
-			var x: I1;
+			var x: I2;
       var y: I2;
 			y = x to I2;
       x = new I2(1);
-      x = new I3(1);
+      new I3(1);
 		}
 	}
 }
 
-machine M : I2, I3
+machine M
 receives E1, E3;
 {
   start state S {
@@ -27,4 +27,6 @@ receives E1, E3;
     }
   }
 }
+
+implementation impl[main = Main]: {M -> I2, M -> I3, Main};
 

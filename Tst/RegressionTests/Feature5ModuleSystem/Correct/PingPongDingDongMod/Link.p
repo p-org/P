@@ -1,7 +1,7 @@
-module PingPongDingDong
+module PingPongDingDong = 
 {
   PongDongMachine,
   PingDingMachine
-}
+};
 
-implementation (rename PingDingMachine to Main in PingPongDingDong);
+implementation impl[main = PingDingMachine]: PingPongDingDong;

@@ -1,0 +1,6 @@
+arg: ..\Elevator.p
+arg: /shortFileNames
+arg: /test
+arg: /outputDir:..\.
+link: ..\Link.p 
+dsc: pc.exe, Modular Elevator Implementation

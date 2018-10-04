@@ -12,7 +12,7 @@ module OSRDriverModule =
 
 module UserModule =
 {
-  UserMachine
+  Main
 };
 
-implementation impl[main = UserMachine]: (compose UserModule, OSModule, OSRDriverModule);
+implementation DefaultImpl[main = Main]: (compose UserModule, OSModule, OSRDriverModule);

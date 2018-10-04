@@ -1,4 +1,4 @@
-machine UserMachine 
+machine Main 
 sends eD0Entry, eD0Exit;
 {
   var Driver: machine;

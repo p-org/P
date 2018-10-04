@@ -1293,6 +1293,9 @@ namespace Microsoft.Pc.Backend.Prt
                         case PrimitiveType primitiveType when PrimitiveType.Float.IsSameTypeAs(primitiveType):
                             coerceCtor = "PrtMkFloatValue";
                             break;
+                        case PermissionType permissionType:
+                            coerceCtor = "PrtMkMachineValue";
+                            break;
                         default:
                             throw context.Handler.InternalError(coerceExpr.SourceLocation,
                                 new ArgumentOutOfRangeException(nameof(coerceExpr.NewType)));
@@ -1307,6 +1310,10 @@ namespace Microsoft.Pc.Backend.Prt
                             break;
                         case PrimitiveType primitiveType when PrimitiveType.Float.IsSameTypeAs(primitiveType):
                             coerceUnpack = "PrtPrimGetFloat";
+                            break;
+                        case PrimitiveType primitiveType when PrimitiveType.Machine.IsSameTypeAs(primitiveType):
+                        case PermissionType _:
+                            coerceUnpack = "PrtPrimGetMachine";
                             break;
                         default:
                             throw context.Handler.InternalError(coerceExpr.SourceLocation,

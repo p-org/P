@@ -19,6 +19,7 @@ namespace UnitTests.Core
             Path.Combine("RegressionTests","Feature2Stmts"),
             Path.Combine("RegressionTests","Feature3Exprs"),
             Path.Combine("RegressionTests","Feature4DataTypes"),
+            Path.Combine("RegressionTests","Feature5ModuleSystem"),
             Path.Combine("RegressionTests","Integration")
         };
 

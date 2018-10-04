@@ -1,0 +1,693 @@
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Main.Init
+OUT: <CreateLog> Machine Elevator(2) is created
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.Init
+OUT: <CreateLog> Machine Timer(3) is created
+OUT: <StateLog> Machine Timer(3) entered state Timer._Init
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer._Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <CreateLog> Machine Door(4) is created
+OUT: <StateLog> Machine Door(4) entered state Door._Init
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door._Init
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <RaiseLog> Machine Elevator(2) raised event eUnit with payload null
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.Init
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosed
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ActionLog> Machine Door(4) ignored event eSendCommandToResetDoor in state Door.Init
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Init
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eCloseDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eCloseDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eCloseDoor in state Elevator.DoorClosed
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eCloseDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eCloseDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eCloseDoor in state Elevator.DoorClosed
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpening
+OUT: <EnqueueLog> Enqueued event eSendCommandToOpenDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToOpenDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.OpenDoor
+OUT: <EnqueueLog> Enqueued event eDoorOpened with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.OpenDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorOpened with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpening
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ResetDoor
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eCloseDoor with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <PushLog> Machine Elevator(2) pushed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingTimer
+OUT: <EnqueueLog> Enqueued event eStopDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStopDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.ConsiderStopping
+OUT: <EnqueueLog> Enqueued event eOperationFailure with payload null on Machine Elevator(2)
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.ConsiderStopping
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eOperationFailure with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.StoppingTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.WaitingForTimer
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.WaitingForTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.ReturnState
+OUT: <RaiseLog> Machine Elevator(2) raised event eStopTimerReturned with payload null
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.ReturnState
+OUT: <PopLog> Machine Elevator(2) popped with unhandled event eStopTimerReturned and reentered state Elevator.DoorOpened
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ActionLog> Machine Door(4) ignored event eSendCommandToResetDoor in state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <PushLog> Machine Elevator(2) pushed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingTimer
+OUT: <EnqueueLog> Enqueued event eStopDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStopDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.ConsiderStopping
+OUT: <EnqueueLog> Enqueued event eOperationFailure with payload null on Machine Elevator(2)
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.ConsiderStopping
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eOperationFailure with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.StoppingTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.WaitingForTimer
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.WaitingForTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.ReturnState
+OUT: <RaiseLog> Machine Elevator(2) raised event eStopTimerReturned with payload null
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.ReturnState
+OUT: <PopLog> Machine Elevator(2) popped with unhandled event eStopTimerReturned and reentered state Elevator.DoorOpened
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ActionLog> Machine Door(4) ignored event eSendCommandToResetDoor in state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpenedOkToClose
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <DequeueLog> Dequeued event eCloseDoor with payload null by Machine Elevator(2)
+OUT: <PushLog> Machine Elevator(2) pushed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingTimer
+OUT: <EnqueueLog> Enqueued event eStopDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStopDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.ConsiderStopping
+OUT: <EnqueueLog> Enqueued event eOperationSuccess with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.ConsiderStopping
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eOperationSuccess with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.StoppingTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.ReturnState
+OUT: <RaiseLog> Machine Elevator(2) raised event eStopTimerReturned with payload null
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.ReturnState
+OUT: <PopLog> Machine Elevator(2) popped with unhandled event eStopTimerReturned and reentered state Elevator.DoorOpenedOkToClose
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpenedOkToClose
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosing
+OUT: <EnqueueLog> Enqueued event eSendCommandToCloseDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToCloseDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.ConsiderClosingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosing
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingDoor
+OUT: <EnqueueLog> Enqueued event eSendCommandToStopDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToStopDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ConsiderClosingDoor
+OUT: <StateLog> Machine Door(4) entered state Door.StopDoor
+OUT: <EnqueueLog> Enqueued event eDoorStopped with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.StopDoor
+OUT: <StateLog> Machine Door(4) entered state Door.OpenDoor
+OUT: <EnqueueLog> Enqueued event eDoorOpened with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.OpenDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorStopped with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.StoppingDoor
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpening
+OUT: <EnqueueLog> Enqueued event eSendCommandToOpenDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToOpenDoor with payload null by Machine Door(4)
+OUT: <ActionLog> Machine Door(4) ignored event eSendCommandToOpenDoor in state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorOpened with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpening
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ResetDoor
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <PushLog> Machine Elevator(2) pushed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingTimer
+OUT: <EnqueueLog> Enqueued event eStopDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStopDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.ConsiderStopping
+OUT: <EnqueueLog> Enqueued event eOperationFailure with payload null on Machine Elevator(2)
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.ConsiderStopping
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eOperationFailure with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.StoppingTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.WaitingForTimer
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.WaitingForTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.ReturnState
+OUT: <RaiseLog> Machine Elevator(2) raised event eStopTimerReturned with payload null
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.ReturnState
+OUT: <PopLog> Machine Elevator(2) popped with unhandled event eStopTimerReturned and reentered state Elevator.DoorOpened
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ActionLog> Machine Door(4) ignored event eSendCommandToResetDoor in state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpenedOkToClose
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpenedOkToClose
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosing
+OUT: <EnqueueLog> Enqueued event eSendCommandToCloseDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToCloseDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.ConsiderClosingDoor
+OUT: <RaiseLog> Machine Door(4) raised event eObjectEncountered with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.ConsiderClosingDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ObjectEncountered
+OUT: <EnqueueLog> Enqueued event eObjectDetected with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.ObjectEncountered
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <DequeueLog> Dequeued event eObjectDetected with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosing
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpening
+OUT: <EnqueueLog> Enqueued event eSendCommandToOpenDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToOpenDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.OpenDoor
+OUT: <EnqueueLog> Enqueued event eDoorOpened with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.OpenDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorOpened with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpening
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ResetDoor
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <PushLog> Machine Elevator(2) pushed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingTimer
+OUT: <EnqueueLog> Enqueued event eStopDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStopDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.ConsiderStopping
+OUT: <EnqueueLog> Enqueued event eOperationFailure with payload null on Machine Elevator(2)
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.ConsiderStopping
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eOperationFailure with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.StoppingTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.WaitingForTimer
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.WaitingForTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.ReturnState
+OUT: <RaiseLog> Machine Elevator(2) raised event eStopTimerReturned with payload null
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.ReturnState
+OUT: <PopLog> Machine Elevator(2) popped with unhandled event eStopTimerReturned and reentered state Elevator.DoorOpened
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ActionLog> Machine Door(4) ignored event eSendCommandToResetDoor in state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpenedOkToClose
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpenedOkToClose
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosing
+OUT: <EnqueueLog> Enqueued event eSendCommandToCloseDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToCloseDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.ConsiderClosingDoor
+OUT: <RaiseLog> Machine Door(4) raised event eObjectEncountered with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.ConsiderClosingDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ObjectEncountered
+OUT: <EnqueueLog> Enqueued event eObjectDetected with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.ObjectEncountered
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <DequeueLog> Dequeued event eObjectDetected with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosing
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpening
+OUT: <EnqueueLog> Enqueued event eSendCommandToOpenDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToOpenDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.OpenDoor
+OUT: <EnqueueLog> Enqueued event eDoorOpened with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.OpenDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorOpened with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpening
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ResetDoor
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpenedOkToClose
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpenedOkToClose
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosing
+OUT: <EnqueueLog> Enqueued event eSendCommandToCloseDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToCloseDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.ConsiderClosingDoor
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.ConsiderClosingDoor
+OUT: <StateLog> Machine Door(4) entered state Door.CloseDoor
+OUT: <EnqueueLog> Enqueued event eDoorClosed with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.CloseDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorClosed with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosing
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosed
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ResetDoor
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpening
+OUT: <EnqueueLog> Enqueued event eSendCommandToOpenDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToOpenDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.OpenDoor
+OUT: <EnqueueLog> Enqueued event eDoorOpened with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.OpenDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorOpened with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpening
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ResetDoor
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <PushLog> Machine Elevator(2) pushed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingTimer
+OUT: <EnqueueLog> Enqueued event eStopDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStopDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.ConsiderStopping
+OUT: <EnqueueLog> Enqueued event eOperationSuccess with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.ConsiderStopping
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eOperationSuccess with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.StoppingTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.ReturnState
+OUT: <RaiseLog> Machine Elevator(2) raised event eStopTimerReturned with payload null
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.ReturnState
+OUT: <PopLog> Machine Elevator(2) popped with unhandled event eStopTimerReturned and reentered state Elevator.DoorOpened
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ActionLog> Machine Door(4) ignored event eSendCommandToResetDoor in state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpenedOkToClose
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpenedOkToClose
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosing
+OUT: <EnqueueLog> Enqueued event eSendCommandToCloseDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToCloseDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.ConsiderClosingDoor
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.ConsiderClosingDoor
+OUT: <StateLog> Machine Door(4) entered state Door.CloseDoor
+OUT: <EnqueueLog> Enqueued event eDoorClosed with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.CloseDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorClosed with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosing
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosed
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ResetDoor
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpening
+OUT: <EnqueueLog> Enqueued event eSendCommandToOpenDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToOpenDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.OpenDoor
+OUT: <EnqueueLog> Enqueued event eDoorOpened with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.OpenDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ResetDoor
+OUT: <DequeueLog> Dequeued event eDoorOpened with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpening
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpened
+OUT: <EnqueueLog> Enqueued event eSendCommandToResetDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToResetDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.ResetDoor
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.SendTimerFired
+OUT: <EnqueueLog> Enqueued event eTimerFired with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.SendTimerFired
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eTimerFired with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpened
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorOpenedOkToClose
+OUT: <EnqueueLog> Enqueued event eStartDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStartDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.Init
+OUT: <StateLog> Machine Timer(3) entered state Timer.TimerStarted
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eCloseDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eCloseDoor with payload null by Machine Elevator(2)
+OUT: <PushLog> Machine Elevator(2) pushed
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingTimer
+OUT: <EnqueueLog> Enqueued event eStopDoorCloseTimer with payload null on Machine Timer(3)
+OUT: <DequeueLog> Dequeued event eStopDoorCloseTimer with payload null by Machine Timer(3)
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.TimerStarted
+OUT: <StateLog> Machine Timer(3) entered state Timer.ConsiderStopping
+OUT: <EnqueueLog> Enqueued event eOperationSuccess with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Timer(3) raised event eUnit with payload null
+OUT: <ExitLog> Machine Timer(3) exiting state Timer.ConsiderStopping
+OUT: <StateLog> Machine Timer(3) entered state Timer.Init
+OUT: <DequeueLog> Dequeued event eOperationSuccess with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.StoppingTimer
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.ReturnState
+OUT: <RaiseLog> Machine Elevator(2) raised event eStopTimerReturned with payload null
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.ReturnState
+OUT: <PopLog> Machine Elevator(2) popped with unhandled event eStopTimerReturned and reentered state Elevator.DoorOpenedOkToClose
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorOpenedOkToClose
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.DoorClosing
+OUT: <EnqueueLog> Enqueued event eSendCommandToCloseDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToCloseDoor with payload null by Machine Door(4)
+OUT: <ExitLog> Machine Door(4) exiting state Door.Init
+OUT: <StateLog> Machine Door(4) entered state Door.ConsiderClosingDoor
+OUT: <RaiseLog> Machine Door(4) raised event eObjectEncountered with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.ConsiderClosingDoor
+OUT: <StateLog> Machine Door(4) entered state Door.ObjectEncountered
+OUT: <EnqueueLog> Enqueued event eObjectDetected with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Door(4) raised event eUnit with payload null
+OUT: <ExitLog> Machine Door(4) exiting state Door.ObjectEncountered
+OUT: <StateLog> Machine Door(4) entered state Door.Init
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ExitLog> Machine Elevator(2) exiting state Elevator.DoorClosing
+OUT: <StateLog> Machine Elevator(2) entered state Elevator.StoppingDoor
+OUT: <EnqueueLog> Enqueued event eSendCommandToStopDoor with payload null on Machine Door(4)
+OUT: <DequeueLog> Dequeued event eSendCommandToStopDoor with payload null by Machine Door(4)
+OUT: <ActionLog> Machine Door(4) ignored event eSendCommandToStopDoor in state Door.Init
+OUT: <DequeueLog> Dequeued event eObjectDetected with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eObjectDetected in state Elevator.StoppingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eOpenDoor in state Elevator.StoppingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eOpenDoor in state Elevator.StoppingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eOpenDoor in state Elevator.StoppingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eOpenDoor in state Elevator.StoppingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eOpenDoor in state Elevator.StoppingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eOpenDoor in state Elevator.StoppingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eOpenDoor with payload null on Machine Elevator(2)
+OUT: <DequeueLog> Dequeued event eOpenDoor with payload null by Machine Elevator(2)
+OUT: <ActionLog> Machine Elevator(2) ignored event eOpenDoor in state Elevator.StoppingDoor
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: <EnqueueLog> Enqueued event eCloseDoor with payload null on Machine Elevator(2)
+OUT: <RaiseLog> Machine Main(1) raised event eUnit with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Loop
+OUT: <StateLog> Machine Main(1) entered state Main.Loop
+OUT: exiting with PRT_STATUS_EVENT_OVERFLOW
+OUT: 
+EXIT: 1

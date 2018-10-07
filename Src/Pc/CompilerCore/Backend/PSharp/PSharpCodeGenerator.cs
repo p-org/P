@@ -611,7 +611,20 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     break;
                 case InsertStmt insertStmt:
-                    throw new NotImplementedException();
+                    WriteExpr(context, output, insertStmt.Variable);
+                    if (PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map))
+                    {
+                        context.Write(output, ".Add(");
+                    }
+                    else
+                    {
+                        context.Write(output, ".Insert(");
+                    }
+                    WriteExpr(context, output, insertStmt.Index);
+                    context.Write(output, ", ");
+                    WriteExpr(context, output, insertStmt.Value);
+                    context.WriteLine(output, ");");
+                    break;
                 case MoveAssignStmt moveAssignStmt:
                     WriteLValue(context, output, moveAssignStmt.ToLocation);
                     context.WriteLine(output, $" = {context.Names.GetNameForDecl(moveAssignStmt.FromVariable)};");
@@ -675,7 +688,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case RemoveStmt removeStmt:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("remove statements");
                     break;
                 case ReturnStmt returnStmt:
                     context.Write(output, "return ");
@@ -701,7 +714,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, $");");
                     break;
                 case SwapAssignStmt swapAssignStmt:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("swap assignments");
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
                     WriteExpr(context, output, whileStmt.Condition);
@@ -725,7 +738,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, "]");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("named tuple lvalues");
                 case SeqAccessExpr seqAccessExpr:
                     context.Write(output, "(");
                     WriteLValue(context, output, seqAccessExpr.SeqExpr);
@@ -734,7 +747,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, "]");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("tuple lvalues");
                 case VariableAccessExpr variableAccessExpr:
                     context.Write(output, context.Names.GetNameForDecl(variableAccessExpr.Variable));
                     break;
@@ -761,7 +774,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"((PrtBool){(boolLiteralExpr.Value ? "true" : "false")})");
                     break;
                 case CastExpr castExpr:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("explicit casts");
                 case CoerceExpr coerceExpr:
                     switch (coerceExpr.Type.Canonicalize())
                     {
@@ -779,7 +792,7 @@ namespace Microsoft.Pc.Backend.PSharp
                             context.Write(output, $"PInterfaces.GetPermissions(\"{coerceExpr.NewType.CanonicalRepresentation}\"))");
                             break;
                     }
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("some coercions?");
                 case ContainsKeyExpr containsKeyExpr:
                     context.Write(output, "((PrtBool)");
                     WriteExpr(context, output, containsKeyExpr.Map);
@@ -853,7 +866,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"{swapKeyword}{context.Names.GetNameForDecl(linearAccessRefExpr.Variable)}");
                     break;
                 case NamedTupleExpr namedTupleExpr:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("named tuple construction");
                 case NondetExpr _:
                     context.Write(output, "((PrtBool)currentMachine.Random())");
                     break;
@@ -874,7 +887,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ")");
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("tuple construction");
                 case ValuesExpr valuesExpr:
                     context.Write(output, "(");
                     WriteExpr(context, output, valuesExpr.Expr);
@@ -945,11 +958,11 @@ namespace Microsoft.Pc.Backend.PSharp
                 case EnumType enumType:
                     return context.Names.GetNameForDecl(enumType.EnumDecl);
                 case ForeignType _:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("foreign types");
                 case MapType mapType:
-                    return $"Dictionary<{GetCSharpType(context, mapType.KeyType)}, {GetCSharpType(context, mapType.ValueType)}>";
+                    return $"PrtMap<{GetCSharpType(context, mapType.KeyType)}, {GetCSharpType(context, mapType.ValueType)}>";
                 case NamedTupleType _:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("named tuple types");
                 case PermissionType _:
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
@@ -967,9 +980,9 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return "void";
                 case SequenceType sequenceType:
-                    return $"List<{GetCSharpType(context, sequenceType.ElementType)}>";
+                    return $"PrtSeq<{GetCSharpType(context, sequenceType.ElementType)}>";
                 case TupleType _:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("tuple types");
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));
             }
@@ -986,9 +999,9 @@ namespace Microsoft.Pc.Backend.PSharp
                 case SequenceType sequenceType:
                     return $"new {GetCSharpType(context, sequenceType)}()";
                 case NamedTupleType _:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("named tuple default values");
                 case TupleType _:
-                    throw new NotImplementedException();
+                    throw new NotImplementedException("tuple default values");
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return "((PrtBool)false)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):

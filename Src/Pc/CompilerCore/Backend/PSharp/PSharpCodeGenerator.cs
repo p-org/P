@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Pc.Backend.ASTExt;
+using Microsoft.Pc.Backend.Debugging;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -17,6 +18,8 @@ namespace Microsoft.Pc.Backend.PSharp
     {
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
         {
+            Console.WriteLine(IrToPseudoP.Dump(globalScope));
+
             var context = new CompilationContext(job);
             CompiledFile csharpSource = GenerateSource(context, globalScope);
             return new List<CompiledFile> {csharpSource};
@@ -50,11 +53,11 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "public static void InitializeInterfaces() {");
             foreach (var iface in interfaces)
             {
-                context.Write(output, $"PInterfaces.AddInterface(\"{iface.Name}\"");
+                context.Write(output, $"PInterfaces.AddInterface(nameof({context.Names.GetNameForDecl(iface)})");
                 foreach (PEvent ev in iface.ReceivableEvents.Events)
                 {
                     context.Write(output, ", ");
-                    context.Write(output, $"\"{ev.Name}\"");
+                    context.Write(output, $"nameof({context.Names.GetNameForDecl(ev)})");
                 }
                 context.WriteLine(output, ");");
             }
@@ -154,13 +157,13 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "}");
         }
 
-        private void WriteMonitorContructor(CompilationContext context, StringWriter output, Machine machine)
+        private void WriteMonitorConstructor(CompilationContext context, StringWriter output, Machine machine)
         {
             string declName = context.Names.GetNameForDecl(machine);
             context.WriteLine(output, $"static {declName}() {{");
             foreach (var sEvent in machine.Observes.Events)
             {
-                context.WriteLine(output, $"observes.Add(\"{sEvent.Name}\");");
+                context.WriteLine(output, $"observes.Add(nameof({context.Names.GetNameForDecl(sEvent)}));");
             }
             context.WriteLine(output, "}");
             context.WriteLine(output);
@@ -181,7 +184,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
         {
-            context.WriteLine(output, $"public class {safety.Name} {{");
+            context.WriteLine(output, $"public class {context.Names.GetNameForDecl(safety)} {{");
             WriteInitializeLinkMap(context, output, safety.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, safety.ModExpr.ModuleInfo.InterfaceDef);
             WriteInitializeMonitorObserves(context, output, safety.ModExpr.ModuleInfo.MonitorMap.Keys);
@@ -192,7 +195,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteImplementationDecl(CompilationContext context, StringWriter output, Implementation impl)
         {
-            context.WriteLine(output, $"public class {impl.Name} {{");
+            context.WriteLine(output, $"public class {context.Names.GetNameForDecl(impl)} {{");
             WriteInitializeLinkMap(context, output, impl.ModExpr.ModuleInfo.LinkMap);
             WriteInitializeInterfaceDefMap(context, output, impl.ModExpr.ModuleInfo.InterfaceDef);
             WriteInitializeMonitorObserves(context, output, impl.ModExpr.ModuleInfo.MonitorMap.Keys);
@@ -207,10 +210,10 @@ namespace Microsoft.Pc.Backend.PSharp
 
             foreach (var monitor in monitors)
             {
-                context.WriteLine(output, $"PModule.monitorObserves[\"{monitor.Name}\"] = new List<string>();");
+                context.WriteLine(output, $"PModule.monitorObserves[nameof({context.Names.GetNameForDecl(monitor)})] = new List<string>();");
                 foreach (var ev in monitor.Observes.Events)
                 {
-                    context.WriteLine(output, $"PModule.monitorObserves[\"{monitor.Name}\"].Add(\"{ev.Name}\");");
+                    context.WriteLine(output, $"PModule.monitorObserves[nameof({context.Names.GetNameForDecl(monitor)})].Add(nameof({context.Names.GetNameForDecl(ev)}));");
                 }
             }
 
@@ -274,7 +277,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "public static void InitializeInterfaceDefMap() {");
             foreach (var map in interfaceDef)
             {
-                context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(\"{map.Key.Name}\", typeof({context.Names.GetNameForDecl(map.Value)}));");
+                context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(nameof({context.Names.GetNameForDecl(map.Key)}), typeof({context.Names.GetNameForDecl(map.Value)}));");
             }
             context.WriteLine(output, "}");
             context.WriteLine(output);
@@ -286,10 +289,11 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "public static void InitializeLinkMap() {");
             foreach (var creatorInterface in linkMap)
             {
-                context.WriteLine(output, $"PModule.linkMap[\"{creatorInterface.Key.Name}\"] = new Dictionary<string, string>();");
-                foreach (var clinkMap in creatorInterface.Value)
+                context.WriteLine(output, $"PModule.linkMap[nameof({context.Names.GetNameForDecl(creatorInterface.Key)})] = new Dictionary<string, string>();");
+                foreach (KeyValuePair<Interface, Interface> clinkMap in creatorInterface.Value)
                 {
-                    context.WriteLine(output, $"PModule.linkMap[\"{creatorInterface.Key.Name}\"].Add(\"{clinkMap.Key.Name}\", \"{clinkMap.Value.Name}\");");
+                    context.WriteLine(output,
+                        $"PModule.linkMap[nameof({context.Names.GetNameForDecl(creatorInterface.Key)})].Add(nameof({context.Names.GetNameForDecl(clinkMap.Key)}), nameof({context.Names.GetNameForDecl(clinkMap.Value)}));");
                 }
             }
             context.WriteLine(output, "}");
@@ -305,8 +309,8 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, $"internal class {declName} : PEvent<{payloadType}>");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
-            context.WriteLine(output, $"public {pEvent.Name}() : base() {{}}");
-            context.WriteLine(output, $"public {pEvent.Name} ({payloadType} payload): base(payload)" + "{ }");
+            context.WriteLine(output, $"public {declName}() : base() {{}}");
+            context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
             context.WriteLine(output, "}");
         }
 
@@ -322,7 +326,7 @@ namespace Microsoft.Pc.Backend.PSharp
             }
 
             // create the constructor to initialize the sends, creates and receives list
-            WriteMachineContructor(context, output, machine);
+            WriteMachineConstructor(context, output, machine);
 
             foreach (Function method in machine.Methods)
             {
@@ -336,21 +340,21 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "}");
         }
 
-        private static void WriteMachineContructor(CompilationContext context, StringWriter output, Machine machine)
+        private static void WriteMachineConstructor(CompilationContext context, StringWriter output, Machine machine)
         {
             string declName = context.Names.GetNameForDecl(machine);
             context.WriteLine(output, $"public {declName}() {{");
             foreach (var sEvent in machine.Sends.Events)
             {
-                context.WriteLine(output, $"this.sends.Add(\"{sEvent.Name}\");");
+                context.WriteLine(output, $"this.sends.Add(nameof({context.Names.GetNameForDecl(sEvent)}));");
             }
             foreach (var rEvent in machine.Receives.Events)
             {
-                context.WriteLine(output, $"this.receives.Add(\"{rEvent.Name}\");");
+                context.WriteLine(output, $"this.receives.Add(nameof({context.Names.GetNameForDecl(rEvent)}));");
             }
             foreach (var iCreate in machine.Creates.Interfaces)
             {
-                context.WriteLine(output, $"this.creates.Add(\"{iCreate.Name}\");");
+                context.WriteLine(output, $"this.creates.Add(nameof({context.Names.GetNameForDecl(iCreate)}));");
             }
             context.WriteLine(output, "}");
             context.WriteLine(output);
@@ -362,7 +366,7 @@ namespace Microsoft.Pc.Backend.PSharp
             {
                 context.WriteLine(output, "[Start]");
                 context.WriteLine(output, "[OnEntry(nameof(InitializeParametersFunction))]");
-                context.WriteLine(output, $"[OnEventGotoState(typeof(ContructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
+                context.WriteLine(output, $"[OnEventGotoState(typeof(ConstructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
                 context.WriteLine(output, "class __InitState__ : MachineState { }");
                 context.WriteLine(output);
             }
@@ -497,13 +501,13 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = (currentMachine.ReceivedEvent as PEvent<{GetCSharpType(context, param.Type)}>).Payload;");
                 }
             }
+
             foreach (Variable local in function.LocalVariables)
             {
                 PLanguageType type = local.Type;
-                context.WriteLine(output, $"{GetCSharpType(context, type)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
+                context.WriteLine(output,
+                    $"{GetCSharpType(context, type)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
             }
-
-            
 
             foreach (IPStmt bodyStatement in function.Body.Statements)
             {
@@ -511,7 +515,6 @@ namespace Microsoft.Pc.Backend.PSharp
             }
             context.WriteLine(output, "}");
         }
-
    
         private void WriteStmt(CompilationContext context, StringWriter output, IPStmt stmt)
         {
@@ -556,12 +559,11 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case CtorStmt ctorStmt:
-                    context.Write(output, "currentMachine.CreateInterface(");
-                    context.Write(output, "currentMachine, ");
-                    context.Write(output, $"\"{ctorStmt.Interface.Name}\"");
+                    context.Write(output, $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorStmt.Interface)}>(");
+                    context.Write(output, "currentMachine");
                     if (ctorStmt.Arguments.Any())
                     {
-                        context.Write(output, $", ");
+                        context.Write(output, ", ");
                         WriteExpr(context, output, ctorStmt.Arguments.First());
                     }
                     context.WriteLine(output, ");");
@@ -572,7 +574,6 @@ namespace Microsoft.Pc.Backend.PSharp
                     var globalFunctionClass = isStatic? $"{context.GlobalFunctionClassName}." : "";
                     context.Write(output, $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallStmt.Function)}(");
                     var separator = "";
-
                     
                     foreach (var param in funCallStmt.ArgsList)
                     {
@@ -590,7 +591,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case GotoStmt gotoStmt:
                     context.Write(output, $"currentMachine.GotoState<{gotoStmt.State.QualifiedName}>(");
-                    WriteExpr(context, output, gotoStmt.Payload);
+                    if (gotoStmt.Payload != null)
+                    {
+                        WriteExpr(context, output, gotoStmt.Payload);
+                    }
                     context.WriteLine(output, ");");
                     //last statement
                     context.WriteLine(output, "throw new PUnreachableCodeException();");
@@ -652,9 +656,21 @@ namespace Microsoft.Pc.Backend.PSharp
                     {
                         string caseName = context.Names.GetTemporaryName("evt");
                         context.WriteLine(output, $"case {context.Names.GetNameForDecl(recvCase.Key)} {caseName}: {{");
-                        
+                        if (recvCase.Value.Signature.Parameters.FirstOrDefault() is Variable caseArg)
+                        {
+                            context.WriteLine(output, $"var {context.Names.GetNameForDecl(caseArg)} = {caseName}.Payload;");
+                        }
+                        foreach (Variable local in recvCase.Value.LocalVariables)
+                        {
+                            PLanguageType type = local.Type;
+                            context.WriteLine(output,
+                                $"{GetCSharpType(context, type)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
+                        }
+                        foreach (var caseStmt in recvCase.Value.Body.Statements)
+                        {
+                            WriteStmt(context, output, caseStmt);
+                        }
                         context.WriteLine(output, "} break;");
-                        throw new NotImplementedException();
                     }
                     context.WriteLine(output, "}");
                     break;
@@ -663,7 +679,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case ReturnStmt returnStmt:
                     context.Write(output, "return ");
-                    WriteExpr(context, output, returnStmt.ReturnValue);
+                    if (!PrimitiveType.Null.IsSameTypeAs(returnStmt.ReturnType))
+                    {
+                        WriteExpr(context, output, returnStmt.ReturnValue);
+                    }
                     context.WriteLine(output, ";");
                     break;
                 case SendStmt sendStmt:
@@ -739,7 +758,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ")");
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
-                    context.Write(output, boolLiteralExpr.Value ? "true" : "false");
+                    context.Write(output, $"((PrtBool){(boolLiteralExpr.Value ? "true" : "false")})");
                     break;
                 case CastExpr castExpr:
                     throw new NotImplementedException();
@@ -753,7 +772,7 @@ namespace Microsoft.Pc.Backend.PSharp
                             context.Write(output, ")");
                             break;
                         case PermissionType _:
-                            context.Write(output, $"new PMachineValue(");
+                            context.Write(output, "new PMachineValue(");
                             context.Write(output, "(");
                             WriteExpr(context, output, coerceExpr.SubExpr);
                             context.Write(output, ").Id, ");
@@ -762,19 +781,18 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     throw new NotImplementedException();
                 case ContainsKeyExpr containsKeyExpr:
-                    context.Write(output, "(");
+                    context.Write(output, "((PrtBool)");
                     WriteExpr(context, output, containsKeyExpr.Map);
                     context.Write(output, ").ContainsKey(");
                     WriteExpr(context, output, containsKeyExpr.Key);
                     context.Write(output, ")");
                     break;
                 case CtorExpr ctorExpr:
-                    context.Write(output, "currentMachine.CreateInterface( ");
-                    context.Write(output, "currentMachine, ");
-                    context.Write(output, $"\"{ctorExpr.Interface.Name}\"");
+                    context.Write(output, $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
+                    context.Write(output, "currentMachine");
                     if (ctorExpr.Arguments.Any())
                     {
-                        context.Write(output, $", ");
+                        context.Write(output, ", ");
                         WriteExpr(context, output, ctorExpr.Arguments.First());
                     }
                     context.Write(output, ")");
@@ -796,10 +814,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"new {eventName}({payloadExpr})");
                     break;
                 case FairNondetExpr _:
-                    context.Write(output, "currentMachine.FairRandom()");
+                    context.Write(output, "((PrtBool)currentMachine.FairRandom())");
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
-                    context.Write(output, $"{floatLiteralExpr.Value}");
+                    context.Write(output, $"((PrtFloat){floatLiteralExpr.Value})");
                     break;
                 case FunCallExpr funCallExpr:
                     var isStatic = funCallExpr.Function.Owner == null;
@@ -807,7 +825,6 @@ namespace Microsoft.Pc.Backend.PSharp
                     var globalFunctionClass = isStatic ? $"{context.GlobalFunctionClassName}." : "";
                     context.Write(output, $"{awaitMethod}{globalFunctionClass}{context.Names.GetNameForDecl(funCallExpr.Function)}(");
                     var separator = "";
-
 
                     foreach (var param in funCallExpr.Arguments)
                     {
@@ -820,10 +837,11 @@ namespace Microsoft.Pc.Backend.PSharp
                     {
                         context.Write(output, separator + "this");
                     }
+
                     context.Write(output, ")");
                     break;
                 case IntLiteralExpr intLiteralExpr:
-                    context.Write(output, $"{intLiteralExpr.Value}");
+                    context.Write(output, $"((PrtInt){intLiteralExpr.Value})");
                     break;
                 case KeysExpr keysExpr:
                     context.Write(output, "(");
@@ -837,15 +855,15 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NamedTupleExpr namedTupleExpr:
                     throw new NotImplementedException();
                 case NondetExpr _:
-                    context.Write(output, "currentMachine.Random()");
+                    context.Write(output, "((PrtBool)currentMachine.Random())");
                     break;
                 case NullLiteralExpr _:
                     context.Write(output, "null");
                     break;
                 case SizeofExpr sizeofExpr:
-                    context.Write(output, "(");
+                    context.Write(output, "((PrtInt)(");
                     WriteExpr(context, output, sizeofExpr.Expr);
-                    context.Write(output, ").Count");
+                    context.Write(output, ").Count)");
                     break;
                 case ThisRefExpr _:
                     context.Write(output, "currentMachine.self");
@@ -870,7 +888,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     WriteLValue(context, output, pExpr);
                     break;
                 default:
-                    throw new ArgumentOutOfRangeException(nameof(pExpr));
+                    throw new ArgumentOutOfRangeException(nameof(pExpr), $"type was {pExpr?.GetType().FullName}");
             }
         }
 
@@ -937,11 +955,11 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
                     return "object";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    return "bool";
+                    return "PrtBool";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    return "int";
+                    return "PrtInt";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    return "double";
+                    return "PrtFloat";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
                     return "Event";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
@@ -972,11 +990,11 @@ namespace Microsoft.Pc.Backend.PSharp
                 case TupleType _:
                     throw new NotImplementedException();
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
-                    return "false";
+                    return "((PrtBool)false)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
-                    return "0";
+                    return "((PrtInt)0)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
-                    return "0.0";
+                    return "((PrtFloat)0.0)";
                 case PermissionType _:
                 case PrimitiveType anyType when anyType.IsSameTypeAs(PrimitiveType.Any):
                 case PrimitiveType eventType when eventType.IsSameTypeAs(PrimitiveType.Event):

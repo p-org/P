@@ -1,8 +1,8 @@
-using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
+using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 using Microsoft.Pc.TypeChecker.AST.States;
 using Microsoft.Pc.TypeChecker.Types;
@@ -21,44 +21,43 @@ namespace Microsoft.Pc.TypeChecker
 
         public static void ValidateNoStaticHandlers(ITranslationErrorHandler handler, Machine machine)
         {
-            foreach (var state in machine.AllStates())
+            foreach (State state in machine.AllStates())
             {
-                var illegalUsage = (state.Entry != null && IsStaticOrForeign(state.Entry));
+                bool illegalUsage = state.Entry != null && IsStaticOrForeign(state.Entry);
                 if (illegalUsage)
                 {
                     throw handler.StaticFunctionNotAllowedAsHandler(state.SourceLocation,
                         state.Entry.Name);
                 }
 
-                illegalUsage = (state.Exit != null && IsStaticOrForeign(state.Exit));
+                illegalUsage = state.Exit != null && IsStaticOrForeign(state.Exit);
                 if (illegalUsage)
                 {
                     throw handler.StaticFunctionNotAllowedAsHandler(state.SourceLocation,
                         state.Exit.Name);
                 }
 
-                foreach (var eventHandler in state.AllEventHandlers)
+                foreach (KeyValuePair<PEvent, IStateAction> pair in state.AllEventHandlers)
                 {
-                    foreach (var pair in state.AllEventHandlers)
+                    switch (pair.Value)
                     {
-                        PEvent handledEvent = pair.Key;
-                        switch (pair.Value)
-                        {
-                            case EventDoAction eventDoAction:
-                                if (eventDoAction.Target != null && IsStaticOrForeign(eventDoAction.Target))
-                                {
-                                    throw handler.StaticFunctionNotAllowedAsHandler(eventDoAction.SourceLocation,
-                                        eventDoAction.Target.Name);
-                                }
-                                break;
-                            case EventGotoState eventGotoState:
-                                if (eventGotoState.TransitionFunction != null && IsStaticOrForeign(eventGotoState.TransitionFunction))
-                                {
-                                    throw handler.StaticFunctionNotAllowedAsHandler(eventGotoState.SourceLocation,
-                                        eventGotoState.TransitionFunction.Name);
-                                }
-                                break;
-                        }
+                        case EventDoAction eventDoAction:
+                            if (eventDoAction.Target != null && IsStaticOrForeign(eventDoAction.Target))
+                            {
+                                throw handler.StaticFunctionNotAllowedAsHandler(eventDoAction.SourceLocation,
+                                    eventDoAction.Target.Name);
+                            }
+
+                            break;
+                        case EventGotoState eventGotoState:
+                            if (eventGotoState.TransitionFunction != null &&
+                                IsStaticOrForeign(eventGotoState.TransitionFunction))
+                            {
+                                throw handler.StaticFunctionNotAllowedAsHandler(eventGotoState.SourceLocation,
+                                    eventGotoState.TransitionFunction.Name);
+                            }
+
+                            break;
                     }
                 }
             }
@@ -66,14 +65,14 @@ namespace Microsoft.Pc.TypeChecker
 
         private static bool IsStaticOrForeign(Function function)
         {
-            return (function.Owner == null || function.IsForeign);
+            return function.Owner == null || function.IsForeign;
         }
 
         private static void ValidateTransitions(ITranslationErrorHandler handler, Machine machine)
         {
             foreach (State state in machine.AllStates())
             {
-                foreach (var pair in state.AllEventHandlers)
+                foreach (KeyValuePair<PEvent, IStateAction> pair in state.AllEventHandlers)
                 {
                     PEvent handledEvent = pair.Key;
                     switch (pair.Value)
@@ -173,13 +172,14 @@ namespace Microsoft.Pc.TypeChecker
                 return PrimitiveType.Null;
             }
 
-            Debug.Assert(startState.Entry.Signature.Parameters.Count == 1, "Allowed start state entry with multiple parameters");
+            Debug.Assert(startState.Entry.Signature.Parameters.Count == 1,
+                "Allowed start state entry with multiple parameters");
             return startState.Entry.Signature.Parameters[0].Type;
         }
 
         private static State FindStartState(Machine machine, ITranslationErrorHandler handler)
         {
-            var foundStartState = false;
+            bool foundStartState = false;
             foreach (State state in machine.AllStates())
             {
                 if (state == machine.StartState || state.IsStart)
@@ -194,7 +194,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
                 }
             }
-            
+
             Debug.Assert(!(foundStartState && machine.StartState == null), "machine has unregistered start state");
 
             if (!foundStartState || machine.StartState == null)

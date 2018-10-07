@@ -78,7 +78,7 @@ namespace receive11
         }
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
-        [OnEventGotoState(typeof(ContructorEvent), typeof(Init_1))]
+        [OnEventGotoState(typeof(ConstructorEvent), typeof(Init_1))]
         class __InitState__ : MachineState { }
 
         [OnEntry(nameof(Anon_2))]
@@ -135,7 +135,7 @@ namespace receive11
         }
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
-        [OnEventGotoState(typeof(ContructorEvent), typeof(Init_2))]
+        [OnEventGotoState(typeof(ConstructorEvent), typeof(Init_2))]
         class __InitState__ : MachineState { }
 
         [OnEntry(nameof(Anon_3))]

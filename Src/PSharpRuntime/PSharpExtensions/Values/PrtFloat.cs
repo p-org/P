@@ -28,6 +28,21 @@ namespace PrtSharp.Values
             return value.GetHashCode();
         }
 
+        public static implicit operator double(PrtFloat val)
+        {
+            return val.value;
+        }
+
+        public static implicit operator PrtFloat(float val)
+        {
+            return new PrtFloat(val);
+        }
+
+        public static implicit operator PrtFloat(double val)
+        {
+            return new PrtFloat(val);
+        }
+
         public static PrtFloat operator +(PrtFloat prtFloat1, PrtFloat prtFloat2)
         {
             return new PrtFloat(prtFloat1.value + prtFloat2.value);

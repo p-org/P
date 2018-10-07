@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace PrtSharp.Values
 {
@@ -41,6 +42,7 @@ namespace PrtSharp.Values
             return value.ToString();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator T(PPrimitiveValue<T> prim)
         {
             return prim.value;

@@ -10,8 +10,6 @@ using Microsoft.Pc.TypeChecker.AST.Expressions;
 using Microsoft.Pc.TypeChecker.AST.Statements;
 using Microsoft.Pc.TypeChecker.Types;
 
-// TODO: Make sure that compound statements are never nested and that block statement bodies (if, while, functions) are always compound statements
-
 namespace Microsoft.Pc.Backend
 {
     public class IRTransformer
@@ -280,14 +278,19 @@ namespace Microsoft.Pc.Backend
                                   })
                                   .ToList();
                 case GotoStmt gotoStmt:
+                    if (gotoStmt.Payload == null)
+                    {
+                        return new List<IPStmt> {gotoStmt};
+                    }
+
                     var (gotoPayload, gotoDeps) = SimplifyExpression(gotoStmt.Payload);
                     var (gotoArgTmp, gotoArgDep) = SaveInTemporary(new CloneExpr(gotoPayload));
                     return gotoDeps.Concat(new[]
-                                   {
-                                       gotoArgDep,
-                                       new GotoStmt(location, gotoStmt.State, gotoArgTmp)
-                                   })
-                                   .ToList();
+                        {
+                            gotoArgDep,
+                            new GotoStmt(location, gotoStmt.State, gotoArgTmp)
+                        })
+                        .ToList();
                 case IfStmt ifStmt:
                     var (ifCond, ifCondDeps) = SimplifyExpression(ifStmt.Condition);
                     var thenBranch = SimplifyStatement(ifStmt.ThenBranch);

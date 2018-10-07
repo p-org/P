@@ -30,7 +30,7 @@ namespace Microsoft.Pc.Backend.Prt
                 return name;
             }
 
-            name = AdjustName(hint);
+            name = UniquifyName(hint);
             retLabels.Add(function, name);
             return name;
         }
@@ -45,7 +45,7 @@ namespace Microsoft.Pc.Backend.Prt
             string namePrefix = function.IsForeign ? "P_FUN_" : NamePrefix;
             string methodName = function.IsAnon ? "Anon" : function.Name;
             string nameSuffix = function.IsForeign ? "_FOREIGN" : "_IMPL";
-            name = AdjustName(namePrefix + methodName + nameSuffix);
+            name = UniquifyName(namePrefix + methodName + nameSuffix);
 
             funcNames.Add(function, name);
             return name;
@@ -61,7 +61,7 @@ namespace Microsoft.Pc.Backend.Prt
             }
 
             name = NamePrefix + "GEND_TYPE_" + SimplifiedRep(type);
-            name = AdjustName(name);
+            name = UniquifyName(name);
             typeNames.Add(type, name);
             return name;
         }
@@ -73,7 +73,7 @@ namespace Microsoft.Pc.Backend.Prt
                 return name;
             }
 
-            name = AdjustName(NamePrefix + foreignType.CanonicalRepresentation);
+            name = UniquifyName(NamePrefix + foreignType.CanonicalRepresentation);
             foreignTypeDeclNames.Add(foreignType, name);
             return name;
         }
@@ -128,7 +128,7 @@ namespace Microsoft.Pc.Backend.Prt
                 name = NamePrefix + declTypePart + enumName + name;
             }
 
-            return name;
+            return UniquifyName(name);
         }
 
         private static readonly Dictionary<Type, string> DeclNameParts = new Dictionary<Type, string>

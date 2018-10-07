@@ -417,7 +417,7 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr payload;
             if (rvaluesList.Length == 0)
             {
-                payload = new NullLiteralExpr(context);
+                payload = null;
             }
             else if (rvaluesList.Length == 1)
             {
@@ -428,9 +428,10 @@ namespace Microsoft.Pc.TypeChecker
                 payload = new UnnamedTupleExpr(context, rvaluesList);
             }
 
-            if (!expectedType.IsAssignableFrom(payload.Type))
+            var payloadType = payload?.Type ?? PrimitiveType.Null;
+            if (!expectedType.IsAssignableFrom(payloadType))
             {
-                throw handler.TypeMismatch(context, payload.Type, expectedType);
+                throw handler.TypeMismatch(context, payloadType, expectedType);
             }
 
             method.CanChangeState = true;

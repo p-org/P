@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace PrtSharp.Values
 {
@@ -28,61 +29,103 @@ namespace PrtSharp.Values
             return value.GetHashCode();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator PrtInt(byte val)
+        {
+            return new PrtInt(val);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator PrtInt(short val)
+        {
+            return new PrtInt(val);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator PrtInt(int val)
+        {
+            return new PrtInt(val);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator PrtInt(long val)
+        {
+            return new PrtInt(val);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator long(PrtInt val)
+        {
+            return val.value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtInt operator +(PrtInt prtInt1, PrtInt prtInt2)
         {
             return new PrtInt(prtInt1.value + prtInt2.value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtInt operator -(PrtInt prtInt1, PrtInt prtInt2)
         {
             return new PrtInt(prtInt1.value - prtInt2.value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtInt operator *(PrtInt prtInt1, PrtInt prtInt2)
         {
             return new PrtInt(prtInt1.value * prtInt2.value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtInt operator /(PrtInt prtInt1, PrtInt prtInt2)
         {
             return new PrtInt(prtInt1.value / prtInt2.value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator <(PrtInt prtInt1, PrtInt prtInt2)
         {
-            return PrtValues.Box(prtInt1.value < prtInt2.value);
+            return prtInt1.value < prtInt2.value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator >(PrtInt prtInt1, PrtInt prtInt2)
         {
-            return PrtValues.Box(prtInt1.value > prtInt2.value);
+            return prtInt1.value > prtInt2.value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator <=(PrtInt prtInt1, PrtInt prtInt2)
         {
-            return PrtValues.Box(prtInt1.value <= prtInt2.value);
+            return prtInt1.value <= prtInt2.value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator >=(PrtInt prtInt1, PrtInt prtInt2)
         {
-            return PrtValues.Box(prtInt1.value >= prtInt2.value);
+            return prtInt1.value >= prtInt2.value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator ==(PrtInt prtInt1, PrtInt prtInt2)
         {
-            return PrtValues.Box(Equals(prtInt1?.value, prtInt2?.value));
+            return Equals(prtInt1?.value, prtInt2?.value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator !=(PrtInt prtInt1, PrtInt prtInt2)
         {
-            return PrtValues.Box(Equals(prtInt1?.value, prtInt2?.value) == false);
+            return Equals(prtInt1?.value, prtInt2?.value) == false;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtInt operator +(PrtInt prtInt)
         {
             return new PrtInt(+prtInt.value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtInt operator -(PrtInt prtInt)
         {
             return new PrtInt(-prtInt.value);

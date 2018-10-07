@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace PrtSharp.Values
 {
@@ -19,6 +20,18 @@ namespace PrtSharp.Values
         public override IPrtValue Clone()
         {
             return new PrtBool(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator bool(PrtBool val)
+        {
+            return val.value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator PrtBool(bool val)
+        {
+            return val ? PrtTrue : PrtFalse;
         }
 
         public static bool operator true(PrtBool pValue)

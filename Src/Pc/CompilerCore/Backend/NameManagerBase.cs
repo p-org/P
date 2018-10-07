@@ -20,10 +20,10 @@ namespace Microsoft.Pc.Backend
 
         public string GetTemporaryName(string baseName)
         {
-            return AdjustName(NamePrefix + baseName);
+            return UniquifyName(NamePrefix + baseName);
         }
 
-        protected string AdjustName(string baseName)
+        protected string UniquifyName(string baseName)
         {
             var name = baseName;
             while (nameUsages.TryGetValue(name, out var usages))
@@ -57,8 +57,7 @@ namespace Microsoft.Pc.Backend
             {
                 throw new ArgumentException($"Decl {node.Name} already has name {existing}", nameof(node));
             }
-
-            name = AdjustName(name);
+            
             declNames.Add(node, name);
             return name;
         }

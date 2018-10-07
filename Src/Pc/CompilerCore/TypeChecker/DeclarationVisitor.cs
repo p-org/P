@@ -649,11 +649,6 @@ namespace Microsoft.Pc.TypeChecker
                 transitionFunction = null;
             }
 
-            if (transitionFunction != null && transitionFunction.Owner == null)
-            {
-                throw Handler.StaticFunctionNotAllowedAsHandler(context.funName, transitionFunction.Name);
-            }
-
             // GOTO stateName 
             var target = FindState(context.stateName());
 

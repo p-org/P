@@ -40,7 +40,7 @@ machine Main {
 	
 	state S1 {
 		entry F2_wrap;
-		on a do F3;
+		on a do { F3(); }
 	}
 	
 	fun F2_wrap()

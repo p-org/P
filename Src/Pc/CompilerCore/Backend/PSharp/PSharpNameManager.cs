@@ -28,6 +28,8 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
 
                     break;
+                case Interface _:
+                    return name;
             }
 
             name = string.IsNullOrEmpty(name) ? "Anon" : name;
@@ -36,7 +38,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 name = "TMP_" + name.Substring(1);
             }
 
-            return name;
+            return UniquifyName(name);
         }
     }
 }

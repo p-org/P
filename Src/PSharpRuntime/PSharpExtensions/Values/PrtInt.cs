@@ -54,6 +54,12 @@ namespace PrtSharp.Values
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator int(PrtInt val)
+        {
+            return (int) val.value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator long(PrtInt val)
         {
             return val.value;

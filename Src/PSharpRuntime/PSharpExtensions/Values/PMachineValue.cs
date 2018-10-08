@@ -3,7 +3,7 @@ using Microsoft.PSharp;
 
 namespace PrtSharp.Values
 {
-    public class PMachineValue
+    public class PMachineValue : IPrtValue
     {
         public MachineId Id { get; }
         public List<string> Permissions { get; }
@@ -12,6 +12,16 @@ namespace PrtSharp.Values
         {
             this.Id = machine;
             this.Permissions = permissions;
+        }
+
+        public bool Equals(IPrtValue other)
+        {
+            return other is PMachineValue machine && Equals(Id, machine.Id);
+        }
+
+        public IPrtValue Clone()
+        {
+            return new PMachineValue(Id, new List<string>(Permissions));
         }
     }
 }

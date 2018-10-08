@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Pc.Backend.ASTExt;
-using Microsoft.Pc.Backend.Debugging;
 using Microsoft.Pc.TypeChecker;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -18,8 +17,6 @@ namespace Microsoft.Pc.Backend.PSharp
     {
         public IEnumerable<CompiledFile> GenerateCode(ICompilationJob job, Scope globalScope)
         {
-            Console.WriteLine(IrToPseudoP.Dump(globalScope));
-
             var context = new CompilationContext(job);
             CompiledFile csharpSource = GenerateSource(context, globalScope);
             return new List<CompiledFile> {csharpSource};
@@ -648,7 +645,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case RaiseStmt raiseStmt:
                     context.Write(output, "currentMachine.RaiseEvent(");
-                    context.Write(output, "currentMachine, ");
+                    context.Write(output, "currentMachine, (Event)");
                     WriteExpr(context, output, raiseStmt.PEvent);
                     if (raiseStmt.Payload.Any())
                     {
@@ -692,7 +689,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case ReturnStmt returnStmt:
                     context.Write(output, "return ");
-                    if (!PrimitiveType.Null.IsSameTypeAs(returnStmt.ReturnType))
+                    if (returnStmt.ReturnValue != null)
                     {
                         WriteExpr(context, output, returnStmt.ReturnValue);
                     }
@@ -702,16 +699,16 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, "currentMachine.SendEvent(");
                     context.Write(output, "currentMachine, ");
                     WriteExpr(context, output, sendStmt.MachineExpr);
-                    context.Write(output, $",");
+                    context.Write(output, ", (Event)");
                     WriteExpr(context, output, sendStmt.Evt);
 
                     if (sendStmt.ArgsList.Any())
                     {
-                        context.Write(output, $", ");
+                        context.Write(output, ", ");
                         WriteExpr(context, output, sendStmt.ArgsList.First());
                     }
 
-                    context.WriteLine(output, $");");
+                    context.WriteLine(output, ");");
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     throw new NotImplementedException("swap assignments");
@@ -747,7 +744,9 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, "]");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
-                    throw new NotImplementedException("tuple lvalues");
+                    WriteExpr(context, output, tupleAccessExpr.SubExpr);
+                    context.Write(output, $".Item{tupleAccessExpr.FieldNo + 1}");
+                    break;
                 case VariableAccessExpr variableAccessExpr:
                     context.Write(output, context.Names.GetNameForDecl(variableAccessExpr.Variable));
                     break;
@@ -887,7 +886,17 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ")");
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
-                    throw new NotImplementedException("tuple construction");
+                    context.Write(output, $"new {GetCSharpType(context, unnamedTupleExpr.Type)}(");
+                    string sep = "";
+                    foreach (IPExpr field in unnamedTupleExpr.TupleFields)
+                    {
+                        context.Write(output, sep);
+                        context.Write(output, $"({GetCSharpType(context, field.Type)})");
+                        WriteExpr(context, output, field);
+                        sep = ", ";
+                    }
+                    context.Write(output, ")");
+                    break;
                 case ValuesExpr valuesExpr:
                     context.Write(output, "(");
                     WriteExpr(context, output, valuesExpr.Expr);
@@ -912,41 +921,9 @@ namespace Microsoft.Pc.Backend.PSharp
                 WriteExpr(context, output, cloneExprTerm);
                 return;
             }
-            
-            var variable = variableRef.Variable;
-            context.Write(output, RenderClone(context, variable.Type, context.Names.GetNameForDecl(variable)));
-        }
 
-        private string RenderClone(CompilationContext context, PLanguageType cloneType, string termName)
-        {
-            switch (cloneType.Canonicalize())
-            {
-                case SequenceType seq:
-                    var elem = context.Names.GetTemporaryName("elem");
-                    return $"({termName}).ConvertAll({elem} => {RenderClone(context, seq.ElementType, elem)})";
-                case MapType map:
-                    var key = context.Names.GetTemporaryName("k");
-                    var val = context.Names.GetTemporaryName("v");
-                    return $"({termName}).ToDictionary({key} => {RenderClone(context, map.KeyType, key + ".Key")}, {val} => {RenderClone(context, map.ValueType, val + ".Value")})";
-                case NamedTupleType type:
-                    throw new NotImplementedException("named tuple types");
-                case PermissionType type:
-                    throw new NotImplementedException("permission types");
-                case PrimitiveType type when type.IsSameTypeAs(PrimitiveType.Int):
-                    return termName;
-                case PrimitiveType type when type.IsSameTypeAs(PrimitiveType.Float):
-                    return termName;
-                case PrimitiveType type when type.IsSameTypeAs(PrimitiveType.Bool):
-                    return termName;
-                case PrimitiveType type when type.IsSameTypeAs(PrimitiveType.Machine):
-                    return termName;
-                case PrimitiveType type when type.IsSameTypeAs(PrimitiveType.Event):
-                    return GetDefaultValue(context, type);
-                case TupleType type:
-                    throw new NotImplementedException("tuple types");
-                default:
-                    throw new NotImplementedException($"Cloning {cloneType.OriginalRepresentation}");
-            }
+            string varName = context.Names.GetNameForDecl(variableRef.Variable);
+            context.Write(output, $"(({GetCSharpType(context, variableRef.Type)})((IPrtValue){varName}).Clone())");
         }
 
         private string GetCSharpType(CompilationContext context, PLanguageType type)
@@ -974,15 +951,16 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "PrtFloat";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    return "Event";
+                    return "IEventWithPayload<object>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return "void";
                 case SequenceType sequenceType:
                     return $"PrtSeq<{GetCSharpType(context, sequenceType.ElementType)}>";
-                case TupleType _:
-                    throw new NotImplementedException("tuple types");
+                case TupleType tupleType:
+                    var typeList = string.Join(", ", tupleType.Types.Select(t => GetCSharpType(context, t)));
+                    return $"PrtTuple<{typeList}>";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));
             }
@@ -1000,8 +978,9 @@ namespace Microsoft.Pc.Backend.PSharp
                     return $"new {GetCSharpType(context, sequenceType)}()";
                 case NamedTupleType _:
                     throw new NotImplementedException("named tuple default values");
-                case TupleType _:
-                    throw new NotImplementedException("tuple default values");
+                case TupleType tupleType:
+                    string defaultTupleValues = string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(context, t)));
+                    return $"(new {GetCSharpType(context, tupleType)}({defaultTupleValues}))";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return "((PrtBool)false)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):

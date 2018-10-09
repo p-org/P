@@ -71,5 +71,6 @@ namespace Microsoft.Pc
         Exception IllegalTypeInCoerceExpr(ParserRuleContext context);
         Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType);
         Exception StaticFunctionNotAllowedAsHandler(ParserRuleContext funName, string name);
+        Exception TupleSizeMoreThanEight(ParserRuleContext context);
     }
 }

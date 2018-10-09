@@ -339,6 +339,15 @@ extern "C"{
 		_In_ PRT_VALUE *tuple, 
 		_In_ PRT_UINT32 index);
 
+	/** Returns true if the seq contains value; false otherwise.
+	* @param[in] seq A Seq.
+	* @param[in] val The value to lookup.
+	* @returns Returns true if the seq contains key; false otherwise.
+	*/
+	PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtSeqExists(
+		_In_ PRT_VALUE *seq,
+		_In_ PRT_VALUE *val);
+
 	/** Updates the sequence at index.
 	* @param[in,out] seq   A sequence to mutate.
 	* @param[in]     index The name of the element to set. A value must already exist at this index.

@@ -32,5 +32,5 @@ namespace PrtSharp
         {
             return new PEvent<T>();
         }
-    }
+    } 
 }

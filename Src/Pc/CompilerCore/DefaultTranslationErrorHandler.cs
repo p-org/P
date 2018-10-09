@@ -322,5 +322,9 @@ namespace Microsoft.Pc
             return method.Name.Length > 0 ? method.Name : $"at {locationResolver.GetLocation(method.SourceLocation)}";
         }
 
+        public Exception TupleSizeMoreThanEight(ParserRuleContext context)
+        {
+            return IssueError(context, "tuple or named tuple of size greater than 8 is not supported");
+        }
     }
 }

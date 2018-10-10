@@ -46,9 +46,20 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteInitializeInterfaces(CompilationContext context, StringWriter output, IEnumerable<Interface> interfaces)
         {
+            //create the interface declarations
+            var ifaces = interfaces.ToList();
+            foreach (var iface in ifaces)
+            {
+                context.WriteLine(output, $"public class {context.Names.GetNameForDecl(iface)} : PMachineValue {{");
+                context.WriteLine(output, $"public {context.Names.GetNameForDecl(iface)} (MachineId machine, List<string> permissions) : base(machine, permissions) {{ }}");
+                context.WriteLine(output, "}");
+                context.WriteLine(output);
+            }
+
+            //initialize the interfaces
             context.WriteLine(output, "public partial class PHelper {");
             context.WriteLine(output, "public static void InitializeInterfaces() {");
-            foreach (var iface in interfaces)
+            foreach (var iface in ifaces)
             {
                 context.Write(output, $"PInterfaces.AddInterface(nameof({context.Names.GetNameForDecl(iface)})");
                 foreach (PEvent ev in iface.ReceivableEvents.Events)
@@ -789,7 +800,8 @@ namespace Microsoft.Pc.Backend.PSharp
                         case PermissionType _:
                             context.Write(output, "(PInterfaces.IsCoercionAllowed(");
                             WriteExpr(context, output, coerceExpr.SubExpr);
-                            context.Write(output, $"PInterfaces.GetPermissions(\"I_{coerceExpr.NewType.CanonicalRepresentation}\")) ?");
+                            context.Write(output, ", ");
+                            context.Write(output, $"\"I_{coerceExpr.NewType.CanonicalRepresentation}\") ?");
                             context.Write(output, "new PMachineValue(");
                             context.Write(output, "(");
                             WriteExpr(context, output, coerceExpr.SubExpr);

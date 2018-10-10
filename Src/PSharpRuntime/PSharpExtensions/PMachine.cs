@@ -71,7 +71,7 @@ namespace PrtSharp
         }
 
         public PMachineValue CreateInterface<T>(PMachine creator, object payload = null)
-            where T : PMachine
+            where T : PMachineValue
         {
             var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
             Assert(creates.Contains(createdInterface), $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");

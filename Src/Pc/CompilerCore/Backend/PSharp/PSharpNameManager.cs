@@ -29,7 +29,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
                     break;
                 case Interface _:
-                    return name;
+                    return "I_" + name;
             }
 
             name = string.IsNullOrEmpty(name) ? "Anon" : name;

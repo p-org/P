@@ -782,7 +782,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     {
                         case PrimitiveType oldType when oldType.IsSameTypeAs(PrimitiveType.Float):
                         case PrimitiveType oldType1 when oldType1.IsSameTypeAs(PrimitiveType.Int):
-                            context.Write(output, $"(({GetCSharpType(context, coerceExpr.NewType)}) ");
+                            context.Write(output, $"(");
                             WriteExpr(context, output, coerceExpr.SubExpr);
                             context.Write(output, ")");
                             break;

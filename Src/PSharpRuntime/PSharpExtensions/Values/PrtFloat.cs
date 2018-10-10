@@ -43,6 +43,11 @@ namespace PrtSharp.Values
             return new PrtFloat(val);
         }
 
+        public static implicit operator PrtFloat(PrtInt val)
+        {
+            return new PrtFloat(val);
+        }
+
         public static PrtFloat operator +(PrtFloat prtFloat1, PrtFloat prtFloat2)
         {
             return new PrtFloat(prtFloat1.value + prtFloat2.value);

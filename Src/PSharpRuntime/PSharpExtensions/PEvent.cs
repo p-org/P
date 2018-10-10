@@ -32,5 +32,10 @@ namespace PrtSharp
         {
             return new PEvent<T>();
         }
-    } 
+    }
+
+    public class PHalt : PEvent<object>
+    {
+
+    }
 }

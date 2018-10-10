@@ -1,8 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Microsoft.PSharp;
 
 namespace PrtSharp.Values
 {
+    public class I_Main : PMachineValue
+    {
+        public I_Main(MachineId machine, List<string> permissions) : base(machine, permissions)
+        {
+        }
+    }
+
     public class PMachineValue : IPrtValue
     {
         public MachineId Id { get; }
@@ -11,7 +19,7 @@ namespace PrtSharp.Values
         public PMachineValue(MachineId machine, List<string> permissions)
         {
             this.Id = machine;
-            this.Permissions = permissions;
+            this.Permissions = permissions.ToList();
         }
 
         public bool Equals(IPrtValue other)

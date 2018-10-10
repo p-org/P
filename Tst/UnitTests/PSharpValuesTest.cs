@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Pc;
+using Microsoft.PSharp;
 using NUnit.Framework;
 using PrtSharp;
 using PrtSharp.Values;
@@ -10,7 +11,7 @@ namespace UnitTests
     [TestFixture]
     public class PSharpValuesTest
     {
-        [Test]
+        [NUnit.Framework.Test]
         public void TestPrtBoolOverloading()
         {
             PrtBool boolT = true;
@@ -22,7 +23,7 @@ namespace UnitTests
             Assert.AreEqual(boolT, boolT && boolT);
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestPrtFloatComparisions()
         {
             PrtBool boolT = true;
@@ -38,7 +39,7 @@ namespace UnitTests
             Assert.AreEqual(boolT, PrtValues.Box(1.0) > PrtValues.Box(0.0));
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestPrtFloatOverloading()
         {
             PrtFloat float1 = 1.0;
@@ -56,7 +57,7 @@ namespace UnitTests
             Assert.AreEqual(float1, +float1);
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestPrtHashCodesAreValueDependent()
         {
             var list = new PrtSeq<PrtInt> {1};
@@ -73,7 +74,7 @@ namespace UnitTests
             Assert.AreNotEqual(hashCode1, hashCodeCloned2);
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestPrtIntComparisions()
         {
             PrtBool boolT = PrtValues.Box(true);
@@ -89,7 +90,7 @@ namespace UnitTests
             Assert.AreEqual(boolT, PrtValues.Box(1) > PrtValues.Box(0));
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestPrtIntOverloading()
         {
             PrtInt int1 = 1;
@@ -107,7 +108,7 @@ namespace UnitTests
             Assert.AreEqual(int1, +int1);
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestPrtSequenceEquality()
         {
             // var t : (a:int, b:float);
@@ -131,7 +132,7 @@ namespace UnitTests
             Assert.False(Equals(list1, list2));
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestStableHashes()
         {
             // ints
@@ -155,7 +156,7 @@ namespace UnitTests
             }
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestPrtMapBasic()
         {
             // Build two identical maps in different orders
@@ -183,7 +184,7 @@ namespace UnitTests
             Assert.AreEqual(map1.GetHashCode(), map2.GetHashCode());
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestFreezingValues()
         {
             var list = new PrtSeq<PrtInt> {PrtValues.Box(1), PrtValues.Box(2), PrtValues.Box(3)};
@@ -198,7 +199,7 @@ namespace UnitTests
             Assert.AreEqual(PrtValues.Box(2.71), map[list]);
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestDeeplyFrozenValues()
         {
             // Create a list of int-lists and clone it
@@ -231,7 +232,7 @@ namespace UnitTests
             Assert.AreNotEqual(listBackup, keyList);
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestExplicitCastIsBox()
         {
             Assert.AreEqual(typeof(PrtInt), ((PrtInt)3).GetType());
@@ -239,7 +240,7 @@ namespace UnitTests
             Assert.AreEqual(typeof(PrtBool), ((PrtBool)true).GetType());
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestIfStatementTranslation()
         {
             PrtBool unconditional = true;
@@ -250,7 +251,7 @@ namespace UnitTests
             Assert.Fail();
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestFib()
         {
             PrtInt a = 1;
@@ -264,7 +265,7 @@ namespace UnitTests
             Assert.AreEqual(7778742049, (long)b);
         }
 
-        [Test]
+        [NUnit.Framework.Test]
         public void TestFibOpt()
         {
             long a = 1;
@@ -276,6 +277,14 @@ namespace UnitTests
                 a = c;
             }
             Assert.AreEqual(7778742049, b);
+        }
+
+        [NUnit.Framework.Test]
+        public void TestPMachineValue()
+        {
+            var pm1 = new I_Main(null, new List<string>());
+            var pm2 = new I_Main(null, new List<string>());
+            Assert.AreEqual(pm1, pm2);
         }
     }
 }

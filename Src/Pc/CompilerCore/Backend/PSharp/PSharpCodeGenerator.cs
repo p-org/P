@@ -518,7 +518,7 @@ namespace Microsoft.Pc.Backend.PSharp
             switch (stmt)
             {
                 case AnnounceStmt announceStmt:
-                    context.Write(output, "currentMachine.Announce(");
+                    context.Write(output, "currentMachine.Announce((Event)");
                     WriteExpr(context, output, announceStmt.PEvent);
                     if (announceStmt.Payload != null)
                     {
@@ -773,7 +773,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"((PrtBool){(boolLiteralExpr.Value ? "true" : "false")})");
                     break;
                 case CastExpr castExpr:
-                    throw new NotImplementedException("explicit casts");
+                    context.Write(output, $"(({GetCSharpType(context, castExpr.Type)})");
+                    WriteExpr(context, output, castExpr.SubExpr);
+                    context.Write(output, ")");
+                    break;
                 case CoerceExpr coerceExpr:
                     switch (coerceExpr.Type.Canonicalize())
                     {
@@ -818,12 +821,21 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case EventRefExpr eventRefExpr:
                     var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
-                    string payloadExpr = "";
+                    
                     if (!(eventName == "Halt" || eventName == "Default"))
                     {
-                        payloadExpr = GetDefaultValue(context, eventRefExpr.Value.PayloadType);
+                        string payloadExpr = GetDefaultValue(context, eventRefExpr.Value.PayloadType);
+                        context.Write(output, $"new {eventName}({payloadExpr})");
                     }
-                    context.Write(output, $"new {eventName}({payloadExpr})");
+                    else if (eventName == "Halt")
+                    {
+                        context.Write(output, $"new PHalt()");
+                    }
+                    else
+                    {
+                        context.Write(output, $"new Default()");
+                    }
+                    
                     break;
                 case FairNondetExpr _:
                     context.Write(output, "((PrtBool)currentMachine.FairRandom())");
@@ -951,7 +963,6 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "PrtFloat";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-
                     return "IEventWithPayload<object>";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                     return "PMachineValue";

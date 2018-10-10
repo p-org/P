@@ -787,14 +787,19 @@ namespace Microsoft.Pc.Backend.PSharp
                             context.Write(output, ")");
                             break;
                         case PermissionType _:
+                            context.Write(output, "(PInterfaces.IsCoercionAllowed(");
+                            WriteExpr(context, output, coerceExpr.SubExpr);
+                            context.Write(output, $"PInterfaces.GetPermissions(\"I_{coerceExpr.NewType.CanonicalRepresentation}\")) ?");
                             context.Write(output, "new PMachineValue(");
                             context.Write(output, "(");
                             WriteExpr(context, output, coerceExpr.SubExpr);
                             context.Write(output, ").Id, ");
-                            context.Write(output, $"PInterfaces.GetPermissions(\"{coerceExpr.NewType.CanonicalRepresentation}\"))");
+                            context.Write(output, $"PInterfaces.GetPermissions(\"I_{coerceExpr.NewType.CanonicalRepresentation}\")) : null)");
                             break;
+                        default:
+                            throw new ArgumentOutOfRangeException(@"unexpected coercion operation to:" + coerceExpr.Type.CanonicalRepresentation);
                     }
-                    throw new NotImplementedException("some coercions?");
+                    break;
                 case ContainsKeyExpr containsKeyExpr:
                     context.Write(output, "((PrtBool)");
                     WriteExpr(context, output, containsKeyExpr.Map);

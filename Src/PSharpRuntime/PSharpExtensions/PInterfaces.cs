@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using PrtSharp.Exceptions;
+using PrtSharp.Values;
 
 namespace PrtSharp
 {
@@ -15,6 +17,18 @@ namespace PrtSharp
         public static List<string> GetPermissions(string interfaceName)
         {
             return Interfaces[interfaceName].ToList();
+        }
+
+        public static bool IsCoercionAllowed(PMachineValue val, string interfaceName)
+        {
+            if (GetPermissions(interfaceName).Any(ev => !val.Permissions.Contains(ev)))
+            {
+                throw new PIllegalCoercionException($"value cannot be coerced to interface {interfaceName}");
+            }
+            else
+            {
+                return true;
+            }
         }
     }
 }

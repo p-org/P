@@ -19,6 +19,8 @@ namespace UnitTests.Runners
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
         {
             FileInfo[] compiledFiles = DoCompile(scratchDirectory).ToArray();
+            CreateFileWithMainFunction(scratchDirectory);
+
             var dependencies = new List<string> {"netstandard.dll", "System.Runtime.dll", "System.Collections.dll"};
             string psharpPath =
                 Path.Combine(Constants.SolutionDirectory, "Ext", "psharp", "bin", "Microsoft.PSharp.dll");
@@ -26,8 +28,9 @@ namespace UnitTests.Runners
                 Constants.BuildConfiguration, "AnyCPU", "Binaries", "PrtSharp.dll");
             dependencies.Add(psharpExtensionsPath);
             dependencies.Add(psharpPath);
-            string[] args = new[] {"/t:library"}.Concat(dependencies.Select(dep => $"/r:\"{dep}\""))
-                .Concat(compiledFiles.Select(file => file.Name)).ToArray();
+            string[] args = new[] {"/t:exe"}.Concat(dependencies.Select(dep => $"/r:\"{dep}\""))
+                .Concat(compiledFiles.Select(file => file.Name))
+                .Append("Test.cs").ToArray();
             int exitCode =
                 ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
             foreach (FileInfo compiledFile in compiledFiles)
@@ -38,6 +41,38 @@ namespace UnitTests.Runners
             return exitCode;
         }
 
+        private void CreateFileWithMainFunction(DirectoryInfo dir)
+        {
+            string testCode = @"
+using Microsoft.PSharp;
+using System;
+
+namespace Main
+{
+    public class _TestRegression {
+        public static void Main(string[] args)
+        {
+            // Optional: increases verbosity level to see the P# runtime log.
+            var configuration = Configuration.Create().WithVerbosityEnabled(2);
+
+            // Creates a new P# runtime instance, and passes an optional configuration.
+            var runtime = PSharpRuntime.Create(configuration);
+
+            // Executes the P# program.
+            DefaultImpl.Execute(runtime);
+
+            // The P# runtime executes asynchronously, so we wait
+            // to not terminate the process.
+            Console.WriteLine(""Press Enter to terminate..."");
+        }
+    }
+}";
+            using (StreamWriter outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.cs"), false))
+            {
+                outputFile.WriteLine(testCode);
+            }
+        }
+    
         private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)
         {
             var compiler = new Compiler();

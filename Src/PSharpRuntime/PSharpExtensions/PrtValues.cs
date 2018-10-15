@@ -6,7 +6,7 @@ namespace PrtSharp
     {
         public static PrtBool Box(bool value)
         {
-            return value ? PrtBool.PrtTrue : PrtBool.PrtFalse;
+            return value;
         }
 
         public static PrtInt Box(long value)

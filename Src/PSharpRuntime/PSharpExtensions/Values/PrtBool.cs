@@ -4,26 +4,24 @@ using System.Runtime.CompilerServices;
 namespace PrtSharp.Values
 {
     [Serializable]
-    public sealed class PrtBool : PPrimitiveValue<bool>
+    public readonly struct PrtBool : IPrtValue
     {
-        public static readonly PrtBool PrtTrue = new PrtBool(true);
-        public static readonly PrtBool PrtFalse = new PrtBool(false);
+        private readonly bool value;
 
-        private PrtBool() : base(false)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private PrtBool(bool value)
         {
-        }
-
-        private PrtBool(bool value) : base(value)
-        {
-        }
-
-        public override IPrtValue Clone()
-        {
-            return new PrtBool(value);
+            this.value = value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator bool(PrtBool val)
+        public IPrtValue Clone()
+        {
+            return this;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator bool(in PrtBool val)
         {
             return val.value;
         }
@@ -31,32 +29,48 @@ namespace PrtSharp.Values
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator PrtBool(bool val)
         {
-            return val ? PrtTrue : PrtFalse;
+            return new PrtBool(val);
         }
 
-        public static bool operator true(PrtBool pValue)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator true(in PrtBool pValue)
         {
             return pValue;
         }
 
-        public static bool operator false(PrtBool pValue)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator false(in PrtBool pValue)
         {
             return !pValue;
         }
 
-        public static PrtBool operator !(PrtBool pValue)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator !(in PrtBool pValue)
         {
             return new PrtBool(!pValue.value);
         }
 
-        public static PrtBool operator &(PrtBool pValue1, PrtBool pValue2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator &(in PrtBool pValue1, in PrtBool pValue2)
         {
             return new PrtBool(pValue1.value && pValue2.value);
         }
 
-        public static PrtBool operator |(PrtBool pValue1, PrtBool pValue2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator |(in PrtBool pValue1, in PrtBool pValue2)
         {
             return new PrtBool(pValue1.value || pValue2.value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(IPrtValue obj)
+        {
+            return obj is PrtBool other && value == other.value;
+        }
+
+        public override int GetHashCode()
+        {
+            return value.GetHashCode();
         }
     }
 }

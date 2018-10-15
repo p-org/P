@@ -1,109 +1,135 @@
 ﻿using System;
+using System.Runtime.CompilerServices;
 
 namespace PrtSharp.Values
 {
     [Serializable]
-    public sealed class PrtFloat : PPrimitiveValue<double>
+    public readonly struct PrtFloat : IPrtValue
     {
-        public PrtFloat() : base(0)
+        private readonly double value;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public PrtFloat(double value)
         {
+            this.value = value;
         }
 
-        public PrtFloat(double value) : base(value)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public IPrtValue Clone()
         {
+            return this;
         }
 
-        public override IPrtValue Clone()
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool Equals(IPrtValue other)
         {
-            return new PrtFloat(value);
+            return other is PrtFloat f && value == f.value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override bool Equals(object val)
         {
             return val is PrtFloat other && Equals(value, other.value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public override int GetHashCode()
         {
             return value.GetHashCode();
         }
 
-        public static implicit operator double(PrtFloat val)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator double(in PrtFloat val)
         {
             return val.value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator PrtFloat(float val)
         {
             return new PrtFloat(val);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator PrtFloat(double val)
         {
             return new PrtFloat(val);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator PrtFloat(PrtInt val)
         {
             return new PrtFloat(val);
         }
 
-        public static PrtFloat operator +(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtFloat operator +(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
             return new PrtFloat(prtFloat1.value + prtFloat2.value);
         }
 
-        public static PrtFloat operator -(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtFloat operator -(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
             return new PrtFloat(prtFloat1.value - prtFloat2.value);
         }
 
-        public static PrtFloat operator *(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtFloat operator *(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
             return new PrtFloat(prtFloat1.value * prtFloat2.value);
         }
 
-        public static PrtFloat operator /(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtFloat operator /(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
             return new PrtFloat(prtFloat1.value / prtFloat2.value);
         }
 
-        public static PrtBool operator <(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator <(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return PrtValues.Box(prtFloat1.value < prtFloat2.value);
+            return (prtFloat1.value < prtFloat2.value);
         }
 
-        public static PrtBool operator >(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator >(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return PrtValues.Box(prtFloat1.value > prtFloat2.value);
+            return (prtFloat1.value > prtFloat2.value);
         }
 
-        public static PrtBool operator <=(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator <=(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return PrtValues.Box(prtFloat1.value <= prtFloat2.value);
+            return (prtFloat1.value <= prtFloat2.value);
         }
 
-        public static PrtBool operator >=(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator >=(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return PrtValues.Box(prtFloat1.value >= prtFloat2.value);
+            return (prtFloat1.value >= prtFloat2.value);
         }
 
-        public static PrtBool operator ==(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator ==(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return PrtValues.Box(Equals(prtFloat1?.value, prtFloat2?.value));
+            return (Equals(prtFloat1.value, prtFloat2.value));
         }
 
-        public static PrtBool operator !=(PrtFloat prtFloat1, PrtFloat prtFloat2)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator !=(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return PrtValues.Box(Equals(prtFloat1?.value, prtFloat2?.value) == false);
+            return (Equals(prtFloat1.value, prtFloat2.value) == false);
         }
 
-        public static PrtFloat operator +(PrtFloat prtFloat)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtFloat operator +(in PrtFloat prtFloat)
         {
             return new PrtFloat(+prtFloat.value);
         }
 
-        public static PrtFloat operator -(PrtFloat prtFloat)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtFloat operator -(in PrtFloat prtFloat)
         {
             return new PrtFloat(-prtFloat.value);
         }

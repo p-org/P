@@ -6,7 +6,7 @@ using System.Text;
 namespace PrtSharp.Values
 {
     public sealed class PrtSeq<T> : IPrtMutableValue, IReadOnlyList<T>
-        where T : class, IPrtValue
+        where T : IPrtValue
     {
         private readonly List<T> values = new List<T>();
 

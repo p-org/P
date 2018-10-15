@@ -1,7 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Pc;
-using Microsoft.PSharp;
 using NUnit.Framework;
 using PrtSharp;
 using PrtSharp.Values;
@@ -11,7 +10,7 @@ namespace UnitTests
     [TestFixture]
     public class PSharpValuesTest
     {
-        [NUnit.Framework.Test]
+        [Test]
         public void TestPrtBoolOverloading()
         {
             PrtBool boolT = true;
@@ -23,7 +22,7 @@ namespace UnitTests
             Assert.AreEqual(boolT, boolT && boolT);
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestPrtFloatComparisions()
         {
             PrtBool boolT = true;
@@ -39,7 +38,7 @@ namespace UnitTests
             Assert.AreEqual(boolT, PrtValues.Box(1.0) > PrtValues.Box(0.0));
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestPrtFloatOverloading()
         {
             PrtFloat float1 = 1.0;
@@ -57,7 +56,7 @@ namespace UnitTests
             Assert.AreEqual(float1, +float1);
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestPrtHashCodesAreValueDependent()
         {
             var list = new PrtSeq<PrtInt> {1};
@@ -74,11 +73,11 @@ namespace UnitTests
             Assert.AreNotEqual(hashCode1, hashCodeCloned2);
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestPrtIntComparisions()
         {
-            PrtBool boolT = PrtValues.Box(true);
-            PrtBool boolF = PrtValues.Box(false);
+            PrtBool boolT = true;
+            PrtBool boolF = false;
             Assert.AreEqual(boolT, PrtValues.Box(1) < PrtValues.Box(2));
             Assert.AreEqual(boolF, PrtValues.Box(1) < PrtValues.Box(1));
             Assert.AreEqual(boolT, PrtValues.Box(1) <= PrtValues.Box(1));
@@ -90,7 +89,7 @@ namespace UnitTests
             Assert.AreEqual(boolT, PrtValues.Box(1) > PrtValues.Box(0));
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestPrtIntOverloading()
         {
             PrtInt int1 = 1;
@@ -108,7 +107,7 @@ namespace UnitTests
             Assert.AreEqual(int1, +int1);
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestPrtSequenceEquality()
         {
             // var t : (a:int, b:float);
@@ -132,7 +131,7 @@ namespace UnitTests
             Assert.False(Equals(list1, list2));
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestStableHashes()
         {
             // ints
@@ -144,8 +143,8 @@ namespace UnitTests
             }
 
             // bools
-            Assert.AreEqual(PrtValues.Box(true).GetHashCode(), PrtBool.PrtTrue.GetHashCode());
-            Assert.AreEqual(PrtValues.Box(false).GetHashCode(), PrtBool.PrtFalse.GetHashCode());
+            Assert.AreEqual(PrtValues.Box(true).GetHashCode(), ((PrtBool)true).GetHashCode());
+            Assert.AreEqual(PrtValues.Box(false).GetHashCode(), ((PrtBool)false).GetHashCode());
 
             // floats
             for (int i = 0; i < 100; i++)
@@ -156,7 +155,7 @@ namespace UnitTests
             }
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestPrtMapBasic()
         {
             // Build two identical maps in different orders
@@ -184,7 +183,7 @@ namespace UnitTests
             Assert.AreEqual(map1.GetHashCode(), map2.GetHashCode());
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestFreezingValues()
         {
             var list = new PrtSeq<PrtInt> {PrtValues.Box(1), PrtValues.Box(2), PrtValues.Box(3)};
@@ -199,7 +198,7 @@ namespace UnitTests
             Assert.AreEqual(PrtValues.Box(2.71), map[list]);
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestDeeplyFrozenValues()
         {
             // Create a list of int-lists and clone it
@@ -214,7 +213,7 @@ namespace UnitTests
             // Use one of the clones as a map key, which freezes it to prevent
             // hash code changes under the map's nose
             var weirdMap = new PrtMap<PrtSeq<PrtSeq<PrtInt>>, PrtBool>();
-            weirdMap.Add(nestedList, PrtBool.PrtTrue);
+            weirdMap.Add(nestedList, true);
 
             // Ensure that attempts to mutate any part of the key-list are denied
             Assert.Throws<PFrozenMutationException>(() =>
@@ -232,7 +231,7 @@ namespace UnitTests
             Assert.AreNotEqual(listBackup, keyList);
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestExplicitCastIsBox()
         {
             Assert.AreEqual(typeof(PrtInt), ((PrtInt)3).GetType());
@@ -240,7 +239,7 @@ namespace UnitTests
             Assert.AreEqual(typeof(PrtBool), ((PrtBool)true).GetType());
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestIfStatementTranslation()
         {
             PrtBool unconditional = true;
@@ -251,7 +250,7 @@ namespace UnitTests
             Assert.Fail();
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestFib()
         {
             PrtInt a = 1;
@@ -265,7 +264,7 @@ namespace UnitTests
             Assert.AreEqual(7778742049, (long)b);
         }
 
-        [NUnit.Framework.Test]
+        [Test]
         public void TestFibOpt()
         {
             long a = 1;
@@ -279,7 +278,21 @@ namespace UnitTests
             Assert.AreEqual(7778742049, b);
         }
 
-        [NUnit.Framework.Test]
+        [Test]
+        public void TestFloatOptimization()
+        {
+            PrtFloat init = 5.0;
+            for (int i = 0; i < 100; i++)
+            {
+                var f = init * init + 2 * init + 1;
+                var df = 2 * init + 2;
+                init = init - f / df;
+            }
+            
+            Assert.True(Math.Abs(init + 1) < 1e-8f);
+        }
+
+        [Test]
         public void TestPMachineValue()
         {
             var pm1 = new I_Main(null, new List<string>());

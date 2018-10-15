@@ -5,8 +5,8 @@ using System.Linq;
 namespace PrtSharp.Values
 {
     public sealed class PrtMap<TKey, TValue> : IPrtMutableValue, IDictionary<TKey, TValue>
-        where TKey : class, IPrtValue
-        where TValue : class, IPrtValue
+        where TKey : IPrtValue
+        where TValue : IPrtValue
     {
         private readonly Dictionary<TKey, TValue> map = new Dictionary<TKey, TValue>();
 

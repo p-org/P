@@ -4,19 +4,24 @@ using System.Runtime.CompilerServices;
 namespace PrtSharp.Values
 {
     [Serializable]
-    public sealed class PrtInt : PPrimitiveValue<long>
+    public readonly struct PrtInt : IPrtValue
     {
-        public PrtInt() : base(0)
+        private readonly long value;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public PrtInt(long value)
         {
+            this.value = value;
         }
 
-        public PrtInt(long value) : base(value)
+        public bool Equals(IPrtValue other)
         {
+            return other is PrtInt i && value == i.value;
         }
 
-        public override IPrtValue Clone()
+        public IPrtValue Clone()
         {
-            return new PrtInt(value);
+            return this;
         }
 
         public override bool Equals(object val)
@@ -54,91 +59,91 @@ namespace PrtSharp.Values
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator PrtInt(PrtFloat val)
+        public static implicit operator PrtInt(in PrtFloat val)
         {
             return new PrtInt((long)val);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator int(PrtInt val)
+        public static implicit operator int(in PrtInt val)
         {
             return (int) val.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator long(PrtInt val)
+        public static implicit operator long(in PrtInt val)
         {
             return val.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtInt operator +(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtInt operator +(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return new PrtInt(prtInt1.value + prtInt2.value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtInt operator -(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtInt operator -(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return new PrtInt(prtInt1.value - prtInt2.value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtInt operator *(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtInt operator *(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return new PrtInt(prtInt1.value * prtInt2.value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtInt operator /(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtInt operator /(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return new PrtInt(prtInt1.value / prtInt2.value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtBool operator <(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtBool operator <(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return prtInt1.value < prtInt2.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtBool operator >(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtBool operator >(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return prtInt1.value > prtInt2.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtBool operator <=(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtBool operator <=(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return prtInt1.value <= prtInt2.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtBool operator >=(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtBool operator >=(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return prtInt1.value >= prtInt2.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtBool operator ==(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtBool operator ==(in PrtInt prtInt1, in PrtInt prtInt2)
         {
-            return Equals(prtInt1?.value, prtInt2?.value);
+            return Equals(prtInt1.value, prtInt2.value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtBool operator !=(PrtInt prtInt1, PrtInt prtInt2)
+        public static PrtBool operator !=(in PrtInt prtInt1, in PrtInt prtInt2)
         {
-            return Equals(prtInt1?.value, prtInt2?.value) == false;
+            return Equals(prtInt1.value, prtInt2.value) == false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtInt operator +(PrtInt prtInt)
+        public static PrtInt operator +(in PrtInt prtInt)
         {
             return new PrtInt(+prtInt.value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static PrtInt operator -(PrtInt prtInt)
+        public static PrtInt operator -(in PrtInt prtInt)
         {
             return new PrtInt(-prtInt.value);
         }

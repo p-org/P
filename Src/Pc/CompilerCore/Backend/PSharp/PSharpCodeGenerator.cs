@@ -313,7 +313,7 @@ namespace Microsoft.Pc.Backend.PSharp
             string declName = context.Names.GetNameForDecl(pEvent);
             
             // initialize the payload type
-            string payloadType = pEvent.PayloadType.IsSameTypeAs(PrimitiveType.Null)? "object": GetCSharpType(context, pEvent.PayloadType);
+            string payloadType = GetCSharpType(context, pEvent.PayloadType, true);
             context.WriteLine(output, $"internal class {declName} : PEvent<{payloadType}>");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
@@ -514,7 +514,7 @@ namespace Microsoft.Pc.Backend.PSharp
             {
                 PLanguageType type = local.Type;
                 context.WriteLine(output,
-                    $"{GetCSharpType(context, type)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
+                    $"{GetCSharpType(context, type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
             }
 
             foreach (IPStmt bodyStatement in function.Body.Statements)
@@ -685,7 +685,7 @@ namespace Microsoft.Pc.Backend.PSharp
                         {
                             PLanguageType type = local.Type;
                             context.WriteLine(output,
-                                $"{GetCSharpType(context, type)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
+                                $"{GetCSharpType(context, type, true)} {context.Names.GetNameForDecl(local)} = {GetDefaultValue(context, type)};");
                         }
                         foreach (var caseStmt in recvCase.Value.Body.Statements)
                         {
@@ -955,7 +955,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.Write(output, $"(({GetCSharpType(context, variableRef.Type)})((IPrtValue){varName}).Clone())");
         }
 
-        private string GetCSharpType(CompilationContext context, PLanguageType type)
+        private string GetCSharpType(CompilationContext context, PLanguageType type, bool isVar = false)
         {
             switch (type.Canonicalize())
             {
@@ -984,7 +984,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
-                    return "void";
+                    return isVar ? "object" : "void";
                 case SequenceType sequenceType:
                     return $"PrtSeq<{GetCSharpType(context, sequenceType.ElementType)}>";
                 case TupleType tupleType:
@@ -1024,6 +1024,8 @@ namespace Microsoft.Pc.Backend.PSharp
                 case ForeignType _:
                 case DataType _:
                     return "null";
+                case null:
+                    return "";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(returnType));
             }

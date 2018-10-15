@@ -29,6 +29,7 @@ namespace UnitTests.Core
         /// </summary>
         /// <param name="testDir">The directory containing P source files</param>
         /// <param name="runConfig">The run configuration for the test, or null if compile-only</param>
+        /// <param name="output">The desired output language</param>
         /// <returns>The test case in a runnable state.</returns>
         public CompilerTestCase CreateTestCase(DirectoryInfo testDir, TestConfig runConfig, CompilerOutput output)
         {
@@ -61,22 +62,16 @@ namespace UnitTests.Core
 
                 // TODO: fix golden outputs for dynamic error assertions (79 tests)
                 ParseExpectedOutput(expectedOutput, out string stdout, out string stderr, out int exitCode);
-                if (testName.Contains("/DynamicError/"))
+                if (testName.Contains("/DynamicError/") || output.Equals(CompilerOutput.PSharp))
                 {
                     stdout = null;
                     stderr = null;
                 }
                 validator = new ExecutionOutputValidator(exitCode, stdout, stderr);
-
-                // TODO: fix golden output for P#
-                if (output.Equals(CompilerOutput.PSharp))
-                {
-                    validator = new CompileSuccessValidator();
-                }
             }
             else
             {
-                runner = new CompileOnlyRunner(CompilerOutput.C, inputFiles);
+                runner = new CompileOnlyRunner(output, inputFiles);
 
                 // TODO: validate information about the particular kind of compiler error
                 bool isStaticError = testName.Contains("/StaticError/");

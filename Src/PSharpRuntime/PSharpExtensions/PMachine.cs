@@ -147,6 +147,7 @@ namespace PrtSharp
         private void AnnounceInternal(Event ev)
         {
             Assert(!(ev is Default), "cannot send a null event");
+
             foreach (var monitor in PModule.monitorMap[interfaceName])
             {
                 if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))

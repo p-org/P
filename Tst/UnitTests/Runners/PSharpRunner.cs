@@ -28,14 +28,32 @@ namespace UnitTests.Runners
                 Constants.BuildConfiguration, "AnyCPU", "Binaries", "PrtSharp.dll");
             dependencies.Add(psharpExtensionsPath);
             dependencies.Add(psharpPath);
+
+            File.Copy(psharpExtensionsPath, Path.Combine(scratchDirectory.FullName, "PrtSharp.dll"), true);
+
             string[] args = new[] {"/t:exe"}.Concat(dependencies.Select(dep => $"/r:\"{dep}\""))
                 .Concat(compiledFiles.Select(file => file.Name))
                 .Append("Test.cs").ToArray();
-            int exitCode =
-                ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
+
+
+            int exitCode = ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
+
             foreach (FileInfo compiledFile in compiledFiles)
             {
                 stdout += $"{compiledFile.Name}\n===\n{File.ReadAllText(compiledFile.FullName)}\n\n";
+            }
+
+            if (exitCode == 0)
+            {
+                RunPSharpTester(scratchDirectory.FullName, Path.Combine(scratchDirectory.FullName, "Test.exe"), out var testStdout, out var testStderr);
+                stdout += testStdout;
+                stderr += testStderr;
+
+                // TODO: bug P# folks to either set an exit code or print obvious indicator that can be machine-processed.
+                if (testStdout.Contains("buggy schedules"))
+                {
+                    exitCode = -1;
+                }
             }
 
             return exitCode;
@@ -71,6 +89,12 @@ namespace Main
             {
                 outputFile.WriteLine(testCode);
             }
+        }
+
+        private int RunPSharpTester(string directory, string dllPath, out string stdout, out string stderr)
+        {
+            string testerPath = Path.Combine(Constants.SolutionDirectory, "Ext", "psharp", "bin", "win-x64", "PSharpTester.exe");
+            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, testerPath, $"\"/test:{dllPath}\"");
         }
     
         private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)

@@ -170,6 +170,7 @@ namespace Main
 
         public static void InitializeMonitorMap(PSharpRuntime runtime)
         {
+
         }
 
 
@@ -209,7 +210,7 @@ namespace Main
 
 namespace Main
 {
-    public class _TestRegression
+    public static class _TestRegression
     {
         public static void Main(string[] args)
         {
@@ -225,6 +226,7 @@ namespace Main
             // The P# runtime executes asynchronously, so we wait
             // to not terminate the process
             Console.WriteLine("Press Enter to terminate...");
+            Console.ReadLine();
         }
     }
 }

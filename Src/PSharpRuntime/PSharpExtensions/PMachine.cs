@@ -15,7 +15,7 @@ namespace PrtSharp
         public List<string> creates = new List<string>();
         public List<string> receives = new List<string>();
         public PMachineValue self;
-        protected object gotoPayload = null;
+        protected object gotoPayload;
 
         public new void Assert(bool predicate)
         {
@@ -147,6 +147,7 @@ namespace PrtSharp
         private void AnnounceInternal(Event ev)
         {
             Assert(!(ev is Default), "cannot send a null event");
+            if (!PModule.monitorMap.ContainsKey(interfaceName)) return;
             foreach (var monitor in PModule.monitorMap[interfaceName])
             {
                 if (PModule.monitorObserves[monitor.Name].Contains(ev.GetType().Name))
@@ -154,6 +155,7 @@ namespace PrtSharp
                     Monitor(monitor, ev);
                 }
             }
+
         }
     }
 }

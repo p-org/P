@@ -12,140 +12,230 @@ using System.Threading.Tasks;
 namespace Main
 {
     public static partial class GlobalFunctions_Main { }
-    internal class Ping : PEvent<PMachineValue>
+    internal class E1 : PEvent<object>
     {
-        static Ping() { AssertVal = 1; AssumeVal = -1; }
-        public Ping() : base() { }
-        public Ping(PMachineValue payload) : base(payload) { }
+        static E1() { AssertVal = 1; AssumeVal = -1; }
+        public E1() : base() { }
+        public E1(object payload) : base(payload) { }
     }
-    internal class Pong : PEvent<object>
+    internal class E2 : PEvent<PrtInt>
     {
-        static Pong() { AssertVal = 1; AssumeVal = -1; }
-        public Pong() : base() { }
-        public Pong(object payload) : base(payload) { }
+        static E2() { AssertVal = 1; AssumeVal = -1; }
+        public E2() : base() { }
+        public E2(PrtInt payload) : base(payload) { }
     }
-    internal class Success : PEvent<object>
+    internal class E3 : PEvent<object>
     {
-        static Success() { AssertVal = -1; AssumeVal = -1; }
-        public Success() : base() { }
-        public Success(object payload) : base(payload) { }
+        static E3() { AssertVal = -1; AssumeVal = 1; }
+        public E3() : base() { }
+        public E3(object payload) : base(payload) { }
+    }
+    internal class E4 : PEvent<object>
+    {
+        static E4() { AssertVal = -1; AssumeVal = -1; }
+        public E4() : base() { }
+        public E4(object payload) : base(payload) { }
+    }
+    internal class unit : PEvent<object>
+    {
+        static unit() { AssertVal = 1; AssumeVal = -1; }
+        public unit() : base() { }
+        public unit(object payload) : base(payload) { }
     }
     internal class Main : PMachine
     {
-        private PMachineValue pongId = null;
-        private PMachineValue pongId1 = null;
+        private PMachineValue ghost_machine = null;
         public Main()
         {
-            this.sends.Add(nameof(Ping));
-            this.sends.Add(nameof(Pong));
-            this.sends.Add(nameof(Success));
-            this.receives.Add(nameof(Ping));
-            this.receives.Add(nameof(Pong));
-            this.receives.Add(nameof(Success));
-            this.creates.Add(nameof(I_PONG));
+            this.sends.Add(nameof(E1));
+            this.sends.Add(nameof(E2));
+            this.sends.Add(nameof(E3));
+            this.sends.Add(nameof(E4));
+            this.sends.Add(nameof(unit));
+            this.receives.Add(nameof(E1));
+            this.receives.Add(nameof(E2));
+            this.receives.Add(nameof(E3));
+            this.receives.Add(nameof(E4));
+            this.receives.Add(nameof(unit));
+            this.creates.Add(nameof(I_Ghost));
         }
 
         public void Anon()
         {
             Main currentMachine = this;
-            PMachineValue TMP_tmp0 = null;
-            IEventWithPayload TMP_tmp1 = null;
-            TMP_tmp0 = currentMachine.CreateInterface<I_PONG>(currentMachine);
-            pongId = TMP_tmp0;
-            TMP_tmp1 = new Success(null);
-            currentMachine.RaiseEvent(currentMachine, (Event)TMP_tmp1);
-            throw new PUnreachableCodeException();
-        }
-        public PrtBool foo()
-        {
-            Main currentMachine = this;
-            return ((PrtBool)true);
+            PrtInt payload = ((PEvent<PrtInt>)currentMachine.ReceivedEvent).PayloadT;
+            PrtInt TMP_tmp0 = ((PrtInt)0);
+            TMP_tmp0 = ((PrtInt)((IPrtValue)payload).Clone());
+            Action1(TMP_tmp0);
         }
         public void Anon_1()
         {
             Main currentMachine = this;
-            PrtBool res = ((PrtBool)false);
             PMachineValue TMP_tmp0_1 = null;
-            IEventWithPayload TMP_tmp1_1 = null;
-            PMachineValue TMP_tmp2 = null;
-            PrtBool TMP_tmp3 = ((PrtBool)false);
-            IEventWithPayload TMP_tmp4 = null;
-            TMP_tmp0_1 = ((PMachineValue)((IPrtValue)pongId).Clone());
-            TMP_tmp1_1 = new Ping(null);
-            TMP_tmp2 = currentMachine.self;
-            currentMachine.SendEvent(currentMachine, TMP_tmp0_1, (Event)TMP_tmp1_1, TMP_tmp2);
-            TMP_tmp3 = foo();
-            res = TMP_tmp3;
-            TMP_tmp4 = new Success(null);
-            currentMachine.RaiseEvent(currentMachine, (Event)TMP_tmp4);
+            PMachineValue TMP_tmp1 = null;
+            IEventWithPayload TMP_tmp2 = null;
+            TMP_tmp0_1 = currentMachine.self;
+            TMP_tmp1 = currentMachine.CreateInterface<I_Ghost>(currentMachine, TMP_tmp0_1);
+            ghost_machine = TMP_tmp1;
+            TMP_tmp2 = new unit(null);
+            currentMachine.RaiseEvent(currentMachine, (Event)TMP_tmp2);
             throw new PUnreachableCodeException();
         }
-        [Start]
-        [OnEntry(nameof(InitializeParametersFunction))]
-        [OnEventGotoState(typeof(ConstructorEvent), typeof(Ping_Init))]
-        class __InitState__ : MachineState { }
-
-        [OnEntry(nameof(Anon))]
-        [OnEventGotoState(typeof(Success), typeof(Ping_SendPing))]
-        class Ping_Init : MachineState
-        {
-        }
-        [OnEntry(nameof(Anon_1))]
-        [OnEventGotoState(typeof(Success), typeof(Ping_WaitPong))]
-        class Ping_SendPing : MachineState
-        {
-        }
-        [OnEventGotoState(typeof(Pong), typeof(Ping_SendPing))]
-        class Ping_WaitPong : MachineState
-        {
-        }
-        class Done : MachineState
-        {
-        }
-    }
-    internal class PONG : PMachine
-    {
-        public PONG()
-        {
-            this.sends.Add(nameof(Ping));
-            this.sends.Add(nameof(Pong));
-            this.sends.Add(nameof(Success));
-            this.receives.Add(nameof(Ping));
-            this.receives.Add(nameof(Pong));
-            this.receives.Add(nameof(Success));
-        }
-
         public void Anon_2()
         {
-            PONG currentMachine = this;
+            Main currentMachine = this;
+            PMachineValue TMP_tmp0_2 = null;
+            IEventWithPayload TMP_tmp1_1 = null;
+            PMachineValue TMP_tmp2_1 = null;
+            IEventWithPayload TMP_tmp3 = null;
+            TMP_tmp0_2 = ((PMachineValue)((IPrtValue)ghost_machine).Clone());
+            TMP_tmp1_1 = new E1(null);
+            currentMachine.SendEvent(currentMachine, TMP_tmp0_2, (Event)TMP_tmp1_1);
+            TMP_tmp2_1 = ((PMachineValue)((IPrtValue)ghost_machine).Clone());
+            TMP_tmp3 = new E1(null);
+            currentMachine.SendEvent(currentMachine, TMP_tmp2_1, (Event)TMP_tmp3);
         }
         public void Anon_3()
         {
-            PONG currentMachine = this;
-            PMachineValue payload = ((PEvent<PMachineValue>) currentMachine.ReceivedEvent).PayloadT;
-            PMachineValue TMP_tmp0_2 = null;
-            IEventWithPayload TMP_tmp1_2 = null;
-            IEventWithPayload TMP_tmp2_1 = null;
-            TMP_tmp0_2 = ((PMachineValue)((IPrtValue)payload).Clone());
-            TMP_tmp1_2 = new Pong(null);
-            currentMachine.SendEvent(currentMachine, TMP_tmp0_2, (Event)TMP_tmp1_2);
-            TMP_tmp2_1 = new Success(null);
-            currentMachine.RaiseEvent(currentMachine, (Event)TMP_tmp2_1);
+            Main currentMachine = this;
+            IEventWithPayload TMP_tmp0_3 = null;
+            TMP_tmp0_3 = new unit(null);
+            currentMachine.RaiseEvent(currentMachine, (Event)TMP_tmp0_3);
             throw new PUnreachableCodeException();
+        }
+        public void Anon_4()
+        {
+            Main currentMachine = this;
+        }
+        public void Action1(PrtInt payload_1)
+        {
+            Main currentMachine = this;
+            PrtBool TMP_tmp0_4 = ((PrtBool)false);
+            PMachineValue TMP_tmp1_2 = null;
+            IEventWithPayload TMP_tmp2_2 = null;
+            PMachineValue TMP_tmp3_1 = null;
+            IEventWithPayload TMP_tmp4 = null;
+            TMP_tmp0_4 = (payload_1) == (((PrtInt)100));
+            currentMachine.Assert(TMP_tmp0_4, "");
+            TMP_tmp1_2 = ((PMachineValue)((IPrtValue)ghost_machine).Clone());
+            TMP_tmp2_2 = new E3(null);
+            currentMachine.SendEvent(currentMachine, TMP_tmp1_2, (Event)TMP_tmp2_2);
+            TMP_tmp3_1 = ((PMachineValue)((IPrtValue)ghost_machine).Clone());
+            TMP_tmp4 = new E3(null);
+            currentMachine.SendEvent(currentMachine, TMP_tmp3_1, (Event)TMP_tmp4);
         }
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
-        [OnEventGotoState(typeof(ConstructorEvent), typeof(Pong_WaitPing))]
+        [OnEventGotoState(typeof(ConstructorEvent), typeof(Real_Init))]
         class __InitState__ : MachineState { }
 
+        [OnEntry(nameof(Anon_1))]
+        [OnEventDoAction(typeof(E2), nameof(Anon))]
+        [OnEventPushState(typeof(unit), typeof(Real_S1))]
+        [OnEventGotoState(typeof(E4), typeof(Real_S2))]
+        class Real_Init : MachineState
+        {
+        }
         [OnEntry(nameof(Anon_2))]
-        [OnEventGotoState(typeof(Ping), typeof(Pong_SendPong))]
-        class Pong_WaitPing : MachineState
+        class Real_S1 : MachineState
         {
         }
         [OnEntry(nameof(Anon_3))]
-        [OnEventGotoState(typeof(Success), typeof(Pong_WaitPing))]
-        class Pong_SendPong : MachineState
+        [OnEventGotoState(typeof(unit), typeof(Real_S3))]
+        class Real_S2 : MachineState
+        {
+        }
+        [OnEntry(nameof(Anon_4))]
+        [OnEventGotoState(typeof(E4), typeof(Real_S3))]
+        class Real_S3 : MachineState
+        {
+        }
+    }
+    internal class Ghost : PMachine
+    {
+        private PMachineValue real_machine = null;
+        public Ghost()
+        {
+            this.sends.Add(nameof(E1));
+            this.sends.Add(nameof(E2));
+            this.sends.Add(nameof(E3));
+            this.sends.Add(nameof(E4));
+            this.sends.Add(nameof(unit));
+            this.receives.Add(nameof(E1));
+            this.receives.Add(nameof(E2));
+            this.receives.Add(nameof(E3));
+            this.receives.Add(nameof(E4));
+            this.receives.Add(nameof(unit));
+        }
+
+        public void Anon_5()
+        {
+            Ghost currentMachine = this;
+            PMachineValue payload_2 = ((PEvent<PMachineValue>)currentMachine.ReceivedEvent).PayloadT;
+            IEventWithPayload TMP_tmp0_5 = null;
+            real_machine = ((PMachineValue)((IPrtValue)payload_2).Clone());
+            TMP_tmp0_5 = new unit(null);
+            currentMachine.RaiseEvent(currentMachine, (Event)TMP_tmp0_5);
+            throw new PUnreachableCodeException();
+        }
+        public void Anon_6()
+        {
+            Ghost currentMachine = this;
+        }
+        public void Anon_7()
+        {
+            Ghost currentMachine = this;
+            PMachineValue TMP_tmp0_6 = null;
+            IEventWithPayload TMP_tmp1_3 = null;
+            PrtInt TMP_tmp2_3 = ((PrtInt)0);
+            TMP_tmp0_6 = ((PMachineValue)((IPrtValue)real_machine).Clone());
+            TMP_tmp1_3 = new E2(((PrtInt)0));
+            TMP_tmp2_3 = ((PrtInt)100);
+            currentMachine.SendEvent(currentMachine, TMP_tmp0_6, (Event)TMP_tmp1_3, TMP_tmp2_3);
+        }
+        public void Anon_8()
+        {
+            Ghost currentMachine = this;
+            PMachineValue TMP_tmp0_7 = null;
+            IEventWithPayload TMP_tmp1_4 = null;
+            PMachineValue TMP_tmp2_4 = null;
+            IEventWithPayload TMP_tmp3_2 = null;
+            PMachineValue TMP_tmp4_1 = null;
+            IEventWithPayload TMP_tmp5 = null;
+            TMP_tmp0_7 = ((PMachineValue)((IPrtValue)real_machine).Clone());
+            TMP_tmp1_4 = new E4(null);
+            currentMachine.SendEvent(currentMachine, TMP_tmp0_7, (Event)TMP_tmp1_4);
+            TMP_tmp2_4 = ((PMachineValue)((IPrtValue)real_machine).Clone());
+            TMP_tmp3_2 = new E4(null);
+            currentMachine.SendEvent(currentMachine, TMP_tmp2_4, (Event)TMP_tmp3_2);
+            TMP_tmp4_1 = ((PMachineValue)((IPrtValue)real_machine).Clone());
+            TMP_tmp5 = new E4(null);
+            currentMachine.SendEvent(currentMachine, TMP_tmp4_1, (Event)TMP_tmp5);
+        }
+        [Start]
+        [OnEntry(nameof(InitializeParametersFunction))]
+        [OnEventGotoState(typeof(ConstructorEvent), typeof(_Init))]
+        class __InitState__ : MachineState { }
+
+        [OnEntry(nameof(Anon_5))]
+        [OnEventGotoState(typeof(unit), typeof(Ghost_Init))]
+        class _Init : MachineState
+        {
+        }
+        [OnEntry(nameof(Anon_6))]
+        [OnEventGotoState(typeof(E1), typeof(Ghost_S1))]
+        class Ghost_Init : MachineState
+        {
+        }
+        [OnEntry(nameof(Anon_7))]
+        [OnEventGotoState(typeof(E3), typeof(Ghost_S2))]
+        [IgnoreEvents(typeof(E1))]
+        class Ghost_S1 : MachineState
+        {
+        }
+        [OnEntry(nameof(Anon_8))]
+        [OnEventGotoState(typeof(E3), typeof(Ghost_Init))]
+        class Ghost_S2 : MachineState
         {
         }
     }
@@ -154,14 +244,14 @@ namespace Main
         public static void InitializeLinkMap()
         {
             PModule.linkMap[nameof(I_Main)] = new Dictionary<string, string>();
-            PModule.linkMap[nameof(I_Main)].Add(nameof(I_PONG), nameof(I_PONG));
-            PModule.linkMap[nameof(I_PONG)] = new Dictionary<string, string>();
+            PModule.linkMap[nameof(I_Main)].Add(nameof(I_Ghost), nameof(I_Ghost));
+            PModule.linkMap[nameof(I_Ghost)] = new Dictionary<string, string>();
         }
 
         public static void InitializeInterfaceDefMap()
         {
             PModule.interfaceDefinitionMap.Add(nameof(I_Main), typeof(Main));
-            PModule.interfaceDefinitionMap.Add(nameof(I_PONG), typeof(PONG));
+            PModule.interfaceDefinitionMap.Add(nameof(I_Ghost), typeof(Ghost));
         }
 
         public static void InitializeMonitorObserves()
@@ -170,7 +260,6 @@ namespace Main
 
         public static void InitializeMonitorMap(PSharpRuntime runtime)
         {
-
         }
 
 
@@ -192,25 +281,26 @@ namespace Main
         public I_Main(MachineId machine, List<string> permissions) : base(machine, permissions) { }
     }
 
-    public class I_PONG : PMachineValue
+    public class I_Ghost : PMachineValue
     {
-        public I_PONG(MachineId machine, List<string> permissions) : base(machine, permissions) { }
+        public I_Ghost(MachineId machine, List<string> permissions) : base(machine, permissions) { }
     }
 
     public partial class PHelper
     {
         public static void InitializeInterfaces()
         {
-            PInterfaces.AddInterface(nameof(I_Main), nameof(Ping), nameof(Pong), nameof(Success));
-            PInterfaces.AddInterface(nameof(I_PONG), nameof(Ping), nameof(Pong), nameof(Success));
+            PInterfaces.AddInterface(nameof(I_Main), nameof(E1), nameof(E2), nameof(E3), nameof(E4), nameof(unit));
+            PInterfaces.AddInterface(nameof(I_Ghost), nameof(E1), nameof(E2), nameof(E3), nameof(E4), nameof(unit));
         }
     }
 
 }
 
+
 namespace Main
 {
-    public static class _TestRegression
+    public class _TestRegression
     {
         public static void Main(string[] args)
         {
@@ -224,7 +314,7 @@ namespace Main
             DefaultImpl.Execute(runtime);
 
             // The P# runtime executes asynchronously, so we wait
-            // to not terminate the process
+            // to not terminate the process.
             Console.WriteLine("Press Enter to terminate...");
             Console.ReadLine();
         }

@@ -45,14 +45,18 @@ namespace UnitTests.Runners
 
             if (exitCode == 0)
             {
-                RunPSharpTester(scratchDirectory.FullName, Path.Combine(scratchDirectory.FullName, "Test.exe"), out var testStdout, out var testStderr);
+                exitCode = RunPSharpTester(scratchDirectory.FullName, Path.Combine(scratchDirectory.FullName, "Test.exe"), out var testStdout, out var testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
 
                 // TODO: bug P# folks to either set an exit code or print obvious indicator that can be machine-processed.
                 if (testStdout.Contains("buggy schedules"))
                 {
-                    exitCode = -1;
+                    // TODO: fix testing so that we can check whether a bug was expected.
+                    if (scratchDirectory.FullName.Contains("DynamicError"))
+                    {
+                        exitCode = 1;
+                    }
                 }
             }
 

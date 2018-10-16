@@ -40,9 +40,9 @@ namespace Microsoft.Pc.Backend.PSharp
             // TODO: generate tuple type classes.
             foreach (var type in context.UsedTypes)
             {
-                if (PLanguageType.TypeIsOfKind(type, TypeKind.NamedTuple))
+                if (type.Canonicalize() is NamedTupleType namedtuple)
                 {
-                    WriteNamedTupleDefinition(context, source.Stream, (NamedTupleType)type);
+                    WriteNamedTupleDefinition(context, source.Stream, namedtuple);
                 }
             }
 
@@ -934,7 +934,7 @@ namespace Microsoft.Pc.Backend.PSharp
                         WriteExpr(context, output, namedTupleExpr.TupleFields[i]);
                     }
 
-                    context.Write(output, ")");
+                    context.Write(output, "))");
                     break;
                 case NondetExpr _:
                     context.Write(output, "((PrtBool)currentMachine.Random())");
@@ -1001,7 +1001,7 @@ namespace Microsoft.Pc.Backend.PSharp
             switch (type.Canonicalize())
             {
                 case DataType _:
-                    return "object";
+                    return "IPrtValue";
                 case EnumType enumType:
                     return context.Names.GetNameForDecl(enumType.EnumDecl);
                 case ForeignType _:
@@ -1013,7 +1013,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PermissionType _:
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
-                    return "object";
+                    return "IPrtValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Bool):
                     return "PrtBool";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Int):
@@ -1025,7 +1025,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
-                    return isVar ? "object" : "void";
+                    return isVar ? "IPrtValue" : "void";
                 case SequenceType sequenceType:
                     return $"PrtSeq<{GetCSharpType(context, sequenceType.ElementType)}>";
                 case TupleType tupleType:

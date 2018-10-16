@@ -276,15 +276,15 @@ namespace Microsoft.Pc.Backend.PSharp
         {
             // compute the reverse map
             var machineMap = new Dictionary<string, List<Machine>>();
-            foreach (var monitor in monitorMap)
+            foreach (var monitorToInterface in monitorMap)
             {
-                foreach (var machine in monitor.Value)
+                foreach (var iface in monitorToInterface.Value)
                 {
-                    if (!machineMap.ContainsKey(machine.Name))
+                    if (!machineMap.ContainsKey(iface.Name))
                     {
-                        machineMap[machine.Name] = new List<Machine>();
+                        machineMap[iface.Name] = new List<Machine>();
                     }
-                    machineMap[machine.Name].Add(monitor.Key);
+                    machineMap[iface.Name].Add(monitorToInterface.Key);
                 }
             }
 

@@ -723,7 +723,23 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case RemoveStmt removeStmt:
-                    throw new NotImplementedException("remove statements");
+                    switch (removeStmt.Variable.Type)
+                    {
+                        case MapType map:
+                            WriteExpr(context, output, removeStmt.Variable);
+                            context.Write(output, ".Remove(");
+                            WriteExpr(context, output, removeStmt.Value);
+                            context.WriteLine(output, ");");
+                            break;
+                        case SequenceType seq:
+                            WriteExpr(context, output, removeStmt.Variable);
+                            context.Write(output, ".RemoveAt(");
+                            WriteExpr(context, output, removeStmt.Value);
+                            context.WriteLine(output, ");");
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException($"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
+                    }
                     break;
                 case ReturnStmt returnStmt:
                     context.Write(output, "return ");

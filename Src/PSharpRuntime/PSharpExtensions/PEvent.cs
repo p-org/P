@@ -2,26 +2,27 @@
 
 namespace PrtSharp
 {
-    public interface IEventWithPayload<out T> : IPrtValue
+    public interface IEventWithPayload : IPrtValue
     {
-        T Payload { get; }
+        object Payload { get; }
     }
 
-    public class PEvent<T> : Event, IEventWithPayload<T>
+    public class PEvent<T> : Event, IEventWithPayload
     {
+        public PEvent() : base(AssertVal, AssumeVal)
+        {
+        }
+
+        public PEvent(T payload) : base(AssertVal, AssumeVal)
+        {
+            Payload = payload;
+        }
+
         protected static int AssertVal { get; set; }
         protected static int AssumeVal { get; set; }
 
-        public PEvent() : base(AssertVal, AssumeVal)
-        {
-            
-        }
-        public PEvent(T payload): base(AssertVal, AssumeVal)
-        {
-            this.Payload = payload;
-        }
-
-        public T Payload { get; }
+        public object Payload { get; }
+        public T PayloadT => (T) Payload;
 
         public bool Equals(IPrtValue other)
         {
@@ -34,8 +35,7 @@ namespace PrtSharp
         }
     }
 
-    public class PHalt : PEvent<object>
+    public class PHalt : PEvent<IPrtValue>
     {
-
     }
 }

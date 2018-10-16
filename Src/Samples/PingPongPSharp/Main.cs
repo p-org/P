@@ -49,7 +49,7 @@ namespace Main
         {
             Main currentMachine = this;
             PMachineValue TMP_tmp0 = null;
-            IEventWithPayload<object> TMP_tmp1 = null;
+            IEventWithPayload TMP_tmp1 = null;
             TMP_tmp0 = currentMachine.CreateInterface<I_PONG>(currentMachine);
             pongId = TMP_tmp0;
             TMP_tmp1 = new Success(null);
@@ -66,10 +66,10 @@ namespace Main
             Main currentMachine = this;
             PrtBool res = ((PrtBool)false);
             PMachineValue TMP_tmp0_1 = null;
-            IEventWithPayload<object> TMP_tmp1_1 = null;
+            IEventWithPayload TMP_tmp1_1 = null;
             PMachineValue TMP_tmp2 = null;
             PrtBool TMP_tmp3 = ((PrtBool)false);
-            IEventWithPayload<object> TMP_tmp4 = null;
+            IEventWithPayload TMP_tmp4 = null;
             TMP_tmp0_1 = ((PMachineValue)((IPrtValue)pongId).Clone());
             TMP_tmp1_1 = new Ping(null);
             TMP_tmp2 = currentMachine.self;
@@ -122,10 +122,10 @@ namespace Main
         public void Anon_3()
         {
             PONG currentMachine = this;
-            PMachineValue payload = (currentMachine.ReceivedEvent as PEvent<PMachineValue>).Payload;
+            PMachineValue payload = ((PEvent<PMachineValue>) currentMachine.ReceivedEvent).PayloadT;
             PMachineValue TMP_tmp0_2 = null;
-            IEventWithPayload<object> TMP_tmp1_2 = null;
-            IEventWithPayload<object> TMP_tmp2_1 = null;
+            IEventWithPayload TMP_tmp1_2 = null;
+            IEventWithPayload TMP_tmp2_1 = null;
             TMP_tmp0_2 = ((PMachineValue)((IPrtValue)payload).Clone());
             TMP_tmp1_2 = new Pong(null);
             currentMachine.SendEvent(currentMachine, TMP_tmp0_2, (Event)TMP_tmp1_2);

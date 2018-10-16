@@ -1,4 +1,6 @@
-﻿using Microsoft.Pc.TypeChecker.AST.Declarations;
+﻿using System.Collections.Generic;
+using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Microsoft.Pc.TypeChecker.Types;
 
 namespace Microsoft.Pc.Backend.PSharp
 {
@@ -14,6 +16,8 @@ namespace Microsoft.Pc.Backend.PSharp
             FileName = $"{ProjectName}.cs";
             GlobalFunctionClassName = $"GlobalFunctions_{ProjectName}";
         }
+
+        public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
 
         public string GetStaticMethodQualifiedName(Function function)
         {

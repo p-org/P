@@ -60,9 +60,9 @@ namespace PrtSharp
                 throw new ArgumentException("Event type is incorrect: " + ReceivedEvent.GetType().Name);
             }
 
-            interfaceName = @event.Payload.InterfaceName;
+            interfaceName = @event.PayloadT.InterfaceName;
             self = new PMachineValue(Id, receives.ToList());
-            RaiseEvent(this, new ConstructorEvent(@event.Payload.Payload));
+            RaiseEvent(this, new ConstructorEvent(@event.PayloadT.Payload));
         }
 
         protected override OnExceptionOutcome OnException(string methodName, Exception ex)

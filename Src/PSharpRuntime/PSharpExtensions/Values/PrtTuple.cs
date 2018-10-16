@@ -1,12 +1,14 @@
-﻿namespace PrtSharp.Values
+﻿using System;
+
+namespace PrtSharp.Values
 {
     public interface IReadOnlyPrtTuple<out T1>
     {
         T1 Item1 { get; }
     }
 
-    public sealed class PrtTuple<T1> : IPrtValue, IReadOnlyPrtTuple<T1>
-        where T1 : class, IPrtValue
+    public class PrtTuple<T1> : IPrtValue, IReadOnlyPrtTuple<T1>
+        where T1 : IPrtValue
     {
         public PrtTuple(T1 item1)
         {
@@ -37,9 +39,9 @@
         T2 Item2 { get; }
     }
 
-    public sealed class PrtTuple<T1, T2> : IPrtValue, IReadOnlyPrtTuple<T1, T2>
-        where T1 : class, IPrtValue
-        where T2 : class, IPrtValue
+    public class PrtTuple<T1, T2> : IPrtValue, IReadOnlyPrtTuple<T1, T2>
+        where T1 : IPrtValue
+        where T2 : IPrtValue
     {
         public PrtTuple(T1 item1, T2 item2)
         {
@@ -74,10 +76,10 @@
         T3 Item3 { get; }
     }
 
-    public sealed class PrtTuple<T1, T2, T3> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3>
-        where T1 : class, IPrtValue
-        where T2 : class, IPrtValue
-        where T3 : class, IPrtValue
+    public class PrtTuple<T1, T2, T3> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3>
+        where T1 : IPrtValue
+        where T2 : IPrtValue
+        where T3 : IPrtValue
     {
         public PrtTuple(T1 item1, T2 item2, T3 item3)
         {
@@ -117,11 +119,11 @@
         T4 Item4 { get; }
     }
 
-    public sealed class PrtTuple<T1, T2, T3, T4> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4>
-        where T1 : class, IPrtValue
-        where T2 : class, IPrtValue
-        where T3 : class, IPrtValue
-        where T4 : class, IPrtValue
+    public class PrtTuple<T1, T2, T3, T4> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4>
+        where T1 : IPrtValue
+        where T2 : IPrtValue
+        where T3 : IPrtValue
+        where T4 : IPrtValue
     {
         public PrtTuple(T1 item1, T2 item2, T3 item3, T4 item4)
         {
@@ -166,12 +168,12 @@
         T5 Item5 { get; }
     }
 
-    public sealed class PrtTuple<T1, T2, T3, T4, T5> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4, T5>
-        where T1 : class, IPrtValue
-        where T2 : class, IPrtValue
-        where T3 : class, IPrtValue
-        where T4 : class, IPrtValue
-        where T5 : class, IPrtValue
+    public class PrtTuple<T1, T2, T3, T4, T5> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4, T5>
+        where T1 : IPrtValue
+        where T2 : IPrtValue
+        where T3 : IPrtValue
+        where T4 : IPrtValue
+        where T5 : IPrtValue
     {
         public PrtTuple(T1 item1, T2 item2, T3 item3, T4 item4, T5 item5)
         {
@@ -220,13 +222,13 @@
         T6 Item6 { get; }
     }
 
-    public sealed class PrtTuple<T1, T2, T3, T4, T5, T6> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4, T5, T6>
-        where T1 : class, IPrtValue
-        where T2 : class, IPrtValue
-        where T3 : class, IPrtValue
-        where T4 : class, IPrtValue
-        where T5 : class, IPrtValue
-        where T6: class, IPrtValue
+    public class PrtTuple<T1, T2, T3, T4, T5, T6> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4, T5, T6>
+        where T1 : IPrtValue
+        where T2 : IPrtValue
+        where T3 : IPrtValue
+        where T4 : IPrtValue
+        where T5 : IPrtValue
+        where T6: IPrtValue
     {
         public PrtTuple(T1 item1, T2 item2, T3 item3, T4 item4, T5 item5, T6 item6)
         {
@@ -279,14 +281,14 @@
         T7 Item7 { get; }
     }
 
-    public sealed class PrtTuple<T1, T2, T3, T4, T5, T6, T7> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4, T5, T6, T7>
-        where T1 : class, IPrtValue
-        where T2 : class, IPrtValue
-        where T3 : class, IPrtValue
-        where T4 : class, IPrtValue
-        where T5 : class, IPrtValue
-        where T6 : class, IPrtValue
-        where T7 : class, IPrtValue
+    public class PrtTuple<T1, T2, T3, T4, T5, T6, T7> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4, T5, T6, T7>
+        where T1 : IPrtValue
+        where T2 : IPrtValue
+        where T3 : IPrtValue
+        where T4 : IPrtValue
+        where T5 : IPrtValue
+        where T6 : IPrtValue
+        where T7 : IPrtValue
     {
         public PrtTuple(T1 item1, T2 item2, T3 item3, T4 item4, T5 item5, T6 item6, T7 item7)
         {
@@ -342,16 +344,16 @@
         T7 Item7 { get; }
         T8 Item8 { get; }
     }
-
-    public sealed class PrtTuple<T1, T2, T3, T4, T5, T6, T7, T8> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4, T5, T6, T7, T8>
-        where T1 : class, IPrtValue
-        where T2 : class, IPrtValue
-        where T3 : class, IPrtValue
-        where T4 : class, IPrtValue
-        where T5 : class, IPrtValue
-        where T6 : class, IPrtValue
-        where T7 : class, IPrtValue
-        where T8 : class, IPrtValue
+    
+    public class PrtTuple<T1, T2, T3, T4, T5, T6, T7, T8> : IPrtValue, IReadOnlyPrtTuple<T1, T2, T3, T4, T5, T6, T7, T8>
+        where T1 : IPrtValue
+        where T2 : IPrtValue
+        where T3 : IPrtValue
+        where T4 : IPrtValue
+        where T5 : IPrtValue
+        where T6 : IPrtValue
+        where T7 : IPrtValue
+        where T8 : IPrtValue
     {
         public PrtTuple(T1 item1, T2 item2, T3 item3, T4 item4, T5 item5, T6 item6, T7 item7, T8 item8)
         {
@@ -363,7 +365,6 @@
             Item6 = item6;
             Item7 = item7;
             Item8 = item8;
-
         }
 
         public PrtTuple(IReadOnlyPrtTuple<T1, T2, T3, T4, T5, T6, T7, T8> other)

@@ -38,10 +38,37 @@ namespace Microsoft.Pc.Backend.PSharp
             WriteInitializeInterfaces(context, source.Stream, globalScope.Interfaces);
 
             // TODO: generate tuple type classes.
+            foreach (var type in context.UsedTypes)
+            {
+                if (PLanguageType.TypeIsOfKind(type, TypeKind.NamedTuple))
+                {
+                    WriteNamedTupleDefinition(context, source.Stream, (NamedTupleType)type);
+                }
+            }
 
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
+        }
+
+        private void WriteNamedTupleDefinition(CompilationContext context, StringWriter output, NamedTupleType type)
+        {
+            var className = context.Names.GetTypeName(type);
+            var typeNames = type.Types.Select(t => GetCSharpType(context, t)).ToList();
+            var fieldNames = type.Fields.Select(entry => entry.Name).ToList();
+
+            var genericTypes = string.Join(", ", typeNames);
+            context.WriteLine(output, $"public class {className} : PrtTuple<{genericTypes}>");
+            context.WriteLine(output, "{");
+            var ctorArgList = string.Join(", ", typeNames.Zip(fieldNames, (ty, f) => $"{ty} {f}"));
+            context.WriteLine(output, $"public {className}({ctorArgList}) : base({string.Join(", ", fieldNames)}) {{ }}");
+            context.WriteLine(output, $"public {className}(IReadOnlyPrtTuple<{genericTypes}> other) : base(other) {{ }}");
+            // todo: bug: if a user names their field "ItemN"
+            for (int i = 0; i < typeNames.Count; i++)
+            {
+                context.WriteLine(output, $"public {typeNames[i]} {fieldNames[i]} {{ get => Item{i+1}; set => Item{i+1} = value; }}");
+            }
+            context.WriteLine(output, "}");
         }
 
         private void WriteInitializeInterfaces(CompilationContext context, StringWriter output, IEnumerable<Interface> interfaces)
@@ -506,7 +533,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 if (function.Signature.Parameters.Any())
                 {
                     var param = function.Signature.Parameters.First();
-                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = (currentMachine.ReceivedEvent as PEvent<{GetCSharpType(context, param.Type)}>).Payload;");
+                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = ((PEvent<{GetCSharpType(context, param.Type)}>)currentMachine.ReceivedEvent).PayloadT;");
                 }
             }
 
@@ -679,7 +706,7 @@ namespace Microsoft.Pc.Backend.PSharp
                         context.WriteLine(output, $"case {context.Names.GetNameForDecl(recvCase.Key)} {caseName}: {{");
                         if (recvCase.Value.Signature.Parameters.FirstOrDefault() is Variable caseArg)
                         {
-                            context.WriteLine(output, $"var {context.Names.GetNameForDecl(caseArg)} = {caseName}.Payload;");
+                            context.WriteLine(output, $"var {context.Names.GetNameForDecl(caseArg)} = {caseName}.PayloadT;");
                         }
                         foreach (Variable local in recvCase.Value.LocalVariables)
                         {
@@ -746,7 +773,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, "]");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    throw new NotImplementedException("named tuple lvalues");
+                    context.Write(output, "(");
+                    WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
+                    context.Write(output, $").{namedTupleAccessExpr.FieldName}");
+                    break;
                 case SeqAccessExpr seqAccessExpr:
                     context.Write(output, "(");
                     WriteLValue(context, output, seqAccessExpr.SeqExpr);
@@ -894,7 +924,18 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"{swapKeyword}{context.Names.GetNameForDecl(linearAccessRefExpr.Variable)}");
                     break;
                 case NamedTupleExpr namedTupleExpr:
-                    throw new NotImplementedException("named tuple construction");
+                    context.Write(output, $"(new {GetCSharpType(context, namedTupleExpr.Type)}(");
+                    for (int i = 0; i < namedTupleExpr.TupleFields.Count; i++)
+                    {
+                        if (i > 0)
+                        {
+                            context.Write(output, ", ");
+                        }
+                        WriteExpr(context, output, namedTupleExpr.TupleFields[i]);
+                    }
+
+                    context.Write(output, ")");
+                    break;
                 case NondetExpr _:
                     context.Write(output, "((PrtBool)currentMachine.Random())");
                     break;
@@ -967,8 +1008,8 @@ namespace Microsoft.Pc.Backend.PSharp
                     throw new NotImplementedException("foreign types");
                 case MapType mapType:
                     return $"PrtMap<{GetCSharpType(context, mapType.KeyType)}, {GetCSharpType(context, mapType.ValueType)}>";
-                case NamedTupleType _:
-                    throw new NotImplementedException("named tuple types");
+                case NamedTupleType namedTuple:
+                    return context.Names.GetTypeName(namedTuple);
                 case PermissionType _:
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
@@ -980,7 +1021,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "PrtFloat";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    return "IEventWithPayload<object>";
+                    return "IEventWithPayload";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
@@ -1005,8 +1046,10 @@ namespace Microsoft.Pc.Backend.PSharp
                     return $"new {GetCSharpType(context, mapType)}()";
                 case SequenceType sequenceType:
                     return $"new {GetCSharpType(context, sequenceType)}()";
-                case NamedTupleType _:
-                    throw new NotImplementedException("named tuple default values");
+                case NamedTupleType namedTupleType:
+                    var fieldDefaults =
+                        string.Join(", ", namedTupleType.Types.Select(t => GetDefaultValue(context, t)));
+                    return $"(new {GetCSharpType(context, namedTupleType)}({fieldDefaults}))";
                 case TupleType tupleType:
                     string defaultTupleValues = string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(context, t)));
                     return $"(new {GetCSharpType(context, tupleType)}({defaultTupleValues}))";

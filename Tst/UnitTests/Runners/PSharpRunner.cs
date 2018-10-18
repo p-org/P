@@ -2,14 +2,19 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using Microsoft.Pc;
 using UnitTests.Core;
+using Microsoft.PSharp.TestingServices;
 
 namespace UnitTests.Runners
 {
     internal class PSharpRunner : ICompilerTestRunner
     {
         private readonly FileInfo[] sources;
+
+        private static readonly string PSharpAssemblyLocation =
+            Path.GetDirectoryName(typeof(TestingEngineFactory).GetTypeInfo().Assembly.Location);
 
         public PSharpRunner(FileInfo[] sources)
         {
@@ -22,8 +27,7 @@ namespace UnitTests.Runners
             CreateFileWithMainFunction(scratchDirectory);
 
             var dependencies = new List<string> {"netstandard.dll", "System.Runtime.dll", "System.Collections.dll"};
-            string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            string psharpPath = Path.Combine(homePath, ".nuget", "packages", "microsoft.psharp", "1.4.0", "lib", "net46", "Microsoft.PSharp.dll");
+            string psharpPath = Path.Combine(PSharpAssemblyLocation, "..", "net46", "Microsoft.PSharp.dll");
             string psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops",
                 Constants.BuildConfiguration, "AnyCPU", "Binaries", "PrtSharp.dll");
             dependencies.Add(psharpExtensionsPath);
@@ -98,9 +102,7 @@ namespace Main
         private int RunPSharpTester(string directory, string dllPath, out string stdout, out string stderr)
         {
             // TODO: bug P# team for how to run a test w/o invoking executable
-            string homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            // Assume the tester exists in the user-wide package location
-            string testerPath = Path.Combine(homePath, ".nuget", "packages", "microsoft.psharp", "1.4.0", "lib", "net46", "PSharpTester.exe");
+            string testerPath = Path.Combine(PSharpAssemblyLocation, "..", "net46", "PSharpTester.exe");
             return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, testerPath, $"\"/test:{dllPath}\"");
         }
     

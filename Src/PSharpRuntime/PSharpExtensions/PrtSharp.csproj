@@ -1,15 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <LangVersion>latest</LangVersion>
+    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
   </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <OutputPath>..\..\..\Drops\Debug\AnyCPU\Binaries</OutputPath>
-  </PropertyGroup>
-
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Ext\PSharp\Source\Core\Core.csproj" />
+    <PackageReference Include="Microsoft.PSharp" Version="1.4.0" />
   </ItemGroup>
 </Project>

@@ -1,14 +1,63 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 
 namespace PrtSharp.Values
 {
+    public interface IPrtMap<in TKey, out TValue> : IPrtValue
+        where TKey : IPrtValue
+        where TValue : IPrtValue
+    {
+        TValue this[TKey key] { get; }
+    }
+
+    public sealed class PrtMap2<TKey, TValue> : IPrtMap<TKey, TValue>
+        where TKey : IPrtValue
+        where TValue : IPrtValue
+    {
+        public readonly ImmutableDictionary<TKey, TValue> wrapped;
+
+        public PrtMap2(ImmutableDictionary<TKey, TValue> dict)
+        {
+            wrapped = dict;
+        }
+
+        public TValue this[TKey key] => throw new System.NotImplementedException();
+
+        public IPrtValue Clone()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public bool Equals(IPrtValue other)
+        {
+            throw new System.NotImplementedException();
+        }
+    }
+
+    public static class PrtMapExtensions
+    {
+        public static PrtMap2<TKey, TValue> Insert<TKey, TValue>(this PrtMap2<TKey, TValue> map, TKey key, TValue value)
+            where TKey : IPrtValue
+            where TValue : IPrtValue
+        {
+            return new PrtMap2<TKey, TValue>(map.wrapped.Add(key, value));
+        }
+
+        public static PrtSeq<TKey> GetKeys<TKey, TValue>(this PrtMap2<TKey, TValue> map)
+            where TKey : IPrtValue
+            where TValue : IPrtValue
+        {
+            return new PrtSeq<TKey>(map.wrapped.Keys.Select(v => v.Clone()).Cast<TKey>());
+        }
+    }
+
     public sealed class PrtMap<TKey, TValue> : IPrtMutableValue, IDictionary<TKey, TValue>
         where TKey : IPrtValue
         where TValue : IPrtValue
     {
-        private readonly Dictionary<TKey, TValue> map = new Dictionary<TKey, TValue>();
+        private readonly IDictionary<TKey, TValue> map = new Dictionary<TKey, TValue>();
 
         private int hashCode;
         private bool isDirty;
@@ -23,6 +72,16 @@ namespace PrtSharp.Values
         {
             this.map = map;
             hashCode = ComputeHashCode();
+        }
+
+        public PrtSeq<TKey> CloneKeys()
+        {
+            return new PrtSeq<TKey>(map.Keys.Select(v => v.Clone()).Cast<TKey>());
+        }
+
+        public PrtSeq<TValue> CloneValues()
+        {
+            return new PrtSeq<TValue>(map.Values.Select(v => v.Clone()).Cast<TValue>());
         }
 
         private bool IsDirty

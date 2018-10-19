@@ -579,9 +579,24 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     break;
                 case AssignStmt assignStmt:
+                    var needCtorAdapter = !assignStmt.Value.Type.IsSameTypeAs(assignStmt.Location.Type)
+                                          && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
+                                          && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
                     WriteLValue(context, output, assignStmt.Location);
                     context.Write(output, " = ");
+                    if (needCtorAdapter)
+                    {
+                        context.Write(output, $"new {GetCSharpType(context, assignStmt.Location.Type)}(");
+                    }
                     WriteExpr(context, output, assignStmt.Value);
+                    if (needCtorAdapter)
+                    {
+                        if (assignStmt.Location.Type.Canonicalize() is SequenceType seqType)
+                        {
+                            context.Write(output, $".Cast<{GetCSharpType(context, seqType.ElementType)}>()");
+                        }
+                        context.Write(output, ")");
+                    }
                     context.WriteLine(output, ";");
                     break;
                 case CompoundStmt compoundStmt:
@@ -723,7 +738,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case RemoveStmt removeStmt:
-                    switch (removeStmt.Variable.Type)
+                    switch (removeStmt.Variable.Type.Canonicalize())
                     {
                         case MapType map:
                             WriteExpr(context, output, removeStmt.Variable);
@@ -830,9 +845,19 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"((PrtBool){(boolLiteralExpr.Value ? "true" : "false")})");
                     break;
                 case CastExpr castExpr:
-                    context.Write(output, $"(({GetCSharpType(context, castExpr.Type)})");
-                    WriteExpr(context, output, castExpr.SubExpr);
-                    context.Write(output, ")");
+                    if (castExpr.SubExpr.Type.Canonicalize() is SequenceType &&
+                        castExpr.Type.Canonicalize() is SequenceType toSeqType)
+                    {
+                        context.Write(output, $"(new {GetCSharpType(context, toSeqType)}(");
+                        WriteExpr(context, output, castExpr.SubExpr);
+                        context.Write(output, $".Cast<{GetCSharpType(context, toSeqType.ElementType)}>()))");
+                    }
+                    else
+                    {
+                        context.Write(output, $"(({GetCSharpType(context, castExpr.Type)})");
+                        WriteExpr(context, output, castExpr.SubExpr);
+                        context.Write(output, ")");
+                    }
                     break;
                 case CoerceExpr coerceExpr:
                     switch (coerceExpr.Type.Canonicalize())
@@ -859,11 +884,11 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     break;
                 case ContainsKeyExpr containsKeyExpr:
-                    context.Write(output, "((PrtBool)");
+                    context.Write(output, "((PrtBool)(");
                     WriteExpr(context, output, containsKeyExpr.Map);
                     context.Write(output, ").ContainsKey(");
                     WriteExpr(context, output, containsKeyExpr.Key);
-                    context.Write(output, ")");
+                    context.Write(output, "))");
                     break;
                 case CtorExpr ctorExpr:
                     context.Write(output, $"currentMachine.CreateInterface<{context.Names.GetNameForDecl(ctorExpr.Interface)}>( ");
@@ -933,7 +958,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case KeysExpr keysExpr:
                     context.Write(output, "(");
                     WriteExpr(context, output, keysExpr.Expr);
-                    context.Write(output, ").Keys.ToList()");
+                    context.Write(output, ").CloneKeys()");
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
                     string swapKeyword = linearAccessRefExpr.LinearType.Equals(LinearType.Swap) ? "ref " : "";
@@ -986,7 +1011,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case ValuesExpr valuesExpr:
                     context.Write(output, "(");
                     WriteExpr(context, output, valuesExpr.Expr);
-                    context.Write(output, ").Values.ToList()");
+                    context.Write(output, ").CloneValues()");
                     break;
                 case MapAccessExpr _:
                 case NamedTupleAccessExpr _:

@@ -131,6 +131,30 @@ namespace PrtSharp.Values
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator ==(in IPrtValue prtInt1, in PrtInt prtInt2)
+        {
+            return prtInt1 is PrtInt int1 && Equals(int1.value, prtInt2.value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator !=(in IPrtValue prtInt1, in PrtInt prtInt2)
+        {
+            return prtInt1 is PrtInt int1 && !Equals(int1.value, prtInt2.value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator ==(in PrtInt prtInt1, in IPrtValue prtInt2)
+        {
+            return prtInt2 is PrtInt int2 && Equals(prtInt1.value, int2.value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static PrtBool operator !=(in PrtInt prtInt1, in IPrtValue prtInt2)
+        {
+            return prtInt2 is PrtInt int2 && !Equals(prtInt1.value, int2.value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator !=(in PrtInt prtInt1, in PrtInt prtInt2)
         {
             return Equals(prtInt1.value, prtInt2.value) == false;

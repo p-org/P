@@ -299,5 +299,12 @@ namespace UnitTests
             var pm2 = new I_Main(null, new List<string>());
             Assert.AreEqual(pm1, pm2);
         }
+
+        [Test]
+        public void TestSeqToEnum()
+        {
+            var seq = new PrtSeq<PrtInt>{1,2,3,4};
+            var genericSeq = new PrtSeq<IPrtValue>(seq.Cast<IPrtValue>());
+        }
     }
 }

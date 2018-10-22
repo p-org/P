@@ -63,6 +63,43 @@ namespace PrtSharp.Values
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in PrtBool pValue1, in PrtBool pValue2)
+        {
+            return Equals(pValue1, pValue2);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in PrtBool pValue1, in PrtBool pValue2)
+        {
+            return !Equals(pValue1, pValue2);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in PrtBool pValue1, in IPrtValue pValue2)
+        {
+            return pValue2 is PrtBool prtBool && pValue1.value == prtBool.value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in PrtBool pValue1, in IPrtValue pValue2)
+        {
+            return pValue2 is PrtBool prtBool && pValue1.value != prtBool.value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator ==(in IPrtValue pValue1, in PrtBool pValue2)
+        {
+            return pValue1 is PrtBool prtBool && pValue2.value == prtBool.value;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool operator !=(in IPrtValue pValue1, in PrtBool pValue2)
+        {
+            return pValue1 is PrtBool prtBool && pValue2.value != prtBool.value;
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool Equals(IPrtValue obj)
         {
             return obj is PrtBool other && value == other.value;

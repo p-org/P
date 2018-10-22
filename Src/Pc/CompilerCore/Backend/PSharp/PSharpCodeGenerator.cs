@@ -114,6 +114,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);
+            context.WriteLine(output, "#pragma warning disable 162, 414");
             context.WriteLine(output, $"namespace {context.ProjectName}");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName} {{}}");
@@ -122,6 +123,7 @@ namespace Microsoft.Pc.Backend.PSharp
         private void WriteSourceEpilogue(CompilationContext context, StringWriter output)
         {
             context.WriteLine(output, "}");
+            context.WriteLine(output, "#pragma warning restore 162, 414");
         }
 
         private void WriteDecl(CompilationContext context, StringWriter output, IPDecl decl)

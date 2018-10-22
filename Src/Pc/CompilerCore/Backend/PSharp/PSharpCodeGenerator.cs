@@ -1036,7 +1036,7 @@ namespace Microsoft.Pc.Backend.PSharp
             }
 
             string varName = context.Names.GetNameForDecl(variableRef.Variable);
-            context.Write(output, $"(({GetCSharpType(context, variableRef.Type)})((IPrtValue){varName}).Clone())");
+            context.Write(output, $"(({GetCSharpType(context, variableRef.Type)})((IPrtValue){varName})?.Clone())");
         }
 
         private string GetCSharpType(CompilationContext context, PLanguageType type, bool isVar = false)

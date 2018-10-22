@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Pc.Backend.ASTExt;
@@ -209,7 +210,7 @@ namespace Microsoft.Pc.Backend.PSharp
         private static void WriteEnum(CompilationContext context, StringWriter output, PEnum pEnum)
         {
             var declName = context.Names.GetNameForDecl(pEnum);
-            context.WriteLine(output, $"public enum {declName}");
+            context.WriteLine(output, $"public enum {declName} : long");
             context.WriteLine(output, "{");
             foreach (EnumElem enumElem in pEnum.Values)
             {
@@ -678,8 +679,17 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, ");");
                     break;
                 case MoveAssignStmt moveAssignStmt:
+                    string upCast = "";
+                    if (!moveAssignStmt.FromVariable.Type.IsSameTypeAs(moveAssignStmt.ToLocation.Type))
+                    {
+                        upCast = $"({GetCSharpType(context, moveAssignStmt.ToLocation.Type)})";
+                        if (PLanguageType.TypeIsOfKind(moveAssignStmt.FromVariable.Type, TypeKind.Enum))
+                        {
+                            upCast = $"{upCast}(long)";
+                        }
+                    }
                     WriteLValue(context, output, moveAssignStmt.ToLocation);
-                    context.WriteLine(output, $" = {context.Names.GetNameForDecl(moveAssignStmt.FromVariable)};");
+                    context.WriteLine(output, $" = {upCast}{context.Names.GetNameForDecl(moveAssignStmt.FromVariable)};");
                     break;
                 case NoStmt _:
                     break;
@@ -838,8 +848,16 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case BinOpExpr binOpExpr:
                     context.Write(output, "(");
+                    if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                    {
+                        context.Write(output, "(long)");
+                    }
                     WriteExpr(context, output, binOpExpr.Lhs);
                     context.Write(output, $") {BinOpToStr(binOpExpr.Operation)} (");
+                    if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                    {
+                        context.Write(output, "(long)");
+                    }
                     WriteExpr(context, output, binOpExpr.Rhs);
                     context.Write(output, ")");
                     break;
@@ -907,25 +925,23 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
                     EnumElem enumElem = enumElemRefExpr.Value;
-                    context.Write(output, $"{context.Names.GetNameForDecl(enumElem.ParentEnum)}.{context.Names.GetNameForDecl(enumElem)}");
+                    context.Write(output, $"((PrtInt)(long){context.Names.GetNameForDecl(enumElem.ParentEnum)}.{context.Names.GetNameForDecl(enumElem)})");
                     break;
                 case EventRefExpr eventRefExpr:
                     var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
-                    
-                    if (!(eventName == "Halt" || eventName == "Default"))
+                    switch (eventName)
                     {
-                        string payloadExpr = GetDefaultValue(context, eventRefExpr.Value.PayloadType);
-                        context.Write(output, $"new {eventName}({payloadExpr})");
+                        case "Halt":
+                            context.Write(output, $"new PHalt()");
+                            break;
+                        case "Default":
+                            context.Write(output, $"new Default()");
+                            break;
+                        default:
+                            string payloadExpr = GetDefaultValue(context, eventRefExpr.Value.PayloadType);
+                            context.Write(output, $"new {eventName}({payloadExpr})");
+                            break;
                     }
-                    else if (eventName == "Halt")
-                    {
-                        context.Write(output, $"new PHalt()");
-                    }
-                    else
-                    {
-                        context.Write(output, $"new Default()");
-                    }
-                    
                     break;
                 case FairNondetExpr _:
                     context.Write(output, "((PrtBool)currentMachine.FairRandom())");

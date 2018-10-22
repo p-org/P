@@ -77,7 +77,16 @@ namespace PrtSharp
 
         protected override OnExceptionOutcome OnException(string methodName, Exception ex)
         {
-            return ex is PNonStandardReturnException ? OnExceptionOutcome.HandledException : base.OnException(methodName, ex);
+            var v = ex is UnhandledEventException;
+            if (!v)
+                return ex is PNonStandardReturnException
+                    ? OnExceptionOutcome.HandledException
+                    : base.OnException(methodName, ex);
+            else
+            {
+                return (ex as UnhandledEventException).UnhandledEvent is PHalt? OnExceptionOutcome.HaltMachine: base.OnException(methodName, ex);
+            }
+            
         }
 
         public PMachineValue CreateInterface<T>(PMachine creator, IPrtValue payload = null)
@@ -93,17 +102,11 @@ namespace PrtSharp
         public void SendEvent(PMachine source, PMachineValue target, Event ev, object payload = null)
         {
             Assert(!(ev is Default), "Machine cannot send a null event");
-            if (ev is PHalt)
-            {
-                ev = new Halt();
-            }
-            else
-            {
-                Assert(sends.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
-                Assert(target.Permissions.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
-                var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-                ev = (Event)oneArgConstructor.Invoke(new[] { payload });
-            }
+            Assert(sends.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
+            Assert(target.Permissions.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
+            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            ev = (Event)oneArgConstructor.Invoke(new[] { payload });
+
             
             AnnounceInternal(ev);
             Send(target.Id, ev);
@@ -112,15 +115,9 @@ namespace PrtSharp
         public void RaiseEvent(PMachine source, Event ev, object payload = null)
         {
             Assert(!(ev is Default), "Machine cannot raise a null event");
-            if (ev is PHalt)
-            {
-                ev = new Halt();
-            }
-            else
-            {
-                var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-                ev = (Event)oneArgConstructor.Invoke(new[] { payload });
-            }
+            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+            ev = (Event)oneArgConstructor.Invoke(new[] { payload });
+
             
             source.Raise(ev);
             throw new PNonStandardReturnException {ReturnKind = NonStandardReturn.Raise};

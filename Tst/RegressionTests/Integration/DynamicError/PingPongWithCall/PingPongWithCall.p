@@ -16,11 +16,19 @@ machine Main {
         }
         on Success goto Ping_SendPing;
     }
-
+    var counter: int;
     state Ping_SendPing {
-        entry {
-	    send pongId, Ping, this;
-	    raise Success;
+      entry {
+	     if(counter > 100)
+       {
+          assert false;
+       }
+       else
+       {
+          counter = counter + 1;
+       }
+       send pongId, Ping, this;
+	     raise Success;
 	}
         on Success goto Ping_WaitPong;
      }

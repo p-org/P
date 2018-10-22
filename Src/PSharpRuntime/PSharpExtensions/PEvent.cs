@@ -8,6 +8,7 @@ namespace PrtSharp
     }
 
     public class PEvent<T> : Event, IEventWithPayload
+    where T : IPrtValue
     {
         public PEvent() : base(AssertVal, AssumeVal)
         {
@@ -37,5 +38,8 @@ namespace PrtSharp
 
     public class PHalt : PEvent<IPrtValue>
     {
+        public PHalt(IPrtValue payload) : base(payload)
+        {
+        }
     }
 }

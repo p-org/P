@@ -45,7 +45,9 @@ namespace Microsoft.Pc.TypeChecker
             Parent = parent;
             parent?.children.Add(this);
 
-            UniversalEventSet = parent == null ? new EventSet() : parent.UniversalEventSet;
+            var eventSetWithHalt = new EventSet();
+            eventSetWithHalt.AddEvent(new PEvent("halt", null));
+            UniversalEventSet = parent == null ? eventSetWithHalt : parent.UniversalEventSet;
         }
 
         private Scope Parent { get; }

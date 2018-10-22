@@ -27,15 +27,25 @@ namespace PrtSharp
             base.Assert(predicate, s, args);
         }
 
-        public class InitializeParameters
+        public class InitializeParameters : IPrtValue
         {
             public string InterfaceName { get; }
-            public object Payload { get; }
+            public IPrtValue Payload { get; }
 
-            public InitializeParameters(string interfaceName, object payload)
+            public InitializeParameters(string interfaceName, IPrtValue payload)
             {
                 InterfaceName = interfaceName;
                 Payload = payload;
+            }
+
+            public bool Equals(IPrtValue other)
+            {
+                throw new NotImplementedException();
+            }
+
+            public IPrtValue Clone()
+            {
+                throw new NotImplementedException();
             }
         }
 
@@ -46,9 +56,9 @@ namespace PrtSharp
             }
         }
 
-        protected class ConstructorEvent : PEvent<object>
+        protected class ConstructorEvent : PEvent<IPrtValue>
         {
-            public ConstructorEvent(object payload) : base(payload)
+            public ConstructorEvent(IPrtValue payload) : base(payload)
             {
             }
         }
@@ -70,7 +80,7 @@ namespace PrtSharp
             return ex is PNonStandardReturnException ? OnExceptionOutcome.HandledException : base.OnException(methodName, ex);
         }
 
-        public PMachineValue CreateInterface<T>(PMachine creator, object payload = null)
+        public PMachineValue CreateInterface<T>(PMachine creator, IPrtValue payload = null)
             where T : PMachineValue
         {
             var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
@@ -87,12 +97,16 @@ namespace PrtSharp
             {
                 ev = new Halt();
             }
-            Assert(sends.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
-            Assert(target.Permissions.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
-            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length>0);
-            var @event = (Event)oneArgConstructor.Invoke(new[]{payload});
-            AnnounceInternal(@event);
-            Send(target.Id, @event);
+            else
+            {
+                Assert(sends.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
+                Assert(target.Permissions.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
+                var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+                ev = (Event)oneArgConstructor.Invoke(new[] { payload });
+            }
+            
+            AnnounceInternal(ev);
+            Send(target.Id, ev);
         }
 
         public void RaiseEvent(PMachine source, Event ev, object payload = null)
@@ -102,9 +116,13 @@ namespace PrtSharp
             {
                 ev = new Halt();
             }
-            var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
-            var @event = (Event)oneArgConstructor.Invoke(new[] { payload });
-            source.Raise(@event);
+            else
+            {
+                var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
+                ev = (Event)oneArgConstructor.Invoke(new[] { payload });
+            }
+            
+            source.Raise(ev);
             throw new PNonStandardReturnException {ReturnKind = NonStandardReturn.Raise};
         }
 

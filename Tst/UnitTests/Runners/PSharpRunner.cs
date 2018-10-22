@@ -57,7 +57,7 @@ namespace UnitTests.Runners
                 if (testStdout.Contains("buggy schedules"))
                 {
                     // TODO: fix testing so that we can check whether a bug was expected.
-                    if (scratchDirectory.FullName.Contains("DynamicError"))
+                    //if (scratchDirectory.FullName.Contains("DynamicError"))
                     {
                         exitCode = 1;
                     }

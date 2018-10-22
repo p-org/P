@@ -44,10 +44,10 @@ namespace Microsoft.Pc.Backend.PSharp
 
                     if (pEvent.IsHaltEvent)
                     {
-                        name = "Halt";
+                        name = "PHalt";
                     }
 
-                    break;
+                    return name;
                 case Interface _:
                     return "I_" + name;
             }

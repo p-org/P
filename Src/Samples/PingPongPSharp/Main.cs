@@ -12,11 +12,11 @@ using System.Threading.Tasks;
 namespace Main
 {
     public static partial class GlobalFunctions_Main { }
-    internal class E1 : PEvent<object>
+    internal class E1 : PEvent<IPrtValue>
     {
         static E1() { AssertVal = 1; AssumeVal = -1; }
         public E1() : base() { }
-        public E1(object payload) : base(payload) { }
+        public E1(IPrtValue payload) : base(payload) { }
     }
     internal class E2 : PEvent<PrtInt>
     {
@@ -24,23 +24,23 @@ namespace Main
         public E2() : base() { }
         public E2(PrtInt payload) : base(payload) { }
     }
-    internal class E3 : PEvent<object>
+    internal class E3 : PEvent<IPrtValue>
     {
         static E3() { AssertVal = -1; AssumeVal = 1; }
         public E3() : base() { }
-        public E3(object payload) : base(payload) { }
+        public E3(IPrtValue payload) : base(payload) { }
     }
-    internal class E4 : PEvent<object>
+    internal class E4 : PEvent<IPrtValue>
     {
         static E4() { AssertVal = -1; AssumeVal = -1; }
         public E4() : base() { }
-        public E4(object payload) : base(payload) { }
+        public E4(IPrtValue payload) : base(payload) { }
     }
-    internal class unit : PEvent<object>
+    internal class unit : PEvent<IPrtValue>
     {
         static unit() { AssertVal = 1; AssumeVal = -1; }
         public unit() : base() { }
-        public unit(object payload) : base(payload) { }
+        public unit(IPrtValue payload) : base(payload) { }
     }
     internal class Main : PMachine
     {

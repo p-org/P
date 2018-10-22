@@ -4,10 +4,11 @@ event E2 assert 1: bool;
 
 machine Main {
     var XYZ: bool; 
-	var ev2: event;
+	  var ev2: event;
     start state Real1_Init {
         entry { 
-			announce ev2, XYZ;  //"null event" error in Zing
+          ev2 = E2;
+			    announce ev2, XYZ;  //"null event" error in Zing
 		}
 	}
 }

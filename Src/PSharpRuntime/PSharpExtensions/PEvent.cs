@@ -1,4 +1,5 @@
-﻿using Microsoft.PSharp;
+﻿using System;
+using Microsoft.PSharp;
 
 namespace PrtSharp
 {
@@ -30,9 +31,9 @@ namespace PrtSharp
             return other != null && GetType().FullName.Equals(other.GetType().FullName);
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
-            return new PEvent<T>();
+            throw new NotImplementedException();
         }
     }
 

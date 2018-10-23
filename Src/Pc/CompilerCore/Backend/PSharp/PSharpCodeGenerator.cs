@@ -349,6 +349,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
             context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
+            context.WriteLine(output, $"public override IPrtValue Clone() {{ return new {declName}();}}");
             context.WriteLine(output, "}");
         }
 

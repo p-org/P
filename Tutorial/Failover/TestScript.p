@@ -1,1 +1,1 @@
-test Test0: main TestDriver in { TestDriver, FaultTolerantMachine, ReliableStorageMachine, ServiceMachine };
+test Test0[main = TestDriver]:{ TestDriver, FaultTolerantMachine, ReliableStorageMachine, ServiceMachine };

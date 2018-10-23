@@ -20,7 +20,7 @@ namespace PrtSharp.Values
             Item1 = (T1) other.Item1.Clone();
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
             return new PrtTuple<T1>((T1) Item1.Clone());
         }
@@ -55,7 +55,7 @@ namespace PrtSharp.Values
             Item2 = (T2) other.Item2.Clone();
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
             return new PrtTuple<T1, T2>((T1) Item1.Clone(), (T2) Item2.Clone());
         }
@@ -95,7 +95,7 @@ namespace PrtSharp.Values
             Item3 = (T3) other.Item3.Clone();
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
             return new PrtTuple<T1, T2, T3>((T1) Item1.Clone(), (T2) Item2.Clone(), (T3) Item3.Clone());
         }
@@ -141,7 +141,7 @@ namespace PrtSharp.Values
             Item4 = (T4) other.Item4.Clone();
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
             return new PrtTuple<T1, T2, T3, T4>((T1) Item1.Clone(), (T2) Item2.Clone(), (T3) Item3.Clone(),
                 (T4) Item4.Clone());
@@ -193,7 +193,7 @@ namespace PrtSharp.Values
             Item5 = (T5)other.Item5.Clone();
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
             return new PrtTuple<T1, T2, T3, T4, T5>((T1)Item1.Clone(), (T2)Item2.Clone(), (T3)Item3.Clone(),
                 (T4)Item4.Clone(), (T5)Item5.Clone());
@@ -250,7 +250,7 @@ namespace PrtSharp.Values
             Item6 = (T6)other.Item6.Clone();
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
             return new PrtTuple<T1, T2, T3, T4, T5, T6>((T1)Item1.Clone(), (T2)Item2.Clone(), (T3)Item3.Clone(),
                 (T4)Item4.Clone(), (T5)Item5.Clone(), (T6)Item6.Clone());
@@ -312,7 +312,7 @@ namespace PrtSharp.Values
             Item7 = (T7)other.Item7.Clone();
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
             return new PrtTuple<T1, T2, T3, T4, T5, T6, T7>((T1)Item1.Clone(), (T2)Item2.Clone(), (T3)Item3.Clone(),
                 (T4)Item4.Clone(), (T5)Item5.Clone(), (T6)Item6.Clone(), (T7)Item7.Clone());
@@ -379,7 +379,7 @@ namespace PrtSharp.Values
             Item8 = (T8)other.Item8.Clone();
         }
 
-        public IPrtValue Clone()
+        public virtual IPrtValue Clone()
         {
             return new PrtTuple<T1, T2, T3, T4, T5, T6, T7, T8>((T1)Item1.Clone(), (T2)Item2.Clone(), (T3)Item3.Clone(),
                 (T4)Item4.Clone(), (T5)Item5.Clone(), (T6)Item6.Clone(), (T7)Item7.Clone(), (T8)Item8.Clone());

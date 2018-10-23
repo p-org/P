@@ -69,6 +69,7 @@ namespace Microsoft.Pc.Backend.PSharp
             {
                 context.WriteLine(output, $"public {typeNames[i]} {fieldNames[i]} {{ get => Item{i+1}; set => Item{i+1} = value; }}");
             }
+            context.WriteLine(output, $"public override IPrtValue Clone() {{ return new {className}({string.Join(", ", fieldNames)}); }}");
             context.WriteLine(output, "}");
         }
 

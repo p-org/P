@@ -17,9 +17,6 @@ machine Main {
 				}
 				CREATECONTAINER();
 				CreateSMR(container, (this, false, 1));
-				receive {
-					case x : (payload: (int, int)) { part[payload.0] =  payload.1; }
-				}
 			}
 		}
 		

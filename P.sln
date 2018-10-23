@@ -230,7 +230,6 @@ Global
 		{462FD13C-FB4D-4F4C-A4F4-7CCD95B0A20C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{462FD13C-FB4D-4F4C-A4F4-7CCD95B0A20C}.Release|Any CPU.Build.0 = Release|Any CPU
 		{462FD13C-FB4D-4F4C-A4F4-7CCD95B0A20C}.Release|x64.ActiveCfg = Release|Any CPU
-		{462FD13C-FB4D-4F4C-A4F4-7CCD95B0A20C}.Release|x64.Build.0 = Release|Any CPU
 		{462FD13C-FB4D-4F4C-A4F4-7CCD95B0A20C}.Release|x86.ActiveCfg = Release|Any CPU
 		{462FD13C-FB4D-4F4C-A4F4-7CCD95B0A20C}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection

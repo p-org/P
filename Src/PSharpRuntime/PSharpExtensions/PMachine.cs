@@ -56,13 +56,6 @@ namespace PrtSharp
             }
         }
 
-        protected class ConstructorEvent : PEvent<IPrtValue>
-        {
-            public ConstructorEvent(IPrtValue payload) : base(payload)
-            {
-            }
-        }
-
         protected void InitializeParametersFunction()
         {
             if (!(ReceivedEvent is IntializeParametersEvent @event))
@@ -72,7 +65,12 @@ namespace PrtSharp
 
             interfaceName = @event.PayloadT.InterfaceName;
             self = new PMachineValue(Id, receives.ToList());
-            RaiseEvent(this, new ConstructorEvent(@event.PayloadT.Payload));
+            RaiseEvent(GetConstructorEvent(@event.PayloadT.Payload), @event.PayloadT.Payload);
+        }
+
+        protected virtual Event GetConstructorEvent(IPrtValue value)
+        {
+            throw new NotImplementedException();
         }
 
         protected override OnExceptionOutcome OnException(string methodName, Exception ex)

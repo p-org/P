@@ -363,6 +363,16 @@ namespace Microsoft.Pc.Backend.PSharp
                 context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
             }
 
+            //create the constructor event
+            var cTorType = GetCSharpType(context, machine.PayloadType, true);
+            context.Write(output, $"public class ConstructorEvent : PEvent<{cTorType}>");
+            context.Write(output, "{");
+            context.Write(output, $"public ConstructorEvent({cTorType} val) : base(val) {{ }}");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+
+            context.WriteLine(output, $"protected override Event GetConstructorEvent(IPrtValue value) {{ return new ConstructorEvent(({cTorType})value); }}");
+
             // create the constructor to initialize the sends, creates and receives list
             WriteMachineConstructor(context, output, machine);
 
@@ -398,12 +408,12 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output);
         }
 
-        private static void WriteState(CompilationContext context, StringWriter output, State state)
+        private void WriteState(CompilationContext context, StringWriter output, State state)
         {
             if (state.IsStart && !state.OwningMachine.IsSpec)
             {
                 context.WriteLine(output, "[Start]");
-                context.WriteLine(output, "[OnEntry(nameof(InitializeParametersFunction))]");
+                context.WriteLine(output, $"[OnEntry(nameof(InitializeParametersFunction))]");
                 context.WriteLine(output, $"[OnEventGotoState(typeof(ConstructorEvent), typeof({context.Names.GetNameForDecl(state)}))]");
                 context.WriteLine(output, "class __InitState__ : MachineState { }");
                 context.WriteLine(output);

@@ -47,7 +47,7 @@ namespace Microsoft.Pc.TypeChecker
                     impl.ModExpr = modExprVisitor.Visit(context.modExpr());
                 }
             }
-            else
+            else if (!globalScope.SafetyTests.Any())
             {
                 var defaultImplDecl = new Implementation(ParserRuleContext.EmptyContext, "DefaultImpl")
                 {

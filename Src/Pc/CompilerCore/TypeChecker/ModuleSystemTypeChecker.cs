@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -404,14 +403,12 @@ namespace Microsoft.Pc.TypeChecker
                     ModuleInfo module2Info = module2.ModuleInfo;
                     var allPrivateEvents = module1Info
                                            .PrivateEvents.Events
-                                           .Union(module2Info.PrivateEvents.Events)
-                                           .ToImmutableHashSet();
+                                           .Union(module2Info.PrivateEvents.Events).ToList();
                     var allSendAndReceiveEvents =
                         module1Info.Sends.Events.Union(
                                        module1Info.Receives.Events.Union(
                                            module2Info.Receives.Events.Union(
-                                               module2Info.Sends.Events)))
-                                   .ToImmutableHashSet();
+                                               module2Info.Sends.Events))).ToList();
 
                     // 1) domain of interface def map is disjoint
                     foreach (Interface @interface in module1Info.InterfaceDef.Keys.Intersect(
@@ -433,7 +430,7 @@ namespace Microsoft.Pc.TypeChecker
                     // 3) no private events in the sends or receives permissions
                     foreach (PEvent @event in allSendAndReceiveEvents)
                     {
-                        var permissionsEmbedded = GetPermissions(@event.PayloadType.AllowedPermissions.Value);
+                        var permissionsEmbedded = GetPermissions(@event.PayloadType.AllowedPermissions?.Value);
                         foreach (PEvent privatePermission in allPrivateEvents.Where(
                             ev => permissionsEmbedded.Contains(ev)))
                         {
@@ -491,7 +488,7 @@ namespace Microsoft.Pc.TypeChecker
 
                     foreach (Interface exportedOrCreatedInterface in module1.ModuleInfo.InterfaceDef.Keys.Union(module1.ModuleInfo.Creates.Interfaces))
                     {
-                        foreach (var priEvent in module2.ModuleInfo.PrivateEvents.Events.Where(ev => GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions.Value).Contains(ev)))
+                        foreach (var priEvent in module2.ModuleInfo.PrivateEvents.Events.Where(ev => GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions?.Value).Contains(ev)))
                         {
                             throw handler.InvalidHideEventExpr(module2.SourceLocation,
                                 $"private event {priEvent.Name} belongs to the permissions of the contructor type of public interface {exportedOrCreatedInterface.Name}");
@@ -555,7 +552,7 @@ namespace Microsoft.Pc.TypeChecker
             var receiveAndsends = componentModuleInfo
                                   .Sends.Events
                                   .Where(ev => componentModuleInfo.Receives.Contains(ev))
-                                  .ToImmutableHashSet();
+                                  .ToList();
             if (!hideEExpr.HideEvents.IsSubsetEqOf(receiveAndsends))
             {
                 PEvent @event = hideEExpr.HideEvents.Events.First(h => !receiveAndsends.Contains(h));
@@ -595,7 +592,7 @@ namespace Microsoft.Pc.TypeChecker
 
             foreach (Interface exportedOrCreatedInterface in hideEExpr.ModuleInfo.InterfaceDef.Keys.Union(hideEExpr.ModuleInfo.Creates.Interfaces))
             {
-                foreach(var priEvent in hideEExpr.HideEvents.Events.Where(ev => GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions.Value).Contains(ev)))
+                foreach(var priEvent in hideEExpr.HideEvents.Events.Where(ev => GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions?.Value).Contains(ev)))
                 {
                     throw handler.InvalidHideEventExpr(hideEExpr.SourceLocation,
                         $"event {priEvent.Name} cannot be made private as it belongs to the permissions of the contructor type of interface {exportedOrCreatedInterface.Name}");

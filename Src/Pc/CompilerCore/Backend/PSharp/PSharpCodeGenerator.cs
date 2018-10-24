@@ -299,7 +299,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 context.WriteLine(output, $"PModule.monitorMap[\"{machine.Key}\"] = new List<Type>();");
                 foreach (var monitor in machine.Value)
                 {
-                    context.WriteLine(output, $"PModule.monitorMap[\"{machine.Key}\"].Add(typeof({context.Names.GetNameForDecl(monitor)});");
+                    context.WriteLine(output, $"PModule.monitorMap[\"{machine.Key}\"].Add(typeof({context.Names.GetNameForDecl(monitor)}));");
                 }
             }
             foreach (var monitor in monitorMap.Keys)

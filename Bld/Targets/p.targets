@@ -6,7 +6,7 @@
     <!-- So this new property unifies that difference and moves everything to 'x86' -->
     <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
     <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
-    <PDllPath>"$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\AnyCPU\Binaries\Pc.dll"</PDllPath>
+    <PExePath>"$(MSBuildThisFileDirectory)..\Drops\Release\Binaries\win-x64\pc.exe"</PExePath>
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
     <PCompileOptions>-generate:C "-t:$(ProjectName)" "-outputDir:$(PGeneratedDir)"</PCompileOptions>
@@ -27,7 +27,7 @@
       </ItemGroup>
       
       <Message Importance="high" Text="########## compiling p files @(PCompile)  ##################" />
-      <Exec Command="dotnet $(PDllPath) $(PCompileOptions) @(PCompile->'&quot;%(FullPath)&quot;',' ')"/>
+      <Exec Command="dotnet $(PExePath) $(PCompileOptions) @(PCompile->'&quot;%(FullPath)&quot;',' ')"/>
       <Message Importance="high" Text="########## compiling p files complete ##################" />
 
     </Target>

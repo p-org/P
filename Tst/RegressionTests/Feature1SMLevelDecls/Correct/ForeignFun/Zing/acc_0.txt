@@ -1,0 +1,14 @@
+OUT: Writing AlonBug.zing ...
+OUT: Compiling AlonBug.zing to AlonBug.dll ...
+OUT: Writing linker.c ...
+OUT: Writing linker.h ...
+EXIT: 0
+=================================
+         Console output          
+=================================
+OUT: ##################
+OUT: Check Passed
+OUT: ##################
+OUT: 3 distinct states explored
+OUT: 
+EXIT: 0

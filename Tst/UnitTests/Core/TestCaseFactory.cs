@@ -47,12 +47,14 @@ namespace UnitTests.Core
                 string expectedOutput;
                 if (output.Equals(CompilerOutput.C))
                 {
-                    runner = new PrtRunner(inputFiles);
+                    var nativeFiles = testDir.GetFiles("*.c");
+                    runner = new PrtRunner(inputFiles, nativeFiles);
                     expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
                 }
                 else if (output.Equals(CompilerOutput.PSharp))
                 {
-                    runner = new PSharpRunner(inputFiles);
+                    var nativeFiles = testDir.GetFiles("*.cs");
+                    runner = new PSharpRunner(inputFiles, nativeFiles);
                     expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
                 }
                 else

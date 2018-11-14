@@ -15,6 +15,7 @@ namespace UnitTests.Runners
     {
         private readonly DirectoryInfo prtTestProjDirectory = new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
         private readonly IReadOnlyList<FileInfo> sources;
+        private readonly IReadOnlyList<FileInfo> nativeSources;
 
         /// <summary>
         /// Box a new test runner from the given P source files
@@ -23,6 +24,13 @@ namespace UnitTests.Runners
         public PrtRunner(IReadOnlyList<FileInfo> sources)
         {
             this.sources = sources;
+            this.nativeSources = new FileInfo[] { };
+        }
+
+        public PrtRunner(IReadOnlyList<FileInfo> sources, IReadOnlyList<FileInfo> nativeSources)
+        {
+            this.sources = sources;
+            this.nativeSources = nativeSources;
         }
 
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
@@ -33,6 +41,12 @@ namespace UnitTests.Runners
 
             // Copy source files into destination directory
             foreach (FileInfo source in sources)
+            {
+                source.CopyTo(Path.Combine(tmpDirName, source.Name), true);
+            }
+
+            // Copy native source files into destination directory
+            foreach (FileInfo source in nativeSources)
             {
                 source.CopyTo(Path.Combine(tmpDirName, source.Name), true);
             }

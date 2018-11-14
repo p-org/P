@@ -1,0 +1,24 @@
+OUT: <CreateLog> Machine Main(1) is created
+OUT: <StateLog> Machine Main(1) entered state Main.Init
+OUT: <RaiseLog> Machine Main(1) raised event E with payload null
+OUT: <PushLog> Machine Main(1) pushed
+OUT: <StateLog> Machine Main(1) entered state Main.Call
+OUT: <RaiseLog> Machine Main(1) raised event E with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Call
+OUT: <PopLog> Machine Main(1) popped with unhandled event E and reentered state Main.Init
+OUT: <PushLog> Machine Main(1) pushed
+OUT: <StateLog> Machine Main(1) entered state Main.Call
+OUT: <RaiseLog> Machine Main(1) raised event E with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Call
+OUT: <PopLog> Machine Main(1) popped with unhandled event E and reentered state Main.Init
+OUT: <PushLog> Machine Main(1) pushed
+OUT: <StateLog> Machine Main(1) entered state Main.Call
+OUT: <RaiseLog> Machine Main(1) raised event E with payload null
+OUT: <ExitLog> Machine Main(1) exiting state Main.Call
+OUT: <PopLog> Machine Main(1) popped with unhandled event E and reentered state Main.Init
+OUT: <PushLog> Machine Main(1) pushed
+OUT: <StateLog> Machine Main(1) entered state Main.Call
+OUT: <ExitLog> Machine Main(1) exiting state Main.Call
+OUT: <PopLog> Machine Main(1) popped and reentered state Main.Init
+OUT: 
+EXIT: 0

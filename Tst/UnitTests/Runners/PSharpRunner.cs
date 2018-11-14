@@ -12,6 +12,7 @@ namespace UnitTests.Runners
     internal class PSharpRunner : ICompilerTestRunner
     {
         private readonly FileInfo[] sources;
+        private readonly FileInfo[] nativeSources;
 
         private static readonly string PSharpAssemblyLocation =
             Path.GetDirectoryName(typeof(TestingEngineFactory).GetTypeInfo().Assembly.Location);
@@ -19,6 +20,13 @@ namespace UnitTests.Runners
         public PSharpRunner(FileInfo[] sources)
         {
             this.sources = sources;
+            this.nativeSources = new FileInfo[] { };
+        }
+
+        public PSharpRunner(FileInfo[] sources, FileInfo[] nativeSources)
+        {
+            this.sources = sources;
+            this.nativeSources = nativeSources;
         }
 
         public int? RunTest(DirectoryInfo scratchDirectory, out string stdout, out string stderr)
@@ -37,8 +45,9 @@ namespace UnitTests.Runners
 
             string[] args = new[] {"/t:exe"}.Concat(dependencies.Select(dep => $"/r:\"{dep}\""))
                 .Concat(compiledFiles.Select(file => file.Name))
-                .Append("Test.cs").ToArray();
-
+                .Append("Test.cs")
+                .Concat(nativeSources.Select(file => file.FullName))
+                .ToArray();
 
             int exitCode = ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
 

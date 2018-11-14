@@ -176,7 +176,7 @@ namespace Microsoft.Pc.Backend.PSharp
         private void WriteMonitor(CompilationContext context, StringWriter output, Machine machine)
         {
             string declName = context.Names.GetNameForDecl(machine);
-            context.WriteLine(output, $"internal class {declName} : PMonitor");
+            context.WriteLine(output, $"internal partial class {declName} : PMonitor");
             context.WriteLine(output, "{");
 
             foreach (Variable field in machine.Fields)
@@ -345,7 +345,7 @@ namespace Microsoft.Pc.Backend.PSharp
             
             // initialize the payload type
             string payloadType = GetCSharpType(context, pEvent.PayloadType, true);
-            context.WriteLine(output, $"internal class {declName} : PEvent<{payloadType}>");
+            context.WriteLine(output, $"internal partial class {declName} : PEvent<{payloadType}>");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
@@ -357,7 +357,7 @@ namespace Microsoft.Pc.Backend.PSharp
         private void WriteMachine(CompilationContext context, StringWriter output, Machine machine)
         {
             string declName = context.Names.GetNameForDecl(machine);
-            context.WriteLine(output, $"internal class {declName} : PMachine");
+            context.WriteLine(output, $"internal partial class {declName} : PMachine");
             context.WriteLine(output, "{");
 
             foreach (Variable field in machine.Fields)
@@ -502,6 +502,11 @@ namespace Microsoft.Pc.Backend.PSharp
         
         private void WriteFunction(CompilationContext context, StringWriter output, Function function)
         {
+            if (function.IsForeign)
+            {
+                return;
+            }
+
             bool isStatic = function.Owner == null;
             bool isAsync = function.CanReceive == true;
             FunctionSignature signature = function.Signature;

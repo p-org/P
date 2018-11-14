@@ -1,7 +1,9 @@
 // This sample XYZs case when exit actions are not executed
+type T;
 event E;
 
 machine Main {
+	var t: T;
 	var i: int;
 	start state Init {
 		entry {

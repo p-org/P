@@ -158,6 +158,13 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PEnum pEnum:
                     WriteEnum(context, output, pEnum);
                     break;
+                case TypeDef typeDef:
+                    var foreignType = typeDef.Type as ForeignType;
+                    if (foreignType != null)
+                    {
+                        WriteForeignType(context, output, foreignType);
+                    }
+                    break;
                 case Implementation impl:
                     WriteImplementationDecl(context, output, impl);
                     break;
@@ -218,6 +225,14 @@ namespace Microsoft.Pc.Backend.PSharp
                 context.WriteLine(output, $"{enumElem.Name} = {enumElem.Value},");
             }
 
+            context.WriteLine(output, "}");
+        }
+
+        private static void WriteForeignType(CompilationContext context, StringWriter output, ForeignType foreignType)
+        {
+            var declName = foreignType.CanonicalRepresentation;
+            context.WriteLine(output, $"public partial class {declName} : IPrtValue");
+            context.WriteLine(output, "{");
             context.WriteLine(output, "}");
         }
 
@@ -1081,7 +1096,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case EnumType enumType:
                     return context.Names.GetNameForDecl(enumType.EnumDecl);
                 case ForeignType _:
-                    throw new NotImplementedException("foreign types");
+                    return type.CanonicalRepresentation;
                 case MapType mapType:
                     return $"PrtMap<{GetCSharpType(context, mapType.KeyType)}, {GetCSharpType(context, mapType.ValueType)}>";
                 case NamedTupleType namedTuple:

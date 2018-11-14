@@ -139,11 +139,7 @@ namespace Microsoft.Pc.Backend.Prt
                     // Declares a type. Instantiated by usage.
                     return;
                 case Function function:
-                    if (!function.IsForeign)
-                    {
-                        WriteNormalFunction(output, function);
-                    }
-
+                    WriteFunction(output, function);
                     break;
                 case Implementation _:
                     // does not produce a struct definition - aside from ProgramDecl
@@ -389,7 +385,7 @@ namespace Microsoft.Pc.Backend.Prt
             context.WriteLine(output);
         }
 
-        private void WriteNormalFunction(TextWriter output, Function function)
+        private void WriteFunction(TextWriter output, Function function)
         {
             string declName = context.Names.GetNameForDecl(function);
             var declLocation = context.LocationResolver.GetLocation(function);
@@ -403,12 +399,16 @@ namespace Microsoft.Pc.Backend.Prt
                 ? $"&{context.Names.GetNameForType(signature[0])}"
                 : "NULL";
 
-            TraceSourceLine(output, declLocation);
-            context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
-            context.WriteLine(output, "{");
-            WriteFunctionBody(output, function);
-            context.WriteLine(output, "}");
-            context.WriteLine(output);
+            if (!function.IsForeign)
+            {
+                TraceSourceLine(output, declLocation);
+                context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
+                context.WriteLine(output, "{");
+                WriteFunctionBody(output, function);
+                context.WriteLine(output, "}");
+                context.WriteLine(output);
+            }
+
             context.WriteLine(output, $"PRT_FUNDECL {declName} =");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"{functionName},"); // name of function in original program, NULL if anon

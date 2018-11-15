@@ -440,27 +440,23 @@ namespace Microsoft.Pc.Backend.Prt
                 case ForeignType foreignType:
                     string foreignTypeName = foreignType.CanonicalRepresentation;
 
-                    context.WriteLine(output, $"extern PRT_UINT64 PRT_FOREIGN_MKDEF_{foreignTypeName}_IMPL(void);");
-                    context.WriteLine(output,
-                        $"extern PRT_UINT64 PRT_FOREIGN_CLONE_{foreignTypeName}_IMPL(PRT_UINT64);");
-                    context.WriteLine(output, $"extern void PRT_FOREIGN_FREE_{foreignTypeName}_IMPL(PRT_UINT64);");
-                    context.WriteLine(output,
-                        $"extern PRT_UINT32 PRT_FOREIGN_GETHASHCODE_{foreignTypeName}_IMPL(PRT_UINT64);");
-                    context.WriteLine(output,
-                        $"extern PRT_BOOLEAN PRT_FOREIGN_ISEQUAL_{foreignTypeName}_IMPL(PRT_UINT64, PRT_UINT64);");
-                    context.WriteLine(output,
-                        $"extern PRT_STRING PRT_FOREIGN_TOSTRING_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output, $"extern PRT_UINT64 P_MKDEF_{foreignTypeName}_IMPL(void);");
+                    context.WriteLine(output, $"extern PRT_UINT64 P_CLONE_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output, $"extern void P_FREE_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output, $"extern PRT_UINT32 P_GETHASHCODE_{foreignTypeName}_IMPL(PRT_UINT64);");
+                    context.WriteLine(output, $"extern PRT_BOOLEAN P_ISEQUAL_{foreignTypeName}_IMPL(PRT_UINT64, PRT_UINT64);");
+                    context.WriteLine(output, $"extern PRT_STRING P_TOSTRING_{foreignTypeName}_IMPL(PRT_UINT64);");
 
                     string foreignTypeDeclName = context.Names.GetNameForForeignTypeDecl(foreignType);
                     context.WriteLine(output, $"static PRT_FOREIGNTYPEDECL {foreignTypeDeclName} = {{");
                     context.WriteLine(output, "0U,");
                     context.WriteLine(output, $"\"{foreignTypeName}\",");
-                    context.WriteLine(output, $"PRT_FOREIGN_MKDEF_{foreignTypeName}_IMPL,");
-                    context.WriteLine(output, $"PRT_FOREIGN_CLONE_{foreignTypeName}_IMPL,");
-                    context.WriteLine(output, $"PRT_FOREIGN_FREE_{foreignTypeName}_IMPL,");
-                    context.WriteLine(output, $"PRT_FOREIGN_GETHASHCODE_{foreignTypeName}_IMPL,");
-                    context.WriteLine(output, $"PRT_FOREIGN_ISEQUAL_{foreignTypeName}_IMPL,");
-                    context.WriteLine(output, $"PRT_FOREIGN_TOSTRING_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"P_MKDEF_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"P_CLONE_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"P_FREE_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"P_GETHASHCODE_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"P_ISEQUAL_{foreignTypeName}_IMPL,");
+                    context.WriteLine(output, $"P_TOSTRING_{foreignTypeName}_IMPL,");
                     context.WriteLine(output, "};");
                     context.WriteLine(output,
                         $"PRT_TYPE {typeGenName} = {{ PRT_KIND_FOREIGN, {{ .foreignType = &{foreignTypeDeclName} }} }};");

@@ -20,10 +20,23 @@ namespace Main {
         
     }
 
-    public static partial class GlobalFunctions_Main
+    public static partial class GlobalFunctions
     {
         public static void GlobalForeignFun(PMachine currentMachine)
         {
+        }
+    }
+
+    public partial class T : IPrtValue
+    {
+        public IPrtValue Clone()
+        {
+            return this;
+        }
+
+        public bool Equals(IPrtValue other)
+        {
+            return this == other;
         }
     }
 }

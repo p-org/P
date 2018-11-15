@@ -12,7 +12,7 @@ using System.Threading.Tasks;
 #pragma warning disable 162, 219, 414
 namespace Main
 {
-    public static partial class GlobalFunctions_Main { }
+    public static partial class GlobalFunctions { }
     internal class E : PEvent<IPrtValue>
     {
         static E() { AssertVal = 1; AssumeVal = -1; }

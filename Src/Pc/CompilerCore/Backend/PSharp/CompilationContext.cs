@@ -14,7 +14,7 @@ namespace Microsoft.Pc.Backend.PSharp
             Names = new PSharpNameManager("PGEN_");
 
             FileName = $"{ProjectName}.cs";
-            GlobalFunctionClassName = $"GlobalFunctions_{ProjectName}";
+            GlobalFunctionClassName = $"GlobalFunctions";
         }
 
         public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;

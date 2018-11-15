@@ -9,7 +9,7 @@ typedef struct TimerContext {
 	BOOL started;
 } TimerContext;
 
-void PRT_FOREIGN_FREE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+void PRT_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	if (frgnVal == 0) return;
 	TimerContext *timerContext = (TimerContext *)frgnVal;
@@ -21,12 +21,12 @@ void PRT_FOREIGN_FREE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 	}
 }
 
-PRT_BOOLEAN PRT_FOREIGN_ISEQUAL_TimerPtr_IMPL(PRT_UINT64 frgnVal1, PRT_UINT64 frgnVal2)
+PRT_BOOLEAN P_ISEQUAL_TimerPtr_IMPL(PRT_UINT64 frgnVal1, PRT_UINT64 frgnVal2)
 {
 	return frgnVal1 == frgnVal2;
 }
 
-PRT_STRING PRT_FOREIGN_TOSTRING_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+PRT_STRING P_TOSTRING_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	if (frgnVal == 0) return "";
 	TimerContext *timerContext = (TimerContext *)frgnVal;
@@ -35,17 +35,17 @@ PRT_STRING PRT_FOREIGN_TOSTRING_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 	return str;
 }
 
-PRT_UINT32 PRT_FOREIGN_GETHASHCODE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+PRT_UINT32 P_GETHASHCODE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	return (PRT_UINT32)frgnVal;
 }
 
-PRT_UINT64 PRT_FOREIGN_MKDEF_TimerPtr_IMPL(void)
+PRT_UINT64 P_MKDEF_TimerPtr_IMPL(void)
 {
 	return 0;
 }
 
-PRT_UINT64 PRT_FOREIGN_CLONE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+PRT_UINT64 P_CLONE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	if (frgnVal == 0) return 0;
 	TimerContext *timerContext = (TimerContext *)frgnVal;
@@ -69,7 +69,7 @@ VOID CALLBACK Callback(LPVOID arg, DWORD dwTimerLowValue, DWORD dwTimerHighValue
 	PrtSend(&state, clientMachine, ev, 1, &timerId);
 }
 
-PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **owner)
+PRT_VALUE *P_CreateTimer_IMPL(PRT_MACHINEINST *context, PRT_VALUE **owner)
 {
 	TimerContext *timerContext = (TimerContext *)PrtMalloc(sizeof(TimerContext));
 	timerContext->refCount = 1;
@@ -83,7 +83,7 @@ PRT_VALUE *P_FUN_CreateTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **owner
 	return PrtMkForeignValue((PRT_UINT64)timerContext, P_TYPEDEF_TimerPtr);
 }
 
-PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer, PRT_VALUE **time)
+PRT_VALUE *P_StartTimer_IMPL(PRT_MACHINEINST *context, PRT_VALUE **timer, PRT_VALUE **time)
 {
 	LARGE_INTEGER liDueTime;
 	BOOL success;
@@ -98,7 +98,7 @@ PRT_VALUE *P_FUN_StartTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer,
 	return NULL;
 }
 
-PRT_VALUE *P_FUN_CancelTimer_FOREIGN(PRT_MACHINEINST *context, PRT_VALUE **timer)
+PRT_VALUE *P_CancelTimer_IMPL(PRT_MACHINEINST *context, PRT_VALUE **timer)
 {
 	BOOL success;
 	PRT_VALUE *ev;

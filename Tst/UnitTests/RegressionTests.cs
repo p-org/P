@@ -58,13 +58,14 @@ namespace UnitTests
         {
             DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestTemp"));
             var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
+            var nativeFiles = tempFilePath.Directory.GetFiles("*.c");
 
             if (!tempFilePath.Exists)
             {
                 return;
             }
 
-            var testCase = new CompilerTestCase(tempDir, new PrtRunner(new[] { tempFilePath }),
+            var testCase = new CompilerTestCase(tempDir, new PrtRunner(new[] { tempFilePath }, nativeFiles),
                                                 new ExecutionOutputValidator(0, null, null));
 
             TestAssertions.AssertTestCase(testCase);

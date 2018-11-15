@@ -42,9 +42,9 @@ namespace Microsoft.Pc.Backend.Prt
                 return name;
             }
 
-            string namePrefix = function.IsForeign ? "P_FUN_" : NamePrefix;
+            string namePrefix = NamePrefix;
             string methodName = function.IsAnon ? "Anon" : function.Name;
-            string nameSuffix = function.IsForeign ? "_FOREIGN" : "_IMPL";
+            string nameSuffix = "_IMPL";
             name = UniquifyName(namePrefix + methodName + nameSuffix);
 
             funcNames.Add(function, name);

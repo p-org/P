@@ -12,6 +12,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Expressions
 
         public ParserRuleContext SourceLocation { get; }
 
-        public PLanguageType Type { get; } = PrimitiveType.Null;
+        public PLanguageType Type { get; } = PrimitiveType.Any;
     }
 }

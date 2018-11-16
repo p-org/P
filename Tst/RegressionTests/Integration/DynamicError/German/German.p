@@ -34,7 +34,7 @@ machine Main {
 			clients.1 = temp;
 			temp = new Client(this, false);
 			clients.2 = temp;
-			curr_client = null;
+			curr_client = null as machine;
 			curr_cpu = new CPU(clients);
 			assert(sizeof(sharer_list) == 0);
 			raise unit;

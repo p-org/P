@@ -96,7 +96,7 @@ machine OpenWSN_Mote {
 		entry (payload: int){
 			//init the connections
 			myRank = payload;
-			myTimeParent = (null, 10000);
+			myTimeParent = (null as machine, 10000);
 			lastSynched = 0;	
 		
 		}
@@ -190,7 +190,7 @@ machine OpenWSN_Mote {
 				check = CSMA_CA();
 				if(check)
 				{
-					TransmitData(null);
+					TransmitData(null as machine);
 					raise TxDone;
 				}
 				else
@@ -268,7 +268,7 @@ machine SlotTimerMachine {
 			i = sizeof(AllMotes) - 1;
 			while(i>=0)
 			{
-				send AllMotes[i], newSlot, (true, (null, null));
+				send AllMotes[i], newSlot, (true, (null as machine, null as machine));
 				i = i - 1;
 			}
 		}

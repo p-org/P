@@ -387,7 +387,7 @@ namespace Microsoft.Pc.Backend
                     var (sendEvent, sendEventDeps) = SimplifyExpression(sendStmt.Evt);
                     var (sendEventAccessExpr, sendEventAssn) = SaveInTemporary(new CloneExpr(sendEvent));
 
-                    var (sendArgs, sendArgDeps) = SimplifyArgPack(sendStmt.ArgsList);
+                    var (sendArgs, sendArgDeps) = SimplifyArgPack(sendStmt.Arguments);
 
                     return sendMachineDeps
                            .Concat(new[] {sendMachineAssn})

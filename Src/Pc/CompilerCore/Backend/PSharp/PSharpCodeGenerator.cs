@@ -649,8 +649,28 @@ namespace Microsoft.Pc.Backend.PSharp
                     if (ctorStmt.Arguments.Any())
                     {
                         context.Write(output, ", ");
-                        WriteExpr(context, output, ctorStmt.Arguments.First());
+                        if (ctorStmt.Arguments.Count > 1)
+                        {
+                            //create tuple from rvaluelist
+                            var argTypes = string.Join(",", ctorStmt.Arguments.Select(a => GetCSharpType(context, a.Type)));
+                            var tupleType = $"PrtTuple<{argTypes}>";
+                            context.Write(output, $"new {tupleType}(");
+                            var septor = "";
+                            foreach (var ctorExprArgument in ctorStmt.Arguments)
+                            {
+                                context.Write(output, septor);
+                                WriteExpr(context, output, ctorExprArgument);
+                                septor = ",";
+                            }
+                            context.Write(output, ")");
+                        }
+                        else
+                        {
+                            WriteExpr(context, output, ctorStmt.Arguments.First());
+                        }
+
                     }
+
                     context.WriteLine(output, ");");
                     break;
                 case FunCallStmt funCallStmt:
@@ -815,12 +835,30 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ", (Event)");
                     WriteExpr(context, output, sendStmt.Evt);
 
-                    if (sendStmt.ArgsList.Any())
+                    if (sendStmt.Arguments.Any())
                     {
                         context.Write(output, ", ");
-                        WriteExpr(context, output, sendStmt.ArgsList.First());
-                    }
+                        if (sendStmt.Arguments.Count > 1)
+                        {
+                            //create tuple from rvaluelist
+                            var argTypes = string.Join(",", sendStmt.Arguments.Select(a => GetCSharpType(context, a.Type)));
+                            var tupleType = $"PrtTuple<{argTypes}>";
+                            context.Write(output, $"new {tupleType}(");
+                            var septor = "";
+                            foreach (var ctorExprArgument in sendStmt.Arguments)
+                            {
+                                context.Write(output, septor);
+                                WriteExpr(context, output, ctorExprArgument);
+                                septor = ",";
+                            }
+                            context.Write(output, ")");
+                        }
+                        else
+                        {
+                            WriteExpr(context, output, sendStmt.Arguments.First());
+                        }
 
+                    }
                     context.WriteLine(output, ");");
                     break;
                 case SwapAssignStmt swapAssignStmt:
@@ -948,7 +986,26 @@ namespace Microsoft.Pc.Backend.PSharp
                     if (ctorExpr.Arguments.Any())
                     {
                         context.Write(output, ", ");
-                        WriteExpr(context, output, ctorExpr.Arguments.First());
+                        if (ctorExpr.Arguments.Count > 1)
+                        {
+                            //create tuple from rvaluelist
+                            var argTypes = string.Join(",", ctorExpr.Arguments.Select(a => GetCSharpType(context, a.Type)));
+                            var tupleType = $"PrtTuple<{argTypes}>";
+                            context.Write(output, $"new {tupleType}(");
+                            var septor = "";
+                            foreach (var ctorExprArgument in ctorExpr.Arguments)
+                            {
+                                context.Write(output, septor);
+                                WriteExpr(context, output, ctorExprArgument);
+                                septor = ",";
+                            }
+                            context.Write(output, ")");
+                        }
+                        else
+                        {
+                            WriteExpr(context, output, ctorExpr.Arguments.First());
+                        }
+                        
                     }
                     context.Write(output, ")");
                     break;

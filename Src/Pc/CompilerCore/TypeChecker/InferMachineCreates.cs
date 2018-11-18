@@ -79,7 +79,7 @@ namespace Microsoft.Pc.TypeChecker
                 case SendStmt sendStmt:
                     return InferCreatesForExpr(sendStmt.MachineExpr, handler)
                            .Union(InferCreatesForExpr(sendStmt.Evt, handler))
-                           .Union(sendStmt.ArgsList.SelectMany(expr => InferCreatesForExpr(expr, handler)));
+                           .Union(sendStmt.Arguments.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case SwapAssignStmt swapAssignStmt:
                     return InferCreatesForExpr(swapAssignStmt.NewLocation, handler);
                 case WhileStmt whileStmt:

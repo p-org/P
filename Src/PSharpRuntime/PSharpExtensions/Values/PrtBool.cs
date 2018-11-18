@@ -6,6 +6,17 @@ namespace PrtSharp.Values
     [Serializable]
     public readonly struct PrtBool : IPrtValue
     {
+        public bool Equals(PrtBool other)
+        {
+            return value == other.value;
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            return obj is PrtBool other && Equals(other);
+        }
+
         private readonly bool value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -194,7 +194,7 @@ namespace Microsoft.Pc.TypeChecker
                 case SendStmt sendStmt:
                     unavailable = ProcessExpr(unavailable, sendStmt.MachineExpr);
                     unavailable = ProcessExpr(unavailable, sendStmt.Evt);
-                    unavailable = ProcessArgList(sendStmt.ArgsList, unavailable, ArgOptions.SwapNotAllowed);
+                    unavailable = ProcessArgList(sendStmt.Arguments, unavailable, ArgOptions.SwapNotAllowed);
                     break;
                 case AnnounceStmt announceStmt:
                     unavailable = ProcessExpr(unavailable, announceStmt.PEvent);

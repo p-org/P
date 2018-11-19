@@ -171,7 +171,9 @@ namespace Microsoft.Pc.Backend.PSharp
                 case SafetyTest safety:
                     WriteSafetyTestDecl(context, output, safety);
                     break;
-                case Interface pInterface:
+                case Interface _:
+                    break;
+                case EnumElem _:
                     break;
                 default:
                     declName = context.Names.GetNameForDecl(decl);

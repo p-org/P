@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace PrtSharp.Values
 {
     [Serializable]
-    public readonly struct PrtInt : IPrtValue
+    public class PrtInt : IPrtValue
     {
         private readonly long value;
 

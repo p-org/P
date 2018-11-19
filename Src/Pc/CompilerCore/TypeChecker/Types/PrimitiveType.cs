@@ -48,7 +48,7 @@ namespace Microsoft.Pc.TypeChecker.Types
                            otherType.CanonicalRepresentation.Equals("null") ||
                            otherType is PermissionType;
                 case "int":
-                    return TypeIsOfKind(otherType, TypeKind.Enum) || otherType.CanonicalRepresentation.Equals("int");
+                    return otherType.CanonicalRepresentation.Equals("int");
                 case "event":
                     return otherType.CanonicalRepresentation.Equals("event") ||
                            otherType.CanonicalRepresentation.Equals("null");

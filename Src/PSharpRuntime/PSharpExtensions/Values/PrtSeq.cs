@@ -5,7 +5,11 @@ using System.Text;
 
 namespace PrtSharp.Values
 {
-    public sealed class PrtSeq<T> : IPrtMutableValue, IReadOnlyList<T>
+    public interface ISeq<in TElement> : IPrtValue
+    {
+
+    }
+    public sealed class PrtSeq<T> : IPrtMutableValue, IReadOnlyList<T>, ISeq<T>
         where T : IPrtValue
     {
         private readonly List<T> values = new List<T>();

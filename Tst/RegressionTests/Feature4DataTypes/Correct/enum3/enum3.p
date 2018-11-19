@@ -8,9 +8,9 @@ machine Main {
             var y: Foo;
             var z: Bar;
 
-            assert Foo0 > Foo1;
+            assert (Foo0 to int) > (Foo1 to int);
             x =  (Foo1 to int) + 1;
-            assert x >= Foo0;
+            assert x >= Foo0 to int;
             
         }
     }

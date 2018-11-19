@@ -568,7 +568,8 @@ namespace Microsoft.Pc.Backend.PSharp
                 if (function.Signature.Parameters.Any())
                 {
                     var param = function.Signature.Parameters.First();
-                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = ((PEvent<{GetCSharpType(context, param.Type)}>)currentMachine.ReceivedEvent).PayloadT;");
+                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = this.gotoPayload == null ? ((PEvent<{GetCSharpType(context, param.Type)}>)currentMachine.ReceivedEvent).PayloadT : ({GetCSharpType(context, param.Type)})this.gotoPayload;");
+                    context.WriteLine(output, "this.gotoPayload = null;");
                 }
             }
 
@@ -917,19 +918,41 @@ namespace Microsoft.Pc.Backend.PSharp
                     WriteClone(context, output, cloneExpr.Term);
                     break;
                 case BinOpExpr binOpExpr:
-                    context.Write(output, "(");
-                    if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                    //handle eq and noteq differently
+                    if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
                     {
-                        context.Write(output, "(long)");
+                        string negate = binOpExpr.Operation == BinOpType.Neq ? "!" : "";
+                        context.Write(output, $"({negate}PrtValues.SafeEquals(");
+                        if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                        {
+                            context.Write(output, "(long)");
+                        }
+                        WriteExpr(context, output, binOpExpr.Lhs);
+                        context.Write(output, ",");
+                        if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                        {
+                            context.Write(output, "(long)");
+                        }
+                        WriteExpr(context, output, binOpExpr.Rhs);
+                        context.Write(output, "))");
                     }
-                    WriteExpr(context, output, binOpExpr.Lhs);
-                    context.Write(output, $") {BinOpToStr(binOpExpr.Operation)} (");
-                    if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                    else
                     {
-                        context.Write(output, "(long)");
+                        context.Write(output, "(");
+                        if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                        {
+                            context.Write(output, "(long)");
+                        }
+                        WriteExpr(context, output, binOpExpr.Lhs);
+                        context.Write(output, $") {BinOpToStr(binOpExpr.Operation)} (");
+                        if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                        {
+                            context.Write(output, "(long)");
+                        }
+                        WriteExpr(context, output, binOpExpr.Rhs);
+                        context.Write(output, ")");
                     }
-                    WriteExpr(context, output, binOpExpr.Rhs);
-                    context.Write(output, ")");
+                    
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
                     context.Write(output, $"((PrtBool){(boolLiteralExpr.Value ? "true" : "false")})");
@@ -1247,10 +1270,6 @@ namespace Microsoft.Pc.Backend.PSharp
                     return "*";
                 case BinOpType.Div:
                     return "/";
-                case BinOpType.Eq:
-                    return "==";
-                case BinOpType.Neq:
-                    return "!=";
                 case BinOpType.Lt:
                     return "<";
                 case BinOpType.Le:

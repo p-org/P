@@ -235,7 +235,7 @@ namespace Microsoft.Pc.Backend.Debugging
                     WriteStmt("return ", returnStmt.ReturnValue, ";");
                     break;
                 case SendStmt sendStmt:
-                    WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.ArgsList, ";");
+                    WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.Arguments, ";");
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     WriteStmt(swapAssignStmt.NewLocation,

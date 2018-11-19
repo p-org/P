@@ -79,7 +79,7 @@ machine Main {
 		  assert (m5[1] == E);     //holds
 		  
 	      ////////////////////////machine type:
-		  mac = null;                //OK
+		  mac = null as machine;                //OK
 		  assert (mac == null);      //holds
 		  
 		  /////////////////////////tuples:
@@ -96,7 +96,7 @@ machine Main {
 		  assert(tt.0 == 0 && tt.1 == 0);   //holds
 		  
 		  te = (2,E2);            //OK
-		  te = (3,null);          //OK
+		  te = (3,null as event);          //OK
 		  assert (te.1 == null);
 		  
 	      /////////////////////////sequences:
@@ -123,7 +123,7 @@ machine Main {
 		  s9 += (0,E);
 		  s9 += (1,E1);
 		  s9 += (2,E2);
-		  s9 += (3,null);
+		  s9 += (3,null as event);
 		  assert (sizeof(s9) == 4);   //holds
 		  s10 += (0,E);                //OK
 		  
@@ -157,7 +157,7 @@ machine Main {
 		  
 		  m8[0] = E;                 //OK
 		  m8[1] = E1;                //OK
-		  m8[2] = null;              //OK
+		  m8[2] = null as event;              //OK
 		  
 		  m9[0] = E;                  //OK
 		  m9[1] = null;               //OK

@@ -171,7 +171,9 @@ namespace Microsoft.Pc.Backend.PSharp
                 case SafetyTest safety:
                     WriteSafetyTestDecl(context, output, safety);
                     break;
-                case Interface pInterface:
+                case Interface _:
+                    break;
+                case EnumElem _:
                     break;
                 default:
                     declName = context.Names.GetNameForDecl(decl);
@@ -568,7 +570,8 @@ namespace Microsoft.Pc.Backend.PSharp
                 if (function.Signature.Parameters.Any())
                 {
                     var param = function.Signature.Parameters.First();
-                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = ((PEvent<{GetCSharpType(context, param.Type)}>)currentMachine.ReceivedEvent).PayloadT;");
+                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = this.gotoPayload == null ? ((PEvent<{GetCSharpType(context, param.Type)}>)currentMachine.ReceivedEvent).PayloadT : ({GetCSharpType(context, param.Type)})this.gotoPayload;");
+                    context.WriteLine(output, "this.gotoPayload = null;");
                 }
             }
 
@@ -649,8 +652,28 @@ namespace Microsoft.Pc.Backend.PSharp
                     if (ctorStmt.Arguments.Any())
                     {
                         context.Write(output, ", ");
-                        WriteExpr(context, output, ctorStmt.Arguments.First());
+                        if (ctorStmt.Arguments.Count > 1)
+                        {
+                            //create tuple from rvaluelist
+                            var argTypes = string.Join(",", ctorStmt.Arguments.Select(a => GetCSharpType(context, a.Type)));
+                            var tupleType = $"PrtTuple<{argTypes}>";
+                            context.Write(output, $"new {tupleType}(");
+                            var septor = "";
+                            foreach (var ctorExprArgument in ctorStmt.Arguments)
+                            {
+                                context.Write(output, septor);
+                                WriteExpr(context, output, ctorExprArgument);
+                                septor = ",";
+                            }
+                            context.Write(output, ")");
+                        }
+                        else
+                        {
+                            WriteExpr(context, output, ctorStmt.Arguments.First());
+                        }
+
                     }
+
                     context.WriteLine(output, ");");
                     break;
                 case FunCallStmt funCallStmt:
@@ -815,12 +838,30 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, ", (Event)");
                     WriteExpr(context, output, sendStmt.Evt);
 
-                    if (sendStmt.ArgsList.Any())
+                    if (sendStmt.Arguments.Any())
                     {
                         context.Write(output, ", ");
-                        WriteExpr(context, output, sendStmt.ArgsList.First());
-                    }
+                        if (sendStmt.Arguments.Count > 1)
+                        {
+                            //create tuple from rvaluelist
+                            var argTypes = string.Join(",", sendStmt.Arguments.Select(a => GetCSharpType(context, a.Type)));
+                            var tupleType = $"PrtTuple<{argTypes}>";
+                            context.Write(output, $"new {tupleType}(");
+                            var septor = "";
+                            foreach (var ctorExprArgument in sendStmt.Arguments)
+                            {
+                                context.Write(output, septor);
+                                WriteExpr(context, output, ctorExprArgument);
+                                septor = ",";
+                            }
+                            context.Write(output, ")");
+                        }
+                        else
+                        {
+                            WriteExpr(context, output, sendStmt.Arguments.First());
+                        }
 
+                    }
                     context.WriteLine(output, ");");
                     break;
                 case SwapAssignStmt swapAssignStmt:
@@ -879,19 +920,53 @@ namespace Microsoft.Pc.Backend.PSharp
                     WriteClone(context, output, cloneExpr.Term);
                     break;
                 case BinOpExpr binOpExpr:
-                    context.Write(output, "(");
-                    if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                    //handle eq and noteq differently
+                    if (binOpExpr.Operation == BinOpType.Eq || binOpExpr.Operation == BinOpType.Neq)
                     {
-                        context.Write(output, "(long)");
+                        string negate = binOpExpr.Operation == BinOpType.Neq ? "!" : "";
+                        context.Write(output, $"({negate}PrtValues.SafeEquals(");
+                        if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                        {
+                            context.Write(output, "PrtValues.Box((long) ");
+                            WriteExpr(context, output, binOpExpr.Lhs);
+                            context.Write(output, "),");
+                        }
+                        else
+                        {
+                            WriteExpr(context, output, binOpExpr.Lhs);
+                            context.Write(output, ",");
+                        }
+                        
+                        
+                        if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                        {
+                            context.Write(output, "PrtValues.Box((long) ");
+                            WriteExpr(context, output, binOpExpr.Rhs);
+                            context.Write(output, ")");
+                        }
+                        else
+                        {
+                            WriteExpr(context, output, binOpExpr.Rhs);
+                        }
+                        context.Write(output, "))");
                     }
-                    WriteExpr(context, output, binOpExpr.Lhs);
-                    context.Write(output, $") {BinOpToStr(binOpExpr.Operation)} (");
-                    if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                    else
                     {
-                        context.Write(output, "(long)");
+                        context.Write(output, "(");
+                        if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
+                        {
+                            context.Write(output, "(long)");
+                        }
+                        WriteExpr(context, output, binOpExpr.Lhs);
+                        context.Write(output, $") {BinOpToStr(binOpExpr.Operation)} (");
+                        if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
+                        {
+                            context.Write(output, "(long)");
+                        }
+                        WriteExpr(context, output, binOpExpr.Rhs);
+                        context.Write(output, ")");
                     }
-                    WriteExpr(context, output, binOpExpr.Rhs);
-                    context.Write(output, ")");
+                    
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
                     context.Write(output, $"((PrtBool){(boolLiteralExpr.Value ? "true" : "false")})");
@@ -948,7 +1023,26 @@ namespace Microsoft.Pc.Backend.PSharp
                     if (ctorExpr.Arguments.Any())
                     {
                         context.Write(output, ", ");
-                        WriteExpr(context, output, ctorExpr.Arguments.First());
+                        if (ctorExpr.Arguments.Count > 1)
+                        {
+                            //create tuple from rvaluelist
+                            var argTypes = string.Join(",", ctorExpr.Arguments.Select(a => GetCSharpType(context, a.Type)));
+                            var tupleType = $"PrtTuple<{argTypes}>";
+                            context.Write(output, $"new {tupleType}(");
+                            var septor = "";
+                            foreach (var ctorExprArgument in ctorExpr.Arguments)
+                            {
+                                context.Write(output, septor);
+                                WriteExpr(context, output, ctorExprArgument);
+                                septor = ",";
+                            }
+                            context.Write(output, ")");
+                        }
+                        else
+                        {
+                            WriteExpr(context, output, ctorExpr.Arguments.First());
+                        }
+                        
                     }
                     context.Write(output, ")");
                     break;
@@ -1190,10 +1284,6 @@ namespace Microsoft.Pc.Backend.PSharp
                     return "*";
                 case BinOpType.Div:
                     return "/";
-                case BinOpType.Eq:
-                    return "==";
-                case BinOpType.Neq:
-                    return "!=";
                 case BinOpType.Lt:
                     return "<";
                 case BinOpType.Le:

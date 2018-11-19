@@ -15,7 +15,7 @@ namespace PrtSharp
         public List<string> creates = new List<string>();
         public List<string> receives = new List<string>();
         public PMachineValue self;
-        protected object gotoPayload;
+        protected object gotoPayload = null;
 
         public new void Assert(bool predicate)
         {
@@ -133,7 +133,6 @@ namespace PrtSharp
 
         public void GotoState<T>(object payload = null) where T : MachineState
         {
-            //todo: goto parameter has to be initialized correctly
             gotoPayload = payload;
             Goto<T>();
             throw new PNonStandardReturnException { ReturnKind = NonStandardReturn.Goto };

@@ -15,7 +15,7 @@ namespace UnitTests
         {
             DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
             var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
-            var foreignFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "Foreign.cs"));
+            //var foreignFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "Foreign.cs"));
 
             if (!tempFilePath.Exists)
             {
@@ -24,7 +24,7 @@ namespace UnitTests
 
             var testCase = new CompilerTestCase(
                 tempDir,
-                new PSharpRunner(new[] {tempFilePath}, new[] {foreignFilePath}),
+                new PSharpRunner(new[] {tempFilePath}),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);

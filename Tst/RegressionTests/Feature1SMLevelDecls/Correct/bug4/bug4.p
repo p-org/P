@@ -20,10 +20,10 @@ machine Main {
 			}
 		}
 		
-		fun CREATECONTAINER() : machine {return null;}
+		fun CREATECONTAINER() : machine {return null as machine;}
 		fun CreateSMR(cont: machine, param : any) : machine
 		{
-			return null;
+			return null as machine;
 		}
 	}
 

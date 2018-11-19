@@ -64,8 +64,8 @@ machine Main {
 	state Real1_S1 {
 		entry {
 		    
-			sev1 += (0, null);
-			sev1 += (1, null);
+			sev1 += (0, null as event);
+			sev1 += (1, null as event);
 			if (sev1[0] == sev1[1]) {
 				assert(false);                  //fails 
 			}

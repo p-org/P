@@ -1092,8 +1092,8 @@ namespace Microsoft.Pc.Backend.Prt
                     WriteExpr(output, function, sendStmt.MachineExpr);
                     context.Write(output, "), ");
                     WriteExpr(output, function, sendStmt.Evt);
-                    context.Write(output, $", {sendStmt.ArgsList.Count}");
-                    foreach (IPExpr sendArgExpr in sendStmt.ArgsList)
+                    context.Write(output, $", {sendStmt.Arguments.Count}");
+                    foreach (IPExpr sendArgExpr in sendStmt.Arguments)
                     {
                         Debug.Assert(sendArgExpr is IVariableRef);
                         var argVar = (IVariableRef) sendArgExpr;

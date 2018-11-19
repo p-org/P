@@ -38,5 +38,10 @@ namespace PrtSharp
         {
             return new PrtFloat(value);
         }
+
+        public static PrtBool SafeEquals(IPrtValue val1, IPrtValue val2)
+        {
+            return ReferenceEquals(val1, val2) || (val1 != null && val1.Equals(val2));
+        }
     }
 }

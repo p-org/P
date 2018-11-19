@@ -22,6 +22,12 @@ namespace PrtSharp.Values
             this.Permissions = permissions.ToList();
         }
 
+        public PMachineValue(PMachineValue mValue)
+        {
+            this.Id = mValue.Id;
+            this.Permissions = mValue.Permissions.ToList();
+        }
+
         public bool Equals(IPrtValue other)
         {
             return other is PMachineValue machine && Equals(Id, machine.Id);

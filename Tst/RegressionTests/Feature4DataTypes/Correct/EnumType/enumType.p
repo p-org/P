@@ -185,7 +185,7 @@ machine Main {
 	fun XYZfun_param(x: int, day: DayOfWeek)
 	{		
 		// XYZ integer coercion
-		if (day == 0) {
+		if (day to int == 0) {
 			
 		}
 	}

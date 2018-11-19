@@ -925,15 +925,27 @@ namespace Microsoft.Pc.Backend.PSharp
                         context.Write(output, $"({negate}PrtValues.SafeEquals(");
                         if (PLanguageType.TypeIsOfKind(binOpExpr.Lhs.Type, TypeKind.Enum))
                         {
-                            context.Write(output, "(long)");
+                            context.Write(output, "PrtValues.Box((long) ");
+                            WriteExpr(context, output, binOpExpr.Lhs);
+                            context.Write(output, "),");
                         }
-                        WriteExpr(context, output, binOpExpr.Lhs);
-                        context.Write(output, ",");
+                        else
+                        {
+                            WriteExpr(context, output, binOpExpr.Lhs);
+                            context.Write(output, ",");
+                        }
+                        
+                        
                         if (PLanguageType.TypeIsOfKind(binOpExpr.Rhs.Type, TypeKind.Enum))
                         {
-                            context.Write(output, "(long)");
+                            context.Write(output, "PrtValues.Box((long) ");
+                            WriteExpr(context, output, binOpExpr.Rhs);
+                            context.Write(output, ")");
                         }
-                        WriteExpr(context, output, binOpExpr.Rhs);
+                        else
+                        {
+                            WriteExpr(context, output, binOpExpr.Rhs);
+                        }
                         context.Write(output, "))");
                     }
                     else

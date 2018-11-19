@@ -6,6 +6,8 @@ event e3;
 
 fun Dummy(m : machine, n: machine) {
 	send m, getres, n;
+	send m, e2;
+	send m, e3;
 	receive {
 		case res: (payload: int) { send m, getres, m; }
 	}

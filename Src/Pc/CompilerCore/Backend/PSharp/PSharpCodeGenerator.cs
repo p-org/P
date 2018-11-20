@@ -1194,7 +1194,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case MapType mapType:
                     return "PrtMap";
                 case NamedTupleType namedTuple:
-                    return context.Names.GetTypeName(namedTuple);
+                    return "PrtNamedTuple";
                 case PermissionType _:
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Any):
@@ -1215,7 +1215,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     return "PrtSeq";
                 case TupleType tupleType:
                     var typeList = string.Join(", ", tupleType.Types.Select(t => GetCSharpType(context, t)));
-                    return $"PrtTuple<{typeList}>";
+                    return "PrtTuple";
                 default:
                     throw new ArgumentOutOfRangeException(nameof(type));
             }

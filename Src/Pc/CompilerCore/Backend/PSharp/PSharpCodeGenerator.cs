@@ -224,7 +224,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "{");
             foreach (EnumElem enumElem in pEnum.Values)
             {
-                context.WriteLine(output, $"{enumElem.Name} = {enumElem.Value},");
+                context.WriteLine(output, $"{context.Names.GetNameForDecl(enumElem)} = {enumElem.Value},");
             }
 
             context.WriteLine(output, "}");
@@ -1051,7 +1051,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
                     EnumElem enumElem = enumElemRefExpr.Value;
-                    context.Write(output, $"((PrtInt)(long){context.Names.GetNameForDecl(enumElem.ParentEnum)}.{context.Names.GetNameForDecl(enumElem)})");
+                    context.Write(output, $"((long){context.Names.GetNameForDecl(enumElem.ParentEnum)}.{context.Names.GetNameForDecl(enumElem)})");
                     break;
                 case EventRefExpr eventRefExpr:
                     var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
@@ -1162,6 +1162,10 @@ namespace Microsoft.Pc.Backend.PSharp
                 case SeqAccessExpr _:
                 case TupleAccessExpr _:
                 case VariableAccessExpr _:
+                    if (pExpr.Type.TypeKind == TypeKind.Enum)
+                    {
+                        context.Write(output, "(long)");
+                    }
                     WriteLValue(context, output, pExpr);
                     break;
                 default:

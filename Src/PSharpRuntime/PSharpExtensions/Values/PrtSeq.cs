@@ -5,14 +5,10 @@ using System.Text;
 
 namespace PrtSharp.Values
 {
-    public interface ISeq<in TElement> : IPrtValue
-    {
 
-    }
-    public sealed class PrtSeq<T> : IPrtMutableValue, IReadOnlyList<T>, ISeq<T>
-        where T : IPrtValue
+    public sealed class PrtSeq: IPrtMutableValue, IReadOnlyList<IPrtValue>
     {
-        private readonly List<T> values = new List<T>();
+        private readonly List<IPrtValue> values = new List<IPrtValue>();
 
         private int hashCode;
         private bool isDirty;
@@ -23,7 +19,7 @@ namespace PrtSharp.Values
             hashCode = ComputeHashCode();
         }
 
-        public PrtSeq(IEnumerable<T> values)
+        public PrtSeq(IEnumerable<IPrtValue> values)
         {
             this.values = values.ToList();
             hashCode = ComputeHashCode();
@@ -45,7 +41,7 @@ namespace PrtSharp.Values
 
         public void Freeze()
         {
-            foreach (T value in values)
+            foreach (var value in values)
             {
                 MutabilityHelper.EnsureFrozen(value);
             }
@@ -55,15 +51,15 @@ namespace PrtSharp.Values
 
         public IPrtValue Clone()
         {
-            return new PrtSeq<T>(values.Select(item => item.Clone()).Cast<T>());
+            return new PrtSeq(values.Select(item => item.Clone()));
         }
 
         public bool Equals(IPrtValue other)
         {
-            return other is PrtSeq<T> otherValue && Equals(otherValue);
+            return other is PrtSeq otherValue && Equals(otherValue);
         }
 
-        public IEnumerator<T> GetEnumerator()
+        public IEnumerator<IPrtValue> GetEnumerator()
         {
             return values.GetEnumerator();
         }
@@ -75,7 +71,7 @@ namespace PrtSharp.Values
 
         public int Count => values.Count;
 
-        public T this[int index]
+        public IPrtValue this[int index]
         {
             get => values[index];
             set
@@ -94,13 +90,13 @@ namespace PrtSharp.Values
             return HashHelper.ComputeHash(values);
         }
 
-        public void Add(T item)
+        public void Add(IPrtValue item)
         {
             IsDirty = true;
             values.Add(item);
         }
 
-        public void Insert(int index, T item)
+        public void Insert(int index, IPrtValue item)
         {
             IsDirty = true;
             values.Insert(index, item);
@@ -112,7 +108,7 @@ namespace PrtSharp.Values
             values.RemoveAt(index);
         }
 
-        private bool Equals(PrtSeq<T> other)
+        private bool Equals(PrtSeq other)
         {
             return other != null && values.SequenceEqual(other.values);
         }
@@ -122,16 +118,14 @@ namespace PrtSharp.Values
             return !ReferenceEquals(null, obj) &&
                    (ReferenceEquals(this, obj) ||
                     obj.GetType() == GetType() &&
-                    Equals((PrtSeq<T>) obj));
+                    Equals(obj));
         }
 
         public override int GetHashCode()
         {
-            if (IsDirty)
-            {
-                hashCode = ComputeHashCode();
-                IsDirty = false;
-            }
+            if (!IsDirty) return hashCode;
+            hashCode = ComputeHashCode();
+            IsDirty = false;
 
             return hashCode;
         }
@@ -140,8 +134,8 @@ namespace PrtSharp.Values
         {
             var sb = new StringBuilder();
             sb.Append("(");
-            string sep = "";
-            foreach (T value in values)
+            var sep = "";
+            foreach (var value in values)
             {
                 sb.Append(sep);
                 sb.Append(value);

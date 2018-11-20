@@ -1192,7 +1192,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case ForeignType _:
                     return type.CanonicalRepresentation;
                 case MapType mapType:
-                    return $"PrtMap<{GetCSharpType(context, mapType.KeyType)}, {GetCSharpType(context, mapType.ValueType)}>";
+                    return "PrtMap";
                 case NamedTupleType namedTuple:
                     return context.Names.GetTypeName(namedTuple);
                 case PermissionType _:
@@ -1212,7 +1212,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
                     return isVar ? "IPrtValue" : "void";
                 case SequenceType sequenceType:
-                    return $"PrtSeq<{GetCSharpType(context, sequenceType.ElementType)}>";
+                    return "PrtSeq";
                 case TupleType tupleType:
                     var typeList = string.Join(", ", tupleType.Types.Select(t => GetCSharpType(context, t)));
                     return $"PrtTuple<{typeList}>";

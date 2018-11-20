@@ -54,6 +54,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private void WriteNamedTupleDefinition(CompilationContext context, StringWriter output, NamedTupleType type)
         {
+            /*
             var className = context.Names.GetTypeName(type);
             var typeNames = type.Types.Select(t => GetCSharpType(context, t)).ToList();
             var fieldNames = type.Fields.Select(entry => entry.Name).ToList();
@@ -70,7 +71,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 context.WriteLine(output, $"public {typeNames[i]} {fieldNames[i]} {{ get => Item{i+1}; set => Item{i+1} = value; }}");
             }
             context.WriteLine(output, $"public override IPrtValue Clone() {{ return new {className}({string.Join(", ", fieldNames)}); }}");
-            context.WriteLine(output, "}");
+            context.WriteLine(output, "}");*/
         }
 
         private void WriteInitializeInterfaces(CompilationContext context, StringWriter output, IEnumerable<Interface> interfaces)
@@ -891,7 +892,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case NamedTupleAccessExpr namedTupleAccessExpr:
                     context.Write(output, "(");
                     WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
-                    context.Write(output, $").{namedTupleAccessExpr.FieldName}");
+                    context.Write(output, $").GetVal(\"{namedTupleAccessExpr.FieldName}\")");
                     break;
                 case SeqAccessExpr seqAccessExpr:
                     context.Write(output, "(");
@@ -902,7 +903,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case TupleAccessExpr tupleAccessExpr:
                     WriteExpr(context, output, tupleAccessExpr.SubExpr);
-                    context.Write(output, $".Item{tupleAccessExpr.FieldNo + 1}");
+                    context.Write(output, $".GetVal({tupleAccessExpr.FieldNo})");
                     break;
                 case VariableAccessExpr variableAccessExpr:
                     context.Write(output, context.Names.GetNameForDecl(variableAccessExpr.Variable));

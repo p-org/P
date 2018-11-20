@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Diagnostics;
+using System.Linq;
 
 namespace PrtSharp
 {
@@ -20,6 +20,7 @@ namespace PrtSharp
             return "NULL";
         }
     }
+
     public class PrtAnyType : PrtType
     {
         public override string ToString()
@@ -27,6 +28,7 @@ namespace PrtSharp
             return "ANY";
         }
     }
+
     public class PrtMachineType : PrtType
     {
         public override string ToString()
@@ -34,6 +36,7 @@ namespace PrtSharp
             return "MACHINE";
         }
     }
+
     public class PrtIntType : PrtType
     {
         public override string ToString()
@@ -52,36 +55,41 @@ namespace PrtSharp
 
     public class PrtEnumType : PrtType
     {
+        public Dictionary<long, string> enumConstants;
         public string name;
-        public Dictionary<Int64, string> enumConstants;
+
         public PrtEnumType(string typeName, params object[] args)
         {
             name = typeName;
-            enumConstants = new Dictionary<Int64, string>();
-            int i = 0;
+            enumConstants = new Dictionary<long, string>();
+            var i = 0;
             while (i < args.Count())
             {
-                string enumConstantName = (string)args[i];
+                var enumConstantName = (string) args[i];
                 i++;
-                int enumConstantValue = (int)args[i];
+                var enumConstantValue = (int) args[i];
                 i++;
                 enumConstants[enumConstantValue] = enumConstantName;
             }
         }
+
+        public string DefaultConstant => enumConstants[0];
+
         public override string ToString()
         {
             return name;
         }
-        public string DefaultConstant => enumConstants[0];
     }
 
     public class PrtPermissionType : PrtType
     {
-        public List<string> permissions;
         public string name;
-        public PrtPermissionType(string name)
+        public List<string> permissions;
+
+        public PrtPermissionType(string name, IEnumerable<string> perm)
         {
             this.name = name;
+            permissions = perm.ToList();
         }
 
         public override string ToString()
@@ -97,6 +105,7 @@ namespace PrtSharp
             return "BOOL";
         }
     }
+
     public class PrtEventType : PrtType
     {
         public override string ToString()
@@ -104,6 +113,7 @@ namespace PrtSharp
             return "EVENT";
         }
     }
+
     public class PrtMapType : PrtType
     {
         public PrtType keyType;
@@ -111,13 +121,13 @@ namespace PrtSharp
 
         public PrtMapType(PrtType k, PrtType v)
         {
-            this.keyType = k;
-            this.valType = v;
+            keyType = k;
+            valType = v;
         }
 
         public override string ToString()
         {
-            return $"({keyType.ToString()} -> {valType.ToString()})";
+            return $"({keyType} -> {valType})";
         }
     }
 
@@ -127,12 +137,12 @@ namespace PrtSharp
 
         public PrtSeqType(PrtType s)
         {
-            this.elemType = s;
+            elemType = s;
         }
 
         public override string ToString()
         {
-            return $"seq[{elemType.ToString()}]";
+            return $"seq[{elemType}]";
         }
     }
 
@@ -152,20 +162,14 @@ namespace PrtSharp
         public PrtTupleType(params PrtType[] fields)
         {
             Debug.Assert(fields.Any());
-            this.fieldTypes = new List<PrtType>();
-            foreach (var f in fields)
-            {
-                fieldTypes.Add(f);
-            }
+            fieldTypes = new List<PrtType>();
+            foreach (var f in fields) fieldTypes.Add(f);
         }
 
         public override string ToString()
         {
-            string retStr = "<";
-            foreach (var f in fieldTypes)
-            {
-                retStr += f.ToString() + ", ";
-            }
+            var retStr = "<";
+            foreach (var f in fieldTypes) retStr += f + ", ";
             retStr += ">";
             return retStr;
         }
@@ -181,25 +185,26 @@ namespace PrtSharp
             fieldNames = new List<string>();
             fieldTypes = new List<PrtType>();
 
-            int index = 0;
+            var index = 0;
             while (index < args.Count())
             {
-                fieldNames.Add((string)args[index]);
+                fieldNames.Add((string) args[index]);
                 index++;
-                fieldTypes.Add((PrtType)args[index]);
+                fieldTypes.Add((PrtType) args[index]);
                 index++;
             }
         }
 
         public override string ToString()
         {
-            string retStr = "<";
-            int index = 0;
+            var retStr = "<";
+            var index = 0;
             while (index < fieldTypes.Count)
             {
-                retStr += fieldNames[index] + ":" + fieldTypes[index].ToString() + ", ";
+                retStr += fieldNames[index] + ":" + fieldTypes[index] + ", ";
                 index++;
             }
+
             retStr += ">";
             return retStr;
         }

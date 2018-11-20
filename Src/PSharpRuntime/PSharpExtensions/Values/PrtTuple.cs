@@ -1,14 +1,53 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text;
 
 namespace PrtSharp.Values
 {
     [Serializable]
     public class PrtTuple : IPrtValue
     {
+        public readonly List<IPrtValue> fieldValues;
+
+        public PrtTuple()
+        {
+            fieldValues = new List<IPrtValue>();
+        }
+
+        public PrtTuple(PrtType type)
+        {
+            var tupType = type as PrtTupleType;
+            Debug.Assert(tupType != null, nameof(tupType) + " != null");
+            fieldValues = tupType.fieldTypes.Select(PrtMkDefaultValue).ToList();
+        }
+
+        public PrtTuple(params IPrtValue[] elems)
+        {
+            fieldValues = new List<IPrtValue>(elems.Count());
+            foreach (var elem in elems) fieldValues.Add(elem.Clone());
+        }
+
+
+        public IPrtValue Clone()
+        {
+            var clone = new PrtTuple();
+            foreach (var val in fieldValues) clone.fieldValues.Add(val.Clone());
+            return clone;
+        }
+
+        public bool Equals(IPrtValue val)
+        {
+            if (val is PrtNamedTuple) return false;
+            var tupValue = val as PrtTuple;
+            if (tupValue == null) return false;
+            if (tupValue.fieldValues.Count != fieldValues.Count) return false;
+            for (var i = 0; i < fieldValues.Count; i++)
+                if (!fieldValues[i].Equals(tupValue.fieldValues[i]))
+                    return false;
+            return true;
+        }
+
         private static IPrtValue PrtMkDefaultValue(PrtType type)
         {
             switch (type)
@@ -39,35 +78,10 @@ namespace PrtSharp.Values
                     throw new Exception("Invalid type in PrtMkDefaultType");
             }
         }
-        public List<IPrtValue> fieldValues;
 
         public IPrtValue GetVal(int field)
         {
             return fieldValues[field];
-        }
-
-        public PrtTuple()
-        {
-            fieldValues = new List<IPrtValue>();
-        }
-
-        public PrtTuple(PrtType type)
-        {
-            var tupType = type as PrtTupleType;
-            fieldValues = new List<IPrtValue>(tupType.fieldTypes.Count);
-            foreach (var ft in tupType.fieldTypes)
-            {
-                fieldValues.Add(PrtMkDefaultValue(ft));
-            }
-        }
-
-        public PrtTuple(params IPrtValue[] elems)
-        {
-            fieldValues = new List<IPrtValue>(elems.Count());
-            foreach (var elem in elems)
-            {
-                fieldValues.Add(elem.Clone());
-            }
         }
 
         public void Update(int index, IPrtValue val)
@@ -75,42 +89,16 @@ namespace PrtSharp.Values
             fieldValues[index] = val;
         }
 
-
-        public IPrtValue Clone()
-        {
-            var clone = new PrtTuple();
-            foreach (var val in fieldValues)
-            {
-                clone.fieldValues.Add(val.Clone());
-            }
-            return clone;
-        }
-
-        public bool Equals(IPrtValue val)
-        {
-            if (val is PrtNamedTuple) return false;
-            var tupValue = (val as PrtTuple);
-            if (tupValue == null) return false;
-            if (tupValue.fieldValues.Count != this.fieldValues.Count) return false;
-            for (int i = 0; i < fieldValues.Count; i++)
-            {
-                if (!this.fieldValues[i].Equals(tupValue.fieldValues[i])) return false;
-            }
-            return true;
-        }
-
         public override int GetHashCode()
         {
-            return fieldValues.GetHashCode();
+            var hashCode = fieldValues.GetHashCode();
+            return hashCode;
         }
 
         public override string ToString()
         {
-            string retStr = "<";
-            foreach (var field in fieldValues)
-            {
-                retStr = retStr + field.ToString() + ",";
-            }
+            var retStr = "<";
+            foreach (var field in fieldValues) retStr = retStr + field + ",";
             retStr += ">";
             return retStr;
         }
@@ -121,59 +109,48 @@ namespace PrtSharp.Values
     {
         public List<string> fieldNames;
 
-        public IPrtValue GetVal(string fieldName)
-        {
-            return fieldValues[fieldName.IndexOf(fieldName, StringComparison.Ordinal)];
-        }
-
-        public PrtNamedTuple() : base()
+        public PrtNamedTuple()
         {
             fieldNames = new List<string>();
         }
 
         public PrtNamedTuple(PrtType type) : base(type)
         {
-            var tupType = type as PrtNamedTupleType;
-            fieldNames = new List<string>(tupType.fieldTypes.Count);
-            foreach (var fn in tupType.fieldNames)
-            {
-                fieldNames.Add(fn);
-            }
+            var nmdTupleType = type as PrtNamedTupleType;
+            Debug.Assert(nmdTupleType != null, nameof(nmdTupleType) + " != null");
+            fieldNames = nmdTupleType.fieldNames.ToList();
         }
 
         public PrtNamedTuple(PrtType type, params IPrtValue[] elems) : base(elems)
         {
             var tupType = type as PrtNamedTupleType;
             fieldNames = new List<string>(tupType.fieldTypes.Count);
-            foreach (var fn in tupType.fieldNames)
-            {
-                fieldNames.Add(fn);
-            }
+            foreach (var fn in tupType.fieldNames) fieldNames.Add(fn);
+        }
+
+        public IPrtValue GetVal(string fieldName)
+        {
+            return fieldValues[fieldName.IndexOf(fieldName, StringComparison.Ordinal)];
         }
 
         public new IPrtValue Clone()
         {
             var clone = new PrtNamedTuple();
-            foreach (var name in fieldNames)
-            {
-                clone.fieldNames.Add(name);
-            }
-            foreach (var val in fieldValues)
-            {
-                clone.fieldValues.Add(val.Clone());
-            }
+            foreach (var name in fieldNames) clone.fieldNames.Add(name);
+            foreach (var val in fieldValues) clone.fieldValues.Add(val.Clone());
             return clone;
         }
 
         public override bool Equals(object val)
         {
             if (!(val is PrtNamedTuple tup)) return false;
-            if (tup.fieldValues.Count != this.fieldValues.Count) return false;
+            if (tup.fieldValues.Count != fieldValues.Count) return false;
             for (var i = 0; i < tup.fieldValues.Count; i++)
             {
-                if (this.fieldNames[i] != tup.fieldNames[i]) return false;
-                if (!this.fieldValues[i].Equals(tup.fieldValues[i])) return false;
+                if (fieldNames[i] != tup.fieldNames[i]) return false;
+                if (!fieldValues[i].Equals(tup.fieldValues[i])) return false;
             }
+
             return true;
         }
 
@@ -184,11 +161,8 @@ namespace PrtSharp.Values
 
         public override string ToString()
         {
-            string retStr = "<";
-            for (int i = 0; i < fieldValues.Count; i++)
-            {
-                retStr += fieldNames[i] + ":" + fieldValues[i].ToString() + ", ";
-            }
+            var retStr = "<";
+            for (var i = 0; i < fieldValues.Count; i++) retStr += fieldNames[i] + ":" + fieldValues[i] + ", ";
             retStr += ">";
             return retStr;
         }

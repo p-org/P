@@ -119,10 +119,9 @@ namespace PrtSharp
             }
             else if (type is PrtNamedTupleType) // must come before PrtTupleType since PrtNamedTupleType derives from PrtTupleType
             {
-                // TODO: Remaining
-                /*
+
                 var nmtupType = type as PrtNamedTupleType;
-                var nmtupVal = value as PrtTuple;
+                var nmtupVal = value as PrtNamedTuple;
                 if (nmtupVal == null) return false;
                 if (nmtupVal.fieldValues.Count != nmtupType.fieldTypes.Count) return false;
                 for (int i = 0; i < nmtupVal.fieldValues.Count; i++)
@@ -132,7 +131,7 @@ namespace PrtSharp
                 for (int i = 0; i < nmtupVal.fieldValues.Count; i++)
                 {
                     if (!PrtInhabitsType(nmtupVal.fieldValues[i], nmtupType.fieldTypes[i])) return false;
-                }*/
+                }
                 return true;
             }
             else if (type is PrtTupleType)

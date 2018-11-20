@@ -5,8 +5,7 @@ using System.Text;
 
 namespace PrtSharp.Values
 {
-
-    public sealed class PrtSeq: IPrtMutableValue, IReadOnlyList<IPrtValue>
+    public sealed class PrtSeq : IPrtMutableValue, IReadOnlyList<IPrtValue>
     {
         private readonly List<IPrtValue> values = new List<IPrtValue>();
 
@@ -30,10 +29,7 @@ namespace PrtSharp.Values
             get => isDirty;
             set
             {
-                if (value && isFrozen)
-                {
-                    throw new PFrozenMutationException();
-                }
+                if (value && isFrozen) throw new PFrozenMutationException();
 
                 isDirty = value;
             }
@@ -41,10 +37,7 @@ namespace PrtSharp.Values
 
         public void Freeze()
         {
-            foreach (var value in values)
-            {
-                MutabilityHelper.EnsureFrozen(value);
-            }
+            foreach (var value in values) MutabilityHelper.EnsureFrozen(value);
 
             isFrozen = true;
         }
@@ -76,10 +69,7 @@ namespace PrtSharp.Values
             get => values[index];
             set
             {
-                if (isFrozen)
-                {
-                    throw new PFrozenMutationException();
-                }
+                if (isFrozen) throw new PFrozenMutationException();
 
                 values[index] = value;
             }

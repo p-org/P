@@ -621,7 +621,7 @@ namespace Microsoft.Pc.Backend.PSharp
                                           && !PrimitiveType.Null.IsSameTypeAs(assignStmt.Value.Type)
                                           && !PrimitiveType.Any.IsSameTypeAs(assignStmt.Location.Type);
                     WriteLValue(context, output, assignStmt.Location);
-                    context.Write(output, " = ");
+                    context.Write(output, $" = ({GetCSharpType(context, assignStmt.Location.Type)})(");
                     if (needCtorAdapter)
                     {
                         context.Write(output, $"new {GetCSharpType(context, assignStmt.Location.Type)}(");
@@ -635,7 +635,7 @@ namespace Microsoft.Pc.Backend.PSharp
                         }
                         context.Write(output, ")");
                     }
-                    context.WriteLine(output, ";");
+                    context.WriteLine(output, ");");
                     break;
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");

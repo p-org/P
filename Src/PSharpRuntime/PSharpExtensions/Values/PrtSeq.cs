@@ -44,7 +44,7 @@ namespace PrtSharp.Values
 
         public IPrtValue Clone()
         {
-            return new PrtSeq(values.Select(item => item.Clone()));
+            return new PrtSeq(values.Select(item => item?.Clone()));
         }
 
         public bool Equals(IPrtValue other)

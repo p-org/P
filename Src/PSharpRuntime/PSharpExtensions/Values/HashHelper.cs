@@ -11,7 +11,7 @@ namespace PrtSharp.Values
         {
             unchecked
             {
-                return (int)values.Aggregate(HashSeed, (current, value) => current ^ (uint)value.GetHashCode());
+                return (int)values.Aggregate(HashSeed, (current, value) => current ^ (value == null? 0: (uint)value.GetHashCode()));
             }
         }
     }

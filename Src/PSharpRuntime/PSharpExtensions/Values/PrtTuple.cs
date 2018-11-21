@@ -19,7 +19,7 @@ namespace PrtSharp.Values
         public PrtTuple(params IPrtValue[] elems)
         {
             fieldValues = new List<IPrtValue>(elems.Count());
-            foreach (var elem in elems) fieldValues.Add(elem.Clone());
+            foreach (var elem in elems) fieldValues.Add(elem?.Clone());
         }
 
 

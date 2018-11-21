@@ -143,8 +143,8 @@ namespace PrtSharp.Values
         public IPrtValue Clone()
         {
             return new PrtMap(map.ToDictionary(
-                kv => (IPrtValue) kv.Key.Clone(),
-                kv => (IPrtValue) kv.Value.Clone()));
+                kv => (IPrtValue) kv.Key?.Clone(),
+                kv => (IPrtValue) kv.Value?.Clone()));
         }
 
         public void Freeze()

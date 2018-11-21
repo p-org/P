@@ -1,5 +1,0 @@
-arg: ..\MaxInstances_2.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, 1.9/1.10. assert/assume max instances of event

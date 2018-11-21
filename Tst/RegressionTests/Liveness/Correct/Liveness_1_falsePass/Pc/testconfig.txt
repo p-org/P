@@ -1,6 +1,0 @@
-arg: ..\Liveness_1_falsePass.p
-arg: /shortFileNames
-arg: /liveness
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, Liveness: sample demonstrating "false" pass in liveness checking

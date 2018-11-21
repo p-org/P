@@ -1,5 +1,0 @@
-arg: ..\StackOverflowException.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, complex data types in assignments: sequences, tuples, maps

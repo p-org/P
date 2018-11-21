@@ -1,5 +1,0 @@
-arg: ..\PingPong.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, static function example 

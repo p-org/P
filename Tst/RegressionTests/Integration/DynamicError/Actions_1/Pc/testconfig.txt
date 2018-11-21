@@ -1,5 +1,0 @@
-arg: ..\Actions_1.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, Feature Integration: basic semantics of actions and goto transitions

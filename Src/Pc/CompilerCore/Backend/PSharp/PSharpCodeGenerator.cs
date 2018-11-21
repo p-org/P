@@ -363,7 +363,7 @@ namespace Microsoft.Pc.Backend.PSharp
             
             // initialize the payload type
             string payloadType = GetCSharpType(context, pEvent.PayloadType, true);
-            context.WriteLine(output, $"internal partial class {declName} : PEvent<{payloadType}>");
+            context.WriteLine(output, $"internal partial class {declName} : PEvent");
             context.WriteLine(output, "{");
             context.WriteLine(output, $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
@@ -385,7 +385,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
             //create the constructor event
             var cTorType = GetCSharpType(context, machine.PayloadType, true);
-            context.Write(output, $"public class ConstructorEvent : PEvent<{cTorType}>");
+            context.Write(output, $"public class ConstructorEvent : PEvent");
             context.Write(output, "{");
             context.Write(output, $"public ConstructorEvent({cTorType} val) : base(val) {{ }}");
             context.WriteLine(output, "}");
@@ -571,7 +571,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 if (function.Signature.Parameters.Any())
                 {
                     var param = function.Signature.Parameters.First();
-                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = this.gotoPayload == null ? ((PEvent<{GetCSharpType(context, param.Type)}>)currentMachine.ReceivedEvent).PayloadT : ({GetCSharpType(context, param.Type)})this.gotoPayload;");
+                    context.WriteLine(output, $"{GetCSharpType(context, param.Type)} {context.Names.GetNameForDecl(param)} = ({GetCSharpType(context, param.Type)})(gotoPayload ?? ((PEvent)currentMachine.ReceivedEvent).Payload);");
                     context.WriteLine(output, "this.gotoPayload = null;");
                 }
             }
@@ -791,7 +791,7 @@ namespace Microsoft.Pc.Backend.PSharp
                         context.WriteLine(output, $"case {context.Names.GetNameForDecl(recvCase.Key)} {caseName}: {{");
                         if (recvCase.Value.Signature.Parameters.FirstOrDefault() is Variable caseArg)
                         {
-                            context.WriteLine(output, $"var {context.Names.GetNameForDecl(caseArg)} = {caseName}.PayloadT;");
+                            context.WriteLine(output, $"{GetCSharpType(context, caseArg.Type)} {context.Names.GetNameForDecl(caseArg)} = ({GetCSharpType(context, caseArg.Type)})({caseName}.Payload);");
                         }
                         foreach (Variable local in recvCase.Value.LocalVariables)
                         {

@@ -15,7 +15,7 @@ namespace PrtSharp
         public List<string> creates = new List<string>();
         public List<string> receives = new List<string>();
         public PMachineValue self;
-        protected object gotoPayload = null;
+        protected IPrtValue gotoPayload = null;
 
         public new void Assert(bool predicate)
         {
@@ -49,7 +49,7 @@ namespace PrtSharp
             }
         }
 
-        public class IntializeParametersEvent : PEvent<InitializeParameters>
+        public class IntializeParametersEvent : PEvent
         {
             public IntializeParametersEvent(InitializeParameters payload) : base(payload)
             {
@@ -63,9 +63,10 @@ namespace PrtSharp
                 throw new ArgumentException("Event type is incorrect: " + ReceivedEvent.GetType().Name);
             }
 
-            interfaceName = @event.PayloadT.InterfaceName;
+            var initParam = (@event.Payload as InitializeParameters);
+            interfaceName = initParam.InterfaceName;
             self = new PMachineValue(Id, receives.ToList());
-            RaiseEvent(GetConstructorEvent(@event.PayloadT.Payload), @event.PayloadT.Payload);
+            RaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
         }
 
         protected virtual Event GetConstructorEvent(IPrtValue value)
@@ -131,7 +132,7 @@ namespace PrtSharp
             return Receive(events);
         }
 
-        public void GotoState<T>(object payload = null) where T : MachineState
+        public void GotoState<T>(IPrtValue payload = null) where T : MachineState
         {
             gotoPayload = payload;
             Goto<T>();

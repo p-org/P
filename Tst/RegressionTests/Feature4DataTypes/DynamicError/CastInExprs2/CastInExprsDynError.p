@@ -74,7 +74,7 @@ machine Main {
 		  ////////////////////////// bool vs any:
 		  a = default(any);
 		  b = a as bool;             //dynamic error: "value must be a member of type" (this XYZ)
-		  
+		  assert(b == true);
 		  raise halt;
        }    
     }       

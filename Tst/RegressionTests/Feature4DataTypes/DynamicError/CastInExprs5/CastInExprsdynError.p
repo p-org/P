@@ -112,7 +112,7 @@ machine Main {
 		  ////////////////////////// tuple vs any:
 		  a = default(any);
 		  ts = a as (a: int, b: int);    //dynamic error: "value must be a member of type" (this XYZ)
-		  
+		  assert(ts.a == 0);
 		  raise halt;
        }    
     }       

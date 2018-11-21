@@ -8,14 +8,13 @@ namespace PrtSharp
         object Payload { get; }
     }
 
-    public class PEvent<T> : Event, IEventWithPayload
-    where T : IPrtValue
+    public class PEvent : Event, IEventWithPayload
     {
         public PEvent() : base(AssertVal, AssumeVal)
         {
         }
 
-        public PEvent(T payload) : base(AssertVal, AssumeVal)
+        public PEvent(IPrtValue payload) : base(AssertVal, AssumeVal)
         {
             Payload = payload;
         }
@@ -24,7 +23,6 @@ namespace PrtSharp
         protected static int AssumeVal { get; set; }
 
         public object Payload { get; }
-        public T PayloadT => (T) Payload;
 
         public bool Equals(IPrtValue other)
         {
@@ -37,7 +35,7 @@ namespace PrtSharp
         }
     }
 
-    public class PHalt : PEvent<IPrtValue>
+    public class PHalt : PEvent
     {
         public PHalt(IPrtValue payload) : base(payload)
         {

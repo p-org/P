@@ -1,7 +1,0 @@
-runZing: ..\..\..\..\..\..\Bld\Drops\$(Configuration)\$(Platform)\Zinger.exe
-argZing: ..\DefaultHandlerInheritedByPushTr.dll
-argZing: -et:DefaultHandlerInheritedByPushTr.trace
-incZing: DefaultHandlerInheritedByPushTr.trace
-del: DefaultHandlerInheritedByPushTr.trace
-acc: .\
-dsc: zinger.exe, P semantics test, one machine: "default" handler semantics

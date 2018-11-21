@@ -1,1 +1,0 @@
-dsc: zinger.exe, variable scoping in receive

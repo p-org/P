@@ -1,4 +1,0 @@
-arg: -et:MaxInstances_1.trace
-inc: MaxInstances_1.trace
-del: MaxInstances_1.trace
-dsc: zinger.exe, 1.10. assert max instances of event: max number of instances exceeded

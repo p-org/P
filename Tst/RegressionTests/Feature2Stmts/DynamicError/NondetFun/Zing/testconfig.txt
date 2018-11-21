@@ -1,4 +1,0 @@
-arg: -et:NondetFun.trace
-inc: NondetFun.trace
-del: NondetFun.trace
-dsc: zinger.exe, Nondeterminism in functions

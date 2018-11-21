@@ -1,1 +1,0 @@
-dsc: zinger.exe, bug repro with more than 32 events

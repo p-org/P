@@ -1,4 +1,0 @@
-arg: -et:NonConstantEventExpr.trace
-inc: NonConstantEventExpr.trace
-del: NonConstantEventExpr.trace
-dsc: zinger.exe, P semantics test, two machines, "send", "raise", monitor invocation for non-constant event expressions

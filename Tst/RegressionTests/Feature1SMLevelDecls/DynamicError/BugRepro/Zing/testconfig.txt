@@ -1,4 +1,0 @@
-arg: -et:PingPongBugRepro.trace
-inc: PingPongBugRepro.trace
-del: PingPongBugRepro.trace
-dsc: zinger.exe, Feature Integration: "send" in function which mutates its parameters

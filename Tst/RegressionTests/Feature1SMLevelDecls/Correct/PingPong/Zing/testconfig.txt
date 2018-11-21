@@ -1,1 +1,0 @@
-dsc: zinger.exe, PingPong example that uses static functions.

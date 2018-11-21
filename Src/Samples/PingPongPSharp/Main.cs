@@ -13,168 +13,92 @@ using System.Threading.Tasks;
 namespace Main
 {
     public static partial class GlobalFunctions { }
-    internal partial class unit : PEvent<IPrtValue>
+    internal partial class XYZ : PEvent<PrtNamedTuple>
     {
-        static unit() { AssertVal = -1; AssumeVal = -1; }
-        public unit() : base() { }
-        public unit(IPrtValue payload) : base(payload) { }
-        public override IPrtValue Clone() { return new unit(); }
-    }
-    internal partial class seqpayload : PEvent<PrtSeq>
-    {
-        static seqpayload() { AssertVal = -1; AssumeVal = -1; }
-        public seqpayload() : base() { }
-        public seqpayload(PrtSeq payload) : base(payload) { }
-        public override IPrtValue Clone() { return new seqpayload(); }
+        static XYZ() { AssertVal = -1; AssumeVal = -1; }
+        public XYZ() : base() { }
+        public XYZ(PrtNamedTuple payload) : base(payload) { }
+        public override IPrtValue Clone() { return new XYZ(); }
     }
     internal partial class Main : PMachine
     {
-        private PrtSeq l = new PrtSeq();
-        private PrtInt i = ((PrtInt)0);
-        private PMachineValue mac = null;
-        private PrtTuple t = (new PrtTuple(new PrtSeq(), ((PrtInt)0)));
+        private PrtNamedTuple compVal2 = (new PrtNamedTuple(new string[] { "first", "second" }, (new PrtNamedTuple(new string[] { "first", "second" }, ((PrtInt)0), (new PrtTuple(((PrtInt)0), ((PrtBool)false))))), new PrtSeq()));
+        private PrtNamedTuple compVal1 = (new PrtNamedTuple(new string[] { "first", "second" }, ((PrtInt)0), (new PrtTuple(((PrtInt)0), ((PrtBool)false)))));
         public class ConstructorEvent : PEvent<IPrtValue> { public ConstructorEvent(IPrtValue val) : base(val) { } }
 
         protected override Event GetConstructorEvent(IPrtValue value) { return new ConstructorEvent((IPrtValue)value); }
         public Main()
         {
+            this.sends.Add(nameof(XYZ));
             this.sends.Add(nameof(PHalt));
-            this.sends.Add(nameof(seqpayload));
-            this.sends.Add(nameof(unit));
+            this.receives.Add(nameof(XYZ));
             this.receives.Add(nameof(PHalt));
-            this.receives.Add(nameof(seqpayload));
-            this.receives.Add(nameof(unit));
-            this.creates.Add(nameof(I_XYZ));
         }
 
         public void Anon()
         {
             Main currentMachine = this;
-            PrtInt TMP_tmp0 = ((PrtInt)0);
-            PrtInt TMP_tmp1 = ((PrtInt)0);
-            PrtInt TMP_tmp2 = ((PrtInt)0);
-            PrtInt TMP_tmp3 = ((PrtInt)0);
-            PrtInt TMP_tmp4 = ((PrtInt)0);
+            PrtNamedTuple TMP_tmp0 = (new PrtNamedTuple(new string[] { "first", "second" }, ((PrtInt)0), (new PrtTuple(((PrtInt)0), ((PrtBool)false)))));
+            PMachineValue TMP_tmp1 = null;
+            IEventWithPayload TMP_tmp2 = null;
+            PrtNamedTuple TMP_tmp3 = (new PrtNamedTuple(new string[] { "first", "second" }, (new PrtNamedTuple(new string[] { "first", "second" }, ((PrtInt)0), (new PrtTuple(((PrtInt)0), ((PrtBool)false))))), new PrtSeq()));
+            ((PrtNamedTuple)compVal1)["first"] = (PrtInt)(((PrtInt)1));
+            ((PrtTuple)((PrtNamedTuple)compVal1)["second"])[0] = (PrtInt)(((PrtInt)100));
+            ((PrtTuple)((PrtNamedTuple)compVal1)["second"])[1] = (PrtBool)(((PrtBool)false));
+            ((PrtNamedTuple)compVal2)["first"] = (PrtNamedTuple)(((PrtNamedTuple)((IPrtValue)compVal1)?.Clone()));
+            TMP_tmp0 = (PrtNamedTuple)(((PrtNamedTuple)((IPrtValue)compVal1)?.Clone()));
+            ((PrtSeq)((PrtNamedTuple)compVal2)["second"]).Insert(((PrtInt)0), TMP_tmp0);
+            TMP_tmp1 = (PMachineValue)(currentMachine.self);
+            TMP_tmp2 = (IEventWithPayload)(new XYZ((new PrtNamedTuple(new string[] { "first", "second" }, (new PrtNamedTuple(new string[] { "first", "second" }, ((PrtInt)0), (new PrtTuple(((PrtInt)0), ((PrtBool)false))))), new PrtSeq()))));
+            TMP_tmp3 = (PrtNamedTuple)(((PrtNamedTuple)((IPrtValue)compVal2)?.Clone()));
+            currentMachine.SendEvent(currentMachine, TMP_tmp1, (Event)TMP_tmp2, TMP_tmp3);
+        }
+        public void Anon_1()
+        {
+            Main currentMachine = this;
+            PrtNamedTuple payload = this.gotoPayload == null ? ((PEvent<PrtNamedTuple>)currentMachine.ReceivedEvent).PayloadT : (PrtNamedTuple)this.gotoPayload;
+            this.gotoPayload = null;
+            PrtNamedTuple TMP_tmp0_1 = (new PrtNamedTuple(new string[] { "first", "second" }, ((PrtInt)0), (new PrtTuple(((PrtInt)0), ((PrtBool)false)))));
+            PrtInt TMP_tmp1_1 = ((PrtInt)0);
+            PrtBool TMP_tmp2_1 = ((PrtBool)false);
+            PrtNamedTuple TMP_tmp3_1 = (new PrtNamedTuple(new string[] { "first", "second" }, ((PrtInt)0), (new PrtTuple(((PrtInt)0), ((PrtBool)false)))));
+            PrtTuple TMP_tmp4 = (new PrtTuple(((PrtInt)0), ((PrtBool)false)));
             PrtInt TMP_tmp5 = ((PrtInt)0);
-            PrtSeq TMP_tmp6 = new PrtSeq();
-            PrtInt TMP_tmp7 = ((PrtInt)0);
-            PMachineValue TMP_tmp8 = null;
-            PMachineValue TMP_tmp9 = null;
-            IEventWithPayload TMP_tmp10 = null;
+            PrtBool TMP_tmp6 = ((PrtBool)false);
+            PrtNamedTuple TMP_tmp7 = (new PrtNamedTuple(new string[] { "first", "second" }, ((PrtInt)0), (new PrtTuple(((PrtInt)0), ((PrtBool)false)))));
+            PrtTuple TMP_tmp8 = (new PrtTuple(((PrtInt)0), ((PrtBool)false)));
+            PrtBool TMP_tmp9 = ((PrtBool)false);
+            PrtBool TMP_tmp10 = ((PrtBool)false);
             PrtSeq TMP_tmp11 = new PrtSeq();
-            TMP_tmp0 = (PrtInt)(((PrtInt)12));
-            ((PrtSeq)l).Insert(((PrtInt)0), TMP_tmp0);
-            TMP_tmp1 = (PrtInt)(((PrtInt)23));
-            ((PrtSeq)l).Insert(((PrtInt)0), TMP_tmp1);
-            TMP_tmp2 = (PrtInt)(((PrtInt)12));
-            ((PrtSeq)l).Insert(((PrtInt)0), TMP_tmp2);
-            TMP_tmp3 = (PrtInt)(((PrtInt)23));
-            ((PrtSeq)l).Insert(((PrtInt)0), TMP_tmp3);
-            TMP_tmp4 = (PrtInt)(((PrtInt)12));
-            ((PrtSeq)l).Insert(((PrtInt)0), TMP_tmp4);
-            TMP_tmp5 = (PrtInt)(((PrtInt)23));
-            ((PrtSeq)l).Insert(((PrtInt)0), TMP_tmp5);
-            TMP_tmp6 = (PrtSeq)(((PrtSeq)((IPrtValue)l)?.Clone()));
-            TMP_tmp7 = (PrtInt)(((PrtInt)1));
-            TMP_tmp8 = (PMachineValue)(currentMachine.CreateInterface<I_XYZ>(currentMachine, new PrtTuple<PrtSeq, PrtInt>(TMP_tmp6, TMP_tmp7)));
-            mac = (PMachineValue)TMP_tmp8;
-            TMP_tmp9 = (PMachineValue)(((PMachineValue)((IPrtValue)mac)?.Clone()));
-            TMP_tmp10 = (IEventWithPayload)(new seqpayload(new PrtSeq()));
-            TMP_tmp11 = (PrtSeq)(((PrtSeq)((IPrtValue)l)?.Clone()));
-            currentMachine.SendEvent(currentMachine, TMP_tmp9, (Event)TMP_tmp10, TMP_tmp11);
+            PrtInt TMP_tmp12 = ((PrtInt)0);
+            PrtBool TMP_tmp13 = ((PrtBool)false);
+            TMP_tmp0_1 = (PrtNamedTuple)(((PrtNamedTuple)payload)["first"]);
+            TMP_tmp1_1 = (PrtInt)(((PrtNamedTuple)TMP_tmp0_1)["first"]);
+            TMP_tmp2_1 = (PrtBool)((PrtValues.SafeEquals(TMP_tmp1_1, ((PrtInt)1))));
+            currentMachine.Assert(TMP_tmp2_1, "");
+            TMP_tmp3_1 = (PrtNamedTuple)(((PrtNamedTuple)payload)["first"]);
+            TMP_tmp4 = (PrtTuple)(((PrtNamedTuple)TMP_tmp3_1)["second"]);
+            TMP_tmp5 = (PrtInt)(((PrtTuple)TMP_tmp4)[0]);
+            TMP_tmp6 = (PrtBool)((PrtValues.SafeEquals(TMP_tmp5, ((PrtInt)100))));
+            currentMachine.Assert(TMP_tmp6, "");
+            TMP_tmp7 = (PrtNamedTuple)(((PrtNamedTuple)payload)["first"]);
+            TMP_tmp8 = (PrtTuple)(((PrtNamedTuple)TMP_tmp7)["second"]);
+            TMP_tmp9 = (PrtBool)(((PrtTuple)TMP_tmp8)[1]);
+            TMP_tmp10 = (PrtBool)((PrtValues.SafeEquals(TMP_tmp9, ((PrtBool)false))));
+            currentMachine.Assert(TMP_tmp10, "");
+            TMP_tmp11 = (PrtSeq)(((PrtNamedTuple)payload)["second"]);
+            TMP_tmp12 = (PrtInt)(((PrtInt)(TMP_tmp11).Count));
+            TMP_tmp13 = (PrtBool)((PrtValues.SafeEquals(TMP_tmp12, ((PrtInt)1))));
+            currentMachine.Assert(TMP_tmp13, "");
         }
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
-        [OnEventGotoState(typeof(ConstructorEvent), typeof(init))]
+        [OnEventGotoState(typeof(ConstructorEvent), typeof(S1))]
         class __InitState__ : MachineState { }
 
         [OnEntry(nameof(Anon))]
-        class init : MachineState
-        {
-        }
-    }
-    internal partial class XYZ : PMachine
-    {
-        private PrtSeq ii = new PrtSeq();
-        private PrtSeq rec = new PrtSeq();
-        private PrtInt i_1 = ((PrtInt)0);
-        public class ConstructorEvent : PEvent<PrtTuple> { public ConstructorEvent(PrtTuple val) : base(val) { } }
-
-        protected override Event GetConstructorEvent(IPrtValue value) { return new ConstructorEvent((PrtTuple)value); }
-        public XYZ()
-        {
-            this.sends.Add(nameof(PHalt));
-            this.sends.Add(nameof(seqpayload));
-            this.sends.Add(nameof(unit));
-            this.receives.Add(nameof(PHalt));
-            this.receives.Add(nameof(seqpayload));
-            this.receives.Add(nameof(unit));
-        }
-
-        public void Anon_1()
-        {
-            XYZ currentMachine = this;
-            PrtTuple payload = this.gotoPayload == null ? ((PEvent<PrtTuple>)currentMachine.ReceivedEvent).PayloadT : (PrtTuple)this.gotoPayload;
-            this.gotoPayload = null;
-            PrtSeq TMP_tmp0_1 = new PrtSeq();
-            PrtSeq TMP_tmp1_1 = new PrtSeq();
-            PrtInt TMP_tmp2_1 = ((PrtInt)0);
-            PrtBool TMP_tmp3_1 = ((PrtBool)false);
-            PrtInt TMP_tmp4_1 = ((PrtInt)0);
-            PrtBool TMP_tmp5_1 = ((PrtBool)false);
-            TMP_tmp0_1 = (PrtSeq)(((PrtTuple)payload)[0]);
-            ii = TMP_tmp0_1;
-            TMP_tmp1_1 = (PrtSeq)(((PrtTuple)payload)[0]);
-            TMP_tmp2_1 = (PrtInt)(((PrtSeq)TMP_tmp1_1)[((PrtInt)0)]);
-            TMP_tmp3_1 = (PrtBool)((PrtValues.SafeEquals(TMP_tmp2_1, ((PrtInt)23))));
-            currentMachine.Assert(TMP_tmp3_1, "");
-            TMP_tmp4_1 = (PrtInt)(((PrtTuple)payload)[1]);
-            TMP_tmp5_1 = (PrtBool)((PrtValues.SafeEquals(TMP_tmp4_1, ((PrtInt)1))));
-            currentMachine.Assert(TMP_tmp5_1, "");
-        }
-        public void Anon_2()
-        {
-            XYZ currentMachine = this;
-            PrtSeq payload_1 = this.gotoPayload == null ? ((PEvent<PrtSeq>)currentMachine.ReceivedEvent).PayloadT : (PrtSeq)this.gotoPayload;
-            this.gotoPayload = null;
-            PrtInt TMP_tmp0_2 = ((PrtInt)0);
-            PrtInt TMP_tmp1_2 = ((PrtInt)0);
-            PrtBool TMP_tmp2_2 = ((PrtBool)false);
-            PrtBool TMP_tmp3_2 = ((PrtBool)false);
-            PrtInt TMP_tmp4_2 = ((PrtInt)0);
-            PrtInt TMP_tmp5_2 = ((PrtInt)0);
-            PrtBool TMP_tmp6_1 = ((PrtBool)false);
-            PrtInt TMP_tmp7_1 = ((PrtInt)0);
-            rec = (PrtSeq)(((PrtSeq)((IPrtValue)payload_1)?.Clone()));
-            TMP_tmp0_2 = (PrtInt)(((PrtInt)(rec).Count));
-            TMP_tmp1_2 = (PrtInt)((TMP_tmp0_2) - (((PrtInt)1)));
-            i_1 = TMP_tmp1_2;
-            TMP_tmp2_2 = (PrtBool)((i_1) >= (((PrtInt)0)));
-            TMP_tmp3_2 = (PrtBool)(((PrtBool)((IPrtValue)TMP_tmp2_2)?.Clone()));
-            while (TMP_tmp3_2)
-            {
-                TMP_tmp4_2 = (PrtInt)(((PrtSeq)rec)[i_1]);
-                TMP_tmp5_2 = (PrtInt)(((PrtSeq)ii)[i_1]);
-                TMP_tmp6_1 = (PrtBool)((PrtValues.SafeEquals(TMP_tmp4_2, TMP_tmp5_2)));
-                currentMachine.Assert(TMP_tmp6_1, "");
-                TMP_tmp7_1 = (PrtInt)((i_1) - (((PrtInt)1)));
-                i_1 = TMP_tmp7_1;
-                TMP_tmp2_2 = (PrtBool)((i_1) >= (((PrtInt)0)));
-                TMP_tmp3_2 = (PrtBool)(((PrtBool)((IPrtValue)TMP_tmp2_2)?.Clone()));
-            }
-        }
-        [Start]
-        [OnEntry(nameof(InitializeParametersFunction))]
-        [OnEventGotoState(typeof(ConstructorEvent), typeof(init_1))]
-        class __InitState__ : MachineState { }
-
-        [OnEntry(nameof(Anon_1))]
-        [OnEventGotoState(typeof(seqpayload), typeof(XYZitnow))]
-        class init_1 : MachineState
-        {
-        }
-        [OnEntry(nameof(Anon_2))]
-        class XYZitnow : MachineState
+        [OnEventDoAction(typeof(XYZ), nameof(Anon_1))]
+        class S1 : MachineState
         {
         }
     }
@@ -183,14 +107,11 @@ namespace Main
         public static void InitializeLinkMap()
         {
             PModule.linkMap[nameof(I_Main)] = new Dictionary<string, string>();
-            PModule.linkMap[nameof(I_Main)].Add(nameof(I_XYZ), nameof(I_XYZ));
-            PModule.linkMap[nameof(I_XYZ)] = new Dictionary<string, string>();
         }
 
         public static void InitializeInterfaceDefMap()
         {
             PModule.interfaceDefinitionMap.Add(nameof(I_Main), typeof(Main));
-            PModule.interfaceDefinitionMap.Add(nameof(I_XYZ), typeof(XYZ));
         }
 
         public static void InitializeMonitorObserves()
@@ -220,17 +141,11 @@ namespace Main
         public I_Main(MachineId machine, List<string> permissions) : base(machine, permissions) { }
     }
 
-    public class I_XYZ : PMachineValue
-    {
-        public I_XYZ(MachineId machine, List<string> permissions) : base(machine, permissions) { }
-    }
-
     public partial class PHelper
     {
         public static void InitializeInterfaces()
         {
-            PInterfaces.AddInterface(nameof(I_Main), nameof(PHalt), nameof(seqpayload), nameof(unit));
-            PInterfaces.AddInterface(nameof(I_XYZ), nameof(PHalt), nameof(seqpayload), nameof(unit));
+            PInterfaces.AddInterface(nameof(I_Main), nameof(XYZ), nameof(PHalt));
         }
     }
 

@@ -15,12 +15,6 @@ namespace PrtSharp.Values
             fieldValues = new List<IPrtValue>();
         }
 
-        public PrtTuple(PrtType type)
-        {
-            var tupType = type as PrtTupleType;
-            Debug.Assert(tupType != null, nameof(tupType) + " != null");
-            fieldValues = tupType.fieldTypes.Select(PrtMkDefaultValue).ToList();
-        }
 
         public PrtTuple(params IPrtValue[] elems)
         {
@@ -48,36 +42,6 @@ namespace PrtSharp.Values
             return true;
         }
 
-        private static IPrtValue PrtMkDefaultValue(PrtType type)
-        {
-            switch (type)
-            {
-                case PrtAnyType _:
-                case PrtNullType _:
-                case PrtEventType _:
-                case PrtMachineType _:
-                case PrtPermissionType _:
-                    return null;
-                case PrtIntType _:
-                    return new PrtInt(0);
-                case PrtFloatType _:
-                    return new PrtFloat(0);
-                case PrtEnumType _:
-                    throw new NotImplementedException("asd");
-                case PrtBoolType _:
-                    return (PrtBool) false;
-                case PrtMapType _:
-                    return new PrtMap();
-                case PrtSeqType _:
-                    return new PrtSeq();
-                case PrtNamedTupleType tupleType:
-                    return new PrtNamedTuple(tupleType);
-                case PrtTupleType prtTupleType:
-                    return new PrtTuple(prtTupleType);
-                default:
-                    throw new Exception("Invalid type in PrtMkDefaultType");
-            }
-        }
 
         public IPrtValue this[int key]
         {
@@ -106,25 +70,22 @@ namespace PrtSharp.Values
     }
 
     [Serializable]
-    public class PrtNamedTuple : PrtTuple
+    public class PrtNamedTuple : IPrtValue
     {
         public List<string> fieldNames;
+        public readonly List<IPrtValue> fieldValues;
 
         public PrtNamedTuple()
         {
             fieldNames = new List<string>();
+            fieldValues = new List<IPrtValue>();
         }
 
-        public PrtNamedTuple(PrtType type) : base(type)
-        {
-            var nmdTupleType = type as PrtNamedTupleType;
-            Debug.Assert(nmdTupleType != null, nameof(nmdTupleType) + " != null");
-            fieldNames = nmdTupleType.fieldNames.ToList();
-        }
 
-        public PrtNamedTuple(string[] fieldNames, params IPrtValue[] fieldValues): base(fieldValues)
+        public PrtNamedTuple(string[] fieldNames, params IPrtValue[] fieldValues)
         {
             this.fieldNames = fieldNames.ToList();
+            this.fieldValues = fieldValues.ToList();
         }
 
         public IPrtValue this[string name]
@@ -133,7 +94,7 @@ namespace PrtSharp.Values
             set => fieldValues[fieldNames.IndexOf(name)] = value;
         }
 
-        public new IPrtValue Clone()
+        public IPrtValue Clone()
         {
             var clone = new PrtNamedTuple();
             foreach (var name in fieldNames) clone.fieldNames.Add(name);
@@ -141,7 +102,7 @@ namespace PrtSharp.Values
             return clone;
         }
 
-        public override bool Equals(object val)
+        public bool Equals(IPrtValue val)
         {
             if (!(val is PrtNamedTuple tup)) return false;
             if (tup.fieldValues.Count != fieldValues.Count) return false;

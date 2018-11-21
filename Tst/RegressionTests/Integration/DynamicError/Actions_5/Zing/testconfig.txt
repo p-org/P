@@ -1,4 +1,0 @@
-arg: -et:Actions_5.trace
-inc: Actions_5.trace
-del: Actions_5.trace
-dsc: zinger.exe, Feature Integration: inheritance of actions and not transitions by "push" transition

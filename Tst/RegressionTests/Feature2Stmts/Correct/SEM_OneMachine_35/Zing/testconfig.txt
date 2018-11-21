@@ -1,1 +1,0 @@
-dsc: zinger.exe, P Semantics, one machine, sequences, "while", "if-then-else"

@@ -1,1 +1,0 @@
-dsc: zinger.exe, P semantics test: two machines, "halt" as a transition trigger for "do"

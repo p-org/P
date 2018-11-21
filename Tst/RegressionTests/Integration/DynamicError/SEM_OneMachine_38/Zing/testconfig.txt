@@ -1,4 +1,0 @@
-arg: -et:NullHandlerInheritedByPushTr.trace
-inc: NullHandlerInheritedByPushTr.trace
-del: NullHandlerInheritedByPushTr.trace
-dsc: zinger.exe, P semantics test, one machine: "default" handler semantics

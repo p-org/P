@@ -1,4 +1,0 @@
-arg: -et:typedef.trace
-inc: typedef.trace
-del: typedef.trace
-dsc: zinger.exe, testing the typedef feature.

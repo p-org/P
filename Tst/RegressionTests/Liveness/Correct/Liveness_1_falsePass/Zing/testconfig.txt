@@ -1,2 +1,0 @@
-arg: -ndfsliveness
-dsc: zinger.exe, Liveness: sample demonstrating "false" pass in liveness checking

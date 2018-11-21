@@ -1,4 +1,0 @@
-arg: -et:gotoStmt2.trace
-inc: gotoStmt2.trace
-del: gotoStmt2.trace
-dsc: zinger.exe, goto statement

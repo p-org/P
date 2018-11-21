@@ -1,1 +1,0 @@
-dsc: zinger.exe, 1.9/1.10. assert/assume max instances of event

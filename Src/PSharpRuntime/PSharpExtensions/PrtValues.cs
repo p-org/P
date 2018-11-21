@@ -179,9 +179,10 @@ namespace PrtSharp
         
         public static IPrtValue PrtCastValue(IPrtValue value, PrtType type)
         {
-            if (!PrtInhabitsType(value, type))
+            //todo: Needs to be fixed
+            /*if (!PrtInhabitsType(value, type))
                 throw new PrtInhabitsTypeException(
-                    $"value {value.ToString()} is not a member of type {type.ToString()}");
+                    $"value {value.ToString()} is not a member of type {type.ToString()}");*/
             return value.Clone();
         }
     }

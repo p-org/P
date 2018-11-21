@@ -79,9 +79,10 @@ namespace PrtSharp.Values
             }
         }
 
-        public IPrtValue GetVal(int field)
+        public IPrtValue this[int key]
         {
-            return fieldValues[field];
+            get => fieldValues[key];
+            set => fieldValues[key] = value;
         }
 
         public void Update(int index, IPrtValue val)
@@ -121,16 +122,15 @@ namespace PrtSharp.Values
             fieldNames = nmdTupleType.fieldNames.ToList();
         }
 
-        public PrtNamedTuple(PrtType type, params IPrtValue[] elems) : base(elems)
+        public PrtNamedTuple(string[] fieldNames, params IPrtValue[] fieldValues): base(fieldValues)
         {
-            var tupType = type as PrtNamedTupleType;
-            fieldNames = new List<string>(tupType.fieldTypes.Count);
-            foreach (var fn in tupType.fieldNames) fieldNames.Add(fn);
+            this.fieldNames = fieldNames.ToList();
         }
 
-        public IPrtValue GetVal(string fieldName)
+        public IPrtValue this[string name]
         {
-            return fieldValues[fieldName.IndexOf(fieldName, StringComparison.Ordinal)];
+            get => fieldValues[fieldNames.IndexOf(name)];
+            set => fieldValues[fieldNames.IndexOf(name)] = value;
         }
 
         public new IPrtValue Clone()

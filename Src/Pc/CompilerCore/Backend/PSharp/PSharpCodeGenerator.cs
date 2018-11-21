@@ -720,14 +720,17 @@ namespace Microsoft.Pc.Backend.PSharp
                     }
                     break;
                 case InsertStmt insertStmt:
+                    var isMap = PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map);
+                    var castOp = isMap ? "(PrtMap)" : "(PrtSeq)";
+                    context.Write(output, $"({castOp}");
                     WriteExpr(context, output, insertStmt.Variable);
-                    if (PLanguageType.TypeIsOfKind(insertStmt.Variable.Type, TypeKind.Map))
+                    if (isMap)
                     {
-                        context.Write(output, ".Add(");
+                        context.Write(output, ").Add(");
                     }
                     else
                     {
-                        context.Write(output, ".Insert(");
+                        context.Write(output, ").Insert(");
                     }
                     WriteExpr(context, output, insertStmt.Index);
                     context.Write(output, ", ");
@@ -883,27 +886,28 @@ namespace Microsoft.Pc.Backend.PSharp
             switch (lvalue)
             {
                 case MapAccessExpr mapAccessExpr:
-                    context.Write(output, "(");
+                    context.Write(output, "((PrtMap)");
                     WriteLValue(context, output, mapAccessExpr.MapExpr);
                     context.Write(output, ")[");
                     WriteExpr(context, output, mapAccessExpr.IndexExpr);
                     context.Write(output, "]");
                     break;
                 case NamedTupleAccessExpr namedTupleAccessExpr:
-                    context.Write(output, "(");
+                    context.Write(output, "((PrtNamedTuple)");
                     WriteExpr(context, output, namedTupleAccessExpr.SubExpr);
-                    context.Write(output, $").GetVal(\"{namedTupleAccessExpr.FieldName}\")");
+                    context.Write(output, $")[\"{namedTupleAccessExpr.FieldName}\"]");
                     break;
                 case SeqAccessExpr seqAccessExpr:
-                    context.Write(output, "(");
+                    context.Write(output, "((PrtSeq)");
                     WriteLValue(context, output, seqAccessExpr.SeqExpr);
                     context.Write(output, ")[");
                     WriteExpr(context, output, seqAccessExpr.IndexExpr);
                     context.Write(output, "]");
                     break;
                 case TupleAccessExpr tupleAccessExpr:
+                    context.Write(output, "((PrtTuple)");
                     WriteExpr(context, output, tupleAccessExpr.SubExpr);
-                    context.Write(output, $".GetVal({tupleAccessExpr.FieldNo})");
+                    context.Write(output, $")[{tupleAccessExpr.FieldNo}]");
                     break;
                 case VariableAccessExpr variableAccessExpr:
                     context.Write(output, context.Names.GetNameForDecl(variableAccessExpr.Variable));
@@ -973,19 +977,9 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"((PrtBool){(boolLiteralExpr.Value ? "true" : "false")})");
                     break;
                 case CastExpr castExpr:
-                    if (castExpr.SubExpr.Type.Canonicalize() is SequenceType &&
-                        castExpr.Type.Canonicalize() is SequenceType toSeqType)
-                    {
-                        context.Write(output, $"(new {GetCSharpType(context, toSeqType)}(");
-                        WriteExpr(context, output, castExpr.SubExpr);
-                        context.Write(output, $".Cast<{GetCSharpType(context, toSeqType.ElementType)}>()))");
-                    }
-                    else
-                    {
-                        context.Write(output, $"(({GetCSharpType(context, castExpr.Type)})");
-                        WriteExpr(context, output, castExpr.SubExpr);
-                        context.Write(output, ")");
-                    }
+                    context.Write(output, $"(({GetCSharpType(context, castExpr.Type)})");
+                    WriteExpr(context, output, castExpr.SubExpr);
+                    context.Write(output, ")");
                     break;
                 case CoerceExpr coerceExpr:
                     switch (coerceExpr.Type.Canonicalize())
@@ -1237,9 +1231,11 @@ namespace Microsoft.Pc.Backend.PSharp
                 case SequenceType sequenceType:
                     return $"new {GetCSharpType(context, sequenceType)}()";
                 case NamedTupleType namedTupleType:
+                    var fieldNamesArray = string.Join(",", namedTupleType.Names.Select(n => $"\"{n}\""));
+                    fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
                     var fieldDefaults =
                         string.Join(", ", namedTupleType.Types.Select(t => GetDefaultValue(context, t)));
-                    return $"(new {GetCSharpType(context, namedTupleType)}({fieldDefaults}))";
+                    return $"(new {GetCSharpType(context, namedTupleType)}({fieldNamesArray},{fieldDefaults}))";
                 case TupleType tupleType:
                     string defaultTupleValues = string.Join(", ", tupleType.Types.Select(t => GetDefaultValue(context, t)));
                     return $"(new {GetCSharpType(context, tupleType)}({defaultTupleValues}))";

@@ -657,8 +657,7 @@ namespace Microsoft.Pc.Backend.PSharp
                         {
                             //create tuple from rvaluelist
                             var argTypes = string.Join(",", ctorStmt.Arguments.Select(a => GetCSharpType(context, a.Type)));
-                            var tupleType = $"PrtTuple<{argTypes}>";
-                            context.Write(output, $"new {tupleType}(");
+                            context.Write(output, $"new PrtTuple(");
                             var septor = "";
                             foreach (var ctorExprArgument in ctorStmt.Arguments)
                             {
@@ -809,22 +808,27 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, "}");
                     break;
                 case RemoveStmt removeStmt:
-                    switch (removeStmt.Variable.Type.Canonicalize())
                     {
-                        case MapType map:
-                            WriteExpr(context, output, removeStmt.Variable);
-                            context.Write(output, ".Remove(");
-                            WriteExpr(context, output, removeStmt.Value);
-                            context.WriteLine(output, ");");
-                            break;
-                        case SequenceType seq:
-                            WriteExpr(context, output, removeStmt.Variable);
-                            context.Write(output, ".RemoveAt(");
-                            WriteExpr(context, output, removeStmt.Value);
-                            context.WriteLine(output, ");");
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException($"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
+                        var castOperation = PLanguageType.TypeIsOfKind(removeStmt.Variable.Type, TypeKind.Map) ? "(PrtMap)" : "(PrtSeq)";
+                        context.Write(output, $"({castOperation}");
+                        switch (removeStmt.Variable.Type.Canonicalize())
+                        {
+                            case MapType map:
+                                WriteExpr(context, output, removeStmt.Variable);
+                                context.Write(output, ").Remove(");
+                                WriteExpr(context, output, removeStmt.Value);
+                                context.WriteLine(output, ");");
+                                break;
+                            case SequenceType seq:
+                                WriteExpr(context, output, removeStmt.Variable);
+                                context.Write(output, ").RemoveAt(");
+                                WriteExpr(context, output, removeStmt.Value);
+                                context.WriteLine(output, ");");
+                                break;
+                            default:
+                                throw new ArgumentOutOfRangeException(
+                                    $"Remove cannot be applied to type {removeStmt.Variable.Type.OriginalRepresentation}");
+                        }
                     }
                     break;
                 case ReturnStmt returnStmt:
@@ -1022,8 +1026,7 @@ namespace Microsoft.Pc.Backend.PSharp
                         {
                             //create tuple from rvaluelist
                             var argTypes = string.Join(",", ctorExpr.Arguments.Select(a => GetCSharpType(context, a.Type)));
-                            var tupleType = $"PrtTuple<{argTypes}>";
-                            context.Write(output, $"new {tupleType}(");
+                            context.Write(output, $"new PrtTuple(");
                             var septor = "";
                             foreach (var ctorExprArgument in ctorExpr.Arguments)
                             {
@@ -1104,7 +1107,9 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.Write(output, $"{swapKeyword}{context.Names.GetNameForDecl(linearAccessRefExpr.Variable)}");
                     break;
                 case NamedTupleExpr namedTupleExpr:
-                    context.Write(output, $"(new {GetCSharpType(context, namedTupleExpr.Type)}(");
+                    var fieldNamesArray = string.Join(",", (namedTupleExpr.Type as NamedTupleType).Names.Select(n => $"\"{n}\""));
+                    fieldNamesArray = $"new string[]{{{fieldNamesArray}}}";
+                    context.Write(output, $"(new {GetCSharpType(context, namedTupleExpr.Type)}({fieldNamesArray}, ");
                     for (int i = 0; i < namedTupleExpr.TupleFields.Count; i++)
                     {
                         if (i > 0)
@@ -1141,7 +1146,6 @@ namespace Microsoft.Pc.Backend.PSharp
                     foreach (IPExpr field in unnamedTupleExpr.TupleFields)
                     {
                         context.Write(output, sep);
-                        context.Write(output, $"({GetCSharpType(context, field.Type)})");
                         WriteExpr(context, output, field);
                         sep = ", ";
                     }

@@ -56,12 +56,12 @@ machine Main {
           b = default(bool);	  
 
 		  e = E;
-          e = default(event);	  
+          //e = default(event);	  
 		  
 		  mac = this;          mac = default(machine);	  
 		  
 		  a = true;
-		  a = default(any);
+		  //a = default(any);
 		  
 		  m5[1]  = true;
 		  m5 = default(map[int,any]);
@@ -226,7 +226,7 @@ machine Main {
 		  assert ( tmp2 != t);
 		  //m11 += (null,null);   //dynamic error: "key must not exist in map"
 		  m11[1] = null;      //OK
-		  m11[null] = 1;      //OK
+		  //m11[null] = 1;      //OK
 
 		  y = default(int);
 		  tmp1 = IncY();

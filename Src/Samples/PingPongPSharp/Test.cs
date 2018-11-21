@@ -16,9 +16,12 @@ namespace Main
             // Executes the P# program.
             DefaultImpl.Execute(runtime);
 
+            
             // The P# runtime executes asynchronously, so we wait
             // to not terminate the process.
             Console.WriteLine("Press Enter to terminate...");
+
+            Console.ReadKey();
         }
     }
 }

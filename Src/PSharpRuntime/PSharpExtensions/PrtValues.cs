@@ -77,7 +77,7 @@ namespace PrtSharp
             }
             else if (type is PrtEventType)
             {
-                return value is IEventWithPayload;
+                return value is PEvent;
             }
             else if (type is PrtPermissionType interfaceType)
             {

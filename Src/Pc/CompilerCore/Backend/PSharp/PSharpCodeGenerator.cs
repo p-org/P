@@ -1209,7 +1209,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "PrtFloat";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Event):
-                    return "IEventWithPayload";
+                    return "PEvent";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Machine):
                     return "PMachineValue";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Null):
@@ -1249,12 +1249,12 @@ namespace Microsoft.Pc.Backend.PSharp
                     return "((PrtInt)0)";
                 case PrimitiveType primitiveType when primitiveType.IsSameTypeAs(PrimitiveType.Float):
                     return "((PrtFloat)0.0)";
+                case PrimitiveType eventType when eventType.IsSameTypeAs(PrimitiveType.Event):
                 case PermissionType _:
                 case PrimitiveType anyType when anyType.IsSameTypeAs(PrimitiveType.Any):
-                case PrimitiveType eventType when eventType.IsSameTypeAs(PrimitiveType.Event):
-                case PrimitiveType nullType when nullType.IsSameTypeAs(PrimitiveType.Null):
                 case PrimitiveType machineType when machineType.IsSameTypeAs(PrimitiveType.Machine):
                 case ForeignType _:
+                case PrimitiveType nullType when nullType.IsSameTypeAs(PrimitiveType.Null):
                 case DataType _:
                     return "null";
                 case null:

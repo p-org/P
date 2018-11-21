@@ -21,7 +21,7 @@ namespace PrtSharp
         void InitOnEntry()
         {
             var mainMachine = (this.ReceivedEvent as Config).MainMachine;
-            this.CreateMachine(mainMachine, new PMachine.IntializeParametersEvent(new PMachine.InitializeParameters("I_" +mainMachine.Name, null)));
+            this.CreateMachine(mainMachine, new PMachine.InitializeParametersEvent(new PMachine.InitializeParameters("I_" +mainMachine.Name, null)));
         }
     }
 }

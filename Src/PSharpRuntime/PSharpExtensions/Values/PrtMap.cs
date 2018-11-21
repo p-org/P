@@ -137,7 +137,7 @@ namespace PrtSharp.Values
             return other is PrtMap otherMap
                    && !map.Keys.Except(otherMap.map.Keys).Any()
                    && !otherMap.map.Keys.Except(map.Keys).Any()
-                   && map.All(kv => Equals(otherMap.map[kv.Key], kv.Value));
+                   && map.All(kv => PrtValues.SafeEquals(otherMap.map[kv.Key], kv.Value));
         }
 
         public IPrtValue Clone()

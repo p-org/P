@@ -3,12 +3,8 @@ using Microsoft.PSharp;
 
 namespace PrtSharp
 {
-    public interface IEventWithPayload : IPrtValue
-    {
-        object Payload { get; }
-    }
-
-    public class PEvent : Event, IEventWithPayload
+   
+    public class PEvent : Event, IPrtValue
     {
         public PEvent() : base(AssertVal, AssumeVal)
         {
@@ -22,7 +18,7 @@ namespace PrtSharp
         protected static int AssertVal { get; set; }
         protected static int AssumeVal { get; set; }
 
-        public object Payload { get; }
+        public IPrtValue Payload { get; }
 
         public bool Equals(IPrtValue other)
         {

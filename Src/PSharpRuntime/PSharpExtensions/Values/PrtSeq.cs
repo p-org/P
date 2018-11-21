@@ -103,14 +103,6 @@ namespace PrtSharp.Values
             return other != null && values.SequenceEqual(other.values);
         }
 
-        public override bool Equals(object obj)
-        {
-            return !ReferenceEquals(null, obj) &&
-                   (ReferenceEquals(this, obj) ||
-                    obj.GetType() == GetType() &&
-                    Equals(obj));
-        }
-
         public override int GetHashCode()
         {
             if (!IsDirty) return hashCode;

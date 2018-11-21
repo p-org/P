@@ -1,5 +1,0 @@
-arg: ..\BugReproIdenticalTerms.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, P semantics test: exit function performed while explicitly popping the state

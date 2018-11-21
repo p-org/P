@@ -1,5 +1,0 @@
-arg: ..\LinearBugRepro3.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, linear variables

@@ -1,5 +1,0 @@
-arg: ..\variableType.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, Integration: various syntax checks

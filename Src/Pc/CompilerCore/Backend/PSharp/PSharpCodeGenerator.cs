@@ -252,7 +252,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "PrtEnum.Clear();");
             foreach (var enumDecl in enums)
             {
-                string enumElemNames = $"new [] {{{string.Join(",", enumDecl.Values.Select(e => $"\"{e.Name}\""))}}}";
+                string enumElemNames = $"new [] {{{string.Join(",", enumDecl.Values.Select(e => $"\"{context.Names.GetNameForDecl(e)}\""))}}}";
                 string enumElemValues = $"new [] {{{string.Join(",", enumDecl.Values.Select(e => e.Value))}}}";
                 context.WriteLine(output, $"PrtEnum.AddEnumElements({enumElemNames}, {enumElemValues});");
                 

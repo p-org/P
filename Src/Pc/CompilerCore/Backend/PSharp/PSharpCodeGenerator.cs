@@ -89,6 +89,7 @@ namespace Microsoft.Pc.Backend.PSharp
             //initialize the interfaces
             context.WriteLine(output, "public partial class PHelper {");
             context.WriteLine(output, "public static void InitializeInterfaces() {");
+            context.WriteLine(output, "PInterfaces.Clear();");
             foreach (var iface in ifaces)
             {
                 context.Write(output, $"PInterfaces.AddInterface(nameof({context.Names.GetNameForDecl(iface)})");
@@ -264,7 +265,7 @@ namespace Microsoft.Pc.Backend.PSharp
         private void WriteInitializeMonitorObserves(CompilationContext context, StringWriter output, ICollection<Machine> monitors)
         {
             context.WriteLine(output, "public static void InitializeMonitorObserves() {");
-
+            context.WriteLine(output, "PModule.monitorObserves.Clear();");
             foreach (var monitor in monitors)
             {
                 context.WriteLine(output, $"PModule.monitorObserves[nameof({context.Names.GetNameForDecl(monitor)})] = new List<string>();");
@@ -311,7 +312,7 @@ namespace Microsoft.Pc.Backend.PSharp
             }
 
             context.WriteLine(output, "public static void InitializeMonitorMap(PSharpRuntime runtime) {");
-
+            context.WriteLine(output, "PModule.monitorMap.Clear();");
             foreach (var machine in machineMap)
             {
                 context.WriteLine(output, $"PModule.monitorMap[\"{machine.Key}\"] = new List<Type>();");
@@ -332,6 +333,7 @@ namespace Microsoft.Pc.Backend.PSharp
         private void WriteInitializeInterfaceDefMap(CompilationContext context, StringWriter output, IDictionary<Interface, Machine> interfaceDef)
         {
             context.WriteLine(output, "public static void InitializeInterfaceDefMap() {");
+            context.WriteLine(output, "PModule.interfaceDefinitionMap.Clear();");
             foreach (var map in interfaceDef)
             {
                 context.WriteLine(output, $"PModule.interfaceDefinitionMap.Add(nameof({context.Names.GetNameForDecl(map.Key)}), typeof({context.Names.GetNameForDecl(map.Value)}));");
@@ -344,6 +346,7 @@ namespace Microsoft.Pc.Backend.PSharp
         {
             
             context.WriteLine(output, "public static void InitializeLinkMap() {");
+            context.WriteLine(output, "PModule.linkMap.Clear();");
             foreach (var creatorInterface in linkMap)
             {
                 context.WriteLine(output, $"PModule.linkMap[nameof({context.Names.GetNameForDecl(creatorInterface.Key)})] = new Dictionary<string, string>();");

@@ -13,20 +13,20 @@ namespace PrtSharp.Values
 
     public class PMachineValue : IPrtValue
     {
-        public MachineId Id { get; }
-        public List<string> Permissions { get; }
-
         public PMachineValue(MachineId machine, List<string> permissions)
         {
-            this.Id = machine;
-            this.Permissions = permissions.ToList();
+            Id = machine;
+            Permissions = permissions.ToList();
         }
 
         public PMachineValue(PMachineValue mValue)
         {
-            this.Id = mValue.Id;
-            this.Permissions = mValue.Permissions.ToList();
+            Id = mValue.Id;
+            Permissions = mValue.Permissions.ToList();
         }
+
+        public MachineId Id { get; }
+        public List<string> Permissions { get; }
 
         public bool Equals(IPrtValue other)
         {

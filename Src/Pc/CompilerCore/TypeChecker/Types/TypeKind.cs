@@ -12,10 +12,16 @@ namespace Microsoft.Pc.TypeChecker.Types
         public static readonly TypeKind TypeDef = new TypeKind("typedef");
         public static readonly TypeKind Data = new TypeKind("bounded");
 
-        private TypeKind(string name) { Name = name; }
+        private TypeKind(string name)
+        {
+            Name = name;
+        }
 
         public string Name { get; }
 
-        public override string ToString() { return Name; }
+        public override string ToString()
+        {
+            return Name;
+        }
     }
 }

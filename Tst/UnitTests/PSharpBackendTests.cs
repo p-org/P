@@ -13,14 +13,11 @@ namespace UnitTests
         [Test]
         public void TestCompilePSharpTemp()
         {
-            DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
+            var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
             var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "test.p"));
             //var foreignFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "tmp", "Foreign.cs"));
 
-            if (!tempFilePath.Exists)
-            {
-                return;
-            }
+            if (!tempFilePath.Exists) return;
 
             var testCase = new CompilerTestCase(
                 tempDir,
@@ -33,8 +30,9 @@ namespace UnitTests
         [Test]
         public void TestModuleSystem()
         {
-            DirectoryInfo tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
-            var tempFilePath = new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial","PingPong", "Main.p"));
+            var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
+            var tempFilePath =
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "PingPong", "Main.p"));
             var allFiles = new[]
             {
                 new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "PingPong", "Main.p")),
@@ -45,7 +43,7 @@ namespace UnitTests
                 new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "Env", "Env.p")),
                 new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "Timer", "Timer.p"))
             };
-            
+
             var testCase = new CompilerTestCase(
                 tempDir,
                 new PSharpRunner(allFiles),

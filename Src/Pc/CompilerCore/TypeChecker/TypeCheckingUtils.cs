@@ -19,9 +19,7 @@ namespace Microsoft.Pc.TypeChecker
             if (arguments.Count == 0)
             {
                 if (!payloadType.IsSameTypeAs(PrimitiveType.Null))
-                {
                     throw handler.TypeMismatch(context, PrimitiveType.Null, payloadType);
-                }
             }
             else if (arguments.Count == 1)
             {
@@ -30,9 +28,7 @@ namespace Microsoft.Pc.TypeChecker
             else if (payloadType.Canonicalize() is TupleType tuple)
             {
                 foreach (var pair in tuple.Types.Zip(arguments, Tuple.Create))
-                {
                     CheckArgument(handler, context, pair.Item1, pair.Item2);
-                }
             }
             else
             {
@@ -47,17 +43,10 @@ namespace Microsoft.Pc.TypeChecker
             IPExpr arg)
         {
             if (arg is ILinearRef linearRef)
-            {
                 if (linearRef.LinearType.Equals(LinearType.Swap) && !arg.Type.IsSameTypeAs(argumentType))
-                {
                     throw handler.TypeMismatch(context, arg.Type, argumentType);
-                }
-            }
 
-            if (!argumentType.IsAssignableFrom(arg.Type))
-            {
-                throw handler.TypeMismatch(context, arg.Type, argumentType);
-            }
+            if (!argumentType.IsAssignableFrom(arg.Type)) throw handler.TypeMismatch(context, arg.Type, argumentType);
         }
 
         public static IEnumerable<IPExpr> VisitRvalueList(PParser.RvalueListContext context, ExprVisitor visitor)
@@ -72,45 +61,29 @@ namespace Microsoft.Pc.TypeChecker
             // Do not modify without adding tests.
             var max = 0;
             for (var i = 0; i < message.Length; i++)
-            {
                 if (message[i] == '{')
                 {
-                    if (++i >= message.Length)
-                    {
-                        return -1; // error - opened { at end of string
-                    }
+                    if (++i >= message.Length) return -1; // error - opened { at end of string
 
-                    if (message[i] == '{')
-                    {
-                        continue;
-                    }
+                    if (message[i] == '{') continue;
 
                     var cur = 0;
                     do
                     {
-                        if (!char.IsDigit(message[i]))
-                        {
-                            return -1; // error - expecting only digits within { ... }
-                        }
+                        if (!char.IsDigit(message[i])) return -1; // error - expecting only digits within { ... }
 
                         cur = 10 * cur + (message[i] - '0');
                     } while (++i < message.Length && message[i] != '}');
 
-                    if (i >= message.Length)
-                    {
-                        return -1; // error - missing closing } at end of string.
-                    }
+                    if (i >= message.Length) return -1; // error - missing closing } at end of string.
 
                     max = Math.Max(cur + 1, max);
                 }
                 else if (message[i] == '}')
                 {
-                    if (++i >= message.Length || message[i] != '}')
-                    {
-                        return -1; // error - stray, unescaped }
-                    }
+                    if (++i >= message.Length || message[i] != '}') return -1; // error - stray, unescaped }
                 }
-            }
+
             return max;
         }
     }

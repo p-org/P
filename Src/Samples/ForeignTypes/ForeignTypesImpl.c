@@ -36,7 +36,7 @@ PRT_UINT64 P_CLONE_StringType_IMPL(PRT_UINT64 frgnVal)
 	return (PRT_UINT64)str;
 }
 
-PRT_VALUE *P_GetPassword_IMPL(PRT_MACHINEINST *context, PRT_VALUE*** argRefs)
+PRT_VALUE* P_GetPassword_IMPL(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)
 {
 	return PrtMkDefaultValue(P_TYPEDEF_StringType);
 }

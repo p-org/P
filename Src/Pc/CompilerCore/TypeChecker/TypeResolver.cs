@@ -19,8 +19,8 @@ namespace Microsoft.Pc.TypeChecker
 
         private class TypeVisitor : PParserBaseVisitor<PLanguageType>
         {
-            private readonly Scope scope;
             private readonly ITranslationErrorHandler handler;
+            private readonly Scope scope;
             private readonly HashSet<TypeDef> visitedTypeDefs = new HashSet<TypeDef>();
 
             public TypeVisitor(Scope scope, ITranslationErrorHandler handler)
@@ -28,7 +28,7 @@ namespace Microsoft.Pc.TypeChecker
                 this.scope = scope;
                 this.handler = handler;
             }
-            
+
             public override PLanguageType VisitSeqType(PParser.SeqTypeContext context)
             {
                 return new SequenceType(Visit(context.type()));
@@ -36,18 +36,12 @@ namespace Microsoft.Pc.TypeChecker
 
             public override PLanguageType VisitNamedType(PParser.NamedTypeContext context)
             {
-                string typeName = context.name.GetText();
-                if (scope.Lookup(typeName, out PEnum pEnum))
-                {
-                    return new EnumType(pEnum);
-                }
+                var typeName = context.name.GetText();
+                if (scope.Lookup(typeName, out PEnum pEnum)) return new EnumType(pEnum);
 
                 if (scope.Lookup(typeName, out TypeDef typeDef))
                 {
-                    if (visitedTypeDefs.Contains(typeDef))
-                    {
-                        throw handler.CircularTypeDef(context.name, typeDef);
-                    }
+                    if (visitedTypeDefs.Contains(typeDef)) throw handler.CircularTypeDef(context.name, typeDef);
 
                     if (typeDef.Type == null)
                     {
@@ -61,37 +55,27 @@ namespace Microsoft.Pc.TypeChecker
                                 typeDef.Type = Visit(typedefDecl.type());
                                 break;
                             default:
-                                throw handler.InternalError(typeDef.SourceLocation, new ArgumentOutOfRangeException(nameof(context)));
+                                throw handler.InternalError(typeDef.SourceLocation,
+                                    new ArgumentOutOfRangeException(nameof(context)));
                         }
                     }
 
                     return new TypeDefType(typeDef);
                 }
 
-                if (scope.Lookup(typeName, out NamedEventSet eventSet))
-                {
-                    return new PermissionType(eventSet);
-                }
+                if (scope.Lookup(typeName, out NamedEventSet eventSet)) return new PermissionType(eventSet);
 
-                if (scope.Lookup(typeName, out Interface pInterface))
-                {
-                    return new PermissionType(pInterface);
-                }
+                if (scope.Lookup(typeName, out Interface pInterface)) return new PermissionType(pInterface);
 
-                if (scope.Lookup(typeName, out Machine machine))
-                {
-                    return new PermissionType(machine);
-                }
+                if (scope.Lookup(typeName, out Machine machine)) return new PermissionType(machine);
 
-                throw handler.MissingDeclaration(context.name, "enum, typedef, event set, machine, or interface", typeName);
+                throw handler.MissingDeclaration(context.name, "enum, typedef, event set, machine, or interface",
+                    typeName);
             }
 
             public override PLanguageType VisitTupleType(PParser.TupleTypeContext context)
             {
-                if (context._tupTypes.Count > 8)
-                {
-                    throw handler.TupleSizeMoreThanEight(context);
-                }
+                if (context._tupTypes.Count > 8) throw handler.TupleSizeMoreThanEight(context);
                 return new TupleType(context._tupTypes.Select(Visit).ToArray());
             }
 
@@ -99,19 +83,13 @@ namespace Microsoft.Pc.TypeChecker
             {
                 var names = new HashSet<string>();
                 var namedTupleFields = context.idenTypeList().idenType();
-                if (context.idenTypeList().idenType().Length > 8)
-                {
-                    throw handler.TupleSizeMoreThanEight(context);
-                }
+                if (context.idenTypeList().idenType().Length > 8) throw handler.TupleSizeMoreThanEight(context);
                 var fields = new NamedTupleEntry[namedTupleFields.Length];
                 for (var i = 0; i < namedTupleFields.Length; i++)
                 {
-                    PParser.IdenTypeContext field = namedTupleFields[i];
-                    string fieldName = field.name.GetText();
-                    if (names.Contains(fieldName))
-                    {
-                        throw handler.DuplicateNamedTupleEntry(field.name, fieldName);
-                    }
+                    var field = namedTupleFields[i];
+                    var fieldName = field.name.GetText();
+                    if (names.Contains(fieldName)) throw handler.DuplicateNamedTupleEntry(field.name, fieldName);
 
                     names.Add(fieldName);
                     fields[i] = new NamedTupleEntry {Name = fieldName, FieldNo = i, Type = Visit(field.type())};
@@ -122,7 +100,7 @@ namespace Microsoft.Pc.TypeChecker
 
             public override PLanguageType VisitPrimitiveType(PParser.PrimitiveTypeContext context)
             {
-                string name = context.GetText();
+                var name = context.GetText();
                 switch (name)
                 {
                     case "bool": return PrimitiveType.Bool;

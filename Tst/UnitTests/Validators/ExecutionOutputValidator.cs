@@ -4,7 +4,7 @@ namespace UnitTests.Validators
 {
     /// <inheritdoc />
     /// <summary>
-    /// Validates that the generated program ran with the expected output.
+    ///     Validates that the generated program ran with the expected output.
     /// </summary>
     public class ExecutionOutputValidator : ITestResultsValidator
     {
@@ -21,15 +21,9 @@ namespace UnitTests.Validators
 
         public bool ValidateResult(string stdout, string stderr, int? exitCode)
         {
-            if (expectedStdout != null && !expectedStdout.Equals(stdout))
-            {
-                return false;
-            }
+            if (expectedStdout != null && !expectedStdout.Equals(stdout)) return false;
 
-            if (expectedStderr != null && !expectedStderr.Equals(stderr))
-            {
-                return false;
-            }
+            if (expectedStderr != null && !expectedStderr.Equals(stderr)) return false;
 
             return exitCode == expectedExitCode;
         }

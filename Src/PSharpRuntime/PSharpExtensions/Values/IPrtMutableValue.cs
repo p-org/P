@@ -1,4 +1,4 @@
-﻿namespace PrtSharp
+﻿namespace PrtSharp.Values
 {
     public interface IPrtMutableValue : IPrtValue
     {

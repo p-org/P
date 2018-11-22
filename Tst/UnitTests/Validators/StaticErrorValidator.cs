@@ -4,7 +4,7 @@ namespace UnitTests.Validators
 {
     /// <inheritdoc />
     /// <summary>
-    /// Validates that the P compiler fails with the appropriate error for a type-checker test case.
+    ///     Validates that the P compiler fails with the appropriate error for a type-checker test case.
     /// </summary>
     public class StaticErrorValidator : ITestResultsValidator
     {

@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace PrtSharp.Values
 {
     [Serializable]
-    public readonly  struct PrtBool : IPrtValue
+    public readonly struct PrtBool : IPrtValue
     {
         public bool Equals(PrtBool other)
         {

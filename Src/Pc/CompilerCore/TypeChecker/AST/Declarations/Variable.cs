@@ -26,6 +26,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         Local = 1 << 0,
         Param = 1 << 1,
         Field = 1 << 2,
-        Temp  = 1 << 3
+        Temp = 1 << 3
     }
 }

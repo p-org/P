@@ -10,30 +10,24 @@ namespace Microsoft.Pc.TypeChecker
     public static class Analyzer
     {
         public static Scope AnalyzeCompilationUnit(ITranslationErrorHandler handler,
-                                                   params PParser.ProgramContext[] programUnits)
+            params PParser.ProgramContext[] programUnits)
         {
             // Step 1: Build the global scope of declarations
-            Scope globalScope = BuildGlobalScope(handler, programUnits);
+            var globalScope = BuildGlobalScope(handler, programUnits);
 
             // Step 2: Validate machine specifications
-            foreach (Machine machine in globalScope.Machines)
-            {
-                MachineChecker.Validate(handler, machine);
-            }
+            foreach (var machine in globalScope.Machines) MachineChecker.Validate(handler, machine);
 
             // Step 3: Fill function bodies
             var allFunctions = globalScope.GetAllMethods().ToList();
-            foreach (Function machineFunction in allFunctions)
+            foreach (var machineFunction in allFunctions)
             {
                 FunctionBodyVisitor.PopulateMethod(handler, machineFunction);
                 FunctionValidator.CheckAllPathsReturn(handler, machineFunction);
             }
 
             // Step 2: Validate no static handlers
-            foreach (Machine machine in globalScope.Machines)
-            {
-                MachineChecker.ValidateNoStaticHandlers(handler, machine);
-            }
+            foreach (var machine in globalScope.Machines) MachineChecker.ValidateNoStaticHandlers(handler, machine);
 
             // Step 4: Propagate purity properties
             ApplyPropagations(allFunctions,
@@ -45,60 +39,41 @@ namespace Microsoft.Pc.TypeChecker
                     true));
 
             // Step 5: Verify capability restrictions
-            foreach (Function machineFunction in allFunctions)
+            foreach (var machineFunction in allFunctions)
             {
                 // TODO: is this checked earlier?
                 if (machineFunction.Owner?.IsSpec == true && machineFunction.IsNondeterministic == true)
-                {
                     throw handler.NonDeterministicFunctionInSpecMachine(machineFunction);
-                }
 
                 if ((machineFunction.CanChangeState == true || machineFunction.CanRaiseEvent == true) &&
                     (machineFunction.Role.HasFlag(FunctionRole.TransitionFunction) ||
                      machineFunction.Role.HasFlag(FunctionRole.ExitHandler)))
-                {
                     throw handler.ChangedStateMidTransition(machineFunction.SourceLocation, machineFunction);
-                }
             }
 
             // Step 6: Check linear type ownership
             LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
 
             // Step 7: Infer the creates set for each machine.
-            foreach (Machine machine in globalScope.Machines)
-            {
-                InferMachineCreates.Populate(machine, handler);
-            }
+            foreach (var machine in globalScope.Machines) InferMachineCreates.Populate(machine, handler);
 
             // Step 8: Fill the module expressions
             ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
 
-            ModuleSystemTypeChecker moduleTypeChecker = new ModuleSystemTypeChecker(handler, globalScope);
+            var moduleTypeChecker = new ModuleSystemTypeChecker(handler, globalScope);
             // Step 9: Check that all module expressions are well-formed
-            foreach (IPModuleExpr moduleExpr in AllModuleExprs(globalScope))
-            {
-                moduleTypeChecker.CheckWellFormedness(moduleExpr);
-            }
+            foreach (var moduleExpr in AllModuleExprs(globalScope)) moduleTypeChecker.CheckWellFormedness(moduleExpr);
 
             // Step 10: Check the test and implementation declarations
-            foreach (Implementation impl in globalScope.Implementations)
-            {
-                moduleTypeChecker.CheckImplementationDecl(impl);
-            }
-            foreach (SafetyTest test in globalScope.SafetyTests)
-            {
-                moduleTypeChecker.CheckSafetyTest(test);
-            }
-            foreach (RefinementTest test in globalScope.RefinementTests)
-            {
-                moduleTypeChecker.CheckRefinementTest(test);
-            }
-            
+            foreach (var impl in globalScope.Implementations) moduleTypeChecker.CheckImplementationDecl(impl);
+            foreach (var test in globalScope.SafetyTests) moduleTypeChecker.CheckSafetyTest(test);
+            foreach (var test in globalScope.RefinementTests) moduleTypeChecker.CheckRefinementTest(test);
+
             return globalScope;
         }
 
         private static Propagation<T> CreatePropagation<T>(Func<Function, T> getter, Action<Function, T> setter,
-                                                           T value)
+            T value)
         {
             return new Propagation<T>
             {
@@ -110,31 +85,19 @@ namespace Microsoft.Pc.TypeChecker
 
         private static void ApplyPropagations<T>(IEnumerable<Function> functions, params Propagation<T>[] propagations)
         {
-            foreach (Function function in functions)
-            {
-                foreach (Propagation<T> propagation in propagations)
-                {
-                    if (propagation.Getter(function).Equals(propagation.ActiveValue))
-                    {
-                        propagation.PropertyStack.Push(function);
-                    }
-                }
-            }
+            foreach (var function in functions)
+            foreach (var propagation in propagations)
+                if (propagation.Getter(function).Equals(propagation.ActiveValue))
+                    propagation.PropertyStack.Push(function);
 
-            foreach (Propagation<T> propagation in propagations)
-            {
+            foreach (var propagation in propagations)
                 while (propagation.PropertyStack.Any())
-                {
-                    foreach (Function caller in propagation.PropertyStack.Pop().Callers)
-                    {
+                    foreach (var caller in propagation.PropertyStack.Pop().Callers)
                         if (!propagation.Getter(caller).Equals(propagation.ActiveValue))
                         {
                             propagation.Setter(caller, propagation.ActiveValue);
                             propagation.PropertyStack.Push(caller);
                         }
-                    }
-                }
-            }
         }
 
         private static Scope BuildGlobalScope(ITranslationErrorHandler handler, PParser.ProgramContext[] programUnits)
@@ -147,16 +110,12 @@ namespace Microsoft.Pc.TypeChecker
             globalScope.Put("halt", (PParser.EventDeclContext) null);
 
             // Step 1: Create mapping of names to declaration stubs
-            foreach (PParser.ProgramContext programUnit in programUnits)
-            {
+            foreach (var programUnit in programUnits)
                 DeclarationStubVisitor.PopulateStubs(globalScope, programUnit, nodesToDeclarations);
-            }
 
             // Step 2: Validate declarations and fill with types
-            foreach (PParser.ProgramContext programUnit in programUnits)
-            {
+            foreach (var programUnit in programUnits)
                 DeclarationVisitor.PopulateDeclarations(handler, globalScope, programUnit, nodesToDeclarations);
-            }
 
             return globalScope;
         }
@@ -164,33 +123,17 @@ namespace Microsoft.Pc.TypeChecker
         private static IEnumerable<IPModuleExpr> AllModuleExprs(Scope globalScope)
         {
             // first do all the named modules
-            foreach (NamedModule mod in globalScope.NamedModules)
-            {
-                yield return mod.ModExpr;
-            }
+            foreach (var mod in globalScope.NamedModules) yield return mod.ModExpr;
 
             // all the test declarations
-            foreach (SafetyTest test in globalScope.SafetyTests)
-            {
-                yield return test.ModExpr;
-            }
+            foreach (var test in globalScope.SafetyTests) yield return test.ModExpr;
 
-            foreach (RefinementTest test in globalScope.RefinementTests)
-            {
-                yield return test.LeftModExpr;
-            }
+            foreach (var test in globalScope.RefinementTests) yield return test.LeftModExpr;
 
-            foreach (RefinementTest test in globalScope.RefinementTests)
-            {
-                yield return test.RightModExpr;
-            }
+            foreach (var test in globalScope.RefinementTests) yield return test.RightModExpr;
 
             // all the implementations
-            foreach (Implementation impl in globalScope.Implementations)
-            {
-                yield return impl.ModExpr;
-            }
-
+            foreach (var impl in globalScope.Implementations) yield return impl.ModExpr;
         }
 
         private class Propagation<T>

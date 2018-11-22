@@ -3,7 +3,7 @@
 namespace UnitTests.Core
 {
     /// <summary>
-    /// Helpers for running external programs
+    ///     Helpers for running external programs
     /// </summary>
     public static class ProcessHelper
     {
@@ -17,9 +17,9 @@ namespace UnitTests.Core
         /// <param name="argumentList">The arguments to pass to the program</param>
         /// <returns>The exit code produced by the program</returns>
         public static int RunWithOutput(string activeDirectory,
-                                        out string stdout,
-                                        out string stderr, string exeName,
-                                        params string[] argumentList)
+            out string stdout,
+            out string stderr, string exeName,
+            params string[] argumentList)
         {
             var psi = new ProcessStartInfo(exeName)
             {
@@ -38,10 +38,7 @@ namespace UnitTests.Core
             proc.OutputDataReceived += (s, e) => { mStdout += $"{e.Data}\n"; };
             proc.ErrorDataReceived += (s, e) =>
             {
-                if (!string.IsNullOrWhiteSpace(e.Data))
-                {
-                    mStderr += $"{e.Data}\n";
-                }
+                if (!string.IsNullOrWhiteSpace(e.Data)) mStderr += $"{e.Data}\n";
             };
 
             proc.Start();

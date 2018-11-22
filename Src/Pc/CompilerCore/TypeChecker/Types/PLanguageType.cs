@@ -6,7 +6,10 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public abstract class PLanguageType
     {
-        protected PLanguageType(TypeKind kind) { TypeKind = kind; }
+        protected PLanguageType(TypeKind kind)
+        {
+            TypeKind = kind;
+        }
 
         /// <summary>
         ///     The category of type this is (eg. sequence, map, base)
@@ -22,6 +25,11 @@ namespace Microsoft.Pc.TypeChecker.Types
         ///     Representation of the type with typedefs and event sets expanded.
         /// </summary>
         public abstract string CanonicalRepresentation { get; }
+
+        /// <summary>
+        ///     represents the permissions embedded in a type
+        /// </summary>
+        public abstract Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
 
         public abstract bool IsAssignableFrom(PLanguageType otherType);
 
@@ -46,10 +54,5 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             return type.Canonicalize().TypeKind.Equals(kind);
         }
-
-        /// <summary>
-        /// represents the permissions embedded in a type
-        /// </summary>
-        public abstract Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
     }
 }

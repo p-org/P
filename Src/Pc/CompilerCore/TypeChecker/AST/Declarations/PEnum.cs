@@ -23,10 +23,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public bool AddElement(EnumElem elem)
         {
-            if (values.Contains(elem.Value))
-            {
-                return false;
-            }
+            if (values.Contains(elem.Value)) return false;
 
             var success = elem.ParentEnum?.RemoveElement(elem);
             Debug.Assert(success != false);
@@ -38,12 +35,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public bool RemoveElement(EnumElem elem)
         {
-            if (elem.ParentEnum != this)
-            {
-                return false;
-            }
+            if (elem.ParentEnum != this) return false;
 
-            bool success = elements.Remove(elem);
+            var success = elements.Remove(elem);
             Debug.Assert(success);
             values.Remove(elem.Value);
             elem.ParentEnum = null;

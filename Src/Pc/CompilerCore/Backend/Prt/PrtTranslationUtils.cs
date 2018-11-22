@@ -13,10 +13,7 @@ namespace Microsoft.Pc.Backend.Prt
         {
             var items = enumerable.ToList();
             IList<T> inOrder = new T[items.Count];
-            foreach (T item in items)
-            {
-                inOrder[perm(item)] = item;
-            }
+            foreach (var item in items) inOrder[perm(item)] = item;
 
             return inOrder;
         }
@@ -32,7 +29,7 @@ namespace Microsoft.Pc.Backend.Prt
 
             foreach (var eventActionPair in state.AllEventHandlers)
             {
-                PEvent pEvent = eventActionPair.Key;
+                var pEvent = eventActionPair.Key;
                 switch (eventActionPair.Value)
                 {
                     case EventDefer _:
@@ -44,7 +41,7 @@ namespace Microsoft.Pc.Backend.Prt
                         break;
                     case EventGotoState eventGotoState:
                         transSet.AddEvent(pEvent);
-                        string transFunName = eventGotoState.TransitionFunction == null
+                        var transFunName = eventGotoState.TransitionFunction == null
                             ? "_P_NO_OP"
                             : context.Names.GetNameForDecl(eventGotoState.TransitionFunction);
                         trans.Add((pEvent, context.GetDeclNumber(eventGotoState.Target), "&" + transFunName));
@@ -68,13 +65,10 @@ namespace Microsoft.Pc.Backend.Prt
             var parts = new List<object>();
             var sb = new StringBuilder();
             for (var i = 0; i < message.Length; i++)
-            {
                 if (message[i] == '{')
                 {
                     if (i + 1 == message.Length)
-                    {
                         throw new ArgumentException("unmatched opening brace", nameof(message));
-                    }
 
                     if (message[i + 1] == '{')
                     {
@@ -88,14 +82,11 @@ namespace Microsoft.Pc.Backend.Prt
 
                         var position = 0;
                         while (++i < message.Length && '0' <= message[i] && message[i] <= '9')
-                        {
                             position = 10 * position + (message[i] - '0');
-                        }
 
                         if (i == message.Length || message[i] != '}')
-                        {
-                            throw new ArgumentException("unmatched opening brace in position expression", nameof(message));
-                        }
+                            throw new ArgumentException("unmatched opening brace in position expression",
+                                nameof(message));
 
                         parts.Add(position);
                     }
@@ -107,9 +98,7 @@ namespace Microsoft.Pc.Backend.Prt
                 else if (message[i] == '}')
                 {
                     if (i + 1 == message.Length || message[i + 1] != '}')
-                    {
                         throw new ArgumentException("unmatched closing brace", nameof(message));
-                    }
 
                     sb.Append(message[i]);
                     i++;
@@ -118,7 +107,6 @@ namespace Microsoft.Pc.Backend.Prt
                 {
                     sb.Append(message[i]);
                 }
-            }
 
             parts.Add(sb.ToString());
             return parts.ToArray();
@@ -126,8 +114,9 @@ namespace Microsoft.Pc.Backend.Prt
 
         public class StateActionResults
         {
-            public StateActionResults(NamedEventSet defersSet, NamedEventSet transSet, NamedEventSet dosSet, List<(PEvent, Function)> dos,
-                                      List<(PEvent, int, string)> trans)
+            public StateActionResults(NamedEventSet defersSet, NamedEventSet transSet, NamedEventSet dosSet,
+                List<(PEvent, Function)> dos,
+                List<(PEvent, int, string)> trans)
             {
                 DefersSet = defersSet;
                 TransSet = transSet;

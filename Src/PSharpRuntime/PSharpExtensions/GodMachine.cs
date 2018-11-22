@@ -5,23 +5,28 @@ namespace PrtSharp
 {
     public class _GodMachine : Machine
     {
+        private void InitOnEntry()
+        {
+            var mainMachine = (ReceivedEvent as Config).MainMachine;
+            CreateMachine(mainMachine,
+                new PMachine.InitializeParametersEvent(
+                    new PMachine.InitializeParameters("I_" + mainMachine.Name, null)));
+        }
+
         public class Config : Event
         {
             public Type MainMachine;
 
             public Config(Type main)
             {
-                this.MainMachine = main;
+                MainMachine = main;
             }
         }
+
         [Start]
         [OnEntry(nameof(InitOnEntry))]
-        class Init : MachineState { }
-
-        void InitOnEntry()
+        private class Init : MachineState
         {
-            var mainMachine = (this.ReceivedEvent as Config).MainMachine;
-            this.CreateMachine(mainMachine, new PMachine.InitializeParametersEvent(new PMachine.InitializeParameters("I_" +mainMachine.Name, null)));
         }
     }
 }

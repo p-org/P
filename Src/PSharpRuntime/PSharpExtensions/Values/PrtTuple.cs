@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 
 namespace PrtSharp.Values
@@ -23,6 +22,13 @@ namespace PrtSharp.Values
         }
 
 
+        public IPrtValue this[int key]
+        {
+            get => fieldValues[key];
+            set => fieldValues[key] = value;
+        }
+
+
         public IPrtValue Clone()
         {
             var clone = new PrtTuple();
@@ -40,13 +46,6 @@ namespace PrtSharp.Values
                 if (!fieldValues[i].Equals(tupValue.fieldValues[i]))
                     return false;
             return true;
-        }
-
-
-        public IPrtValue this[int key]
-        {
-            get => fieldValues[key];
-            set => fieldValues[key] = value;
         }
 
         public void Update(int index, IPrtValue val)
@@ -72,8 +71,8 @@ namespace PrtSharp.Values
     [Serializable]
     public class PrtNamedTuple : IPrtValue
     {
-        public List<string> fieldNames;
         public readonly List<IPrtValue> fieldValues;
+        public List<string> fieldNames;
 
         public PrtNamedTuple()
         {

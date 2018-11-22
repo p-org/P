@@ -25,6 +25,10 @@ namespace Microsoft.Pc.Backend.Prt
 
     internal class PrtCodeGeneratorImpl
     {
+        private const string FunCallArgsArrayName = "_P_GEN_funargs";
+        private const string FunCallRetValName = "_P_GEN_funval";
+        private const string FunResultValName = "_P_GEN_retval";
+        private const string FunNullStaticName = "_P_GEN_null";
         private readonly CompilationContext context;
 
         private PrtCodeGeneratorImpl(CompilationContext context)
@@ -36,15 +40,10 @@ namespace Microsoft.Pc.Backend.Prt
         {
             var context = new CompilationContext(job);
             var generator = new PrtCodeGeneratorImpl(context);
-            CompiledFile cHeader = generator.GenerateHeaderFile(globalScope);
-            CompiledFile cSource = generator.GenerateSourceFile(globalScope);
+            var cHeader = generator.GenerateHeaderFile(globalScope);
+            var cSource = generator.GenerateSourceFile(globalScope);
             return new List<CompiledFile> {cHeader, cSource};
         }
-
-        private const string FunCallArgsArrayName = "_P_GEN_funargs";
-        private const string FunCallRetValName = "_P_GEN_funval";
-        private const string FunResultValName = "_P_GEN_retval";
-        private const string FunNullStaticName = "_P_GEN_null";
 
         #region Top-level generation methods
 
@@ -53,10 +52,7 @@ namespace Microsoft.Pc.Backend.Prt
             var cHeader = new CompiledFile(context.HeaderFileName);
 
             WriteHeaderPrologue(cHeader.Stream);
-            foreach (IPDecl decl in globalScope.AllDecls)
-            {
-                WriteExternDeclaration(cHeader.Stream, decl);
-            }
+            foreach (var decl in globalScope.AllDecls) WriteExternDeclaration(cHeader.Stream, decl);
 
             WriteHeaderEpilogue(cHeader.Stream);
             return cHeader;
@@ -70,30 +66,22 @@ namespace Microsoft.Pc.Backend.Prt
 
             // Write the machine and function bodies into temporary buffer
             var bodyWriter = new StringWriter();
-            foreach (IPDecl decl in globalScope.AllDecls)
-            {
-                WriteSourceDecl(bodyWriter, decl);
-            }
+            foreach (var decl in globalScope.AllDecls) WriteSourceDecl(bodyWriter, decl);
 
             // Write all the type definitions and function implementation prototypes
             context.WriteLine(cSource.Stream, "// Type universe for program:");
-            foreach (PLanguageType type in context.UsedTypes.ToArray())
-            {
-                WriteTypeDefinition(cSource.Stream, type);
-            }
+            foreach (var type in context.UsedTypes.ToArray()) WriteTypeDefinition(cSource.Stream, type);
 
             context.WriteLine(cSource.Stream);
 
             context.WriteLine(cSource.Stream, "// Function implementation prototypes:");
-            foreach (Function function in globalScope.GetAllMethods())
+            foreach (var function in globalScope.GetAllMethods())
             {
-                string functionName = context.Names.GetNameForFunctionImpl(function);
+                var functionName = context.Names.GetNameForFunctionImpl(function);
                 context.WriteLine(cSource.Stream,
                     $"PRT_VALUE* {functionName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs);");
                 if (!function.IsForeign)
-                {
                     context.WriteLine(cSource.Stream, $"extern PRT_FUNDECL {context.Names.GetNameForDecl(function)};");
-                }
 
                 context.WriteLine(cSource.Stream);
             }
@@ -111,9 +99,7 @@ namespace Microsoft.Pc.Backend.Prt
         private void TraceSourceLine(TextWriter output, SourceLocation location)
         {
             if (context.Job.GenerateSourceMaps)
-            {
                 context.WriteLine(output, $"#line {location.Line} \"{location.File.Name}\"");
-            }
         }
 
         #endregion
@@ -128,7 +114,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         private void WriteSourceDecl(TextWriter output, IPDecl decl)
         {
-            string declName = context.Names.GetNameForDecl(decl);
+            var declName = context.Names.GetNameForDecl(decl);
             var declLocation = context.LocationResolver.GetLocation(decl);
             switch (decl)
             {
@@ -176,8 +162,8 @@ namespace Microsoft.Pc.Backend.Prt
                         context.WriteLine(output, $"PRT_VARDECL {fieldArrayName}[] = {{");
                         for (var i = 0; i < machineFields.Count; i++)
                         {
-                            Variable field = machineFields[i];
-                            string sep = i == machineFields.Count - 1 ? "" : ",";
+                            var field = machineFields[i];
+                            var sep = i == machineFields.Count - 1 ? "" : ",";
                             context.WriteLine(output,
                                 $"{{ \"{field.Name}\", &{context.Names.GetNameForType(field.Type)} }}{sep}");
                         }
@@ -188,43 +174,40 @@ namespace Microsoft.Pc.Backend.Prt
 
                     var machineStates = machine.AllStates().ToList();
                     var machineStatesInOrder = new State[machineStates.Count];
-                    foreach (State state in machineStates)
+                    foreach (var state in machineStates)
                     {
                         WriteSourceDecl(output, state);
                         machineStatesInOrder[context.GetDeclNumber(state)] = state;
                     }
 
-                    string stateArrayName = context.Names.GetTemporaryName($"{machine.Name}_STATES");
-                    string stateArrayBody =
+                    var stateArrayName = context.Names.GetTemporaryName($"{machine.Name}_STATES");
+                    var stateArrayBody =
                         string.Join(", ", machineStatesInOrder.Select(st => context.Names.GetNameForDecl(st)));
                     context.WriteLine(output, $"PRT_STATEDECL {stateArrayName}[] = {{ {stateArrayBody} }};");
                     context.WriteLine(output);
 
                     var machineMethods = machine.Methods.ToList();
-                    foreach (Function machineMethod in machineMethods)
-                    {
-                        WriteSourceDecl(output, machineMethod);
-                    }
+                    foreach (var machineMethod in machineMethods) WriteSourceDecl(output, machineMethod);
 
                     var methodArrayName = "NULL";
                     if (machineMethods.Any())
                     {
                         methodArrayName = context.Names.GetTemporaryName($"{machine.Name}_METHODS");
-                        string methodArrayBody =
+                        var methodArrayBody =
                             string.Join(", ", machineMethods.Select(m => $"&{context.Names.GetNameForDecl(m)}"));
                         context.WriteLine(output, $"PRT_FUNDECL* {methodArrayName}[] = {{ {methodArrayBody} }};");
                         context.WriteLine(output);
                     }
 
-                    string machineRecvSetName = GetReceivesNameOrMkTemp(output, machine);
-                    string machineSendSetName = GetSendsNameOrMkTemp(output, machine);
+                    var machineRecvSetName = GetReceivesNameOrMkTemp(output, machine);
+                    var machineSendSetName = GetSendsNameOrMkTemp(output, machine);
                     var machineCreatesName = "NULL";
                     if (machine.Creates.Interfaces.Any())
                     {
                         var createsInterfaces = machine.Creates.Interfaces.ToList();
                         machineCreatesName = context.Names.GetTemporaryName($"{machine.Name}_CREATES");
-                        string createsArrayName = context.Names.GetTemporaryName($"{machine.Name}_CREATES_ARR");
-                        string createsArrayBody = string.Join(", ", createsInterfaces.Select(context.GetDeclNumber));
+                        var createsArrayName = context.Names.GetTemporaryName($"{machine.Name}_CREATES_ARR");
+                        var createsArrayBody = string.Join(", ", createsInterfaces.Select(context.GetDeclNumber));
                         context.WriteLine(output, $"PRT_UINT32 {createsArrayName}[] = {{ {createsArrayBody} }};");
                         context.WriteLine(
                             output,
@@ -232,7 +215,7 @@ namespace Microsoft.Pc.Backend.Prt
                         machineCreatesName = "&" + machineCreatesName;
                     }
 
-                    uint maxQueueSize = machine.Assert ?? uint.MaxValue;
+                    var maxQueueSize = machine.Assert ?? uint.MaxValue;
                     TraceSourceLine(output, declLocation);
                     context.WriteLine(output, $"PRT_MACHINEDECL {declName} = ");
                     context.WriteLine(output, "{");
@@ -253,10 +236,10 @@ namespace Microsoft.Pc.Backend.Prt
 
                     break;
                 case NamedEventSet namedEventSet:
-                    string innerSetName = context.Names.GetTemporaryName(namedEventSet.Name + "_INNER");
+                    var innerSetName = context.Names.GetTemporaryName(namedEventSet.Name + "_INNER");
                     var eventDeclNames = namedEventSet.Events.Select(x => "&" + context.Names.GetNameForDecl(x))
                         .ToList();
-                    string eventDeclArrBody = string.Join(", ", eventDeclNames);
+                    var eventDeclArrBody = string.Join(", ", eventDeclNames);
                     eventDeclArrBody = string.IsNullOrEmpty(eventDeclArrBody) ? "NULL" : eventDeclArrBody;
                     TraceSourceLine(output, declLocation);
                     context.WriteLine(output, $"PRT_EVENTDECL* {innerSetName}[] = {{ {eventDeclArrBody} }};");
@@ -300,14 +283,14 @@ namespace Microsoft.Pc.Backend.Prt
                     // handled by MachineDecl.
                     return;
                 case State state:
-                    string stateEntryFunName = state.Entry == null
+                    var stateEntryFunName = state.Entry == null
                         ? "&_P_NO_OP"
                         : $"&{context.Names.GetNameForDecl(state.Entry)}";
-                    string stateExitFunName =
+                    var stateExitFunName =
                         state.Exit == null ? "&_P_NO_OP" : $"&{context.Names.GetNameForDecl(state.Exit)}";
 
-                    int stateIndex = context.GetDeclNumber(state);
-                    PrtTranslationUtils.StateActionResults stateData =
+                    var stateIndex = context.GetDeclNumber(state);
+                    var stateData =
                         PrtTranslationUtils.BuildActionSets(context, state);
 
                     WriteSourceDecl(output, stateData.DefersSet);
@@ -322,9 +305,9 @@ namespace Microsoft.Pc.Backend.Prt
                         context.WriteLine(output, "{");
                         for (var i = 0; i < stateData.Trans.Count; i++)
                         {
-                            (PEvent triggerEvent, int destIndex, string transFunRef) = stateData.Trans[i];
-                            string triggerName = context.Names.GetNameForDecl(triggerEvent);
-                            string comma = i == stateData.Trans.Count - 1 ? "" : ",";
+                            var (triggerEvent, destIndex, transFunRef) = stateData.Trans[i];
+                            var triggerName = context.Names.GetNameForDecl(triggerEvent);
+                            var comma = i == stateData.Trans.Count - 1 ? "" : ",";
                             context.WriteLine(output,
                                 $"{{ {stateIndex}, &{triggerName}, {destIndex}, {transFunRef} }}{comma}");
                         }
@@ -342,10 +325,10 @@ namespace Microsoft.Pc.Backend.Prt
                         context.WriteLine(output, "{");
                         for (var i = 0; i < stateData.Dos.Count; i++)
                         {
-                            (PEvent triggerEvent, Function doFun) = stateData.Dos[i];
-                            string triggerName = context.Names.GetNameForDecl(triggerEvent);
-                            string comma = i == stateData.Dos.Count - 1 ? "" : ",";
-                            string funName = doFun != null ? $"&{context.Names.GetNameForDecl(doFun)}" : "NULL";
+                            var (triggerEvent, doFun) = stateData.Dos[i];
+                            var triggerName = context.Names.GetNameForDecl(triggerEvent);
+                            var comma = i == stateData.Dos.Count - 1 ? "" : ",";
+                            var funName = doFun != null ? $"&{context.Names.GetNameForDecl(doFun)}" : "NULL";
                             context.WriteLine(output, $"{{ {stateIndex}, &{triggerName}, {funName} }}{comma}");
                         }
 
@@ -369,15 +352,9 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, "}");
                     break;
                 case StateGroup stateGroup:
-                    foreach (State state in stateGroup.States)
-                    {
-                        WriteSourceDecl(output, state);
-                    }
+                    foreach (var state in stateGroup.States) WriteSourceDecl(output, state);
 
-                    foreach (StateGroup subGroup in stateGroup.Groups)
-                    {
-                        WriteSourceDecl(output, subGroup);
-                    }
+                    foreach (var subGroup in stateGroup.Groups) WriteSourceDecl(output, subGroup);
 
                     break;
             }
@@ -387,22 +364,23 @@ namespace Microsoft.Pc.Backend.Prt
 
         private void WriteFunction(TextWriter output, Function function)
         {
-            string declName = context.Names.GetNameForDecl(function);
+            var declName = context.Names.GetNameForDecl(function);
             var declLocation = context.LocationResolver.GetLocation(function);
 
-            string functionImplName = context.Names.GetNameForFunctionImpl(function);
-            bool isAnon = string.IsNullOrEmpty(function.Name);
-            string functionName = isAnon ? "NULL" : $"\"{function.Name}\"";
+            var functionImplName = context.Names.GetNameForFunctionImpl(function);
+            var isAnon = string.IsNullOrEmpty(function.Name);
+            var functionName = isAnon ? "NULL" : $"\"{function.Name}\"";
             var signature = function.Signature.ParameterTypes.ToList();
-            Debug.Assert((isAnon && signature.Count <= 1) || !isAnon);
-            string payloadType = isAnon && signature.Count == 1
+            Debug.Assert(isAnon && signature.Count <= 1 || !isAnon);
+            var payloadType = isAnon && signature.Count == 1
                 ? $"&{context.Names.GetNameForType(signature[0])}"
                 : "NULL";
 
             if (!function.IsForeign)
             {
                 TraceSourceLine(output, declLocation);
-                context.WriteLine(output, $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
+                context.WriteLine(output,
+                    $"PRT_VALUE* {functionImplName}(PRT_MACHINEINST* context, PRT_VALUE*** argRefs)");
                 context.WriteLine(output, "{");
                 WriteFunctionBody(output, function);
                 context.WriteLine(output, "}");
@@ -422,12 +400,9 @@ namespace Microsoft.Pc.Backend.Prt
         {
             type = type.Canonicalize();
 
-            string typeGenName = context.Names.GetNameForType(type);
+            var typeGenName = context.Names.GetNameForType(type);
 
-            if (context.WrittenTypes.Contains(type))
-            {
-                return typeGenName;
-            }
+            if (context.WrittenTypes.Contains(type)) return typeGenName;
 
             switch (type)
             {
@@ -438,16 +413,17 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_INT, {{ NULL }} }};");
                     break;
                 case ForeignType foreignType:
-                    string foreignTypeName = foreignType.CanonicalRepresentation;
+                    var foreignTypeName = foreignType.CanonicalRepresentation;
 
                     context.WriteLine(output, $"extern PRT_UINT64 P_MKDEF_{foreignTypeName}_IMPL(void);");
                     context.WriteLine(output, $"extern PRT_UINT64 P_CLONE_{foreignTypeName}_IMPL(PRT_UINT64);");
                     context.WriteLine(output, $"extern void P_FREE_{foreignTypeName}_IMPL(PRT_UINT64);");
                     context.WriteLine(output, $"extern PRT_UINT32 P_GETHASHCODE_{foreignTypeName}_IMPL(PRT_UINT64);");
-                    context.WriteLine(output, $"extern PRT_BOOLEAN P_ISEQUAL_{foreignTypeName}_IMPL(PRT_UINT64, PRT_UINT64);");
+                    context.WriteLine(output,
+                        $"extern PRT_BOOLEAN P_ISEQUAL_{foreignTypeName}_IMPL(PRT_UINT64, PRT_UINT64);");
                     context.WriteLine(output, $"extern PRT_STRING P_TOSTRING_{foreignTypeName}_IMPL(PRT_UINT64);");
 
-                    string foreignTypeDeclName = context.Names.GetNameForForeignTypeDecl(foreignType);
+                    var foreignTypeDeclName = context.Names.GetNameForForeignTypeDecl(foreignType);
                     context.WriteLine(output, $"static PRT_FOREIGNTYPEDECL {foreignTypeDeclName} = {{");
                     context.WriteLine(output, "0U,");
                     context.WriteLine(output, $"\"{foreignTypeName}\",");
@@ -462,18 +438,18 @@ namespace Microsoft.Pc.Backend.Prt
                         $"PRT_TYPE {typeGenName} = {{ PRT_KIND_FOREIGN, {{ .foreignType = &{foreignTypeDeclName} }} }};");
                     break;
                 case MapType mapType:
-                    string mapKeyTypeName = WriteTypeDefinition(output, mapType.KeyType);
-                    string mapValueTypeName = WriteTypeDefinition(output, mapType.ValueType);
-                    string mapTypeDeclName = context.Names.GetTemporaryName("MAPTYPE");
+                    var mapKeyTypeName = WriteTypeDefinition(output, mapType.KeyType);
+                    var mapValueTypeName = WriteTypeDefinition(output, mapType.ValueType);
+                    var mapTypeDeclName = context.Names.GetTemporaryName("MAPTYPE");
                     context.WriteLine(output,
                         $"static PRT_MAPTYPE {mapTypeDeclName} = {{ &{mapKeyTypeName}, &{mapValueTypeName} }};");
                     context.WriteLine(output,
                         $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_MAP, {{ .map = &{mapTypeDeclName} }} }};");
                     break;
                 case NamedTupleType namedTupleType:
-                    string ntNamesArrayName = context.Names.GetTemporaryName("NMDTUP_N");
-                    string ntTypesArrayName = context.Names.GetTemporaryName("NMDTUP_T");
-                    string ntStructName = context.Names.GetTemporaryName("NMDTUP");
+                    var ntNamesArrayName = context.Names.GetTemporaryName("NMDTUP_N");
+                    var ntTypesArrayName = context.Names.GetTemporaryName("NMDTUP_T");
+                    var ntStructName = context.Names.GetTemporaryName("NMDTUP");
                     var typeDeclNames = namedTupleType.Types.Select(t => WriteTypeDefinition(output, t));
                     context.WriteLine(
                         output,
@@ -515,15 +491,15 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"// TODO: implement types like {primitiveType.CanonicalRepresentation}");
                     break;
                 case SequenceType sequenceType:
-                    string seqElementTypeName = WriteTypeDefinition(output, sequenceType.ElementType);
-                    string seqTypeDeclName = context.Names.GetTemporaryName("SEQTYPE");
+                    var seqElementTypeName = WriteTypeDefinition(output, sequenceType.ElementType);
+                    var seqTypeDeclName = context.Names.GetTemporaryName("SEQTYPE");
                     context.WriteLine(output, $"static PRT_SEQTYPE {seqTypeDeclName} = {{ &{seqElementTypeName} }};");
                     context.WriteLine(output,
                         $"static PRT_TYPE {typeGenName} = {{ PRT_KIND_SEQ, {{ .seq = &{seqTypeDeclName} }} }};");
                     break;
                 case TupleType tupleType:
-                    string tupTypesArrayName = context.Names.GetTemporaryName("TUP_T");
-                    string tupStructName = context.Names.GetTemporaryName("TUP");
+                    var tupTypesArrayName = context.Names.GetTemporaryName("TUP_T");
+                    var tupStructName = context.Names.GetTemporaryName("TUP");
                     var tupTypeDeclNames = tupleType.Types.Select(t => WriteTypeDefinition(output, t));
                     context.WriteLine(
                         output,
@@ -546,23 +522,24 @@ namespace Microsoft.Pc.Backend.Prt
         private void WriteProgramDecl(TextWriter output, Scope globalScope)
         {
             // generate event array
-            string eventArrayName = context.Names.GetTemporaryName("ALL_EVENTS");
-            var eventsInOrder = PrtTranslationUtils.ToOrderedListByPermutation(globalScope.Events, context.GetDeclNumber);
-            string eventArrayBody = string.Join(", ", eventsInOrder.Select(ev => "&" + context.Names.GetNameForDecl(ev)));
+            var eventArrayName = context.Names.GetTemporaryName("ALL_EVENTS");
+            var eventsInOrder =
+                PrtTranslationUtils.ToOrderedListByPermutation(globalScope.Events, context.GetDeclNumber);
+            var eventArrayBody = string.Join(", ", eventsInOrder.Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             eventArrayBody = string.IsNullOrEmpty(eventArrayBody) ? "NULL" : eventArrayBody;
             context.WriteLine(output, $"PRT_EVENTDECL* {eventArrayName}[] = {{ {eventArrayBody} }};");
 
             // generate machine array
-            string machineArrayName = context.Names.GetTemporaryName("ALL_MACHINES");
-            string machineArrayBody = string.Join(", ", PrtTranslationUtils
+            var machineArrayName = context.Names.GetTemporaryName("ALL_MACHINES");
+            var machineArrayBody = string.Join(", ", PrtTranslationUtils
                 .ToOrderedListByPermutation(globalScope.Machines, context.GetDeclNumber)
                 .Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             machineArrayBody = string.IsNullOrEmpty(machineArrayBody) ? "NULL" : machineArrayBody;
             context.WriteLine(output, $"PRT_MACHINEDECL* {machineArrayName}[] = {{ {machineArrayBody} }};");
 
             // generate interface array
-            string interfaceArrayName = context.Names.GetTemporaryName("ALL_INTERFACES");
-            string interfaceArrayBody = string.Join(", ", PrtTranslationUtils
+            var interfaceArrayName = context.Names.GetTemporaryName("ALL_INTERFACES");
+            var interfaceArrayBody = string.Join(", ", PrtTranslationUtils
                 .ToOrderedListByPermutation(globalScope.Interfaces, context.GetDeclNumber)
                 .Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             interfaceArrayBody = string.IsNullOrEmpty(interfaceArrayBody) ? "NULL" : interfaceArrayBody;
@@ -570,23 +547,23 @@ namespace Microsoft.Pc.Backend.Prt
 
             // generate functions array
             var allFunctions = globalScope.Functions.Where(f => !f.IsForeign).ToList();
-            string funcArrayName = context.Names.GetTemporaryName("ALL_FUNCTIONS");
-            string funcArrayBody =
+            var funcArrayName = context.Names.GetTemporaryName("ALL_FUNCTIONS");
+            var funcArrayBody =
                 string.Join(", ", allFunctions.Select(ev => "&" + context.Names.GetNameForDecl(ev)));
             funcArrayBody = string.IsNullOrEmpty(funcArrayBody) ? "NULL" : funcArrayBody;
             context.WriteLine(output, $"PRT_FUNDECL* {funcArrayName}[] = {{ {funcArrayBody} }};");
 
             // generate foreign types array
             var foreignTypes = context.WrittenTypes.Where(t => t is ForeignType).Cast<ForeignType>().ToList();
-            string foreignTypesArrayName = context.Names.GetTemporaryName("ALL_FOREIGN_TYPES");
-            string foreignTypesArrayBody = string.Join(", ",
+            var foreignTypesArrayName = context.Names.GetTemporaryName("ALL_FOREIGN_TYPES");
+            var foreignTypesArrayBody = string.Join(", ",
                 foreignTypes
                     .Select(t => $"&{context.Names.GetNameForForeignTypeDecl(t)}"));
             foreignTypesArrayBody = string.IsNullOrEmpty(foreignTypesArrayBody) ? "NULL" : foreignTypesArrayBody;
             context.WriteLine(output,
                 $"PRT_FOREIGNTYPEDECL* {foreignTypesArrayName}[] = {{ {foreignTypesArrayBody} }};");
 
-            foreach (Implementation impl in globalScope.Implementations)
+            foreach (var impl in globalScope.Implementations)
             {
                 var linkMap = impl.ModExpr.ModuleInfo.LinkMap;
 
@@ -597,22 +574,20 @@ namespace Microsoft.Pc.Backend.Prt
                     var iMap = trueLinkMap[i];
                     if (iMap != null)
                     {
-                        string mapTmpName = context.Names.GetTemporaryName($"{impl.Name}_LME_{i}");
+                        var mapTmpName = context.Names.GetTemporaryName($"{impl.Name}_LME_{i}");
                         mapNames[i] = mapTmpName;
                         context.WriteLine(output, $"int {mapTmpName}[] = {{ {string.Join(",", iMap)} }};");
                     }
                 }
 
-                string linkMapName = context.Names.GetTemporaryName($"{impl.Name}_LINKMAP");
+                var linkMapName = context.Names.GetTemporaryName($"{impl.Name}_LINKMAP");
                 context.WriteLine(output, $"int* {linkMapName}[] = {{ {string.Join(", ", mapNames)} }};");
 
                 var machineDefMap = impl.ModExpr.ModuleInfo.InterfaceDef;
-                string machineDefMapName = context.Names.GetTemporaryName($"{impl.Name}_DEFMAP");
+                var machineDefMapName = context.Names.GetTemporaryName($"{impl.Name}_DEFMAP");
                 var realMachineDefMap = Enumerable.Repeat(-1, trueLinkMap.Length).ToArray();
                 foreach (var linking in machineDefMap)
-                {
                     realMachineDefMap[context.GetDeclNumber(linking.Key)] = context.GetDeclNumber(linking.Value);
-                }
 
                 context.WriteLine(output, $"int {machineDefMapName}[] = {{ {string.Join(",", realMachineDefMap)} }};");
 
@@ -633,20 +608,21 @@ namespace Microsoft.Pc.Backend.Prt
             }
         }
 
-        private int[][] ResolveLinkMap(Scope globalScope, IDictionary<Interface, IDictionary<Interface, Interface>> linkMap)
+        private int[][] ResolveLinkMap(Scope globalScope,
+            IDictionary<Interface, IDictionary<Interface, Interface>> linkMap)
         {
-            int nInterfaces = globalScope.Interfaces.Count();
+            var nInterfaces = globalScope.Interfaces.Count();
             var maps = new int[nInterfaces][];
             foreach (var keyValuePair in linkMap)
             {
-                int firstInterfaceIndex = context.GetDeclNumber(keyValuePair.Key);
+                var firstInterfaceIndex = context.GetDeclNumber(keyValuePair.Key);
                 Debug.Assert(maps[firstInterfaceIndex] == null);
                 maps[firstInterfaceIndex] = Enumerable.Repeat(-1, nInterfaces).ToArray();
 
                 foreach (var finalMapping in keyValuePair.Value)
                 {
-                    int secondInterfaceIndex = context.GetDeclNumber(finalMapping.Key);
-                    int finalInterfaceIndex = context.GetDeclNumber(finalMapping.Value);
+                    var secondInterfaceIndex = context.GetDeclNumber(finalMapping.Key);
+                    var finalInterfaceIndex = context.GetDeclNumber(finalMapping.Value);
                     maps[firstInterfaceIndex][secondInterfaceIndex] = finalInterfaceIndex;
                 }
             }
@@ -709,14 +685,14 @@ namespace Microsoft.Pc.Backend.Prt
             }
             else
             {
-                string nameForReturnType = context.Names.GetNameForType(function.Signature.ReturnType);
+                var nameForReturnType = context.Names.GetNameForType(function.Signature.ReturnType);
                 context.WriteLine(output, $"PRT_VALUE* {FunResultValName} = PrtMkDefaultValue(&{nameForReturnType});");
             }
 
             for (var i = 0; i < function.Signature.Parameters.Count; i++)
             {
-                Variable argument = function.Signature.Parameters[i];
-                string varName = context.Names.GetNameForDecl(argument);
+                var argument = function.Signature.Parameters[i];
+                var varName = context.Names.GetNameForDecl(argument);
                 context.WriteLine(output, $"PRT_VALUE** {varName} = argRefs[{i}];");
             }
 
@@ -726,32 +702,29 @@ namespace Microsoft.Pc.Backend.Prt
 
         private void WriteFunctionStatements(TextWriter output, Function function, string returnLabelHint)
         {
-            string returnLabel = context.Names.GetReturnLabel(function, returnLabelHint);
+            var returnLabel = context.Names.GetReturnLabel(function, returnLabelHint);
 
             // Write the body into a temporary buffer so that forward declarations can be found and added
             var bodyWriter = new StringWriter();
             var bodyLocation = context.LocationResolver.GetLocation(function.Body);
             TraceSourceLine(bodyWriter, bodyLocation);
 
-            foreach (IPStmt stmt in function.Body.Statements)
-            {
-                WriteStmt(bodyWriter, function, stmt);
-            }
+            foreach (var stmt in function.Body.Statements) WriteStmt(bodyWriter, function, stmt);
 
             bodyWriter.WriteLine($"{returnLabel}: ;");
-            foreach (Variable localVariable in function.LocalVariables)
+            foreach (var localVariable in function.LocalVariables)
             {
-                string varName = context.Names.GetNameForDecl(localVariable);
+                var varName = context.Names.GetNameForDecl(localVariable);
                 context.WriteLine(bodyWriter, $"PrtFreeValue({varName}); {varName} = NULL;");
             }
 
             // Write local variable declarations to the prologue
-            foreach (Variable localVariable in function.LocalVariables)
+            foreach (var localVariable in function.LocalVariables)
             {
                 var varLocation = context.LocationResolver.GetLocation(localVariable);
                 TraceSourceLine(output, varLocation);
 
-                string varName = context.Names.GetNameForDecl(localVariable);
+                var varName = context.Names.GetNameForDecl(localVariable);
                 if (localVariable.Role.HasFlag(VariableRole.Temp))
                 {
                     // temporaries are never read before being written.
@@ -760,15 +733,12 @@ namespace Microsoft.Pc.Backend.Prt
                 else
                 {
                     // TODO: optimize away PrtMkDefaultValue if liveness shows no usages before assignments.
-                    string varTypeName = context.Names.GetNameForType(localVariable.Type);
+                    var varTypeName = context.Names.GetNameForType(localVariable.Type);
                     context.WriteLine(output, $"PRT_VALUE* {varName} = PrtMkDefaultValue(&{varTypeName});");
                 }
             }
 
-            if (function.LocalVariables.Any())
-            {
-                context.WriteLine(output);
-            }
+            if (function.LocalVariables.Any()) context.WriteLine(output);
 
             // Write gathered literals to the prologue
             context.WriteLine(output,
@@ -782,23 +752,17 @@ namespace Microsoft.Pc.Backend.Prt
         private void WriteRegisteredLiterals(TextWriter output, Function function)
         {
             foreach (var literal in context.GetRegisteredIntLiterals(function))
-            {
                 context.WriteLine(output,
                     $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_INT, {{ .nt = {literal.Key} }} }};");
-            }
 
             foreach (var literal in context.GetRegisteredFloatLiterals(function))
-            {
                 context.WriteLine(output,
                     $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_FLOAT, {{ .ft = {literal.Key} }} }};");
-            }
 
             foreach (var literal in context.GetRegisteredBoolLiterals(function))
-            {
                 context.WriteLine(
                     output,
                     $"PRT_VALUE {literal.Value} = {{ PRT_VALUE_KIND_BOOL, {{ .bl = {(literal.Key ? "PRT_TRUE" : "PRT_FALSE")} }} }};");
-            }
         }
 
         private string GetVariableReference(Function function, IVariableRef variableRef)
@@ -809,12 +773,10 @@ namespace Microsoft.Pc.Backend.Prt
         private void WriteCleanupCheck(TextWriter output, Function function)
         {
             var topFun = function;
-            while (topFun.ParentFunction != null)
-            {
-                topFun = topFun.ParentFunction;
-            }
+            while (topFun.ParentFunction != null) topFun = topFun.ParentFunction;
 
-            context.WriteLine(output, "if (p_this->returnKind != ReturnStatement && p_this->returnKind != ReceiveStatement) {");
+            context.WriteLine(output,
+                "if (p_this->returnKind != ReturnStatement && p_this->returnKind != ReceiveStatement) {");
             context.WriteLine(output, $"goto {context.Names.GetReturnLabel(topFun)};");
             context.WriteLine(output, "}");
 
@@ -841,7 +803,7 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case AssignStmt assignStmt:
                     // Lookup lvalue
-                    string lvalName = context.Names.GetTemporaryName("LVALUE");
+                    var lvalName = context.Names.GetTemporaryName("LVALUE");
                     context.Write(output, $"PRT_VALUE** {lvalName} = &(");
                     WriteLValue(output, function, assignStmt.Location);
                     context.WriteLine(output, ");");
@@ -856,16 +818,11 @@ namespace Microsoft.Pc.Backend.Prt
 
                     // If we called external code, check for cleanup.
                     if (assignStmt.Value is FunCallExpr || assignStmt.Value is CtorExpr)
-                    {
                         WriteCleanupCheck(output, function);
-                    }
                     break;
                 case CompoundStmt compoundStmt:
                     context.WriteLine(output, "{");
-                    foreach (IPStmt pStmt in compoundStmt.Statements)
-                    {
-                        WriteStmt(output, function, pStmt);
-                    }
+                    foreach (var pStmt in compoundStmt.Statements) WriteStmt(output, function, pStmt);
 
                     context.WriteLine(output, "}");
                     break;
@@ -873,7 +830,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(
                         output,
                         $"PrtMkInterface(context, {context.GetDeclNumber(ctorStmt.Interface)}, {ctorStmt.Arguments.Count}");
-                    foreach (IPExpr pExpr in ctorStmt.Arguments)
+                    foreach (var pExpr in ctorStmt.Arguments)
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
@@ -884,15 +841,13 @@ namespace Microsoft.Pc.Backend.Prt
                     WriteCleanupCheck(output, function);
                     break;
                 case FunCallStmt funCallStmt:
-                    string funImplName = context.Names.GetNameForFunctionImpl(funCallStmt.Function);
+                    var funImplName = context.Names.GetNameForFunctionImpl(funCallStmt.Function);
                     var funArgs = funCallStmt.ArgsList.Cast<ILinearRef>().ToList();
 
                     // Put all the arguments in the args array
                     foreach (var arg in funArgs.Select((arg, i) => new {arg, i}))
-                    {
                         context.WriteLine(
                             output, $"{FunCallArgsArrayName}[{arg.i}] = {GetVariableReference(function, arg.arg)};");
-                    }
 
                     // Call the function and immediately free the value
                     context.WriteLine(output, $"PrtFreeValue({funImplName}(context, {FunCallArgsArrayName}));");
@@ -900,7 +855,7 @@ namespace Microsoft.Pc.Backend.Prt
                     // Free and set to null all the moved arguments
                     var toFree = funArgs.Where(arg => arg.LinearType.Equals(LinearType.Move))
                         .Select(arg => GetVariablePointer(function, arg.Variable));
-                    foreach (string argName in toFree)
+                    foreach (var argName in toFree)
                     {
                         context.WriteLine(output, $"PrtFreeValue({argName});");
                         context.WriteLine(output, $"{argName} = NULL;");
@@ -909,7 +864,7 @@ namespace Microsoft.Pc.Backend.Prt
                     WriteCleanupCheck(output, function);
                     break;
                 case GotoStmt gotoStmt:
-                    int destStateIndex = context.GetDeclNumber(gotoStmt.State);
+                    var destStateIndex = context.GetDeclNumber(gotoStmt.State);
                     context.Write(output, $"PrtGoto(p_this, {destStateIndex}U, ");
                     if (gotoStmt.Payload != null)
                     {
@@ -950,10 +905,10 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case MoveAssignStmt moveAssignStmt:
                     context.WriteLine(output, "{");
-                    string movedVarName = GetVariablePointer(function, moveAssignStmt.FromVariable);
+                    var movedVarName = GetVariablePointer(function, moveAssignStmt.FromVariable);
 
                     // Get reference to old value
-                    string movedLValue = context.Names.GetTemporaryName("LVALUE");
+                    var movedLValue = context.Names.GetTemporaryName("LVALUE");
                     context.Write(output, $"PRT_VALUE** {movedLValue} = &(");
                     WriteLValue(output, function, moveAssignStmt.ToLocation);
                     context.WriteLine(output, ");");
@@ -982,7 +937,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, "PrtRaise(p_this, ");
                     WriteExpr(output, function, raiseStmt.PEvent);
                     context.Write(output, $", {raiseStmt.Payload.Count}");
-                    foreach (IPExpr pExpr in raiseStmt.Payload)
+                    foreach (var pExpr in raiseStmt.Payload)
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
@@ -995,26 +950,25 @@ namespace Microsoft.Pc.Backend.Prt
                     var raiseEventVar = (IVariableRef) raiseStmt.PEvent;
                     context.WriteLine(output, $"*({GetVariableReference(function, raiseEventVar)}) = NULL;");
 
-                    Function raiseReturnTarget = function;
+                    var raiseReturnTarget = function;
                     while (raiseReturnTarget.ParentFunction != null)
-                    {
                         raiseReturnTarget = raiseReturnTarget.ParentFunction;
-                    }
 
                     context.WriteLine(output, $"goto {context.Names.GetReturnLabel(raiseReturnTarget)};");
                     break;
                 case ReceiveStmt receiveStmt:
                     // context.Job.Output.WriteMessage("Receive is not yet stable!", SeverityKind.Warning);
 
-                    string allowedEventIdsName = context.Names.GetTemporaryName("allowedEventIds");
+                    var allowedEventIdsName = context.Names.GetTemporaryName("allowedEventIds");
                     var receiveEventIds = receiveStmt.Cases.Keys.Select(context.GetDeclNumber).ToList();
-                    string allowedEventIdsValue = string.Join(", ", receiveEventIds);
-                    
-                    var payloadVariable = new Variable(context.Names.GetTemporaryName("payload"), receiveStmt.SourceLocation, VariableRole.Temp);
+                    var allowedEventIdsValue = string.Join(", ", receiveEventIds);
+
+                    var payloadVariable = new Variable(context.Names.GetTemporaryName("payload"),
+                        receiveStmt.SourceLocation, VariableRole.Temp);
                     function.AddLocalVariable(payloadVariable);
 
-                    string payloadName = context.Names.GetNameForDecl(payloadVariable);
-                    string eventIdName = context.Names.GetTemporaryName("eventId");
+                    var payloadName = context.Names.GetNameForDecl(payloadVariable);
+                    var eventIdName = context.Names.GetTemporaryName("eventId");
 
                     // Set up call to PrtReceiveAsync
                     context.WriteLine(output, $"PRT_UINT32 {allowedEventIdsName}[] = {{ {allowedEventIdsValue} }};");
@@ -1037,16 +991,14 @@ namespace Microsoft.Pc.Backend.Prt
 
                         if (caseFunction.Signature.Parameters.Any())
                         {
-                            string realPayloadName = context.Names.GetNameForDecl(caseFunction.Signature.Parameters[0]);
+                            var realPayloadName = context.Names.GetNameForDecl(caseFunction.Signature.Parameters[0]);
                             context.WriteLine(output, $"PRT_VALUE** {realPayloadName} = &{payloadName};");
                         }
 
                         // Write case body into temporary buffer so that we can prepend literals
                         var caseWriter = new StringWriter();
-                        foreach (IPStmt caseStmt in caseFunction.Body.Statements)
-                        {
+                        foreach (var caseStmt in caseFunction.Body.Statements)
                             WriteStmt(caseWriter, caseFunction, caseStmt);
-                        }
                         context.WriteLine(caseWriter, $"{context.Names.GetReturnLabel(caseFunction)}: ;");
 
                         // Register local variables with containing function
@@ -1059,7 +1011,7 @@ namespace Microsoft.Pc.Backend.Prt
                         context.Write(output, caseWriter.ToString());
                         context.WriteLine(output, "} break;");
                     }
-                    
+
                     // Default case -- catch erroneous resumptions
                     context.WriteLine(output, "default: {");
                     context.WriteLine(output, "PrtAssert(PRT_FALSE, \"receive returned unhandled event\");");
@@ -1093,7 +1045,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, "), ");
                     WriteExpr(output, function, sendStmt.Evt);
                     context.Write(output, $", {sendStmt.Arguments.Count}");
-                    foreach (IPExpr sendArgExpr in sendStmt.Arguments)
+                    foreach (var sendArgExpr in sendStmt.Arguments)
                     {
                         Debug.Assert(sendArgExpr is IVariableRef);
                         var argVar = (IVariableRef) sendArgExpr;
@@ -1113,11 +1065,11 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     context.WriteLine(output, "{");
-                    string lvName = context.Names.GetTemporaryName("LVALUE");
-                    string tmpName = context.Names.GetTemporaryName("SWAP");
+                    var lvName = context.Names.GetTemporaryName("LVALUE");
+                    var tmpName = context.Names.GetTemporaryName("SWAP");
 
                     // Can only swap local variables, so this is safe. Otherwise would have to call a second WriteLValue
-                    string swappedName = GetVariablePointer(function, swapAssignStmt.OldLocation);
+                    var swappedName = GetVariablePointer(function, swapAssignStmt.OldLocation);
 
                     // Save l-value
                     context.Write(output, $"PRT_VALUE** {lvName} = &(");
@@ -1158,12 +1110,12 @@ namespace Microsoft.Pc.Backend.Prt
             }
 
             // Otherwise build full parameter pack...
-            int k = (printMessageParts.Length - 1) / 2;
+            var k = (printMessageParts.Length - 1) / 2;
             context.Write(output, "PrtFormatPrintf(\"");
             context.Write(output, (string) printMessageParts[0]);
             context.Write(output, "\", ");
             context.Write(output, printStmt.Args.Count.ToString());
-            foreach (IPExpr printArg in printStmt.Args)
+            foreach (var printArg in printStmt.Args)
             {
                 context.Write(output, ", ");
                 WriteExpr(output, function, printArg);
@@ -1233,14 +1185,14 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, ")");
                     break;
                 case BinOpExpr binOpExpr:
-                    IPExpr binOpLhs = binOpExpr.Lhs;
-                    IPExpr binOpRhs = binOpExpr.Rhs;
-                    BinOpType binOpType = binOpExpr.Operation;
+                    var binOpLhs = binOpExpr.Lhs;
+                    var binOpRhs = binOpExpr.Rhs;
+                    var binOpType = binOpExpr.Operation;
 
                     // TODO: if getting a literal, replace with literal.
                     if (binOpType == BinOpType.Eq || binOpType == BinOpType.Neq)
                     {
-                        string negate = binOpType == BinOpType.Eq ? "" : "!";
+                        var negate = binOpType == BinOpType.Eq ? "" : "!";
                         context.Write(output, $"PrtMkBoolValue({negate}PrtIsEqualValue(");
                         WriteExpr(output, function, binOpLhs);
                         context.Write(output, ", ");
@@ -1249,8 +1201,8 @@ namespace Microsoft.Pc.Backend.Prt
                     }
                     else
                     {
-                        (string binOpGetter, _) = GetTypeStructureFuns(binOpLhs.Type);
-                        (_, string binOpBuilder) = GetTypeStructureFuns(binOpExpr.Type);
+                        var (binOpGetter, _) = GetTypeStructureFuns(binOpLhs.Type);
+                        var (_, binOpBuilder) = GetTypeStructureFuns(binOpExpr.Type);
 
                         context.Write(output, $"{binOpBuilder}(");
 
@@ -1269,11 +1221,11 @@ namespace Microsoft.Pc.Backend.Prt
 
                     break;
                 case BoolLiteralExpr boolLiteralExpr:
-                    string boolLiteralName = context.RegisterLiteral(function, boolLiteralExpr.Value);
+                    var boolLiteralName = context.RegisterLiteral(function, boolLiteralExpr.Value);
                     context.Write(output, $"(&{boolLiteralName})");
                     break;
                 case CastExpr castExpr:
-                    string castTypeName = context.Names.GetNameForType(castExpr.Type);
+                    var castTypeName = context.Names.GetNameForType(castExpr.Type);
                     context.Write(output, "PrtCloneValue(PrtCastValue(");
                     WriteExpr(output, function, castExpr.SubExpr);
                     context.Write(output, $", &{castTypeName}))");
@@ -1331,7 +1283,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(
                         output,
                         $"PrtCloneValue(PrtMkInterface(context, {context.GetDeclNumber(ctorExpr.Interface)}, {ctorExpr.Arguments.Count}");
-                    foreach (IPExpr pExpr in ctorExpr.Arguments)
+                    foreach (var pExpr in ctorExpr.Arguments)
                     {
                         Debug.Assert(pExpr is IVariableRef);
                         var argVar = (IVariableRef) pExpr;
@@ -1341,11 +1293,11 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, ")->id)");
                     break;
                 case DefaultExpr defaultExpr:
-                    string nameForDefaultType = context.Names.GetNameForType(defaultExpr.Type);
+                    var nameForDefaultType = context.Names.GetNameForType(defaultExpr.Type);
                     context.Write(output, $"PrtMkDefaultValue(&{nameForDefaultType})");
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
-                    string enumLiteralName = context.RegisterLiteral(function, enumElemRefExpr.Value.Value);
+                    var enumLiteralName = context.RegisterLiteral(function, enumElemRefExpr.Value.Value);
                     context.Write(output, $"(&{enumLiteralName})");
                     break;
                 case EventRefExpr eventRefExpr:
@@ -1355,11 +1307,11 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, "(PrtMkNondetBoolValue())");
                     break;
                 case FloatLiteralExpr floatLiteralExpr:
-                    string floaLiteralName = context.RegisterLiteral(function, floatLiteralExpr.Value);
+                    var floaLiteralName = context.RegisterLiteral(function, floatLiteralExpr.Value);
                     context.Write(output, $"(&{floaLiteralName})");
                     break;
                 case FunCallExpr funCallExpr:
-                    string funImplName = context.Names.GetNameForFunctionImpl(funCallExpr.Function);
+                    var funImplName = context.Names.GetNameForFunctionImpl(funCallExpr.Function);
                     var funArgs = funCallExpr.Arguments.Cast<ILinearRef>().ToList();
                     var argSetup = funArgs.Select((arg, i) =>
                         $"({FunCallArgsArrayName}[{i}] = {GetVariableReference(function, arg)})");
@@ -1368,11 +1320,11 @@ namespace Microsoft.Pc.Backend.Prt
                         .Select(arg => GetVariablePointer(function, arg.Variable))
                         .Select(varName => $"(PrtFreeValue({varName}), {varName} = NULL)");
                     var resRetrieve = new[] {$"({FunCallRetValName})"};
-                    string fullCall = string.Join(", ", argSetup.Concat(funCall).Concat(argsFree).Concat(resRetrieve));
+                    var fullCall = string.Join(", ", argSetup.Concat(funCall).Concat(argsFree).Concat(resRetrieve));
                     context.Write(output, $"({fullCall})");
                     break;
                 case IntLiteralExpr intLiteralExpr:
-                    string intLiteralName = context.RegisterLiteral(function, intLiteralExpr.Value);
+                    var intLiteralName = context.RegisterLiteral(function, intLiteralExpr.Value);
                     context.Write(output, $"(&{intLiteralName})");
                     break;
                 case KeysExpr keysExpr:
@@ -1398,8 +1350,8 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case NamedTupleExpr namedTupleExpr:
                     var ntArgs = (IReadOnlyList<IVariableRef>) namedTupleExpr.TupleFields;
-                    string ntTypeName = context.Names.GetNameForType(namedTupleExpr.Type);
-                    string namedTupleBody =
+                    var ntTypeName = context.Names.GetNameForType(namedTupleExpr.Type);
+                    var namedTupleBody =
                         string.Join(", ", ntArgs.Select(v => GetVariableReference(function, v)));
                     context.Write(output, $"(PrtMkTuple(&{ntTypeName}, {namedTupleBody}))");
                     break;
@@ -1433,7 +1385,7 @@ namespace Microsoft.Pc.Backend.Prt
                     context.Write(output, $", {tupleAccessExpr.FieldNo})");
                     break;
                 case UnaryOpExpr unaryOpExpr:
-                    (string unOpGetter, string unOpBuilder) = GetTypeStructureFuns(unaryOpExpr.Type);
+                    var (unOpGetter, unOpBuilder) = GetTypeStructureFuns(unaryOpExpr.Type);
                     context.Write(output, $"{unOpBuilder}(");
 
                     context.Write(output, UnOpToStr(unaryOpExpr.Operation));
@@ -1445,8 +1397,8 @@ namespace Microsoft.Pc.Backend.Prt
                     break;
                 case UnnamedTupleExpr unnamedTupleExpr:
                     var utArgs = (IReadOnlyList<IVariableRef>) unnamedTupleExpr.TupleFields;
-                    string utTypeName = context.Names.GetNameForType(unnamedTupleExpr.Type);
-                    string tupleBody =
+                    var utTypeName = context.Names.GetNameForType(unnamedTupleExpr.Type);
+                    var tupleBody =
                         string.Join(", ", utArgs.Select(v => GetVariableReference(function, v)));
                     context.Write(output, $"(PrtMkTuple(&{utTypeName}, {tupleBody}))");
                     break;
@@ -1463,23 +1415,17 @@ namespace Microsoft.Pc.Backend.Prt
 
         private string GetVariablePointer(Function function, Variable variable)
         {
-            if (variable.Role.HasFlag(VariableRole.Param))
-            {
-                // dereference, since params are passed by reference.
-                return $"*{context.Names.GetNameForDecl(variable)}";
-            }
+            if (variable.Role.HasFlag(VariableRole.Param)) return $"*{context.Names.GetNameForDecl(variable)}";
 
             if (variable.Role.HasFlag(VariableRole.Field))
             {
                 // TODO: is this always correct? I think the iterator ordering of a List should be consistent...
-                int varIdx = function.Owner.Fields.ToList().IndexOf(variable);
+                var varIdx = function.Owner.Fields.ToList().IndexOf(variable);
                 return $"p_this->varValues[{varIdx}]";
             }
 
             if (variable.Role.HasFlag(VariableRole.Temp) || variable.Role.HasFlag(VariableRole.Local))
-            {
                 return context.Names.GetNameForDecl(variable);
-            }
 
             throw context.Handler.InternalError(variable.SourceLocation,
                 new ArgumentOutOfRangeException(nameof(variable)));
@@ -1569,7 +1515,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         private void WriteHeaderPrologue(TextWriter output)
         {
-            string includeGuardMacro = $"P_{Regex.Replace(context.ProjectName.ToUpperInvariant(), @"\s+", "")}_H_";
+            var includeGuardMacro = $"P_{Regex.Replace(context.ProjectName.ToUpperInvariant(), @"\s+", "")}_H_";
             context.WriteLine(output, "#pragma once");
             context.WriteLine(output, $"#ifndef {includeGuardMacro}");
             context.WriteLine(output, $"#define {includeGuardMacro}");
@@ -1583,7 +1529,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         private void WriteExternDeclaration(TextWriter output, IPDecl decl)
         {
-            string declName = context.Names.GetNameForDecl(decl);
+            var declName = context.Names.GetNameForDecl(decl);
             switch (decl)
             {
                 case EnumElem _:
@@ -1609,16 +1555,13 @@ namespace Microsoft.Pc.Backend.Prt
                     context.WriteLine(output, $"// DECL(NamedModule, {decl.Name}) => {declName}");
                     break;
                 case PEnum pEnum:
-                    string enumBody = string.Join(", ",
+                    var enumBody = string.Join(", ",
                         pEnum.Values.Select(val => $"{context.Names.GetNameForDecl(val)} = {val.Value}"));
                     context.WriteLine(output, $"typedef enum {declName} {{ {enumBody} }} {declName};");
                     context.WriteLine(output);
                     break;
                 case PEvent pEvent:
-                    if (!pEvent.IsBuiltIn)
-                    {
-                        context.WriteLine(output, $"extern PRT_EVENTDECL {declName};");
-                    }
+                    if (!pEvent.IsBuiltIn) context.WriteLine(output, $"extern PRT_EVENTDECL {declName};");
 
                     break;
                 case RefinementTest refinementTest:
@@ -1648,7 +1591,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         private void WriteHeaderEpilogue(TextWriter output)
         {
-            string includeGuardMacro = $"P_{Regex.Replace(context.ProjectName.ToUpperInvariant(), @"\s+", "")}_H_";
+            var includeGuardMacro = $"P_{Regex.Replace(context.ProjectName.ToUpperInvariant(), @"\s+", "")}_H_";
             context.WriteLine(output);
             context.WriteLine(output, "#ifdef __cplusplus");
             context.WriteLine(output, "}");

@@ -6,7 +6,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Statements
     public class SendStmt : IPStmt
     {
         public SendStmt(ParserRuleContext sourceLocation, IPExpr machineExpr, IPExpr evt,
-                        IReadOnlyList<IPExpr> arguments)
+            IReadOnlyList<IPExpr> arguments)
         {
             SourceLocation = sourceLocation;
             MachineExpr = machineExpr;

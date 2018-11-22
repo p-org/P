@@ -22,12 +22,12 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public int Assert { get; set; }
         public PLanguageType PayloadType { get; set; }
 
-
-        public string Name { get; }
-        public ParserRuleContext SourceLocation { get; }
-
         public bool IsHaltEvent => string.Equals(Name, "halt");
         public bool IsNullEvent => string.Equals(Name, "null");
         public bool IsBuiltIn => IsHaltEvent || IsNullEvent;
+
+
+        public string Name { get; }
+        public ParserRuleContext SourceLocation { get; }
     }
 }

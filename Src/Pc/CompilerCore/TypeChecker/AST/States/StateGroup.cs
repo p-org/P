@@ -45,12 +45,12 @@ namespace Microsoft.Pc.TypeChecker.AST.States
 
         public IStateContainer GetGroup(string groupName)
         {
-            return groups.TryGetValue(groupName, out StateGroup group) ? group : null;
+            return groups.TryGetValue(groupName, out var group) ? group : null;
         }
 
         public State GetState(string stateName)
         {
-            return states.TryGetValue(stateName, out State state) ? state : null;
+            return states.TryGetValue(stateName, out var state) ? state : null;
         }
     }
 }

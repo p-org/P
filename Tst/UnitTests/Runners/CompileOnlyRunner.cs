@@ -97,10 +97,7 @@ namespace UnitTests.Runners
                 stdout.WriteLine($"={new string(' ', prePadding)}{file.FileName}{new string(' ', postPadding)}=");
                 stdout.WriteLine(hdash);
                 stdout.Write(file.Contents);
-                if (!file.Contents.EndsWith(Environment.NewLine))
-                {
-                    stdout.WriteLine();
-                }
+                if (!file.Contents.EndsWith(Environment.NewLine)) stdout.WriteLine();
 
                 stdout.WriteLine(hdash);
                 stdout.WriteLine();

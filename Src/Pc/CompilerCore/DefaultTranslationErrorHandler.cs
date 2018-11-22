@@ -78,18 +78,21 @@ namespace Microsoft.Pc
 
         public Exception IllegalTypeInCoerceExpr(ParserRuleContext location)
         {
-            return IssueError(location, $"expected an interface or int or float type");
+            return IssueError(location, "expected an interface or int or float type");
         }
 
         public Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType)
         {
-            PEvent outlierEvent = newType.AllowedPermissions.Value.First(x => !oldType.AllowedPermissions.Value.Contains(x));
-            return IssueError(context, $"illegal Coerce, {oldType.OriginalRepresentation} permissions is not a superset of {newType.OriginalRepresentation} (e.g., event {outlierEvent.Name})");
+            var outlierEvent =
+                newType.AllowedPermissions.Value.First(x => !oldType.AllowedPermissions.Value.Contains(x));
+            return IssueError(context,
+                $"illegal Coerce, {oldType.OriginalRepresentation} permissions is not a superset of {newType.OriginalRepresentation} (e.g., event {outlierEvent.Name})");
         }
 
         public Exception StaticFunctionNotAllowedAsHandler(ParserRuleContext funName, string name)
         {
-            return IssueError(funName, $"global functions or foreign functions are not directly allowed as handlers, {name}");
+            return IssueError(funName,
+                $"global functions or foreign functions are not directly allowed as handlers, {name}");
         }
 
         public Exception TypeMismatch(ParserRuleContext location, PLanguageType actual, params PLanguageType[] expected)
@@ -123,7 +126,6 @@ namespace Microsoft.Pc
                 $"types {lhsType.OriginalRepresentation} and {rhsType.OriginalRepresentation} are incomparable");
         }
 
-        
 
         public Exception MisplacedThis(PParser.PrimitiveContext location)
         {
@@ -307,6 +309,11 @@ namespace Microsoft.Pc
             return IssueError(location, $"Event {pEvent.Name} appears twice in receive statement argument list");
         }
 
+        public Exception TupleSizeMoreThanEight(ParserRuleContext context)
+        {
+            return IssueError(context, "tuple or named tuple of size greater than 8 is not supported");
+        }
+
         private Exception IssueError(ParserRuleContext location, string message)
         {
             return IssueError(location, location.Start, message);
@@ -320,11 +327,6 @@ namespace Microsoft.Pc
         private string DeclarationName(IPDecl method)
         {
             return method.Name.Length > 0 ? method.Name : $"at {locationResolver.GetLocation(method.SourceLocation)}";
-        }
-
-        public Exception TupleSizeMoreThanEight(ParserRuleContext context)
-        {
-            return IssueError(context, "tuple or named tuple of size greater than 8 is not supported");
         }
     }
 }

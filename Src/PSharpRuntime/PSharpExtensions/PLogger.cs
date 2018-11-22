@@ -1,16 +1,17 @@
 ﻿using System;
 using Microsoft.PSharp;
 using Microsoft.PSharp.IO;
+using PrtSharp.Exceptions;
 
 namespace PrtSharp
 {
     /// <summary>
-    /// Logger that writes text to the console.
+    ///     Logger that writes text to the console.
     /// </summary>
     public class PLogger : MachineLogger
     {
         /// <summary>
-        /// Writes the specified string value.
+        ///     Writes the specified string value.
         /// </summary>
         /// <param name="value">Text</param>
         public override void Write(string value)
@@ -19,7 +20,7 @@ namespace PrtSharp
         }
 
         /// <summary>
-        /// Writes the text representation of the specified array of objects.
+        ///     Writes the text representation of the specified array of objects.
         /// </summary>
         /// <param name="format">Text</param>
         /// <param name="args">Arguments</param>
@@ -29,8 +30,8 @@ namespace PrtSharp
         }
 
         /// <summary>
-        /// Writes the specified string value, followed by the
-        /// current line terminator.
+        ///     Writes the specified string value, followed by the
+        ///     current line terminator.
         /// </summary>
         /// <param name="value">Text</param>
         public override void WriteLine(string value)
@@ -39,8 +40,8 @@ namespace PrtSharp
         }
 
         /// <summary>
-        /// Writes the text representation of the specified array of objects,
-        /// followed by the current line terminator.
+        ///     Writes the text representation of the specified array of objects,
+        ///     followed by the current line terminator.
         /// </summary>
         /// <param name="format">Text</param>
         /// <param name="args">Arguments</param>
@@ -49,7 +50,8 @@ namespace PrtSharp
             Console.WriteLine(format, args);
         }
 
-        public override void OnMachineExceptionHandled(MachineId machineId, string currentStateName, string actionName, Exception ex)
+        public override void OnMachineExceptionHandled(MachineId machineId, string currentStateName, string actionName,
+            Exception ex)
         {
             if (ex is PNonStandardReturnException)
             {
@@ -61,7 +63,8 @@ namespace PrtSharp
             }
         }
 
-        public override void OnMachineExceptionThrown(MachineId machineId, string currentStateName, string actionName, Exception ex)
+        public override void OnMachineExceptionThrown(MachineId machineId, string currentStateName, string actionName,
+            Exception ex)
         {
             if (ex is PNonStandardReturnException)
             {
@@ -69,13 +72,15 @@ namespace PrtSharp
             }
             else
             {
-                base.OnMachineExceptionThrown(machineId, currentStateName,actionName,ex);
+                base.OnMachineExceptionThrown(machineId, currentStateName, actionName, ex);
             }
         }
 
         /// <summary>
-        /// Disposes the logger.
+        ///     Disposes the logger.
         /// </summary>
-        public override void Dispose() { }
+        public override void Dispose()
+        {
+        }
     }
 }

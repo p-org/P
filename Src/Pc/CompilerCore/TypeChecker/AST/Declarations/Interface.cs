@@ -8,7 +8,6 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 {
     public class Interface : IPDecl
     {
-
         public Interface(string name, ParserRuleContext sourceNode)
         {
             Debug.Assert(sourceNode is PParser.InterfaceDeclContext || sourceNode is PParser.ImplMachineDeclContext);
@@ -41,7 +40,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         private readonly SortedSet<Interface> interfaces = new SortedSet<Interface>(InterfaceNameComparer);
 
-        public IEnumerable<Interface> Interfaces=> interfaces;
+        public IEnumerable<Interface> Interfaces => interfaces;
 
         public bool AddInterface(Interface @interface)
         {
@@ -50,10 +49,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public void AddInterfaces(IEnumerable<Interface> its)
         {
-            foreach(var @interface in its)
-            {
-                interfaces.Add(@interface);
-            }
+            foreach (var @interface in its) interfaces.Add(@interface);
         }
 
         public bool Contains(Interface @interface)

@@ -17,8 +17,10 @@ namespace Microsoft.Pc.TypeChecker.Types
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.OriginalRepresentation}"))})";
             CanonicalRepresentation =
                 $"({string.Join(",", Fields.Select(tn => $"{tn.Name}:{tn.Type.CanonicalRepresentation}"))})";
-            AllowedPermissions = Fields.Any(f => f.Type.AllowedPermissions == null) ? null : new Lazy<IReadOnlyList<PEvent>>(() => Fields.SelectMany(f => f.Type.AllowedPermissions.Value).ToList());
-            
+            AllowedPermissions = Fields.Any(f => f.Type.AllowedPermissions == null)
+                ? null
+                : new Lazy<IReadOnlyList<PEvent>>(
+                    () => Fields.SelectMany(f => f.Type.AllowedPermissions.Value).ToList());
         }
 
         public IEnumerable<string> Names => Fields.Select(f => f.Name);
@@ -26,6 +28,8 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         public override string OriginalRepresentation { get; }
         public override string CanonicalRepresentation { get; }
+
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
@@ -38,19 +42,17 @@ namespace Microsoft.Pc.TypeChecker.Types
         public override PLanguageType Canonicalize()
         {
             return new NamedTupleType(Fields.Select(f => new NamedTupleEntry
-                                            {
-                                                Name = f.Name,
-                                                FieldNo = f.FieldNo,
-                                                Type = f.Type.Canonicalize()
-                                            })
-                                            .ToArray());
+                {
+                    Name = f.Name,
+                    FieldNo = f.FieldNo,
+                    Type = f.Type.Canonicalize()
+                })
+                .ToArray());
         }
 
         public bool LookupEntry(string name, out NamedTupleEntry entry)
         {
             return lookupTable.TryGetValue(name, out entry);
         }
-
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
+using PrtSharp.Exceptions;
 
 namespace PrtSharp.Values
 {
@@ -24,25 +24,12 @@ namespace PrtSharp.Values
             hashCode = ComputeHashCode();
         }
 
-        public PrtSeq CloneKeys()
-        {
-            return new PrtSeq(map.Keys.Select(v => v.Clone()));
-        }
-
-        public PrtSeq CloneValues()
-        {
-            return new PrtSeq(map.Values.Select(v => v.Clone()));
-        }
-
         private bool IsDirty
         {
             get => isDirty;
             set
             {
-                if (value && isFrozen)
-                {
-                    throw new PFrozenMutationException();
-                }
+                if (value && isFrozen) throw new PFrozenMutationException();
 
                 isDirty = value;
             }
@@ -78,15 +65,12 @@ namespace PrtSharp.Values
 
         public void CopyTo(KeyValuePair<IPrtValue, IPrtValue>[] array, int arrayIndex)
         {
-            foreach (KeyValuePair<IPrtValue, IPrtValue> kv in map)
-            {
-                array[arrayIndex++] = kv;
-            }
+            foreach (var kv in map) array[arrayIndex++] = kv;
         }
 
         public bool Remove(KeyValuePair<IPrtValue, IPrtValue> item)
         {
-            bool removed = map.Remove(item.Key);
+            var removed = map.Remove(item.Key);
             IsDirty = true;
             return removed;
         }
@@ -108,7 +92,7 @@ namespace PrtSharp.Values
 
         public bool Remove(IPrtValue key)
         {
-            bool removed = map.Remove(key);
+            var removed = map.Remove(key);
             IsDirty = true;
             return removed;
         }
@@ -143,17 +127,24 @@ namespace PrtSharp.Values
         public IPrtValue Clone()
         {
             return new PrtMap(map.ToDictionary(
-                kv => (IPrtValue) kv.Key?.Clone(),
-                kv => (IPrtValue) kv.Value?.Clone()));
+                kv => kv.Key?.Clone(),
+                kv => kv.Value?.Clone()));
         }
 
         public void Freeze()
         {
-            foreach (var key in map.Keys)
-            {
-                MutabilityHelper.EnsureFrozen(key);
-            }
+            foreach (var key in map.Keys) MutabilityHelper.EnsureFrozen(key);
             isFrozen = true;
+        }
+
+        public PrtSeq CloneKeys()
+        {
+            return new PrtSeq(map.Keys.Select(v => v.Clone()));
+        }
+
+        public PrtSeq CloneValues()
+        {
+            return new PrtSeq(map.Values.Select(v => v.Clone()));
         }
 
         public override int GetHashCode()

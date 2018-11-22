@@ -4,6 +4,8 @@ namespace Microsoft.Pc
 {
     public class TranslationException : Exception
     {
-        public TranslationException(string message) : base(message) { }
+        public TranslationException(string message) : base(message)
+        {
+        }
     }
 }

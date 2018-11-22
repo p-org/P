@@ -13,13 +13,9 @@ namespace Microsoft.Pc.TypeChecker
 {
     public class DeclarationVisitor : PParserBaseVisitor<object>
     {
-        private readonly StackProperty<Scope> currentScope;
         private readonly StackProperty<Machine> currentMachine = new StackProperty<Machine>();
+        private readonly StackProperty<Scope> currentScope;
         private readonly ParseTreeProperty<IPDecl> nodesToDeclarations;
-
-        private Scope CurrentScope => currentScope.Value;
-        private Machine CurrentMachine => currentMachine.Value;
-        private ITranslationErrorHandler Handler { get; }
 
         private DeclarationVisitor(
             ITranslationErrorHandler handler,
@@ -31,6 +27,10 @@ namespace Microsoft.Pc.TypeChecker
             this.nodesToDeclarations = nodesToDeclarations;
         }
 
+        private Scope CurrentScope => currentScope.Value;
+        private Machine CurrentMachine => currentMachine.Value;
+        private ITranslationErrorHandler Handler { get; }
+
         public static void PopulateDeclarations(
             ITranslationErrorHandler handler,
             Scope topLevelScope,
@@ -39,6 +39,114 @@ namespace Microsoft.Pc.TypeChecker
         {
             var visitor = new DeclarationVisitor(handler, topLevelScope, nodesToDeclarations);
             visitor.Visit(context);
+        }
+
+        #region Events
+
+        public override object VisitEventDecl(PParser.EventDeclContext context)
+        {
+            // EVENT name=Iden
+            var pEvent = (PEvent) nodesToDeclarations.Get(context);
+
+            // cardinality?
+            var hasAssume = context.cardinality()?.ASSUME() != null;
+            var hasAssert = context.cardinality()?.ASSERT() != null;
+            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
+            pEvent.Assume = hasAssume ? cardinality : -1;
+            pEvent.Assert = hasAssert ? cardinality : -1;
+
+            // (COLON type)?
+            pEvent.PayloadType = ResolveType(context.type());
+
+            // SEMI 
+            return pEvent;
+        }
+
+        #endregion
+
+        #region Interfaces
+
+        public override object VisitInterfaceDecl(PParser.InterfaceDeclContext context)
+        {
+            // TYPE name=Iden
+            var mInterface = (Interface) nodesToDeclarations.Get(context);
+
+            // LPAREN type? RPAREN
+            mInterface.PayloadType = ResolveType(context.type());
+
+            IEventSet eventSet;
+            if (context.RECEIVES() == null)
+            {
+                eventSet = CurrentScope.UniversalEventSet;
+            }
+            else
+            {
+                eventSet = new EventSet();
+                if (context.nonDefaultEventList()?._events is IList<PParser.NonDefaultEventContext> events)
+                    foreach (var eventContext in events)
+                        eventSet.AddEvent((PEvent) Visit(eventContext));
+            }
+
+            mInterface.ReceivableEvents = eventSet;
+            return mInterface;
+        }
+
+        #endregion
+
+        private PLanguageType ResolveType(PParser.TypeContext typeContext)
+        {
+            return TypeResolver.ResolveType(typeContext, CurrentScope, Handler);
+        }
+
+        private Function CreateAnonFunction(PParser.AnonEventHandlerContext context)
+        {
+            var fun = new Function(context)
+            {
+                Owner = CurrentMachine,
+                Scope = CurrentScope.MakeChildScope()
+            };
+
+            CurrentMachine.AddMethod(fun);
+
+            if (context.funParam() is PParser.FunParamContext paramContext)
+            {
+                var param = fun.Scope.Put(paramContext.name.GetText(), paramContext, VariableRole.Param);
+                param.Type = ResolveType(paramContext.type());
+                nodesToDeclarations.Put(paramContext, param);
+                fun.Signature.Parameters.Add(param);
+            }
+
+            nodesToDeclarations.Put(context, fun);
+            return fun;
+        }
+
+        private Function CreateAnonFunction(PParser.NoParamAnonEventHandlerContext context)
+        {
+            var fun = new Function(context)
+            {
+                Owner = CurrentMachine,
+                Scope = CurrentScope.MakeChildScope()
+            };
+
+            CurrentMachine.AddMethod(fun);
+
+            nodesToDeclarations.Put(context, fun);
+            return fun;
+        }
+
+        private State FindState(PParser.StateNameContext context)
+        {
+            var scope = CurrentMachine.Scope;
+            foreach (var groupToken in context._groups)
+            {
+                if (!scope.Get(groupToken.GetText(), out StateGroup group))
+                    throw Handler.MissingDeclaration(groupToken, "group", groupToken.GetText());
+                scope = group.Scope;
+            }
+
+            if (!scope.Get(context.state.GetText(), out State state))
+                throw Handler.MissingDeclaration(context.state, "state", context.state.GetText());
+            return state;
         }
 
         #region Typedefs
@@ -86,15 +194,13 @@ namespace Microsoft.Pc.TypeChecker
             else if (context.numberedEnumElemList() is PParser.NumberedEnumElemListContext numberedElemList)
             {
                 var numberedElems = (EnumElem[]) Visit(numberedElemList);
-                foreach (var elem in numberedElems)
-                {
-                    pEnum.AddElement(elem);
-                }
+                foreach (var elem in numberedElems) pEnum.AddElement(elem);
             }
             else
             {
                 Debug.Fail("grammar requires enum declarations to have element lists");
             }
+
             return pEnum;
         }
 
@@ -126,29 +232,6 @@ namespace Microsoft.Pc.TypeChecker
 
         #endregion
 
-        #region Events
-
-        public override object VisitEventDecl(PParser.EventDeclContext context)
-        {
-            // EVENT name=Iden
-            var pEvent = (PEvent) nodesToDeclarations.Get(context);
-
-            // cardinality?
-            var hasAssume = context.cardinality()?.ASSUME() != null;
-            var hasAssert = context.cardinality()?.ASSERT() != null;
-            var cardinality = int.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            pEvent.Assume = hasAssume ? cardinality : -1;
-            pEvent.Assert = hasAssert ? cardinality : -1;
-
-            // (COLON type)?
-            pEvent.PayloadType = ResolveType(context.type());
-
-            // SEMI 
-            return pEvent;
-        }
-
-        #endregion
-
         #region Event sets
 
         public override object VisitEventSetDecl(PParser.EventSetDeclContext context)
@@ -172,43 +255,8 @@ namespace Microsoft.Pc.TypeChecker
             // HALT | iden
             var eventName = context.GetText();
             if (!CurrentScope.Lookup(eventName, out PEvent pEvent))
-            {
                 throw Handler.MissingDeclaration(context, "event", eventName);
-            }
             return pEvent;
-        }
-
-        #endregion
-
-        #region Interfaces
-
-        public override object VisitInterfaceDecl(PParser.InterfaceDeclContext context)
-        {
-            // TYPE name=Iden
-            var mInterface = (Interface) nodesToDeclarations.Get(context);
-
-            // LPAREN type? RPAREN
-            mInterface.PayloadType = ResolveType(context.type());
-
-            IEventSet eventSet;
-            if (context.RECEIVES() == null)
-            {
-                eventSet = CurrentScope.UniversalEventSet;
-            }
-            else
-            {
-                eventSet = new EventSet();
-                if (context.nonDefaultEventList()?._events is IList<PParser.NonDefaultEventContext> events)
-                {
-                    foreach (var eventContext in events)
-                    {
-                        eventSet.AddEvent((PEvent) Visit(eventContext));
-                    }
-                }
-            }
-            
-            mInterface.ReceivableEvents = eventSet;
-            return mInterface;
         }
 
         #endregion
@@ -224,12 +272,9 @@ namespace Microsoft.Pc.TypeChecker
             var hasAssume = context.cardinality()?.ASSUME() != null;
             var hasAssert = context.cardinality()?.ASSERT() != null;
             var cardinality = long.Parse(context.cardinality()?.IntLiteral().GetText() ?? "-1");
-            if (cardinality > uint.MaxValue)
-            {
-                throw Handler.ValueOutOfRange(context.cardinality(), "uint32");
-            }
-            machine.Assume = hasAssume ? (uint?)cardinality : null;
-            machine.Assert = hasAssert ? (uint?)cardinality : null;
+            if (cardinality > uint.MaxValue) throw Handler.ValueOutOfRange(context.cardinality(), "uint32");
+            machine.Assume = hasAssume ? (uint?) cardinality : null;
+            machine.Assert = hasAssert ? (uint?) cardinality : null;
 
             // receivesSends*
             foreach (var receivesSends in context.receivesSends())
@@ -238,25 +283,13 @@ namespace Microsoft.Pc.TypeChecker
                 var eventSetType = recvSendTuple.Item1;
                 if (eventSetType.Equals("RECV", StringComparison.InvariantCulture))
                 {
-                    if (machine.Receives == null)
-                    {
-                        machine.Receives = new EventSet();
-                    }
-                    foreach (PEvent @event in recvSendTuple.Item2)
-                    {
-                        machine.Receives.AddEvent(@event);
-                    }
+                    if (machine.Receives == null) machine.Receives = new EventSet();
+                    foreach (var @event in recvSendTuple.Item2) machine.Receives.AddEvent(@event);
                 }
                 else if (eventSetType.Equals("SEND", StringComparison.InvariantCulture))
                 {
-                    if (machine.Sends == null)
-                    {
-                        machine.Sends = new EventSet();
-                    }
-                    foreach (PEvent @event in recvSendTuple.Item2)
-                    {
-                        machine.Sends.AddEvent(@event);
-                    }
+                    if (machine.Sends == null) machine.Sends = new EventSet();
+                    foreach (var @event in recvSendTuple.Item2) machine.Sends.AddEvent(@event);
                 }
                 else
                 {
@@ -264,15 +297,9 @@ namespace Microsoft.Pc.TypeChecker
                 }
             }
 
-            if (machine.Receives == null)
-            {
-                machine.Receives = CurrentScope.UniversalEventSet;
-            }
+            if (machine.Receives == null) machine.Receives = CurrentScope.UniversalEventSet;
 
-            if (machine.Sends == null)
-            {
-                machine.Sends = CurrentScope.UniversalEventSet;
-            }
+            if (machine.Sends == null) machine.Sends = CurrentScope.UniversalEventSet;
 
             // machineBody
             using (currentScope.NewContext(machine.Scope))
@@ -292,16 +319,16 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitMachineReceive(PParser.MachineReceiveContext context)
         {
             var events = context.eventSetLiteral() == null
-                             ? new PEvent[0]
-                             : (PEvent[]) Visit(context.eventSetLiteral());
+                ? new PEvent[0]
+                : (PEvent[]) Visit(context.eventSetLiteral());
             return Tuple.Create("RECV", events);
         }
 
         public override object VisitMachineSend(PParser.MachineSendContext context)
         {
             var events = context.eventSetLiteral() == null
-                             ? new PEvent[0]
-                             : (PEvent[])Visit(context.eventSetLiteral());
+                ? new PEvent[0]
+                : (PEvent[]) Visit(context.eventSetLiteral());
             return Tuple.Create("SEND", events);
         }
 
@@ -316,10 +343,7 @@ namespace Microsoft.Pc.TypeChecker
 
             // OBSERVES eventSetLiteral
             specMachine.Observes = new EventSet();
-            foreach (var pEvent in (PEvent[]) Visit(context.eventSetLiteral()))
-            {
-                specMachine.Observes.AddEvent(pEvent);
-            }
+            foreach (var pEvent in (PEvent[]) Visit(context.eventSetLiteral())) specMachine.Observes.AddEvent(pEvent);
 
             // machineBody
             using (currentScope.NewContext(specMachine.Scope))
@@ -334,7 +358,6 @@ namespace Microsoft.Pc.TypeChecker
         public override object VisitMachineBody(PParser.MachineBodyContext context)
         {
             foreach (var machineEntryContext in context.machineEntry())
-            {
                 switch (Visit(machineEntryContext))
                 {
                     case Variable[] fields:
@@ -350,9 +373,9 @@ namespace Microsoft.Pc.TypeChecker
                         CurrentMachine.AddGroup(group);
                         break;
                     default:
-                        throw Handler.InternalError(machineEntryContext, new ArgumentOutOfRangeException(nameof(context)));
+                        throw Handler.InternalError(machineEntryContext,
+                            new ArgumentOutOfRangeException(nameof(context)));
                 }
-            }
             return null;
         }
 
@@ -368,7 +391,6 @@ namespace Microsoft.Pc.TypeChecker
 
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
-
             // COLON type
             var variableType = ResolveType(context.type());
 
@@ -393,7 +415,6 @@ namespace Microsoft.Pc.TypeChecker
             using (currentScope.NewContext(group.Scope))
             {
                 foreach (var groupItemContext in context.groupItem())
-                {
                     switch (Visit(groupItemContext))
                     {
                         case StateGroup subGroup:
@@ -404,10 +425,10 @@ namespace Microsoft.Pc.TypeChecker
                             break;
                         default:
                             throw Handler.InternalError(groupItemContext,
-                                                        new ArgumentOutOfRangeException(nameof(context)));
+                                new ArgumentOutOfRangeException(nameof(context)));
                     }
-                }
             }
+
             return group;
         }
 
@@ -430,63 +451,54 @@ namespace Microsoft.Pc.TypeChecker
 
             // temperature=(HOT | COLD)?
             state.Temperature = context.temperature == null
-                                    ? StateTemperature.Warm
-                                    : context.HOT() != null
-                                        ? StateTemperature.Hot
-                                        : StateTemperature.Cold;
+                ? StateTemperature.Warm
+                : context.HOT() != null
+                    ? StateTemperature.Hot
+                    : StateTemperature.Cold;
 
             // LBRACE stateBodyItem* RBRACE ;
             foreach (var stateBodyItemContext in context.stateBodyItem())
-            {
                 switch (Visit(stateBodyItemContext))
                 {
                     case IStateAction[] actions:
                         foreach (var action in actions)
                         {
                             if (state.HasHandler(action.Trigger))
-                            {
                                 throw Handler.DuplicateEventAction(action.SourceLocation, state[action.Trigger], state);
-                            }
 
                             if (action.Trigger.Name.Equals("null") && CurrentMachine.IsSpec)
-                            {
                                 throw Handler.NullTransitionInMonitor(action.SourceLocation, CurrentMachine);
-                            }
                             state[action.Trigger] = action;
                         }
+
                         break;
                     case Tuple<string, Function> entryOrExit:
                         if (entryOrExit.Item1.Equals("ENTRY"))
                         {
-                            
                             if (state.Entry != null)
-                            {
                                 throw Handler.DuplicateStateEntry(stateBodyItemContext, state.Entry, state);
-                            }
                             state.Entry = entryOrExit.Item2;
                         }
                         else
                         {
                             if (state.Exit != null)
-                            {
                                 throw Handler.DuplicateStateExitHandler(stateBodyItemContext, state.Exit, state);
-                            }
                             state.Exit = entryOrExit.Item2;
                         }
+
                         break;
                     default:
-                        throw Handler.InternalError(stateBodyItemContext, new ArgumentOutOfRangeException(nameof(context)));
+                        throw Handler.InternalError(stateBodyItemContext,
+                            new ArgumentOutOfRangeException(nameof(context)));
                 }
-            }
 
             if (state.IsStart)
             {
                 if (CurrentMachine.StartState != null)
-                {
                     throw Handler.DuplicateStartState(context, state, CurrentMachine.StartState, CurrentMachine);
-                }
                 CurrentMachine.StartState = state;
-                CurrentMachine.PayloadType = state.Entry?.Signature.Parameters.ElementAtOrDefault(0)?.Type ?? PrimitiveType.Null;
+                CurrentMachine.PayloadType =
+                    state.Entry?.Signature.Parameters.ElementAtOrDefault(0)?.Type ?? PrimitiveType.Null;
             }
 
             return state;
@@ -503,10 +515,9 @@ namespace Microsoft.Pc.TypeChecker
             {
                 var funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
-                {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
-                }
             }
+
             fun.Role |= FunctionRole.EntryHandler;
 
             return Tuple.Create("ENTRY", fun);
@@ -523,20 +534,16 @@ namespace Microsoft.Pc.TypeChecker
             {
                 var funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
-                {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
-                }
             }
+
             fun.Role |= FunctionRole.ExitHandler;
             return Tuple.Create("EXIT", fun);
         }
 
         public override object VisitStateDefer(PParser.StateDeferContext context)
-        { 
-            if (CurrentMachine.IsSpec)
-            {
-                throw Handler.DeferredEventInMonitor(context, CurrentMachine);
-            }
+        {
+            if (CurrentMachine.IsSpec) throw Handler.DeferredEventInMonitor(context, CurrentMachine);
 
             // DEFER nonDefaultEventList
             var eventContexts = context.nonDefaultEventList()._events;
@@ -545,33 +552,29 @@ namespace Microsoft.Pc.TypeChecker
             {
                 var token = eventContexts[i];
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
-                {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
-                }
                 actions[i] = new EventDefer(token, evt);
             }
+
             return actions;
         }
 
         public override object VisitStateIgnore(PParser.StateIgnoreContext context)
         {
-
             // IGNORE nonDefaultEventList
             var actions = new List<IStateAction>();
             foreach (var token in context.nonDefaultEventList()._events)
             {
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
-                {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
-                }
                 actions.Add(new EventIgnore(token, evt));
             }
+
             return actions.ToArray();
         }
 
         public override object VisitOnEventDoAction(PParser.OnEventDoActionContext context)
         {
-
             Function fun;
             if (context.anonEventHandler() is PParser.AnonEventHandlerContext anonEventHandler)
             {
@@ -583,10 +586,9 @@ namespace Microsoft.Pc.TypeChecker
                 // DO funName=Iden
                 var funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out fun))
-                {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
-                }
             }
+
             // TODO: is this correct?
             fun.Role |= FunctionRole.EventHandler;
 
@@ -595,18 +597,16 @@ namespace Microsoft.Pc.TypeChecker
             foreach (var eventIdContext in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
-                {
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
-                }
 
                 actions.Add(new EventDoAction(eventIdContext, evt, fun));
             }
+
             return actions.ToArray();
         }
 
         public override object VisitOnEventPushState(PParser.OnEventPushStateContext context)
         {
-
             // PUSH stateName 
             var targetState = FindState(context.stateName());
 
@@ -615,12 +615,11 @@ namespace Microsoft.Pc.TypeChecker
             foreach (var token in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(token.GetText(), out PEvent evt))
-                {
                     throw Handler.MissingDeclaration(token, "event", token.GetText());
-                }
 
                 actions.Add(new EventPushState(token, evt, targetState));
             }
+
             return actions.ToArray();
         }
 
@@ -632,9 +631,7 @@ namespace Microsoft.Pc.TypeChecker
                 // WITH funName=Iden
                 var funName = context.funName.GetText();
                 if (!CurrentScope.Lookup(funName, out transitionFunction))
-                {
                     throw Handler.MissingDeclaration(context.funName, "function", funName);
-                }
                 transitionFunction.Role |= FunctionRole.TransitionFunction;
             }
             else if (context.anonEventHandler() != null)
@@ -657,12 +654,11 @@ namespace Microsoft.Pc.TypeChecker
             foreach (var eventIdContext in context.eventList().eventId())
             {
                 if (!CurrentScope.Lookup(eventIdContext.GetText(), out PEvent evt))
-                {
                     throw Handler.MissingDeclaration(eventIdContext, "event", eventIdContext.GetText());
-                }
 
                 actions.Add(new EventGotoState(eventIdContext, evt, target, transitionFunction));
             }
+
             return actions.ToArray();
         }
 
@@ -677,8 +673,8 @@ namespace Microsoft.Pc.TypeChecker
 
             // LPAREN funParamList? RPAREN
             var paramList = context.funParamList() != null
-                                ? (Variable[]) Visit(context.funParamList())
-                                : new Variable[0];
+                ? (Variable[]) Visit(context.funParamList())
+                : new Variable[0];
             fun.Signature.Parameters.AddRange(paramList);
 
             // (COLON type)?
@@ -696,8 +692,8 @@ namespace Microsoft.Pc.TypeChecker
 
             // LPAREN funParamList? RPAREN
             var paramList = context.funParamList() != null
-                                ? (Variable[]) Visit(context.funParamList())
-                                : new Variable[0];
+                ? (Variable[]) Visit(context.funParamList())
+                : new Variable[0];
             fun.Signature.Parameters.AddRange(paramList);
 
             // (COLON type)?
@@ -724,63 +720,5 @@ namespace Microsoft.Pc.TypeChecker
         }
 
         #endregion
-
-        private PLanguageType ResolveType(PParser.TypeContext typeContext)
-        {
-            return TypeResolver.ResolveType(typeContext, CurrentScope, Handler);
-        }
-
-        private Function CreateAnonFunction(PParser.AnonEventHandlerContext context)
-        {
-            var fun = new Function(context)
-            {
-                Owner = CurrentMachine,
-                Scope = CurrentScope.MakeChildScope()
-            };
-
-            CurrentMachine.AddMethod(fun);
-
-            if (context.funParam() is PParser.FunParamContext paramContext)
-            {
-                Variable param = fun.Scope.Put(paramContext.name.GetText(), paramContext, VariableRole.Param);
-                param.Type = ResolveType(paramContext.type());
-                nodesToDeclarations.Put(paramContext, param);
-                fun.Signature.Parameters.Add(param);
-            }
-            nodesToDeclarations.Put(context, fun);
-            return fun;
-        }
-
-        private Function CreateAnonFunction(PParser.NoParamAnonEventHandlerContext context)
-        {
-            var fun = new Function(context)
-            {
-                Owner = CurrentMachine,
-                Scope = CurrentScope.MakeChildScope()
-            };
-
-            CurrentMachine.AddMethod(fun);
-
-            nodesToDeclarations.Put(context, fun);
-            return fun;
-        }
-
-        private State FindState(PParser.StateNameContext context)
-        {
-            var scope = CurrentMachine.Scope;
-            foreach (var groupToken in context._groups)
-            {
-                if (!scope.Get(groupToken.GetText(), out StateGroup group))
-                {
-                    throw Handler.MissingDeclaration(groupToken, "group", groupToken.GetText());
-                }
-                scope = group.Scope;
-            }
-            if (!scope.Get(context.state.GetText(), out State state))
-            {
-                throw Handler.MissingDeclaration(context.state, "state", context.state.GetText());
-            }
-            return state;
-        }
     }
 }

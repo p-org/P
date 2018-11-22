@@ -5,13 +5,7 @@ namespace Microsoft.Pc.Backend
 {
     public abstract class CompilationContextBase
     {
-        public ICompilationJob Job { get; }
         private bool lineHasBeenIndented;
-        private int IndentationLevel { get; set; }
-
-        public string ProjectName { get; }
-        public ITranslationErrorHandler Handler { get; }
-        public ILocationResolver LocationResolver { get; }
 
         protected CompilationContextBase(ICompilationJob job)
         {
@@ -21,12 +15,19 @@ namespace Microsoft.Pc.Backend
             LocationResolver = job.LocationResolver;
         }
 
+        public ICompilationJob Job { get; }
+        private int IndentationLevel { get; set; }
+
+        public string ProjectName { get; }
+        public ITranslationErrorHandler Handler { get; }
+        public ILocationResolver LocationResolver { get; }
+
 
         /// <summary>
-        /// Writes a line to the given output stream, taking curly brace indentation into account.
-        /// This function is called extremely frequently, so some care has been taken to optimize
-        /// it for performance. In particular, it does not allocate any memory that isn't part
-        /// of the output stream.
+        ///     Writes a line to the given output stream, taking curly brace indentation into account.
+        ///     This function is called extremely frequently, so some care has been taken to optimize
+        ///     it for performance. In particular, it does not allocate any memory that isn't part
+        ///     of the output stream.
         /// </summary>
         /// <param name="output">The output stream to write to</param>
         /// <param name="format">The line to print</param>
@@ -36,42 +37,23 @@ namespace Microsoft.Pc.Backend
             // of one past the last leading }.
             int i;
             for (i = 0; i < format.Length; i++)
-            {
                 if (format[i] == '}')
-                {
                     IndentationLevel--;
-                }
-                else if (!char.IsWhiteSpace(format[i]))
-                {
-                    break;
-                }
-            }
+                else if (!char.IsWhiteSpace(format[i])) break;
 
             // Do not indent preprocessor lines.
             if (!(format.Length > 0 && format[0] == '#') && !lineHasBeenIndented)
-            {
-                // skipping an allocation here
-                for (int j = 0; j < 4 * IndentationLevel; j++)
-                {
+                for (var j = 0; j < 4 * IndentationLevel; j++)
                     output.Write(' ');
-                }
-            }
             output.WriteLine(format);
 
             lineHasBeenIndented = false;
 
             // Compute indentation for future lines starting from after last leading }.
             for (; i < format.Length; i++)
-            {
                 if (format[i] == '{')
-                {
                     IndentationLevel++;
-                }
-                else if (format[i] == '}')
-                {
-                    IndentationLevel--;
-                }
-            }
+                else if (format[i] == '}') IndentationLevel--;
         }
 
         public void Write(TextWriter output, string format)
@@ -80,42 +62,23 @@ namespace Microsoft.Pc.Backend
             // of one past the last leading }.
             int i;
             for (i = 0; i < format.Length; i++)
-            {
                 if (format[i] == '}')
-                {
                     IndentationLevel--;
-                }
-                else if (!char.IsWhiteSpace(format[i]))
-                {
-                    break;
-                }
-            }
+                else if (!char.IsWhiteSpace(format[i])) break;
 
             // Do not indent preprocessor lines.
             if (!format.StartsWith("#") && !lineHasBeenIndented)
-            {
-                // skipping an allocation here
-                for (int j = 0; j < 4 * IndentationLevel; j++)
-                {
+                for (var j = 0; j < 4 * IndentationLevel; j++)
                     output.Write(' ');
-                }
-            }
             output.Write(format);
 
             lineHasBeenIndented = true;
 
             // Compute indentation for future lines starting from after last leading }.
             for (; i < format.Length; i++)
-            {
                 if (format[i] == '{')
-                {
                     IndentationLevel++;
-                }
-                else if (format[i] == '}')
-                {
-                    IndentationLevel--;
-                }
-            }
+                else if (format[i] == '}') IndentationLevel--;
         }
     }
 }

@@ -1,9 +1,9 @@
 ﻿using System;
 using Microsoft.PSharp;
+using PrtSharp.Values;
 
 namespace PrtSharp
 {
-   
     public class PEvent : Event, IPrtValue
     {
         public PEvent() : base(AssertVal, AssumeVal)

@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using PrtSharp;
 using PrtSharp.Values;
 
@@ -56,7 +53,6 @@ namespace UnitTests
             Assert.AreEqual(float1, +float1);
         }
 
-        
 
         [Test]
         public void TestPrtIntComparisions()
@@ -91,14 +87,5 @@ namespace UnitTests
             Assert.AreEqual(+int1, int1);
             Assert.AreEqual(int1, +int1);
         }
-
-
-
-
-
-
-
-        
-
     }
 }

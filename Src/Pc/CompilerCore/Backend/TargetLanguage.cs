@@ -6,7 +6,8 @@ namespace Microsoft.Pc.Backend
 {
     public static class TargetLanguage
     {
-        private static readonly IDictionary<CompilerOutput, ICodeGenerator> BackendMap = new Dictionary<CompilerOutput, ICodeGenerator>();
+        private static readonly IDictionary<CompilerOutput, ICodeGenerator> BackendMap =
+            new Dictionary<CompilerOutput, ICodeGenerator>();
 
         static TargetLanguage()
         {

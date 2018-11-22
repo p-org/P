@@ -4,7 +4,7 @@ namespace UnitTests.Validators
 {
     /// <inheritdoc />
     /// <summary>
-    /// Validates that the compiler ran without issue.
+    ///     Validates that the compiler ran without issue.
     /// </summary>
     public class CompileSuccessValidator : ITestResultsValidator
     {

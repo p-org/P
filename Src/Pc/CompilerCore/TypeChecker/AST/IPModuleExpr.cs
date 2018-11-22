@@ -10,17 +10,20 @@ namespace Microsoft.Pc.TypeChecker.AST
 
     public class ModuleInfo
     {
+        public readonly IInterfaceSet Creates = new InterfaceSet();
+        public readonly IDictionary<Interface, Machine> InterfaceDef = new Dictionary<Interface, Machine>();
+
+        //used for code generation and runtime
+        public readonly IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap =
+            new Dictionary<Interface, IDictionary<Interface, Interface>>();
+
+        public readonly IDictionary<Machine, IEnumerable<Interface>> MonitorMap =
+            new Dictionary<Machine, IEnumerable<Interface>>();
+
         //Attributes of module expression
         public readonly IEventSet PrivateEvents = new EventSet();
         public readonly IInterfaceSet PrivateInterfaces = new InterfaceSet();
-        public readonly IEventSet Sends = new EventSet();
         public readonly IEventSet Receives = new EventSet();
-        public readonly IInterfaceSet Creates = new InterfaceSet();
-
-        //used for code generation and runtime
-        public readonly IDictionary<Interface, IDictionary<Interface, Interface>> LinkMap = new Dictionary<Interface, IDictionary<Interface, Interface>>();
-        public readonly IDictionary<Interface, Machine> InterfaceDef = new Dictionary<Interface, Machine>();
-        public readonly IDictionary<Machine, IEnumerable<Interface>> MonitorMap = new Dictionary<Machine, IEnumerable<Interface>>();
+        public readonly IEventSet Sends = new EventSet();
     }
 }
-

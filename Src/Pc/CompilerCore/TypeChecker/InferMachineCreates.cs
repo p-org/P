@@ -14,10 +14,7 @@ namespace Microsoft.Pc.TypeChecker
         public static void Populate(Machine machine, ITranslationErrorHandler handler)
         {
             var interfaces = new InterfaceSet();
-            foreach (Function function in machine.Methods)
-            {
-                interfaces.AddInterfaces(InferCreates(function, handler));
-            }
+            foreach (var function in machine.Methods) interfaces.AddInterfaces(InferCreates(function, handler));
 
             machine.Creates = interfaces;
         }
@@ -27,14 +24,11 @@ namespace Microsoft.Pc.TypeChecker
             switch (tree)
             {
                 case Function function:
-                    if (function.IsForeign)
-                    {
-                        // TODO: make foreign functions declare the list of machines they create.
-                        return Enumerable.Empty<Interface>();
-                    }
+                    if (function.IsForeign) return Enumerable.Empty<Interface>();
                     return InferCreates(function.Body, handler);
                 case AnnounceStmt announce:
-                    return InferCreatesForExpr(announce.PEvent, handler).Union(InferCreatesForExpr(announce.Payload, handler));
+                    return InferCreatesForExpr(announce.PEvent, handler)
+                        .Union(InferCreatesForExpr(announce.Payload, handler));
                 case AssertStmt assertStmt:
                     return InferCreatesForExpr(assertStmt.Assertion, handler);
                 case AssignStmt assignStmt:
@@ -43,7 +37,7 @@ namespace Microsoft.Pc.TypeChecker
                 case CompoundStmt compoundStmt:
                     return compoundStmt.Statements.SelectMany(tree1 => InferCreates(tree1, handler));
                 case CtorStmt ctorStmt:
-                    var res = new []{ctorStmt.Interface};
+                    var res = new[] {ctorStmt.Interface};
                     return res.Union(ctorStmt.Arguments.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case FunCallStmt funCallStmt:
                     return InferCreates(funCallStmt.Function, handler)
@@ -52,12 +46,12 @@ namespace Microsoft.Pc.TypeChecker
                     return InferCreatesForExpr(gotoStmt.Payload, handler);
                 case IfStmt ifStmt:
                     return InferCreatesForExpr(ifStmt.Condition, handler)
-                           .Union(InferCreates(ifStmt.ThenBranch, handler))
-                           .Union(InferCreates(ifStmt.ElseBranch, handler));
+                        .Union(InferCreates(ifStmt.ThenBranch, handler))
+                        .Union(InferCreates(ifStmt.ElseBranch, handler));
                 case InsertStmt insertStmt:
                     return InferCreatesForExpr(insertStmt.Variable, handler)
-                           .Union(InferCreatesForExpr(insertStmt.Index, handler))
-                           .Union(InferCreatesForExpr(insertStmt.Value, handler));
+                        .Union(InferCreatesForExpr(insertStmt.Index, handler))
+                        .Union(InferCreatesForExpr(insertStmt.Value, handler));
                 case MoveAssignStmt moveAssignStmt:
                     return InferCreatesForExpr(moveAssignStmt.ToLocation, handler);
                 case NoStmt _:
@@ -78,12 +72,13 @@ namespace Microsoft.Pc.TypeChecker
                     return InferCreatesForExpr(returnStmt.ReturnValue, handler);
                 case SendStmt sendStmt:
                     return InferCreatesForExpr(sendStmt.MachineExpr, handler)
-                           .Union(InferCreatesForExpr(sendStmt.Evt, handler))
-                           .Union(sendStmt.Arguments.SelectMany(expr => InferCreatesForExpr(expr, handler)));
+                        .Union(InferCreatesForExpr(sendStmt.Evt, handler))
+                        .Union(sendStmt.Arguments.SelectMany(expr => InferCreatesForExpr(expr, handler)));
                 case SwapAssignStmt swapAssignStmt:
                     return InferCreatesForExpr(swapAssignStmt.NewLocation, handler);
                 case WhileStmt whileStmt:
-                    return InferCreatesForExpr(whileStmt.Condition, handler).Union(InferCreates(whileStmt.Body, handler));
+                    return InferCreatesForExpr(whileStmt.Condition, handler)
+                        .Union(InferCreates(whileStmt.Body, handler));
                 default:
                     throw handler.InternalError(tree.SourceLocation, new ArgumentOutOfRangeException(nameof(tree)));
             }
@@ -106,7 +101,7 @@ namespace Microsoft.Pc.TypeChecker
                 case CloneExpr cloneExpr:
                     return InferCreatesForExpr(cloneExpr.Term, handler);
                 case CtorExpr ctorExpr:
-                    var res = new []{ctorExpr.Interface};
+                    var res = new[] {ctorExpr.Interface};
                     return res.Union(ctorExpr.Arguments.SelectMany(expr1 => InferCreatesForExpr(expr1, handler)));
                 case FunCallExpr funCallExpr:
                     return InferCreates(funCallExpr.Function, handler)

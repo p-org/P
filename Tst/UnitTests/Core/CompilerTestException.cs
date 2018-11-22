@@ -5,7 +5,7 @@ namespace UnitTests.Core
 {
     /// <inheritdoc />
     /// <summary>
-    /// An exception to be thrown when something fails while creating or executing a compiler test.
+    ///     An exception to be thrown when something fails while creating or executing a compiler test.
     /// </summary>
     [Serializable]
     public class CompilerTestException : Exception

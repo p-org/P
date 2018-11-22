@@ -33,10 +33,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
 
         public void AddEvents(IEnumerable<PEvent> evts)
         {
-            foreach (PEvent pEvent in evts)
-            {
-                AddEvent(pEvent);
-            }
+            foreach (var pEvent in evts) AddEvent(pEvent);
         }
 
         public bool Contains(PEvent pEvent)
@@ -64,7 +61,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             return events.Overlaps(eventSet);
         }
     }
-    
+
     public class NamedEventSet : IPDecl, IEventSet
     {
         private readonly EventSet events = new EventSet();
@@ -99,15 +96,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             return events.IsSame(eventSet);
         }
 
-        public string Name { get; }
-        public ParserRuleContext SourceLocation { get; }
-
         public void AddEvents(IEnumerable<PEvent> evts)
         {
-            foreach (PEvent pEvent in evts)
-            {
-                AddEvent(pEvent);
-            }
+            foreach (var pEvent in evts) AddEvent(pEvent);
         }
 
         public bool IsSubsetEqOf(IEventSet eventSet)
@@ -124,5 +115,8 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         {
             return events.Intersects(eventSet);
         }
+
+        public string Name { get; }
+        public ParserRuleContext SourceLocation { get; }
     }
 }

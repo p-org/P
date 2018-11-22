@@ -89,37 +89,37 @@ namespace PrtSharp.Values
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator <(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return (prtFloat1.value < prtFloat2.value);
+            return prtFloat1.value < prtFloat2.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator >(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return (prtFloat1.value > prtFloat2.value);
+            return prtFloat1.value > prtFloat2.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator <=(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return (prtFloat1.value <= prtFloat2.value);
+            return prtFloat1.value <= prtFloat2.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator >=(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return (prtFloat1.value >= prtFloat2.value);
+            return prtFloat1.value >= prtFloat2.value;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator ==(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return (Equals(prtFloat1.value, prtFloat2.value));
+            return Equals(prtFloat1.value, prtFloat2.value);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static PrtBool operator !=(in PrtFloat prtFloat1, in PrtFloat prtFloat2)
         {
-            return (Equals(prtFloat1.value, prtFloat2.value) == false);
+            return Equals(prtFloat1.value, prtFloat2.value) == false;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

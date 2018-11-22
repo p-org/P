@@ -9,22 +9,25 @@ namespace UnitTests.Runners
 {
     /// <inheritdoc />
     /// <summary>
-    /// Runs a test using the Prt backend, calling MSBuild in the process
+    ///     Runs a test using the Prt backend, calling MSBuild in the process
     /// </summary>
     public class PrtRunner : ICompilerTestRunner
     {
-        private readonly DirectoryInfo prtTestProjDirectory = new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
-        private readonly IReadOnlyList<FileInfo> sources;
         private readonly IReadOnlyList<FileInfo> nativeSources;
 
+        private readonly DirectoryInfo prtTestProjDirectory =
+            new DirectoryInfo(Path.Combine(Constants.TestDirectory, Constants.CRuntimeTesterDirectoryName));
+
+        private readonly IReadOnlyList<FileInfo> sources;
+
         /// <summary>
-        /// Box a new test runner from the given P source files
+        ///     Box a new test runner from the given P source files
         /// </summary>
         /// <param name="sources">P source files to compile</param>
         public PrtRunner(IReadOnlyList<FileInfo> sources)
         {
             this.sources = sources;
-            this.nativeSources = new FileInfo[] { };
+            nativeSources = new FileInfo[] { };
         }
 
         public PrtRunner(IReadOnlyList<FileInfo> sources, IReadOnlyList<FileInfo> nativeSources)
@@ -37,37 +40,27 @@ namespace UnitTests.Runners
         {
             DoCompile(scratchDirectory);
 
-            string tmpDirName = scratchDirectory.FullName;
+            var tmpDirName = scratchDirectory.FullName;
 
             // Copy source files into destination directory
-            foreach (FileInfo source in sources)
-            {
-                source.CopyTo(Path.Combine(tmpDirName, source.Name), true);
-            }
+            foreach (var source in sources) source.CopyTo(Path.Combine(tmpDirName, source.Name), true);
 
             // Copy native source files into destination directory
-            foreach (FileInfo source in nativeSources)
-            {
-                source.CopyTo(Path.Combine(tmpDirName, source.Name), true);
-            }
+            foreach (var source in nativeSources) source.CopyTo(Path.Combine(tmpDirName, source.Name), true);
 
             // Copy tester into destination directory.
             CopyFiles(prtTestProjDirectory, tmpDirName);
             if (!RunMsBuildExe(tmpDirName, out stdout, out stderr))
-            {
                 throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed);
-            }
 
-            string testerExeName = Path.Combine(tmpDirName, Constants.BuildConfiguration, Constants.Platform, Constants.CTesterExecutableName);
+            var testerExeName = Path.Combine(tmpDirName, Constants.BuildConfiguration, Constants.Platform,
+                Constants.CTesterExecutableName);
             return ProcessHelper.RunWithOutput(tmpDirName, out stdout, out stderr, testerExeName);
         }
 
         private static void CopyFiles(DirectoryInfo src, string target)
         {
-            foreach (var file in src.GetFiles())
-            {
-                File.Copy(file.FullName, Path.Combine(target, file.Name), true);
-            }
+            foreach (var file in src.GetFiles()) File.Copy(file.FullName, Path.Combine(target, file.Name), true);
         }
 
         private void DoCompile(DirectoryInfo scratchDirectory)
@@ -80,19 +73,18 @@ namespace UnitTests.Runners
 
         private static bool RunMsBuildExe(string tmpDir, out string stdout, out string stderr)
         {
-            string[] msbuildpaths = {
+            string[] msbuildpaths =
+            {
                 @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\MSBuild\15.0\Bin\msbuild.exe",
                 @"C:\Program Files (x86)\Microsoft Visual Studio\2017\Enterprise\MSBuild\15.0\Bin\msbuild.exe",
                 Environment.GetEnvironmentVariable("MSBUILD") ?? ""
             };
 
-            string msbuildpath = msbuildpaths.FirstOrDefault(File.Exists);
+            var msbuildpath = msbuildpaths.FirstOrDefault(File.Exists);
             if (msbuildpath == null)
-            {
                 throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed, "Could not find MSBuild");
-            }
 
-            int exitStatus = ProcessHelper.RunWithOutput(
+            var exitStatus = ProcessHelper.RunWithOutput(
                 tmpDir,
                 out stdout,
                 out stderr,

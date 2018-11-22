@@ -1,10 +1,10 @@
-
-using Microsoft.PSharp;
 using System;
+using Microsoft.PSharp;
 
 namespace Main
 {
-    public class _TestRegression {
+    public class _TestRegression
+    {
         public static void Main(string[] args)
         {
             // Optional: increases verbosity level to see the P# runtime log.

@@ -3,10 +3,12 @@
 
 #include "stdafx.h"
 #include <stdio.h>
+
 extern "C" {
 #include "PingPongSimple.h"
 #include "Prt.h"
 }
+
 #include <string>
 
 /* Global variables */
@@ -16,23 +18,26 @@ PRT_INT64 sendMessageSeqNumber = 0;
 /* the Stubs */
 
 
-typedef struct ClientContext {
-    PRT_VALUE *client;
+typedef struct ClientContext
+{
+	PRT_VALUE* client;
 } ClientContext;
 
-typedef struct ServerContext {
-    PRT_VALUE *client;
+typedef struct ServerContext
+{
+	PRT_VALUE* client;
 } ServerContext;
 
 std::wstring ConvertToUnicode(const char* str)
 {
-	std::string temp(str == NULL ? "" : str);
+	std::string temp(str == nullptr ? "" : str);
 	return std::wstring(temp.begin(), temp.end());
 }
 
-static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
+static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST* receiver, PRT_VALUE* event,
+                       PRT_VALUE* payload)
 {
-	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
+	PRT_MACHINEINST_PRIV* c = (PRT_MACHINEINST_PRIV *)receiver;
 
 	std::wstring machineName = ConvertToUnicode((const char*)program->machines[c->instanceOf]->name);
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
@@ -41,18 +46,18 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 	std::wstring machineInstance = ConvertToUnicode(number);
 	std::wstring stateName;
 	stateName = ConvertToUnicode((const char*)PrtGetCurrentStateDecl(c)->name);
-	
+
 	std::wstring eventName;
 	std::wstring stateId = machineName + L"(0x" + machineInstance + L")." + stateName;
 	std::wstring stateLabel = machineName + L"\n" + stateName;
 
 	// optional sender information.
-	std::wstring senderMachineName	;
-	std::wstring senderStateName	;
-	std::wstring senderStateId		;
-	std::wstring senderStateLabel	;
+	std::wstring senderMachineName;
+	std::wstring senderStateName;
+	std::wstring senderStateId;
+	std::wstring senderStateLabel;
 
-	if (state != NULL)
+	if (state != nullptr)
 	{
 		_itoa(state->machineId, number, 16);
 		std::wstring senderMachineInstance = ConvertToUnicode(number);
@@ -62,10 +67,10 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 		senderStateLabel = senderMachineName + L"\n" + senderStateName;
 	}
 
-	if (event != NULL)
+	if (event != nullptr)
 	{
 		//find out what state the sender machine is in so we can also log that information.
-		PRT_MACHINEINST_PRIV * s = (PRT_MACHINEINST_PRIV *)receiver;
+		PRT_MACHINEINST_PRIV* s = (PRT_MACHINEINST_PRIV *)receiver;
 		eventName = ConvertToUnicode((const char*)program->events[PrtPrimGetEvent(event)]->name);
 	}
 
@@ -103,7 +108,7 @@ static void LogHandler(PRT_STEP step, PRT_MACHINESTATE* state, PRT_MACHINEINST *
 void
 PrtDistSMExceptionHandler(
 	__in PRT_STATUS exception,
-	__in PRT_MACHINEINST* vcontext
+	     __in PRT_MACHINEINST* vcontext
 )
 {
 	int log_size = 1000;
@@ -111,7 +116,7 @@ PrtDistSMExceptionHandler(
 	PRT_UINT32 MachineId = vcontext->id->valueUnion.mid->machineId;
 
 
-	PRT_MACHINEINST_PRIV *c = (PRT_MACHINEINST_PRIV*)vcontext;
+	PRT_MACHINEINST_PRIV* c = (PRT_MACHINEINST_PRIV*)vcontext;
 
 	PRT_CHAR log[1000];
 
@@ -119,41 +124,42 @@ PrtDistSMExceptionHandler(
 	{
 	case PRT_STATUS_EVENT_UNHANDLED:
 		sprintf_s(log,
-			log_size,
-			"<EXCEPTION> Machine %s(%d) : Unhandled Event Exception\n",
-			MachineName,
-			MachineId);
+		          log_size,
+		          "<EXCEPTION> Machine %s(%d) : Unhandled Event Exception\n",
+		          MachineName,
+		          MachineId);
 		break;
 	case PRT_STATUS_EVENT_OVERFLOW:
 		sprintf_s(log,
-			log_size,
-			"<EXCEPTION> Machine %s(%d) : MaxInstance of Event Exceeded Exception\n",
-			MachineName,
-			MachineId);
+		          log_size,
+		          "<EXCEPTION> Machine %s(%d) : MaxInstance of Event Exceeded Exception\n",
+		          MachineName,
+		          MachineId);
 		break;
 	case PRT_STATUS_QUEUE_OVERFLOW:
 		sprintf_s(log,
-			log_size,
-			"<EXCEPTION> Queue Size Exceeded Max Limits in Machine %s(%d)\n",
-			MachineName,
-			MachineId);
+		          log_size,
+		          "<EXCEPTION> Queue Size Exceeded Max Limits in Machine %s(%d)\n",
+		          MachineName,
+		          MachineId);
 		break;
 	case PRT_STATUS_ILLEGAL_SEND:
 		sprintf_s(log,
-			log_size,
-			"<EXCEPTION> Machine %s(%d) : Illegal use of send for sending message across process (source and target machines are in different process) ",
-			MachineName,
-			MachineId);
+		          log_size,
+		          "<EXCEPTION> Machine %s(%d) : Illegal use of send for sending message across process (source and target machines are in different process) ",
+		          MachineName,
+		          MachineId);
 		break;
 	default:
 		sprintf_s(log,
-			log_size,
-			"<EXCEPTION> Machine %s(%d) : Unknown Exception\n",
-			MachineName,
-			MachineId);
+		          log_size,
+		          "<EXCEPTION> Machine %s(%d) : Unknown Exception\n",
+		          MachineName,
+		          MachineId);
 		break;
 	}
 }
+
 /**
 * The main function performs the following steps
 * 1) If the createMain option is true then it create the main machine.
@@ -164,7 +170,7 @@ Also note that the machine hosting the main machine does not host container mach
 
 **/
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	bool cooperative = false;
 	for (int i = 0; i < argc; i++)
@@ -180,42 +186,43 @@ int main(int argc, char *argv[])
 		}
 	}
 
-    PRT_GUID processGuid;
-    processGuid.data1 = 1;
-    processGuid.data2 = 1; //nodeId
-    processGuid.data3 = 0;
-    processGuid.data4 = 0;
-    ContainerProcess = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, PrtDistSMExceptionHandler, LogHandler);
+	PRT_GUID processGuid;
+	processGuid.data1 = 1;
+	processGuid.data2 = 1; //nodeId
+	processGuid.data3 = 0;
+	processGuid.data4 = 0;
+	ContainerProcess = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, PrtDistSMExceptionHandler, LogHandler);
 
 	if (cooperative)
 	{
 		PrtSetSchedulingPolicy(ContainerProcess, PRT_SCHEDULINGPOLICY_COOPERATIVE);
 	}
 
-    //create main machine 
+	//create main machine 
 	PRT_VALUE* payload = PrtMkNullValue();
 	PRT_UINT32 machineId;
 	PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("Client", &machineId);
-	if (foundMainMachine == PRT_FALSE) {
+	if (foundMainMachine == PRT_FALSE)
+	{
 		printf("%s\n", "FAILED TO FIND TestMachine");
 		exit(1);
 	}
 	PrtMkMachine(ContainerProcess, machineId, 1, &payload);
 	PrtFreeValue(payload);
 
-    // Wait for the timer.
+	// Wait for the timer.
 	int iterations = 10;
-    while (iterations--) {
-
+	while (iterations--)
+	{
 		if (cooperative)
 		{
 			PrtRunProcess(ContainerProcess);
 		}
-		else {
+		else
+		{
 			SleepEx(1000, PRT_TRUE); // SleepEx allows the Win32 Timer to execute.
 		}
-    }
+	}
 
-    return 0;
-
+	return 0;
 }

@@ -3,12 +3,12 @@
 namespace UnitTests.Core
 {
     /// <summary>
-    /// Interface for running test cases.
+    ///     Interface for running test cases.
     /// </summary>
     public interface ICompilerTestRunner
     {
         /// <summary>
-        /// Run the test in the given scratch directory, recording output.
+        ///     Run the test in the given scratch directory, recording output.
         /// </summary>
         /// <param name="scratchDirectory">The scratch directory to use. Caller is responsible for cleaning up.</param>
         /// <param name="stdout">The output produced by the test.</param>

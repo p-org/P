@@ -6,7 +6,7 @@ namespace Microsoft.Pc
     {
         public static int Main(string[] args)
         {
-            switch (CommandLineOptions.ParseArguments(args, out CompilationJob job))
+            switch (CommandLineOptions.ParseArguments(args, out var job))
             {
                 case Failure:
                     CommandLineOptions.PrintUsage();

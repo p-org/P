@@ -15,7 +15,7 @@ namespace Microsoft.Pc
 
         public void WriteMessage(string msg, SeverityKind severity)
         {
-            ConsoleColor defaultColor = Console.ForegroundColor;
+            var defaultColor = Console.ForegroundColor;
             switch (severity)
             {
                 case SeverityKind.Info:
@@ -38,7 +38,7 @@ namespace Microsoft.Pc
 
         public void WriteFile(CompiledFile file)
         {
-            string outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
+            var outputPath = Path.Combine(outputDirectory.FullName, file.FileName);
             File.WriteAllText(outputPath, file.Contents);
         }
     }

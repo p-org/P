@@ -7,23 +7,16 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     internal class MapType : PLanguageType
     {
-
         public MapType(PLanguageType keyType, PLanguageType valueType) : base(TypeKind.Map)
         {
             KeyType = keyType;
             ValueType = valueType;
-            if ((KeyType.AllowedPermissions == null) || (ValueType.AllowedPermissions == null))
-            {
+            if (KeyType.AllowedPermissions == null || ValueType.AllowedPermissions == null)
                 AllowedPermissions = null;
-            }
             else
-            {
                 AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => KeyType
                     .AllowedPermissions.Value.Concat(ValueType.AllowedPermissions.Value)
                     .ToList());
-
-            }
-            
         }
 
         public PLanguageType KeyType { get; }

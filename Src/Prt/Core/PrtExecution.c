@@ -2,7 +2,7 @@
 #include "libhandler.h"
 
 // Can only run one P program at a time
-PRT_PROGRAMDECL *program;
+PRT_PROGRAMDECL* program;
 
 PRT_TYPE NullType =
 {
@@ -10,7 +10,7 @@ PRT_TYPE NullType =
 	{(struct PRT_MAPTYPE *)NULL}
 };
 
-PRT_TYPE AnyType = 
+PRT_TYPE AnyType =
 {
 	PRT_KIND_ANY,
 	{(struct PRT_MAPTYPE *)NULL}
@@ -18,10 +18,10 @@ PRT_TYPE AnyType =
 
 PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
 {
-    {
-        PRT_VALUE_KIND_NULL,
-	    { .ev = PRT_SPECIAL_EVENT_NULL }
-    },
+	{
+		PRT_VALUE_KIND_NULL,
+		{.ev = PRT_SPECIAL_EVENT_NULL}
+	},
 	"null",
 	0,
 	&NullType
@@ -29,16 +29,17 @@ PRT_EVENTDECL _P_EVENT_NULL_STRUCT =
 
 PRT_EVENTDECL _P_EVENT_HALT_STRUCT =
 {
-    {
-        PRT_VALUE_KIND_EVENT,
-        {.ev = PRT_SPECIAL_EVENT_HALT }
-    },
+	{
+		PRT_VALUE_KIND_EVENT,
+		{.ev = PRT_SPECIAL_EVENT_HALT}
+	},
 	"halt",
 	4294967295U,
 	&AnyType
 };
 
-PRT_VALUE* PRT_CALL_CONV _P_NO_OP_IMPL(_Inout_ struct PRT_MACHINEINST *context, _Inout_ PRT_VALUE*** refLocals) {
+PRT_VALUE* PRT_CALL_CONV _P_NO_OP_IMPL(_Inout_ struct PRT_MACHINEINST* context, _Inout_ PRT_VALUE*** refLocals)
+{
 	return NULL;
 }
 
@@ -55,7 +56,7 @@ PRT_ASSERT_FUN _PrtAssert = &PrtAssertDefaultFn;
 /* Initialize the function to default print fucntion*/
 PRT_PRINT_FUN PrtPrintf = &PrtPrintfDefaultFn;
 
-void PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV *context)
+void PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV* context)
 {
 	PrtFreeValue(context->currentTrigger);
 	context->currentTrigger = NULL;
@@ -63,17 +64,19 @@ void PrtFreeTriggerPayload(_In_ PRT_MACHINEINST_PRIV *context)
 	context->currentPayload = NULL;
 }
 
-void PrtSetTriggerPayload(_Inout_ PRT_MACHINEINST_PRIV *context, PRT_VALUE* trigger, PRT_VALUE* payload)
+void PrtSetTriggerPayload(_Inout_ PRT_MACHINEINST_PRIV* context, PRT_VALUE* trigger, PRT_VALUE* payload)
 {
 	PrtFreeTriggerPayload(context);
 	context->currentTrigger = trigger;
 	context->currentPayload = payload;
 }
 
-void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
+void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV* context, _In_ PRT_UINT32 varIndex,
+                                             _In_                                             PRT_VALUE* value,
+                                             _In_                                             PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(value), "value is not valid");
-	PRT_VALUE *oldValue = context->varValues[varIndex];
+	PRT_VALUE* oldValue = context->varValues[varIndex];
 	context->varValues[varIndex] = cloneValue ? PrtCloneValue(value) : value;
 	if (oldValue != NULL)
 	{
@@ -82,16 +85,18 @@ void PRT_CALL_CONV PrtSetGlobalVarEx(_Inout_ PRT_MACHINEINST_PRIV *context, _In_
 	}
 }
 
-void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value)
+void PRT_CALL_CONV PrtSetGlobalVar(_Inout_ PRT_MACHINEINST_PRIV* context, _In_ PRT_UINT32 varIndex,
+                                           _In_                                           PRT_VALUE* value)
 {
 	PrtSetGlobalVarEx(context, varIndex, value, PRT_TRUE);
 }
 
 
-void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE *value, _In_ PRT_BOOLEAN cloneValue)
+void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE** locals, _In_ PRT_UINT32 varIndex, _In_ PRT_VALUE* value,
+                                            _In_                                            PRT_BOOLEAN cloneValue)
 {
 	PrtAssert(PrtIsValidValue(value), "value is not valid");
-	PRT_VALUE *oldValue = locals[varIndex];
+	PRT_VALUE* oldValue = locals[varIndex];
 	locals[varIndex] = cloneValue ? PrtCloneValue(value) : value;
 	if (oldValue != NULL)
 	{
@@ -107,39 +112,39 @@ void PRT_CALL_CONV PrtSetLocalVarEx(_Inout_ PRT_VALUE **locals, _In_ PRT_UINT32 
 // on a realtime OS (like NuttX) where the caller creates a special Thread for running all the state machines
 // in a given process which goes to sleep when there is nothing to do.  This thread is automatically
 // woken up using a semaphore when new work is created via PrtMkMachinePrivate or PrtSendPrivate using this method.
-static void PrtScheduleWork(PRT_MACHINEINST_PRIV *context)
+static void PrtScheduleWork(PRT_MACHINEINST_PRIV* context)
 {
-    PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV*)context->process;
-    switch (privateProcess->schedulingPolicy)
-    {
-        case PRT_SCHEDULINGPOLICY_TASKNEUTRAL:
-            {
-                PrtRunStateMachine(context);
-            }
-            break;
-        case PRT_SCHEDULINGPOLICY_COOPERATIVE:
-            {
-                PRT_COOPERATIVE_SCHEDULER* info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
-                if (info->threadsWaiting > 0)
-                {
-                    // signal the PrtRunProcess method that there is work to do.
-                    PrtReleaseSemaphore(info->workAvailable);
-                }
-            }
-            break;
-        default:
-            PrtAssert(PRT_FALSE, "Invalid schedulingPolicy");
-            break;
-    }
+	PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)context->process;
+	switch (privateProcess->schedulingPolicy)
+	{
+	case PRT_SCHEDULINGPOLICY_TASKNEUTRAL:
+		{
+			PrtRunStateMachine(context);
+		}
+		break;
+	case PRT_SCHEDULINGPOLICY_COOPERATIVE:
+		{
+			PRT_COOPERATIVE_SCHEDULER* info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
+			if (info->threadsWaiting > 0)
+			{
+				// signal the PrtRunProcess method that there is work to do.
+				PrtReleaseSemaphore(info->workAvailable);
+			}
+		}
+		break;
+	default:
+		PrtAssert(PRT_FALSE, "Invalid schedulingPolicy");
+		break;
+	}
 }
 
 
-PRT_MACHINEINST_PRIV *
+PRT_MACHINEINST_PRIV*
 PrtMkMachinePrivate(
-_Inout_  PRT_PROCESS_PRIV		*process,
-_In_  PRT_UINT32				interfaceName,
-_In_  PRT_UINT32				instanceOf,
-_In_  PRT_VALUE					*payload
+	_Inout_	         PRT_PROCESS_PRIV* process,
+	       	         _In_	         PRT_UINT32 interfaceName,
+	       	         _In_	         PRT_UINT32 instanceOf,
+	       	         _In_	         PRT_VALUE* payload
 )
 {
 	PrtLockMutex(process->processLock);
@@ -151,7 +156,7 @@ _In_  PRT_VALUE					*payload
 	// Make space in process list for new machine
 	PRT_UINT32 numMachines = process->numMachines;
 	PRT_UINT32 machineCount = process->machineCount;
-	PRT_MACHINEINST **machines = process->machines;
+	PRT_MACHINEINST** machines = process->machines;
 	if (machineCount == 0)
 	{
 		machines = (PRT_MACHINEINST **)PrtCalloc(1, sizeof(PRT_MACHINEINST *));
@@ -160,7 +165,7 @@ _In_  PRT_VALUE					*payload
 	}
 	else if (machineCount == numMachines)
 	{
-		PRT_MACHINEINST **newMachines = (PRT_MACHINEINST **)PrtCalloc(2 * machineCount, sizeof(PRT_MACHINEINST *));
+		PRT_MACHINEINST** newMachines = (PRT_MACHINEINST **)PrtCalloc(2 * machineCount, sizeof(PRT_MACHINEINST *));
 		for (i = 0; i < machineCount; i++)
 		{
 			newMachines[i] = machines[i];
@@ -172,7 +177,7 @@ _In_  PRT_VALUE					*payload
 	}
 
 	// Allocate memory for state machine context
-	PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV*)PrtCalloc(1, sizeof(PRT_MACHINEINST_PRIV));
+	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)PrtCalloc(1, sizeof(PRT_MACHINEINST_PRIV));
 
 	// Assign the interface name
 	context->interfaceBound = interfaceName;
@@ -194,9 +199,9 @@ _In_  PRT_VALUE					*payload
 	//
 	// Initialize the map used in PrtDist, map from sender to the last seqnumber received
 	//
-	PRT_TYPE *domType = PrtMkPrimitiveType(PRT_KIND_MACHINE);
-	PRT_TYPE *codType = PrtMkPrimitiveType(PRT_KIND_INT);
-	PRT_TYPE *recvMapType = PrtMkMapType(domType, codType);
+	PRT_TYPE* domType = PrtMkPrimitiveType(PRT_KIND_MACHINE);
+	PRT_TYPE* codType = PrtMkPrimitiveType(PRT_KIND_INT);
+	PRT_TYPE* recvMapType = PrtMkMapType(domType, codType);
 	context->recvMap = PrtMkDefaultValue(recvMapType);
 	PrtFreeType(domType);
 	PrtFreeType(codType);
@@ -205,8 +210,8 @@ _In_  PRT_VALUE					*payload
 	// Initialize Machine Internal Variables
 	//
 	context->isRunning = PRT_FALSE;
-	context->isHalted = PRT_FALSE; 
-    context->operation = StateEntry;
+	context->isHalted = PRT_FALSE;
+	context->operation = StateEntry;
 	context->returnKind = ReturnStatement;
 
 	context->destStateIndex = 0;
@@ -217,7 +222,7 @@ _In_  PRT_VALUE					*payload
 	// Initialize machine-dependent per-instance state
 	PRT_MACHINEDECL* curMachineDecl = program->machines[instanceOf];
 	PRT_UINT32 nVars = curMachineDecl->nVars;
-	
+
 	context->currentState = curMachineDecl->initStateIndex;
 	context->varValues = NULL;
 	if (nVars > 0)
@@ -276,22 +281,22 @@ _In_  PRT_VALUE					*payload
 	//
 	// Run the state machine according to the scheduling policy.
 	//
-    PrtScheduleWork(context);
+	PrtScheduleWork(context);
 
 	return context;
 }
 
-PRT_VALUE *
+PRT_VALUE*
 PrtGetCurrentTrigger(
-_Inout_ PRT_MACHINEINST_PRIV		*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	return context->currentTrigger;
 }
 
-PRT_VALUE *
+PRT_VALUE*
 PrtGetCurrentPayload(
-_Inout_ PRT_MACHINEINST_PRIV		*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	return context->currentPayload;
@@ -299,14 +304,15 @@ _Inout_ PRT_MACHINEINST_PRIV		*context
 
 void
 PrtSendPrivate(
-_In_ PRT_MACHINESTATE           *state,
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_VALUE					*event,
-_In_ PRT_VALUE					*payload
+	_In_	     PRT_MACHINESTATE* state,
+	    	     _Inout_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_VALUE* event,
+	    	     _In_	     PRT_VALUE* payload
 )
 {
 	PrtAssert(!PrtIsSpecialEvent(event), "Enqueued event must not be null");
-	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
+	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)),
+		"Payload must be member of event payload type");
 
 	PrtLockMutex(context->stateMachineLock);
 
@@ -324,7 +330,7 @@ _In_ PRT_VALUE					*payload
 	const PRT_UINT32 eventMaxInstances = program->events[eventIndex]->eventMaxInstances;
 	const PRT_UINT32 maxQueueSize = program->machines[context->instanceOf]->maxQueueSize;
 
-	PRT_EVENTQUEUE *queue = &context->eventQueue;
+	PRT_EVENTQUEUE* queue = &context->eventQueue;
 
 	// check if maximum allowed instances of event are already present in queue
 	if (eventMaxInstances != 0xffffffff && PrtIsEventMaxInstanceExceeded(queue, eventIndex, eventMaxInstances))
@@ -353,10 +359,12 @@ _In_ PRT_VALUE					*payload
 	//
 	queue->events[tail].trigger = event;
 	queue->events[tail].payload = payload;
-	if (state != NULL) {
+	if (state != NULL)
+	{
 		queue->events[tail].state = *state;
 	}
-	else {
+	else
+	{
 		queue->events[tail].state.machineId = 0;
 		queue->events[tail].state.machineName = NULL;
 		queue->events[tail].state.stateId = 0;
@@ -369,17 +377,17 @@ _In_ PRT_VALUE					*payload
 	//Log
 	//
 	PrtLog(PRT_STEP_ENQUEUE, state, context, event, payload);
-    PrtUnlockMutex(context->stateMachineLock);
-    PrtScheduleWork(context);
+	PrtUnlockMutex(context->stateMachineLock);
+	PrtScheduleWork(context);
 }
 
 void
 PrtEnqueueInOrder(
-_In_ PRT_VALUE					*source,
-_In_ PRT_INT64					seqNum,
-_Inout_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_VALUE					*event,
-_In_ PRT_VALUE					*payload
+	_In_	     PRT_VALUE* source,
+	    	     _In_	     PRT_INT64 seqNum,
+	    	     _Inout_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_VALUE* event,
+	    	     _In_	     PRT_VALUE* payload
 )
 {
 	// Check if the enqueued event is in order
@@ -397,10 +405,7 @@ _In_ PRT_VALUE					*payload
 		// Drop the event
 		return;
 	}
-	else
-	{
-		PrtMapUpdate(context->recvMap, source, PrtMkIntValue((PRT_INT32)seqNum));
-	}
+	PrtMapUpdate(context->recvMap, source, PrtMkIntValue((PRT_INT32)seqNum));
 	PrtUnlockMutex(context->stateMachineLock);
 
 	// get the name of the sender machine.
@@ -410,10 +415,10 @@ _In_ PRT_VALUE					*payload
 	PrtSendPrivate(&state, context, event, payload);
 }
 
-PRT_VALUE *MakeTupleFromArray(_In_ PRT_TYPE *tupleType, _In_ PRT_VALUE **elems)
+PRT_VALUE* MakeTupleFromArray(_In_ PRT_TYPE* tupleType, _In_ PRT_VALUE** elems)
 {
 	PRT_UINT32 arity = tupleType->typeUnion.tuple->arity;
-	PRT_VALUE *payload = PrtMkDefaultValue(tupleType);
+	PRT_VALUE* payload = PrtMkDefaultValue(tupleType);
 	for (PRT_UINT32 i = 0; i < arity; i++)
 	{
 		PrtTupleSetEx(payload, i, elems[i], PRT_FALSE);
@@ -421,14 +426,15 @@ PRT_VALUE *MakeTupleFromArray(_In_ PRT_TYPE *tupleType, _In_ PRT_VALUE **elems)
 	return payload;
 }
 
-PRT_VALUE *PrtMkTuple(_In_ PRT_TYPE *tupleType, ...)
+PRT_VALUE* PrtMkTuple(_In_ PRT_TYPE* tupleType, ...)
 {
 	PRT_UINT32 arity = tupleType->typeUnion.tuple->arity;
-	PRT_VALUE *tup = PrtMkDefaultValue(tupleType);
+	PRT_VALUE* tup = PrtMkDefaultValue(tupleType);
 
 	va_list argp;
 	va_start(argp, tupleType);
-	for (PRT_UINT32 i = 0; i < arity; i++) {
+	for (PRT_UINT32 i = 0; i < arity; i++)
+	{
 		PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
 		PrtTupleSetEx(tup, i, *argPtr, PRT_FALSE);
 		*argPtr = NULL;
@@ -440,27 +446,27 @@ PRT_VALUE *PrtMkTuple(_In_ PRT_TYPE *tupleType, ...)
 
 void
 PrtGoto(
-	_Inout_ PRT_MACHINEINST_PRIV		*context,
-	_In_ PRT_UINT32						destStateIndex,
-	_In_ PRT_UINT32						numArgs,
-	...
+	_Inout_	        PRT_MACHINEINST_PRIV* context,
+	       	        _In_	        PRT_UINT32 destStateIndex,
+	       	        _In_	        PRT_UINT32 numArgs,
+	       	        ...
 )
 {
 	context->returnKind = GotoStatement;
 	context->destStateIndex = destStateIndex;
-	PRT_VALUE *payload;
+	PRT_VALUE* payload;
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
 	}
-	else 
+	else
 	{
-		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		PRT_VALUE** args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
 			args[i] = *argPtr;
 			*argPtr = NULL;
 		}
@@ -468,8 +474,8 @@ PrtGoto(
 		payload = args[0];
 		if (numArgs > 1)
 		{
-			PRT_FUNDECL *entryFun = program->machines[context->instanceOf]->states[destStateIndex].entryFun;
-			PRT_TYPE *payloadType = entryFun->payloadType;
+			PRT_FUNDECL* entryFun = program->machines[context->instanceOf]->states[destStateIndex].entryFun;
+			PRT_TYPE* payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
@@ -484,29 +490,29 @@ PrtGoto(
 
 void
 PrtRaise(
-	_Inout_ PRT_MACHINEINST_PRIV		*context,
-	_In_ PRT_VALUE						*event,
-	_In_ PRT_UINT32						numArgs,
+	_Inout_	        PRT_MACHINEINST_PRIV* context,
+	       	        _In_	        PRT_VALUE* event,
+	       	        _In_	        PRT_UINT32 numArgs,
 
-	...
+	       	        ...
 )
 {
 	PrtAssert(!PrtIsSpecialEvent(event), "Raised event must not be null");
 	context->returnKind = RaiseStatement;
-	
-	PRT_VALUE *payload;
+
+	PRT_VALUE* payload;
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
 	}
 	else
 	{
-		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		PRT_VALUE** args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
 			args[i] = *argPtr;
 			*argPtr = NULL;
 		}
@@ -514,13 +520,14 @@ PrtRaise(
 		payload = args[0];
 		if (numArgs > 1)
 		{
-			PRT_TYPE *payloadType = PrtGetPayloadType(context, event); 
+			PRT_TYPE* payloadType = PrtGetPayloadType(context, event);
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
 	}
-	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)), "Payload must be member of event payload type");
-	
+	PrtAssert(PrtInhabitsType(payload, PrtGetPayloadType(context, event)),
+		"Payload must be member of event payload type");
+
 	PrtSetTriggerPayload(context, event, payload);
 
 	PRT_MACHINESTATE state;
@@ -530,8 +537,9 @@ PrtRaise(
 
 #pragma region Receive Implementation
 
-typedef struct _receive_result_t {
-	int        eventId;
+typedef struct _receive_result_t
+{
+	int eventId;
 	PRT_VALUE* payload;
 } receive_result_t;
 
@@ -548,11 +556,11 @@ LH_DEFINE_EFFECT1(prt, receive);
 LH_DEFINE_OP1(prt, receive, receive_result_ptr, event_id_list_ptr);
 
 PRT_UINT32 PrtReceiveAsync(
-	_In_    PRT_UINT32      nHandledEvents,
-	_In_    PRT_UINT32      *handledEvents,
-	_Out_   PRT_VALUE       **payload)
+	_In_	        PRT_UINT32 nHandledEvents,
+	    	        _In_	        PRT_UINT32* handledEvents,
+	    	        _Out_	        PRT_VALUE** payload)
 {
-	PRT_UINT32* receive_allowed_events  = PrtMalloc((nHandledEvents + 1) * sizeof(*receive_allowed_events));
+	PRT_UINT32* receive_allowed_events = PrtMalloc((nHandledEvents + 1) * sizeof(*receive_allowed_events));
 	memcpy(receive_allowed_events, handledEvents, nHandledEvents * sizeof(*receive_allowed_events));
 	receive_allowed_events[nHandledEvents] = (PRT_UINT32)(-1);
 
@@ -564,7 +572,8 @@ PRT_UINT32 PrtReceiveAsync(
 }
 
 // Await an asynchronous request
-static lh_value _prt_receive(lh_resume r, lh_value local, lh_value arg) {
+static lh_value _prt_receive(lh_resume r, lh_value local, lh_value arg)
+{
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)lh_ptr_value(local);
 	context->receiveResumption = r;
 	context->receiveAllowedEvents = lh_event_id_list_ptr_value(arg);
@@ -576,52 +585,58 @@ static lh_value _prt_receive(lh_resume r, lh_value local, lh_value arg) {
 
 // The main async handler
 static const lh_operation _prt_ops[] = {
-	{ LH_OP_GENERAL, LH_OPTAG(prt, receive), &_prt_receive },
-	{ LH_OP_NULL, lh_op_null, NULL }
+	{LH_OP_GENERAL, LH_OPTAG(prt, receive), &_prt_receive},
+	{LH_OP_NULL, lh_op_null, NULL}
 };
 
 static const lh_handlerdef _prt_handler_def = {
 	LH_EFFECT(prt), NULL, NULL, NULL, _prt_ops
 };
 
-typedef struct receive_handler_args_t {
+typedef struct receive_handler_args_t
+{
 	PRT_MACHINEINST* context;
-	PRT_VALUE***     args;
-	PRT_SM_FUN       fun;
+	PRT_VALUE*** args;
+	PRT_SM_FUN fun;
 } receive_handler_args_t;
 
-lh_value receive_handler_action(lh_value rargsv) {
+lh_value receive_handler_action(lh_value rargsv)
+{
 	receive_handler_args_t* rargs = (receive_handler_args_t*)lh_value_any_ptr(rargsv);
 	return lh_value_ptr(rargs->fun(rargs->context, rargs->args));
 }
 
-void* prt_receive_handler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN action, PRT_VALUE*** args) {
-	receive_handler_args_t rargs = { (PRT_MACHINEINST*)context, args, action };
-	return lh_ptr_value(lh_handle(&_prt_handler_def, lh_value_ptr(context), &receive_handler_action, lh_value_any_ptr(&rargs)));
+void* prt_receive_handler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN action, PRT_VALUE*** args)
+{
+	receive_handler_args_t rargs = {(PRT_MACHINEINST*)context, args, action};
+	return lh_ptr_value(lh_handle(&_prt_handler_def, lh_value_ptr(context), &receive_handler_action, lh_value_any_ptr(&
+		rargs)));
 }
 
-#pragma endregion 
+#pragma endregion
 
 void
 PrtPushState(
-_Inout_ PRT_MACHINEINST_PRIV		*context,
-_In_	PRT_UINT32				stateIndex
+	_Inout_	        PRT_MACHINEINST_PRIV* context,
+	       	        _In_	        PRT_UINT32 stateIndex
 )
 {
 	PRT_MACHINESTATE state;
 	PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 
 	PRT_UINT16 packSize = PrtGetPackSize(context);
-	PRT_UINT32 *currDef = PrtGetDeferredPacked(context, context->currentState);
-	PRT_UINT32 *currActions = PrtGetActionsPacked(context, context->currentState);
-	PRT_UINT32 *currTransitions = PrtGetTransitionsPacked(context, context->currentState);
+	PRT_UINT32* currDef = PrtGetDeferredPacked(context, context->currentState);
+	PRT_UINT32* currActions = PrtGetActionsPacked(context, context->currentState);
+	PRT_UINT32* currTransitions = PrtGetTransitionsPacked(context, context->currentState);
 
 	{
 		const PRT_UINT16 length = context->callStack.length;
 		PrtAssert(length < PRT_MAX_STATESTACK_DEPTH, "State stack overflow");
 		context->callStack.stateStack[length].stateIndex = context->currentState;
-		context->callStack.stateStack[length].inheritedDeferredSetCompact = PrtClonePackedSet(context->inheritedDeferredSetCompact, packSize);
-		context->callStack.stateStack[length].inheritedActionSetCompact = PrtClonePackedSet(context->inheritedActionSetCompact, packSize);
+		context->callStack.stateStack[length].inheritedDeferredSetCompact = PrtClonePackedSet(
+			context->inheritedDeferredSetCompact, packSize);
+		context->callStack.stateStack[length].inheritedActionSetCompact = PrtClonePackedSet(
+			context->inheritedActionSetCompact, packSize);
 		context->callStack.length = length + 1;
 	}
 
@@ -647,7 +662,7 @@ _In_	PRT_UINT32				stateIndex
 
 void
 PrtPop(
-_Inout_ PRT_MACHINEINST_PRIV		*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	context->returnKind = PopStatement;
@@ -658,8 +673,8 @@ _Inout_ PRT_MACHINEINST_PRIV		*context
 
 PRT_BOOLEAN
 PrtPopState(
-_Inout_ PRT_MACHINEINST_PRIV		*context,
-_In_ PRT_BOOLEAN				isPopStatement
+	_Inout_	        PRT_MACHINEINST_PRIV* context,
+	       	        _In_	        PRT_BOOLEAN isPopStatement
 )
 {
 	PRT_MACHINESTATE state;
@@ -714,7 +729,8 @@ _In_ PRT_BOOLEAN				isPopStatement
 	return PRT_FALSE;
 }
 
-PRT_RETURN_KIND PrtResume(PRT_MACHINEINST_PRIV* context, PRT_UINT32 eventId, PRT_VALUE* payload) {
+PRT_RETURN_KIND PrtResume(PRT_MACHINEINST_PRIV* context, PRT_UINT32 eventId, PRT_VALUE* payload)
+{
 	receive_result_t* res = (receive_result_t*)PrtMalloc(sizeof(*res));
 	res->eventId = eventId;
 	res->payload = payload;
@@ -785,7 +801,8 @@ PRT_BOOLEAN PrtHandleUserReturn(PRT_MACHINEINST_PRIV* context)
 
 PRT_BOOLEAN PrtCallEventHandler(PRT_MACHINEINST_PRIV* context, PRT_SM_FUN function, PRT_VALUE*** args)
 {
-	PrtAssert(context->receiveResumption == NULL && context->receiveAllowedEvents == NULL, "When waiting on receive, must resume");
+	PrtAssert(context->receiveResumption == NULL && context->receiveAllowedEvents == NULL,
+		"When waiting on receive, must resume");
 	context->returnKind = ReturnStatement;
 	prt_receive_handler(context, function, args);
 	return PrtHandleUserReturn(context);
@@ -820,8 +837,8 @@ PRT_BOOLEAN PrtCallExitHandler(PRT_MACHINEINST_PRIV* context)
 PRT_BOOLEAN PrtCallTransitionHandler(PRT_MACHINEINST_PRIV* context)
 {
 	const PRT_UINT32 trans_index = PrtFindTransition(context, PrtPrimGetEvent(context->currentTrigger));
-	PRT_STATEDECL *state_decl = PrtGetCurrentStateDecl(context);
-	PRT_FUNDECL *trans_fun = state_decl->transitions[trans_index].transFun;
+	PRT_STATEDECL* state_decl = PrtGetCurrentStateDecl(context);
+	PRT_FUNDECL* trans_fun = state_decl->transitions[trans_index].transFun;
 	return PrtCallEventHandler(context, trans_fun->implementation, &context->handlerArguments);
 }
 
@@ -849,8 +866,8 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
 
 	if (PrtIsActionInstalled(eventValue, context->currentActionSetCompact))
 	{
-		PRT_DODECL *curr_action_decl = PrtGetAction(context, eventValue);
-		PRT_FUNDECL *do_fun = curr_action_decl->doFun;
+		PRT_DODECL* curr_action_decl = PrtGetAction(context, eventValue);
+		PRT_FUNDECL* do_fun = curr_action_decl->doFun;
 		PRT_MACHINESTATE state;
 		PrtGetMachineState((PRT_MACHINEINST*)context, &state);
 
@@ -879,7 +896,7 @@ PRT_BOOLEAN PrtHandleEvent(PRT_MACHINEINST_PRIV* context)
 }
 
 static PRT_BOOLEAN
-PrtDequeueOrReceive(_Inout_ PRT_MACHINEINST_PRIV *context, PRT_VALUE *trigger, PRT_VALUE *payload)
+PrtDequeueOrReceive(_Inout_ PRT_MACHINEINST_PRIV* context, PRT_VALUE* trigger, PRT_VALUE* payload)
 {
 	if (context->receiveResumption == NULL)
 	{
@@ -895,7 +912,7 @@ PrtDequeueOrReceive(_Inout_ PRT_MACHINEINST_PRIV *context, PRT_VALUE *trigger, P
 
 static PRT_BOOLEAN
 PrtStepStateMachine(
-	_Inout_ PRT_MACHINEINST_PRIV	*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	PrtAssert(context->isRunning, "The caller should have set context->isRunning to TRUE");
@@ -925,26 +942,31 @@ PrtStepStateMachine(
 	case ExitState:
 		return PrtCallExitHandler(context);
 	case PopState:
-		PRT_DBG_ASSERT(context->postHandlerOperation == PopState, "pop should only be reachable through ExitState(PopState)");
+		PRT_DBG_ASSERT(context->postHandlerOperation == PopState,
+			"pop should only be reachable through ExitState(PopState)");
 		context->operation = DequeueOrReceive;
 		context->postHandlerOperation = DequeueOrReceive;
 		return !PrtPopState(context, PRT_TRUE);
 	case GotoState:
-		PRT_DBG_ASSERT(context->postHandlerOperation == GotoState, "goto should only be reachable through ExitState(GotoState)");
+		PRT_DBG_ASSERT(context->postHandlerOperation == GotoState,
+			"goto should only be reachable through ExitState(GotoState)");
 		context->currentState = context->destStateIndex;
 		context->operation = StateEntry;
 		return PRT_TRUE;
 	case HandleTransition:
-		PRT_DBG_ASSERT(context->postHandlerOperation == HandleTransition, "transition handlers should only be reachable through ExitState(HandleTransition)");
+		PRT_DBG_ASSERT(context->postHandlerOperation == HandleTransition,
+			"transition handlers should only be reachable through ExitState(HandleTransition)");
 		context->postHandlerOperation = TakeTransition;
 		return PrtCallTransitionHandler(context);
 	case TakeTransition:
-		PRT_DBG_ASSERT(context->postHandlerOperation == TakeTransition, "state transitions should only be reachable through HandleTransition");
+		PRT_DBG_ASSERT(context->postHandlerOperation == TakeTransition,
+			"state transitions should only be reachable through HandleTransition");
 		PrtTakeTransition(context, PrtPrimGetEvent(context->currentTrigger));
 		context->operation = StateEntry;
 		return PRT_TRUE;
 	case UnhandledEvent:
-		PRT_DBG_ASSERT(context->postHandlerOperation == UnhandledEvent, "unhandled state popping should only be reachable through ExitState(UnhandledEvent)");
+		PRT_DBG_ASSERT(context->postHandlerOperation == UnhandledEvent,
+			"unhandled state popping should only be reachable through ExitState(UnhandledEvent)");
 		context->operation = HandleCurrentEvent;
 		return !PrtPopState(context, PRT_FALSE);
 	}
@@ -954,7 +976,7 @@ PrtStepStateMachine(
 
 void
 PrtRunStateMachine(
-	_Inout_ PRT_MACHINEINST_PRIV	*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	// protecting against re-entry using isRunning boolean.
@@ -968,8 +990,8 @@ PrtRunStateMachine(
 	PrtUnlockMutex(context->stateMachineLock);
 
 	// This function now just wraps the new PrtStepStateMachine method
-	while (PrtStepStateMachine(context)) {
-		;
+	while (PrtStepStateMachine(context))
+	{
 	}
 
 	PrtLockMutex(context->stateMachineLock);
@@ -978,19 +1000,19 @@ PrtRunStateMachine(
 }
 
 PRT_API PRT_STEP_RESULT
-PrtStepProcess(PRT_PROCESS *process)
+PrtStepProcess(PRT_PROCESS* process)
 {
-    PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
+	PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
 
 	PrtLockMutex(privateProcess->processLock);
-	PRT_COOPERATIVE_SCHEDULER * info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
+	PRT_COOPERATIVE_SCHEDULER* info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
 	info->threadsWaiting++;
 	PRT_UINT32 machineCount = privateProcess->machineCount;
 	PrtUnlockMutex(privateProcess->processLock);
 
 	PRT_BOOLEAN terminating = PRT_FALSE;
 	PRT_BOOLEAN hasMoreWork = PRT_FALSE;
-    // Run all state machines belonging to this process.
+	// Run all state machines belonging to this process.
 	for (int i = machineCount - 1; i >= 0; i--)
 	{
 		PrtLockMutex(privateProcess->processLock);
@@ -999,7 +1021,7 @@ PrtStepProcess(PRT_PROCESS *process)
 		{
 			break;
 		}
-		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
+		PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)privateProcess->machines[i];
 		PrtUnlockMutex(privateProcess->processLock);
 
 		// todo: assign each context a persistent thread id. only allow wake-ups on the same thread.
@@ -1023,7 +1045,7 @@ PrtStepProcess(PRT_PROCESS *process)
 			}
 		}
 	}
-	
+
 	if (!terminating)
 	{
 		PrtLockMutex(privateProcess->processLock);
@@ -1044,14 +1066,14 @@ PrtStepProcess(PRT_PROCESS *process)
 
 PRT_UINT32
 PrtFindTransition(
-_In_ PRT_MACHINEINST_PRIV		*context,
-_In_ PRT_UINT32					eventIndex
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 eventIndex
 )
 {
 	PRT_UINT32 i;
 	PRT_UINT32 nTransitions;
 
-	PRT_TRANSDECL * transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
+	PRT_TRANSDECL* transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 
 	for (i = 0; i < nTransitions; ++i)
 	{
@@ -1065,11 +1087,11 @@ _In_ PRT_UINT32					eventIndex
 
 void
 PrtTakeTransition(
-_Inout_ PRT_MACHINEINST_PRIV *context,
-_In_    PRT_UINT32            event_index)
+	_Inout_	        PRT_MACHINEINST_PRIV* context,
+	       	        _In_	        PRT_UINT32 event_index)
 {
 	PRT_UINT32 n_transitions;
-	PRT_TRANSDECL *trans_table = PrtGetTransitionTable(context, context->currentState, &n_transitions);
+	PRT_TRANSDECL* trans_table = PrtGetTransitionTable(context, context->currentState, &n_transitions);
 	const PRT_UINT32 trans_index = PrtFindTransition(context, event_index);
 	if (trans_table[trans_index].transFun == NULL)
 	{
@@ -1082,17 +1104,18 @@ _In_    PRT_UINT32            event_index)
 }
 
 static void
-RemoveElementFromQueue(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 i)
+RemoveElementFromQueue(_Inout_ PRT_MACHINEINST_PRIV* context, _In_ PRT_UINT32 i)
 {
-	PRT_EVENTQUEUE *queue = &context->eventQueue;
+	PRT_EVENTQUEUE* queue = &context->eventQueue;
 	PRT_UINT32 queueLength = queue->eventsSize;
 	PRT_UINT32 head = queue->headIndex;
-	
+
 	//
 	// Collapse the event queue on the removed event
 	// by moving the previous elements forward.
 	//
-	for (; i > 0; i--) {
+	for (; i > 0; i--)
+	{
 		PRT_INT32 index = (head + i) % queueLength;
 		PRT_INT32 prev = (index - 1 + queueLength) % queueLength;
 		queue->events[index] = queue->events[prev];
@@ -1108,9 +1131,9 @@ RemoveElementFromQueue(_Inout_ PRT_MACHINEINST_PRIV *context, _In_ PRT_UINT32 i)
 }
 
 PRT_BOOLEAN
-PrtDequeueEvent(_Inout_ PRT_MACHINEINST_PRIV	*context, _Out_ PRT_VALUE** trigger, _Out_ PRT_VALUE** payload)
+PrtDequeueEvent(_Inout_ PRT_MACHINEINST_PRIV* context, _Out_ PRT_VALUE** trigger, _Out_ PRT_VALUE** payload)
 {
-	PRT_EVENTQUEUE *queue = &context->eventQueue;
+	PRT_EVENTQUEUE* queue = &context->eventQueue;
 	const PRT_UINT32 queue_length = queue->eventsSize;
 	const PRT_UINT32 head = queue->headIndex;
 
@@ -1121,13 +1144,14 @@ PrtDequeueEvent(_Inout_ PRT_MACHINEINST_PRIV	*context, _Out_ PRT_VALUE** trigger
 
 	const bool waiting_on_receive = context->receiveResumption != NULL;
 
-	for (PRT_UINT32 i = 0; i < queue->size; i++) {
+	for (PRT_UINT32 i = 0; i < queue->size; i++)
+	{
 		const PRT_UINT32 index = (head + i) % queue_length;
 		PRT_EVENT e = queue->events[index];
 		const PRT_UINT32 trigger_event_id = PrtPrimGetEvent(e.trigger);
 
 		// receive takes precedence over all others
-		if (PrtReceiveWaitingOnEvent(context, trigger_event_id) || 
+		if (PrtReceiveWaitingOnEvent(context, trigger_event_id) ||
 			!waiting_on_receive && !PrtIsEventDeferred(trigger_event_id, context->currentDeferredSetCompact))
 		{
 			*trigger = e.trigger;
@@ -1150,8 +1174,8 @@ PrtDequeueEvent(_Inout_ PRT_MACHINEINST_PRIV	*context, _Out_ PRT_VALUE** trigger
 }
 
 FORCEINLINE
-PRT_STATEDECL *
-PrtGetCurrentStateDecl(_In_ PRT_MACHINEINST_PRIV *context)
+PRT_STATEDECL*
+PrtGetCurrentStateDecl(_In_ PRT_MACHINEINST_PRIV* context)
 {
 	return &(program->machines[context->instanceOf]->states[context->currentState]);
 }
@@ -1159,8 +1183,8 @@ PrtGetCurrentStateDecl(_In_ PRT_MACHINEINST_PRIV *context)
 FORCEINLINE
 PRT_TYPE*
 PrtGetPayloadType(
-_In_ PRT_MACHINEINST_PRIV *context,
-_In_ PRT_VALUE	  *event
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_VALUE* event
 )
 {
 	return program->events[PrtPrimGetEvent(event)]->type;
@@ -1169,7 +1193,7 @@ _In_ PRT_VALUE	  *event
 FORCEINLINE
 PRT_UINT16
 PrtGetPackSize(
-_In_ PRT_MACHINEINST_PRIV			*context
+	_In_	PRT_MACHINEINST_PRIV* context
 )
 {
 	PRT_UINT32 nEvents = program->nEvents;
@@ -1179,36 +1203,35 @@ _In_ PRT_MACHINEINST_PRIV			*context
 }
 
 
-
 FORCEINLINE
 PRT_SM_FUN
 PrtGetEntryFunction(
-_In_ PRT_MACHINEINST_PRIV		*context
+	_In_	PRT_MACHINEINST_PRIV* context
 )
 {
-	PRT_FUNDECL *entryFun = program->machines[context->instanceOf]->states[context->currentState].entryFun;
+	PRT_FUNDECL* entryFun = program->machines[context->instanceOf]->states[context->currentState].entryFun;
 	return entryFun->implementation;
 }
 
 FORCEINLINE
 PRT_SM_FUN
 PrtGetExitFunction(
-_In_ PRT_MACHINEINST_PRIV		*context
+	_In_	PRT_MACHINEINST_PRIV* context
 )
 {
-	PRT_FUNDECL *exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
+	PRT_FUNDECL* exitFun = program->machines[context->instanceOf]->states[context->currentState].exitFun;
 	return exitFun->implementation;
 }
 
 FORCEINLINE
 PRT_DODECL*
 PrtGetAction(
-_In_ PRT_MACHINEINST_PRIV		*context,
-_In_ PRT_UINT32					currEvent
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 currEvent
 )
 {
 	PRT_UINT32 ui, nActions;
-	PRT_DODECL *actionDecl = NULL;
+	PRT_DODECL* actionDecl = NULL;
 	//check if action is defined for the current state
 	PRT_BOOLEAN isActionInstalled =
 		PrtIsActionInstalled(currEvent, PrtGetActionsPacked(context, context->currentState));
@@ -1217,7 +1240,7 @@ _In_ PRT_UINT32					currEvent
 		//
 		// get action function
 		//
-		PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
+		PRT_STATEDECL* stateDecl = PrtGetCurrentStateDecl(context);
 		nActions = stateDecl->nDos;
 		for (ui = 0; ui < nActions; ui++)
 		{
@@ -1233,7 +1256,7 @@ _In_ PRT_UINT32					currEvent
 	// Scan the parent states
 	//
 	const PRT_STATESTACK currStack = context->callStack;
-	PRT_STATEDECL *stateTable = program->machines[context->instanceOf]->states;
+	PRT_STATEDECL* stateTable = program->machines[context->instanceOf]->states;
 	for (PRT_INT32 i = currStack.length - 1; i >= 0; i--)
 	{
 		const PRT_UINT32 topOfStackState = currStack.stateStack[i].stateIndex;
@@ -1262,8 +1285,8 @@ _In_ PRT_UINT32					currEvent
 FORCEINLINE
 PRT_UINT32*
 PrtGetDeferredPacked(
-_In_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32				stateIndex
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 stateIndex
 )
 {
 	return program->machines[context->instanceOf]->states[stateIndex].defersSet->packedEvents;
@@ -1272,8 +1295,8 @@ _In_ PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_UINT32*
 PrtGetActionsPacked(
-_In_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32				stateIndex
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 stateIndex
 )
 {
 	return program->machines[context->instanceOf]->states[stateIndex].doSet->packedEvents;
@@ -1282,8 +1305,8 @@ _In_ PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_UINT32*
 PrtGetTransitionsPacked(
-_In_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32				stateIndex
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 stateIndex
 )
 {
 	return program->machines[context->instanceOf]->states[stateIndex].transSet->packedEvents;
@@ -1292,9 +1315,9 @@ _In_ PRT_UINT32				stateIndex
 FORCEINLINE
 PRT_TRANSDECL*
 PrtGetTransitionTable(
-_In_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32				stateIndex,
-_Out_ PRT_UINT32			*nTransitions
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 stateIndex,
+	    	     _Out_	     PRT_UINT32* nTransitions
 )
 {
 	*nTransitions = program->machines[context->instanceOf]->states[stateIndex].nTransitions;
@@ -1303,18 +1326,19 @@ _Out_ PRT_UINT32			*nTransitions
 
 PRT_BOOLEAN
 PrtAreGuidsEqual(
-_In_ PRT_GUID guid1,
-_In_ PRT_GUID guid2
+	_In_	     PRT_GUID guid1,
+	    	     _In_	     PRT_GUID guid2
 )
 {
-	return guid1.data1 == guid2.data1 && guid1.data2 == guid2.data2 && guid1.data3 == guid2.data3 && guid1.data4 == guid2.data4;
+	return guid1.data1 == guid2.data1 && guid1.data2 == guid2.data2 && guid1.data3 == guid2.data3 && guid1.data4 ==
+		guid2.data4;
 }
 
 PRT_BOOLEAN
 PrtIsEventMaxInstanceExceeded(
-_In_ PRT_EVENTQUEUE			*queue,
-_In_ PRT_UINT32				eventIndex,
-_In_ PRT_UINT32				maxInstances
+	_In_	     PRT_EVENTQUEUE* queue,
+	    	     _In_	     PRT_UINT32 eventIndex,
+	    	     _In_	     PRT_UINT32 maxInstances
 )
 {
 	PRT_UINT32 queueSize = queue->eventsSize;
@@ -1374,10 +1398,10 @@ _In_ PRT_UINT32				maxInstances
 FORCEINLINE
 PRT_BOOLEAN
 PrtStateHasDefaultTransitionOrAction(
-_In_ PRT_MACHINEINST_PRIV			*context
+	_In_	PRT_MACHINEINST_PRIV* context
 )
 {
-	PRT_STATEDECL *stateDecl = PrtGetCurrentStateDecl(context);
+	PRT_STATEDECL* stateDecl = PrtGetCurrentStateDecl(context);
 	PRT_BOOLEAN hasDefaultTransition = (stateDecl->transSet->packedEvents[0] & 0x1) == 1;
 	PRT_BOOLEAN hasDefaultAction = (context->currentActionSetCompact[0] & 0x1) == 1;
 	return hasDefaultTransition || hasDefaultAction;
@@ -1386,7 +1410,7 @@ _In_ PRT_MACHINEINST_PRIV			*context
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsSpecialEvent(
-_In_ PRT_VALUE *event
+	_In_	PRT_VALUE* event
 )
 {
 	return (PrtIsNullValue(event) || PrtPrimGetEvent(event) == PRT_SPECIAL_EVENT_NULL);
@@ -1395,19 +1419,19 @@ _In_ PRT_VALUE *event
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsEventReceivable(
-_In_ PRT_MACHINEINST_PRIV *context,
-_In_ PRT_UINT32		eventIndex
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 eventIndex
 )
 {
-	PRT_UINT32 *caseSet = context->packedReceiveCases;
+	PRT_UINT32* caseSet = context->packedReceiveCases;
 	return (caseSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
 }
 
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsEventDeferred(
-_In_ PRT_UINT32		eventIndex,
-_In_ PRT_UINT32*	defSet
+	_In_	     PRT_UINT32 eventIndex,
+	    	     _In_	     PRT_UINT32* defSet
 )
 {
 	return (defSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
@@ -1416,8 +1440,8 @@ _In_ PRT_UINT32*	defSet
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsActionInstalled(
-_In_ PRT_UINT32		eventIndex,
-_In_ PRT_UINT32*		actionSet
+	_In_	     PRT_UINT32 eventIndex,
+	    	     _In_	     PRT_UINT32* actionSet
 )
 {
 	return (actionSet[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
@@ -1426,23 +1450,24 @@ _In_ PRT_UINT32*		actionSet
 FORCEINLINE
 PRT_BOOLEAN
 PrtIsTransitionPresent(
-_In_ PRT_MACHINEINST_PRIV	*context,
-_In_ PRT_UINT32				eventIndex
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 eventIndex
 )
 {
 	PRT_UINT32* transitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
-	return (transitionsPacked[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8)))) != 0;
+	return (transitionsPacked[eventIndex / (sizeof(PRT_UINT32) * 8)] & (1 << (eventIndex % (sizeof(PRT_UINT32) * 8))))
+		!= 0;
 }
 
 PRT_BOOLEAN
 PrtIsPushTransition(
-_In_ PRT_MACHINEINST_PRIV		*context,
-_In_ PRT_UINT32					event
+	_In_	     PRT_MACHINEINST_PRIV* context,
+	    	     _In_	     PRT_UINT32 event
 )
 {
 	PRT_UINT32 nTransitions;
 
-	PRT_TRANSDECL * transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
+	PRT_TRANSDECL* transTable = PrtGetTransitionTable(context, context->currentState, &nTransitions);
 	for (PRT_UINT16 i = 0; i < nTransitions; ++i)
 	{
 		if (transTable[i].transFun == NULL && transTable[i].triggerEvent->value.valueUnion.ev == event)
@@ -1453,13 +1478,13 @@ _In_ PRT_UINT32					event
 	return PRT_FALSE;
 }
 
-PRT_UINT32 *
+PRT_UINT32*
 PrtClonePackedSet(
-_In_ PRT_UINT32 *				packedSet,
-_In_ PRT_UINT32					size
+	_In_	     PRT_UINT32* packedSet,
+	    	     _In_	     PRT_UINT32 size
 )
 {
-	PRT_UINT32 *clone = (PRT_UINT32 *)PrtCalloc(size, sizeof(PRT_UINT32));
+	PRT_UINT32* clone = (PRT_UINT32 *)PrtCalloc(size, sizeof(PRT_UINT32));
 	for (PRT_UINT32 i = 0; i < size; i++)
 	{
 		clone[i] = packedSet[i];
@@ -1469,13 +1494,13 @@ _In_ PRT_UINT32					size
 
 void
 PrtUpdateCurrentActionsSet(
-_Inout_ PRT_MACHINEINST_PRIV			*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	PRT_UINT16 packSize = PrtGetPackSize(context);
-	PRT_UINT32 *currActionsPacked = PrtGetActionsPacked(context, context->currentState);
-	PRT_UINT32 *currTransitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
-	PRT_UINT32 *currDefSetPacked = PrtGetDeferredPacked(context, context->currentState);
+	PRT_UINT32* currActionsPacked = PrtGetActionsPacked(context, context->currentState);
+	PRT_UINT32* currTransitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
+	PRT_UINT32* currDefSetPacked = PrtGetDeferredPacked(context, context->currentState);
 	//
 	// A = (A -d) + a - e
 	//
@@ -1489,13 +1514,13 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 
 void
 PrtUpdateCurrentDeferredSet(
-_Inout_ PRT_MACHINEINST_PRIV			*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	PRT_UINT16 packSize = PrtGetPackSize(context);
-	PRT_UINT32 *currActionsPacked = PrtGetActionsPacked(context, context->currentState);
-	PRT_UINT32 *currTransitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
-	PRT_UINT32 *currDefSetPacked = PrtGetDeferredPacked(context, context->currentState);
+	PRT_UINT32* currActionsPacked = PrtGetActionsPacked(context, context->currentState);
+	PRT_UINT32* currTransitionsPacked = PrtGetTransitionsPacked(context, context->currentState);
+	PRT_UINT32* currDefSetPacked = PrtGetDeferredPacked(context, context->currentState);
 
 	//
 	// D = (D + d) - a - e
@@ -1510,16 +1535,18 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 
 void
 PrtResizeEventQueue(
-_Inout_ PRT_MACHINEINST_PRIV *context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	PRT_UINT32 maxEventQueueSize = program->machines[context->instanceOf]->maxQueueSize;
 	PRT_UINT32 currEventQueueSize = context->eventQueue.eventsSize;
-	PRT_UINT32 newQueueSize = (maxEventQueueSize != 0xffffffff && currEventQueueSize * 2 > maxEventQueueSize) ? maxEventQueueSize : currEventQueueSize * 2;
+	PRT_UINT32 newQueueSize = (maxEventQueueSize != 0xffffffff && currEventQueueSize * 2 > maxEventQueueSize)
+		                          ? maxEventQueueSize
+		                          : currEventQueueSize * 2;
 	PRT_EVENT* oldQueue = context->eventQueue.events;
 	PRT_UINT32 oldHead = context->eventQueue.headIndex;
 	PRT_UINT32 oldTail = context->eventQueue.tailIndex;
-	PRT_EVENT *newQueue = (PRT_EVENT*)PrtCalloc(newQueueSize, sizeof(PRT_EVENT));
+	PRT_EVENT* newQueue = (PRT_EVENT*)PrtCalloc(newQueueSize, sizeof(PRT_EVENT));
 	PRT_UINT32 newHead = 0;
 	PRT_UINT32 newTail = 0;
 
@@ -1559,7 +1586,7 @@ _Inout_ PRT_MACHINEINST_PRIV *context
 
 void
 PrtHaltMachine(
-_Inout_ PRT_MACHINEINST_PRIV			*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	PRT_MACHINESTATE state;
@@ -1570,7 +1597,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 
 void
 PrtCleanupMachine(
-_Inout_ PRT_MACHINEINST_PRIV			*context
+	_Inout_	PRT_MACHINEINST_PRIV* context
 )
 {
 	// Set the halted flag
@@ -1596,7 +1623,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	PrtLockMutex(context->stateMachineLock);
 	if (context->eventQueue.events != NULL)
 	{
-		PRT_EVENT *queue = context->eventQueue.events;
+		PRT_EVENT* queue = context->eventQueue.events;
 		PRT_UINT32 head = context->eventQueue.headIndex;
 		PRT_UINT32 count = 0;
 
@@ -1622,7 +1649,7 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 
 	for (PRT_INT32 i = 0; i < context->callStack.length; i++)
 	{
-		PRT_STATESTACK_INFO *info = &context->callStack.stateStack[i];
+		PRT_STATESTACK_INFO* info = &context->callStack.stateStack[i];
 		PrtFree(info->inheritedActionSetCompact);
 		PrtFree(info->inheritedDeferredSetCompact);
 	}
@@ -1631,12 +1658,13 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 	PrtFree(context->currentDeferredSetCompact);
 	PrtFree(context->inheritedActionSetCompact);
 	PrtFree(context->inheritedDeferredSetCompact);
-	
+
 	if (context->varValues != NULL)
 	{
-		PRT_MACHINEDECL *mdecl = program->machines[context->instanceOf];
+		PRT_MACHINEDECL* mdecl = program->machines[context->instanceOf];
 
-		for (PRT_UINT32 i = 0; i < mdecl->nVars; i++) {
+		for (PRT_UINT32 i = 0; i < mdecl->nVars; i++)
+		{
 			PrtFreeValue(context->varValues[i]);
 		}
 	}
@@ -1652,8 +1680,8 @@ _Inout_ PRT_MACHINEINST_PRIV			*context
 
 void
 PrtHandleError(
-_In_ PRT_STATUS ex,
-_In_ PRT_MACHINEINST_PRIV *context
+	_In_	     PRT_STATUS ex,
+	    	     _In_	     PRT_MACHINEINST_PRIV* context
 )
 {
 	((PRT_PROCESS_PRIV *)context->process)->errorHandler(ex, (PRT_MACHINEINST *)context);
@@ -1661,8 +1689,8 @@ _In_ PRT_MACHINEINST_PRIV *context
 
 void PRT_CALL_CONV
 PrtAssertDefaultFn(
-_In_ PRT_INT32 condition,
-_In_opt_z_ PRT_CSTRING message
+	_In_	     PRT_INT32 condition,
+	    	     _In_opt_z_	     PRT_CSTRING message
 )
 {
 	if (condition != 0)
@@ -1688,14 +1716,15 @@ PrtPrintfDefaultFn(_In_opt_z_ PRT_CSTRING message)
 
 PRT_API void PRT_CALL_CONV
 PrtUpdateAssertFn(
-PRT_ASSERT_FUN assertFn
-){
+	PRT_ASSERT_FUN assertFn
+)
+{
 	_PrtAssert = assertFn;
 }
 
 PRT_API void PRT_CALL_CONV
 PrtUpdatePrintFn(
-PRT_PRINT_FUN printFn
+	PRT_PRINT_FUN printFn
 )
 {
 	PrtPrintf = printFn;
@@ -1703,20 +1732,21 @@ PRT_PRINT_FUN printFn
 
 void
 PrtLog(
-_In_ PRT_STEP step,
-_In_ PRT_MACHINESTATE* senderState,
-_In_ PRT_MACHINEINST_PRIV *receiver,
-_In_ PRT_VALUE* eventId, 
-_In_ PRT_VALUE* payload
-) 
+	_In_	     PRT_STEP step,
+	    	     _In_	     PRT_MACHINESTATE* senderState,
+	    	     _In_	     PRT_MACHINEINST_PRIV* receiver,
+	    	     _In_	     PRT_VALUE* eventId,
+	    	     _In_	     PRT_VALUE* payload
+)
 {
-	((PRT_PROCESS_PRIV *)receiver->process)->logHandler(step, senderState, (PRT_MACHINEINST *)receiver,  eventId, payload);
+	((PRT_PROCESS_PRIV *)receiver->process)->logHandler(step, senderState, (PRT_MACHINEINST *)receiver, eventId,
+	                                                    payload);
 }
 
 void
 PrtCheckIsLocalMachineId(
-_In_ PRT_MACHINEINST *context,
-_In_ PRT_VALUE *id
+	_In_	     PRT_MACHINEINST* context,
+	    	     _In_	     PRT_VALUE* id
 )
 {
 	if (context->process->guid.data1 == id->valueUnion.mid->processId.data1 &&
@@ -1731,7 +1761,7 @@ Public Functions
 
 *********************************************************************************/
 
-void PrtTraverseEventset(PRT_EVENTSETDECL *evset, PRT_BOOLEAN doInstall)
+void PrtTraverseEventset(PRT_EVENTSETDECL* evset, PRT_BOOLEAN doInstall)
 {
 	if (doInstall)
 	{
@@ -1759,14 +1789,14 @@ void PrtTraverseEventset(PRT_EVENTSETDECL *evset, PRT_BOOLEAN doInstall)
 	}
 }
 
-void PrtTraverseState(PRT_STATEDECL *state, PRT_BOOLEAN doInstall)
+void PrtTraverseState(PRT_STATEDECL* state, PRT_BOOLEAN doInstall)
 {
 	PrtTraverseEventset(state->defersSet, doInstall);
 	PrtTraverseEventset(state->doSet, doInstall);
 	PrtTraverseEventset(state->transSet, doInstall);
 }
 
-void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
+void PrtTraverseMachine(PRT_MACHINEDECL* machine, PRT_BOOLEAN doInstall)
 {
 	for (PRT_UINT32 i = 0; i < machine->nStates; i++)
 	{
@@ -1774,7 +1804,7 @@ void PrtTraverseMachine(PRT_MACHINEDECL *machine, PRT_BOOLEAN doInstall)
 	}
 }
 
-void PrtInstallProgram(_In_ PRT_PROGRAMDECL *p)
+void PrtInstallProgram(_In_ PRT_PROGRAMDECL* p)
 {
 	PrtAssert(p != NULL && program == NULL, "p and program must be non-NULL");
 
@@ -1815,17 +1845,17 @@ void PrtUninstallProgram()
 	program = NULL;
 }
 
-PRT_PROCESS *
+PRT_PROCESS*
 PrtStartProcess(
-	_In_ PRT_GUID guid,
-	_In_ PRT_PROGRAMDECL *p,
-	_In_ PRT_ERROR_FUN errorFun,
-	_In_ PRT_LOG_FUN logFun
+	_In_	     PRT_GUID guid,
+	    	     _In_	     PRT_PROGRAMDECL* p,
+	    	     _In_	     PRT_ERROR_FUN errorFun,
+	    	     _In_	     PRT_LOG_FUN logFun
 )
 {
 	PrtInstallProgram(p);
 
-	PRT_PROCESS_PRIV *process = (PRT_PROCESS_PRIV *)PrtMalloc(sizeof(PRT_PROCESS_PRIV));
+	PRT_PROCESS_PRIV* process = (PRT_PROCESS_PRIV *)PrtMalloc(sizeof(PRT_PROCESS_PRIV));
 	process->guid = guid;
 	process->errorHandler = errorFun;
 	process->logHandler = logFun;
@@ -1842,8 +1872,10 @@ PrtStartProcess(
 PRT_API PRT_BOOLEAN PRT_CALL_CONV PrtLookupMachineByName(_In_ PRT_STRING name, _Out_ PRT_UINT32* id)
 {
 	*id = 0;
-	for (PRT_UINT32 i = 0; i < program->nMachines; i++) {
-		if (strcmp(name, program->machines[i]->name) == 0) {
+	for (PRT_UINT32 i = 0; i < program->nMachines; i++)
+	{
+		if (strcmp(name, program->machines[i]->name) == 0)
+		{
 			*id = i;
 			return PRT_TRUE;
 		}
@@ -1857,7 +1889,8 @@ PrtWaitForWork(PRT_PROCESS* process)
 	PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
 	PrtLockMutex(privateProcess->processLock);
 
-	PrtAssert(privateProcess->schedulingPolicy == PRT_SCHEDULINGPOLICY_COOPERATIVE, "PrtWaitForWork can only be called when PrtSetSchedulingPolicy has set PRT_SCHEDULINGPOLICY_COOPERATIVE mode");
+	PrtAssert(privateProcess->schedulingPolicy == PRT_SCHEDULINGPOLICY_COOPERATIVE,
+		"PrtWaitForWork can only be called when PrtSetSchedulingPolicy has set PRT_SCHEDULINGPOLICY_COOPERATIVE mode");
 	PRT_COOPERATIVE_SCHEDULER* info = (PRT_COOPERATIVE_SCHEDULER*)privateProcess->schedulerInfo;
 
 	info->threadsWaiting++;
@@ -1890,7 +1923,7 @@ static void PrtDestroyCooperativeScheduler(PRT_COOPERATIVE_SCHEDULER* info)
 }
 
 PRT_API void
-PrtSetSchedulingPolicy(PRT_PROCESS *process, PRT_SCHEDULINGPOLICY policy)
+PrtSetSchedulingPolicy(PRT_PROCESS* process, PRT_SCHEDULINGPOLICY policy)
 {
 	PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV*)process;
 	if (privateProcess->schedulingPolicy != policy)
@@ -1915,18 +1948,21 @@ PrtSetSchedulingPolicy(PRT_PROCESS *process, PRT_SCHEDULINGPOLICY policy)
 		}
 		else
 		{
-			PrtAssert(PRT_FALSE, "PrtSetSchedulingPolicy must set either PRT_SCHEDULINGPOLICY_TASKNEUTRAL or PRT_SCHEDULINGPOLICY_COOPERATIVE");
+			PrtAssert(PRT_FALSE,
+				"PrtSetSchedulingPolicy must set either PRT_SCHEDULINGPOLICY_TASKNEUTRAL or PRT_SCHEDULINGPOLICY_COOPERATIVE"
+			);
 		}
 	}
 }
 
 PRT_API void
-PrtRunProcess(PRT_PROCESS *process)
+PrtRunProcess(PRT_PROCESS* process)
 {
 	while (1)
 	{
 		PRT_STEP_RESULT result = PrtStepProcess(process);
-		switch (result) {
+		switch (result)
+		{
 		case PRT_STEP_TERMINATING:
 			return;
 		case PRT_STEP_IDLE:
@@ -1944,10 +1980,10 @@ PrtRunProcess(PRT_PROCESS *process)
 
 void
 PrtStopProcess(
-	_Inout_ PRT_PROCESS* process
+	_Inout_	PRT_PROCESS* process
 )
 {
-	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+	PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV *)process;
 
 	PrtLockMutex(privateProcess->processLock);
 	privateProcess->terminating = PRT_TRUE;
@@ -1978,8 +2014,8 @@ PrtStopProcess(
 	// ok, now we can safely start deleting things...
 	for (PRT_UINT32 i = 0; i < privateProcess->numMachines; i++)
 	{
-		PRT_MACHINEINST *context = privateProcess->machines[i];
-		PRT_MACHINEINST_PRIV * privContext = (PRT_MACHINEINST_PRIV *)context;
+		PRT_MACHINEINST* context = privateProcess->machines[i];
+		PRT_MACHINEINST_PRIV* privContext = (PRT_MACHINEINST_PRIV *)context;
 
 		PrtCleanupMachine(privContext);
 		if (privContext->stateMachineLock != NULL)
@@ -1998,9 +2034,9 @@ PrtStopProcess(
 
 PRT_BOOLEAN PrtInterfaceInCreatesSet(PRT_UINT32 interfaceCreated, PRT_INTERFACESETDECL* creates)
 {
-	for(PRT_UINT32 i = 0; i < creates->nInterfaces; i++)
+	for (PRT_UINT32 i = 0; i < creates->nInterfaces; i++)
 	{
-		if(interfaceCreated == creates->interfacesIndex[i])
+		if (interfaceCreated == creates->interfacesIndex[i])
 		{
 			return PRT_TRUE;
 		}
@@ -2009,21 +2045,22 @@ PRT_BOOLEAN PrtInterfaceInCreatesSet(PRT_UINT32 interfaceCreated, PRT_INTERFACES
 	return PRT_FALSE;
 }
 
-PRT_MACHINEINST *
+PRT_MACHINEINST*
 PrtMkInterface(
-	_In_ PRT_MACHINEINST*		creator,
-	_In_ PRT_UINT32				IName,
-	_In_ PRT_UINT32				numArgs,
-	...
+	_In_	     PRT_MACHINEINST* creator,
+	    	     _In_	     PRT_UINT32 IName,
+	    	     _In_	     PRT_UINT32 numArgs,
+	    	     ...
 )
 {
 	PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV*)creator;
-	PRT_VALUE *payload;
+	PRT_VALUE* payload;
 	const PRT_UINT32 interfaceCreated = program->linkMap[context->interfaceBound][IName];
 	const PRT_UINT32 instance_of = program->interfaceDefMap[interfaceCreated];
 
 	// Check the CreateOk condition
-	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[creator->instanceOf]->creates), "Created interface is not in the creates set of the machine");
+	PrtAssert(PrtInterfaceInCreatesSet(interfaceCreated, program->machines[creator->instanceOf]->creates),
+		"Created interface is not in the creates set of the machine");
 
 	if (numArgs == 0)
 	{
@@ -2031,12 +2068,12 @@ PrtMkInterface(
 	}
 	else
 	{
-		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		PRT_VALUE** args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
 			args[i] = *argPtr;
 			*argPtr = NULL;
 		}
@@ -2045,28 +2082,29 @@ PrtMkInterface(
 
 		if (numArgs > 1)
 		{
-			PRT_MACHINEDECL *machineDecl = program->machines[instance_of];
-			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
-			PRT_TYPE *payloadType = entryFun->payloadType;
+			PRT_MACHINEDECL* machineDecl = program->machines[instance_of];
+			PRT_FUNDECL* entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
+			PRT_TYPE* payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
 	}
-	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process, interfaceCreated, instance_of, payload);
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)context->process,
+	                                                                interfaceCreated, instance_of, payload);
 	// must now free this payload because PrtMkMachinePrivate clones it.
 	PrtFreeValue(payload);
 	return result;
 }
 
-PRT_MACHINEINST *
+PRT_MACHINEINST*
 PrtMkMachine(
-	_Inout_  PRT_PROCESS		*process,
-	_In_ PRT_UINT32				interfaceName,
-	_In_ PRT_UINT32				numArgs,
-	...
+	_Inout_	         PRT_PROCESS* process,
+	       	         _In_	         PRT_UINT32 interfaceName,
+	       	         _In_	         PRT_UINT32 numArgs,
+	       	         ...
 )
 {
-	PRT_VALUE *payload;
+	PRT_VALUE* payload;
 	PRT_UINT32 instanceOf = program->interfaceDefMap[interfaceName];
 
 	if (numArgs == 0)
@@ -2075,12 +2113,12 @@ PrtMkMachine(
 	}
 	else
 	{
-		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		PRT_VALUE** args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
-			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
 			args[i] = *argPtr;
 			*argPtr = NULL;
 		}
@@ -2089,37 +2127,38 @@ PrtMkMachine(
 
 		if (numArgs > 1)
 		{
-			PRT_MACHINEDECL *machineDecl = program->machines[instanceOf];
-			PRT_FUNDECL *entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
-			PRT_TYPE *payloadType = entryFun->payloadType;
+			PRT_MACHINEDECL* machineDecl = program->machines[instanceOf];
+			PRT_FUNDECL* entryFun = machineDecl->states[machineDecl->initStateIndex].entryFun;
+			PRT_TYPE* payloadType = entryFun->payloadType;
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
 	}
-	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, interfaceName, instanceOf, payload);
+	PRT_MACHINEINST* result = (PRT_MACHINEINST*)PrtMkMachinePrivate((PRT_PROCESS_PRIV *)process, interfaceName,
+	                                                                instanceOf, payload);
 	// free the payload since we cloned it here, and PrtMkMachinePrivate also clones it.
 	PrtFreeValue(payload);
 	return result;
 }
 
-PRT_MACHINEINST *
+PRT_MACHINEINST*
 PrtGetMachine(
-	_In_ PRT_PROCESS *process,
-	_In_ PRT_VALUE *id
+	_In_	     PRT_PROCESS* process,
+	    	     _In_	     PRT_VALUE* id
 )
 {
 	PrtAssert(id->discriminator == PRT_VALUE_KIND_MID, "id is not legal PRT_MACHINEID");
-	PRT_MACHINEID *machineId = id->valueUnion.mid;
+	PRT_MACHINEID* machineId = id->valueUnion.mid;
 	//Comented out by Ankush Desai.
 	//PrtAssert(PrtAreGuidsEqual(process->guid, machineId->processId), "id does not belong to process");
-	PRT_PROCESS_PRIV *privateProcess = (PRT_PROCESS_PRIV *)process;
+	PRT_PROCESS_PRIV* privateProcess = (PRT_PROCESS_PRIV *)process;
 	PrtAssert((0 < machineId->machineId) && (machineId->machineId <= privateProcess->numMachines), "id out of bounds");
 	return privateProcess->machines[machineId->machineId - 1];
 }
 
-void PRT_CALL_CONV PrtGetMachineState(_In_ PRT_MACHINEINST *context, _Inout_ PRT_MACHINESTATE* state)
+void PRT_CALL_CONV PrtGetMachineState(_In_ PRT_MACHINEINST* context, _Inout_ PRT_MACHINESTATE* state)
 {
-	PRT_MACHINEINST_PRIV *priv = (PRT_MACHINEINST_PRIV*)context;
+	PRT_MACHINEINST_PRIV* priv = (PRT_MACHINEINST_PRIV*)context;
 	state->machineId = context->id->valueUnion.mid->machineId;
 	state->machineName = program->machines[context->instanceOf]->name;
 	state->stateId = priv->currentState;
@@ -2128,36 +2167,35 @@ void PRT_CALL_CONV PrtGetMachineState(_In_ PRT_MACHINEINST *context, _Inout_ PRT
 
 void
 PrtSend(
-	_Inout_ PRT_MACHINESTATE 		*senderState,
-	_Inout_ PRT_MACHINEINST			*receiver,
-	_In_ PRT_VALUE					*event,
-	_In_ PRT_UINT32					numArgs,
-	...
+	_Inout_	        PRT_MACHINESTATE* senderState,
+	       	        _Inout_	        PRT_MACHINEINST* receiver,
+	       	        _In_	        PRT_VALUE* event,
+	       	        _In_	        PRT_UINT32 numArgs,
+	       	        ...
 )
 {
-	PRT_VALUE *payload;
+	PRT_VALUE* payload;
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
 	}
 	else
 	{
-		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		PRT_VALUE** args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
 			//TODO: Confirm if the code below is correct.
-			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
 			args[i] = *argPtr;
 			*argPtr = NULL;
-			
 		}
 		va_end(argp);
 		payload = args[0];
 		if (numArgs > 1)
 		{
-			PRT_TYPE *payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
+			PRT_TYPE* payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
@@ -2168,30 +2206,30 @@ PrtSend(
 
 void
 PRT_CALL_CONV PrtSendInternal(
-	_Inout_ PRT_MACHINEINST *sender,
-	_Inout_ PRT_MACHINEINST *receiver,
-	_In_ PRT_VALUE *event,
-	_In_ PRT_UINT32	numArgs,
-	...
+	_Inout_	        PRT_MACHINEINST* sender,
+	       	        _Inout_	        PRT_MACHINEINST* receiver,
+	       	        _In_	        PRT_VALUE* event,
+	       	        _In_	        PRT_UINT32 numArgs,
+	       	        ...
 )
 {
 	PRT_MACHINESTATE senderState;
 	PrtGetMachineState(sender, &senderState);
 
-	PRT_VALUE *payload;
+	PRT_VALUE* payload;
 	if (numArgs == 0)
 	{
 		payload = PrtMkNullValue();
 	}
 	else
 	{
-		PRT_VALUE **args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
+		PRT_VALUE** args = PrtCalloc(numArgs, sizeof(PRT_VALUE*));
 		va_list argp;
 		va_start(argp, numArgs);
 		for (PRT_UINT32 i = 0; i < numArgs; i++)
 		{
 			//TODO: Confirm if the code below is correct.
-			PRT_VALUE **argPtr = va_arg(argp, PRT_VALUE **);
+			PRT_VALUE** argPtr = va_arg(argp, PRT_VALUE **);
 			args[i] = *argPtr;
 			*argPtr = NULL;
 		}
@@ -2199,7 +2237,7 @@ PRT_CALL_CONV PrtSendInternal(
 		payload = args[0];
 		if (numArgs > 1)
 		{
-			PRT_TYPE *payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
+			PRT_TYPE* payloadType = PrtGetPayloadType((PRT_MACHINEINST_PRIV *)receiver, event);
 			payload = MakeTupleFromArray(payloadType, args);
 		}
 		PrtFree(args);
@@ -2208,7 +2246,8 @@ PRT_CALL_CONV PrtSendInternal(
 	PrtSendPrivate(&senderState, (PRT_MACHINEINST_PRIV *)receiver, event, payload);
 }
 
-static void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 numCharsWritten, PRT_UINT32 resizeNum)
+static void ResizeBuffer(_Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize, _Inout_ PRT_UINT32 numCharsWritten,
+                                 PRT_UINT32 resizeNum)
 {
 	PRT_UINT32 padding = 100;
 	if (*buffer == NULL)
@@ -2219,7 +2258,7 @@ static void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, 
 	else if (*bufferSize < numCharsWritten + resizeNum + 1)
 	{
 		PRT_UINT32 newBufferSize = numCharsWritten + resizeNum + 1 + padding;
-		char *newBuffer = (char *)PrtCalloc(newBufferSize, sizeof(char));
+		char* newBuffer = (char *)PrtCalloc(newBufferSize, sizeof(char));
 		strcpy_s(newBuffer, newBufferSize, *buffer);
 		PrtFree(*buffer);
 		*buffer = newBuffer;
@@ -2227,27 +2266,32 @@ static void ResizeBuffer(_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, 
 	}
 }
 
-static void PrtUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintUint16(_In_ PRT_UINT16 i, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                    _Inout_                                    PRT_UINT32* numCharsWritten)
 {
 	PRT_UINT32 written = *numCharsWritten;
 	ResizeBuffer(buffer, bufferSize, written, 16);
 	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%u", i);
 }
-static void PrtUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+
+static void PrtUserPrintUint32(_In_ PRT_UINT32 i, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                    _Inout_                                    PRT_UINT32* numCharsWritten)
 {
 	PRT_UINT32 written = *numCharsWritten;
 	ResizeBuffer(buffer, bufferSize, written, 32);
 	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%u", i);
 }
 
-static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintUint64(_In_ PRT_UINT64 i, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                    _Inout_                                    PRT_UINT32* numCharsWritten)
 {
 	PRT_UINT32 written = *numCharsWritten;
 	ResizeBuffer(buffer, bufferSize, written, 64);
-    *numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%llu", (unsigned long long)i);
+	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%llu", (unsigned long long)i);
 }
 
-static void PrtUserPrintFloat(_In_ PRT_FLOAT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintFloat(_In_ PRT_FLOAT i, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                   _Inout_                                   PRT_UINT32* numCharsWritten)
 {
 	const int flt_size = sizeof(PRT_FLOAT);
 	const PRT_UINT32 written = *numCharsWritten;
@@ -2256,26 +2300,26 @@ static void PrtUserPrintFloat(_In_ PRT_FLOAT i, _Inout_ char **buffer, _Inout_ P
 	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, fmt, i);
 }
 
-static void PrtUserPrintInt(_In_ PRT_INT i, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintInt(_In_ PRT_INT i, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                 _Inout_                                 PRT_UINT32* numCharsWritten)
 {
 	if (sizeof(PRT_INT) == 4)
 	{
 		PrtUserPrintUint32((PRT_UINT32)i, buffer, bufferSize, numCharsWritten);
 	}
-	else
-	{
-		PrtUserPrintUint64(i, buffer, bufferSize, numCharsWritten);
-	}
+	PrtUserPrintUint64(i, buffer, bufferSize, numCharsWritten);
 }
 
-static void PrtUserPrintString(_In_ PRT_STRING s, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintString(_In_ PRT_STRING s, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                    _Inout_                                    PRT_UINT32* numCharsWritten)
 {
 	PRT_UINT32 written = *numCharsWritten;
 	ResizeBuffer(buffer, bufferSize, written, (PRT_UINT32)strlen(s) + 1);
 	*numCharsWritten += sprintf_s(*buffer + written, *bufferSize - written, "%s", s);
 }
 
-static void PrtUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                       _Inout_                                       PRT_UINT32* numCharsWritten)
 {
 	PrtUserPrintString("< (", buffer, bufferSize, numCharsWritten);
 	PrtUserPrintUint32(id.processId.data1, buffer, bufferSize, numCharsWritten);
@@ -2290,7 +2334,8 @@ static void PrtUserPrintMachineId(_In_ PRT_MACHINEID id, _Inout_ char **buffer, 
 	PrtUserPrintString(">", buffer, bufferSize, numCharsWritten);
 }
 
-static void PrtUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintType(_In_ PRT_TYPE* type, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                  _Inout_                                  PRT_UINT32* numCharsWritten)
 {
 	PRT_TYPE_KIND kind = type->typeKind;
 	switch (kind)
@@ -2320,58 +2365,25 @@ static void PrtUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_
 		PrtUserPrintString("foreign", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_KIND_MAP:
-	{
-		PRT_MAPTYPE *mtype = type->typeUnion.map;
-		PrtUserPrintString("map[", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintType(mtype->domType, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintType(mtype->codType, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
-		break;
-	}
+		{
+			PRT_MAPTYPE* mtype = type->typeUnion.map;
+			PrtUserPrintString("map[", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintType(mtype->domType, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintType(mtype->codType, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
+			break;
+		}
 	case PRT_KIND_NMDTUP:
-	{
-		PRT_NMDTUPTYPE *ntype = type->typeUnion.nmTuple;
-		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
-		for (PRT_UINT32 i = 0; i < ntype->arity; ++i)
 		{
-			PrtUserPrintString(ntype->fieldNames[i], buffer, bufferSize, numCharsWritten);
-			PrtUserPrintString(": ", buffer, bufferSize, numCharsWritten);
-			PrtUserPrintType(ntype->fieldTypes[i], buffer, bufferSize, numCharsWritten);
-			if (i < ntype->arity - 1)
+			PRT_NMDTUPTYPE* ntype = type->typeUnion.nmTuple;
+			PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+			for (PRT_UINT32 i = 0; i < ntype->arity; ++i)
 			{
-				PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
-			}
-			else
-			{
-				PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
-			}
-		}
-		break;
-	}
-	case PRT_KIND_SEQ:
-	{
-		PRT_SEQTYPE *stype = type->typeUnion.seq;
-		PrtUserPrintString("seq[", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintType(stype->innerType, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
-		break;
-	}
-	case PRT_KIND_TUPLE:
-	{
-		PRT_TUPTYPE *ttype = type->typeUnion.tuple;
-		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
-		if (ttype->arity == 1)
-		{
-			PrtUserPrintType(ttype->fieldTypes[0], buffer, bufferSize, numCharsWritten);
-			PrtUserPrintString(",)", buffer, bufferSize, numCharsWritten);
-		}
-		else
-		{
-			for (PRT_UINT32 i = 0; i < ttype->arity; ++i)
-			{
-				PrtUserPrintType(ttype->fieldTypes[i], buffer, bufferSize, numCharsWritten);
-				if (i < ttype->arity - 1)
+				PrtUserPrintString(ntype->fieldNames[i], buffer, bufferSize, numCharsWritten);
+				PrtUserPrintString(": ", buffer, bufferSize, numCharsWritten);
+				PrtUserPrintType(ntype->fieldTypes[i], buffer, bufferSize, numCharsWritten);
+				if (i < ntype->arity - 1)
 				{
 					PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
 				}
@@ -2380,16 +2392,50 @@ static void PrtUserPrintType(_In_ PRT_TYPE *type, _Inout_ char **buffer, _Inout_
 					PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
 				}
 			}
+			break;
 		}
-		break;
-	}
+	case PRT_KIND_SEQ:
+		{
+			PRT_SEQTYPE* stype = type->typeUnion.seq;
+			PrtUserPrintString("seq[", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintType(stype->innerType, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
+			break;
+		}
+	case PRT_KIND_TUPLE:
+		{
+			PRT_TUPTYPE* ttype = type->typeUnion.tuple;
+			PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+			if (ttype->arity == 1)
+			{
+				PrtUserPrintType(ttype->fieldTypes[0], buffer, bufferSize, numCharsWritten);
+				PrtUserPrintString(",)", buffer, bufferSize, numCharsWritten);
+			}
+			else
+			{
+				for (PRT_UINT32 i = 0; i < ttype->arity; ++i)
+				{
+					PrtUserPrintType(ttype->fieldTypes[i], buffer, bufferSize, numCharsWritten);
+					if (i < ttype->arity - 1)
+					{
+						PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+					}
+					else
+					{
+						PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
+					}
+				}
+			}
+			break;
+		}
 	default:
 		PrtAssert(PRT_FALSE, "PrtUserPrintType: Invalid type");
 		break;
 	}
 }
 
-static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintValue(_In_ PRT_VALUE* value, _Inout_ char** buffer, _Inout_ PRT_UINT32* bufferSize,
+                                   _Inout_                                   PRT_UINT32* numCharsWritten)
 {
 	PRT_STRING frgnStr;
 	PRT_VALUE_KIND kind = value->discriminator;
@@ -2421,87 +2467,90 @@ static void PrtUserPrintValue(_In_ PRT_VALUE *value, _Inout_ char **buffer, _Ino
 		PrtFree(frgnStr);
 		break;
 	case PRT_VALUE_KIND_MAP:
-	{
-		PRT_MAPVALUE *mval = value->valueUnion.map;
-		PRT_MAPNODE *next = mval->first;
-		PrtUserPrintString("{", buffer, bufferSize, numCharsWritten);
-		while (next != NULL)
 		{
-			PrtUserPrintValue(next->key, buffer, bufferSize, numCharsWritten);
-			PrtUserPrintString(" --> ", buffer, bufferSize, numCharsWritten);
-			PrtUserPrintValue(next->value, buffer, bufferSize, numCharsWritten);
-			if (next->bucketNext != NULL)
+			PRT_MAPVALUE* mval = value->valueUnion.map;
+			PRT_MAPNODE* next = mval->first;
+			PrtUserPrintString("{", buffer, bufferSize, numCharsWritten);
+			while (next != NULL)
 			{
-				PrtUserPrintString("*", buffer, bufferSize, numCharsWritten);
-			}
+				PrtUserPrintValue(next->key, buffer, bufferSize, numCharsWritten);
+				PrtUserPrintString(" --> ", buffer, bufferSize, numCharsWritten);
+				PrtUserPrintValue(next->value, buffer, bufferSize, numCharsWritten);
+				if (next->bucketNext != NULL)
+				{
+					PrtUserPrintString("*", buffer, bufferSize, numCharsWritten);
+				}
 
-			if (next->insertNext != NULL)
-			{
-				PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
-			}
-
-			next = next->insertNext;
-		}
-
-		PrtUserPrintString("} (", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintUint32(mval->size, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString(" / ", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintUint32(PrtMapCapacity(value), buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
-		break;
-	}
-	case PRT_VALUE_KIND_SEQ:
-	{
-		PRT_SEQVALUE *sVal = value->valueUnion.seq;
-		PrtUserPrintString("[", buffer, bufferSize, numCharsWritten);
-		for (PRT_UINT32 i = 0; i < sVal->size; ++i)
-		{
-			PrtUserPrintValue(sVal->values[i], buffer, bufferSize, numCharsWritten);
-			if (i < sVal->size - 1)
-			{
-				PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
-			}
-		}
-
-		PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
-		break;
-	}
-	case PRT_VALUE_KIND_TUPLE:
-	{
-		PRT_TUPVALUE *tval = value->valueUnion.tuple;
-		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
-		if (tval->size == 1)
-		{
-			PrtUserPrintValue(tval->values[0], buffer, bufferSize, numCharsWritten);
-			PrtUserPrintString(",)", buffer, bufferSize, numCharsWritten);
-		}
-		else
-		{
-			for (PRT_UINT32 i = 0; i < tval->size; ++i)
-			{
-				PrtUserPrintValue(tval->values[i], buffer, bufferSize, numCharsWritten);
-				if (i < tval->size - 1)
+				if (next->insertNext != NULL)
 				{
 					PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
 				}
-				else
+
+				next = next->insertNext;
+			}
+
+			PrtUserPrintString("} (", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintUint32(mval->size, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(" / ", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintUint32(PrtMapCapacity(value), buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
+			break;
+		}
+	case PRT_VALUE_KIND_SEQ:
+		{
+			PRT_SEQVALUE* sVal = value->valueUnion.seq;
+			PrtUserPrintString("[", buffer, bufferSize, numCharsWritten);
+			for (PRT_UINT32 i = 0; i < sVal->size; ++i)
+			{
+				PrtUserPrintValue(sVal->values[i], buffer, bufferSize, numCharsWritten);
+				if (i < sVal->size - 1)
 				{
-					PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
+					PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
 				}
 			}
+
+			PrtUserPrintString("]", buffer, bufferSize, numCharsWritten);
+			break;
 		}
-		break;
-	}
+	case PRT_VALUE_KIND_TUPLE:
+		{
+			PRT_TUPVALUE* tval = value->valueUnion.tuple;
+			PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+			if (tval->size == 1)
+			{
+				PrtUserPrintValue(tval->values[0], buffer, bufferSize, numCharsWritten);
+				PrtUserPrintString(",)", buffer, bufferSize, numCharsWritten);
+			}
+			else
+			{
+				for (PRT_UINT32 i = 0; i < tval->size; ++i)
+				{
+					PrtUserPrintValue(tval->values[i], buffer, bufferSize, numCharsWritten);
+					if (i < tval->size - 1)
+					{
+						PrtUserPrintString(", ", buffer, bufferSize, numCharsWritten);
+					}
+					else
+					{
+						PrtUserPrintString(")", buffer, bufferSize, numCharsWritten);
+					}
+				}
+			}
+			break;
+		}
 	default:
 		PrtAssert(PRT_FALSE, "PrtUserPrintValue: Invalid value");
 		break;
 	}
 }
 
-static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload,
-	_Inout_ char **buffer, _Inout_ PRT_UINT32 *bufferSize, _Inout_ PRT_UINT32 *numCharsWritten)
+static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE* senderState, _In_ PRT_MACHINEINST* receiver,
+                                  _In_                                  PRT_VALUE* event, _In_ PRT_VALUE* payload,
+                                  _Inout_                                  char** buffer,
+                                  _Inout_                                  PRT_UINT32* bufferSize,
+                                  _Inout_                                  PRT_UINT32* numCharsWritten)
 {
-	PRT_MACHINEINST_PRIV * c = (PRT_MACHINEINST_PRIV *)receiver;
+	PRT_MACHINEINST_PRIV* c = (PRT_MACHINEINST_PRIV *)receiver;
 	PRT_STRING machineName = program->machines[c->instanceOf]->name;
 	PRT_UINT32 machineId = c->id->valueUnion.mid->machineId;
 	PRT_STRING stateName = PrtGetCurrentStateDecl(c)->name;
@@ -2559,20 +2608,20 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 		PrtUserPrintString(") is created\n", buffer, bufferSize, numCharsWritten);
 		break;
 	case PRT_STEP_GOTO:
-	{
-		PRT_MACHINEINST_PRIV *context = (PRT_MACHINEINST_PRIV *)receiver;
-		PRT_STRING destStateName = program->machines[context->instanceOf]->states[context->destStateIndex].name;
-		PrtUserPrintString("<GotoLog> Machine ", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString(") goes to state ", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString(destStateName, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
-		PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
-		PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
-		break;
-	}
+		{
+			PRT_MACHINEINST_PRIV* context = (PRT_MACHINEINST_PRIV *)receiver;
+			PRT_STRING destStateName = program->machines[context->instanceOf]->states[context->destStateIndex].name;
+			PrtUserPrintString("<GotoLog> Machine ", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(machineName, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString("(", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintUint32(machineId, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(") goes to state ", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(destStateName, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString(" with payload ", buffer, bufferSize, numCharsWritten);
+			PrtUserPrintValue(payload, buffer, bufferSize, numCharsWritten);
+			PrtUserPrintString("\n", buffer, bufferSize, numCharsWritten);
+			break;
+		}
 	case PRT_STEP_RAISE:
 		eventName = program->events[PrtPrimGetEvent(event)]->name;
 		PrtUserPrintString("<RaiseLog> Machine ", buffer, bufferSize, numCharsWritten);
@@ -2649,9 +2698,9 @@ static void PrtUserPrintStep(_In_ PRT_STEP step, PRT_MACHINESTATE *senderState, 
 	}
 }
 
-void PRT_CALL_CONV PrtPrintValue(_In_ PRT_VALUE *value)
+void PRT_CALL_CONV PrtPrintValue(_In_ PRT_VALUE* value)
 {
-	char *buffer = NULL;
+	char* buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
@@ -2661,9 +2710,9 @@ void PRT_CALL_CONV PrtPrintValue(_In_ PRT_VALUE *value)
 	PrtFree(buffer);
 }
 
-PRT_STRING PRT_CALL_CONV PrtToStringValue(_In_ PRT_VALUE *value)
+PRT_STRING PRT_CALL_CONV PrtToStringValue(_In_ PRT_VALUE* value)
 {
-	char *buffer = NULL;
+	char* buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
@@ -2684,9 +2733,9 @@ PRT_STRING PRT_CALL_CONV PrtCopyString(_In_ const PRT_STRING value)
 	return buffer;
 }
 
-void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE *type)
+void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE* type)
 {
-	char *buffer = NULL;
+	char* buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
@@ -2696,9 +2745,9 @@ void PRT_CALL_CONV PrtPrintType(_In_ PRT_TYPE *type)
 	PrtFree(buffer);
 }
 
-PRT_STRING PRT_CALL_CONV PrtToStringType(_In_ PRT_TYPE *type)
+PRT_STRING PRT_CALL_CONV PrtToStringType(_In_ PRT_TYPE* type)
 {
-	char *buffer = NULL;
+	char* buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
@@ -2707,9 +2756,10 @@ PRT_STRING PRT_CALL_CONV PrtToStringType(_In_ PRT_TYPE *type)
 	return buffer;
 }
 
-void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
+void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE* senderState, _In_ PRT_MACHINEINST* receiver,
+                                     _In_                                     PRT_VALUE* event, _In_ PRT_VALUE* payload)
 {
-	char *buffer = NULL;
+	char* buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
@@ -2719,9 +2769,11 @@ void PRT_CALL_CONV PrtPrintStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE *sende
 	PrtFree(buffer);
 }
 
-PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE *senderState, _In_ PRT_MACHINEINST *receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
+PRT_STRING PRT_CALL_CONV PrtToStringStep(_In_ PRT_STEP step, _In_ PRT_MACHINESTATE* senderState,
+                                              _In_                                              PRT_MACHINEINST*
+                                              receiver, _In_ PRT_VALUE* event, _In_ PRT_VALUE* payload)
 {
-	char *buffer = NULL;
+	char* buffer = NULL;
 	PRT_UINT32 bufferSize = 0;
 	PRT_UINT32 nChars = 0;
 
@@ -2736,7 +2788,7 @@ void PRT_CALL_CONV PrtFormatPrintf(_In_ PRT_CSTRING msg, ...)
 	va_list argp;
 	va_start(argp, msg);
 	PRT_UINT32 numArgs = va_arg(argp, PRT_UINT32);
-	PRT_VALUE **args = (PRT_VALUE **)PrtCalloc(numArgs, sizeof(PRT_VALUE *));
+	PRT_VALUE** args = (PRT_VALUE **)PrtCalloc(numArgs, sizeof(PRT_VALUE *));
 	for (PRT_UINT32 i = 0; i < numArgs; i++)
 	{
 		args[i] = va_arg(argp, PRT_VALUE *);

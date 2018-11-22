@@ -6,7 +6,7 @@ namespace Microsoft.Pc.TypeChecker.AST.ModuleExprs
     public class UnionOrComposeModuleExpr : IPModuleExpr
     {
         public UnionOrComposeModuleExpr(ParserRuleContext sourceNode, IReadOnlyList<IPModuleExpr> modules,
-                                        bool isComposition)
+            bool isComposition)
         {
             SourceLocation = sourceNode;
             ComponentModules = modules;

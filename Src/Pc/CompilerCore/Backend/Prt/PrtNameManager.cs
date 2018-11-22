@@ -11,126 +11,6 @@ namespace Microsoft.Pc.Backend.Prt
 {
     public class PrtNameManager : NameManagerBase
     {
-        private readonly ConditionalWeakTable<Function, string> funcNames = new ConditionalWeakTable<Function, string>();
-        private readonly ConditionalWeakTable<Function, string> retLabels = new ConditionalWeakTable<Function, string>();
-        private readonly ConditionalWeakTable<ForeignType, string> foreignTypeDeclNames = new ConditionalWeakTable<ForeignType, string>();
-        private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
-
-        public PrtNameManager(string namePrefix)
-            : base(namePrefix)
-        {
-        }
-
-        public IEnumerable<PLanguageType> UsedTypes => typeNames.Keys;
-
-        public string GetReturnLabel(Function function, string hint = "p_return")
-        {
-            if (retLabels.TryGetValue(function, out string name))
-            {
-                return name;
-            }
-
-            name = UniquifyName(hint);
-            retLabels.Add(function, name);
-            return name;
-        }
-
-        public string GetNameForFunctionImpl(Function function)
-        {
-            if (funcNames.TryGetValue(function, out string name))
-            {
-                return name;
-            }
-
-            string namePrefix = NamePrefix;
-            string methodName = function.IsAnon ? "Anon" : function.Name;
-            string nameSuffix = "_IMPL";
-            name = UniquifyName(namePrefix + methodName + nameSuffix);
-
-            funcNames.Add(function, name);
-            return name;
-        }
-
-        public string GetNameForType(PLanguageType type)
-        {
-            type = type.Canonicalize();
-
-            if (typeNames.TryGetValue(type, out string name))
-            {
-                return name;
-            }
-
-            name = NamePrefix + "GEND_TYPE_" + SimplifiedRep(type);
-            name = UniquifyName(name);
-            typeNames.Add(type, name);
-            return name;
-        }
-
-        public string GetNameForForeignTypeDecl(ForeignType foreignType)
-        {
-            if (foreignTypeDeclNames.TryGetValue(foreignType, out var name))
-            {
-                return name;
-            }
-
-            name = UniquifyName(NamePrefix + foreignType.CanonicalRepresentation);
-            foreignTypeDeclNames.Add(foreignType, name);
-            return name;
-        }
-
-        protected override string ComputeNameForDecl(IPDecl decl)
-        {
-            var enumName = "";
-            switch (decl)
-            {
-                case EnumElem enumElem:
-                    enumName = $"{enumElem.ParentEnum.Name}_";
-                    break;
-                case PEvent pEvent:
-                    if (pEvent.IsNullEvent)
-                    {
-                        return "_P_EVENT_NULL_STRUCT";
-                    }
-
-                    if (pEvent.IsHaltEvent)
-                    {
-                        return "_P_EVENT_HALT_STRUCT";
-                    }
-
-                    break;
-                case Implementation impl:
-                    return $"P_GEND_IMPL_{impl.Name}";
-            }
-
-            if (DeclNameParts.TryGetValue(decl.GetType(), out string declTypePart))
-            {
-                declTypePart += "_";
-            }
-            else
-            {
-                declTypePart = "";
-            }
-
-            string name = decl.Name;
-            if (decl is State state)
-            {
-                name = state.QualifiedName;
-            }
-            name = string.IsNullOrEmpty(name) ? "Anon" : name;
-            name = name.Replace('.', '_');
-
-            if (name.StartsWith("$"))
-            {
-                name = "PTMP_" + name.Substring(1);
-            }
-            else
-            {
-                name = NamePrefix + declTypePart + enumName + name;
-            }
-
-            return UniquifyName(name);
-        }
-
         private static readonly Dictionary<Type, string> DeclNameParts = new Dictionary<Type, string>
         {
             {typeof(EnumElem), "ENUMELEM"},
@@ -149,6 +29,103 @@ namespace Microsoft.Pc.Backend.Prt
             {typeof(TypeDef), "TYPEDEF"},
             {typeof(Variable), "VAR"}
         };
+
+        private readonly ConditionalWeakTable<ForeignType, string> foreignTypeDeclNames =
+            new ConditionalWeakTable<ForeignType, string>();
+
+        private readonly ConditionalWeakTable<Function, string>
+            funcNames = new ConditionalWeakTable<Function, string>();
+
+        private readonly ConditionalWeakTable<Function, string>
+            retLabels = new ConditionalWeakTable<Function, string>();
+
+        private readonly Dictionary<PLanguageType, string> typeNames = new Dictionary<PLanguageType, string>();
+
+        public PrtNameManager(string namePrefix)
+            : base(namePrefix)
+        {
+        }
+
+        public IEnumerable<PLanguageType> UsedTypes => typeNames.Keys;
+
+        public string GetReturnLabel(Function function, string hint = "p_return")
+        {
+            if (retLabels.TryGetValue(function, out var name)) return name;
+
+            name = UniquifyName(hint);
+            retLabels.Add(function, name);
+            return name;
+        }
+
+        public string GetNameForFunctionImpl(Function function)
+        {
+            if (funcNames.TryGetValue(function, out var name)) return name;
+
+            var namePrefix = NamePrefix;
+            var methodName = function.IsAnon ? "Anon" : function.Name;
+            var nameSuffix = "_IMPL";
+            name = UniquifyName(namePrefix + methodName + nameSuffix);
+
+            funcNames.Add(function, name);
+            return name;
+        }
+
+        public string GetNameForType(PLanguageType type)
+        {
+            type = type.Canonicalize();
+
+            if (typeNames.TryGetValue(type, out var name)) return name;
+
+            name = NamePrefix + "GEND_TYPE_" + SimplifiedRep(type);
+            name = UniquifyName(name);
+            typeNames.Add(type, name);
+            return name;
+        }
+
+        public string GetNameForForeignTypeDecl(ForeignType foreignType)
+        {
+            if (foreignTypeDeclNames.TryGetValue(foreignType, out var name)) return name;
+
+            name = UniquifyName(NamePrefix + foreignType.CanonicalRepresentation);
+            foreignTypeDeclNames.Add(foreignType, name);
+            return name;
+        }
+
+        protected override string ComputeNameForDecl(IPDecl decl)
+        {
+            var enumName = "";
+            switch (decl)
+            {
+                case EnumElem enumElem:
+                    enumName = $"{enumElem.ParentEnum.Name}_";
+                    break;
+                case PEvent pEvent:
+                    if (pEvent.IsNullEvent) return "_P_EVENT_NULL_STRUCT";
+
+                    if (pEvent.IsHaltEvent) return "_P_EVENT_HALT_STRUCT";
+
+                    break;
+                case Implementation impl:
+                    return $"P_GEND_IMPL_{impl.Name}";
+            }
+
+            if (DeclNameParts.TryGetValue(decl.GetType(), out var declTypePart))
+                declTypePart += "_";
+            else
+                declTypePart = "";
+
+            var name = decl.Name;
+            if (decl is State state) name = state.QualifiedName;
+            name = string.IsNullOrEmpty(name) ? "Anon" : name;
+            name = name.Replace('.', '_');
+
+            if (name.StartsWith("$"))
+                name = "PTMP_" + name.Substring(1);
+            else
+                name = NamePrefix + declTypePart + enumName + name;
+
+            return UniquifyName(name);
+        }
 
 
         private string SimplifiedRep(PLanguageType type)
@@ -188,6 +165,7 @@ namespace Microsoft.Pc.Backend.Prt
                 case TypeDefType _:
                     throw new ArgumentException("typedefs should be impossible after canonicalization", nameof(type));
             }
+
             throw new ArgumentException("unrecognized type kind", nameof(type));
         }
     }

@@ -24,20 +24,22 @@ namespace Microsoft.Pc
             return isCaseInsensitive;
         });
 
+        private static readonly DefaultCompilerOutput CommandlineOutput =
+            new DefaultCompilerOutput(new DirectoryInfo(Directory.GetCurrentDirectory()));
+
         private static bool IsFileSystemCaseInsensitive => isFileSystemCaseInsensitive.Value;
 
-        private static readonly DefaultCompilerOutput CommandlineOutput = new DefaultCompilerOutput(new DirectoryInfo(Directory.GetCurrentDirectory()));
         public static CommandLineParseResult ParseArguments(IEnumerable<string> args, out CompilationJob job)
         {
             job = null;
 
             var outputLanguage = CompilerOutput.C;
             DirectoryInfo outputDirectory = null;
-            
+
             var commandLineFileNames = new List<string>();
             var inputFiles = new List<FileInfo>();
             string targetName = null;
-            bool generateSourceMaps = false;
+            var generateSourceMaps = false;
 
             foreach (var x in args)
             {
@@ -57,17 +59,11 @@ namespace Microsoft.Pc
                         case "t":
                         case "target":
                             if (colonArg == null)
-                            {
                                 CommandlineOutput.WriteMessage("Missing target name", SeverityKind.Error);
-                            }
                             else if (targetName == null)
-                            {
                                 targetName = colonArg;
-                            }
                             else
-                            {
                                 CommandlineOutput.WriteMessage("Only one target must be specified", SeverityKind.Error);
-                            }
 
                             break;
 
@@ -76,7 +72,8 @@ namespace Microsoft.Pc
                             switch (colonArg?.ToLowerInvariant())
                             {
                                 case null:
-                                    CommandlineOutput.WriteMessage("Missing generation argument, expecting generate:[C,P#]", SeverityKind.Error);
+                                    CommandlineOutput.WriteMessage(
+                                        "Missing generation argument, expecting generate:[C,P#]", SeverityKind.Error);
                                     return Failure;
                                 case "c":
                                     outputLanguage = CompilerOutput.C;
@@ -85,7 +82,9 @@ namespace Microsoft.Pc
                                     outputLanguage = CompilerOutput.PSharp;
                                     break;
                                 default:
-                                    CommandlineOutput.WriteMessage($"Unrecognized generate option '{colonArg}', expecting C or P#", SeverityKind.Error);
+                                    CommandlineOutput.WriteMessage(
+                                        $"Unrecognized generate option '{colonArg}', expecting C or P#",
+                                        SeverityKind.Error);
                                     return Failure;
                             }
 
@@ -95,7 +94,8 @@ namespace Microsoft.Pc
                         case "outputdir":
                             if (colonArg == null)
                             {
-                                CommandlineOutput.WriteMessage("Must supply path for output directory", SeverityKind.Error);
+                                CommandlineOutput.WriteMessage("Must supply path for output directory",
+                                    SeverityKind.Error);
                                 return Failure;
                             }
 
@@ -114,9 +114,11 @@ namespace Microsoft.Pc
                                     generateSourceMaps = false;
                                     break;
                                 default:
-                                    CommandlineOutput.WriteMessage("sourcemaps argument must be either 'true' or 'false'", SeverityKind.Error);
+                                    CommandlineOutput.WriteMessage(
+                                        "sourcemaps argument must be either 'true' or 'false'", SeverityKind.Error);
                                     return Failure;
                             }
+
                             break;
                         case "h":
                         case "help":
@@ -136,16 +138,11 @@ namespace Microsoft.Pc
 
             // Each command line file name must be a legal P file name
             foreach (var inputFileName in commandLineFileNames)
-            {
-                if (IsLegalPFile(inputFileName, out FileInfo fullPathName))
-                {
+                if (IsLegalPFile(inputFileName, out var fullPathName))
                     inputFiles.Add(fullPathName);
-                }
                 else
-                {
-                    CommandlineOutput.WriteMessage($"Illegal P file name {fullPathName} or file {fullPathName} not found", SeverityKind.Error);
-                }
-            }
+                    CommandlineOutput.WriteMessage(
+                        $"Illegal P file name {fullPathName} or file {fullPathName} not found", SeverityKind.Error);
 
             if (inputFiles.Count == 0)
             {
@@ -153,7 +150,7 @@ namespace Microsoft.Pc
                 return Failure;
             }
 
-            string projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
+            var projectName = targetName ?? Path.GetFileNameWithoutExtension(inputFiles[0].FullName);
             if (!IsLegalUnitName(projectName))
             {
                 CommandlineOutput.WriteMessage($"{projectName} is not a legal project name", SeverityKind.Error);
@@ -161,10 +158,7 @@ namespace Microsoft.Pc
             }
 
 
-            if (outputDirectory == null)
-            {
-                outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
-            }
+            if (outputDirectory == null) outputDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
 
             job = new CompilationJob(new DefaultCompilerOutput(outputDirectory), outputLanguage, inputFiles,
                 projectName, generateSourceMaps);
@@ -180,15 +174,10 @@ namespace Microsoft.Pc
         {
             file = null;
             if (fileName.Length <= 2 || !fileName.EndsWith(".p") || !File.Exists(Path.GetFullPath(fileName)))
-            {
                 return false;
-            }
 
             var path = Path.GetFullPath(fileName);
-            if (IsFileSystemCaseInsensitive)
-            {
-                path = path.ToLowerInvariant();
-            }
+            if (IsFileSystemCaseInsensitive) path = path.ToLowerInvariant();
 
             file = new FileInfo(path);
 
@@ -197,16 +186,24 @@ namespace Microsoft.Pc
 
         public static void PrintUsage()
         {
-            CommandlineOutput.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -t:tfile                   -- name of output file produced for this compilation unit; if not supplied then file1", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -outputDir:path            -- where to write the generated files", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -generate:[C,P#]           -- select a target language to generate", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("USAGE: Pc.exe file1.p [file2.p ...] [-t:tfile] [options]",
+                SeverityKind.Info);
+            CommandlineOutput.WriteMessage(
+                "    -t:tfile                   -- name of output file produced for this compilation unit; if not supplied then file1",
+                SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -outputDir:path            -- where to write the generated files",
+                SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -generate:[C,P#]           -- select a target language to generate",
+                SeverityKind.Info);
             CommandlineOutput.WriteMessage("        C   : generate C code using the Prt runtime", SeverityKind.Info);
             CommandlineOutput.WriteMessage("        P#  : generate C# code using the P# runtime", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -sourcemaps[:(true|false)] -- enable or disable generating source maps", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("                                  in the compiled output. may confuse some", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -sourcemaps[:(true|false)] -- enable or disable generating source maps",
+                SeverityKind.Info);
+            CommandlineOutput.WriteMessage("                                  in the compiled output. may confuse some",
+                SeverityKind.Info);
             CommandlineOutput.WriteMessage("                                  debuggers.", SeverityKind.Info);
-            CommandlineOutput.WriteMessage("    -h, -help, --help          -- display this help message", SeverityKind.Info);
+            CommandlineOutput.WriteMessage("    -h, -help, --help          -- display this help message",
+                SeverityKind.Info);
         }
     }
 }

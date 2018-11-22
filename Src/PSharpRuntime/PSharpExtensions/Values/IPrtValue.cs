@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PrtSharp
+namespace PrtSharp.Values
 {
     public interface IPrtValue : IEquatable<IPrtValue>
     {

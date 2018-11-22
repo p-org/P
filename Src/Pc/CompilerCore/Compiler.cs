@@ -5,7 +5,6 @@ using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
 using Microsoft.Pc.Backend;
 using Microsoft.Pc.TypeChecker;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
 
 namespace Microsoft.Pc
 {
@@ -16,23 +15,20 @@ namespace Microsoft.Pc
             // Run parser on every input file
             var trees = job.InputFiles.Select(file =>
             {
-                PParser.ProgramContext tree = Parse(job, file);
+                var tree = Parse(job, file);
                 job.LocationResolver.RegisterRoot(tree, file);
                 return tree;
             }).ToArray();
 
             // Run typechecker and produce AST
-            Scope scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
+            var scope = Analyzer.AnalyzeCompilationUnit(job.Handler, trees);
 
             // Convert functions to lowered SSA form with explicit cloning
-            foreach (Function fun in scope.GetAllMethods())
-            {
-                IRTransformer.SimplifyMethod(fun);
-            }
+            foreach (var fun in scope.GetAllMethods()) IRTransformer.SimplifyMethod(fun);
 
             // Run the selected backend on the project and write the files.
             var compiledFiles = job.Backend.GenerateCode(job, scope);
-            foreach (CompiledFile file in compiledFiles)
+            foreach (var file in compiledFiles)
             {
                 job.Output.WriteMessage($"Writing {file.FileName}...", SeverityKind.Info);
                 job.Output.WriteFile(file);
@@ -41,7 +37,7 @@ namespace Microsoft.Pc
 
         private static PParser.ProgramContext Parse(ICompilationJob job, FileInfo inputFile)
         {
-            string fileText = File.ReadAllText(inputFile.FullName);
+            var fileText = File.ReadAllText(inputFile.FullName);
             var fileStream = new AntlrInputStream(fileText);
             var lexer = new PLexer(fileStream);
             var tokens = new CommonTokenStream(lexer);
@@ -73,8 +69,8 @@ namespace Microsoft.Pc
 
         /// <inheritdoc />
         /// <summary>
-        /// This error listener converts Antlr parse errors into translation exceptions via the
-        /// active error handler.
+        ///     This error listener converts Antlr parse errors into translation exceptions via the
+        ///     active error handler.
         /// </summary>
         private class PParserErrorListener : IAntlrErrorListener<IToken>
         {

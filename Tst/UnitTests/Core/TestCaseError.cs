@@ -1,20 +1,22 @@
 ﻿namespace UnitTests.Core
 {
     /// <summary>
-    /// Possible reasons for failure in a <see cref="CompilerTestException"/>
+    ///     Possible reasons for failure in a <see cref="CompilerTestException" />
     /// </summary>
     public enum TestCaseError
     {
         /// <summary>
-        /// The P compiler failed to produce code in the target language
+        ///     The P compiler failed to produce code in the target language
         /// </summary>
         TranslationFailed,
+
         /// <summary>
-        /// The target language's compiler (eg. MSVC, Clang) failed to compile the generated sources
+        ///     The target language's compiler (eg. MSVC, Clang) failed to compile the generated sources
         /// </summary>
         GeneratedSourceCompileFailed,
+
         /// <summary>
-        /// The golden output file has a formatting error
+        ///     The golden output file has a formatting error
         /// </summary>
         InvalidOutputSpec
     }

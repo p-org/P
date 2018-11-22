@@ -9,12 +9,11 @@ namespace Microsoft.Pc
 {
     public class CompilationJob : ICompilationJob
     {
-        public CompilationJob(ICompilerOutput output, CompilerOutput outputLanguage, IReadOnlyList<FileInfo> inputFiles, string projectName = null, bool generateSourceMaps = false)
+        public CompilationJob(ICompilerOutput output, CompilerOutput outputLanguage, IReadOnlyList<FileInfo> inputFiles,
+            string projectName = null, bool generateSourceMaps = false)
         {
             if (!inputFiles.Any())
-            {
                 throw new ArgumentException("Must supply at least one input file", nameof(inputFiles));
-            }
 
             Output = output;
             InputFiles = inputFiles;

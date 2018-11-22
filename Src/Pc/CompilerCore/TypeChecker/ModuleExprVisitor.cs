@@ -16,22 +16,22 @@ namespace Microsoft.Pc.TypeChecker
             Scope globalScope)
         {
             var modExprVisitor = new ModuleExprVisitor(handler, globalScope);
-           
+
             // first do all the named modules
-            foreach (NamedModule mod in globalScope.NamedModules)
+            foreach (var mod in globalScope.NamedModules)
             {
                 var context = (PParser.NamedModuleDeclContext) mod.SourceLocation;
                 mod.ModExpr = modExprVisitor.Visit(context.modExpr());
             }
 
             // all the test declarations
-            foreach (SafetyTest test in globalScope.SafetyTests)
+            foreach (var test in globalScope.SafetyTests)
             {
                 var context = (PParser.SafetyTestDeclContext) test.SourceLocation;
                 test.ModExpr = modExprVisitor.Visit(context.modExpr());
             }
 
-            foreach (RefinementTest test in globalScope.RefinementTests)
+            foreach (var test in globalScope.RefinementTests)
             {
                 var context = (PParser.RefinementTestDeclContext) test.SourceLocation;
                 test.LeftModExpr = modExprVisitor.Visit(context.modExpr()[0]);
@@ -41,9 +41,9 @@ namespace Microsoft.Pc.TypeChecker
             if (globalScope.Implementations.Any())
             {
                 // all user defind implementations
-                foreach (Implementation impl in globalScope.Implementations)
+                foreach (var impl in globalScope.Implementations)
                 {
-                    var context = (PParser.ImplementationDeclContext)impl.SourceLocation;
+                    var context = (PParser.ImplementationDeclContext) impl.SourceLocation;
                     impl.ModExpr = modExprVisitor.Visit(context.modExpr());
                 }
             }
@@ -60,11 +60,11 @@ namespace Microsoft.Pc.TypeChecker
                     globalScope.Get(machine.Name, out Interface @interface);
                     defaultBindings.Add(new Tuple<Interface, Machine>(@interface, machine));
                 }
+
                 defaultImplDecl.ModExpr = new BindModuleExpr(ParserRuleContext.EmptyContext, defaultBindings);
 
                 globalScope.AddDefaultImpl(defaultImplDecl);
             }
-                
         }
     }
 
@@ -85,9 +85,7 @@ namespace Microsoft.Pc.TypeChecker
         {
             // check if the named module is declared
             if (!globalScope.Get(context.GetText(), out NamedModule mod))
-            {
                 throw handler.MissingDeclaration(context, "module", context.GetText());
-            }
 
             var declContext = (PParser.NamedModuleDeclContext) mod.SourceLocation;
             return Visit(declContext.modExpr());
@@ -108,12 +106,10 @@ namespace Microsoft.Pc.TypeChecker
         public override IPModuleExpr VisitHideEventsModuleExpr([NotNull] PParser.HideEventsModuleExprContext context)
         {
             var eventList = new List<PEvent>();
-            foreach (PParser.NonDefaultEventContext eventName in context.nonDefaultEventList()._events)
+            foreach (var eventName in context.nonDefaultEventList()._events)
             {
                 if (!globalScope.Get(eventName.GetText(), out PEvent @event))
-                {
                     throw handler.MissingDeclaration(eventName, "event", eventName.GetText());
-                }
 
                 eventList.Add(@event);
             }
@@ -125,12 +121,10 @@ namespace Microsoft.Pc.TypeChecker
             [NotNull] PParser.HideInterfacesModuleExprContext context)
         {
             var interfaceList = new List<Interface>();
-            foreach (PParser.IdenContext interfaceName in context.idenList()._names)
+            foreach (var interfaceName in context.idenList()._names)
             {
                 if (!globalScope.Get(interfaceName.GetText(), out Interface @interface))
-                {
                     throw handler.MissingDeclaration(interfaceName, "interface", interfaceName.GetText());
-                }
 
                 interfaceList.Add(@interface);
             }
@@ -141,14 +135,10 @@ namespace Microsoft.Pc.TypeChecker
         public override IPModuleExpr VisitRenameModuleExpr([NotNull] PParser.RenameModuleExprContext context)
         {
             if (!globalScope.Get(context.newName.GetText(), out Interface newInterface))
-            {
                 throw handler.MissingDeclaration(context.newName, "interface", context.newName.GetText());
-            }
 
             if (!globalScope.Get(context.oldName.GetText(), out Interface oldInterface))
-            {
                 throw handler.MissingDeclaration(context.oldName, "interface", context.oldName.GetText());
-            }
 
             return new RenameModuleExpr(context, newInterface, oldInterface, Visit(context.modExpr()));
         }
@@ -162,17 +152,12 @@ namespace Microsoft.Pc.TypeChecker
         public override IPModuleExpr VisitAssertModuleExpr([NotNull] PParser.AssertModuleExprContext context)
         {
             var monList = new List<Machine>();
-            foreach (PParser.IdenContext monName in context.idenList()._names)
+            foreach (var monName in context.idenList()._names)
             {
                 if (!globalScope.Get(monName.GetText(), out Machine monitor))
-                {
                     throw handler.MissingDeclaration(monName, "spec machine", monName.GetText());
-                }
 
-                if (!monitor.IsSpec)
-                {
-                    throw handler.ExpectedMonitor(monName, monitor);
-                }
+                if (!monitor.IsSpec) throw handler.ExpectedMonitor(monName, monitor);
 
                 monList.Add(monitor);
             }
@@ -182,18 +167,14 @@ namespace Microsoft.Pc.TypeChecker
 
         private new Tuple<Interface, Machine> VisitBindExpr([NotNull] PParser.BindExprContext context)
         {
-            string machine = context.mName.GetText();
-            string @interface = context.iName?.GetText() ?? machine;
+            var machine = context.mName.GetText();
+            var @interface = context.iName?.GetText() ?? machine;
 
             if (!globalScope.Get(@interface, out Interface i))
-            {
                 throw handler.MissingDeclaration(context.iName, "interface", @interface);
-            }
 
             if (!globalScope.Get(machine, out Machine m))
-            {
                 throw handler.MissingDeclaration(context.mName, "machine", machine);
-            }
 
             return Tuple.Create(i, m);
         }

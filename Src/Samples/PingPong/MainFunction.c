@@ -21,43 +21,40 @@ static char* FirstArgument = NULL;
 
 char* GetApplicationName()
 {
-    char* last = strrchr(FirstArgument, '/');
-    char* last2 = strrchr(FirstArgument, '\\');
+	char* last = strrchr(FirstArgument, '/');
+	char* last2 = strrchr(FirstArgument, '\\');
 
-    if (last != NULL)
-    {
-        return last + 1;
-    }
-    else if (last2 != NULL)
-    {
-        return last2 + 1;
-    }
-    else
-    {
-        return FirstArgument;
-    }
+	if (last != NULL)
+	{
+		return last + 1;
+	}
+	if (last2 != NULL)
+	{
+		return last2 + 1;
+	}
+	return FirstArgument;
 }
 
-void PrintUsage() {
-
-    printf("Usage: %s clusterConfigFile createMain processId nodeId\n", GetApplicationName());
-    printf("Where:\n");
-    printf("  clusterConfigFile points to the cluser config xml file.\n");
-    printf("  createMain (true if 1 and false if 0)\n");
-    printf("  processId the id of the process we are talking to\n");
-    printf("  nodeid (0 is localhost)\n");
+void PrintUsage()
+{
+	printf("Usage: %s clusterConfigFile createMain processId nodeId\n", GetApplicationName());
+	printf("Where:\n");
+	printf("  clusterConfigFile points to the cluser config xml file.\n");
+	printf("  createMain (true if 1 and false if 0)\n");
+	printf("  processId the id of the process we are talking to\n");
+	printf("  nodeid (0 is localhost)\n");
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	//The commandline arguments 
-    FirstArgument = argv[0];
+	FirstArgument = argv[0];
 
-    if (argc != 5)
-    {
-        PrintUsage();
-        return;
-    }
+	if (argc != 5)
+	{
+		PrintUsage();
+		return;
+	}
 
 	/*
 	int createMain = atoi(argv[2]);

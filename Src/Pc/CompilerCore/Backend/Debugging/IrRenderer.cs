@@ -10,7 +10,9 @@ namespace Microsoft.Pc.Backend.Debugging
     {
         private readonly StringBuilder writer = new StringBuilder();
         private int depth;
-        
+
+        protected string Padding { get; private set; }
+
         /*
         public static void InferCreates(Scope scope)
         {
@@ -28,34 +30,34 @@ namespace Microsoft.Pc.Backend.Debugging
 
         public string Render(Scope scope)
         {
-            foreach (IPDecl decl in scope.AllDecls)
-            {
-                WriteDecl(decl);
-            }
+            foreach (var decl in scope.AllDecls) WriteDecl(decl);
 
             return writer.ToString();
         }
 
-        protected string Padding { get; private set; }
+        protected void Indent()
+        {
+            Padding = new string(' ', ++depth * 4);
+        }
 
-        protected void Indent() { Padding = new string(' ', ++depth * 4); }
+        protected void Dedent()
+        {
+            Padding = new string(' ', --depth * 4);
+        }
 
-        protected void Dedent() { Padding = new string(' ', --depth * 4); }
-
-        protected void WriteParts(string part) { writer.Append(part); }
+        protected void WriteParts(string part)
+        {
+            writer.Append(part);
+        }
 
         protected void WriteParts(params string[] parts)
         {
-            foreach (string part in parts)
-            {
-                writer.Append(part);
-            }
+            foreach (var part in parts) writer.Append(part);
         }
 
         protected void WriteParts(params object[] parts)
         {
-            foreach (object part in parts)
-            {
+            foreach (var part in parts)
                 switch (part)
                 {
                     case IPExpr expr:
@@ -77,7 +79,6 @@ namespace Microsoft.Pc.Backend.Debugging
                         writer.Append(part);
                         break;
                 }
-            }
         }
 
         protected abstract void WriteDecl(IPDecl decl);

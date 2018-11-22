@@ -1,6 +1,6 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
 
@@ -8,6 +8,8 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class PermissionType : PLanguageType
     {
+        private readonly IPDecl origin;
+
         public PermissionType(Machine machine) : base(TypeKind.Base)
         {
             origin = machine;
@@ -26,11 +28,10 @@ namespace Microsoft.Pc.TypeChecker.Types
             AllowedPermissions = new Lazy<IReadOnlyList<PEvent>>(() => eventSet.Events.ToList());
         }
 
-
-        private readonly IPDecl origin;
-
         public override string OriginalRepresentation => origin.Name;
         public override string CanonicalRepresentation => origin.Name;
+
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
@@ -42,6 +43,7 @@ namespace Microsoft.Pc.TypeChecker.Types
                 eventSet2.AddEvents(AllowedPermissions.Value);
                 return eventSet1.IsSame(eventSet2);
             }
+
             return false;
         }
 
@@ -49,7 +51,5 @@ namespace Microsoft.Pc.TypeChecker.Types
         {
             return this;
         }
-
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
     }
 }

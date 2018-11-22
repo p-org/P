@@ -6,7 +6,7 @@ namespace Microsoft.Pc.TypeChecker.AST.States
     public class EventGotoState : IStateAction
     {
         public EventGotoState(ParserRuleContext sourceLocation, PEvent trigger, State target,
-                              Function transitionFunction)
+            Function transitionFunction)
         {
             SourceLocation = sourceLocation;
             Trigger = trigger;

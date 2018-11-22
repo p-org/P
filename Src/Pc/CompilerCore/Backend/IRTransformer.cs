@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
-using Antlr4.Runtime;
 using Microsoft.Pc.Backend.ASTExt;
 using Microsoft.Pc.TypeChecker.AST;
 using Microsoft.Pc.TypeChecker.AST.Declarations;
@@ -17,14 +16,14 @@ namespace Microsoft.Pc.Backend
         private readonly Function function;
         private int numTemp;
 
-        private IRTransformer(Function function) { this.function = function; }
+        private IRTransformer(Function function)
+        {
+            this.function = function;
+        }
 
         public static void SimplifyMethod(Function function)
         {
-            if (function.IsForeign)
-            {
-                return;
-            }
+            if (function.IsForeign) return;
 
             var transformer = new IRTransformer(function);
             IPStmt functionBody = function.Body;
@@ -38,7 +37,7 @@ namespace Microsoft.Pc.Backend
 
         private (VariableAccessExpr, IPStmt) SaveInTemporary(IPExpr expr, PLanguageType tempType)
         {
-            ParserRuleContext location = expr.SourceLocation;
+            var location = expr.SourceLocation;
             var temp = function.Scope.Put($"$tmp{numTemp++}", location, VariableRole.Local | VariableRole.Temp);
             Debug.Assert(tempType.IsAssignableFrom(expr.Type));
             temp.Type = tempType;
@@ -50,8 +49,8 @@ namespace Microsoft.Pc.Backend
         private (IPExpr, List<IPStmt>) SimplifyLvalue(IPExpr expr)
         {
             // TODO: I am suspicious.
-            ParserRuleContext location = expr.SourceLocation;
-            PLanguageType type = expr.Type;
+            var location = expr.SourceLocation;
+            var type = expr.Type;
             switch (expr)
             {
                 case MapAccessExpr mapAccessExpr:
@@ -79,7 +78,7 @@ namespace Microsoft.Pc.Backend
 
         private (IExprTerm, List<IPStmt>) SimplifyExpression(IPExpr expr)
         {
-            ParserRuleContext location = expr.SourceLocation;
+            var location = expr.SourceLocation;
             var deps = new List<IPStmt>();
             switch (expr)
             {
@@ -185,9 +184,9 @@ namespace Microsoft.Pc.Backend
                     var (tupItemExpr, tupAccessDeps) = SimplifyExpression(tupleAccessExpr.SubExpr);
                     var (tupItemTemp, tupItemStore) =
                         SaveInTemporary(new TupleAccessExpr(location,
-                                                            tupItemExpr,
-                                                            tupleAccessExpr.FieldNo,
-                                                            tupleAccessExpr.Type));
+                            tupItemExpr,
+                            tupleAccessExpr.FieldNo,
+                            tupleAccessExpr.Type));
                     deps.AddRange(tupAccessDeps);
                     deps.Add(tupItemStore);
                     return (tupItemTemp, deps);
@@ -217,7 +216,7 @@ namespace Microsoft.Pc.Backend
 
         private List<IPStmt> SimplifyStatement(IPStmt statement)
         {
-            ParserRuleContext location = statement?.SourceLocation;
+            var location = statement?.SourceLocation;
             switch (statement)
             {
                 case null:
@@ -225,63 +224,53 @@ namespace Microsoft.Pc.Backend
                 case AnnounceStmt announceStmt:
                     var (annEvt, annEvtDeps) = SimplifyExpression(announceStmt.PEvent);
                     var (annPayload, annPayloadDeps) = announceStmt.Payload == null
-                                                           ? (null, new List<IPStmt>())
-                                                           : SimplifyExpression(announceStmt.Payload);
+                        ? (null, new List<IPStmt>())
+                        : SimplifyExpression(announceStmt.Payload);
                     return annEvtDeps.Concat(annPayloadDeps)
-                                     .Concat(new[]
-                                     {
-                                         new AnnounceStmt(location, annEvt, annPayload)
-                                     })
-                                     .ToList();
+                        .Concat(new[]
+                        {
+                            new AnnounceStmt(location, annEvt, annPayload)
+                        })
+                        .ToList();
                 case AssertStmt assertStmt:
                     var (assertExpr, assertDeps) = SimplifyExpression(assertStmt.Assertion);
                     return assertDeps.Concat(new[]
-                                     {
-                                         new AssertStmt(location, assertExpr, assertStmt.Message)
-                                     })
-                                     .ToList();
+                        {
+                            new AssertStmt(location, assertExpr, assertStmt.Message)
+                        })
+                        .ToList();
                 case AssignStmt assignStmt:
                     var (assignLV, assignLVDeps) = SimplifyLvalue(assignStmt.Location);
                     var (assignRV, assignRVDeps) = SimplifyExpression(assignStmt.Value);
                     IPStmt assignment;
                     // If temporary returned, then automatically move.
-                    if (assignRV is VariableAccessExpr variableRef && variableRef.Variable.Role.HasFlag(VariableRole.Temp))
-                    {
+                    if (assignRV is VariableAccessExpr variableRef &&
+                        variableRef.Variable.Role.HasFlag(VariableRole.Temp))
                         assignment = new MoveAssignStmt(location, assignLV, variableRef.Variable);
-                    }
                     else
-                    {
                         assignment = new AssignStmt(location, assignLV, new CloneExpr(assignRV));
-                    }
-                    return assignLVDeps.Concat(assignRVDeps).Concat(new[]{assignment}).ToList();
+                    return assignLVDeps.Concat(assignRVDeps).Concat(new[] {assignment}).ToList();
                 case CompoundStmt compoundStmt:
                     var newBlock = new List<IPStmt>();
-                    foreach (IPStmt step in compoundStmt.Statements)
-                    {
-                        newBlock.AddRange(SimplifyStatement(step));
-                    }
+                    foreach (var step in compoundStmt.Statements) newBlock.AddRange(SimplifyStatement(step));
                     // TODO: why not return the list? because of source location info?
                     return new List<IPStmt> {new CompoundStmt(location, newBlock)};
                 case CtorStmt ctorStmt:
                     var (ctorArgs, ctorArgDeps) = SimplifyArgPack(ctorStmt.Arguments);
-                    return ctorArgDeps.
-                           Concat(new[]
-                                   {
-                                       new CtorStmt(location, ctorStmt.Interface, ctorArgs)
-                                   })
-                                   .ToList();
+                    return ctorArgDeps.Concat(new[]
+                        {
+                            new CtorStmt(location, ctorStmt.Interface, ctorArgs)
+                        })
+                        .ToList();
                 case FunCallStmt funCallStmt:
                     var (funCallArgs, funCallArgDeps) = SimplifyFunArgs(funCallStmt.ArgsList);
                     return funCallArgDeps.Concat(new[]
-                                  {
-                                      new FunCallStmt(location, funCallStmt.Function, funCallArgs)
-                                  })
-                                  .ToList();
+                        {
+                            new FunCallStmt(location, funCallStmt.Function, funCallArgs)
+                        })
+                        .ToList();
                 case GotoStmt gotoStmt:
-                    if (gotoStmt.Payload == null)
-                    {
-                        return new List<IPStmt> {gotoStmt};
-                    }
+                    if (gotoStmt.Payload == null) return new List<IPStmt> {gotoStmt};
 
                     var (gotoPayload, gotoDeps) = SimplifyExpression(gotoStmt.Payload);
                     var (gotoArgTmp, gotoArgDep) = SaveInTemporary(new CloneExpr(gotoPayload));
@@ -296,32 +285,32 @@ namespace Microsoft.Pc.Backend
                     var thenBranch = SimplifyStatement(ifStmt.ThenBranch);
                     var elseBranch = SimplifyStatement(ifStmt.ElseBranch);
                     return ifCondDeps.Concat(new[]
-                                     {
-                                         new IfStmt(location,
-                                                    ifCond,
-                                                    new CompoundStmt(ifStmt.ThenBranch.SourceLocation, thenBranch),
-                                                    new CompoundStmt(ifStmt.ElseBranch.SourceLocation, elseBranch))
-                                     })
-                                     .ToList();
+                        {
+                            new IfStmt(location,
+                                ifCond,
+                                new CompoundStmt(ifStmt.ThenBranch.SourceLocation, thenBranch),
+                                new CompoundStmt(ifStmt.ElseBranch.SourceLocation, elseBranch))
+                        })
+                        .ToList();
                 case InsertStmt insertStmt:
                     var (insVar, insVarDeps) = SimplifyLvalue(insertStmt.Variable);
                     var (insIdx, insIdxDeps) = SimplifyExpression(insertStmt.Index);
-                    var (insVal, insValDeps) = SimplifyArgPack(new [] {insertStmt.Value});
+                    var (insVal, insValDeps) = SimplifyArgPack(new[] {insertStmt.Value});
                     Debug.Assert(insVal.Count == 1);
                     return insVarDeps.Concat(insIdxDeps)
-                                     .Concat(insValDeps)
-                                     .Concat(new[]
-                                     {
-                                         new InsertStmt(location, insVar, insIdx, insVal[0])
-                                     })
-                                     .ToList();
+                        .Concat(insValDeps)
+                        .Concat(new[]
+                        {
+                            new InsertStmt(location, insVar, insIdx, insVal[0])
+                        })
+                        .ToList();
                 case MoveAssignStmt moveAssignStmt:
                     var (moveDest, moveDestDeps) = SimplifyLvalue(moveAssignStmt.ToLocation);
                     return moveDestDeps.Concat(new[]
-                                       {
-                                           new MoveAssignStmt(moveAssignStmt.SourceLocation, moveDest, moveAssignStmt.FromVariable)
-                                       })
-                                       .ToList();
+                        {
+                            new MoveAssignStmt(moveAssignStmt.SourceLocation, moveDest, moveAssignStmt.FromVariable)
+                        })
+                        .ToList();
                 case NoStmt _:
                     return new List<IPStmt>();
                 case PopStmt popStmt:
@@ -329,14 +318,14 @@ namespace Microsoft.Pc.Backend
                 case PrintStmt printStmt:
                     var deps = new List<IPStmt>();
                     var newArgs = new List<IPExpr>();
-                    foreach (IPExpr printStmtArg in printStmt.Args)
+                    foreach (var printStmtArg in printStmt.Args)
                     {
                         var (arg, argDeps) = SimplifyExpression(printStmtArg);
                         newArgs.Add(arg);
                         deps.AddRange(argDeps);
                     }
 
-                    return deps.Concat(new[] { new PrintStmt(location, printStmt.Message, newArgs) }).ToList();
+                    return deps.Concat(new[] {new PrintStmt(location, printStmt.Message, newArgs)}).ToList();
                 case RaiseStmt raiseStmt:
                     var (raiseEvent, raiseEventDeps) = SimplifyExpression(raiseStmt.PEvent);
                     var (raiseEventTmp, raiseEventTempDep) = SaveInTemporary(new CloneExpr(raiseEvent));
@@ -344,15 +333,15 @@ namespace Microsoft.Pc.Backend
                     var (raiseArgs, raiseArgDeps) = SimplifyArgPack(raiseStmt.Payload);
 
                     return raiseEventDeps.Concat(raiseEventDeps)
-                                         .Concat(raiseArgDeps)
-                                         .Concat(new [] {raiseEventTempDep})
-                                         .Concat(new[]
-                                         {
-                                             new RaiseStmt(location, raiseEventTmp, raiseArgs)
-                                         })
-                                         .ToList();
+                        .Concat(raiseArgDeps)
+                        .Concat(new[] {raiseEventTempDep})
+                        .Concat(new[]
+                        {
+                            new RaiseStmt(location, raiseEventTmp, raiseArgs)
+                        })
+                        .ToList();
                 case ReceiveStmt receiveStmt:
-                    foreach (Function recvCase in receiveStmt.Cases.Values)
+                    foreach (var recvCase in receiveStmt.Cases.Values)
                     {
                         IPStmt functionBody = recvCase.Body;
                         recvCase.Body = new CompoundStmt(functionBody.SourceLocation, SimplifyStatement(functionBody));
@@ -360,26 +349,23 @@ namespace Microsoft.Pc.Backend
 
                     return new List<IPStmt> {receiveStmt};
                 case RemoveStmt removeStmt:
-                    var(removeVar, removeVarDeps) = SimplifyLvalue(removeStmt.Variable);
+                    var (removeVar, removeVarDeps) = SimplifyLvalue(removeStmt.Variable);
                     var (removeKey, removeKeyDeps) = SimplifyExpression(removeStmt.Value);
                     return removeVarDeps.Concat(removeKeyDeps)
-                                        .Concat(new[]
-                                        {
-                                            new RemoveStmt(location, removeVar, removeKey)
-                                        })
-                                        .ToList();
+                        .Concat(new[]
+                        {
+                            new RemoveStmt(location, removeVar, removeKey)
+                        })
+                        .ToList();
                 case ReturnStmt returnStmt:
-                    if (returnStmt.ReturnValue == null)
-                    {
-                        return new List<IPStmt> {returnStmt};
-                    }
+                    if (returnStmt.ReturnValue == null) return new List<IPStmt> {returnStmt};
 
                     var (returnValue, returnValueDeps) = SimplifyExpression(returnStmt.ReturnValue);
                     return returnValueDeps.Concat(new[]
-                                          {
-                                              new ReturnStmt(location, new CloneExpr(returnValue))
-                                          })
-                                          .ToList();
+                        {
+                            new ReturnStmt(location, new CloneExpr(returnValue))
+                        })
+                        .ToList();
                 case SendStmt sendStmt:
                     var (sendMachine, sendMachineDeps) = SimplifyExpression(sendStmt.MachineExpr);
                     var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(new CloneExpr(sendMachine));
@@ -390,23 +376,23 @@ namespace Microsoft.Pc.Backend
                     var (sendArgs, sendArgDeps) = SimplifyArgPack(sendStmt.Arguments);
 
                     return sendMachineDeps
-                           .Concat(new[] {sendMachineAssn})
-                           .Concat(sendEventDeps)
-                           .Concat(new[] {sendEventAssn})
-                           .Concat(sendArgDeps)
-                           .Concat(new[]
-                           {
-                               new SendStmt(location, sendMachineAccessExpr, sendEventAccessExpr, sendArgs)
-                           })
-                           .ToList();
+                        .Concat(new[] {sendMachineAssn})
+                        .Concat(sendEventDeps)
+                        .Concat(new[] {sendEventAssn})
+                        .Concat(sendArgDeps)
+                        .Concat(new[]
+                        {
+                            new SendStmt(location, sendMachineAccessExpr, sendEventAccessExpr, sendArgs)
+                        })
+                        .ToList();
                 case SwapAssignStmt swapAssignStmt:
                     var (swapVar, swapVarDeps) = SimplifyLvalue(swapAssignStmt.NewLocation);
-                    Variable rhs = swapAssignStmt.OldLocation;
+                    var rhs = swapAssignStmt.OldLocation;
                     return swapVarDeps.Concat(new[]
-                                      {
-                                          new SwapAssignStmt(swapAssignStmt.SourceLocation, swapVar, rhs)
-                                      })
-                                      .ToList();
+                        {
+                            new SwapAssignStmt(swapAssignStmt.SourceLocation, swapVar, rhs)
+                        })
+                        .ToList();
                 case WhileStmt whileStmt:
                     var (condExpr, condDeps) = SimplifyExpression(whileStmt.Condition);
                     var (condTemp, condStore) = SaveInTemporary(new CloneExpr(condExpr));
@@ -414,13 +400,13 @@ namespace Microsoft.Pc.Backend
                     whileBody.AddRange(condDeps);
                     whileBody.Add(condStore);
                     return condDeps.Concat(new[]
-                                   {
-                                       condStore,
-                                       new WhileStmt(location,
-                                                     condTemp,
-                                                     new CompoundStmt(whileStmt.Body.SourceLocation, whileBody))
-                                   })
-                                   .ToList();
+                        {
+                            condStore,
+                            new WhileStmt(location,
+                                condTemp,
+                                new CompoundStmt(whileStmt.Body.SourceLocation, whileBody))
+                        })
+                        .ToList();
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));
             }
@@ -450,8 +436,10 @@ namespace Microsoft.Pc.Backend
                 switch (argExpr)
                 {
                     // Move temporaries...
-                    case VariableAccessExpr variableAccessExpr when variableAccessExpr.Variable.Role.HasFlag(VariableRole.Temp):
-                        funArgs[i] = new LinearAccessRefExpr(variableAccessExpr.SourceLocation, variableAccessExpr.Variable, LinearType.Move);
+                    case VariableAccessExpr variableAccessExpr
+                        when variableAccessExpr.Variable.Role.HasFlag(VariableRole.Temp):
+                        funArgs[i] = new LinearAccessRefExpr(variableAccessExpr.SourceLocation,
+                            variableAccessExpr.Variable, LinearType.Move);
                         break;
                     // ...and leave linear accesses alone...
                     case LinearAccessRefExpr linearAccessRefExpr:

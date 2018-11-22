@@ -25,22 +25,14 @@ namespace Microsoft.Pc.TypeChecker
         public static void AnalyzeMethods(ITranslationErrorHandler handler, IEnumerable<Function> allFunctions)
         {
             var checker = new LinearTypeChecker(handler);
-            foreach (var function in allFunctions)
-            {
-                checker.CheckFunction(function);
-            }
+            foreach (var function in allFunctions) checker.CheckFunction(function);
 
             checker.CheckInterproceduralCalls();
         }
 
         private void CheckFunction(Function method)
         {
-            if (method.IsForeign)
-            {
-                // If you move or swap into a foreign function, it becomes
-                // your responsibility to make sure everything works.
-                return;
-            }
+            if (method.IsForeign) return;
 
             var unavailable = ProcessStatement(new HashSet<Variable>(), method.Body);
             allUnavailableParams.UnionWith(unavailable.Where(var => var.Role.Equals(VariableRole.Param)));
@@ -48,15 +40,9 @@ namespace Microsoft.Pc.TypeChecker
 
         private void CheckInterproceduralCalls()
         {
-            foreach (FunCallExpr funCallExpr in funCallExprs)
-            {
-                CheckFunctionCall(funCallExpr.Function, funCallExpr.Arguments);
-            }
+            foreach (var funCallExpr in funCallExprs) CheckFunctionCall(funCallExpr.Function, funCallExpr.Arguments);
 
-            foreach (FunCallStmt funCallStmt in funCallStmts)
-            {
-                CheckFunctionCall(funCallStmt.Function, funCallStmt.ArgsList);
-            }
+            foreach (var funCallStmt in funCallStmts) CheckFunctionCall(funCallStmt.Function, funCallStmt.ArgsList);
         }
 
         private void CheckFunctionCall(Function function, IEnumerable<IPExpr> arguments)
@@ -65,13 +51,9 @@ namespace Microsoft.Pc.TypeChecker
             foreach (var pair in function.Signature.Parameters.Zip(arguments, Tuple.Create))
             {
                 if (pair.Item2 is ILinearRef linearRef)
-                {
                     if (linearRef.LinearType.Equals(LinearType.Swap) && allUnavailableParams.Contains(pair.Item1))
-                    {
                         throw handler.InvalidSwap(linearRef,
-                                                  $"function {function.Name} relinquishes argument #{i} and therefore cannot be swapped.");
-                    }
-                }
+                            $"function {function.Name} relinquishes argument #{i} and therefore cannot be swapped.");
 
                 i++;
             }
@@ -92,49 +74,34 @@ namespace Microsoft.Pc.TypeChecker
                     unavailable = ProcessArgList(printStmt.Args, unavailable, ArgOptions.SwapNotAllowed);
                     break;
                 case ReturnStmt returnStmt:
-                    if (returnStmt.ReturnValue != null)
-                    {
-                        unavailable = ProcessExpr(unavailable, returnStmt.ReturnValue);
-                    }
+                    if (returnStmt.ReturnValue != null) unavailable = ProcessExpr(unavailable, returnStmt.ReturnValue);
 
                     break;
                 case AssignStmt assignStmt:
                     unavailable = ProcessExpr(unavailable, assignStmt.Value);
                     if (assignStmt.Location is VariableAccessExpr assignAccess)
-                    {
                         unavailable.Remove(assignAccess.Variable);
-                    }
                     else
-                    {
                         unavailable = ProcessExpr(unavailable, assignStmt.Location);
-                    }
 
                     break;
                 case MoveAssignStmt moveAssignStmt:
                     if (moveAssignStmt.FromVariable.Role.Equals(VariableRole.Field))
-                    {
                         throw handler.MovedField(moveAssignStmt);
-                    }
 
                     unavailable.Add(moveAssignStmt.FromVariable);
 
                     if (moveAssignStmt.ToLocation is VariableAccessExpr moveAssignAccess)
-                    {
                         unavailable.Remove(moveAssignAccess.Variable);
-                    }
                     else
-                    {
                         unavailable = ProcessExpr(unavailable, moveAssignStmt.ToLocation);
-                    }
 
                     break;
                 case SwapAssignStmt swapAssignStmt:
                     if (swapAssignStmt.NewLocation is VariableAccessExpr swapAssignAccess)
                     {
                         if (unavailable.Contains(swapAssignAccess.Variable))
-                        {
                             throw handler.SwapAssignUnavailable(swapAssignStmt, swapAssignAccess.Variable);
-                        }
                     }
                     else
                     {
@@ -142,9 +109,7 @@ namespace Microsoft.Pc.TypeChecker
                     }
 
                     if (unavailable.Contains(swapAssignStmt.OldLocation))
-                    {
                         throw handler.SwapAssignUnavailable(swapAssignStmt, swapAssignStmt.OldLocation);
-                    }
 
                     break;
                 case InsertStmt insertStmt:
@@ -198,17 +163,11 @@ namespace Microsoft.Pc.TypeChecker
                     break;
                 case AnnounceStmt announceStmt:
                     unavailable = ProcessExpr(unavailable, announceStmt.PEvent);
-                    if (announceStmt.Payload != null)
-                    {
-                        unavailable = ProcessExpr(unavailable, announceStmt.Payload);
-                    }
+                    if (announceStmt.Payload != null) unavailable = ProcessExpr(unavailable, announceStmt.Payload);
 
                     break;
                 case GotoStmt gotoStmt:
-                    if (gotoStmt.Payload != null)
-                    {
-                        unavailable = ProcessExpr(unavailable, gotoStmt.Payload);
-                    }
+                    if (gotoStmt.Payload != null) unavailable = ProcessExpr(unavailable, gotoStmt.Payload);
 
                     break;
                 case ReceiveStmt receiveStmt:
@@ -230,25 +189,23 @@ namespace Microsoft.Pc.TypeChecker
                     // nothing to check
                     break;
                 default:
-                    throw handler.InternalError(statement.SourceLocation, new ArgumentOutOfRangeException(nameof(statement)));
+                    throw handler.InternalError(statement.SourceLocation,
+                        new ArgumentOutOfRangeException(nameof(statement)));
             }
 
             return unavailable;
         }
 
         private ISet<Variable> ProcessArgList(IEnumerable<IPExpr> arguments, ISet<Variable> unavailable,
-                                              ArgOptions perm = ArgOptions.SwapAllowed)
+            ArgOptions perm = ArgOptions.SwapAllowed)
         {
-            bool swapAllowed = perm == ArgOptions.SwapAllowed;
+            var swapAllowed = perm == ArgOptions.SwapAllowed;
             var remainingLinearRefs = new List<ILinearRef>();
-            foreach (IPExpr argument in arguments)
-            {
+            foreach (var argument in arguments)
                 if (argument is ILinearRef linearRef)
                 {
                     if (linearRef.LinearType.Equals(LinearType.Swap) && !swapAllowed)
-                    {
                         throw handler.InvalidSwap(linearRef, "swap not allowed in this context");
-                    }
 
                     remainingLinearRefs.Add(linearRef);
                 }
@@ -256,7 +213,6 @@ namespace Microsoft.Pc.TypeChecker
                 {
                     unavailable = ProcessExpr(unavailable, argument);
                 }
-            }
 
             return remainingLinearRefs.Aggregate(unavailable, ProcessExpr);
         }
@@ -290,15 +246,12 @@ namespace Microsoft.Pc.TypeChecker
                     unavailable = ProcessExpr(unavailable, keysExpr.Expr);
                     break;
                 case LinearAccessRefExpr linearAccessRefExpr:
-                    if (unavailable.Contains(linearAccessRefExpr.Variable) || linearAccessRefExpr.Variable.Role.Equals(VariableRole.Field))
-                    {
+                    if (unavailable.Contains(linearAccessRefExpr.Variable) ||
+                        linearAccessRefExpr.Variable.Role.Equals(VariableRole.Field))
                         throw handler.RelinquishedWithoutOwnership(linearAccessRefExpr);
-                    }
 
                     if (linearAccessRefExpr.LinearType.Equals(LinearType.Move))
-                    {
                         unavailable.Add(linearAccessRefExpr.Variable);
-                    }
 
                     break;
                 case UnaryOpExpr unaryOp:
@@ -336,9 +289,7 @@ namespace Microsoft.Pc.TypeChecker
                     break;
                 case VariableAccessExpr variableAccessExpr:
                     if (unavailable.Contains(variableAccessExpr.Variable))
-                    {
                         throw handler.UseWithoutOwnership(variableAccessExpr);
-                    }
 
                     break;
                 case BoolLiteralExpr _:
@@ -354,7 +305,8 @@ namespace Microsoft.Pc.TypeChecker
                     // nothing to do
                     break;
                 default:
-                    throw handler.InternalError(expression.SourceLocation, new ArgumentOutOfRangeException(nameof(expression)));
+                    throw handler.InternalError(expression.SourceLocation,
+                        new ArgumentOutOfRangeException(nameof(expression)));
             }
 
             return unavailable;

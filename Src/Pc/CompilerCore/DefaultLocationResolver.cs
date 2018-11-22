@@ -13,14 +13,12 @@ namespace Microsoft.Pc
         public SourceLocation GetLocation(ParserRuleContext decl)
         {
             if (decl == null || decl.Equals(ParserRuleContext.EmptyContext))
-            {
                 return new SourceLocation
                 {
                     Line = -1,
                     Column = -1,
                     File = null
                 };
-            }
 
             return new SourceLocation
             {
@@ -33,14 +31,12 @@ namespace Microsoft.Pc
         public SourceLocation GetLocation(IParseTree ctx, IToken tok)
         {
             if (ctx == null || tok == null)
-            {
                 return new SourceLocation
                 {
                     Line = -1,
                     Column = -1,
                     File = null
                 };
-            }
 
             return new SourceLocation
             {
@@ -62,10 +58,7 @@ namespace Microsoft.Pc
 
         private static IParseTree GetRoot(IParseTree node)
         {
-            while (node?.Parent != null)
-            {
-                node = node.Parent;
-            }
+            while (node?.Parent != null) node = node.Parent;
 
             return node;
         }

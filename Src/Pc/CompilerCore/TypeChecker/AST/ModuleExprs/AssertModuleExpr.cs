@@ -8,10 +8,6 @@ namespace Microsoft.Pc.TypeChecker.AST.ModuleExprs
     {
         private readonly List<Machine> specMonitors;
 
-        public IPModuleExpr ComponentModule { get; }
-
-        public IReadOnlyList<Machine> SpecMonitors => specMonitors;
-
         public AssertModuleExpr(ParserRuleContext sourceNode, List<Machine> specs, IPModuleExpr module)
         {
             SourceLocation = sourceNode;
@@ -19,10 +15,13 @@ namespace Microsoft.Pc.TypeChecker.AST.ModuleExprs
             ComponentModule = module;
             ModuleInfo = null;
         }
-        
+
+        public IPModuleExpr ComponentModule { get; }
+
+        public IReadOnlyList<Machine> SpecMonitors => specMonitors;
+
         public ParserRuleContext SourceLocation { get; }
-        
+
         public ModuleInfo ModuleInfo { get; set; }
     }
-    
 }

@@ -33,7 +33,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             SourceLocation = sourceNode;
         }
 
-        public Function(ParserRuleContext sourceNode) : this("", sourceNode) { }
+        public Function(ParserRuleContext sourceNode) : this("", sourceNode)
+        {
+        }
 
         public Machine Owner { get; set; }
         public Function ParentFunction { get; set; }
@@ -47,7 +49,10 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
 
-        public void AddLocalVariable(Variable local) { localVariables.Add(local); }
+        public void AddLocalVariable(Variable local)
+        {
+            localVariables.Add(local);
+        }
 
         public void AddLocalVariables(IEnumerable<Variable> variables)
         {

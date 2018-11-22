@@ -16,7 +16,7 @@ namespace Microsoft.Pc.TypeChecker
             this.machine = machine;
             this.method = method;
         }
-        
+
         public static void PopulateMethod(ITranslationErrorHandler handler, Function fun)
         {
             Contract.Requires(fun.Body == null);
@@ -34,34 +34,38 @@ namespace Microsoft.Pc.TypeChecker
             return Visit(context.functionBody());
         }
 
-        public override object VisitPFunDecl(PParser.PFunDeclContext context) { return Visit(context.functionBody()); }
+        public override object VisitPFunDecl(PParser.PFunDeclContext context)
+        {
+            return Visit(context.functionBody());
+        }
 
-        public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context) { return null; }
+        public override object VisitForeignFunDecl(PParser.ForeignFunDeclContext context)
+        {
+            return null;
+        }
 
         public override object VisitFunctionBody(PParser.FunctionBodyContext context)
         {
             // TODO: check that parameters have been added to internal scope?
 
             // Add all local variables to scope.
-            foreach (PParser.VarDeclContext varDeclContext in context.varDecl())
-            {
-                Visit(varDeclContext);
-            }
+            foreach (var varDeclContext in context.varDecl()) Visit(varDeclContext);
 
             // Build the statement trees
             var statementVisitor = new StatementVisitor(handler, machine, method);
-            method.Body = (CompoundStmt)statementVisitor.Visit(context);
+            method.Body = (CompoundStmt) statementVisitor.Visit(context);
             return null;
         }
 
         public override object VisitVarDecl(PParser.VarDeclContext context)
         {
-            foreach (PParser.IdenContext varName in context.idenList()._names)
+            foreach (var varName in context.idenList()._names)
             {
-                Variable variable = method.Scope.Put(varName.GetText(), varName, VariableRole.Local);
+                var variable = method.Scope.Put(varName.GetText(), varName, VariableRole.Local);
                 variable.Type = TypeResolver.ResolveType(context.type(), method.Scope, handler);
                 method.AddLocalVariable(variable);
             }
+
             return null;
         }
     }

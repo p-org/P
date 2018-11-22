@@ -9,6 +9,7 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             Name = testName;
             SourceLocation = sourceNode;
         }
+
         public string Main { get; set; }
         public IPModuleExpr LeftModExpr { get; set; }
         public IPModuleExpr RightModExpr { get; set; }

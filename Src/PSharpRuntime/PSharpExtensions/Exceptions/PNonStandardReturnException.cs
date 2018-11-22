@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace PrtSharp
+namespace PrtSharp.Exceptions
 {
     public enum NonStandardReturn
     {
@@ -10,7 +10,7 @@ namespace PrtSharp
         Pop
     }
 
-    class PNonStandardReturnException : Exception
+    internal class PNonStandardReturnException : Exception
     {
         public PNonStandardReturnException()
         {

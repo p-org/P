@@ -24,7 +24,7 @@ namespace Microsoft.Pc.Backend.Prt
                 valueInternmentTable.Add(function, funcTable);
             }
 
-            if (!funcTable.TryGetValue(value, out string literalName))
+            if (!funcTable.TryGetValue(value, out var literalName))
             {
                 literalName = nameManager.GetTemporaryName($"LIT_{typeName}");
                 funcTable.Add(value, literalName);
@@ -35,10 +35,7 @@ namespace Microsoft.Pc.Backend.Prt
 
         public IEnumerable<KeyValuePair<T, string>> GetValues(Function function)
         {
-            if (valueInternmentTable.TryGetValue(function, out var table))
-            {
-                return table.AsEnumerable();
-            }
+            if (valueInternmentTable.TryGetValue(function, out var table)) return table.AsEnumerable();
 
             return Enumerable.Empty<KeyValuePair<T, string>>();
         }

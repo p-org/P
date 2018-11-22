@@ -18,7 +18,7 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         public override string CanonicalRepresentation => TypeDefDecl.Type.CanonicalRepresentation;
         public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions { get; }
-    
+
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {

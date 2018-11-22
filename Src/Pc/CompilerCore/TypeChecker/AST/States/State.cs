@@ -26,14 +26,18 @@ namespace Microsoft.Pc.TypeChecker.AST.States
         public Machine OwningMachine { get; set; }
         public IStateContainer Container { get; set; }
 
-        public IStateAction this[PEvent index] { get => actions[index]; set => actions[index] = value; }
+        public IStateAction this[PEvent index]
+        {
+            get => actions[index];
+            set => actions[index] = value;
+        }
 
         public string QualifiedName
         {
             get
             {
-                string name = Name;
-                IStateContainer parent = Container;
+                var name = Name;
+                var parent = Container;
                 while (parent != null)
                 {
                     name = parent.Name + "." + name;
@@ -47,6 +51,9 @@ namespace Microsoft.Pc.TypeChecker.AST.States
         public string Name { get; }
         public ParserRuleContext SourceLocation { get; }
 
-        public bool HasHandler(PEvent pEvent) { return actions.ContainsKey(pEvent); }
+        public bool HasHandler(PEvent pEvent)
+        {
+            return actions.ContainsKey(pEvent);
+        }
     }
 }

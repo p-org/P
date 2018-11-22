@@ -40,10 +40,7 @@ namespace Microsoft.Pc.Backend
         {
             Contract.Requires(decl != null);
 
-            if (TryGetNameForNode(decl, out var name))
-            {
-                return name;
-            }
+            if (TryGetNameForNode(decl, out var name)) return name;
 
             var declName = ComputeNameForDecl(decl);
             return SetNameForNode(decl, declName);
@@ -54,10 +51,8 @@ namespace Microsoft.Pc.Backend
         private string SetNameForNode(IPDecl node, string name)
         {
             if (declNames.TryGetValue(node, out var existing))
-            {
                 throw new ArgumentException($"Decl {node.Name} already has name {existing}", nameof(node));
-            }
-            
+
             declNames.Add(node, name);
             return name;
         }

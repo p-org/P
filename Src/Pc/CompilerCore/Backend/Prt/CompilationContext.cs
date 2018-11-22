@@ -9,14 +9,15 @@ namespace Microsoft.Pc.Backend.Prt
     {
         private readonly Dictionary<Interface, int> interfaceNumbering = new Dictionary<Interface, int>();
         private readonly Dictionary<Machine, int> machineNumbering = new Dictionary<Machine, int>();
-        private readonly Dictionary<PEvent, int> userEventNumbering = new Dictionary<PEvent, int>();
-
-        private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering =
-            new Dictionary<Machine, Dictionary<State, int>>();
 
         private readonly ValueInternmentManager<bool> registeredBools;
         private readonly ValueInternmentManager<double> registeredFloats;
         private readonly ValueInternmentManager<int> registeredInts;
+
+        private readonly Dictionary<Machine, Dictionary<State, int>> stateNumbering =
+            new Dictionary<Machine, Dictionary<State, int>>();
+
+        private readonly Dictionary<PEvent, int> userEventNumbering = new Dictionary<PEvent, int>();
 
         public CompilationContext(ICompilationJob job) : base(job)
         {
@@ -34,62 +35,6 @@ namespace Microsoft.Pc.Backend.Prt
         public string SourceFileName { get; }
         public IEnumerable<PLanguageType> UsedTypes => Names.UsedTypes;
         public HashSet<PLanguageType> WrittenTypes { get; } = new HashSet<PLanguageType>();
-
-        #region Numbering helpers
-
-        private static int GetOrAddNumber<T>(IDictionary<T, int> dict, T declaration)
-        {
-            if (dict.TryGetValue(declaration, out int number))
-            {
-                return number;
-            }
-
-            number = dict.Count;
-            dict.Add(declaration, number);
-            return number;
-        }
-
-        public int GetDeclNumber(Interface pInterface)
-        {
-            return GetOrAddNumber(interfaceNumbering, pInterface);
-        }
-
-        public int GetDeclNumber(Machine machine)
-        {
-            return GetOrAddNumber(machineNumbering, machine);
-        }
-
-        public int GetDeclNumber(PEvent ev)
-        {
-            if (ev.IsNullEvent)
-            {
-                return 0;
-            }
-
-            if (ev.IsHaltEvent)
-            {
-                return 1;
-            }
-
-            // There are two built-in events, which have predetermined numbers.
-            // User-defined events have a minimum id of 2, but GetOrAddNumber
-            // assigns sequentially from 0.
-            return 2 + GetOrAddNumber(userEventNumbering, ev);
-        }
-
-        public int GetDeclNumber(State state)
-        {
-            Machine machine = state.OwningMachine;
-            if (!stateNumbering.TryGetValue(machine, out var internalNumbering))
-            {
-                internalNumbering = new Dictionary<State, int>();
-                stateNumbering.Add(machine, internalNumbering);
-            }
-
-            return GetOrAddNumber(internalNumbering, state);
-        }
-
-        #endregion
 
         public string RegisterLiteral(Function function, int value)
         {
@@ -120,5 +65,52 @@ namespace Microsoft.Pc.Backend.Prt
         {
             return registeredBools.GetValues(function);
         }
+
+        #region Numbering helpers
+
+        private static int GetOrAddNumber<T>(IDictionary<T, int> dict, T declaration)
+        {
+            if (dict.TryGetValue(declaration, out var number)) return number;
+
+            number = dict.Count;
+            dict.Add(declaration, number);
+            return number;
+        }
+
+        public int GetDeclNumber(Interface pInterface)
+        {
+            return GetOrAddNumber(interfaceNumbering, pInterface);
+        }
+
+        public int GetDeclNumber(Machine machine)
+        {
+            return GetOrAddNumber(machineNumbering, machine);
+        }
+
+        public int GetDeclNumber(PEvent ev)
+        {
+            if (ev.IsNullEvent) return 0;
+
+            if (ev.IsHaltEvent) return 1;
+
+            // There are two built-in events, which have predetermined numbers.
+            // User-defined events have a minimum id of 2, but GetOrAddNumber
+            // assigns sequentially from 0.
+            return 2 + GetOrAddNumber(userEventNumbering, ev);
+        }
+
+        public int GetDeclNumber(State state)
+        {
+            var machine = state.OwningMachine;
+            if (!stateNumbering.TryGetValue(machine, out var internalNumbering))
+            {
+                internalNumbering = new Dictionary<State, int>();
+                stateNumbering.Add(machine, internalNumbering);
+            }
+
+            return GetOrAddNumber(internalNumbering, state);
+        }
+
+        #endregion
     }
 }

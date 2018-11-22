@@ -33,48 +33,22 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
         public State StartState { get; set; }
         public IEventSet Observes { get; set; }
         public PLanguageType PayloadType { get; set; } = PrimitiveType.Null;
-        public ParserRuleContext SourceLocation { get; }
 
         public Scope Scope { get; set; }
+        public ParserRuleContext SourceLocation { get; }
         public string Name { get; }
         public IStateContainer ParentStateContainer { get; } = null;
         public IEnumerable<State> States => states.Values;
         public IEnumerable<StateGroup> Groups => groups.Values;
 
-        public IEnumerable<State> AllStates()
-        {
-            if (StartState != null)
-            {
-                yield return StartState;
-            }
-
-            var containers = new Stack<IStateContainer>();
-            containers.Push(this);
-            while (containers.Any())
-            {
-                var container = containers.Pop();
-                foreach (State state in container.States)
-                {
-                    if (!state.IsStart)
-                    {
-                        yield return state;
-                    }
-                }
-                foreach (var group in container.Groups)
-                {
-                    containers.Push(group);
-                }
-            }
-        }
-
         public IStateContainer GetGroup(string groupName)
         {
-            return groups.TryGetValue(groupName, out StateGroup group) ? group : null;
+            return groups.TryGetValue(groupName, out var group) ? group : null;
         }
 
         public State GetState(string stateName)
         {
-            return states.TryGetValue(stateName, out State state) ? state : null;
+            return states.TryGetValue(stateName, out var state) ? state : null;
         }
 
         public void AddState(State state)
@@ -93,7 +67,26 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             groups.Add(group.Name, group);
         }
 
-        public void AddField(Variable field) { fields.Add(field); }
+        public IEnumerable<State> AllStates()
+        {
+            if (StartState != null) yield return StartState;
+
+            var containers = new Stack<IStateContainer>();
+            containers.Push(this);
+            while (containers.Any())
+            {
+                var container = containers.Pop();
+                foreach (var state in container.States)
+                    if (!state.IsStart)
+                        yield return state;
+                foreach (var group in container.Groups) containers.Push(group);
+            }
+        }
+
+        public void AddField(Variable field)
+        {
+            fields.Add(field);
+        }
 
         public void AddMethod(Function method)
         {
@@ -102,6 +95,9 @@ namespace Microsoft.Pc.TypeChecker.AST.Declarations
             method.Role |= FunctionRole.Method;
         }
 
-        public void AddFields(IEnumerable<Variable> variables) { fields.AddRange(variables); }
+        public void AddFields(IEnumerable<Variable> variables)
+        {
+            fields.AddRange(variables);
+        }
     }
 }

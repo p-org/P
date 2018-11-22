@@ -1,6 +1,4 @@
-﻿using System;
-using PrtSharp.Values;
-using PrtSharp.Exceptions;
+﻿using PrtSharp.Values;
 
 namespace PrtSharp
 {
@@ -43,12 +41,10 @@ namespace PrtSharp
 
         public static PrtBool SafeEquals(IPrtValue val1, IPrtValue val2)
         {
-            return ReferenceEquals(val1, val2) || (val1 != null && val1.Equals(val2));
+            return ReferenceEquals(val1, val2) || val1 != null && val1.Equals(val2);
         }
 
-        
 
-        
         public static IPrtValue PrtCastValue(IPrtValue value, PrtType type)
         {
             //todo: Needs to be fixed
@@ -58,5 +54,4 @@ namespace PrtSharp
             return value.Clone();
         }
     }
-
 }

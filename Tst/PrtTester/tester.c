@@ -1,6 +1,6 @@
 #include "main.h"
 
-void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
+void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST* ptr)
 {
 	if (status == PRT_STATUS_ASSERT)
 	{
@@ -32,10 +32,7 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 		fprintf_s(stdout, "unexpected PRT_STATUS in ErrorHandler: %d\n", status);
 		exit(2);
 	}
-
-
 }
-
 
 
 HANDLE threadsTerminated;
@@ -50,12 +47,12 @@ static long startTime = 0;
 static long perfEndTime = 0;
 static const char* parg = NULL;
 
-void Log(PRT_STEP step, PRT_MACHINESTATE *senderState, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
+void Log(PRT_STEP step, PRT_MACHINESTATE* senderState, PRT_MACHINEINST* receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
 	PrtPrintStep(step, senderState, receiver, event, payload);
 }
 
-static PRT_BOOLEAN ParseCommandLine(int argc, char *argv[])
+static PRT_BOOLEAN ParseCommandLine(int argc, char* argv[])
 {
 	for (int i = 1; i < argc; i++)
 	{
@@ -122,16 +119,16 @@ static void PrintUsage(void)
 	printf("Options:\n");
 	printf("   -cooperative     run state machine with the cooperative scheduler\n");
 	printf("   -threads [n]     run P using multiple threads");
-	printf("   -perf [n]        run performance test that outputs #steps every 10 seconds, terminating after n seconds");
+	printf(
+		"   -perf [n]        run performance test that outputs #steps every 10 seconds, terminating after n seconds");
 	printf("   -arg [x]         pass argument 'x' to P main machine");
 }
 
 static void RunPerfTest()
 {
-
 }
 
-void PRT_CALL_CONV  MyAssert(PRT_INT32 condition, PRT_CSTRING message)
+void PRT_CALL_CONV MyAssert(PRT_INT32 condition, PRT_CSTRING message)
 {
 	if (condition != 0)
 	{
@@ -171,7 +168,7 @@ static void RunToIdle(LPVOID process)
 	}
 }
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
 	if (!ParseCommandLine(argc, argv))
 	{
@@ -188,9 +185,9 @@ int main(int argc, char *argv[])
 		// then re-run the test, you will get the full call stack in the debugger where the block was allocated.
 		// _CrtSetBreakAlloc(105);
 #endif
-		PRT_PROCESS *process;
+		PRT_PROCESS * process;
 		PRT_GUID processGuid;
-		PRT_VALUE *payload;
+		PRT_VALUE * payload;
 		processGuid.data1 = 1;
 		processGuid.data2 = 0;
 		processGuid.data3 = 0;
@@ -199,15 +196,18 @@ int main(int argc, char *argv[])
 		if (cooperative)
 		{
 			PrtSetSchedulingPolicy(process, PRT_SCHEDULINGPOLICY_COOPERATIVE);
+		
 		}
 		if (parg == NULL)
 		{
 			payload = PrtMkNullValue();
+		
 		}
 		else
 		{
 			int i = atoi(parg);
 			payload = PrtMkIntValue(i);
+		
 		}
 
 		PrtUpdateAssertFn(MyAssert);
@@ -225,18 +225,22 @@ int main(int argc, char *argv[])
 			{
 				DWORD threadId;
 				CreateThread(NULL, 16000, (LPTHREAD_START_ROUTINE)RunToIdle, process, 0, &threadId);
+			
 			}
 			WaitForSingleObject(threadsTerminated, INFINITE);
+		
 		}
 
 		PrtFreeValue(payload);
 		PrtStopProcess(process);
+	
 	}
 #ifdef REPORT_MEMORY_LEAK
     }
 	_CrtSetReportMode(_CRT_ERROR, _CRTDBG_MODE_DEBUG);
 	_CrtDumpMemoryLeaks();
 #else
-		PRT_DBG_END_MEM_BALANCED_REGION
+	PRT_DBG_END_MEM_BALANCED_REGION
 #endif
+
 }

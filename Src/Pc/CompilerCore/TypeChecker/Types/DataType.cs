@@ -7,7 +7,6 @@ namespace Microsoft.Pc.TypeChecker.Types
 {
     public class DataType : PLanguageType
     {
-
         public DataType(NamedEventSet eventSet) : base(TypeKind.Data)
         {
         }
@@ -16,18 +15,14 @@ namespace Microsoft.Pc.TypeChecker.Types
 
         public override string CanonicalRepresentation => "data";
 
-        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions => new Lazy<IReadOnlyList<PEvent>>(() => new List<PEvent>());
+        public override Lazy<IReadOnlyList<PEvent>> AllowedPermissions =>
+            new Lazy<IReadOnlyList<PEvent>>(() => new List<PEvent>());
 
         public override bool IsAssignableFrom(PLanguageType otherType)
         {
             if (otherType.AllowedPermissions == null)
-            {
                 return false;
-            }
-            else
-            {
-                return !otherType.AllowedPermissions.Value.Any();
-            }
+            return !otherType.AllowedPermissions.Value.Any();
         }
 
         public override PLanguageType Canonicalize()

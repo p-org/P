@@ -1,1 +1,0 @@
-dsc: ptester, RHS of asgn is nondet return value from function

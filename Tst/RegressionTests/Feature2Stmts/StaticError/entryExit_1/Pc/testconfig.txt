@@ -1,5 +1,0 @@
-arg: ..\entryExit_1.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: 2.12. ITE statements: nondet choice

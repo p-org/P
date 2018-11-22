@@ -38,40 +38,12 @@ namespace Microsoft.Pc.Backend.PSharp
             // write the interface declarations 
             WriteInitializeInterfaces(context, source.Stream, globalScope.Interfaces);
 
-            // TODO: generate tuple type classes.
-            foreach (var type in context.UsedTypes.ToList())
-            {
-                if (type.Canonicalize() is NamedTupleType namedtuple)
-                {
-                    WriteNamedTupleDefinition(context, source.Stream, namedtuple);
-                }
-            }
+            // write the enum declarations
+            WriteInitializeEnums(context, source.Stream, globalScope.Enums);
 
             WriteSourceEpilogue(context, source.Stream);
 
             return source;
-        }
-
-        private void WriteNamedTupleDefinition(CompilationContext context, StringWriter output, NamedTupleType type)
-        {
-            /*
-            var className = context.Names.GetTypeName(type);
-            var typeNames = type.Types.Select(t => GetCSharpType(context, t)).ToList();
-            var fieldNames = type.Fields.Select(entry => entry.Name).ToList();
-
-            var genericTypes = string.Join(", ", typeNames);
-            context.WriteLine(output, $"public class {className} : PrtTuple<{genericTypes}>");
-            context.WriteLine(output, "{");
-            var ctorArgList = string.Join(", ", typeNames.Zip(fieldNames, (ty, f) => $"{ty} {f}"));
-            context.WriteLine(output, $"public {className}({ctorArgList}) : base({string.Join(", ", fieldNames)}) {{ }}");
-            context.WriteLine(output, $"public {className}(IReadOnlyPrtTuple<{genericTypes}> other) : base(other) {{ }}");
-            // todo: bug: if a user names their field "ItemN"
-            for (int i = 0; i < typeNames.Count; i++)
-            {
-                context.WriteLine(output, $"public {typeNames[i]} {fieldNames[i]} {{ get => Item{i+1}; set => Item{i+1} = value; }}");
-            }
-            context.WriteLine(output, $"public override IPrtValue Clone() {{ return new {className}({string.Join(", ", fieldNames)}); }}");
-            context.WriteLine(output, "}");*/
         }
 
         private void WriteInitializeInterfaces(CompilationContext context, StringWriter output, IEnumerable<Interface> interfaces)
@@ -157,8 +129,7 @@ namespace Microsoft.Pc.Backend.PSharp
                         WriteMachine(context, output, machine);
                     }
                     break;
-                case PEnum pEnum:
-                    WriteEnum(context, output, pEnum);
+                case PEnum _:
                     break;
                 case TypeDef typeDef:
                     var foreignType = typeDef.Type as ForeignType;
@@ -195,6 +166,8 @@ namespace Microsoft.Pc.Backend.PSharp
                 context.WriteLine(output, $"private {GetCSharpType(context, field.Type)} {context.Names.GetNameForDecl(field)} = {GetDefaultValue(context, field.Type)};");
             }
 
+            WriteMonitorConstructor(context, output, machine);
+
             foreach (Function method in machine.Methods)
             {
                 WriteFunction(context, output, method);
@@ -221,15 +194,7 @@ namespace Microsoft.Pc.Backend.PSharp
 
         private static void WriteEnum(CompilationContext context, StringWriter output, PEnum pEnum)
         {
-            var declName = context.Names.GetNameForDecl(pEnum);
-            context.WriteLine(output, $"public enum {declName} : long");
-            context.WriteLine(output, "{");
-            foreach (EnumElem enumElem in pEnum.Values)
-            {
-                context.WriteLine(output, $"{context.Names.GetNameForDecl(enumElem)} = {enumElem.Value},");
-            }
-
-            context.WriteLine(output, "}");
+            
         }
 
         private static void WriteForeignType(CompilationContext context, StringWriter output, ForeignType foreignType)
@@ -279,6 +244,24 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output);
         }
 
+        private void WriteInitializeEnums(CompilationContext context, StringWriter output, IEnumerable<PEnum> enums)
+        {
+            //initialize the interfaces
+            context.WriteLine(output, "public partial class PHelper {");
+            context.WriteLine(output, "public static void InitializeEnums() {");
+            context.WriteLine(output, "PrtEnum.Clear();");
+            foreach (var enumDecl in enums)
+            {
+                string enumElemNames = $"new [] {{{string.Join(",", enumDecl.Values.Select(e => $"\"{e.Name}\""))}}}";
+                string enumElemValues = $"new [] {{{string.Join(",", enumDecl.Values.Select(e => e.Value))}}}";
+                context.WriteLine(output, $"PrtEnum.AddEnumElements({enumElemNames}, {enumElemValues});");
+                
+            }
+            context.WriteLine(output, "}");
+            context.WriteLine(output, "}");
+            context.WriteLine(output);
+        }
+
         private void WriteTestFunction(CompilationContext context, StringWriter output, string main)
         {
             context.WriteLine(output);
@@ -287,6 +270,7 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "runtime.SetLogger(new PLogger());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
+            context.WriteLine(output, "PHelper.InitializeEnums();");
             context.WriteLine(output, "InitializeLinkMap();");
             context.WriteLine(output, "InitializeInterfaceDefMap();");
             context.WriteLine(output, "InitializeMonitorMap(runtime);");
@@ -1052,7 +1036,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case EnumElemRefExpr enumElemRefExpr:
                     EnumElem enumElem = enumElemRefExpr.Value;
-                    context.Write(output, $"((long){context.Names.GetNameForDecl(enumElem.ParentEnum)}.{context.Names.GetNameForDecl(enumElem)})");
+                    context.Write(output, $"(PrtEnum.Get(\"{context.Names.GetNameForDecl(enumElem)}\"))");
                     break;
                 case EventRefExpr eventRefExpr:
                     var eventName = context.Names.GetNameForDecl(eventRefExpr.Value);
@@ -1164,10 +1148,6 @@ namespace Microsoft.Pc.Backend.PSharp
                 case SeqAccessExpr _:
                 case TupleAccessExpr _:
                 case VariableAccessExpr _:
-                    if (pExpr.Type.TypeKind == TypeKind.Enum)
-                    {
-                        context.Write(output, "(long)");
-                    }
                     WriteLValue(context, output, pExpr);
                     break;
                 default:
@@ -1194,7 +1174,7 @@ namespace Microsoft.Pc.Backend.PSharp
                 case DataType _:
                     return "IPrtValue";
                 case EnumType enumType:
-                    return context.Names.GetNameForDecl(enumType.EnumDecl);
+                    return "PrtInt";
                 case ForeignType _:
                     return type.CanonicalRepresentation;
                 case MapType mapType:
@@ -1231,8 +1211,8 @@ namespace Microsoft.Pc.Backend.PSharp
         {
             switch (returnType.Canonicalize())
             {
-                case EnumType enumType:
-                    return $"({context.Names.GetNameForDecl(enumType.EnumDecl)})(0)";
+                case EnumType _:
+                    return $"((PrtInt)0)";
                 case MapType mapType:
                     return $"new {GetCSharpType(context, mapType)}()";
                 case SequenceType sequenceType:

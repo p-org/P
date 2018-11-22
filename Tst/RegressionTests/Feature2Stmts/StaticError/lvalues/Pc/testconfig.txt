@@ -1,5 +1,0 @@
-arg: ..\lvalues.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: 2.9.2.  Assign: invalid LHS, impure functions in LHS

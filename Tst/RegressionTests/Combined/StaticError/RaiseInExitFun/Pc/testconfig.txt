@@ -1,5 +1,0 @@
-arg: ..\RaiseInExitFun.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: Control Impurity: error when "raise" in exit function

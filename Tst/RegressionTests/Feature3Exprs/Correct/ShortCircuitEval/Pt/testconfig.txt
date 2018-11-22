@@ -1,1 +1,0 @@
-dsc: ptester, short-circuit in "&&" and "||" evaluation in Zinger

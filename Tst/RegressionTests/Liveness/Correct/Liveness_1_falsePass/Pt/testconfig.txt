@@ -1,1 +1,0 @@
-dsc: ptester, Liveness: sample demonstrating "false" pass in liveness checking

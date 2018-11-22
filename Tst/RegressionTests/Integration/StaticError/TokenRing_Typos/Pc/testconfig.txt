@@ -1,5 +1,0 @@
-arg: ..\TokenRing_Typos.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: Integration: various syntax checks

@@ -1,5 +1,0 @@
-arg: ..\sends.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: 2.4. Send statement: type checking

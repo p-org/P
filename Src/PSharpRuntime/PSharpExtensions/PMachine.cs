@@ -68,11 +68,11 @@ namespace PrtSharp
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
 
-        public void SendEvent(PMachine source, PMachineValue target, Event ev, object payload = null)
+        public void SendEvent(PMachineValue target, Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot send a null event");
             Assert(sends.Contains(ev.GetType().Name),
-                $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
+                $"Event {ev.GetType().Name} is not in the sends set of the Machine {this.GetType().Name}");
             Assert(target.Permissions.Contains(ev.GetType().Name),
                 $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
@@ -83,21 +83,17 @@ namespace PrtSharp
             Send(target.Id, ev);
         }
 
-        public void RaiseEvent(PMachine source, Event ev, object payload = null)
+        public void RaiseEvent(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot raise a null event");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event) oneArgConstructor.Invoke(new[] {payload});
 
 
-            source.Raise(ev);
+            this.Raise(ev);
             throw new PNonStandardReturnException {ReturnKind = NonStandardReturn.Raise};
         }
 
-        public void RaiseEvent(Event ev, object payload = null)
-        {
-            RaiseEvent(this, ev, payload);
-        }
 
         public Task<Event> ReceiveEvent(params Type[] events)
         {

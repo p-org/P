@@ -694,8 +694,7 @@ namespace Microsoft.Pc.Backend.PSharp
                     context.WriteLine(output, ");");
                     break;
                 case RaiseStmt raiseStmt:
-                    context.Write(output, "currentMachine.RaiseEvent(");
-                    context.Write(output, "currentMachine, (Event)");
+                    context.Write(output, "currentMachine.RaiseEvent((Event)");
                     WriteExpr(context, output, raiseStmt.PEvent);
                     if (raiseStmt.Payload.Any())
                     {
@@ -770,7 +769,6 @@ namespace Microsoft.Pc.Backend.PSharp
                     break;
                 case SendStmt sendStmt:
                     context.Write(output, "currentMachine.SendEvent(");
-                    context.Write(output, "currentMachine, ");
                     WriteExpr(context, output, sendStmt.MachineExpr);
                     context.Write(output, ", (Event)");
                     WriteExpr(context, output, sendStmt.Evt);

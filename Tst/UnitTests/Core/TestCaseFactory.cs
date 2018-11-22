@@ -28,12 +28,10 @@ namespace UnitTests.Core
         /// Box a test case from the given directory and parsed Prt run configuration
         /// </summary>
         /// <param name="testDir">The directory containing P source files</param>
-        /// <param name="runConfig">The run configuration for the test, or null if compile-only</param>
         /// <param name="output">The desired output language</param>
         /// <returns>The test case in a runnable state.</returns>
-        public CompilerTestCase CreateTestCase(DirectoryInfo testDir, TestConfig runConfig, CompilerOutput output)
+        public CompilerTestCase CreateTestCase(DirectoryInfo testDir, CompilerOutput output)
         {
-            // TODO: support other run configurations.
             var inputFiles = testDir.GetFiles("*.p");
             string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
                               .MakeRelativeUri(new Uri(testDir.FullName))
@@ -42,43 +40,53 @@ namespace UnitTests.Core
             ICompilerTestRunner runner;
             ITestResultsValidator validator;
 
-            if (runConfig != null)
+            string expectedOutput;
+            if (output.Equals(CompilerOutput.C))
             {
-                string expectedOutput;
-                if (output.Equals(CompilerOutput.C))
-                {
-                    var nativeFiles = testDir.GetFiles("*.c");
-                    runner = new PrtRunner(inputFiles, nativeFiles);
-                    expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
-                }
-                else if (output.Equals(CompilerOutput.PSharp))
-                {
-                    var nativeFiles = testDir.GetFiles("*.cs");
-                    runner = new PSharpRunner(inputFiles, nativeFiles);
-                    expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
-                }
-                else
-                {
-                    throw new ArgumentOutOfRangeException();
-                }
-
-                // TODO: fix golden outputs for dynamic error assertions (79 tests)
-                ParseExpectedOutput(expectedOutput, out string stdout, out string stderr, out int exitCode);
-                if (testName.Contains("/DynamicError/") || output.Equals(CompilerOutput.PSharp))
-                {
-                    stdout = null;
-                    stderr = null;
-                }
-                validator = new ExecutionOutputValidator(exitCode, stdout, stderr);
+                var nativeFiles = testDir.GetFiles("*.c");
+                runner = new PrtRunner(inputFiles, nativeFiles);
+                expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
+            }
+            else if (output.Equals(CompilerOutput.PSharp))
+            {
+                var nativeFiles = testDir.GetFiles("*.cs");
+                runner = new PSharpRunner(inputFiles, nativeFiles);
+                expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
             }
             else
             {
-                runner = new CompileOnlyRunner(output, inputFiles);
-
-                // TODO: validate information about the particular kind of compiler error
-                bool isStaticError = testName.Contains("/StaticError/");
-                validator = isStaticError ? (ITestResultsValidator) new StaticErrorValidator() : new CompileSuccessValidator();
+                throw new ArgumentOutOfRangeException();
             }
+
+            // TODO: fix golden outputs for dynamic error assertions (79 tests)
+            ParseExpectedOutput(expectedOutput, out string stdout, out string stderr, out int exitCode);
+            if (testName.Contains("/DynamicError/") || output.Equals(CompilerOutput.PSharp))
+            {
+                stdout = null;
+                stderr = null;
+            }
+            validator = new ExecutionOutputValidator(exitCode, stdout, stderr);
+
+            DirectoryInfo tempDirName = Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, output.ToString(), testName));
+            return new CompilerTestCase(tempDirName, runner, validator);
+        }
+
+        public CompilerTestCase CreateTestCase(DirectoryInfo testDir)
+        {
+            var inputFiles = testDir.GetFiles("*.p");
+            string testName = new Uri(Constants.TestDirectory + Path.DirectorySeparatorChar)
+                              .MakeRelativeUri(new Uri(testDir.FullName))
+                              .ToString();
+
+            ICompilerTestRunner runner;
+            ITestResultsValidator validator;
+
+            var output = CompilerOutput.C;
+            runner = new CompileOnlyRunner(output, inputFiles);
+
+            // TODO: validate information about the particular kind of compiler error
+            bool isStaticError = testName.Contains("/StaticError/");
+            validator = isStaticError ? (ITestResultsValidator)new StaticErrorValidator() : new CompileSuccessValidator();
 
             DirectoryInfo tempDirName = Directory.CreateDirectory(Path.Combine(testTempBaseDir.FullName, output.ToString(), testName));
             return new CompilerTestCase(tempDirName, runner, validator);

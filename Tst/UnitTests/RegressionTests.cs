@@ -39,17 +39,34 @@ namespace UnitTests
 
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class RegressionTests
+    public class CompileOnlyRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
-        
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "Pc" });
+
         [TestCaseSource(nameof(RegressionTestSuite))]
-        public void TestPrtRegressions(DirectoryInfo testDir, TestConfig runConfig)
+        public void TestRegressions(DirectoryInfo testDir)
         {
             var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
             var factory = new TestCaseFactory(scratchDir);
-            var testCaseC = factory.CreateTestCase(testDir, runConfig, CompilerOutput.C);
+            var testCaseC = factory.CreateTestCase(testDir);
+            TestAssertions.AssertTestCase(testCaseC);
+        }
+    }
+
+    [TestFixture]
+    [Parallelizable(ParallelScope.Children)]
+    public class PrtRegressionTests
+    {
+        private static IEnumerable<TestCaseData> RegressionTestSuite =>
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "Prt" });
+        
+        [TestCaseSource(nameof(RegressionTestSuite))]
+        public void TestRegressions(DirectoryInfo testDir)
+        {
+            var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
+            var factory = new TestCaseFactory(scratchDir);
+            var testCaseC = factory.CreateTestCase(testDir,CompilerOutput.C);
             TestAssertions.AssertTestCase(testCaseC);
         }
 
@@ -74,18 +91,17 @@ namespace UnitTests
 
     [TestFixture]
     [Parallelizable(ParallelScope.Children)]
-    public class PSharpRegressionTests
+    public class PrtSharpRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory);
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] { "Prt" });
 
         [TestCaseSource(nameof(RegressionTestSuite))]
-        public void TestPSharpRegressions(DirectoryInfo testDir, TestConfig runConfig)
+        public void TestRegressions(DirectoryInfo testDir)
         {
-            // TODO: static error test cases are run twice here.
             var scratchDir = Directory.CreateDirectory(Constants.ScratchParentDirectory);
             var factory = new TestCaseFactory(scratchDir);
-            var testCasePSharp = factory.CreateTestCase(testDir, runConfig, CompilerOutput.PSharp);
+            var testCasePSharp = factory.CreateTestCase(testDir, CompilerOutput.PSharp);
             TestAssertions.AssertTestCase(testCasePSharp);
         }
     }

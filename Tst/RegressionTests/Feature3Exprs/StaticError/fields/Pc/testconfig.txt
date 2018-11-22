@@ -1,5 +1,0 @@
-arg: ..\fields.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: 3.3.4.2. bad field name

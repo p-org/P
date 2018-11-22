@@ -16,7 +16,6 @@ namespace UnitTests.Core
         public const string TestDirectoryName = "Tst";
         public const string CTesterExecutableName = "tester.exe";
         public const string CorrectOutputFileName = "acc_0.txt";
-        public const string TestConfigFileName = "testconfig.txt";
 #if DEBUG
         public const string BuildConfiguration = "Debug";
 #else

@@ -1,5 +1,0 @@
-arg: ..\Duplicates.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: Combined: duplicates: static errors

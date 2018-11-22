@@ -1,5 +1,0 @@
-arg: ..\TokenRing_Main.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: Integration: various syntax checks

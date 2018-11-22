@@ -112,7 +112,7 @@ namespace Main
         {
             // TODO: bug P# team for how to run a test w/o invoking executable
             string testerPath = Path.Combine(PSharpAssemblyLocation, "..", "net46", "PSharpTester.exe");
-            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, testerPath, $"\"/test:{dllPath}\"",$"\"/i:200\"");
+            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, testerPath, $"\"/test:{dllPath}\"", $"\"/i:200\"", $"\"/sch:pct:2\"");
         }
     
         private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)

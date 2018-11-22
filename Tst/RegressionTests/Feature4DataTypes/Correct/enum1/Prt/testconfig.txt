@@ -1,1 +1,0 @@
-dsc: test enum feature

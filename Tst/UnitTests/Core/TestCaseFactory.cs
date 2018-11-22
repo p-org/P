@@ -51,7 +51,16 @@ namespace UnitTests.Core
             {
                 var nativeFiles = testDir.GetFiles("*.cs");
                 runner = new PSharpRunner(inputFiles, nativeFiles);
-                expectedOutput = File.ReadAllText(Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName));
+                var prtGoldenOutputFile = Path.Combine(testDir.FullName, "Prt", Constants.CorrectOutputFileName);
+                var prtSharpGoldenOutputFile = Path.Combine(testDir.FullName, "PrtSharp", Constants.CorrectOutputFileName);
+                if (File.Exists(prtSharpGoldenOutputFile))
+                {
+                    expectedOutput = File.ReadAllText(prtSharpGoldenOutputFile);
+                }
+                else
+                {
+                    expectedOutput = File.ReadAllText(prtGoldenOutputFile);
+                }
             }
             else
             {

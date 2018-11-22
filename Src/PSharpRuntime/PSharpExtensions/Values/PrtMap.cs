@@ -5,59 +5,9 @@ using System.Linq;
 
 namespace PrtSharp.Values
 {
-    public interface IPrtMap<in TKey, out TValue> : IPrtValue
-        where TKey : IPrtValue
-        where TValue : IPrtValue
+    public sealed class PrtMap : IPrtMutableValue, IDictionary<IPrtValue, IPrtValue>
     {
-        TValue this[TKey key] { get; }
-    }
-
-    public sealed class PrtMap2<TKey, TValue> : IPrtMap<TKey, TValue>
-        where TKey : IPrtValue
-        where TValue : IPrtValue
-    {
-        public readonly ImmutableDictionary<TKey, TValue> wrapped;
-
-        public PrtMap2(ImmutableDictionary<TKey, TValue> dict)
-        {
-            wrapped = dict;
-        }
-
-        public TValue this[TKey key] => throw new System.NotImplementedException();
-
-        public IPrtValue Clone()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public bool Equals(IPrtValue other)
-        {
-            throw new System.NotImplementedException();
-        }
-    }
-
-    public static class PrtMapExtensions
-    {
-        public static PrtMap2<TKey, TValue> Insert<TKey, TValue>(this PrtMap2<TKey, TValue> map, TKey key, TValue value)
-            where TKey : IPrtValue
-            where TValue : IPrtValue
-        {
-            return new PrtMap2<TKey, TValue>(map.wrapped.Add(key, value));
-        }
-
-        public static PrtSeq<TKey> GetKeys<TKey, TValue>(this PrtMap2<TKey, TValue> map)
-            where TKey : IPrtValue
-            where TValue : IPrtValue
-        {
-            return new PrtSeq<TKey>(map.wrapped.Keys.Select(v => v.Clone()).Cast<TKey>());
-        }
-    }
-
-    public sealed class PrtMap<TKey, TValue> : IPrtMutableValue, IDictionary<TKey, TValue>
-        where TKey : IPrtValue
-        where TValue : IPrtValue
-    {
-        private readonly IDictionary<TKey, TValue> map = new Dictionary<TKey, TValue>();
+        private readonly IDictionary<IPrtValue, IPrtValue> map = new Dictionary<IPrtValue, IPrtValue>();
 
         private int hashCode;
         private bool isDirty;
@@ -68,20 +18,20 @@ namespace PrtSharp.Values
             hashCode = ComputeHashCode();
         }
 
-        public PrtMap(Dictionary<TKey, TValue> map)
+        public PrtMap(IDictionary<IPrtValue, IPrtValue> map)
         {
             this.map = map;
             hashCode = ComputeHashCode();
         }
 
-        public PrtSeq<TKey> CloneKeys()
+        public PrtSeq CloneKeys()
         {
-            return new PrtSeq<TKey>(map.Keys.Select(v => v.Clone()).Cast<TKey>());
+            return new PrtSeq(map.Keys.Select(v => v.Clone()));
         }
 
-        public PrtSeq<TValue> CloneValues()
+        public PrtSeq CloneValues()
         {
-            return new PrtSeq<TValue>(map.Values.Select(v => v.Clone()).Cast<TValue>());
+            return new PrtSeq(map.Values.Select(v => v.Clone()));
         }
 
         private bool IsDirty
@@ -98,7 +48,7 @@ namespace PrtSharp.Values
             }
         }
 
-        public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
+        public IEnumerator<KeyValuePair<IPrtValue, IPrtValue>> GetEnumerator()
         {
             return map.GetEnumerator();
         }
@@ -108,7 +58,7 @@ namespace PrtSharp.Values
             return GetEnumerator();
         }
 
-        public void Add(KeyValuePair<TKey, TValue> item)
+        public void Add(KeyValuePair<IPrtValue, IPrtValue> item)
         {
             MutabilityHelper.EnsureFrozen(item.Key);
             map.Add(item.Key, item.Value);
@@ -121,20 +71,20 @@ namespace PrtSharp.Values
             IsDirty = true;
         }
 
-        public bool Contains(KeyValuePair<TKey, TValue> item)
+        public bool Contains(KeyValuePair<IPrtValue, IPrtValue> item)
         {
             return map.Contains(item);
         }
 
-        public void CopyTo(KeyValuePair<TKey, TValue>[] array, int arrayIndex)
+        public void CopyTo(KeyValuePair<IPrtValue, IPrtValue>[] array, int arrayIndex)
         {
-            foreach (KeyValuePair<TKey, TValue> kv in map)
+            foreach (KeyValuePair<IPrtValue, IPrtValue> kv in map)
             {
                 array[arrayIndex++] = kv;
             }
         }
 
-        public bool Remove(KeyValuePair<TKey, TValue> item)
+        public bool Remove(KeyValuePair<IPrtValue, IPrtValue> item)
         {
             bool removed = map.Remove(item.Key);
             IsDirty = true;
@@ -144,31 +94,31 @@ namespace PrtSharp.Values
         public int Count => map.Count;
         public bool IsReadOnly => false;
 
-        public void Add(TKey key, TValue value)
+        public void Add(IPrtValue key, IPrtValue value)
         {
             MutabilityHelper.EnsureFrozen(key);
             map.Add(key, value);
             IsDirty = true;
         }
 
-        public bool ContainsKey(TKey key)
+        public bool ContainsKey(IPrtValue key)
         {
             return map.ContainsKey(key);
         }
 
-        public bool Remove(TKey key)
+        public bool Remove(IPrtValue key)
         {
             bool removed = map.Remove(key);
             IsDirty = true;
             return removed;
         }
 
-        public bool TryGetValue(TKey key, out TValue value)
+        public bool TryGetValue(IPrtValue key, out IPrtValue value)
         {
             return map.TryGetValue(key, out value);
         }
 
-        public TValue this[TKey key]
+        public IPrtValue this[IPrtValue key]
         {
             get => map[key];
             set
@@ -179,22 +129,22 @@ namespace PrtSharp.Values
             }
         }
 
-        public ICollection<TKey> Keys => map.Keys;
-        public ICollection<TValue> Values => map.Values;
+        public ICollection<IPrtValue> Keys => map.Keys;
+        public ICollection<IPrtValue> Values => map.Values;
 
         public bool Equals(IPrtValue other)
         {
-            return other is PrtMap<TKey, TValue> otherMap
+            return other is PrtMap otherMap
                    && !map.Keys.Except(otherMap.map.Keys).Any()
                    && !otherMap.map.Keys.Except(map.Keys).Any()
-                   && map.All(kv => Equals(otherMap.map[kv.Key], kv.Value));
+                   && map.All(kv => PrtValues.SafeEquals(otherMap.map[kv.Key], kv.Value));
         }
 
         public IPrtValue Clone()
         {
-            return new PrtMap<TKey, TValue>(map.ToDictionary(
-                kv => (TKey) kv.Key.Clone(),
-                kv => (TValue) kv.Value.Clone()));
+            return new PrtMap(map.ToDictionary(
+                kv => (IPrtValue) kv.Key?.Clone(),
+                kv => (IPrtValue) kv.Value?.Clone()));
         }
 
         public void Freeze()

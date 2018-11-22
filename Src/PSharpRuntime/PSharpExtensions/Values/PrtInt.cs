@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 namespace PrtSharp.Values
 {
     [Serializable]
-    public class PrtInt : IPrtValue
+    public readonly struct PrtInt : IPrtValue
     {
         private readonly long value;
 
@@ -69,6 +69,7 @@ namespace PrtSharp.Values
         {
             return (int) val.value;
         }
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static implicit operator long(in PrtInt val)

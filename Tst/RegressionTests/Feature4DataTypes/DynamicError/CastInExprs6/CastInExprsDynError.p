@@ -119,7 +119,7 @@ machine Main {
 		  
 		  a = default(any);
 		  tt = a as (int, int);    //dynamic error: "value must be a member of type" (this XYZ)
-		  
+		  assert(tt.0 + tt.1 == 0);
 		  raise halt;
        }    
     }       

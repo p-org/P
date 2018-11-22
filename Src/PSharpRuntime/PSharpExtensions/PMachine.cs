@@ -15,7 +15,7 @@ namespace PrtSharp
         public List<string> creates = new List<string>();
         public List<string> receives = new List<string>();
         public PMachineValue self;
-        protected object gotoPayload = null;
+        protected IPrtValue gotoPayload = null;
 
         public new void Assert(bool predicate)
         {
@@ -49,23 +49,24 @@ namespace PrtSharp
             }
         }
 
-        public class IntializeParametersEvent : PEvent<InitializeParameters>
+        public class InitializeParametersEvent : PEvent
         {
-            public IntializeParametersEvent(InitializeParameters payload) : base(payload)
+            public InitializeParametersEvent(InitializeParameters payload) : base(payload)
             {
             }
         }
 
         protected void InitializeParametersFunction()
         {
-            if (!(ReceivedEvent is IntializeParametersEvent @event))
+            if (!(ReceivedEvent is InitializeParametersEvent @event))
             {
                 throw new ArgumentException("Event type is incorrect: " + ReceivedEvent.GetType().Name);
             }
 
-            interfaceName = @event.PayloadT.InterfaceName;
+            var initParam = (@event.Payload as InitializeParameters);
+            interfaceName = initParam.InterfaceName;
             self = new PMachineValue(Id, receives.ToList());
-            RaiseEvent(GetConstructorEvent(@event.PayloadT.Payload), @event.PayloadT.Payload);
+            RaiseEvent(GetConstructorEvent(initParam.Payload), initParam.Payload);
         }
 
         protected virtual Event GetConstructorEvent(IPrtValue value)
@@ -93,13 +94,13 @@ namespace PrtSharp
             var createdInterface = PModule.linkMap[creator.interfaceName][typeof(T).Name];
             Assert(creates.Contains(createdInterface), $"Machine {GetType().Name} cannot create interface {createdInterface}, not in its creates set");
             var createMachine = PModule.interfaceDefinitionMap[createdInterface];
-            var machineId = CreateMachine(createMachine, new IntializeParametersEvent(new InitializeParameters(createdInterface, payload)));
+            var machineId = CreateMachine(createMachine, new InitializeParametersEvent(new InitializeParameters(createdInterface, payload)));
             return new PMachineValue(machineId, PInterfaces.GetPermissions(createdInterface));
         }
 
         public void SendEvent(PMachine source, PMachineValue target, Event ev, object payload = null)
         {
-            Assert(!(ev is Default), "Machine cannot send a null event");
+            Assert(ev != null, "Machine cannot send a null event");
             Assert(sends.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the sends set of the Machine {source.GetType().Name}");
             Assert(target.Permissions.Contains(ev.GetType().Name), $"Event {ev.GetType().Name} is not in the permissions set of the target machine");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
@@ -112,7 +113,7 @@ namespace PrtSharp
 
         public void RaiseEvent(PMachine source, Event ev, object payload = null)
         {
-            Assert(!(ev is Default), "Machine cannot raise a null event");
+            Assert(ev != null, "Machine cannot raise a null event");
             var oneArgConstructor = ev.GetType().GetConstructors().First(x => x.GetParameters().Length > 0);
             ev = (Event)oneArgConstructor.Invoke(new[] { payload });
 
@@ -131,7 +132,7 @@ namespace PrtSharp
             return Receive(events);
         }
 
-        public void GotoState<T>(object payload = null) where T : MachineState
+        public void GotoState<T>(IPrtValue payload = null) where T : MachineState
         {
             gotoPayload = payload;
             Goto<T>();
@@ -146,7 +147,7 @@ namespace PrtSharp
 
         public void Announce(Event ev, object payload = null)
         {
-            Assert(!(ev is Default), "Machine cannot announce a null event");
+            Assert(ev != null, "Machine cannot announce a null event");
             if (ev is PHalt)
             {
                 ev = new Halt();
@@ -158,7 +159,7 @@ namespace PrtSharp
 
         private void AnnounceInternal(Event ev)
         {
-            Assert(!(ev is Default), "cannot send a null event");
+            Assert(ev != null, "cannot send a null event");
             if (!PModule.monitorMap.ContainsKey(interfaceName)) return;
             foreach (var monitor in PModule.monitorMap[interfaceName])
             {

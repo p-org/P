@@ -14,6 +14,11 @@ namespace PrtSharp
             Interfaces.Add(interfaceName, permissions.ToList());
         }
 
+        public static void Clear()
+        {
+            Interfaces.Clear();
+        }
+
         public static List<string> GetPermissions(string interfaceName)
         {
             return Interfaces[interfaceName].ToList();

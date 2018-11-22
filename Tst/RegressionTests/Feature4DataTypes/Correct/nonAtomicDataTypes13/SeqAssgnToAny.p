@@ -40,8 +40,6 @@ machine Main {
 		  ts.b = 3;
 		  ts.a = ts.b + 1;
 		  assert (ts.a == 4);     //holds
-		  ts.0 = ts.0 + ts.1;
-		  assert (ts.0 == 7);     //holds
 		  
 		  tt.0 = 1;
 		  tt.1 = 2;

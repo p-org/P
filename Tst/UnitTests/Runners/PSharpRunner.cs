@@ -33,24 +33,20 @@ namespace UnitTests.Runners
         {
             var compiledFiles = DoCompile(scratchDirectory).ToArray();
             CreateFileWithMainFunction(scratchDirectory);
+            CreateProjectFile(scratchDirectory);
 
-            var dependencies = new List<string> {"netstandard.dll", "System.Runtime.dll", "System.Collections.dll"};
-            var psharpPath = Path.Combine(PSharpAssemblyLocation, "..", "net46", "Microsoft.PSharp.dll");
-            var psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops",
-                Constants.BuildConfiguration, "AnyCPU", "Binaries", "PrtSharp.dll");
-            dependencies.Add(psharpExtensionsPath);
-            dependencies.Add(psharpPath);
-
+            var psharpExtensionsPath = Path.Combine(Constants.SolutionDirectory, "Bld", "Drops", Constants.BuildConfiguration, "AnyCPU", "Binaries", "PrtSharp.dll");
             File.Copy(psharpExtensionsPath, Path.Combine(scratchDirectory.FullName, "PrtSharp.dll"), true);
 
-            var args = new[] {"/t:exe"}.Concat(dependencies.Select(dep => $"/r:\"{dep}\""))
-                .Concat(compiledFiles.Select(file => file.Name))
-                .Append("Test.cs")
-                .Concat(nativeSources.Select(file => file.FullName))
-                .ToArray();
+            foreach (var nativeFile in nativeSources)
+            {
+                File.Copy(nativeFile.FullName, Path.Combine(scratchDirectory.FullName, nativeFile.Name), true);
+            }
+
+            var args = new[] { "build", "Test.csproj" };
 
             var exitCode =
-                ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindCsc(), args);
+                ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindDotnet(), args);
 
             foreach (var compiledFile in compiledFiles)
                 stdout += $"{compiledFile.Name}\n===\n{File.ReadAllText(compiledFile.FullName)}\n\n";
@@ -58,7 +54,7 @@ namespace UnitTests.Runners
             if (exitCode == 0)
             {
                 exitCode = RunPSharpTester(scratchDirectory.FullName,
-                    Path.Combine(scratchDirectory.FullName, "Test.exe"), out var testStdout, out var testStderr);
+                    Path.Combine(scratchDirectory.FullName, "Test.dll"), out var testStdout, out var testStderr);
                 stdout += testStdout;
                 stderr += testStderr;
 
@@ -104,11 +100,38 @@ namespace Main
             }
         }
 
+        private void CreateProjectFile(DirectoryInfo dir)
+        {
+            var projectFileContents = @"
+<Project Sdk=""Microsoft.NET.Sdk"">
+  <PropertyGroup>
+    <TargetFramework >netcoreapp2.0</TargetFramework>
+    <ApplicationIcon />
+    <OutputType>library</OutputType>
+    <StartupObject />
+    <LangVersion >latest</LangVersion>
+    <OutputPath>.</OutputPath>
+  </PropertyGroup >
+  <PropertyGroup Condition = ""'$(Configuration)|$(Platform)'=='Debug|AnyCPU'"">
+    <WarningLevel>0</WarningLevel>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include=""Microsoft.PSharp"" Version=""1.4.0""/>
+    <Reference Include = ""PrtSharp.dll""/>
+  </ItemGroup>
+</Project>";
+            using (var outputFile = new StreamWriter(Path.Combine(dir.FullName, "Test.csproj"), false))
+            {
+                outputFile.WriteLine(projectFileContents);
+            }
+        }
+
         private int RunPSharpTester(string directory, string dllPath, out string stdout, out string stderr)
         {
             // TODO: bug P# team for how to run a test w/o invoking executable
-            string testerPath = Path.Combine(PSharpAssemblyLocation, "..", "net46", "PSharpTester.exe");
-            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, testerPath, $"\"/test:{dllPath}\"", $"\"/max-steps:1000\"", $"\"/i:2000\"", $"\"/sch:dfs\"");
+            string testerPath = Path.Combine(PSharpAssemblyLocation, "..", "netcoreapp2.1", "PSharpTester.dll");
+            return ProcessHelper.RunWithOutput(directory, out stdout, out stderr, "dotnet", testerPath, $"\"/test:{dllPath}\"", $"\"/max-steps:1000\"", $"\"/i:2000\"", $"\"/sch:dfs\"");
         }
 
         private IEnumerable<FileInfo> DoCompile(DirectoryInfo scratchDirectory)
@@ -120,7 +143,23 @@ namespace Main
             return outputStream.OutputFiles;
         }
 
-        private static string FindCsc()
+        private static string FindDotnet()
+        {
+            string[] dotnetPaths =
+            {
+                @"C:\Program Files\dotnet\dotnet.exe",
+                @"C:\Program Files (x86)\dotnet\dotnet.exe",
+                Environment.GetEnvironmentVariable("DOTNET") ?? ""
+            };
+
+            var dotnetPath = dotnetPaths.FirstOrDefault(File.Exists);
+            if (dotnetPath == null)
+                throw new CompilerTestException(TestCaseError.GeneratedSourceCompileFailed, "Could not find MSBuild");
+
+            return dotnetPath;
+        }
+
+            private static string FindCsc()
         {
             string[] cscPaths =
             {

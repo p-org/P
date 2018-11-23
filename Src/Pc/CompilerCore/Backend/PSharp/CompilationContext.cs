@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.Backend.PSharp
+namespace Plang.Compiler.Backend.PSharp
 {
     internal class CompilationContext : CompilationContextBase
     {

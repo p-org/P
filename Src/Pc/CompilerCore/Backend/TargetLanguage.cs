@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Pc.Backend.Prt;
-using Microsoft.Pc.Backend.PSharp;
+using Plang.Compiler.Backend.Prt;
+using Plang.Compiler.Backend.PSharp;
 
-namespace Microsoft.Pc.Backend
+namespace Plang.Compiler.Backend
 {
     public static class TargetLanguage
     {

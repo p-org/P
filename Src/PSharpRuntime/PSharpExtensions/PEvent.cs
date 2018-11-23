@@ -1,8 +1,8 @@
 ﻿using System;
 using Microsoft.PSharp;
-using PrtSharp.Values;
+using Plang.PrtSharp.Values;
 
-namespace PrtSharp
+namespace Plang.PrtSharp
 {
     public class PEvent : Event, IPrtValue
     {

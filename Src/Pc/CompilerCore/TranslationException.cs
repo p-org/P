@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public class TranslationException : Exception
     {

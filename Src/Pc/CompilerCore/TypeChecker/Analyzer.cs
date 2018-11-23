@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime.Tree;
-using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Plang.Compiler.TypeChecker
 {
     public static class Analyzer
     {

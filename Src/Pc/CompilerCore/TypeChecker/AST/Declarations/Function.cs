@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST.Statements;
+using Plang.Compiler.TypeChecker.AST.Statements;
 
-namespace Microsoft.Pc.TypeChecker.AST.Declarations
+namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     [Flags]
     public enum FunctionRole

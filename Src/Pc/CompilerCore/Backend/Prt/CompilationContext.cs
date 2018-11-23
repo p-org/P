@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.States;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.Backend.Prt
+namespace Plang.Compiler.Backend.Prt
 {
     public class CompilationContext : CompilationContextBase
     {

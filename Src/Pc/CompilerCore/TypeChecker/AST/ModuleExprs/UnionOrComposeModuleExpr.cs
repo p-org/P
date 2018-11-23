@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using Antlr4.Runtime;
 
-namespace Microsoft.Pc.TypeChecker.AST.ModuleExprs
+namespace Plang.Compiler.TypeChecker.AST.ModuleExprs
 {
     public class UnionOrComposeModuleExpr : IPModuleExpr
     {

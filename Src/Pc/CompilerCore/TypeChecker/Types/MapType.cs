@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker.Types
+namespace Plang.Compiler.TypeChecker.Types
 {
     internal class MapType : PLanguageType
     {

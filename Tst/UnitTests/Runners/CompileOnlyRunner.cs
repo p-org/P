@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using Microsoft.Pc;
-using Microsoft.Pc.Backend;
+using Plang.Compiler;
+using Plang.Compiler.Backend;
 using UnitTests.Core;
 
 namespace UnitTests.Runners

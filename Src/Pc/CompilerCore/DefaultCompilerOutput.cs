@@ -1,8 +1,8 @@
 using System;
 using System.IO;
-using Microsoft.Pc.Backend;
+using Plang.Compiler.Backend;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public class DefaultCompilerOutput : ICompilerOutput
     {

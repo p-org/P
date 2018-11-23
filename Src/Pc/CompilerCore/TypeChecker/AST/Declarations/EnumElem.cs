@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using Antlr4.Runtime;
 
-namespace Microsoft.Pc.TypeChecker.AST.Declarations
+namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     public class EnumElem : IPDecl
     {

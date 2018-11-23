@@ -1,6 +1,6 @@
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker.AST.Expressions
+namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
     public interface IVariableRef : IExprTerm
     {

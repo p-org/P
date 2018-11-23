@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Pc;
+using Plang.Compiler;
 using NUnit.Framework;
 using UnitTests.Core;
 using UnitTests.Runners;

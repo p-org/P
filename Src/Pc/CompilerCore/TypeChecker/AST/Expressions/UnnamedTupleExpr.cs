@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker.AST.Expressions
+namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
     public class UnnamedTupleExpr : IPExpr
     {

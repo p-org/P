@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Text;
-using Microsoft.Pc.TypeChecker;
-using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.Backend.Debugging
+namespace Plang.Compiler.Backend.Debugging
 {
     public abstract class IrRenderer
     {

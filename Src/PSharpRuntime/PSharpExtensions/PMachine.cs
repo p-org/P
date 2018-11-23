@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.PSharp;
 using Microsoft.PSharp.Runtime;
-using PrtSharp.Exceptions;
-using PrtSharp.Values;
+using Plang.PrtSharp.Exceptions;
+using Plang.PrtSharp.Values;
 
-namespace PrtSharp
+namespace Plang.PrtSharp
 {
     public class PMachine : Machine
     {

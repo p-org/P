@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.Backend.Prt
+namespace Plang.Compiler.Backend.Prt
 {
     internal class ValueInternmentManager<T>
     {

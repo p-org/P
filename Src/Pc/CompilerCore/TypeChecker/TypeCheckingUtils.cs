@@ -2,11 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.AST.Expressions;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Plang.Compiler.TypeChecker
 {
     public static class TypeCheckingUtils
     {

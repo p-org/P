@@ -1,9 +1,9 @@
 ﻿using System;
 using Microsoft.PSharp;
 using Microsoft.PSharp.IO;
-using PrtSharp.Exceptions;
+using Plang.PrtSharp.Exceptions;
 
-namespace PrtSharp
+namespace Plang.PrtSharp
 {
     /// <summary>
     ///     Logger that writes text to the console.

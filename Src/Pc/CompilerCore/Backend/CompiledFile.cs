@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace Microsoft.Pc.Backend
+namespace Plang.Compiler.Backend
 {
     public class CompiledFile
     {

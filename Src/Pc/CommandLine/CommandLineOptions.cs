@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-using static Microsoft.Pc.CommandLineParseResult;
+using static Plang.Compiler.CommandLineParseResult;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public enum CommandLineParseResult
     {

@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
-using Microsoft.Pc.Backend;
-using Microsoft.Pc.TypeChecker;
+using Plang.Compiler.Backend;
+using Plang.Compiler.TypeChecker;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public interface ICompilationJob
     {

@@ -1,4 +1,4 @@
-namespace Microsoft.Pc.TypeChecker.AST.Expressions
+namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
     public enum BinOpType
     {

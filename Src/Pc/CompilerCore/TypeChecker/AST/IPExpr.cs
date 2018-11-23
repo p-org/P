@@ -1,6 +1,6 @@
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Plang.Compiler.TypeChecker.AST
 {
     public interface IPExpr : IPAST
     {

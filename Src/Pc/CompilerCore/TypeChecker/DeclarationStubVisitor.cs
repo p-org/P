@@ -1,10 +1,10 @@
 using Antlr4.Runtime.Misc;
 using Antlr4.Runtime.Tree;
-using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.Util;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.Util;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Plang.Compiler.TypeChecker
 {
     internal class DeclarationStubVisitor : PParserBaseVisitor<object>
     {

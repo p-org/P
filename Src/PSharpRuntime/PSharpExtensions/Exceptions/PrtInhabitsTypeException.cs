@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.Serialization;
 
-namespace PrtSharp.Exceptions
+namespace Plang.PrtSharp.Exceptions
 {
     public class PrtInhabitsTypeException : Exception
     {

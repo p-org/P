@@ -1,7 +1,7 @@
 ﻿using System;
 using Microsoft.PSharp;
 
-namespace PrtSharp
+namespace Plang.PrtSharp
 {
     public class _GodMachine : Machine
     {

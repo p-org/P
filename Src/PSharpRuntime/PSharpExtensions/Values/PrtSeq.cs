@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using PrtSharp.Exceptions;
+using Plang.PrtSharp.Exceptions;
 
-namespace PrtSharp.Values
+namespace Plang.PrtSharp.Values
 {
     public sealed class PrtSeq : IPrtMutableValue, IReadOnlyList<IPrtValue>
     {

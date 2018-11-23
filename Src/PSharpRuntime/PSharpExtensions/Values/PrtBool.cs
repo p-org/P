@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 
-namespace PrtSharp.Values
+namespace Plang.PrtSharp.Values
 {
     [Serializable]
     public readonly struct PrtBool : IPrtValue

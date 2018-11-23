@@ -1,4 +1,4 @@
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public enum CompilerOutput
     {

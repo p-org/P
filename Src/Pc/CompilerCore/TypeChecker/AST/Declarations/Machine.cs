@@ -2,10 +2,10 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST.States;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker.AST.Declarations
+namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     public class Machine : IStateContainer, IHasScope
     {

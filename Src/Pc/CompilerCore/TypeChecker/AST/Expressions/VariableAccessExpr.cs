@@ -1,8 +1,8 @@
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker.AST.Expressions
+namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
     public class VariableAccessExpr : IVariableRef
     {

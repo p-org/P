@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using Microsoft.PSharp;
 
-namespace PrtSharp
+namespace Plang.PrtSharp
 {
     public class PModule
     {

@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.PSharp;
-using PrtSharp;
-using PrtSharp.Values;
+using Plang.PrtSharp;
+using Plang.PrtSharp.Values;
 
 #pragma warning disable 162, 219, 414
 namespace Main
@@ -139,16 +139,16 @@ namespace Main
             m = TMP_tmp0;
             TMP_tmp1 = (PMachineValue) ((IPrtValue) m)?.Clone();
             TMP_tmp2 = new e1(null);
-            currentMachine.SendEvent(currentMachine, TMP_tmp1, TMP_tmp2);
+            currentMachine.SendEvent(TMP_tmp1, TMP_tmp2);
             TMP_tmp3 = (PMachineValue) ((IPrtValue) m)?.Clone();
             TMP_tmp4 = new e2(null);
-            currentMachine.SendEvent(currentMachine, TMP_tmp3, TMP_tmp4);
+            currentMachine.SendEvent(TMP_tmp3, TMP_tmp4);
             TMP_tmp5 = (PMachineValue) ((IPrtValue) m)?.Clone();
             TMP_tmp6 = new e3(null);
-            currentMachine.SendEvent(currentMachine, TMP_tmp5, TMP_tmp6);
+            currentMachine.SendEvent(TMP_tmp5, TMP_tmp6);
             TMP_tmp7 = (PMachineValue) ((IPrtValue) m)?.Clone();
             TMP_tmp8 = new e4(null);
-            currentMachine.SendEvent(currentMachine, TMP_tmp7, TMP_tmp8);
+            currentMachine.SendEvent(TMP_tmp7, TMP_tmp8);
         }
 
         public class ConstructorEvent : PEvent

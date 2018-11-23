@@ -1,6 +1,6 @@
 ﻿using System;
-using Microsoft.Pc.Backend.Prt;
-using Microsoft.Pc.TypeChecker;
+using Plang.Compiler.Backend.Prt;
+using Plang.Compiler.TypeChecker;
 using NUnit.Framework;
 
 namespace UnitTests

@@ -1,6 +1,6 @@
 using System;
 
-namespace Microsoft.Pc.Util
+namespace Plang.Compiler.Util
 {
     public class StackProperty<T>
         where T : class

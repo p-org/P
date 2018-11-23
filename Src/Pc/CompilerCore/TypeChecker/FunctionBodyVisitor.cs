@@ -1,8 +1,8 @@
 using System.Diagnostics.Contracts;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.Statements;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Statements;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Plang.Compiler.TypeChecker
 {
     public class FunctionBodyVisitor : PParserBaseVisitor<object>
     {

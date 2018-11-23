@@ -1,11 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.ModuleExprs;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.ModuleExprs;
 
-namespace Microsoft.Pc.TypeChecker
+namespace Plang.Compiler.TypeChecker
 {
     public class ModuleSystemTypeChecker
     {

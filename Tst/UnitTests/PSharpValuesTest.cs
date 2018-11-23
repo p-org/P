@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
-using PrtSharp;
-using PrtSharp.Values;
+using Plang.PrtSharp;
+using Plang.PrtSharp.Values;
 
 namespace UnitTests
 {

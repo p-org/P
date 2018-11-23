@@ -1,4 +1,4 @@
-namespace Microsoft.Pc.TypeChecker.Types
+namespace Plang.Compiler.TypeChecker.Types
 {
     public class TypeKind
     {

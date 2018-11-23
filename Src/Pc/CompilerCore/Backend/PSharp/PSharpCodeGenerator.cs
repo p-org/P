@@ -2,16 +2,16 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Pc.Backend.ASTExt;
-using Microsoft.Pc.TypeChecker;
-using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.Expressions;
-using Microsoft.Pc.TypeChecker.AST.Statements;
-using Microsoft.Pc.TypeChecker.AST.States;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.Backend.ASTExt;
+using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.AST.Statements;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.Backend.PSharp
+namespace Plang.Compiler.Backend.PSharp
 {
     public class PSharpCodeGenerator : ICodeGenerator
     {
@@ -85,9 +85,9 @@ namespace Microsoft.Pc.Backend.PSharp
             context.WriteLine(output, "using System.Collections.Generic;");
             context.WriteLine(output, "using System.Linq;");
             context.WriteLine(output, "using System.IO;");
-            context.WriteLine(output, "using PrtSharp;");
-            context.WriteLine(output, "using PrtSharp.Values;");
-            context.WriteLine(output, "using PrtSharp.Exceptions;");
+            context.WriteLine(output, "using Plang.PrtSharp;");
+            context.WriteLine(output, "using Plang.PrtSharp.Values;");
+            context.WriteLine(output, "using Plang.PrtSharp.Exceptions;");
             context.WriteLine(output, "using System.Threading;");
             context.WriteLine(output, "using System.Threading.Tasks;");
             context.WriteLine(output);

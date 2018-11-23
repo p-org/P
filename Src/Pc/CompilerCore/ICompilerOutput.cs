@@ -1,6 +1,6 @@
-﻿using Microsoft.Pc.Backend;
+﻿using Plang.Compiler.Backend;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public interface ICompilerOutput
     {

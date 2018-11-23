@@ -2,15 +2,15 @@ using System;
 using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker;
-using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.Expressions;
-using Microsoft.Pc.TypeChecker.AST.Statements;
-using Microsoft.Pc.TypeChecker.AST.States;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.AST.Statements;
+using Plang.Compiler.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public class DefaultTranslationErrorHandler : ITranslationErrorHandler
     {

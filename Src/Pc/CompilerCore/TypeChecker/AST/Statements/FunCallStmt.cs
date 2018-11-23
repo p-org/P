@@ -1,8 +1,8 @@
 using System.Collections.Generic;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker.AST.Statements
+namespace Plang.Compiler.TypeChecker.AST.Statements
 {
     public class FunCallStmt : IPStmt
     {

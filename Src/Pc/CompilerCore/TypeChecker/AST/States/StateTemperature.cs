@@ -1,4 +1,4 @@
-namespace Microsoft.Pc.TypeChecker.AST.States
+namespace Plang.Compiler.TypeChecker.AST.States
 {
     public enum StateTemperature
     {

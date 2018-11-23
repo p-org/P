@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
-using PrtSharp.Exceptions;
-using PrtSharp.Values;
+using Plang.PrtSharp.Exceptions;
+using Plang.PrtSharp.Values;
 
-namespace PrtSharp
+namespace Plang.PrtSharp
 {
     public class PInterfaces
     {

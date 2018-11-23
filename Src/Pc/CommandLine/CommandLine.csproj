@@ -4,7 +4,7 @@
     <TargetFramework>netcoreapp2.0</TargetFramework>
     <RuntimeIdentifiers>win10-x64,ubuntu-x64,osx-x64</RuntimeIdentifiers>
     <ProjectGuid>{48B4C337-CD13-4826-B6A1-DA97CE71511B}</ProjectGuid>
-    <RootNamespace>Microsoft.Pc</RootNamespace>
+    <RootNamespace>Plang.Compiler</RootNamespace>
     <AssemblyName>Pc</AssemblyName>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>

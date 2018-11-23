@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
-using Microsoft.Pc.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST;
 
-namespace Microsoft.Pc.Backend
+namespace Plang.Compiler.Backend
 {
     public abstract class NameManagerBase
     {

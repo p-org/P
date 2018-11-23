@@ -1,5 +1,5 @@
 ﻿using System.IO;
-using Microsoft.Pc;
+using Plang.Compiler;
 using NUnit.Framework;
 using UnitTests.Core;
 using UnitTests.Runners;

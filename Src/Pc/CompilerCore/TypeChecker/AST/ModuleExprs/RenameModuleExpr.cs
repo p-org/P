@@ -1,7 +1,7 @@
 ﻿using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker.AST.ModuleExprs
+namespace Plang.Compiler.TypeChecker.AST.ModuleExprs
 {
     public class RenameModuleExpr : IPModuleExpr
     {

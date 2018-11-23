@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace PrtSharp.Values
+namespace Plang.PrtSharp.Values
 {
     public class PrtEnum
     {

@@ -1,10 +1,10 @@
 using System.IO;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Tree;
-using Microsoft.Pc.TypeChecker;
-using Microsoft.Pc.TypeChecker.AST;
+using Plang.Compiler.TypeChecker;
+using Plang.Compiler.TypeChecker.AST;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public class DefaultLocationResolver : ILocationResolver
     {

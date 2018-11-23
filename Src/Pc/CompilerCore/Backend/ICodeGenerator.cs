@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Pc.TypeChecker;
+using Plang.Compiler.TypeChecker;
 
-namespace Microsoft.Pc.Backend
+namespace Plang.Compiler.Backend
 {
     public interface ICodeGenerator
     {

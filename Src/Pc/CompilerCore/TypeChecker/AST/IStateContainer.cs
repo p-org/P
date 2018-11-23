@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Microsoft.Pc.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.AST.States;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Plang.Compiler.TypeChecker.AST
 {
     public interface IStateContainer : IPDecl
     {

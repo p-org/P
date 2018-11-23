@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Microsoft.Pc;
+using Plang.Compiler;
 using Microsoft.PSharp.TestingServices;
 using UnitTests.Core;
 

@@ -1,9 +1,9 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker.AST.States
+namespace Plang.Compiler.TypeChecker.AST.States
 {
     public class State : IPDecl
     {

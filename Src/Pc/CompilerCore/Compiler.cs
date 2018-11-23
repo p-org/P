@@ -3,10 +3,10 @@ using System.IO;
 using System.Linq;
 using Antlr4.Runtime;
 using Antlr4.Runtime.Atn;
-using Microsoft.Pc.Backend;
-using Microsoft.Pc.TypeChecker;
+using Plang.Compiler.Backend;
+using Plang.Compiler.TypeChecker;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public class Compiler : ICompiler
     {

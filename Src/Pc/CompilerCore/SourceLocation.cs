@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public class SourceLocation
     {

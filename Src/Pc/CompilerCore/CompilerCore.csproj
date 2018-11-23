@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk" ToolsVersion="15.0">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
-    <RootNamespace>Microsoft.Pc</RootNamespace>
+    <RootNamespace>Plang.Compiler</RootNamespace>
     <Antlr4JavaExecutable Condition=" '$(OS)' != 'Windows_NT' ">/usr/bin/java</Antlr4JavaExecutable>
     <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
     <LangVersion>latest</LangVersion>
@@ -14,13 +14,13 @@
   <ItemGroup>
     <Antlr4 Include="Parser/PParser.g4">
       <Generator>MSBuild:Compile</Generator>
-      <CustomToolNamespace>Microsoft.Pc</CustomToolNamespace>
+      <CustomToolNamespace>Plang.Compiler</CustomToolNamespace>
       <Listener>True</Listener>
       <Visitor>True</Visitor>
     </Antlr4>
     <Antlr4 Include="Parser/PLexer.g4">
       <Generator>MSBuild:Compile</Generator>
-      <CustomToolNamespace>Microsoft.Pc</CustomToolNamespace>
+      <CustomToolNamespace>Plang.Compiler</CustomToolNamespace>
     </Antlr4>
   </ItemGroup>
 </Project>

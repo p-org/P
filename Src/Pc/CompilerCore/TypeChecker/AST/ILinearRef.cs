@@ -1,6 +1,6 @@
-using Microsoft.Pc.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.AST.Expressions;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Plang.Compiler.TypeChecker.AST
 {
     public interface ILinearRef : IVariableRef
     {

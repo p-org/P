@@ -1,6 +1,6 @@
 ﻿using Antlr4.Runtime;
 
-namespace Microsoft.Pc.TypeChecker.AST.Declarations
+namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     public class NamedModule : IPDecl
     {

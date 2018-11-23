@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace PrtSharp.Values
+namespace Plang.PrtSharp.Values
 {
     public interface IPrtValue : IEquatable<IPrtValue>
     {

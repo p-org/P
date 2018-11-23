@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
-using Microsoft.Pc.TypeChecker.AST.States;
+using Plang.Compiler.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.States;
 
-namespace Microsoft.Pc.Backend.Prt
+namespace Plang.Compiler.Backend.Prt
 {
     public static class PrtTranslationUtils
     {

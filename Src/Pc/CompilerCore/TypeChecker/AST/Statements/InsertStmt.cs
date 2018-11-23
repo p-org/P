@@ -1,6 +1,6 @@
 using Antlr4.Runtime;
 
-namespace Microsoft.Pc.TypeChecker.AST.Statements
+namespace Plang.Compiler.TypeChecker.AST.Statements
 {
     public class InsertStmt : IPStmt
     {

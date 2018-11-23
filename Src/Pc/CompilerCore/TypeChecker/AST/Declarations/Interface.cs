@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.TypeChecker.AST.Declarations
+namespace Plang.Compiler.TypeChecker.AST.Declarations
 {
     public class Interface : IPDecl
     {

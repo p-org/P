@@ -1,6 +1,6 @@
-﻿using PrtSharp.Values;
+﻿using Plang.PrtSharp.Values;
 
-namespace PrtSharp
+namespace Plang.PrtSharp
 {
     public static class PrtValues
     {

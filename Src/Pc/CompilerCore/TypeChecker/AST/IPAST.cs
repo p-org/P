@@ -1,6 +1,6 @@
 ﻿using Antlr4.Runtime;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Plang.Compiler.TypeChecker.AST
 {
     public interface IPAST
     {

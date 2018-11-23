@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
-using Microsoft.Pc.TypeChecker.AST.Declarations;
+using Plang.Compiler.TypeChecker.AST.Declarations;
 
-namespace Microsoft.Pc.TypeChecker.AST
+namespace Plang.Compiler.TypeChecker.AST
 {
     public interface IPModuleExpr : IPAST
     {

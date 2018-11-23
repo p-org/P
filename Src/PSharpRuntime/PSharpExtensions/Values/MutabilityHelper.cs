@@ -1,4 +1,4 @@
-﻿namespace PrtSharp.Values
+﻿namespace Plang.PrtSharp.Values
 {
     public static class MutabilityHelper
     {

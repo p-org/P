@@ -2,10 +2,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Pc.Backend;
-using Microsoft.Pc.TypeChecker;
+using Plang.Compiler.Backend;
+using Plang.Compiler.TypeChecker;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public class CompilationJob : ICompilationJob
     {

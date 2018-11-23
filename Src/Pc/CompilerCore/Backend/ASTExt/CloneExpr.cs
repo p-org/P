@@ -1,9 +1,9 @@
 ﻿using Antlr4.Runtime;
-using Microsoft.Pc.TypeChecker.AST;
-using Microsoft.Pc.TypeChecker.AST.Expressions;
-using Microsoft.Pc.TypeChecker.Types;
+using Plang.Compiler.TypeChecker.AST;
+using Plang.Compiler.TypeChecker.AST.Expressions;
+using Plang.Compiler.TypeChecker.Types;
 
-namespace Microsoft.Pc.Backend.ASTExt
+namespace Plang.Compiler.Backend.ASTExt
 {
     internal class CloneExpr : IPExpr
     {

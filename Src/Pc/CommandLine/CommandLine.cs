@@ -1,6 +1,6 @@
-﻿using static Microsoft.Pc.CommandLineParseResult;
+﻿using static Plang.Compiler.CommandLineParseResult;
 
-namespace Microsoft.Pc
+namespace Plang.Compiler
 {
     public static class CommandLine
     {

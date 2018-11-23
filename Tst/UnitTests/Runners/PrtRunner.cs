@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Microsoft.Pc;
+using Plang.Compiler;
 using UnitTests.Core;
 
 namespace UnitTests.Runners

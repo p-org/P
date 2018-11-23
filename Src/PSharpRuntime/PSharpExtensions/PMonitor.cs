@@ -1,9 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.PSharp;
-using PrtSharp.Exceptions;
+using Plang.PrtSharp.Exceptions;
 
-namespace PrtSharp
+namespace Plang.PrtSharp
 {
     public class PMonitor : Monitor
     {

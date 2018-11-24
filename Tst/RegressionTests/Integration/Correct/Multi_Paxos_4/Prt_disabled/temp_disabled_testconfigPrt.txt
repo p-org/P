@@ -1,3 +1,0 @@
-runPrt: ..\..\..\..\..\..\..\..\Planguage\Plang\Tst\PrtTester\$(Configuration)\$(Platform)\Tester.exe
-acc: .\
-dsc: runtime, Feature Integration: protocol sample

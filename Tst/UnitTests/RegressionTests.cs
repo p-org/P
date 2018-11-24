@@ -81,7 +81,7 @@ namespace UnitTests
     public class PrtSharpRegressionTests
     {
         private static IEnumerable<TestCaseData> RegressionTestSuite =>
-            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"Prt"});
+            TestCaseLoader.FindTestCasesInDirectory(Constants.TestDirectory, new[] {"Prt", "PrtSharp" });
 
         [TestCaseSource(nameof(RegressionTestSuite))]
         public void TestRegressions(DirectoryInfo testDir)

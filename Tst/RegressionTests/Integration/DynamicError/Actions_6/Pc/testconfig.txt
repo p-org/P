@@ -1,5 +1,0 @@
-arg: ..\Actions_6.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, Feature Integration: payload with push transition

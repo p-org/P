@@ -1,31 +1,17 @@
 set THISDIR=%~dp0
 pushd %THISDIR%
-set pc=..\..\bld\drops\Release\x64\Binaries\pc.exe
+set pc=..\..\bld\drops\Release\Binaries\win-x64\pc.exe
 if not exist "%pc%" goto :noP
 
-set pt=..\..\bld\drops\Release\x64\Binaries\pt.exe
-
-msbuild /p:Platform=x64 /p:Configuration=Release Hello.vcxproj
-
-%pc% /generate:C# /shared ..\Timer\Timer.p /t:Timer.4ml /outputDir:..\Timer
+%pc% -generate:P# -t:Hello ..\Timer\Timer.p ..\Env\Env.p Main.p Continue.p TestScript.p
 
 if NOT errorlevel 0 goto :eof
 
-%pc% /generate:C# /shared ..\Env\Env.p /t:Env.4ml /outputDir:..\Env
+%pc% -generate:C -t:Hello ..\Timer\Timer.p ..\Env\Env.p Main.p Continue.p TestScript.p
 
 if NOT errorlevel 0 goto :eof
-
-%pc% /generate:C# /shared Main.p Continue.p /t:Hello.4ml /r:..\Timer\timer.4ml /r:..\Env\env.4ml
-
-if NOT errorlevel 0 goto :eof
-
-%pc% /generate:C# /link /shared TestScript.p /r:Hello.4ml /r:..\Timer\timer.4ml /r:..\Env\env.4ml
-
-if NOT errorlevel 0 goto :eof
-
-%pt% /psharp Test0.dll
 
 goto :eof
 :noP
-echo please run ..\..\bld\build release x64
+echo please build P
 exit /b 1

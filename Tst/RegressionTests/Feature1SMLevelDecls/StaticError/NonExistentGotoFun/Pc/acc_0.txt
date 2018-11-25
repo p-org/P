@@ -1,0 +1,3 @@
+OUT: entryExit_2.p(36,2,33,3): error PC1001: Undefined function for entry
+OUT: Compilation failed
+EXIT: -1

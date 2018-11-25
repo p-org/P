@@ -1,5 +1,0 @@
-arg: ..\nonDetFunctionInExpr_2.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, RHS of asgn is nondet return value from function

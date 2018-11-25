@@ -1,4 +1,0 @@
-arg: -et:staticfunctions_3.trace
-inc: staticfunctions_3.trace
-del: staticfunctions_3.trace
-dsc: zinger.exe, static functions used as transition functions, do decls, etc.

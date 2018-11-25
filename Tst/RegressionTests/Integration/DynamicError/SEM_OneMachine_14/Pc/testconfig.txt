@@ -1,5 +1,0 @@
-arg: ..\GotoTransInheritance.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, P semantics test: one machine, "goto" transition, action is not inherited by the destination state

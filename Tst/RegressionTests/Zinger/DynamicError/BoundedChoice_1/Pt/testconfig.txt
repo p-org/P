@@ -1,1 +1,0 @@
-dsc: ptester, Testing Bounded Choice Operator in Zing

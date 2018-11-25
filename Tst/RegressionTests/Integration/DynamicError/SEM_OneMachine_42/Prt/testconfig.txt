@@ -1,1 +1,0 @@
-dsc: runtime, P semantics test, one machine: payload and trigger for "null" event

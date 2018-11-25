@@ -1,11 +1,11 @@
 event eDoorOpened;
 event eDoorClosed;
 
-machine Door 
+machine DoorMachine 
 receives ;
 sends eDoorOpened, eDoorClosed;
 {
-    var coffeeMachineController: ICoffeeMachineController;
+    var coffeeMachineController: CoffeeMakerControllerMachine;
     var iter: int;
 
     fun JumpIfMoreWork() {
@@ -16,7 +16,7 @@ sends eDoorOpened, eDoorClosed;
     }
 
     start state Init {
-        entry (x: (ICoffeeMachineController, int)) { 
+        entry (x: (CoffeeMakerControllerMachine, int)) { 
             coffeeMachineController = x.0;
             iter = x.1;
             JumpIfMoreWork();
@@ -38,11 +38,11 @@ sends eDoorOpened, eDoorClosed;
     }
 }
 
-machine EspressoButton 
+machine EspressoButtonMachine
 receives ;
 sends eEspressoButtonPressed;
 {
-    var coffeeMachineController: ICoffeeMachineController;
+    var coffeeMachineController: CoffeeMakerControllerMachine;
     var iter: int;
 
     fun JumpIfMoreWork() {
@@ -53,7 +53,7 @@ sends eEspressoButtonPressed;
     }
 
     start state Init {
-        entry (x: (ICoffeeMachineController, int)) { 
+        entry (x: (CoffeeMakerControllerMachine, int)) { 
             coffeeMachineController = x.0;
             iter = x.1;
             JumpIfMoreWork();
@@ -68,11 +68,11 @@ sends eEspressoButtonPressed;
     }
 }
 
-machine SteamerButton 
+machine SteamerButtonMachine
 receives ;
 sends eSteamerButtonOn, eSteamerButtonOff;
 {
-    var coffeeMachineController: ICoffeeMachineController;
+    var coffeeMachineController: CoffeeMakerControllerMachine;
     var iter: int;
 
     fun JumpIfMoreWork() {
@@ -83,7 +83,7 @@ sends eSteamerButtonOn, eSteamerButtonOff;
     }
 
     start state Init {
-        entry (x: (ICoffeeMachineController, int)) { 
+        entry (x: (CoffeeMakerControllerMachine, int)) { 
             coffeeMachineController = x.0;
             iter = x.1;
             JumpIfMoreWork();

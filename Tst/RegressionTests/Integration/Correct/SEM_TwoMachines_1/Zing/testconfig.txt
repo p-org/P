@@ -1,1 +1,0 @@
-dsc: zinger.exe, P semantics test: event sent after machine is halted ("halt" event unhandled)

@@ -31,10 +31,10 @@ machine Main {
 		XYZ = true;   //unreachable
     }
 	fun Action1() {
-		if (i < 1000)
+		if (i < 10)
 		{			
 			i = i + 1;
 		}
-		else {assert (i != 1000);}
+		else {assert (i != 10);}
 	}
 }

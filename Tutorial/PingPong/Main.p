@@ -1,23 +1,23 @@
-machine TestMachine0
+machine Test_1_Machine
 receives;
 sends;
 {
-  var client: IClient;  
+  var client: ClientMachine;  
   start state Init {  
     entry { 	
-      client = new IClient(5); 
+      client = new ClientMachine(5); 
     } 
   }
 } 
 
-machine TestMachine1
+machine Test_2_Machine
 receives;
 sends;
 {
-  var client: IClient;  
+  var client: ClientMachine;  
   start state Init {  
     entry { 	
-      client = new IClient(-1); 
+      client = new ClientMachine(-1); 
     } 
   }
 } 

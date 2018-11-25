@@ -8,40 +8,4 @@
     <!-- This is so that the C++ project will do incremental build of .p files correctly -->
     <DisableFastUpToDateCheck >True</DisableFastUpToDateCheck>
   </PropertyGroup>
-
-  <PropertyGroup>
-    <!--Make sure that the lexer runs before the C# compiler-->
-    <CoreCompileDependsOn>$(CoreCompileDependsOn);KillCompilerService</CoreCompileDependsOn>
-  </PropertyGroup>
-
-  <UsingTask
-    TaskName="KillProcess"
-    TaskFactory="CodeTaskFactory"
-    AssemblyFile="$(MSBuildToolsPath)\Microsoft.Build.Tasks.v4.0.dll">
-    <ParameterGroup>
-      <ProcessName ParameterType="System.String" Required="true" />
-    </ParameterGroup>
-    <Task>
-      <Using Namespace="System"/>
-      <Using Namespace="System.Diagnostics"/>
-      <Code Type="Fragment" Language="cs">
-        <![CDATA[        
-            foreach (Process p in Process.GetProcesses())
-            {
-                if (p.ProcessName == ProcessName) {
-                  Log.LogMessage("Killing process: " + p.ProcessName, MessageImportance.High);
-                  p.Kill();
-                }
-            }
-        ]]>
-      </Code>
-    </Task>
-  </UsingTask>
-
-  <Target Name="KillCompilerService">
-    <KillProcess ProcessName="PCompilerService" Condition="'$(OS)' == 'Windows_NT'"/>
-    <KillProcess ProcessName="PCompilerService.vshost" Condition="'$(OS)' == 'Windows_NT'"/>
-    <Exec Command="pkill PCompilerService; exit 0" Condition="'$(OS)' != 'Windows_NT'"/>
-  </Target>
-  
 </Project>

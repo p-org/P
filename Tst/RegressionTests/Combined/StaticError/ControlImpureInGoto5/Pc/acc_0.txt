@@ -1,0 +1,3 @@
+OUT: ControlImpureErrorsGoto.p(24,3,24,8): error PC1001: Transition function may cause a change in current state
+OUT: Compilation failed
+EXIT: -1

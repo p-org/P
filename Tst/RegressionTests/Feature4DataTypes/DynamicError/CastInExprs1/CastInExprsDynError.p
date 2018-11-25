@@ -67,7 +67,7 @@ machine Main {
 		  ////////////////////////// int vs any:
 		  a = default(any);
 		  y = a as int;             //dynamic error: "value must be a member of type"
-		  
+		  assert(y == 1);
 		  raise halt;
        }    
     }       

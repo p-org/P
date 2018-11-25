@@ -1,5 +1,0 @@
-arg: -et:zingsealing.trace
-arg: -sched:$(TestBinaries)\SealingScheduler.dll
-inc: zingsealing.trace
-del: zingsealing.trace
-dsc: zinger.exe, Zinger: testing the sealing feature.

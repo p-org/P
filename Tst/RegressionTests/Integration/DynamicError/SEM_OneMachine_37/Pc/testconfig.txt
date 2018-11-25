@@ -1,5 +1,0 @@
-arg: ..\NullEventHandler2.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, P semantics test, one machine: "null" handler semantics

@@ -1,6 +1,6 @@
 #include "ForeignTypes.h"
 
-void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
+void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST* ptr)
 {
 	if (status == PRT_STATUS_ASSERT)
 	{
@@ -34,7 +34,7 @@ void ErrorHandler(PRT_STATUS status, PRT_MACHINEINST *ptr)
 	}
 }
 
-void Log(PRT_STEP step, PRT_MACHINESTATE *senderState, PRT_MACHINEINST *receiver, PRT_VALUE* event, PRT_VALUE* payload)
+void Log(PRT_STEP step, PRT_MACHINESTATE* senderState, PRT_MACHINEINST* receiver, PRT_VALUE* event, PRT_VALUE* payload)
 {
 	PrtPrintStep(step, senderState, receiver, event, payload);
 }
@@ -49,20 +49,28 @@ extern PRT_UINT32 UserHashForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 
 
 extern PRT_STRING UserToStringForeignValue(_In_ PRT_UINT16 typeTag, _In_ PRT_UINT64 frgnVal);
 
-extern PRT_BOOLEAN UserIsEqualForeignValue(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2, _In_ PRT_UINT64 frgnVal2);
+extern PRT_BOOLEAN UserIsEqualForeignValue(_In_ PRT_UINT16 typeTag1, _In_ PRT_UINT64 frgnVal1, _In_ PRT_UINT16 typeTag2,
+                                           _In_ PRT_UINT64 frgnVal2);
 
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
-	PRT_PROCESS *process;
+	PRT_PROCESS* process;
 	PRT_GUID processGuid;
-	PRT_VALUE *payload;
+	PRT_VALUE* payload;
 	processGuid.data1 = 1;
 	processGuid.data2 = 0;
 	processGuid.data3 = 0;
 	processGuid.data4 = 0;
-	process = PrtStartProcess(processGuid, &P_GEND_PROGRAM, ErrorHandler, Log);
+	process = PrtStartProcess(processGuid, &P_GEND_IMPL_DefaultImpl, ErrorHandler, Log);
 	payload = PrtMkNullValue();
-	PrtMkMachine(process, P_MACHINE_TestMachine, 1, PRT_FUN_PARAM_CLONE, payload);
+	PRT_UINT32 machineId;
+	PRT_BOOLEAN foundMainMachine = PrtLookupMachineByName("TestMachine", &machineId);
+	if (foundMainMachine == PRT_FALSE)
+	{
+		printf("%s\n", "FAILED TO FIND TestMachine");
+		exit(1);
+	}
+	PrtMkMachine(process, machineId, 1, &payload);
 	PrtFreeValue(payload);
 	PrtStopProcess(process);
 }

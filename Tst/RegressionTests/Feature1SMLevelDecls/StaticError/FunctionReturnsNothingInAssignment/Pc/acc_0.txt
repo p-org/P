@@ -1,0 +1,4 @@
+OUT: function.p(5,4,5,6): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
+OUT: function.p(5,9,5,13): error PC1001: Function does not return a value
+OUT: Compilation failed
+EXIT: -1

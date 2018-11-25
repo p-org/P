@@ -1,7 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: ControlImpureDoDecl.p(35,14,35,21): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: ControlImpureDoDecl.p(37,8,37,15): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: Compilation failed
-EXIT: -1

@@ -2,15 +2,15 @@ machine Main0
 receives ;
 sends eInit;
 {
-  var coffeeMachine: ICoffeeMachine;
-  var coffeeMachineController: ICoffeeMachineController;
+  var coffeeMachine: CoffeeMakerMachine;
+  var coffeeMachineController: CoffeeMakerControllerMachine;
   var espressoButton: machine;
   start state Init {  
     entry {
-      coffeeMachineController = new ICoffeeMachineController(); 	
-      coffeeMachine = new ICoffeeMachine(coffeeMachineController); 
+      coffeeMachineController = new CoffeeMakerControllerMachine(); 	
+      coffeeMachine = new CoffeeMakerMachine(coffeeMachineController); 
       send coffeeMachineController, eInit, coffeeMachine;
-      espressoButton = new EspressoButton((coffeeMachineController, 1));
+      espressoButton = new EspressoButtonMachine((coffeeMachineController, 1));
     } 
   }
 } 
@@ -19,15 +19,15 @@ machine Main1
 receives ;
 sends eInit;
 {
-  var coffeeMachine: ICoffeeMachine;
-  var coffeeMachineController: ICoffeeMachineController;
+  var coffeeMachine: CoffeeMakerMachine;
+  var coffeeMachineController: CoffeeMakerControllerMachine;
   var steamerButton: machine;
   start state Init {  
     entry {
-      coffeeMachineController = new ICoffeeMachineController(); 	
-      coffeeMachine = new ICoffeeMachine(coffeeMachineController); 
+      coffeeMachineController = new CoffeeMakerControllerMachine(); 	
+      coffeeMachine = new CoffeeMakerMachine(coffeeMachineController); 
       send coffeeMachineController, eInit, coffeeMachine;
-      steamerButton = new SteamerButton((coffeeMachineController, 1));
+      steamerButton = new SteamerButtonMachine((coffeeMachineController, 1));
     } 
   }
 } 
@@ -36,16 +36,16 @@ machine Main2
 receives ;
 sends eInit;
 {
-  var coffeeMachine: ICoffeeMachine; 
-  var coffeeMachineController: ICoffeeMachineController;
+  var coffeeMachine: CoffeeMakerMachine; 
+  var coffeeMachineController: CoffeeMakerControllerMachine;
   var door: machine;
 
   start state Init {  
     entry { 	
-      coffeeMachineController = new ICoffeeMachineController(); 
-      coffeeMachine = new ICoffeeMachine(coffeeMachineController);
+      coffeeMachineController = new CoffeeMakerControllerMachine(); 
+      coffeeMachine = new CoffeeMakerMachine(coffeeMachineController);
       send coffeeMachineController, eInit, coffeeMachine;
-      door = new Door((coffeeMachineController, 1));
+      door = new DoorMachine((coffeeMachineController, 1));
     } 
   }
 } 

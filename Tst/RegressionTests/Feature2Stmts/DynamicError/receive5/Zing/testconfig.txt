@@ -1,4 +1,0 @@
-arg: -et:receive5.trace
-inc: receive5.trace
-del: receive5.trace
-dsc: zinger.exe, receive statement

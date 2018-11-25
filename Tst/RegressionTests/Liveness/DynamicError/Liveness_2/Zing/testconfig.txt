@@ -1,5 +1,0 @@
-arg: -ndfsliveness
-arg: -et:Liveness_2.trace
-inc: Liveness_2.trace
-del: Liveness_2.trace
-dsc: zinger.exe, Liveness: simplest sample demonstrating liveness error found

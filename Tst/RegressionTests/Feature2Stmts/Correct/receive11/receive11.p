@@ -42,3 +42,6 @@ machine Main {
 		on E do (payload: int) {}
 	}
 }
+
+implementation impl[main=Main]: (assert M in { Main, A});
+

@@ -1,6 +1,3 @@
-=================================
-         Console output          
-=================================
 OUT: ?(0,0,0,0): error PC1001: Name appears more than once in name tuple or named tuple type: a
 OUT: nonAtomicDataTypes.p(58,5,58,6): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
 OUT: nonAtomicDataTypes.p(62,5,62,6): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side

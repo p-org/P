@@ -1,7 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: linear2.p(9,8,9,9): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: linear2.p(13,8,13,9): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: Compilation failed
-EXIT: -1

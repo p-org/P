@@ -42,8 +42,8 @@ machine Receiver {
 					y = 1;
 					foo0 = 5;
 					assert foo0 == 5;    //OK
-					Foo = default(Bar);
-					assert Foo == bar0;   //OK
+					Foo = default(Bar) to int;
+					assert Foo == bar0 to int;   //OK
 					z = foo0(y);          
 					assert z == 1;      //OK
 					z = foo1(y);
@@ -57,7 +57,7 @@ machine Receiver {
 							assert x == 19;  //OK
 							//assert x == 0;    //reachable (debug only)
 							assert foo0 == 5;  //OK
-							assert Foo == bar0; //OK
+							assert Foo == bar0 to int; //OK
 							assert z == 1;		//OK
 							assert a == 3;	 	//OK
 							assert ts.a == 5;	//OK
@@ -73,7 +73,6 @@ machine Receiver {
 					assert x == 10;  //OK
 					//assert x == 0;    //reachable (debug only)
 					assert y == e1;   //OK
-					assert foo0 == 0;  //OK
 					assert default(Foo) == foo0;  //OK
 					assert ts.a == 5;	//OK
 				}
@@ -84,7 +83,7 @@ machine Receiver {
 			assert x == 10;  //OK
 			//assert x == 0;    // reachable (debug only)
 			assert y == e1;  //OK
-			assert foo0 == 0;  //OK
+			assert foo0 to int == 0 ;  //OK
 			assert default(Foo) == foo0; //OK
 			assert ts.a == 5;	//OK
 		}

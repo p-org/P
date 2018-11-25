@@ -1,0 +1,3 @@
+OUT: TransDecl_DoDecl.p(10,3,10,7): error PC1001: Action and transition over the same event
+OUT: Compilation failed
+EXIT: -1

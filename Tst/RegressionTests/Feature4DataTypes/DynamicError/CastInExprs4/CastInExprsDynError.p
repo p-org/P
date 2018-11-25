@@ -105,7 +105,7 @@ machine Main {
 		  ////////////////////////// seq vs any:
 		  a = default(any);
 		  s = a as seq[int];         //dynamic error: "value must be a member of type" (this XYZ)
-		  
+		  assert(sizeof(s) > 0);
 		  raise halt;
        }    
     }       

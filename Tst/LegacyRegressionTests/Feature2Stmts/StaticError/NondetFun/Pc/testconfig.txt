@@ -1,5 +1,0 @@
-arg: ..\NondetFun.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, Nondeterminism in functions

@@ -1,0 +1,3 @@
+OUT: Duplicates.p(9,2,8,3): error PC1001: Syntax error - A state with name S1 already declared
+OUT: Compilation failed
+EXIT: -1

@@ -1,9 +1,6 @@
-=================================
-         Console output          
-=================================
 OUT: <CreateLog> Machine Main(1) is created
-OUT: <StateLog> Machine Main(1) entered state Init
-OUT: <ExitLog> Machine Main(1) exiting state Init
+OUT: <StateLog> Machine Main(1) entered state Main.Init
+OUT: <ExitLog> Machine Main(1) exiting state Main.Init
 OUT: exiting with PRT_STATUS_EVENT_UNHANDLED
 OUT: 
 EXIT: 1

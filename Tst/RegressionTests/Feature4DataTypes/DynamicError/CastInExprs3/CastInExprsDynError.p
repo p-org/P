@@ -98,7 +98,7 @@ machine Main {
 		  ////////////////////////// map vs any:
 		  a = default(any);
 		  m1 = a as map[int,int];    //dynamic error: "value must be a member of type" (this XYZ)
-		  
+		  assert(10 in m1);
 		  raise halt;
        }    
     }       

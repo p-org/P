@@ -1,4 +1,0 @@
-arg: -et:frgn.trace
-inc: frgn.trace
-del: frgn.trace
-dsc: zinger.exe, test foreign type implementation

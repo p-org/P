@@ -1,2 +1,2 @@
-test Test0: main Hello in { Hello, Timer };
+test Test0 [main=Hello]: { Hello, Timer };
 

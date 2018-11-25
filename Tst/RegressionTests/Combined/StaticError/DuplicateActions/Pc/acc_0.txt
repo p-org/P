@@ -1,0 +1,4 @@
+OUT: Duplicates-1.p(17,3,17,7): error PC1001: Multiple actions over the same event
+OUT: Duplicates-1.p(18,3,18,7): error PC1001: Multiple actions over the same event
+OUT: Compilation failed
+EXIT: -1

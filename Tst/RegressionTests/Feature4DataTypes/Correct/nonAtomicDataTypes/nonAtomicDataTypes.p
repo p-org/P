@@ -56,12 +56,12 @@ machine Main {
           b = default(bool);	  
 
 		  e = E;
-          e = default(event);	  
+          //e = default(event);	  
 		  
 		  mac = this;          mac = default(machine);	  
 		  
 		  a = true;
-		  a = default(any);
+		  //a = default(any);
 		  
 		  m5[1]  = true;
 		  m5 = default(map[int,any]);
@@ -80,7 +80,7 @@ machine Main {
 		  
 		  te = (2,E2);            //OK
 		  te = (3,bar());         //OK
-		  te = (4,null);          //OK
+		  te = (4,null as event);          //OK
 		  
 	      /////////////////////////sequences:
 		  s += (0, 1);
@@ -104,7 +104,7 @@ machine Main {
 		  s9 += (0,E);
 		  s9 += (1,E1);
 		  s9 += (2,E2);
-		  s9 += (3,null);
+		  s9 += (3,null as event);
 		  assert (sizeof(s9) == 4);   //holds
 		  s10 += (0,E);                //OK
 		  
@@ -135,7 +135,7 @@ machine Main {
 		  
 		  m8[0] = E;                 //OK
 		  m8[1] = E1;                //OK
-		  m8[2] = null;              //OK
+		  m8[2] = null as event;              //OK
 
 		  m9[0] = E;                  //OK
 		  m9[1] = null;               //OK
@@ -226,7 +226,7 @@ machine Main {
 		  assert ( tmp2 != t);
 		  //m11 += (null,null);   //dynamic error: "key must not exist in map"
 		  m11[1] = null;      //OK
-		  m11[null] = 1;      //OK
+		  //m11[null] = 1;      //OK
 
 		  y = default(int);
 		  tmp1 = IncY();

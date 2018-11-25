@@ -1,1 +1,0 @@
-dsc: zinger.exe, 3.4. cast operator in expressions

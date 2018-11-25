@@ -1,5 +1,0 @@
-arg: ..\receive4.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, receive statement

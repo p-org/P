@@ -1,3 +1,3 @@
-module System = { IClient -> Client, IServer -> Server};
+module System = { ClientMachine, ServerMachine};
 
 implementation System;

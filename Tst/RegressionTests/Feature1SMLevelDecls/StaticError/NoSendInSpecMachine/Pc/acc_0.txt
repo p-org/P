@@ -1,0 +1,3 @@
+OUT: monitors.p(18,24,18,25): error PC1001: $, $$, this, new, send, announce, receive, and pop not allowed in spec machines
+OUT: Compilation failed
+EXIT: -1

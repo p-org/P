@@ -1,5 +1,0 @@
-arg: ..\bug.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: defines Transaction type

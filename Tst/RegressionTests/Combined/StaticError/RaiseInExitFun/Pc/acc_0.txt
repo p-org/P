@@ -1,6 +1,3 @@
-=================================
-         Console output          
-=================================
 OUT: RaiseInExitFun.p(9,5,9,10): error PC1001: Exit function may cause a change in current state
 OUT: Compilation failed
 EXIT: -1

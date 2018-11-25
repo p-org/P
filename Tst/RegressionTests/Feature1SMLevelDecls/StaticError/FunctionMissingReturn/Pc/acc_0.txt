@@ -1,0 +1,3 @@
+OUT: function.p(9,32,9,33): error PC1001: function must return a value
+OUT: Compilation failed
+EXIT: -1

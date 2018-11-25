@@ -1,6 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: nonDetFunctionInExpr_4.p(38,14,38,15): error PC1001: Function must be pure: impure functions can only be called like foo(...); or x = foo(...)
-OUT: Compilation failed
-EXIT: -1

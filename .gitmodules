@@ -1,10 +1,6 @@
-[submodule "Ext/Zing"]
-	path = Ext/Zing
-	url = https://github.com/ZingModelChecker/Zing.git
-	ignore = dirty
-[submodule "Ext/Formula"]
-	path = Ext/Formula
-	url = https://github.com/Microsoft/formula.git
-[submodule "Ext/PSharp"]
-	path = Ext/PSharp
+[submodule "Ext/libhandler"]
+	path = Ext/libhandler
+	url = https://github.com/koka-lang/libhandler.git
+[submodule "Ext/psharp"]
+	path = Ext/psharp
 	url = https://github.com/p-org/PSharp.git

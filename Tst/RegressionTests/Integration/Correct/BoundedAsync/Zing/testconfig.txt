@@ -1,2 +1,0 @@
-arg: -fbound:3
-dsc: zinger.exe, Feature Integration: protocol sample

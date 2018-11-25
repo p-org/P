@@ -10,8 +10,6 @@ type SeqB = seq[B];
 type MapBC = map[B,C];
 
 machine Main {
-	var x: X;
-
 	var a: A;
 	var c: C;
     start state S0 {

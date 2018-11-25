@@ -1,4 +1,0 @@
-arg: -et:pop.trace
-inc: pop.trace
-del: pop.trace
-dsc: zinger.exe, pop statement

@@ -1,6 +1,3 @@
-=================================
-         Console output          
-=================================
 OUT: payloads.p(14,10,14,14): error PC1001: Invalid payload type in send
 OUT: payloads.p(15,10,15,14): error PC1001: Invalid payload type in send
 OUT: payloads.p(16,10,16,14): error PC1001: Invalid payload type in send

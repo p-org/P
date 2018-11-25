@@ -1,9 +1,0 @@
-fun StopProgram()
-{
-    
-}
-
-fun Continue() : bool
-{ 
-    return $;
-}

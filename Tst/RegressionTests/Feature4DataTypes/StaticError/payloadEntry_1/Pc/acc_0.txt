@@ -1,6 +1,3 @@
-=================================
-         Console output          
-=================================
 OUT: payloadEntry_1.p(47,4,47,8): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
 OUT: payloadEntry_1.p(48,4,48,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side
 OUT: payloadEntry_1.p(58,4,58,7): error PC1001: Invalid assignment: right hand side is not a subtype of left hand side

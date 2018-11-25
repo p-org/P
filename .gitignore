@@ -218,9 +218,12 @@ $RECYCLE.BIN/
 /packages/
 
 # all P compiler generated output files.
+Bld/
 PGenerated/
 *.4ml
+!Src/**/Domains/*.4ml
 *.zing
+!Src/**/Zing/*.zing
 stubs.c
 
 Src/PrtDist/Binaries/clusterconfiguration.xml
@@ -242,10 +245,10 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /Src/PrtDist/Samples/PingPongFast/test.dll
 /Tst/PrtTester/Tester.VC.db
 /Bld/PRT_CONTAINER_LOG_1.txt
-/Src/Pc/Compiler/Parser/Tokens.report.html
-/Src/Pc/Compiler/Parser/PParser.report.html
-/Src/Pc/Compiler/Parser/LParser.report.html
-/Src/Pc/Compiler/TokensTokens.dat
+/Src/Pc/LegacyCompiler/Parser/Tokens.report.html
+/Src/Pc/LegacyCompiler/Parser/PParser.report.html
+/Src/Pc/LegacyCompiler/Parser/LParser.report.html
+/Src/Pc/LegacyCompiler/TokensTokens.dat
 /Src/Tools/CompilerProfileToCsv/CompilerProfileToCsv.VC.db
 /Tutorial/Sample0/Sample0.VC.db
 /Tutorial/Sample1/Sample1.VC.db
@@ -285,3 +288,7 @@ Src/PrtDist/Binaries/clusterconfiguration.xml
 /Tst/frontend-regression.txt
 /dotMemory
 /tmp
+/**/obj/
+nupkgs/
+/Tst/temp_builds
+*.db

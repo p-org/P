@@ -1,5 +1,0 @@
-arg: ..\receive18.p
-arg: /shortFileNames
-arg: /test
-arg: /outputDir:..\.
-dsc: pc.exe, variable scoping in receive

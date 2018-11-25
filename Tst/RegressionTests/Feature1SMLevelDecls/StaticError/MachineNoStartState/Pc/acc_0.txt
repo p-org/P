@@ -1,0 +1,3 @@
+OUT: purity.p(3,4,81,5): error PC1001: No start state in machine
+OUT: Compilation failed
+EXIT: -1

@@ -7,16 +7,14 @@ event eStartSteamer;
 event eStopSteamer;
 event eDumpGrinds;
 
-interface ICoffeeMachine(ICoffeeMachineController) receives
-eBeginHeating, eGrindBeans, eStartEspresso, eStartSteamer, eStopSteamer, eDumpGrinds;
-
-machine CoffeeMachine
+machine CoffeeMakerMachine
+receives eBeginHeating, eGrindBeans, eStartEspresso, eStartSteamer, eStopSteamer, eDumpGrinds;
 sends eTemperatureReached, eNoBeans, eGrindComplete, eEspressoComplete, eNoWater, eUnknownError, eDumpComplete;
 {
-    var controller: ICoffeeMachineController;
+    var controller: CoffeeMakerControllerMachine;
 
     start state Init {
-        entry (x: ICoffeeMachineController) {
+        entry (x: CoffeeMakerControllerMachine) {
             controller = x;
         }
         on eBeginHeating do { 
@@ -58,14 +56,14 @@ sends eTemperatureReached, eNoBeans, eGrindComplete, eEspressoComplete, eNoWater
 
 // turn on heating element, and wait for eTemperatureReached
 event eTemperatureReached;
-fun BeginHeating(c: ICoffeeMachine) {
+fun BeginHeating(c: CoffeeMakerMachine) {
 	send c, eBeginHeating;
 }
 
 // start grinding beans to fill the filter holder
 event eNoBeans;
 event eGrindComplete;
-fun GrindBeans(c: ICoffeeMachine){
+fun GrindBeans(c: CoffeeMakerMachine){
 	send c, eGrindBeans;
 }
 
@@ -75,27 +73,27 @@ event eEspressoComplete;
 event eNoWater;
 event mMachineBusy;
 
-fun StartEspresso(c: ICoffeeMachine) {
+fun StartEspresso(c: CoffeeMakerMachine) {
     announce mMachineBusy;
     send c, eStartEspresso;
 }
 
 // start the steamer 
 event eSteamerButtonOn;
-fun StartSteamer(c: ICoffeeMachine) {
+fun StartSteamer(c: CoffeeMakerMachine) {
     announce mMachineBusy;
     send c, eStartSteamer;
 }
 
 // stop the steamer 
 event eSteamerButtonOff;
-fun StopSteamer(c: ICoffeeMachine) {
+fun StopSteamer(c: CoffeeMakerMachine) {
     send c, eStopSteamer;
 }
 
 // start dumping the grinds
 event eDumpComplete;
-fun DumpGrinds(c: ICoffeeMachine) {
+fun DumpGrinds(c: CoffeeMakerMachine) {
     send c, eDumpGrinds;
 }
 

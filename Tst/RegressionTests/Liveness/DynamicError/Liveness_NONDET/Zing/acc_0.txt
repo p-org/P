@@ -1,9 +1,0 @@
-=================================
-         Console output          
-=================================
-OUT: ##################
-OUT: Liveness Check Failed
-OUT: ##################
-OUT: 14 distinct states explored
-OUT: 
-EXIT: 6

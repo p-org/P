@@ -1,2 +1,0 @@
-arg: -ndfsliveness
-dsc: zinger.exe, Liveness: simplest sample demonstrating FAIRNONDET in liveness

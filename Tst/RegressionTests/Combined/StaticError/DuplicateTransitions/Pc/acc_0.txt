@@ -1,0 +1,4 @@
+OUT: Duplicates-1.p(11,2,11,6): error PC1001: Multiple transitions over the same event
+OUT: Duplicates-1.p(13,2,13,6): error PC1001: Multiple transitions over the same event
+OUT: Compilation failed
+EXIT: -1

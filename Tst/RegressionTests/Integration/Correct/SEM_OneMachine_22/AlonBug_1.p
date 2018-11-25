@@ -7,24 +7,33 @@ event E;
 machine Main {
 	var i: int;
 	start state Init {
-			 entry { i = 0; raise E; }
+		entry {
+			i = 0;
+			raise E;
+		}
 
-		exit { assert (false); }  //unreachable
+		exit {
+			//unreachable
+			assert(false);
+		}
+		
 		on E push Call;
 	}
 
 	state Call {
-		   entry { 
-			   if (i == 0) {
-				     raise E;
-					   
-			   }
-               else {
-					i = i + 1;
-			   }
+		entry {
+			if (i == 0) {
+				raise E;
+			} else {
+				i = i + 1;
 			}
-			ignore E;   
-			
-			exit { assert (false); ;}  //unreachable, which means that the state is not popped
+		}
+
+		ignore E;
+
+		exit {
+			//unreachable, which means that the state is not popped
+			assert(false);
+		}
 	}
 }

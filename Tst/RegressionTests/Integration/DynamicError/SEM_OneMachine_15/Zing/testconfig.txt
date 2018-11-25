@@ -1,4 +1,0 @@
-arg: -et:ImplicitPopExit.trace
-inc: ImplicitPopExit.trace
-del: ImplicitPopExit.trace
-dsc: zinger.exe, P semantics test: one machine, exit actions executed upon implicit "pop"

@@ -1,34 +1,32 @@
-﻿namespace Microsoft.Pc
-{
-    public class CommandLine
-    {
-        private static ICompiler GetCompiler(CommandLineOptions options)
-        {
-            if (options.compilerOutput == CompilerOutput.PSharp)
-            {
-                return new AntlrCompiler();
-            }
-            if (options.compilerService)
-            {
-                return new CompilerServiceClient();
-            }
-            return new Compiler(options.shortFileNames);
-        }
+﻿using static Plang.Compiler.CommandLineParseResult;
 
+namespace Plang.Compiler
+{
+    public static class CommandLine
+    {
         public static int Main(string[] args)
         {
-            if (CommandLineOptions.ParseArguments(args, out CommandLineOptions options))
+            switch (CommandLineOptions.ParseArguments(args, out var job))
             {
-                ICompiler compiler = GetCompiler(options);
-                var output = new StandardOutput();
-                bool result = options.isLinkerPhase
-                                  ? compiler.Link(output, options)
-                                  : compiler.Compile(output, options);
-                return result ? 0 : -1;
+                case Failure:
+                    CommandLineOptions.PrintUsage();
+                    return 1;
+                case HelpRequested:
+                    CommandLineOptions.PrintUsage();
+                    return 0;
+                default:
+                    try
+                    {
+                        ICompiler compiler = new Compiler();
+                        compiler.Compile(job);
+                        return 0;
+                    }
+                    catch (TranslationException e)
+                    {
+                        job.Output.WriteMessage(e.Message, SeverityKind.Error);
+                        return 1;
+                    }
             }
-
-            CommandLineOptions.PrintUsage();
-            return -1;
         }
     }
 }

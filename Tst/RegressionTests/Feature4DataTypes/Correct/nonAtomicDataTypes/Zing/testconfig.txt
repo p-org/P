@@ -1,4 +1,0 @@
-arg: -et:nonAtomicDataTypes.trace
-inc: nonAtomicDataTypes.trace
-del: nonAtomicDataTypes.trace
-dsc: zinger.exe, 4. complex data types in assign/remove/insert: sequences, tuples, maps

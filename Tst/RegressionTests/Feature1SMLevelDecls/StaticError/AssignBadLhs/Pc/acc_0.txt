@@ -1,0 +1,3 @@
+OUT: function.p(5,4,5,5): error PC1001: Invalid LHS: must have the form LHS ::= var | LHS[expr] | LHS.name
+OUT: Compilation failed
+EXIT: -1

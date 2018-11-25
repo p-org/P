@@ -1,4 +1,0 @@
-arg: -et:NullEventHandler2.trace
-inc: NullEventHandler2.trace
-del: NullEventHandler2.trace
-dsc: zinger.exe, P semantics test, one machine: "null" handler semantics

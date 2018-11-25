@@ -60,7 +60,7 @@ machine FailureDetector {
         on UNIT push SendPing;
     }
     state SendPing {
-        entry (payload: any) {
+        entry {
 		    SendPingsToAliveSet(0);
 			send timer, START, 100;
 	    }

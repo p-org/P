@@ -1,0 +1,3 @@
+OUT: monitors.p(9,4,9,9): error PC1001: Invalid payload type in raise (cannot send null value)
+OUT: Compilation failed
+EXIT: -1

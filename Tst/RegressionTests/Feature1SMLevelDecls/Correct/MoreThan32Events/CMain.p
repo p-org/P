@@ -82,7 +82,7 @@ machine DownloadManagerMachine {
 
     state CloneArtifactPart
     {
-	on halt do (payload: any) {}
+	on halt do {}
 	on null do {}                     
     on CancelDownload do {}
     on ClonePartFromArtifactOperationComplete do {}

@@ -1,6 +1,3 @@
-=================================
-         Console output          
-=================================
-OUT: bug.p(2,7,2,8): error PC1001: Syntax error - Syntax error, unexpected LPAREN, expecting ASSIGN, or SEMICOLON
+OUT: bug.p(18,40,18,42): error PC1001: Cast can never succeed
 OUT: Compilation failed
 EXIT: -1

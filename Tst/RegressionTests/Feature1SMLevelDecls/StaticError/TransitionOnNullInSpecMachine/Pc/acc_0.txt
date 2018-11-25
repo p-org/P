@@ -1,0 +1,3 @@
+OUT: monitors.p(18,3,18,10): error PC1001: Transition on null event not allowed in spec machine
+OUT: Compilation failed
+EXIT: -1

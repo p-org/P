@@ -1808,7 +1808,7 @@ void PrtInstallProgram(_In_ PRT_PROGRAMDECL* p)
 {
 	PrtAssert(p != NULL && program == NULL, "p and program must be non-NULL");
 
-	lh_register_malloc(PrtMalloc, PrtCalloc, PrtRealloc, PrtFree);
+	lh_register_malloc((lh_mallocfun*)PrtMalloc, (lh_callocfun*)PrtCalloc, PrtRealloc, PrtFree);
 
 	program = p;
 	for (PRT_UINT32 i = 0; i < p->nEvents; i++)

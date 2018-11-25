@@ -802,7 +802,7 @@ PRT_API PRT_STRING PRT_CALL_CONV PrtToStringValue(_In_ PRT_VALUE* value);
 * @param[in] value The string to copy.
 * @returns a string representing value. You must call PrtFree to release the string memory when you are done.
 */
-PRT_API PRT_STRING PRT_CALL_CONV PrtCopyString(_In_  PRT_STRING value);
+PRT_API PRT_STRING PRT_CALL_CONV PrtCopyString(_In_  const PRT_STRING value);
 
 /** Prints a type to the output stream
 * @param[in] type The non-null type to print.

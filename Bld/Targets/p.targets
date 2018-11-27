@@ -6,7 +6,7 @@
     <!-- So this new property unifies that difference and moves everything to 'x86' -->
     <UnifiedPlatform Condition="'$(Platform)'=='Win32'">x86</UnifiedPlatform>
     <DropFolder>$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\$(UnifiedPlatform)</DropFolder>
-    <PExePath>"$(MSBuildThisFileDirectory)..\Drops\Release\AnyCPU\Binaries\pc.dll"</PExePath>
+    <PExePath>"$(MSBuildThisFileDirectory)..\Drops\$(Configuration)\AnyCPU\Binaries\pc.dll"</PExePath>
     <CleanDependsOn>$(CleanDependsOn);CleanSdkHeaders;CleanClientFiles;CleanCompileP</CleanDependsOn>
     <PGeneratedDir>$(ProjectDir)PGenerated</PGeneratedDir>
     <PCompileOptions>-generate:C "-t:$(ProjectName)" "-outputDir:$(PGeneratedDir)"</PCompileOptions>

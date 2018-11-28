@@ -102,11 +102,11 @@ machine GodMachine
     start state Init {
 	    entry {
 			container = _CREATECONTAINER();
-			pongMachine_1 = _CREATEMACHINE(container, 2, null, null);
+			pongMachine_1 = _CREATEMACHINE(container, 2, null, null as machine);
 			container = _CREATECONTAINER();
-			pongMachine_2 = _CREATEMACHINE(container, 2, null, null);
+			pongMachine_2 = _CREATEMACHINE(container, 2, null, null as machine);
 			container = _CREATECONTAINER();
-			_CREATEMACHINE(container, 1, (pongMachine_1, pongMachine_2), null);
+			_CREATEMACHINE(container, 1, (pongMachine_1, pongMachine_2), null as machine);
 	    }
 	}
 }

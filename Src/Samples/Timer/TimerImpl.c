@@ -11,7 +11,7 @@ typedef struct TimerContext
 	BOOL started;
 } TimerContext;
 
-void PRT_TimerPtr_IMPL(PRT_UINT64 frgnVal)
+void P_FREE_TimerPtr_IMPL(PRT_UINT64 frgnVal)
 {
 	if (frgnVal == 0) return;
 	TimerContext* timerContext = (TimerContext *)frgnVal;

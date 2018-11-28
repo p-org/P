@@ -1,14 +1,12 @@
 version: 2
+
 jobs:
   build:
     docker:
       - image: microsoft/dotnet:2.1.300-preview2-sdk-alpine
+    working_directory: .
     steps:
       - checkout
       - run: find .
-      - run: git submodule foreach --recursive git reset --hard
-      - run: git submodule foreach --recursive git clean -fdx
-      - run: git clean -fdx
-      - run: git submodule update --init --recursive
       - run: dotnet restore
       - run: dotnet build -c Release P.sln

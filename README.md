@@ -4,6 +4,24 @@
  
 P is a language for asynchronous event-driven programming. P allows the programmer to specify the system as a collection of interacting state machines, which communicate with each other using events. P unifies modeling and programming into one activity for the programmer. Not only can a P program be compiled into executable code, but it can also be validated using systematic testing. P has been used to implement and validate the USB device driver stack that ships with Microsoft Windows 8 and Windows Phone. P is also suitable for the design and implementation of networked, embedded, and distributed systems.
 
+Publications
+==========================================================
+- **[P: Safe asynchronous event-driven programming](http://people.eecs.berkeley.edu/~ankush/assets/papers/p.pdf)**.
+Ankush Desai, Vivek Gupta, Ethan Jackson, Shaz Qadeer, Sriram Rajamani, and Damien Zufferey.
+In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI), 2013.
+
+- **[Systematic Testing of Asynchronous Reactive Systems](http://people.eecs.berkeley.edu/~ankush/assets/papers/fse-desai.pdf)**.
+Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
+In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
+
+- **[DRONA: A Framework for Safe Distributed Mobile Robotics](https://people.eecs.berkeley.edu/~ankush/Papers/drona.pdf)**.
+Ankush Desai, Indranil Saha, Jianqiao Yang, Shaz Qadeer, and Sanjit A. Seshia.
+In Proceedings of the 8th ACM/IEEE International Conference on Cyber-Physical Systems (ICCPS), 2017.
+
+- **[Compositional Programming and Testing of Dynamic Distributed Systems](http://people.eecs.berkeley.edu/~ankush/assets/papers/modp.pdf)**.
+Ankush Desai, Amar Phanishayee, Shaz Qadeer, and Sanjit Seshia.
+International Conference on Object-Oriented Programming, Systems, Languages, and Applications (OOPSLA), 2018.
+
 Manual
 =========
 
@@ -24,19 +42,7 @@ More details about the DRONA framework and simulation videos are available here:
 We are working on using the DRONA framework for building real-world drone applications using **[PX4](https://github.com/PX4/Firmware)** and extending DRONA with runtime monitoring capabilities for reliability.
 Details about these extensions will be posted soon.
 
-Publications
-==========================================================
-- **[P: Safe asynchronous event-driven programming](https://people.eecs.berkeley.edu/~ankush/Papers/p321-desai.pdf)**.
-Ankush Desai, Vivek Gupta, Ethan Jackson, Shaz Qadeer, Sriram Rajamani, and Damien Zufferey.
-In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Implementation (PLDI), 2013.
 
-- **[Systematic testing of asynchronous reactive systems](https://people.eecs.berkeley.edu/~ankush/Papers/fse-desai.pdf)**.
-Ankush Desai, Shaz Qadeer, and Sanjit A. Seshia.
-In Proceedings of the 2015 10th Joint Meeting on Foundations of Software Engineering (ESEC/FSE 2015). 
-
-- **[DRONA: A Framework for Safe Distributed Mobile Robotics](https://people.eecs.berkeley.edu/~ankush/Papers/drona.pdf)**.
-Ankush Desai, Indranil Saha, Jianqiao Yang, Shaz Qadeer, and Sanjit A. Seshia.
-In Proceedings of the 8th ACM/IEEE International Conference on Cyber-Physical Systems (ICCPS), 2017.
 
 Blogs
 ============================================================

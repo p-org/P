@@ -1,7 +1,7 @@
 using System;
 using Microsoft.PSharp;
 
-namespace Main
+namespace pingpongmonitor
 {
     public class _TestRegression
     {

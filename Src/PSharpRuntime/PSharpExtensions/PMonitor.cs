@@ -7,7 +7,7 @@ namespace Plang.PrtSharp
 {
     public class PMonitor : Monitor
     {
-        public static List<string> observes;
+        public static List<string> observes = new List<string>();
 
         public object gotoPayload;
 

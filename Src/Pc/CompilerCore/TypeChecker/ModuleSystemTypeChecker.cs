@@ -384,12 +384,12 @@ namespace Plang.Compiler.TypeChecker
                 {
                     foreach (var @event in module1Info.Sends.Events.Intersect(module2Info.Sends.Events))
                         throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                            $"output sends are not disjoint, {@event.Name} belongs to the sends of the composed module");
+                            $"output sends are not disjoint, {@event.Name} belongs to the sends of multiple composed module");
 
                     foreach (var @interface in module1Info.Creates.Interfaces.Intersect(
                         module2Info.Creates.Interfaces))
                         throw handler.InvalidCompositionExpr(module1.SourceLocation,
-                            $"output creates are not disjoint, {@interface.Name} belongs to the creates of the composed module");
+                            $"output creates are not disjoint, {@interface.Name} belongs to the creates of multiple composed module");
                 }
 
                 foreach (var exportedOrCreatedInterface in module1.ModuleInfo.InterfaceDef.Keys.Union(module1.ModuleInfo
@@ -397,7 +397,7 @@ namespace Plang.Compiler.TypeChecker
                 foreach (var priEvent in module2.ModuleInfo.PrivateEvents.Events.Where(ev =>
                     GetPermissions(exportedOrCreatedInterface.PayloadType.AllowedPermissions?.Value).Contains(ev)))
                     throw handler.InvalidHideEventExpr(module2.SourceLocation,
-                        $"private event {priEvent.Name} belongs to the permissions of the contructor type of public interface {exportedOrCreatedInterface.Name}");
+                        $"private event {priEvent.Name} belongs to the permissions of the constructor type of public interface {exportedOrCreatedInterface.Name}");
             }
 
 

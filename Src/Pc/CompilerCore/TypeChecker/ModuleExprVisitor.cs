@@ -171,7 +171,7 @@ namespace Plang.Compiler.TypeChecker
             var @interface = context.iName?.GetText() ?? machine;
 
             if (!globalScope.Get(@interface, out Interface i))
-                throw handler.MissingDeclaration(context.iName, "interface", @interface);
+                throw handler.MissingDeclaration(context.iName?? context.mName, "interface", @interface);
 
             if (!globalScope.Get(machine, out Machine m))
                 throw handler.MissingDeclaration(context.mName, "machine", machine);

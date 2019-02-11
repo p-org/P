@@ -781,7 +781,7 @@ namespace Plang.Compiler.Backend.PSharp
                             //create tuple from rvaluelist
                             var argTypes = string.Join(",",
                                 sendStmt.Arguments.Select(a => GetCSharpType(a.Type)));
-                            var tupleType = $"PrtTuple<{argTypes}>";
+                            var tupleType = $"PrtTuple";
                             context.Write(output, $"new {tupleType}(");
                             var septor = "";
                             foreach (var ctorExprArgument in sendStmt.Arguments)

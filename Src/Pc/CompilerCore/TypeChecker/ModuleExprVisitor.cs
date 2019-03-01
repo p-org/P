@@ -165,6 +165,11 @@ namespace Plang.Compiler.TypeChecker
             return new AssertModuleExpr(context, monList, Visit(context.modExpr()));
         }
 
+        public override IPModuleExpr VisitParenModuleExpr(PParser.ParenModuleExprContext context)
+        {
+            return Visit(context.modExpr());
+        }
+
         private new Tuple<Interface, Machine> VisitBindExpr([NotNull] PParser.BindExprContext context)
         {
             var machine = context.mName.GetText();

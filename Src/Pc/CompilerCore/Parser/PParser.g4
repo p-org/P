@@ -220,15 +220,16 @@ rvalue : iden linear=(SWAP | MOVE)
 
 // module system related
 
-modExpr : LBRACE bindslist+=bindExpr (COMMA bindslist+=bindExpr)* RBRACE      # PrimitiveModuleExpr
+modExpr : LPAREN modExpr RPAREN												  # ParenModuleExpr
+		| LBRACE bindslist+=bindExpr (COMMA bindslist+=bindExpr)* RBRACE      # PrimitiveModuleExpr
         | iden                                                                # NamedModule
-        | LPAREN op=COMPOSE mexprs+=modExpr (COMMA mexprs+=modExpr)+ RPAREN   # ComposeModuleExpr
-        | LPAREN op=UNION   mexprs+=modExpr (COMMA  mexprs+=modExpr)+ RPAREN  # UnionModuleExpr
-        | LPAREN op=HIDEE  nonDefaultEventList IN modExpr RPAREN              # HideEventsModuleExpr
-        | LPAREN op=HIDEI idenList IN modExpr RPAREN                          # HideInterfacesModuleExpr
-        | LPAREN op=ASSERT  idenList IN modExpr RPAREN                        # AssertModuleExpr
-        | LPAREN op=RENAME  oldName=iden TO newName=iden IN modExpr RPAREN    # RenameModuleExpr
-		| LPAREN op=MAIN mainMachine=iden IN modExpr RPAREN					  # MainMachineModuleExpr
+        | op=COMPOSE mexprs+=modExpr (COMMA mexprs+=modExpr)+				  # ComposeModuleExpr
+        | op=UNION   mexprs+=modExpr (COMMA  mexprs+=modExpr)+				  # UnionModuleExpr
+        | op=HIDEE  nonDefaultEventList IN modExpr							# HideEventsModuleExpr
+        | op=HIDEI idenList IN modExpr										# HideInterfacesModuleExpr
+        | op=ASSERT  idenList IN modExpr									# AssertModuleExpr
+        | op=RENAME  oldName=iden TO newName=iden IN modExpr				# RenameModuleExpr
+		| op=MAIN mainMachine=iden IN modExpr								# MainMachineModuleExpr
         ;
 
 

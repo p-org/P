@@ -12,12 +12,12 @@ namespace Main
             // Optional: increases verbosity level to see the P# runtime log.
             var configuration = Configuration.Create();
             configuration.SchedulingIterations = 10;
-            var engine = TestingEngineFactory.CreateBugFindingEngine(configuration, DefaultImpl.Execute);
+            var engine = TestingEngineFactory.CreateBugFindingEngine(configuration, Test0.Execute);
             engine.Run();
             var bug = engine.TestReport.BugReports.FirstOrDefault();
             if (bug != null)
                 Console.WriteLine(bug);
-
+            
             /*
             // Creates a new P# runtime instance, and passes an optional configuration.
             var runtime = PSharpRuntime.Create(configuration);

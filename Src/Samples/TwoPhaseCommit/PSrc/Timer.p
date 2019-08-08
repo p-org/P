@@ -29,7 +29,7 @@ sends eTimeOut, eCancelTimerFailed, eCancelTimerSuccess;
 		on eCancelTimer goto WaitForStartTimer with {
 			if ($) {
 				send target, eCancelTimerFailed;
-				//send target, eTimeOut;
+				send target, eTimeOut;
 			} else {
 				send target, eCancelTimerSuccess;
 			}		
@@ -53,9 +53,9 @@ fun CancelTimer(timer: machine)
 	receive {
 		case eCancelTimerSuccess: { print "Timer Cancelled Successful"; }
 		case eCancelTimerFailed: {
-			/*receive {
+			receive {
 				case eTimeOut: { print "Timer Cancelled Successful"; }
-			}*/
+			}
 		}
 	}
 }

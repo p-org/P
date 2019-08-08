@@ -48,8 +48,8 @@ namespace UnitTests.Runners
             var exitCode =
                 ProcessHelper.RunWithOutput(scratchDirectory.FullName, out stdout, out stderr, FindDotnet(), args);
 
-            foreach (var compiledFile in compiledFiles)
-                stdout += $"{compiledFile.Name}\n===\n{File.ReadAllText(compiledFile.FullName)}\n\n";
+            /*foreach (var compiledFile in compiledFiles)
+                stdout += $"{compiledFile.Name}\n===\n{File.ReadAllText(compiledFile.FullName)}\n\n";*/
 
             if (exitCode == 0)
             {

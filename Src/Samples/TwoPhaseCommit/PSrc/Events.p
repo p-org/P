@@ -24,10 +24,10 @@ event eCancelTimerFailed;
 event eCancelTimerSuccess;
 
 // events used for communication with the specification monitors
-event eMonitor_LocalCommit: (parcipant:machine, transId: int);
+event eMonitor_LocalCommit: (participant:machine, transId: int);
 event eMonitor_AtomicityInitialize: int;
 
 /* User defined types */
 type tWriteTransaction = (client:machine, key:int, val:int);
 type tReadTransaction = (client:machine, key:int);
-type tPrepareForTrans = (transId:int, key:int, val:int);
+type tPrepareForTrans = (coordinator: machine, transId:int, key:int, val:int);

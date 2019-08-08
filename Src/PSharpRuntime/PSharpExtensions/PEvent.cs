@@ -35,6 +35,7 @@ namespace Plang.PrtSharp
     {
         public PHalt(IPrtValue payload) : base(payload)
         {
+            AssertVal = -1; AssumeVal = -1;
         }
     }
 }

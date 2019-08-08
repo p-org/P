@@ -268,23 +268,23 @@ namespace Plang.Compiler.Backend.PSharp
             IDictionary<Machine, IEnumerable<Interface>> monitorMap)
         {
             // compute the reverse map
-            var machineMap = new Dictionary<string, List<Machine>>();
+            var machineMap = new Dictionary<Interface, List<Machine>>();
             foreach (var monitorToInterface in monitorMap)
             foreach (var iface in monitorToInterface.Value)
             {
-                if (!machineMap.ContainsKey(iface.Name)) machineMap[iface.Name] = new List<Machine>();
+                if (!machineMap.ContainsKey(iface)) machineMap[iface] = new List<Machine>();
 
-                machineMap[iface.Name].Add(monitorToInterface.Key);
+                machineMap[iface].Add(monitorToInterface.Key);
             }
 
             context.WriteLine(output, "public static void InitializeMonitorMap(PSharpRuntime runtime) {");
             context.WriteLine(output, "PModule.monitorMap.Clear();");
             foreach (var machine in machineMap)
             {
-                context.WriteLine(output, $"PModule.monitorMap[\"{machine.Key}\"] = new List<Type>();");
+                context.WriteLine(output, $"PModule.monitorMap[nameof({context.Names.GetNameForDecl(machine.Key)})] = new List<Type>();");
                 foreach (var monitor in machine.Value)
                     context.WriteLine(output,
-                        $"PModule.monitorMap[\"{machine.Key}\"].Add(typeof({context.Names.GetNameForDecl(monitor)}));");
+                        $"PModule.monitorMap[nameof({context.Names.GetNameForDecl(machine.Key)})].Add(typeof({context.Names.GetNameForDecl(monitor)}));");
             }
 
             foreach (var monitor in monitorMap.Keys)

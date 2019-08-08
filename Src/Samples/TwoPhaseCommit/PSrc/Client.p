@@ -26,10 +26,14 @@ machine Client {
 			send coordinator, eReadTransaction, (client=this, key = randomTransaction.key);
 		}
 		on eReadTransFailed do { assert false, "Read Failed after Write!!"; }
-		on eReadTransSuccess goto End;
+		on eReadTransSuccess goto End with (payload: int ){ assert payload == randomTransaction.val, "Incorrect value returned !!"; }
 	}
 
-	state End { }
+	state End {
+		entry {
+			raise halt;
+		}
+	}
 
 	
 }

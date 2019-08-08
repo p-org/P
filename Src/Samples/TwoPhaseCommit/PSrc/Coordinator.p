@@ -16,18 +16,14 @@ machine Coordinator
 	var timer: machine;
 
 	start state Init {
-		entry (numParticipants : int){
+		entry (payload: seq[machine]){
 			var i : int; 
 			//initialize variables
 			i = 0; currTransId = 0;
 			timer = CreateTimer(this);
-			assert (numParticipants > 0);
+			participants = payload;
 			//create all the participants
-			announce eMonitor_AtomicityInitialize, numParticipants;
-			while (i < numParticipants) {
-				participants += (i, new Participant(this));
-				i = i + 1;
-			}
+			announce eMonitor_AtomicityInitialize, sizeof(payload);
 			//wait for requests
 			goto WaitForTransactions;
 		}
@@ -37,12 +33,12 @@ machine Coordinator
 
 	state WaitForTransactions {
 		// when in this state it is fine to drop these messages
-		ignore ePrepareSuccess, ePrepareFailed, eTimeOut;
+		ignore ePrepareSuccess, ePrepareFailed;
 
 		on eWriteTransaction do (wTrans : tWriteTransaction) {
 			pendingWrTrans = wTrans;
 			currTransId = currTransId + 1;
-			SendToAllParticipants(ePrepare, (transId = currTransId, key = pendingWrTrans.key, val = pendingWrTrans.val));
+			SendToAllParticipants(ePrepare, (coordinator = this, transId = currTransId, key = pendingWrTrans.key, val = pendingWrTrans.val));
 
 			//start timer while waiting for responses from all participants
 			StartTimer(timer, 100);
@@ -51,7 +47,14 @@ machine Coordinator
 		}
 
 		on eReadTransaction do (rTrans : tReadTransaction) {
-			// todo: randomly choose a participant and read the value
+			if($)
+			{
+				send participants[0], eReadTransaction, rTrans;
+			}
+			else
+			{
+				send participants[sizeof(participants) - 1], eReadTransaction, rTrans;
+			}
 		}
 
 		on local_event push WaitForPrepareResponses;

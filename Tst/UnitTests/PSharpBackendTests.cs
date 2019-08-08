@@ -31,8 +31,6 @@ namespace UnitTests
         public void TestModuleSystem()
         {
             var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestPSharpTemp"));
-            var tempFilePath =
-                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "PingPong", "Main.p"));
             var allFiles = new[]
             {
                 new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "PingPong", "Main.p")),
@@ -47,6 +45,34 @@ namespace UnitTests
             var testCase = new CompilerTestCase(
                 tempDir,
                 new PSharpRunner(allFiles),
+                new CompileSuccessValidator());
+
+            TestAssertions.AssertTestCase(testCase);
+        }
+
+        [Test]
+        public void TestTwoPhaseCommit()
+        {
+            var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestTwoPhaseCommit"));
+            var allPFiles = new[]
+            {
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "TwoPhaseCommit", "Client.p")),
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "TwoPhaseCommit", "Coordinator.p")),
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "TwoPhaseCommit", "Events.p")),
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "TwoPhaseCommit", "Participant.p")),
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "TwoPhaseCommit", "TestDriver.p")),
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "TwoPhaseCommit", "Timer.p")),
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "TwoPhaseCommit", "Spec.p"))
+            };
+
+            var foreignCode = new[]
+            {
+                new FileInfo(Path.Combine(Constants.SolutionDirectory, "Tutorial", "TwoPhaseCommit", "ForeignCode.cs"))
+            };
+
+            var testCase = new CompilerTestCase(
+                tempDir,
+                new PSharpRunner(allPFiles, foreignCode),
                 new CompileSuccessValidator());
 
             TestAssertions.AssertTestCase(testCase);

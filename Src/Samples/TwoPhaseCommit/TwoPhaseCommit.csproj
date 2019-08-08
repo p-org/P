@@ -17,4 +17,8 @@
     <PackageReference Include="Microsoft.PSharp" Version="1.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="PSrc\" />
+  </ItemGroup>
+
 </Project>

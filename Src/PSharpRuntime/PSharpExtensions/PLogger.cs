@@ -10,6 +10,10 @@ namespace Plang.PrtSharp
     /// </summary>
     public class PLogger : MachineLogger
     {
+        public PLogger() : base(2)
+        {
+
+        }
         /// <summary>
         ///     Writes the specified string value.
         /// </summary>

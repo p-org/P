@@ -251,7 +251,7 @@ namespace Plang.Compiler.Backend.PSharp
             context.WriteLine(output);
             context.WriteLine(output, "[Microsoft.PSharp.Test]");
             context.WriteLine(output, "public static void Execute(PSharpRuntime runtime) {");
-            context.WriteLine(output, "runtime.SetLogger(new PLogger());");
+            //context.WriteLine(output, "runtime.SetLogger(new PLogger());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");

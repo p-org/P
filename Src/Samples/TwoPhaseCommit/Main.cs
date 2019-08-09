@@ -91,13 +91,6 @@ namespace Main
         public eReadTransFailed (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new eReadTransFailed();}
     }
-    internal partial class eReadTransUnAvailable : PEvent
-    {
-        static eReadTransUnAvailable() { AssertVal = -1; AssumeVal = -1;}
-        public eReadTransUnAvailable() : base() {}
-        public eReadTransUnAvailable (IPrtValue payload): base(payload){ }
-        public override IPrtValue Clone() { return new eReadTransUnAvailable();}
-    }
     internal partial class eReadTransSuccess : PEvent
     {
         static eReadTransSuccess() { AssertVal = -1; AssumeVal = -1;}
@@ -226,7 +219,6 @@ namespace Main
             this.sends.Add(nameof(ePrepareSuccess));
             this.sends.Add(nameof(eReadTransFailed));
             this.sends.Add(nameof(eReadTransSuccess));
-            this.sends.Add(nameof(eReadTransUnAvailable));
             this.sends.Add(nameof(eReadTransaction));
             this.sends.Add(nameof(eStartTimer));
             this.sends.Add(nameof(eTimeOut));
@@ -247,7 +239,6 @@ namespace Main
             this.receives.Add(nameof(ePrepareSuccess));
             this.receives.Add(nameof(eReadTransFailed));
             this.receives.Add(nameof(eReadTransSuccess));
-            this.receives.Add(nameof(eReadTransUnAvailable));
             this.receives.Add(nameof(eReadTransaction));
             this.receives.Add(nameof(eStartTimer));
             this.receives.Add(nameof(eTimeOut));
@@ -370,7 +361,6 @@ namespace Main
             this.sends.Add(nameof(ePrepareSuccess));
             this.sends.Add(nameof(eReadTransFailed));
             this.sends.Add(nameof(eReadTransSuccess));
-            this.sends.Add(nameof(eReadTransUnAvailable));
             this.sends.Add(nameof(eReadTransaction));
             this.sends.Add(nameof(eStartTimer));
             this.sends.Add(nameof(eTimeOut));
@@ -391,7 +381,6 @@ namespace Main
             this.receives.Add(nameof(ePrepareSuccess));
             this.receives.Add(nameof(eReadTransFailed));
             this.receives.Add(nameof(eReadTransSuccess));
-            this.receives.Add(nameof(eReadTransUnAvailable));
             this.receives.Add(nameof(eReadTransaction));
             this.receives.Add(nameof(eStartTimer));
             this.receives.Add(nameof(eTimeOut));
@@ -412,12 +401,12 @@ namespace Main
             PMachineValue TMP_tmp0_7 = null;
             PMachineValue TMP_tmp1_6 = null;
             PrtInt TMP_tmp2_3 = ((PrtInt)0);
+            participants = (PrtSeq)(((PrtSeq)((IPrtValue)payload_2)?.Clone()));
             i = (PrtInt)(((PrtInt)0));
             currTransId = (PrtInt)(((PrtInt)0));
             TMP_tmp0_7 = (PMachineValue)(currentMachine.self);
             TMP_tmp1_6 = (PMachineValue)(GlobalFunctions.CreateTimer(TMP_tmp0_7, this));
             timer_2 = TMP_tmp1_6;
-            participants = (PrtSeq)(((PrtSeq)((IPrtValue)payload_2)?.Clone()));
             TMP_tmp2_3 = (PrtInt)(((PrtInt)(payload_2).Count));
             currentMachine.Announce((Event)new eMonitor_AtomicityInitialize(((PrtInt)0)), TMP_tmp2_3);
             currentMachine.GotoState<Coordinator.WaitForTransactions>();
@@ -491,22 +480,6 @@ namespace Main
                 currentMachine.SendEvent(TMP_tmp8_1, (Event)TMP_tmp9_1, TMP_tmp10);
             }
         }
-        public void DoGlobalAbort()
-        {
-            Coordinator currentMachine = this;
-            PEvent TMP_tmp0_10 = null;
-            PrtInt TMP_tmp1_9 = ((PrtInt)0);
-            PMachineValue TMP_tmp2_6 = null;
-            PMachineValue TMP_tmp3_4 = null;
-            PEvent TMP_tmp4_3 = null;
-            TMP_tmp0_10 = (PEvent)(new eGlobalAbort(((PrtInt)0)));
-            TMP_tmp1_9 = (PrtInt)(((PrtInt)((IPrtValue)currTransId)?.Clone()));
-            SendToAllParticipants(TMP_tmp0_10, TMP_tmp1_9);
-            TMP_tmp2_6 = (PMachineValue)(((PrtNamedTuple)pendingWrTrans)["client"]);
-            TMP_tmp3_4 = (PMachineValue)(((PMachineValue)((IPrtValue)TMP_tmp2_6)?.Clone()));
-            TMP_tmp4_3 = (PEvent)(new eWriteTransFailed(null));
-            currentMachine.SendEvent(TMP_tmp3_4, (Event)TMP_tmp4_3);
-        }
         public void Anon_9()
         {
             Coordinator currentMachine = this;
@@ -517,28 +490,28 @@ namespace Main
             Coordinator currentMachine = this;
             PrtInt transId = (PrtInt)(gotoPayload ?? ((PEvent)currentMachine.ReceivedEvent).Payload);
             this.gotoPayload = null;
-            PrtBool TMP_tmp0_11 = ((PrtBool)false);
-            PrtInt TMP_tmp1_10 = ((PrtInt)0);
-            PrtInt TMP_tmp2_7 = ((PrtInt)0);
-            PrtBool TMP_tmp3_5 = ((PrtBool)false);
-            PEvent TMP_tmp4_4 = null;
+            PrtBool TMP_tmp0_10 = ((PrtBool)false);
+            PrtInt TMP_tmp1_9 = ((PrtInt)0);
+            PrtInt TMP_tmp2_6 = ((PrtInt)0);
+            PrtBool TMP_tmp3_4 = ((PrtBool)false);
+            PEvent TMP_tmp4_3 = null;
             PrtInt TMP_tmp5_2 = ((PrtInt)0);
             PMachineValue TMP_tmp6_2 = null;
             PMachineValue TMP_tmp7_2 = null;
             PEvent TMP_tmp8_2 = null;
             PMachineValue TMP_tmp9_2 = null;
-            TMP_tmp0_11 = (PrtBool)((PrtValues.SafeEquals(currTransId,transId)));
-            if (TMP_tmp0_11)
+            TMP_tmp0_10 = (PrtBool)((PrtValues.SafeEquals(currTransId,transId)));
+            if (TMP_tmp0_10)
             {
-                TMP_tmp1_10 = (PrtInt)((countPrepareResponses) + (((PrtInt)1)));
-                countPrepareResponses = TMP_tmp1_10;
-                TMP_tmp2_7 = (PrtInt)(((PrtInt)(participants).Count));
-                TMP_tmp3_5 = (PrtBool)((PrtValues.SafeEquals(countPrepareResponses,TMP_tmp2_7)));
-                if (TMP_tmp3_5)
+                TMP_tmp1_9 = (PrtInt)((countPrepareResponses) + (((PrtInt)1)));
+                countPrepareResponses = TMP_tmp1_9;
+                TMP_tmp2_6 = (PrtInt)(((PrtInt)(participants).Count));
+                TMP_tmp3_4 = (PrtBool)((PrtValues.SafeEquals(countPrepareResponses,TMP_tmp2_6)));
+                if (TMP_tmp3_4)
                 {
-                    TMP_tmp4_4 = (PEvent)(new eGlobalCommit(((PrtInt)0)));
+                    TMP_tmp4_3 = (PEvent)(new eGlobalCommit(((PrtInt)0)));
                     TMP_tmp5_2 = (PrtInt)(((PrtInt)((IPrtValue)currTransId)?.Clone()));
-                    SendToAllParticipants(TMP_tmp4_4, TMP_tmp5_2);
+                    SendToAllParticipants(TMP_tmp4_3, TMP_tmp5_2);
                     TMP_tmp6_2 = (PMachineValue)(((PrtNamedTuple)pendingWrTrans)["client"]);
                     TMP_tmp7_2 = (PMachineValue)(((PMachineValue)((IPrtValue)TMP_tmp6_2)?.Clone()));
                     TMP_tmp8_2 = (PEvent)(new eWriteTransSuccess(null));
@@ -555,14 +528,14 @@ namespace Main
             Coordinator currentMachine = this;
             PrtInt transId_1 = (PrtInt)(gotoPayload ?? ((PEvent)currentMachine.ReceivedEvent).Payload);
             this.gotoPayload = null;
-            PrtBool TMP_tmp0_12 = ((PrtBool)false);
-            PMachineValue TMP_tmp1_11 = null;
-            TMP_tmp0_12 = (PrtBool)((PrtValues.SafeEquals(currTransId,transId_1)));
-            if (TMP_tmp0_12)
+            PrtBool TMP_tmp0_11 = ((PrtBool)false);
+            PMachineValue TMP_tmp1_10 = null;
+            TMP_tmp0_11 = (PrtBool)((PrtValues.SafeEquals(currTransId,transId_1)));
+            if (TMP_tmp0_11)
             {
                 DoGlobalAbort();
-                TMP_tmp1_11 = (PMachineValue)(((PMachineValue)((IPrtValue)timer_2)?.Clone()));
-                await GlobalFunctions.CancelTimer(TMP_tmp1_11, this);
+                TMP_tmp1_10 = (PMachineValue)(((PMachineValue)((IPrtValue)timer_2)?.Clone()));
+                await GlobalFunctions.CancelTimer(TMP_tmp1_10, this);
                 currentMachine.PopState();
                 throw new PUnreachableCodeException();
             }
@@ -578,6 +551,22 @@ namespace Main
         {
             Coordinator currentMachine = this;
             PModule.runtime.Logger.WriteLine("Going back to WaitForTransactions");
+        }
+        public void DoGlobalAbort()
+        {
+            Coordinator currentMachine = this;
+            PEvent TMP_tmp0_12 = null;
+            PrtInt TMP_tmp1_11 = ((PrtInt)0);
+            PMachineValue TMP_tmp2_7 = null;
+            PMachineValue TMP_tmp3_5 = null;
+            PEvent TMP_tmp4_4 = null;
+            TMP_tmp0_12 = (PEvent)(new eGlobalAbort(((PrtInt)0)));
+            TMP_tmp1_11 = (PrtInt)(((PrtInt)((IPrtValue)currTransId)?.Clone()));
+            SendToAllParticipants(TMP_tmp0_12, TMP_tmp1_11);
+            TMP_tmp2_7 = (PMachineValue)(((PrtNamedTuple)pendingWrTrans)["client"]);
+            TMP_tmp3_5 = (PMachineValue)(((PMachineValue)((IPrtValue)TMP_tmp2_7)?.Clone()));
+            TMP_tmp4_4 = (PEvent)(new eWriteTransFailed(null));
+            currentMachine.SendEvent(TMP_tmp3_5, (Event)TMP_tmp4_4);
         }
         public void SendToAllParticipants(PEvent message, IPrtValue payload_3)
         {
@@ -656,7 +645,6 @@ namespace Main
             this.sends.Add(nameof(ePrepareSuccess));
             this.sends.Add(nameof(eReadTransFailed));
             this.sends.Add(nameof(eReadTransSuccess));
-            this.sends.Add(nameof(eReadTransUnAvailable));
             this.sends.Add(nameof(eReadTransaction));
             this.sends.Add(nameof(eStartTimer));
             this.sends.Add(nameof(eTimeOut));
@@ -677,7 +665,6 @@ namespace Main
             this.receives.Add(nameof(ePrepareSuccess));
             this.receives.Add(nameof(eReadTransFailed));
             this.receives.Add(nameof(eReadTransSuccess));
-            this.receives.Add(nameof(eReadTransUnAvailable));
             this.receives.Add(nameof(eReadTransaction));
             this.receives.Add(nameof(eStartTimer));
             this.receives.Add(nameof(eTimeOut));
@@ -941,7 +928,6 @@ namespace Main
             this.sends.Add(nameof(ePrepareSuccess));
             this.sends.Add(nameof(eReadTransFailed));
             this.sends.Add(nameof(eReadTransSuccess));
-            this.sends.Add(nameof(eReadTransUnAvailable));
             this.sends.Add(nameof(eReadTransaction));
             this.sends.Add(nameof(eStartTimer));
             this.sends.Add(nameof(eTimeOut));
@@ -962,7 +948,6 @@ namespace Main
             this.receives.Add(nameof(ePrepareSuccess));
             this.receives.Add(nameof(eReadTransFailed));
             this.receives.Add(nameof(eReadTransSuccess));
-            this.receives.Add(nameof(eReadTransUnAvailable));
             this.receives.Add(nameof(eReadTransaction));
             this.receives.Add(nameof(eStartTimer));
             this.receives.Add(nameof(eTimeOut));
@@ -1037,7 +1022,6 @@ namespace Main
             this.sends.Add(nameof(ePrepareSuccess));
             this.sends.Add(nameof(eReadTransFailed));
             this.sends.Add(nameof(eReadTransSuccess));
-            this.sends.Add(nameof(eReadTransUnAvailable));
             this.sends.Add(nameof(eReadTransaction));
             this.sends.Add(nameof(eStartTimer));
             this.sends.Add(nameof(eTimeOut));
@@ -1058,7 +1042,6 @@ namespace Main
             this.receives.Add(nameof(ePrepareSuccess));
             this.receives.Add(nameof(eReadTransFailed));
             this.receives.Add(nameof(eReadTransSuccess));
-            this.receives.Add(nameof(eReadTransUnAvailable));
             this.receives.Add(nameof(eReadTransaction));
             this.receives.Add(nameof(eStartTimer));
             this.receives.Add(nameof(eTimeOut));
@@ -1137,7 +1120,6 @@ namespace Main
             this.sends.Add(nameof(ePrepareSuccess));
             this.sends.Add(nameof(eReadTransFailed));
             this.sends.Add(nameof(eReadTransSuccess));
-            this.sends.Add(nameof(eReadTransUnAvailable));
             this.sends.Add(nameof(eReadTransaction));
             this.sends.Add(nameof(eStartTimer));
             this.sends.Add(nameof(eTimeOut));
@@ -1158,7 +1140,6 @@ namespace Main
             this.receives.Add(nameof(ePrepareSuccess));
             this.receives.Add(nameof(eReadTransFailed));
             this.receives.Add(nameof(eReadTransSuccess));
-            this.receives.Add(nameof(eReadTransUnAvailable));
             this.receives.Add(nameof(eReadTransaction));
             this.receives.Add(nameof(eStartTimer));
             this.receives.Add(nameof(eTimeOut));
@@ -1510,12 +1491,12 @@ namespace Main
     public partial class PHelper {
         public static void InitializeInterfaces() {
             PInterfaces.Clear();
-            PInterfaces.AddInterface(nameof(I_Client), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransUnAvailable), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
-            PInterfaces.AddInterface(nameof(I_Coordinator), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransUnAvailable), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
-            PInterfaces.AddInterface(nameof(I_Participant), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransUnAvailable), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
-            PInterfaces.AddInterface(nameof(I_TestDriver0), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransUnAvailable), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
-            PInterfaces.AddInterface(nameof(I_TestDriver1), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransUnAvailable), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
-            PInterfaces.AddInterface(nameof(I_FailureInjector), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransUnAvailable), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
+            PInterfaces.AddInterface(nameof(I_Client), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
+            PInterfaces.AddInterface(nameof(I_Coordinator), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
+            PInterfaces.AddInterface(nameof(I_Participant), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
+            PInterfaces.AddInterface(nameof(I_TestDriver0), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
+            PInterfaces.AddInterface(nameof(I_TestDriver1), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
+            PInterfaces.AddInterface(nameof(I_FailureInjector), nameof(eCancelTimer), nameof(eCancelTimerFailed), nameof(eCancelTimerSuccess), nameof(eGlobalAbort), nameof(eGlobalCommit), nameof(eMonitor_AtomicityInitialize), nameof(eMonitor_LocalCommit), nameof(ePrepare), nameof(ePrepareFailed), nameof(ePrepareSuccess), nameof(eReadTransFailed), nameof(eReadTransSuccess), nameof(eReadTransaction), nameof(eStartTimer), nameof(eTimeOut), nameof(eWriteTransFailed), nameof(eWriteTransSuccess), nameof(eWriteTransaction), nameof(PHalt), nameof(local_event));
             PInterfaces.AddInterface(nameof(I_Timer), nameof(eCancelTimer), nameof(eStartTimer));
         }
     }

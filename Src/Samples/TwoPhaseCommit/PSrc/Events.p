@@ -13,7 +13,6 @@ event eWriteTransFailed;
 event eWriteTransSuccess;
 event eReadTransaction : tReadTransaction;
 event eReadTransFailed;
-event eReadTransUnAvailable;
 event eReadTransSuccess: int;
 
 // events for communication with the timer machine

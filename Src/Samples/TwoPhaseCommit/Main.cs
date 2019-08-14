@@ -1319,13 +1319,13 @@ namespace Main
             PModule.monitorObserves.Clear();
         }
         
-        public static void InitializeMonitorMap(PSharpRuntime runtime) {
+        public static void InitializeMonitorMap(IMachineRuntime runtime) {
             PModule.monitorMap.Clear();
         }
         
         
         [Microsoft.PSharp.Test]
-        public static void Execute(PSharpRuntime runtime) {
+        public static void Execute(IMachineRuntime runtime) {
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();
@@ -1370,7 +1370,7 @@ namespace Main
             PModule.monitorObserves[nameof(Progress)].Add(nameof(eWriteTransaction));
         }
         
-        public static void InitializeMonitorMap(PSharpRuntime runtime) {
+        public static void InitializeMonitorMap(IMachineRuntime runtime) {
             PModule.monitorMap.Clear();
             PModule.monitorMap[nameof(I_TestDriver1)] = new List<Type>();
             PModule.monitorMap[nameof(I_TestDriver1)].Add(typeof(Progress));
@@ -1389,7 +1389,7 @@ namespace Main
         
         
         [Microsoft.PSharp.Test]
-        public static void Execute(PSharpRuntime runtime) {
+        public static void Execute(IMachineRuntime runtime) {
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();
@@ -1432,7 +1432,7 @@ namespace Main
             PModule.monitorObserves[nameof(Atomicity)].Add(nameof(eWriteTransSuccess));
         }
         
-        public static void InitializeMonitorMap(PSharpRuntime runtime) {
+        public static void InitializeMonitorMap(IMachineRuntime runtime) {
             PModule.monitorMap.Clear();
             PModule.monitorMap[nameof(I_TestDriver0)] = new List<Type>();
             PModule.monitorMap[nameof(I_TestDriver0)].Add(typeof(Atomicity));
@@ -1449,7 +1449,7 @@ namespace Main
         
         
         [Microsoft.PSharp.Test]
-        public static void Execute(PSharpRuntime runtime) {
+        public static void Execute(IMachineRuntime runtime) {
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();

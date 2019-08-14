@@ -13,6 +13,6 @@ namespace Plang.PrtSharp
         public static IDictionary<string, Dictionary<string, string>> linkMap =
             new Dictionary<string, Dictionary<string, string>>();
 
-        public static PSharpRuntime runtime;
+        public static IMachineRuntime runtime;
     }
 }

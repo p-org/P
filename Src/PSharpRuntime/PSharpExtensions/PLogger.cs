@@ -8,9 +8,9 @@ namespace Plang.PrtSharp
     /// <summary>
     ///     Logger that writes text to the console.
     /// </summary>
-    public class PLogger : MachineLogger
+    /*public class PLogger : MachineLogger
     {
-        public PLogger() : base(2)
+        public PLogger() : base(true)
         {
 
         }
@@ -86,5 +86,5 @@ namespace Plang.PrtSharp
         public override void Dispose()
         {
         }
-    }
+    }*/
 }

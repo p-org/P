@@ -250,7 +250,7 @@ namespace Plang.Compiler.Backend.PSharp
         {
             context.WriteLine(output);
             context.WriteLine(output, "[Microsoft.PSharp.Test]");
-            context.WriteLine(output, "public static void Execute(PSharpRuntime runtime) {");
+            context.WriteLine(output, "public static void Execute(IMachineRuntime runtime) {");
             //context.WriteLine(output, "runtime.SetLogger(new PLogger());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
@@ -277,7 +277,7 @@ namespace Plang.Compiler.Backend.PSharp
                 machineMap[iface].Add(monitorToInterface.Key);
             }
 
-            context.WriteLine(output, "public static void InitializeMonitorMap(PSharpRuntime runtime) {");
+            context.WriteLine(output, "public static void InitializeMonitorMap(IMachineRuntime runtime) {");
             context.WriteLine(output, "PModule.monitorMap.Clear();");
             foreach (var machine in machineMap)
             {

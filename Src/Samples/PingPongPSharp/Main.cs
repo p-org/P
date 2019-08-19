@@ -1032,14 +1032,14 @@ namespace Main
             PModule.monitorObserves.Clear();
         }
 
-        public static void InitializeMonitorMap(PSharpRuntime runtime)
+        public static void InitializeMonitorMap(IMachineRuntime runtime)
         {
             PModule.monitorMap.Clear();
         }
 
 
         [Microsoft.PSharp.Test]
-        public static void Execute(PSharpRuntime runtime)
+        public static void Execute(IMachineRuntime runtime)
         {
             //runtime.SetLogger(new PLogger());
             PModule.runtime = runtime;

@@ -17,6 +17,7 @@ machine Participant {
 				lastTransId = transId;
 			}
 		}
+		
 		on eGlobalCommit do (transId:int) {
 			assert (pendingWrTrans.transId == transId);
 			if (pendingWrTrans.transId == transId) {

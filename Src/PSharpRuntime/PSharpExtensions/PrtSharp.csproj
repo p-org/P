@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFrameworks>netcoreapp2.0;net46</TargetFrameworks>
     <LangVersion>latest</LangVersion>
-    <OutputPath>$(PSdkFolder)\Binaries</OutputPath>
+    <OutputPath>$(PSdkFolder)\$(TargetFramework)\Binaries</OutputPath>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.PSharp" Version="1.4.0" />

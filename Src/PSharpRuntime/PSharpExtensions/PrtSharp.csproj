@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp2.0;net46</TargetFrameworks>
+    <TargetFrameworks>netcoreapp2.1;net46</TargetFrameworks>
     <LangVersion>latest</LangVersion>
     <OutputPath>$(PSdkFolder)\$(TargetFramework)\Binaries</OutputPath>
   </PropertyGroup>

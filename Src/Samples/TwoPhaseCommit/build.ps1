@@ -1,6 +1,6 @@
 param(
-    [ValidateSet("netcoreapp2.0","net46")]
-    [string]$framework="netcoreapp2.0"
+    [ValidateSet("netcoreapp2.1","net46")]
+    [string]$framework="netcoreapp2.1"
 )
 
 $pc_path = $PSScriptRoot + "\..\..\..\Bld\Drops\Release\Binaries\win-x64\Pc.exe"

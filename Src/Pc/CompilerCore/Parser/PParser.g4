@@ -140,6 +140,7 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | PRINT StringLiteral (COMMA rvalueList)? SEMI  # PrintStmt
           | RETURN expr? SEMI                             # ReturnStmt
           | BREAK SEMI                                    # BreakStmt
+          | CONTINUE SEMI                                 # ContinueStmt
           | lvalue ASSIGN rvalue SEMI                     # AssignStmt
           | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI # InsertStmt
           | lvalue REMOVE expr SEMI                       # RemoveStmt

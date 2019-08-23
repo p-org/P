@@ -72,6 +72,8 @@ namespace Plang.Compiler.TypeChecker
                     return InferCreatesForExpr(returnStmt.ReturnValue, handler);
                 case BreakStmt breakStmt:
                     return Enumerable.Empty<Interface>();
+                case ContinueStmt continueStmt:
+                    return Enumerable.Empty<Interface>();
                 case SendStmt sendStmt:
                     return InferCreatesForExpr(sendStmt.MachineExpr, handler)
                         .Union(InferCreatesForExpr(sendStmt.Evt, handler))

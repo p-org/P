@@ -221,6 +221,9 @@ namespace Plang.Compiler.Backend.Debugging
                 case BreakStmt breakStmt:
                     WriteStmt("break;");
                     break;
+                case ContinueStmt continueStmt:
+                    WriteStmt("continue;");
+                    break;
                 case SendStmt sendStmt:
                     WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.Arguments, ";");
                     break;

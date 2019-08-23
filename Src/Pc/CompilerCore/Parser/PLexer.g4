@@ -24,6 +24,7 @@ ASSUME    : 'assume' ;
 BREAK     : 'break' ;
 CASE      : 'case' ;
 COLD      : 'cold' ;
+CONTINUE  : 'continue' ;
 DEFAULT   : 'default' ;
 DEFER     : 'defer' ;
 DO        : 'do' ;

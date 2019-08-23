@@ -1042,6 +1042,9 @@ namespace Plang.Compiler.Backend.Prt
                 case BreakStmt breakStmt:
                     context.WriteLine(output, "break;");
                     break;
+                case ContinueStmt continueStmt:
+                    context.WriteLine(output, "continue;");
+                    break;
                 case SendStmt sendStmt:
                     context.Write(output, "PrtSendInternal(context, PrtGetMachine(context->process, ");
                     WriteExpr(output, function, sendStmt.MachineExpr);

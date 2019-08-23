@@ -21,6 +21,7 @@ ANNOUNCE  : 'announce' ;
 AS        : 'as' ;
 ASSERT    : 'assert' ;
 ASSUME    : 'assume' ;
+BREAK     : 'break' ;
 CASE      : 'case' ;
 COLD      : 'cold' ;
 DEFAULT   : 'default' ;

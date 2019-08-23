@@ -218,6 +218,9 @@ namespace Plang.Compiler.Backend.Debugging
                 case ReturnStmt returnStmt:
                     WriteStmt("return ", returnStmt.ReturnValue, ";");
                     break;
+                case BreakStmt breakStmt:
+                    WriteStmt("break;");
+                    break;
                 case SendStmt sendStmt:
                     WriteStmt("send ", sendStmt.MachineExpr, ", ", sendStmt.Evt, ", ", sendStmt.Arguments, ";");
                     break;

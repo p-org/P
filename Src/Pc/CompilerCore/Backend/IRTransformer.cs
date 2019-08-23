@@ -366,6 +366,8 @@ namespace Plang.Compiler.Backend
                             new ReturnStmt(location, new CloneExpr(returnValue))
                         })
                         .ToList();
+                case BreakStmt breakStmt:
+                    return new List<IPStmt> {breakStmt};
                 case SendStmt sendStmt:
                     var (sendMachine, sendMachineDeps) = SimplifyExpression(sendStmt.MachineExpr);
                     var (sendMachineAccessExpr, sendMachineAssn) = SaveInTemporary(new CloneExpr(sendMachine));

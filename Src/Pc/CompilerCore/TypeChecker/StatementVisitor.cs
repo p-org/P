@@ -91,6 +91,11 @@ namespace Plang.Compiler.TypeChecker
             return new ReturnStmt(context, returnValue);
         }
 
+        public override IPStmt VisitBreakStmt(PParser.BreakStmtContext context)
+        {
+            return new BreakStmt(context);
+        }
+
         public override IPStmt VisitAssignStmt(PParser.AssignStmtContext context)
         {
             var variable = exprVisitor.Visit(context.lvalue());

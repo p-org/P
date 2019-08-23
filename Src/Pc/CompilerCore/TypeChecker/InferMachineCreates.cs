@@ -70,6 +70,8 @@ namespace Plang.Compiler.TypeChecker
                         .Union(InferCreatesForExpr(removeStmt.Value, handler));
                 case ReturnStmt returnStmt:
                     return InferCreatesForExpr(returnStmt.ReturnValue, handler);
+                case BreakStmt breakStmt:
+                    return Enumerable.Empty<Interface>();
                 case SendStmt sendStmt:
                     return InferCreatesForExpr(sendStmt.MachineExpr, handler)
                         .Union(InferCreatesForExpr(sendStmt.Evt, handler))

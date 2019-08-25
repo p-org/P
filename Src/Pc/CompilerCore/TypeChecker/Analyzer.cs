@@ -54,17 +54,20 @@ namespace Plang.Compiler.TypeChecker
             // Step 6: Check linear type ownership
             LinearTypeChecker.AnalyzeMethods(handler, allFunctions);
 
-            // Step 7: Infer the creates set for each machine.
+            // Step 7: Check control flow well-formedness
+            ControlFlowChecker.AnalyzeMethods(handler, allFunctions);
+
+            // Step 8: Infer the creates set for each machine.
             foreach (var machine in globalScope.Machines) InferMachineCreates.Populate(machine, handler);
 
-            // Step 8: Fill the module expressions
+            // Step 9: Fill the module expressions
             ModuleSystemDeclarations.PopulateAllModuleExprs(handler, globalScope);
 
             var moduleTypeChecker = new ModuleSystemTypeChecker(handler, globalScope);
-            // Step 9: Check that all module expressions are well-formed
+            // Step 10: Check that all module expressions are well-formed
             foreach (var moduleExpr in AllModuleExprs(globalScope)) moduleTypeChecker.CheckWellFormedness(moduleExpr);
 
-            // Step 10: Check the test and implementation declarations
+            // Step 11: Check the test and implementation declarations
             foreach (var impl in globalScope.Implementations) moduleTypeChecker.CheckImplementationDecl(impl);
             foreach (var test in globalScope.SafetyTests) moduleTypeChecker.CheckSafetyTest(test);
             foreach (var test in globalScope.RefinementTests) moduleTypeChecker.CheckRefinementTest(test);

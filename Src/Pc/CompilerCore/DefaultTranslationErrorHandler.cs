@@ -314,6 +314,11 @@ namespace Plang.Compiler
             return IssueError(context, "tuple or named tuple of size greater than 8 is not supported");
         }
 
+        public Exception BareLoopControlFlow(string stmtName, ParserRuleContext context)
+        {
+            return IssueError(context, $"Loop control flow statement '{stmtName}' cannot appear outside a loop body");
+        }
+
         private Exception IssueError(ParserRuleContext location, string message)
         {
             return IssueError(location, location.Start, message);

@@ -72,5 +72,6 @@ namespace Plang.Compiler
         Exception IllegalInterfaceCoerce(ParserRuleContext context, PLanguageType oldType, PLanguageType newType);
         Exception StaticFunctionNotAllowedAsHandler(ParserRuleContext funName, string name);
         Exception TupleSizeMoreThanEight(ParserRuleContext context);
+        Exception BareLoopControlFlow(string stmtName, ParserRuleContext context);
     }
 }

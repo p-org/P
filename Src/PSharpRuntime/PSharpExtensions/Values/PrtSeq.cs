@@ -99,6 +99,11 @@ namespace Plang.PrtSharp.Values
             values.RemoveAt(index);
         }
 
+        public bool Contains(IPrtValue item)
+        {
+            return values.Contains(item);
+        }
+
         private bool Equals(PrtSeq other)
         {
             return other != null && values.SequenceEqual(other.values);

@@ -1272,11 +1272,19 @@ namespace Plang.Compiler.Backend.Prt
                     WriteExpr(output, function, coerceExpr.SubExpr);
                     context.Write(output, "))");
                     break;
-                case ContainsKeyExpr containsKeyExpr:
-                    context.Write(output, "PrtMkBoolValue(PrtMapExists(");
-                    WriteExpr(output, function, containsKeyExpr.Map);
+                case ContainsExpr containsKeyExpr:
+                    var isMap = PLanguageType.TypeIsOfKind(containsKeyExpr.Collection.Type, TypeKind.Map);
+                    var isSeq = PLanguageType.TypeIsOfKind(containsKeyExpr.Collection.Type, TypeKind.Sequence);
+                    if (isMap) {
+                        context.Write(output, "PrtMkBoolValue(PrtMapExists(");
+                    } else if (isSeq) {
+                        context.Write(output, "PrtMkBoolValue(PrtSeqExists(");
+                    } else {
+                        throw new InvalidOperationException("Unsupported operation for non-map or sequence type");
+                    }
+                    WriteExpr(output, function, containsKeyExpr.Collection);
                     context.Write(output, ", ");
-                    WriteExpr(output, function, containsKeyExpr.Key);
+                    WriteExpr(output, function, containsKeyExpr.Item);
                     context.Write(output, "));");
                     break;
                 case CtorExpr ctorExpr:

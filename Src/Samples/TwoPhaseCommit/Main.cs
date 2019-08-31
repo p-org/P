@@ -786,7 +786,7 @@ namespace Main
             PMachineValue TMP_tmp8_4 = null;
             PEvent TMP_tmp9_4 = null;
             TMP_tmp0_17 = (PrtInt)(((PrtNamedTuple)payload_4)["key"]);
-            TMP_tmp1_16 = (PrtBool)(((PrtBool)(kvStore).ContainsKey(TMP_tmp0_17)));
+            TMP_tmp1_16 = (PrtBool)(((PrtBool)(((PrtMap)kvStore).ContainsKey(TMP_tmp0_17))));
             if (TMP_tmp1_16)
             {
                 TMP_tmp2_12 = (PMachineValue)(((PrtNamedTuple)payload_4)["client"]);
@@ -850,7 +850,7 @@ namespace Main
             PMachineValue TMP_tmp3_11 = null;
             PrtInt TMP_tmp4_9 = ((PrtInt)0);
             TMP_tmp0_18 = (PMachineValue)(((PrtNamedTuple)payload_5)["participant"]);
-            TMP_tmp1_17 = (PrtBool)(((PrtBool)(receivedLocalCommits).ContainsKey(TMP_tmp0_18)));
+            TMP_tmp1_17 = (PrtBool)(((PrtBool)(((PrtMap)receivedLocalCommits).ContainsKey(TMP_tmp0_18))));
             TMP_tmp2_13 = (PrtBool)(!(TMP_tmp1_17));
             currentMachine.Assert(TMP_tmp2_13,"");
             TMP_tmp3_11 = (PMachineValue)(((PrtNamedTuple)payload_5)["participant"]);

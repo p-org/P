@@ -95,9 +95,9 @@ namespace Plang.Compiler.TypeChecker
                     return InferCreatesForExpr(castExpr.SubExpr, handler);
                 case CoerceExpr coerceExpr:
                     return InferCreatesForExpr(coerceExpr.SubExpr, handler);
-                case ContainsKeyExpr containsKeyExpr:
-                    return InferCreatesForExpr(containsKeyExpr.Key, handler)
-                        .Union(InferCreatesForExpr(containsKeyExpr.Map, handler));
+                case ContainsExpr containsKeyExpr:
+                    return InferCreatesForExpr(containsKeyExpr.Item, handler)
+                        .Union(InferCreatesForExpr(containsKeyExpr.Collection, handler));
                 case CloneExpr cloneExpr:
                     return InferCreatesForExpr(cloneExpr.Term, handler);
                 case CtorExpr ctorExpr:

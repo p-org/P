@@ -940,12 +940,20 @@ namespace Plang.Compiler.Backend.PSharp
                     }
 
                     break;
-                case ContainsKeyExpr containsKeyExpr:
+                case ContainsExpr containsExpr:
+                    var isMap = PLanguageType.TypeIsOfKind(containsExpr.Collection.Type, TypeKind.Map);
+                    var castOp = isMap ? "(PrtMap)" : "(PrtSeq)";
+
                     context.Write(output, "((PrtBool)(");
-                    WriteExpr(context, output, containsKeyExpr.Map);
-                    context.Write(output, ").ContainsKey(");
-                    WriteExpr(context, output, containsKeyExpr.Key);
-                    context.Write(output, "))");
+                    context.Write(output, $"({castOp}");
+                    WriteExpr(context, output, containsExpr.Collection);
+                    if (isMap)
+                        context.Write(output, ").ContainsKey(");
+                    else
+                        context.Write(output, ").Contains(");
+
+                    WriteExpr(context, output, containsExpr.Item);
+                    context.Write(output, ")))");
                     break;
                 case CtorExpr ctorExpr:
                     context.Write(output,

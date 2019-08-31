@@ -1,0 +1,25 @@
+﻿<Properties StartupConfiguration="{934B341C-F23C-4214-A2A5-A0A89DF87718}|Default">
+  <MonoDevelop.Ide.Workbench ActiveDocument="build.sh">
+    <Files>
+      <File FileName="build.sh" Line="1" Column="1" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State name="__root__">
+          <Node name="TwoPhaseCommit" expanded="True">
+            <Node name="TwoPhaseCommit" expanded="True">
+              <Node name="build.sh" selected="True" />
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.ItemProperties.TwoPhaseCommit PreferredExecutionTarget="MonoDevelop.Default" />
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MultiItemStartupConfigurations />
+</Properties>

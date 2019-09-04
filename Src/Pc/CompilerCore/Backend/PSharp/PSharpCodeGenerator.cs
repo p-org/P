@@ -251,7 +251,7 @@ namespace Plang.Compiler.Backend.PSharp
             context.WriteLine(output);
             context.WriteLine(output, "[Microsoft.PSharp.Test]");
             context.WriteLine(output, "public static void Execute(IMachineRuntime runtime) {");
-            //context.WriteLine(output, "runtime.SetLogger(new PLogger());");
+            context.WriteLine(output, "runtime.SetLogWriter(new PLogger());");
             context.WriteLine(output, "PModule.runtime = runtime;");
             context.WriteLine(output, "PHelper.InitializeInterfaces();");
             context.WriteLine(output, "PHelper.InitializeEnums();");
@@ -334,8 +334,6 @@ namespace Plang.Compiler.Backend.PSharp
             var payloadType = GetCSharpType(pEvent.PayloadType, true);
             context.WriteLine(output, $"internal partial class {declName} : PEvent");
             context.WriteLine(output, "{");
-            context.WriteLine(output,
-                $"static {declName}() {{ AssertVal = {pEvent.Assert}; AssumeVal = {pEvent.Assume};}}");
             context.WriteLine(output, $"public {declName}() : base() {{}}");
             context.WriteLine(output, $"public {declName} ({payloadType} payload): base(payload)" + "{ }");
             context.WriteLine(output, $"public override IPrtValue Clone() {{ return new {declName}();}}");

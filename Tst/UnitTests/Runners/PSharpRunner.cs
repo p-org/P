@@ -117,7 +117,7 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.PSharp"" Version=""1.4.0""/>
+    <PackageReference Include=""Microsoft.PSharp"" Version=""1.6.9""/>
     <Reference Include = ""PrtSharp.dll""/>
   </ItemGroup>
 </Project>";

@@ -73,6 +73,4 @@ OUT: <EnqueueLog> Enqueued event ask_share with payload null on Machine Client(4
 OUT: <RaiseLog> Machine CPU(5) raised event unit with payload null
 OUT: <ExitLog> Machine CPU(5) exiting state CPU.makeReq
 OUT: <StateLog> Machine CPU(5) entered state CPU.makeReq
-OUT: exiting with PRT_STATUS_EVENT_OVERFLOW
-OUT: 
-EXIT: 1
+EXIT: 0

@@ -24,6 +24,5 @@ OUT: <EnqueueLog> Enqueued event eSwitchStatusChange with payload null on Machin
 OUT: <RaiseLog> Machine Switch(5) raised event eUnit with payload null
 OUT: <ExitLog> Machine Switch(5) exiting state Switch.ChangeSwitchStatus
 OUT: <StateLog> Machine Switch(5) entered state Switch.ChangeSwitchStatus
-OUT: exiting with PRT_STATUS_EVENT_OVERFLOW
 OUT: 
-EXIT: 1
+EXIT: 0

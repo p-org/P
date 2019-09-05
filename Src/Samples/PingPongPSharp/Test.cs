@@ -3,7 +3,7 @@ using Microsoft.PSharp;
 using Microsoft.PSharp.TestingServices;
 using System.Linq;
 
-namespace Main
+namespace pingpong
 {
     public class _TestRegression
     {

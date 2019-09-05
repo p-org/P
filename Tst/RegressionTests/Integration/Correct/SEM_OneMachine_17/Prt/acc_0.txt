@@ -15,6 +15,4 @@ OUT: <PopLog> Machine Main(1) popped with unhandled event E1 and reentered state
 OUT: <ExitLog> Machine Main(1) exiting state Main.Real1_Init
 OUT: <EnqueueLog> Enqueued event E2 with payload null on Machine Main(1)
 OUT: <StateLog> Machine Main(1) entered state Main.Real1_Init
-OUT: exiting with PRT_STATUS_EVENT_OVERFLOW
-OUT: 
-EXIT: 1
+EXIT: 0

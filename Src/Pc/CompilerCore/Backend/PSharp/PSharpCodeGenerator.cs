@@ -800,11 +800,7 @@ namespace Plang.Compiler.Backend.PSharp
                     context.WriteLine(output, ");");
                     break;
                 case SwapAssignStmt swapStmt:
-                    context.WriteLine(output, $"ref var temp = ref {context.Names.GetNameForDecl(swapStmt.OldLocation)};");
-                    context.Write(output, $"{context.Names.GetNameForDecl(swapStmt.OldLocation)} = ref ");
-                    WriteLValue(context, output, swapStmt.NewLocation);
-                    context.WriteLine(output, ";");
-                    break;
+                    throw new NotImplementedException("Swap Assignment Not Implemented");
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
                     WriteExpr(context, output, whileStmt.Condition);

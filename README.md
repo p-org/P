@@ -25,8 +25,6 @@ In Proceedings of ACM SIGPLAN Conference on Programming Language Design and Impl
 
 
 
-
-
 Manual
 =========
 
@@ -43,10 +41,6 @@ Application to Robotics
 We built DRONA, a software framework for distributed mobile robotics systems. DRONA uses P language for implementing and model-checking the distributed robotics software stack (**[wiki](https://github.com/Drona-Org/Drona/wiki/Drona-Software-Stack)**). The C code generated from P compiler can be easily deployed on  Robot Operating System (ROS).
 More details about the DRONA framework and simulation videos are available here:
 **[https://drona-org.github.io/Drona/](https://drona-org.github.io/Drona/)**
-
-We are working on using the DRONA framework for building real-world drone applications using **[PX4](https://github.com/PX4/Firmware)** and extending DRONA with runtime monitoring capabilities for reliability.
-Details about these extensions will be posted soon.
-
 
 
 Blogs

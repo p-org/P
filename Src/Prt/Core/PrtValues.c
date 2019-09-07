@@ -1047,6 +1047,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(_In_ PRT_VALUE* map, _In_ PRT_VALUE* key)
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
 	PrtAssert((map->discriminator == PRT_VALUE_KIND_MAP), "Invalid value");
+
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE* bucket;
 	bucketNum = PrtGetHashCodeValue(key) % PrtHashtableCapacities[map->valueUnion.map->capNum];
@@ -1066,6 +1067,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(_In_ PRT_VALUE* map, _In_ PRT_VALUE* key)
 
 		next = next->bucketNext;
 	}
+
 	return PRT_FALSE;
 }
 

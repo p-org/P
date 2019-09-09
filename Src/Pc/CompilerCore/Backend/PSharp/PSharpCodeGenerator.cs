@@ -799,8 +799,9 @@ namespace Plang.Compiler.Backend.PSharp
 
                     context.WriteLine(output, ");");
                     break;
-                case SwapAssignStmt _:
-                    throw new NotImplementedException("swap assignments");
+                case SwapAssignStmt swapStmt:
+                    throw new NotImplementedException("Swap Assignment Not Implemented");
+
                 case WhileStmt whileStmt:
                     context.Write(output, "while (");
                     WriteExpr(context, output, whileStmt.Condition);

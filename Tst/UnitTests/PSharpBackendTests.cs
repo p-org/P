@@ -27,6 +27,7 @@ namespace UnitTests
             TestAssertions.AssertTestCase(testCase);
         }
 
+        /*
         [Test]
         public void TestModuleSystem()
         {
@@ -77,5 +78,6 @@ namespace UnitTests
 
             TestAssertions.AssertTestCase(testCase);
         }
+        */
     }
 }

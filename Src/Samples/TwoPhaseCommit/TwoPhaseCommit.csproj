@@ -1,11 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.0</TargetFramework>
+    <TargetFrameworks Condition="'$(OS)'=='Windows_NT'">netcoreapp2.1;net46</TargetFrameworks>
+    <TargetFramework Condition="'$(OS)'=='UNIX'">netcoreapp2.1</TargetFramework>
     <ApplicationIcon />
     <OutputType>Exe</OutputType>
     <StartupObject />
     <LangVersion>latest</LangVersion>
+    <OutputPath>.\bin\$(TargetFramework)\$(Configuration)</OutputPath>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -14,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\PSharpRuntime\PSharpExtensions\PrtSharp.csproj" />
-    <PackageReference Include="Microsoft.PSharp" Version="1.4.0" />
+    <PackageReference Include="Microsoft.PSharp" Version="1.6.9" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,5 +1,4 @@
-// We would like to assert the atomicity property that if a transaction is committed by the coordinator then it was committed by all participants
-
+// We would like to assert the atomicity property that if a transaction is committed by the coordinator then it was agreed on by all participants
 spec Atomicity observes eWriteTransSuccess, eWriteTransFailed, eMonitor_LocalCommit, eMonitor_AtomicityInitialize
 {
 	var receivedLocalCommits: map[machine, int];
@@ -18,13 +17,17 @@ spec Atomicity observes eWriteTransSuccess, eWriteTransFailed, eMonitor_LocalCom
 		}
 		on eWriteTransSuccess do {
 			assert(sizeof(receivedLocalCommits) == numParticipants);
+			// reset the map with default value which is empty map.
 			receivedLocalCommits = default(map[machine, int]);
 		}
 		on eWriteTransFailed do { receivedLocalCommits = default(map[machine, int]); }
 	}
 }
 
-
+/* 
+Every received transaction from a client must be eventually responded back.
+TODO: This spec is not complete.
+*/
 spec Progress observes eWriteTransaction, eWriteTransSuccess, eWriteTransFailed {
 	start state Init {
 		ignore eWriteTransFailed, eWriteTransSuccess;

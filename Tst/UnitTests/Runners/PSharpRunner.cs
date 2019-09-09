@@ -105,7 +105,7 @@ namespace Main
             var projectFileContents = @"
 <Project Sdk=""Microsoft.NET.Sdk"">
   <PropertyGroup>
-    <TargetFramework >netcoreapp2.0</TargetFramework>
+    <TargetFramework >netcoreapp2.1</TargetFramework>
     <ApplicationIcon />
     <OutputType>library</OutputType>
     <StartupObject />
@@ -117,7 +117,7 @@ namespace Main
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include=""Microsoft.PSharp"" Version=""1.4.0""/>
+    <PackageReference Include=""Microsoft.PSharp"" Version=""1.6.9""/>
     <Reference Include = ""PrtSharp.dll""/>
   </ItemGroup>
 </Project>";

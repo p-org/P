@@ -1,19 +1,19 @@
 //Event declaration
-event unit assert 1;
-event req_share assert 3 : machine;
-event req_excl assert 3 : machine;
-event need_invalidate assert 1;
-event invalidate_ack assert 3;
-event grant assert 1;
-event ask_share assume 1;
-event ask_excl assume 1;
-event invalidate assert 1;
-event grant_excl assert 1;
-event grant_share assert 1;
-event normal assert 1;
-event wait assert 1;
-event invalidate_sharers assert 1 : int;
-event sharer_id assert 3 : machine;
+event unit;
+event req_share: machine;
+event req_excl: machine;
+event need_invalidate;
+event invalidate_ack;
+event grant;
+event ask_share;
+event ask_excl;
+event invalidate;
+event grant_excl;
+event grant_share;
+event normal;
+event wait;
+event invalidate_sharers: int;
+event sharer_id: machine;
 
 //Host machine 
 machine Main {

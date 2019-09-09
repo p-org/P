@@ -1,5 +1,6 @@
 /* 
-A client machine pumping in one random transaction
+A client machine pumping in one random transaction 
+and then asserting that if the transaction succeeded then the read should also succeed.
 */
 
 machine Client {
@@ -39,6 +40,9 @@ machine Client {
 }
 
 
-/* external functions to randomly choose index and values */
+/* 
+This is an external functions (implemented in C# or C) to randomly choose transaction values
+In P funtion declarations without body are considered as foreign functions.
+*/
 fun ChooseTransaction(): tWriteTransaction;
 

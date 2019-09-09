@@ -6,9 +6,6 @@ guarantees atomicity accross participants for write transactions
 */
 
 machine Coordinator
-//this is list is not complete
-//receives eWriteTransaction, eReadTransaction, ePrepareSuccess, ePrepareFailed, eTimeOut;
-//sends eGlobalAbort, eGlobalCommit, ePrepare, eWriteTransFailed, eWriteTransSuccess, eStartTimer;
 {
 	var participants: seq[machine];
 	var pendingWrTrans: tWriteTransaction;
@@ -19,21 +16,17 @@ machine Coordinator
 		entry (payload: seq[machine]){
 			var i : int; 
 			//initialize variables
+			participants = payload;
 			i = 0; currTransId = 0;
 			timer = CreateTimer(this);
-			participants = payload;
-			//create all the participants
+
 			announce eMonitor_AtomicityInitialize, sizeof(payload);
 			//wait for requests
 			goto WaitForTransactions;
 		}
 	}
 
-
-
 	state WaitForTransactions {
-		// when in this state it is fine to drop these messages
-		ignore ePrepareSuccess, ePrepareFailed;
 
 		on eWriteTransaction do (wTrans : tWriteTransaction) {
 			pendingWrTrans = wTrans;
@@ -47,6 +40,7 @@ machine Coordinator
 		}
 
 		on eReadTransaction do (rTrans : tReadTransaction) {
+			// non-deterministically pick a participant to read from.
 			if($)
 			{
 				send participants[0], eReadTransaction, rTrans;
@@ -58,14 +52,9 @@ machine Coordinator
 		}
 
 		on local_event push WaitForPrepareResponses;
-	}
 
-	
-
-	fun DoGlobalAbort() {
-		// ask all participants to abort and fail the transaction
-		SendToAllParticipants(eGlobalAbort, currTransId);
-		send pendingWrTrans.client, eWriteTransFailed;
+		// when in this state it is fine to drop these messages
+		ignore ePrepareSuccess, ePrepareFailed;
 	}
 
 	var countPrepareResponses: int;
@@ -88,7 +77,7 @@ machine Coordinator
 					SendToAllParticipants(eGlobalCommit, currTransId);
 					send pendingWrTrans.client, eWriteTransSuccess;
 					CancelTimer(timer);
-					//it is not safe to pop back to the parent state
+					//it is now safe to pop back to the parent state
 					pop;
 				}
 			}
@@ -110,6 +99,12 @@ machine Coordinator
 		exit {
 			print "Going back to WaitForTransactions";
 		}
+	}
+
+	fun DoGlobalAbort() {
+		// ask all participants to abort and fail the transaction
+		SendToAllParticipants(eGlobalAbort, currTransId);
+		send pendingWrTrans.client, eWriteTransFailed;
 	}
 
 	//helper function to send messages to all replicas

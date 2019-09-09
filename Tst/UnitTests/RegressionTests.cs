@@ -60,7 +60,7 @@ namespace UnitTests
             TestAssertions.AssertTestCase(testCaseC);
         }
 
-        [Test]
+        /*[Test]
         public void TestTemp()
         {
             var tempDir = Directory.CreateDirectory(Path.Combine(Constants.ScratchParentDirectory, "TestTemp"));
@@ -73,7 +73,7 @@ namespace UnitTests
                 new ExecutionOutputValidator(0, null, null));
 
             TestAssertions.AssertTestCase(testCase);
-        }
+        }*/
     }
 
     [TestFixture]

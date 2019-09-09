@@ -6,17 +6,14 @@ namespace Plang.PrtSharp
 {
     public class PEvent : Event, IPrtValue
     {
-        public PEvent() : base(AssertVal, AssumeVal)
+        public PEvent() : base()
         {
         }
 
-        public PEvent(IPrtValue payload) : base(AssertVal, AssumeVal)
+        public PEvent(IPrtValue payload) : base()
         {
             Payload = payload;
         }
-
-        protected static int AssertVal { get; set; }
-        protected static int AssumeVal { get; set; }
 
         public IPrtValue Payload { get; }
 
@@ -35,7 +32,6 @@ namespace Plang.PrtSharp
     {
         public PHalt(IPrtValue payload) : base(payload)
         {
-            AssertVal = -1; AssumeVal = -1;
         }
     }
 }

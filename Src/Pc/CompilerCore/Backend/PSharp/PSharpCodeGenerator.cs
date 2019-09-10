@@ -109,10 +109,14 @@ namespace Plang.Compiler.Backend.PSharp
             switch (decl)
             {
                 case Function function:
-                    context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName}");
-                    context.WriteLine(output, "{");
-                    WriteFunction(context, output, function);
-                    context.WriteLine(output, "}");
+                    if(!function.IsForeign)
+                    {
+                        context.WriteLine(output, $"public static partial class {context.GlobalFunctionClassName}");
+                        context.WriteLine(output, "{");
+                        WriteFunction(context, output, function);
+                        context.WriteLine(output, "}");
+                    }
+                    
                     break;
                 case PEvent pEvent:
                     if (!pEvent.IsBuiltIn) WriteEvent(context, output, pEvent);
@@ -181,10 +185,10 @@ namespace Plang.Compiler.Backend.PSharp
 
         private static void WriteForeignType(CompilationContext context, StringWriter output, ForeignType foreignType)
         {
+            // we do not generate code for foreign types
             var declName = foreignType.CanonicalRepresentation;
-            context.WriteLine(output, $"public partial class {declName} : IPrtValue");
-            context.WriteLine(output, "{");
-            context.WriteLine(output, "}");
+            context.WriteLine(output, $"// TODO: Implement the Forieng Type {declName}");
+            
         }
 
         private void WriteSafetyTestDecl(CompilationContext context, StringWriter output, SafetyTest safety)
@@ -545,7 +549,7 @@ namespace Plang.Compiler.Backend.PSharp
                     context.Write(output, "currentMachine.Assert(");
                     WriteExpr(context, output, assertStmt.Assertion);
                     context.Write(output, ",");
-                    context.Write(output, $"\"{assertStmt.Message}\"");
+                    context.Write(output, $"\"Assertion Failed: {assertStmt.Message}\"");
                     context.WriteLine(output, ");");
                     //last statement
                     if (FunctionValidator.SurelyReturns(assertStmt))

@@ -15,9 +15,6 @@ namespace Plang.PrtSharp
             Payload = payload;
         }
 
-        protected static int AssertVal { get; set; }
-        protected static int AssumeVal { get; set; }
-
         public IPrtValue Payload { get; }
 
         public bool Equals(IPrtValue other)

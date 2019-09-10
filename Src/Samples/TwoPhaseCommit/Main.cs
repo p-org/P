@@ -16,133 +16,114 @@ namespace Main
     public static partial class GlobalFunctions {}
     internal partial class local_event : PEvent
     {
-        static local_event() { AssertVal = -1; AssumeVal = -1;}
         public local_event() : base() {}
         public local_event (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new local_event();}
     }
     internal partial class ePrepare : PEvent
     {
-        static ePrepare() { AssertVal = -1; AssumeVal = -1;}
         public ePrepare() : base() {}
         public ePrepare (PrtNamedTuple payload): base(payload){ }
         public override IPrtValue Clone() { return new ePrepare();}
     }
     internal partial class ePrepareSuccess : PEvent
     {
-        static ePrepareSuccess() { AssertVal = -1; AssumeVal = -1;}
         public ePrepareSuccess() : base() {}
         public ePrepareSuccess (PrtInt payload): base(payload){ }
         public override IPrtValue Clone() { return new ePrepareSuccess();}
     }
     internal partial class ePrepareFailed : PEvent
     {
-        static ePrepareFailed() { AssertVal = -1; AssumeVal = -1;}
         public ePrepareFailed() : base() {}
         public ePrepareFailed (PrtInt payload): base(payload){ }
         public override IPrtValue Clone() { return new ePrepareFailed();}
     }
     internal partial class eGlobalAbort : PEvent
     {
-        static eGlobalAbort() { AssertVal = -1; AssumeVal = -1;}
         public eGlobalAbort() : base() {}
         public eGlobalAbort (PrtInt payload): base(payload){ }
         public override IPrtValue Clone() { return new eGlobalAbort();}
     }
     internal partial class eGlobalCommit : PEvent
     {
-        static eGlobalCommit() { AssertVal = -1; AssumeVal = -1;}
         public eGlobalCommit() : base() {}
         public eGlobalCommit (PrtInt payload): base(payload){ }
         public override IPrtValue Clone() { return new eGlobalCommit();}
     }
     internal partial class eWriteTransaction : PEvent
     {
-        static eWriteTransaction() { AssertVal = -1; AssumeVal = -1;}
         public eWriteTransaction() : base() {}
         public eWriteTransaction (PrtNamedTuple payload): base(payload){ }
         public override IPrtValue Clone() { return new eWriteTransaction();}
     }
     internal partial class eWriteTransFailed : PEvent
     {
-        static eWriteTransFailed() { AssertVal = -1; AssumeVal = -1;}
         public eWriteTransFailed() : base() {}
         public eWriteTransFailed (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new eWriteTransFailed();}
     }
     internal partial class eWriteTransSuccess : PEvent
     {
-        static eWriteTransSuccess() { AssertVal = -1; AssumeVal = -1;}
         public eWriteTransSuccess() : base() {}
         public eWriteTransSuccess (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new eWriteTransSuccess();}
     }
     internal partial class eReadTransaction : PEvent
     {
-        static eReadTransaction() { AssertVal = -1; AssumeVal = -1;}
         public eReadTransaction() : base() {}
         public eReadTransaction (PrtNamedTuple payload): base(payload){ }
         public override IPrtValue Clone() { return new eReadTransaction();}
     }
     internal partial class eReadTransFailed : PEvent
     {
-        static eReadTransFailed() { AssertVal = -1; AssumeVal = -1;}
         public eReadTransFailed() : base() {}
         public eReadTransFailed (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new eReadTransFailed();}
     }
     internal partial class eReadTransSuccess : PEvent
     {
-        static eReadTransSuccess() { AssertVal = -1; AssumeVal = -1;}
         public eReadTransSuccess() : base() {}
         public eReadTransSuccess (PrtInt payload): base(payload){ }
         public override IPrtValue Clone() { return new eReadTransSuccess();}
     }
     internal partial class eTimeOut : PEvent
     {
-        static eTimeOut() { AssertVal = -1; AssumeVal = -1;}
         public eTimeOut() : base() {}
         public eTimeOut (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new eTimeOut();}
     }
     internal partial class eStartTimer : PEvent
     {
-        static eStartTimer() { AssertVal = -1; AssumeVal = -1;}
         public eStartTimer() : base() {}
         public eStartTimer (PrtInt payload): base(payload){ }
         public override IPrtValue Clone() { return new eStartTimer();}
     }
     internal partial class eCancelTimer : PEvent
     {
-        static eCancelTimer() { AssertVal = -1; AssumeVal = -1;}
         public eCancelTimer() : base() {}
         public eCancelTimer (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new eCancelTimer();}
     }
     internal partial class eCancelTimerFailed : PEvent
     {
-        static eCancelTimerFailed() { AssertVal = -1; AssumeVal = -1;}
         public eCancelTimerFailed() : base() {}
         public eCancelTimerFailed (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new eCancelTimerFailed();}
     }
     internal partial class eCancelTimerSuccess : PEvent
     {
-        static eCancelTimerSuccess() { AssertVal = -1; AssumeVal = -1;}
         public eCancelTimerSuccess() : base() {}
         public eCancelTimerSuccess (IPrtValue payload): base(payload){ }
         public override IPrtValue Clone() { return new eCancelTimerSuccess();}
     }
     internal partial class eMonitor_LocalCommit : PEvent
     {
-        static eMonitor_LocalCommit() { AssertVal = -1; AssumeVal = -1;}
         public eMonitor_LocalCommit() : base() {}
         public eMonitor_LocalCommit (PrtNamedTuple payload): base(payload){ }
         public override IPrtValue Clone() { return new eMonitor_LocalCommit();}
     }
     internal partial class eMonitor_AtomicityInitialize : PEvent
     {
-        static eMonitor_AtomicityInitialize() { AssertVal = -1; AssumeVal = -1;}
         public eMonitor_AtomicityInitialize() : base() {}
         public eMonitor_AtomicityInitialize (PrtInt payload): base(payload){ }
         public override IPrtValue Clone() { return new eMonitor_AtomicityInitialize();}
@@ -1326,6 +1307,7 @@ namespace Main
         
         [Microsoft.PSharp.Test]
         public static void Execute(IMachineRuntime runtime) {
+            runtime.SetLogWriter(new PLogger());
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();
@@ -1390,6 +1372,7 @@ namespace Main
         
         [Microsoft.PSharp.Test]
         public static void Execute(IMachineRuntime runtime) {
+            runtime.SetLogWriter(new PLogger());
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();
@@ -1450,6 +1433,7 @@ namespace Main
         
         [Microsoft.PSharp.Test]
         public static void Execute(IMachineRuntime runtime) {
+            runtime.SetLogWriter(new PLogger());
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
             PHelper.InitializeEnums();

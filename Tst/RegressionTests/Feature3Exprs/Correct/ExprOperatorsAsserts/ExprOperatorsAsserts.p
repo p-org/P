@@ -35,6 +35,8 @@ machine Main {
 	var s10: seq[any];
 	var s11: seq[int];
 	var s12: seq[bool];
+	var s13: seq[int];
+	var s14: seq[bool]
     var i: int;
 	var mac: machine;
 	var m1: map[int,int];
@@ -171,6 +173,16 @@ machine Main {
 		  assert(s4[0].0 + s8[1].1 - s8[2].0 == 0);   //holds
 		  assert(s4[1].0 * s8[1].1 / s8[2].0 == 1);   //holds
 		  
+		  // Regression Tests for in operator for a sequence
+		  s13 += (0, 4)
+		  assert((4 in s13) == true);
+		  assert((0 in s13) == true);
+		  assert((5 in s13) == false);
+
+		  s14 += (true, true)
+		  assert((true in s14) == true);
+		  assert((false in s14) == false);
+
 		  raise halt;
        }    
     }

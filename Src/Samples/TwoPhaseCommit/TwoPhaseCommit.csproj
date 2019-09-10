@@ -16,7 +16,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\PSharpRuntime\PSharpExtensions\PrtSharp.csproj" />
-    <PackageReference Include="Microsoft.PSharp" Version="1.6.8" />
+    <PackageReference Include="Microsoft.PSharp" Version="1.6.9" />
   </ItemGroup>
 
   <ItemGroup>

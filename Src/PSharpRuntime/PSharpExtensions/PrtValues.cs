@@ -44,10 +44,9 @@ namespace Plang.PrtSharp
             return ReferenceEquals(val1, val2) || val1 != null && val1.Equals(val2);
         }
 
-
         public static IPrtValue PrtCastValue(IPrtValue value, PrtType type)
         {
-            //todo: Needs to be fixed
+            //todo: Needs to be fixed for better error message
             /*if (!PrtInhabitsType(value, type))
                 throw new PrtInhabitsTypeException(
                     $"value {value.ToString()} is not a member of type {type.ToString()}");*/

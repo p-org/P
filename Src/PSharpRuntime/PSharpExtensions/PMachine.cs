@@ -113,6 +113,21 @@ namespace Plang.PrtSharp
             throw new PNonStandardReturnException {ReturnKind = NonStandardReturn.Pop};
         }
 
+        public int RandomInt(int maxValue)
+        {
+            return RandomInteger(maxValue);
+        }
+
+        public bool RandomBool(int maxValue)
+        {
+            return Random(maxValue);
+        }
+
+        public bool RandomBool()
+        {
+            return Random();
+        }
+
         public void Announce(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot announce a null event");
@@ -159,5 +174,7 @@ namespace Plang.PrtSharp
             {
             }
         }
+
+        
     }
 }

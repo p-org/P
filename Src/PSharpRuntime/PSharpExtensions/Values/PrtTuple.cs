@@ -32,7 +32,7 @@ namespace Plang.PrtSharp.Values
         public IPrtValue Clone()
         {
             var clone = new PrtTuple();
-            foreach (var val in fieldValues) clone.fieldValues.Add(val.Clone());
+            foreach (var val in fieldValues) clone.fieldValues.Add(val?.Clone());
             return clone;
         }
 
@@ -43,7 +43,7 @@ namespace Plang.PrtSharp.Values
             if (tupValue == null) return false;
             if (tupValue.fieldValues.Count != fieldValues.Count) return false;
             for (var i = 0; i < fieldValues.Count; i++)
-                if (!fieldValues[i].Equals(tupValue.fieldValues[i]))
+                if (!PrtValues.SafeEquals(fieldValues[i],tupValue.fieldValues[i]))
                     return false;
             return true;
         }
@@ -55,7 +55,7 @@ namespace Plang.PrtSharp.Values
 
         public override int GetHashCode()
         {
-            var hashCode = fieldValues.GetHashCode();
+            var hashCode = HashHelper.ComputeHash<IPrtValue>(fieldValues);
             return hashCode;
         }
 

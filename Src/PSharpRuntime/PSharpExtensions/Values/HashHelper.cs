@@ -3,7 +3,7 @@ using System.Linq;
 
 namespace Plang.PrtSharp.Values
 {
-    internal static class HashHelper
+    public class HashHelper
     {
         private const uint HashSeed = 0x802CBBDB;
 

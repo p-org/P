@@ -3,6 +3,7 @@ using Plang.Compiler.TypeChecker.AST.Declarations;
 using Plang.Compiler.TypeChecker.AST.Statements;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 
 namespace Plang.Compiler.TypeChecker
 {
@@ -23,7 +24,16 @@ namespace Plang.Compiler.TypeChecker
 
         private void CheckFunction(Function function)
         {
-            CheckStmt(function.Body);
+            if (function.IsForeign)
+            {
+                Debug.Assert(function.Body == null);
+                // Skip this function; nothing to check
+            }
+            else
+            {
+                Debug.Assert(function.Body != null);
+                CheckStmt(function.Body);
+            }
         }
 
         private void CheckStmt(IPStmt stmt)

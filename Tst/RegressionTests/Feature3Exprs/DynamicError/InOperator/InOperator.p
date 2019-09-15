@@ -13,7 +13,7 @@ machine Main {
        {  
 		  sequence += (0, 1);
 		  sequence += (1, 2);
-		  sequence += (2, (3, 4))
+		  sequence += (2, (3, 4));
 		  assert(((4, 5) in sequence) == true); // errors for failing assertions
 		  assert(((3, 4) in sequence) == false); // errors for failing assertions
 		  assert((0 in dictionary) == true); // errors for failing assertions

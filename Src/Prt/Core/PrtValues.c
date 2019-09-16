@@ -586,12 +586,13 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE* seq, _In_ PRT_VALUE* index, _
 
 PRT_BOOLEAN PRT_CALL_CONV PrtSeqExists(_In_ PRT_VALUE* seq, _In_ PRT_VALUE* val)
 {
+	PRT_INT i;
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(val), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 
 	const PRT_UINT32 seqSize = seq->valueUnion.seq->size;
-	for (int i = 0; i < (PRT_INT)seqSize - 1; ++i)
+	for (i = 0; i < (PRT_INT)seqSize; i++)
 	{
 		if (PrtIsEqualValue(*PrtSeqGetNCIntIndex(seq, i), val))
 		{
@@ -1046,7 +1047,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtMapExists(_In_ PRT_VALUE* map, _In_ PRT_VALUE* key)
 {
 	PrtAssert(PrtIsValidValue(map), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(key), "Invalid value expression.");
-	PrtAssert(map->discriminator == PRT_VALUE_KIND_MAP, "Invalid value");
+	PrtAssert((map->discriminator == PRT_VALUE_KIND_MAP), "Invalid value");
 
 	PRT_UINT32 bucketNum;
 	PRT_MAPNODE* bucket;

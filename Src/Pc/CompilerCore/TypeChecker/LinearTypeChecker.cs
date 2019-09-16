@@ -235,9 +235,9 @@ namespace Plang.Compiler.TypeChecker
                 case CoerceExpr coerceExpr:
                     unavailable = ProcessExpr(unavailable, coerceExpr.SubExpr);
                     break;
-                case ContainsKeyExpr containsKeyExpr:
-                    unavailable = ProcessExpr(unavailable, containsKeyExpr.Map);
-                    unavailable = ProcessExpr(unavailable, containsKeyExpr.Key);
+                case ContainsExpr containsKeyExpr:
+                    unavailable = ProcessExpr(unavailable, containsKeyExpr.Collection);
+                    unavailable = ProcessExpr(unavailable, containsKeyExpr.Item);
                     break;
                 case CtorExpr ctorExpr:
                     unavailable = ProcessArgList(ctorExpr.Arguments, unavailable, ArgOptions.SwapNotAllowed);

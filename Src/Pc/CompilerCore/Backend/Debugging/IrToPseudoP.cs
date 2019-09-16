@@ -409,8 +409,8 @@ namespace Plang.Compiler.Backend.Debugging
                 case CoerceExpr coerceExpr:
                     WriteParts("(", coerceExpr.SubExpr, ") to ", coerceExpr.Type);
                     break;
-                case ContainsKeyExpr containsKeyExpr:
-                    WriteParts("(", containsKeyExpr.Key, ") in (", containsKeyExpr.Map, ")");
+                case ContainsExpr containsKeyExpr:
+                    WriteParts("(", containsKeyExpr.Item, ") in (", containsKeyExpr.Collection, ")");
                     break;
                 case CloneExpr cloneExpr:
                     WriteParts("$Clone(", cloneExpr.Term, ")");

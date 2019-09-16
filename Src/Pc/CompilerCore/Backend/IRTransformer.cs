@@ -105,11 +105,11 @@ namespace Plang.Compiler.Backend
                     deps.AddRange(coerceDeps);
                     deps.Add(coerceStore);
                     return (coerceTemp, deps);
-                case ContainsKeyExpr containsKeyExpr:
-                    var (contKeyExpr, contKeyDeps) = SimplifyExpression(containsKeyExpr.Key);
-                    var (contMapExpr, contMapDeps) = SimplifyExpression(containsKeyExpr.Map);
+                case ContainsExpr containsKeyExpr:
+                    var (contKeyExpr, contKeyDeps) = SimplifyExpression(containsKeyExpr.Item);
+                    var (contMapExpr, contMapDeps) = SimplifyExpression(containsKeyExpr.Collection);
                     var (contTemp, contStore) =
-                        SaveInTemporary(new ContainsKeyExpr(location, contKeyExpr, contMapExpr));
+                        SaveInTemporary(new ContainsExpr(location, contKeyExpr, contMapExpr));
                     deps.AddRange(contKeyDeps.Concat(contMapDeps));
                     deps.Add(contStore);
                     return (contTemp, deps);

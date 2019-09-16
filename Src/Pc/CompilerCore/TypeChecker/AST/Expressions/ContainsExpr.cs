@@ -3,17 +3,17 @@ using Plang.Compiler.TypeChecker.Types;
 
 namespace Plang.Compiler.TypeChecker.AST.Expressions
 {
-    public class ContainsKeyExpr : IPExpr
+    public class ContainsExpr : IPExpr
     {
-        public ContainsKeyExpr(ParserRuleContext sourceLocation, IPExpr key, IPExpr map)
+        public ContainsExpr(ParserRuleContext sourceLocation, IPExpr item, IPExpr collection)
         {
             SourceLocation = sourceLocation;
-            Key = key;
-            Map = map;
+            Item = item;
+            Collection = collection;
         }
 
-        public IPExpr Key { get; }
-        public IPExpr Map { get; }
+        public IPExpr Item { get; }
+        public IPExpr Collection { get; }
 
         public PLanguageType Type { get; } = PrimitiveType.Bool;
         public ParserRuleContext SourceLocation { get; }

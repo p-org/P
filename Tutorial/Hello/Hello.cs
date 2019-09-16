@@ -4,74 +4,75 @@ using System.Runtime;
 using System.Collections.Generic;
 using System.Linq;
 using System.IO;
-using PrtSharp;
-using PrtSharp.Values;
+using Plang.PrtSharp;
+using Plang.PrtSharp.Values;
+using Plang.PrtSharp.Exceptions;
 using System.Threading;
 using System.Threading.Tasks;
 
 #pragma warning disable 162, 219, 414
 namespace Hello
 {
-    public static partial class GlobalFunctions_Hello {}
-    internal class START : PEvent<PrtInt>
+    public static partial class GlobalFunctions {}
+    internal partial class START : PEvent
     {
         static START() { AssertVal = -1; AssumeVal = -1;}
         public START() : base() {}
         public START (PrtInt payload): base(payload){ }
         public override IPrtValue Clone() { return new START();}
     }
-    internal class TIMEOUT : PEvent<PMachineValue>
+    internal partial class TIMEOUT : PEvent
     {
         static TIMEOUT() { AssertVal = -1; AssumeVal = -1;}
         public TIMEOUT() : base() {}
         public TIMEOUT (PMachineValue payload): base(payload){ }
         public override IPrtValue Clone() { return new TIMEOUT();}
     }
-    public static partial class GlobalFunctions_Hello
+    public static partial class GlobalFunctions
     {
         public static PMachineValue CreateTimer(PMachineValue owner, PMachine currentMachine)
         {
             PMachineValue m = null;
             PMachineValue TMP_tmp0 = null;
             PMachineValue TMP_tmp1 = null;
-            TMP_tmp0 = ((PMachineValue)((IPrtValue)owner)?.Clone());
-            TMP_tmp1 = currentMachine.CreateInterface<I_Timer>( currentMachine, TMP_tmp0);
+            TMP_tmp0 = (PMachineValue)(((PMachineValue)((IPrtValue)owner)?.Clone()));
+            TMP_tmp1 = (PMachineValue)(currentMachine.CreateInterface<I_Timer>( currentMachine, TMP_tmp0));
             m = (PMachineValue)TMP_tmp1;
             return ((PMachineValue)((IPrtValue)m)?.Clone());
         }
     }
-    public static partial class GlobalFunctions_Hello
+    public static partial class GlobalFunctions
     {
         public static void StartTimer(PMachineValue timer, PrtInt time, PMachine currentMachine)
         {
             PMachineValue TMP_tmp0_1 = null;
-            IEventWithPayload TMP_tmp1_1 = null;
+            PEvent TMP_tmp1_1 = null;
             PrtInt TMP_tmp2 = ((PrtInt)0);
-            TMP_tmp0_1 = ((PMachineValue)((IPrtValue)timer)?.Clone());
-            TMP_tmp1_1 = new START(((PrtInt)0));
-            TMP_tmp2 = ((PrtInt)((IPrtValue)time)?.Clone());
-            currentMachine.SendEvent(currentMachine, TMP_tmp0_1, (Event)TMP_tmp1_1, TMP_tmp2);
+            TMP_tmp0_1 = (PMachineValue)(((PMachineValue)((IPrtValue)timer)?.Clone()));
+            TMP_tmp1_1 = (PEvent)(new START(((PrtInt)0)));
+            TMP_tmp2 = (PrtInt)(((PrtInt)((IPrtValue)time)?.Clone()));
+            currentMachine.SendEvent(TMP_tmp0_1, (Event)TMP_tmp1_1, TMP_tmp2);
         }
     }
-    public static partial class GlobalFunctions_Hello
+    public static partial class GlobalFunctions
     {
         public static void StopProgram(PMachine currentMachine)
         {
         }
     }
-    public static partial class GlobalFunctions_Hello
+    public static partial class GlobalFunctions
     {
         public static PrtBool Continue(PMachine currentMachine)
         {
             PrtBool TMP_tmp0_2 = ((PrtBool)false);
-            TMP_tmp0_2 = ((PrtBool)currentMachine.Random());
+            TMP_tmp0_2 = (PrtBool)(((PrtBool)currentMachine.Random()));
             return ((PrtBool)((IPrtValue)TMP_tmp0_2)?.Clone());
         }
     }
-    internal class Timer : PMachine
+    internal partial class Timer : PMachine
     {
         private PMachineValue client = null;
-        public class ConstructorEvent : PEvent<PMachineValue>{public ConstructorEvent(PMachineValue val) : base(val) { }}
+        public class ConstructorEvent : PEvent{public ConstructorEvent(PMachineValue val) : base(val) { }}
         
         protected override Event GetConstructorEvent(IPrtValue value) { return new ConstructorEvent((PMachineValue)value); }
         public Timer() {
@@ -82,8 +83,9 @@ namespace Hello
         public void Anon()
         {
             Timer currentMachine = this;
-            PMachineValue payload = ((PEvent<PMachineValue>)currentMachine.ReceivedEvent).PayloadT;
-            client = ((PMachineValue)((IPrtValue)payload)?.Clone());
+            PMachineValue payload = (PMachineValue)(gotoPayload ?? ((PEvent)currentMachine.ReceivedEvent).Payload);
+            this.gotoPayload = null;
+            client = (PMachineValue)(((PMachineValue)((IPrtValue)payload)?.Clone()));
             currentMachine.GotoState<Timer.WaitForReq>();
             throw new PUnreachableCodeException();
         }
@@ -91,12 +93,12 @@ namespace Hello
         {
             Timer currentMachine = this;
             PMachineValue TMP_tmp0_3 = null;
-            IEventWithPayload TMP_tmp1_2 = null;
+            PEvent TMP_tmp1_2 = null;
             PMachineValue TMP_tmp2_1 = null;
-            TMP_tmp0_3 = ((PMachineValue)((IPrtValue)client)?.Clone());
-            TMP_tmp1_2 = new TIMEOUT(null);
-            TMP_tmp2_1 = currentMachine.self;
-            currentMachine.SendEvent(currentMachine, TMP_tmp0_3, (Event)TMP_tmp1_2, TMP_tmp2_1);
+            TMP_tmp0_3 = (PMachineValue)(((PMachineValue)((IPrtValue)client)?.Clone()));
+            TMP_tmp1_2 = (PEvent)(new TIMEOUT(null));
+            TMP_tmp2_1 = (PMachineValue)(currentMachine.self);
+            currentMachine.SendEvent(TMP_tmp0_3, (Event)TMP_tmp1_2, TMP_tmp2_1);
         }
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
@@ -117,10 +119,10 @@ namespace Hello
         {
         }
     }
-    internal class Hello : PMachine
+    internal partial class Hello : PMachine
     {
         private PMachineValue timer_1 = null;
-        public class ConstructorEvent : PEvent<IPrtValue>{public ConstructorEvent(IPrtValue val) : base(val) { }}
+        public class ConstructorEvent : PEvent{public ConstructorEvent(IPrtValue val) : base(val) { }}
         
         protected override Event GetConstructorEvent(IPrtValue value) { return new ConstructorEvent((IPrtValue)value); }
         public Hello() {
@@ -138,8 +140,8 @@ namespace Hello
             Hello currentMachine = this;
             PMachineValue TMP_tmp0_4 = null;
             PMachineValue TMP_tmp1_3 = null;
-            TMP_tmp0_4 = currentMachine.self;
-            TMP_tmp1_3 = GlobalFunctions_Hello.CreateTimer(TMP_tmp0_4, this);
+            TMP_tmp0_4 = (PMachineValue)(currentMachine.self);
+            TMP_tmp1_3 = (PMachineValue)(GlobalFunctions.CreateTimer(TMP_tmp0_4, this));
             timer_1 = TMP_tmp1_3;
             currentMachine.GotoState<Hello.GetInput>();
             throw new PUnreachableCodeException();
@@ -149,7 +151,7 @@ namespace Hello
             Hello currentMachine = this;
             PrtBool b = ((PrtBool)false);
             PrtBool TMP_tmp0_5 = ((PrtBool)false);
-            TMP_tmp0_5 = GlobalFunctions_Hello.Continue(this);
+            TMP_tmp0_5 = (PrtBool)(GlobalFunctions.Continue(this));
             b = TMP_tmp0_5;
             if (b)
             {
@@ -167,9 +169,9 @@ namespace Hello
             Hello currentMachine = this;
             PMachineValue TMP_tmp0_6 = null;
             PrtInt TMP_tmp1_4 = ((PrtInt)0);
-            TMP_tmp0_6 = ((PMachineValue)((IPrtValue)timer_1)?.Clone());
-            TMP_tmp1_4 = ((PrtInt)100);
-            GlobalFunctions_Hello.StartTimer(TMP_tmp0_6, TMP_tmp1_4, this);
+            TMP_tmp0_6 = (PMachineValue)(((PMachineValue)((IPrtValue)timer_1)?.Clone()));
+            TMP_tmp1_4 = (PrtInt)(((PrtInt)100));
+            GlobalFunctions.StartTimer(TMP_tmp0_6, TMP_tmp1_4, this);
         }
         public void Anon_5()
         {
@@ -179,7 +181,7 @@ namespace Hello
         public void Anon_6()
         {
             Hello currentMachine = this;
-            GlobalFunctions_Hello.StopProgram(this);
+            GlobalFunctions.StopProgram(this);
         }
         [Start]
         [OnEntry(nameof(InitializeParametersFunction))]
@@ -204,31 +206,34 @@ namespace Hello
         {
         }
     }
-    // TODO: TypeDef TimerPtr
     public class Test0 {
         public static void InitializeLinkMap() {
+            PModule.linkMap.Clear();
             PModule.linkMap[nameof(I_Hello)] = new Dictionary<string, string>();
             PModule.linkMap[nameof(I_Hello)].Add(nameof(I_Timer), nameof(I_Timer));
             PModule.linkMap[nameof(I_Timer)] = new Dictionary<string, string>();
         }
         
         public static void InitializeInterfaceDefMap() {
+            PModule.interfaceDefinitionMap.Clear();
             PModule.interfaceDefinitionMap.Add(nameof(I_Hello), typeof(Hello));
             PModule.interfaceDefinitionMap.Add(nameof(I_Timer), typeof(Timer));
         }
         
         public static void InitializeMonitorObserves() {
+            PModule.monitorObserves.Clear();
         }
         
         public static void InitializeMonitorMap(PSharpRuntime runtime) {
+            PModule.monitorMap.Clear();
         }
         
         
         [Microsoft.PSharp.Test]
         public static void Execute(PSharpRuntime runtime) {
-            runtime.SetLogger(new PLogger());
             PModule.runtime = runtime;
             PHelper.InitializeInterfaces();
+            PHelper.InitializeEnums();
             InitializeLinkMap();
             InitializeInterfaceDefMap();
             InitializeMonitorMap(runtime);
@@ -246,8 +251,15 @@ namespace Hello
     
     public partial class PHelper {
         public static void InitializeInterfaces() {
+            PInterfaces.Clear();
             PInterfaces.AddInterface(nameof(I_Timer), nameof(START));
             PInterfaces.AddInterface(nameof(I_Hello), nameof(START), nameof(TIMEOUT), nameof(PHalt));
+        }
+    }
+    
+    public partial class PHelper {
+        public static void InitializeEnums() {
+            PrtEnum.Clear();
         }
     }
     

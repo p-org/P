@@ -586,12 +586,13 @@ void PRT_CALL_CONV PrtSeqInsert(_Inout_ PRT_VALUE* seq, _In_ PRT_VALUE* index, _
 
 PRT_BOOLEAN PRT_CALL_CONV PrtSeqExists(_In_ PRT_VALUE* seq, _In_ PRT_VALUE* val)
 {
+	PRT_INT i;
 	PrtAssert(PrtIsValidValue(seq), "Invalid value expression.");
 	PrtAssert(PrtIsValidValue(val), "Invalid value expression.");
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 
 	const PRT_UINT32 seqSize = seq->valueUnion.seq->size;
-	for (int i = 0; i < (PRT_INT)seqSize; i++)
+	for (i = 0; i < (PRT_INT)seqSize; i++)
 	{
 		if (PrtIsEqualValue(*PrtSeqGetNCIntIndex(seq, i), val))
 		{

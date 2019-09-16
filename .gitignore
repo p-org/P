@@ -194,6 +194,8 @@ FakesAssemblies/
 # Windows detritus
 # =========================
 
+# Local Visual Studio directories
+**/.vs
 
 # Windows image file caches
 Thumbs.db

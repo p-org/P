@@ -139,6 +139,8 @@ statement : LBRACE statement* RBRACE                      # CompoundStmt
           | ASSERT expr (COMMA StringLiteral)? SEMI       # AssertStmt
           | PRINT StringLiteral (COMMA rvalueList)? SEMI  # PrintStmt
           | RETURN expr? SEMI                             # ReturnStmt
+          | BREAK SEMI                                    # BreakStmt
+          | CONTINUE SEMI                                 # ContinueStmt
           | lvalue ASSIGN rvalue SEMI                     # AssignStmt
           | lvalue INSERT LPAREN expr COMMA rvalue RPAREN SEMI # InsertStmt
           | lvalue REMOVE expr SEMI                       # RemoveStmt
@@ -241,4 +243,4 @@ testDecl : TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON
          | TEST testName=iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK) COLON modExpr REFINES modExpr SEMI  # RefinementTestDecl
          ;
 
-implementationDecl : IMPLEMENTATION implName= iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK)? COLON modExpr SEMI ; 
+implementationDecl : IMPLEMENTATION implName= iden (LBRACK MAIN ASSIGN mainMachine=iden RBRACK)? COLON modExpr SEMI ;

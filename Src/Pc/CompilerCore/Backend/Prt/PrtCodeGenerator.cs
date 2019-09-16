@@ -1039,6 +1039,12 @@ namespace Plang.Compiler.Backend.Prt
 
                     context.WriteLine(output, $"goto {context.Names.GetReturnLabel(function)};");
                     break;
+                case BreakStmt breakStmt:
+                    context.WriteLine(output, "break;");
+                    break;
+                case ContinueStmt continueStmt:
+                    context.WriteLine(output, "continue;");
+                    break;
                 case SendStmt sendStmt:
                     context.Write(output, "PrtSendInternal(context, PrtGetMachine(context->process, ");
                     WriteExpr(output, function, sendStmt.MachineExpr);
@@ -1090,6 +1096,8 @@ namespace Plang.Compiler.Backend.Prt
                     context.WriteLine(output, "))");
                     WriteStmt(output, function, whileStmt.Body);
                     break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(stmt));
             }
 
             context.WriteLine(output);

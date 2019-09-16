@@ -77,6 +77,10 @@ namespace Plang.Compiler.TypeChecker
                     if (returnStmt.ReturnValue != null) unavailable = ProcessExpr(unavailable, returnStmt.ReturnValue);
 
                     break;
+                case BreakStmt breakStmt:
+                    break;
+                case ContinueStmt continueStmt:
+                    break;
                 case AssignStmt assignStmt:
                     unavailable = ProcessExpr(unavailable, assignStmt.Value);
                     if (assignStmt.Location is VariableAccessExpr assignAccess)

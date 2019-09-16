@@ -769,6 +769,12 @@ namespace Plang.Compiler.Backend.PSharp
 
                     context.WriteLine(output, ";");
                     break;
+                case BreakStmt breakStmt:
+                    context.WriteLine(output, "break;");
+                    break;
+                case ContinueStmt continueStmt:
+                    context.WriteLine(output, "continue;");
+                    break;
                 case SendStmt sendStmt:
                     context.Write(output, "currentMachine.SendEvent(");
                     WriteExpr(context, output, sendStmt.MachineExpr);

@@ -235,10 +235,26 @@ namespace Plang.Compiler.TypeChecker
                         throw handler.BinOpTypeMismatch(context, lhs.Type, rhs.Type);
                     return arithCtors[op](lhs, rhs);
                 case "in":
-                    if (!(rhs.Type.Canonicalize() is MapType rhsMap)) throw handler.TypeMismatch(rhs, TypeKind.Map);
-                    if (!rhsMap.KeyType.IsAssignableFrom(lhs.Type))
-                        throw handler.TypeMismatch(context.lhs, lhs.Type, rhsMap.KeyType);
-                    return new ContainsKeyExpr(context, lhs, rhs);
+                    var rhsType = rhs.Type.Canonicalize();
+                    if (rhsType is MapType rhsMap)
+                    {
+                        if (!rhsMap.KeyType.IsAssignableFrom(lhs.Type))
+                        {
+                            throw handler.TypeMismatch(context.lhs, lhs.Type, rhsMap.KeyType);
+                        }
+                    }
+                    else if (rhsType is SequenceType rhsSeq)
+                    {
+                        if (!rhsSeq.ElementType.IsAssignableFrom(lhs.Type))
+                        {
+                            throw handler.TypeMismatch(context.lhs, lhs.Type, rhsSeq.ElementType);
+                        }
+                    }
+                    else
+                    {
+                        throw handler.TypeMismatch(rhs, TypeKind.Map, TypeKind.Sequence);
+                    }
+                    return new ContainsExpr(context, lhs, rhs);
                 case "==":
                 case "!=":
                     if (!lhs.Type.IsAssignableFrom(rhs.Type) && !rhs.Type.IsAssignableFrom(lhs.Type))

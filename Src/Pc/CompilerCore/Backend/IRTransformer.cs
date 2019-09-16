@@ -400,17 +400,18 @@ namespace Plang.Compiler.Backend
                 case WhileStmt whileStmt:
                     var (condExpr, condDeps) = SimplifyExpression(whileStmt.Condition);
                     var (condTemp, condStore) = SaveInTemporary(new CloneExpr(condExpr));
-                    var whileBody = SimplifyStatement(whileStmt.Body);
-                    whileBody.AddRange(condDeps);
-                    whileBody.Add(condStore);
-                    return condDeps.Concat(new[]
-                        {
-                            condStore,
-                            new WhileStmt(location,
-                                condTemp,
-                                new CompoundStmt(whileStmt.Body.SourceLocation, whileBody))
-                        })
+                    var condLocation = whileStmt.Condition.SourceLocation;
+                    var condCheck =
+                        condDeps
+                        .Append(condStore)
+                        .Append(new IfStmt(condLocation, condTemp, new NoStmt(condLocation), new BreakStmt(condLocation)))
                         .ToList();
+
+                    var loopBody = new CompoundStmt(
+                        whileStmt.Body.SourceLocation,
+                        condCheck.Concat(SimplifyStatement(whileStmt.Body)));
+
+                    return new List<IPStmt> { new WhileStmt(location, new BoolLiteralExpr(location, true), loopBody) };
                 default:
                     throw new ArgumentOutOfRangeException(nameof(statement));
             }

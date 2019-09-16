@@ -591,7 +591,7 @@ PRT_BOOLEAN PRT_CALL_CONV PrtSeqExists(_In_ PRT_VALUE* seq, _In_ PRT_VALUE* val)
 	PrtAssert(seq->discriminator == PRT_VALUE_KIND_SEQ, "Invalid value");
 
 	const PRT_UINT32 seqSize = seq->valueUnion.seq->size;
-	for (int i = 0; i < (PRT_INT)seqSize - 1; ++i)
+	for (int i = 0; i < (PRT_INT)seqSize; i++)
 	{
 		if (PrtIsEqualValue(*PrtSeqGetNCIntIndex(seq, i), val))
 		{

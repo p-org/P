@@ -32,6 +32,10 @@ namespace Plang.PrtSharp.Values
         {
             return other is PMachineValue machine && Equals(Id, machine.Id);
         }
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
 
         public IPrtValue Clone()
         {

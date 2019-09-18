@@ -128,6 +128,11 @@ namespace Plang.PrtSharp
             return Random();
         }
 
+        public void Log(string message)
+        {
+            this.Logger.WriteLine($"<PrintLog> {message}");
+        }
+
         public void Announce(Event ev, object payload = null)
         {
             Assert(ev != null, "Machine cannot announce a null event");

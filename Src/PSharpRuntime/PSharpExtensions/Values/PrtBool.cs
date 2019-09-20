@@ -17,6 +17,11 @@ namespace Plang.PrtSharp.Values
             return obj is PrtBool other && Equals(other);
         }
 
+        public override string ToString()
+        {
+            return value.ToString();
+        }
+
         private readonly bool value;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

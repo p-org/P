@@ -97,7 +97,7 @@ namespace Plang.PrtSharp.Values
         {
             var clone = new PrtNamedTuple();
             foreach (var name in fieldNames) clone.fieldNames.Add(name);
-            foreach (var val in fieldValues) clone.fieldValues.Add(val.Clone());
+            foreach (var val in fieldValues) clone.fieldValues.Add(val?.Clone());
             return clone;
         }
 
@@ -108,7 +108,7 @@ namespace Plang.PrtSharp.Values
             for (var i = 0; i < tup.fieldValues.Count; i++)
             {
                 if (fieldNames[i] != tup.fieldNames[i]) return false;
-                if (!fieldValues[i].Equals(tup.fieldValues[i])) return false;
+                if (!PrtValues.SafeEquals(fieldValues[i], tup.fieldValues[i])) return false;
             }
 
             return true;
